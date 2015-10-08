@@ -7,7 +7,7 @@ return array(
 		'cruser_id' => 'cruser_id',
 		'sortby' => 'sorting',
 		'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_domain',
-		'iconfile' => 'domain.gif',
+		'iconfile' => 'tcarecords-sys_domain-default',
 		'enablecolumns' => array(
 			'disabled' => 'hidden'
 		),
@@ -46,6 +46,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_domain.redirectHttpStatusCode',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_domain.redirectHttpStatusCode.301', '301'),
 					array('LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_domain.redirectHttpStatusCode.302', '302'),

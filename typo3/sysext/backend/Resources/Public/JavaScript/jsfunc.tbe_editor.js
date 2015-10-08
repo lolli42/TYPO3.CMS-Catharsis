@@ -276,7 +276,7 @@ var TBE_EDITOR = {
 		return (theStr.substring(sPos+lengthOfDelim,ePos));
 	},
 	curSelected: function(theField) {
-		var fObjSel = document[TBE_EDITOR.formname][theField];
+		var fObjSel = TYPO3.jQuery('select[data-formengine-input-name="' + theField + '"]').get(0);
 		var retVal="";
 		if (fObjSel) {
 			if (fObjSel.type=='select-multiple' || fObjSel.type=='select-one') {
@@ -327,7 +327,7 @@ var TBE_EDITOR = {
 	},
 
 	/**
-	 * Determines backend path to be used for e.g. ajax.php
+	 * Determines backend path
 	 * @return string
 	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
 	 */

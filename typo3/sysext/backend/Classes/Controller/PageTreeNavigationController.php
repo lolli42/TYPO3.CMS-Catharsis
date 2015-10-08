@@ -14,9 +14,10 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\View\PageTreeView;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -233,7 +234,7 @@ class PageTreeNavigationController {
 		// New Page
 		$onclickNewPageWizard = 'top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('db_new', ['pagesOnly' => 1, 'id' => ''])) . '+Tree.pageID;';
 		$buttons['new_page'] = '<a href="#" onclick="' . $onclickNewPageWizard . '" title="' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage', TRUE) . '">'
-			. $this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL)
+			. $this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL)->render()
 			. '</a>';
 		// Refresh
 		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.refresh', TRUE) . '">' . $iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL)->render() . '</a>';
@@ -313,20 +314,22 @@ class PageTreeNavigationController {
 	 **********************************/
 	/**
 	 * Makes the AJAX call to expand or collapse the pagetree.
-	 * Called by typo3/ajax.php
+	 * Called by an AJAX Route, see AjaxRequestHandler
 	 *
-	 * @param array $params Additional parameters (not used here)
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj The AjaxRequestHandler object of this request
-	 * @return void
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function ajaxExpandCollapse($params, $ajaxObj) {
+	public function ajaxExpandCollapse(ServerRequestInterface $request, ResponseInterface $response) {
 		$this->init();
 		$tree = $this->pagetree->getBrowsableTree();
 		if (!$this->pagetree->ajaxStatus) {
-			$ajaxObj->setError($tree);
+			$response->withStatus(500);
 		} else {
-			$ajaxObj->addContent('tree', $tree);
+			$response->getBody()->write(json_encode($tree));
 		}
+
+		return $response;
 	}
 
 	/**

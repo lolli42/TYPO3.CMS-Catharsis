@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\Tree\Pagetree;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -329,7 +328,7 @@ class Commands {
 		$lockInfo = BackendUtility::isRecordLocked('pages', $record['uid']);
 		if (is_array($lockInfo)) {
 			$qtip .= '<br />' . htmlspecialchars($lockInfo['msg']);
-			$prefix .= '<span class="typo3-pagetree-status">' . $iconFactory->getIcon('status-warning-in-use', Icon::SIZE_SMALL) . '</span>';
+			$prefix .= '<span class="typo3-pagetree-status">' . $iconFactory->getIcon('status-warning-in-use', Icon::SIZE_SMALL)->render() . '</span>';
 		}
 		// Call stats information hook
 		$stat = '';
@@ -345,7 +344,8 @@ class Commands {
 		$subNode->setText(htmlspecialchars($visibleText), $field, $prefix, htmlspecialchars($suffix) . $stat);
 		$subNode->setQTip($qtip);
 		if ((int)$record['uid'] !== 0) {
-			$spriteIconCode = IconUtility::getSpriteIconForRecord('pages', $record);
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$spriteIconCode = $iconFactory->getIconForRecord('pages', $record, Icon::SIZE_SMALL)->render();
 		} else {
 			$spriteIconCode = $iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL)->render();
 		}

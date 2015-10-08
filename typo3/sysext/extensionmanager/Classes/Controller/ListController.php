@@ -170,7 +170,7 @@ class ListController extends AbstractController {
 		} else {
 			$extensions = $this->extensionRepository->findAll();
 		}
-		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensionsWithAdditionalInformation();
+		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensions($this->listUtility->getAvailableExtensions());
 		$this->view->assign('extensions', $extensions)
 				->assign('search', $search)
 				->assign('availableAndInstalled', $availableAndInstalledExtensions);
@@ -200,18 +200,15 @@ class ListController extends AbstractController {
 			}
 
 			$officialDistributions = $this->extensionRepository->findAllOfficialDistributions();
-			if (!$showUnsuitableDistributions) {
-				$suitableOfficialDistributions = $this->dependencyUtility->getExtensionsSuitableForTypo3Version($officialDistributions->toArray());
-				$this->view->assign('officialDistributions', $suitableOfficialDistributions);
-			} else {
-				$this->view->assign('officialDistributions', $officialDistributions);
-			}
-
 			$communityDistributions = $this->extensionRepository->findAllCommunityDistributions();
+
 			if (!$showUnsuitableDistributions) {
-				$suitableCommunityDistributions = $this->dependencyUtility->getExtensionsSuitableForTypo3Version($communityDistributions->toArray());
+				$suitableOfficialDistributions = $this->dependencyUtility->getExtensionsSuitableForTypo3Version($officialDistributions);
+				$this->view->assign('officialDistributions', $suitableOfficialDistributions);
+				$suitableCommunityDistributions = $this->dependencyUtility->getExtensionsSuitableForTypo3Version($communityDistributions);
 				$this->view->assign('communityDistributions', $suitableCommunityDistributions);
 			} else {
+				$this->view->assign('officialDistributions', $officialDistributions);
 				$this->view->assign('communityDistributions', $communityDistributions);
 			}
 		}

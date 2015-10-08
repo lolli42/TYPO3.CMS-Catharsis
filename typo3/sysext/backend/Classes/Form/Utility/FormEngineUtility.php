@@ -14,16 +14,15 @@ namespace TYPO3\CMS\Backend\Form\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
-use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 /**
@@ -55,11 +54,6 @@ class FormEngineUtility {
 	);
 
 	/**
-	 * @var array Cache of getLanguageIcon()
-	 */
-	static protected $cachedLanguageFlag = array();
-
-	/**
 	 * Overrides the TCA field configuration by TSconfig settings.
 	 *
 	 * Example TSconfig: TCEform.<table>.<field>.config.appearance.useSortable = 1
@@ -88,43 +82,6 @@ class FormEngineUtility {
 			}
 		}
 		return $fieldConfig;
-	}
-
-	/**
-	 * Initializes language icons etc.
-	 *
-	 * @param string $table Table name
-	 * @param array $row Record
-	 * @param string $sys_language_uid Sys language uid OR ISO language code prefixed with "v", eg. "vDA
-	 * @return string
-	 * @internal
-	 */
-	static public function getLanguageIcon($table, $row, $sys_language_uid) {
-		$mainKey = $table . ':' . $row['uid'];
-		if (!isset(static::$cachedLanguageFlag[$mainKey])) {
-			BackendUtility::fixVersioningPid($table, $row);
-			list($tscPID) = BackendUtility::getTSCpidCached($table, $row['uid'], $row['pid']);
-			/** @var $t8Tools TranslationConfigurationProvider */
-			$t8Tools = GeneralUtility::makeInstance(TranslationConfigurationProvider::class);
-			static::$cachedLanguageFlag[$mainKey] = $t8Tools->getSystemLanguages($tscPID);
-		}
-		// Convert sys_language_uid to sys_language_uid if input was in fact a string (ISO code expected then)
-		if (!MathUtility::canBeInterpretedAsInteger($sys_language_uid)) {
-			foreach (static::$cachedLanguageFlag[$mainKey] as $rUid => $cD) {
-				if ('v' . $cD['ISOcode'] === $sys_language_uid) {
-					$sys_language_uid = $rUid;
-				}
-			}
-		}
-		$out = '';
-		if (static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] && static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] != 'empty-empty') {
-			$out .= IconUtility::getSpriteIcon(static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon']);
-			$out .= '&nbsp;';
-		} elseif (static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['title']) {
-			$out .= '[' . static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['title'] . ']';
-			$out .= '&nbsp;';
-		}
-		return $out;
 	}
 
 	/**
@@ -192,92 +149,10 @@ class FormEngineUtility {
 			. ' />';
 		}
 
-		return IconUtility::getSpriteIcon($icon, array('alt' => $alt, 'title' => $title));
-	}
-
-	/**
-	 * Extracts FlexForm parts of a form element name like
-	 * data[table][uid][field][sDEF][lDEF][FlexForm][vDEF]
-	 * Helper method used in inline
-	 *
-	 * @param string $formElementName The form element name
-	 * @return array|NULL
-	 * @internal
-	 */
-	static public function extractFlexFormParts($formElementName) {
-		$flexFormParts = NULL;
-
-		$matches = array();
-
-		if (preg_match('#^data(?:\[[^]]+\]){3}(\[data\](?:\[[^]]+\]){4,})$#', $formElementName, $matches)) {
-			$flexFormParts = GeneralUtility::trimExplode(
-				'][',
-				trim($matches[1], '[]')
-			);
-		}
-
-		return $flexFormParts;
-	}
-
-	/**
-	 * Get inlineFirstPid from a given objectId string
-	 *
-	 * @param string $domObjectId The id attribute of an element
-	 * @return int|NULL Pid or null
-	 * @internal
-	 */
-	static public function getInlineFirstPidFromDomObjectId($domObjectId) {
-		// Substitute FlexForm addition and make parsing a bit easier
-		$domObjectId = str_replace('---', ':', $domObjectId);
-		// The starting pattern of an object identifier (e.g. "data-<firstPidValue>-<anything>)
-		$pattern = '/^data' . '-' . '(.+?)' . '-' . '(.+)$/';
-		if (preg_match($pattern, $domObjectId, $match)) {
-			return $match[1];
-		}
-		return NULL;
-	}
-
-	/**
-	 * Adds / adapts some general options of main TCA config for inline usage
-	 *
-	 * @param array $config TCA field configuration
-	 * @return array Modified configuration
-	 * @internal
-	 */
-	static public function mergeInlineConfiguration($config) {
-		// Init appearance if not set:
-		if (!isset($config['appearance']) || !is_array($config['appearance'])) {
-			$config['appearance'] = array();
-		}
-		// Set the position/appearance of the "Create new record" link:
-		if (
-			isset($config['foreign_selector'])
-			&& $config['foreign_selector']
-			&& (!isset($config['appearance']['useCombination']) || !$config['appearance']['useCombination'])
-		) {
-			$config['appearance']['levelLinksPosition'] = 'none';
-		} elseif (
-			!isset($config['appearance']['levelLinksPosition'])
-			|| !in_array($config['appearance']['levelLinksPosition'], array('top', 'bottom', 'both', 'none'))
-		) {
-			$config['appearance']['levelLinksPosition'] = 'top';
-		}
-		// Defines which controls should be shown in header of each record:
-		$enabledControls = array(
-			'info' => TRUE,
-			'new' => TRUE,
-			'dragdrop' => TRUE,
-			'sort' => TRUE,
-			'hide' => TRUE,
-			'delete' => TRUE,
-			'localize' => TRUE
-		);
-		if (isset($config['appearance']['enabledControls']) && is_array($config['appearance']['enabledControls'])) {
-			$config['appearance']['enabledControls'] = array_merge($enabledControls, $config['appearance']['enabledControls']);
-		} else {
-			$config['appearance']['enabledControls'] = $enabledControls;
-		}
-		return $config;
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		return '<span alt="' . htmlspecialchars($alt). '" title="' . htmlspecialchars($title) . '">'
+			. $iconFactory->getIcon($icon, Icon::SIZE_SMALL)->render()
+			. '</span>';
 	}
 
 	/**

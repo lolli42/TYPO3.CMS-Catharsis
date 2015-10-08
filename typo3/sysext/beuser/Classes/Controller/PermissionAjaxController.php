@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Beuser\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Http\AjaxRequestHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -68,11 +68,11 @@ class PermissionAjaxController {
 	/**
 	 * The main dispatcher function. Collect data and prepare HTML output.
 	 *
-	 * @param array $params array of parameters from the AJAX interface, currently unused
-	 * @param AjaxRequestHandler $ajaxObj object of type AjaxRequestHandler
-	 * @return void
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function dispatch($params = array(), AjaxRequestHandler $ajaxObj = NULL) {
+	public function dispatch(ServerRequestInterface $request, ResponseInterface $response) {
 		$extPath = ExtensionManagementUtility::extPath('beuser');
 
 		$view = GeneralUtility::makeInstance(StandaloneView::class);
@@ -107,7 +107,8 @@ class PermissionAjaxController {
 						$view->assign('username', $usernameArray[$userId]['username']);
 						$content = $view->render();
 					} else {
-						$ajaxObj->setError('An error occurred: No page owner uid specified.');
+						$response->getBody()->write('An error occurred: No page owner uid specified');
+						$response = $response->withStatus(500);
 					}
 					break;
 				case 'show_change_group_selector':
@@ -129,7 +130,8 @@ class PermissionAjaxController {
 						$view->assign('groupname', $groupnameArray[$groupId]['title']);
 						$content = $view->render();
 					} else {
-						$ajaxObj->setError('An error occurred: No page group uid specified.');
+						$response->getBody()->write('An error occurred: No page group uid specified');
+						$response = $response->withStatus(500);
 					}
 					break;
 				case 'toggle_edit_lock':
@@ -160,9 +162,12 @@ class PermissionAjaxController {
 					$content = $view->render();
 			}
 		} else {
-			$ajaxObj->setError('This script cannot be called directly.');
+			$response->getBody()->write('This script cannot be called directly');
+			$response = $response->withStatus(500);
 		}
-		$ajaxObj->addContent($this->conf['page'] . '_' . $this->conf['who'], $content);
+		$response->getBody()->write($content);
+		$response = $response->withHeader('Content-Type', 'text/html; charset=utf-8');
+		return $response;
 	}
 
 	/**
@@ -189,8 +194,8 @@ class PermissionAjaxController {
 		$elementId = 'o_' . $page;
 		$options = '<option value="0"></option>' . $options;
 		$selector = '<select name="new_page_owner" id="new_page_owner">' . $options . '</select>';
-		$saveButton = '<a class="saveowner" data-page="' . $page . '" data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '" title="Change owner">' . $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL) . '</a>';
-		$cancelButton = '<a class="restoreowner" data-page="' . $page . '"  data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '"' . (!empty($username) ? ' data-username="' . htmlspecialchars($username) . '"' : '') . ' title="Cancel">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
+		$saveButton = '<a class="saveowner" data-page="' . $page . '" data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '" title="Change owner">' . $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)->render() . '</a>';
+		$cancelButton = '<a class="restoreowner" data-page="' . $page . '"  data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '"' . (!empty($username) ? ' data-username="' . htmlspecialchars($username) . '"' : '') . ' title="Cancel">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL)->render() . '</a>';
 		return '<span id="' . $elementId . '">' . $selector . $saveButton . $cancelButton . '</span>';
 	}
 
@@ -231,8 +236,8 @@ class PermissionAjaxController {
 		$elementId = 'g_' . $page;
 		$options = '<option value="0"></option>' . $options;
 		$selector = '<select name="new_page_group" id="new_page_group">' . $options . '</select>';
-		$saveButton = '<a class="savegroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '" title="Change group">' . $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL) . '</a>';
-		$cancelButton = '<a class="restoregroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '"' . (!empty($groupname) ? ' data-groupname="' . htmlspecialchars($groupname) . '"' : '') . ' title="Cancel">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
+		$saveButton = '<a class="savegroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '" title="Change group">' . $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)->render() . '</a>';
+		$cancelButton = '<a class="restoregroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '"' . (!empty($groupname) ? ' data-groupname="' . htmlspecialchars($groupname) . '"' : '') . ' title="Cancel">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL)->render() . '</a>';
 		return '<span id="' . $elementId . '">' . $selector . $saveButton . $cancelButton . '</span>';
 	}
 
@@ -278,7 +283,7 @@ class PermissionAjaxController {
 	protected function renderToggleEditLock($page, $editLockState) {
 		$page = (int)$page;
 		if ($editLockState === 1) {
-			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . $page . '" data-lockstate="1" title="The page and all content is locked for editing by all non-Admin users.">' . $this->iconFactory->getIcon('status-warning-lock', Icon::SIZE_SMALL) . '</a></span>';
+			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . $page . '" data-lockstate="1" title="The page and all content is locked for editing by all non-Admin users.">' . $this->iconFactory->getIcon('status-warning-lock', Icon::SIZE_SMALL)->render() . '</a></span>';
 		} else {
 			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . $page . '" data-lockstate="0" title="Enable the &raquo;Admin-only&laquo; edit lock for this page">[+]</a></span>';
 		}
@@ -310,7 +315,7 @@ class PermissionAjaxController {
 					. ' data-who="' . htmlspecialchars($who) . '"'
 					. ' data-bits="' . $permission . '"'
 					. ' style="cursor:pointer">'
-					. $iconFactory->getIcon('status-status-permission-granted', Icon::SIZE_SMALL)
+					. $iconFactory->getIcon('status-status-permission-granted', Icon::SIZE_SMALL)->render()
 					. '</span>';
 			} else {
 				$str .= '<span title="' . $GLOBALS['LANG']->getLL($permission, TRUE) . '"'
@@ -321,7 +326,7 @@ class PermissionAjaxController {
 					. ' data-who="' . htmlspecialchars($who) . '"'
 					. ' data-bits="' . $permission . '"'
 					. ' style="cursor:pointer">'
-					. $iconFactory->getIcon('status-status-permission-denied', Icon::SIZE_SMALL)
+					. $iconFactory->getIcon('status-status-permission-denied', Icon::SIZE_SMALL)->render()
 					. '</span>';
 			}
 		}

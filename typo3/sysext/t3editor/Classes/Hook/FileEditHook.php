@@ -61,16 +61,14 @@ class FileEditHook {
 	 * Hook-function: inject t3editor JavaScript code before the page is compiled
 	 * called in \TYPO3\CMS\Backend\Template\DocumentTemplate:startPage
 	 *
-	 * @param array $parameters
-	 * @param \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplate
 	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::startPage
 	 */
-	public function preStartPageHook($parameters, $documentTemplate) {
+	public function preStartPageHook() {
 		// @todo: this is a workaround. Ideally the document template holds the current request so we can match the route
 		// against the name of the route and not the GET parameter
 		if (GeneralUtility::_GET('route') === '/file/editcontent') {
 			$t3editor = $this->getT3editor();
-			$t3editor->getJavascriptCode($documentTemplate);
+			$t3editor->getJavascriptCode();
 			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/T3editor/FileEdit');
 		}
 	}
@@ -103,10 +101,11 @@ class FileEditHook {
 	 */
 	public function save($parameters, $pObj) {
 		$savingsuccess = FALSE;
-		if ($parameters['type'] == $this->ajaxSaveType) {
+		if ($parameters['type'] === $this->ajaxSaveType) {
+			/** @var \TYPO3\CMS\Backend\Controller\File\FileController $tceFile */
 			$tceFile = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\File\FileController::class);
-			$tceFile->processAjaxRequest(array(), $parameters['ajaxObj']);
-			$result = $parameters['ajaxObj']->getContent('result');
+			$response = $tceFile->processAjaxRequest($parameters['request'], $parameters['response']);
+			$result = json_decode((string)$response->getBody(), TRUE)['result'];
 			$savingsuccess = is_array($result) && $result['editfile'][0];
 		}
 		return $savingsuccess;

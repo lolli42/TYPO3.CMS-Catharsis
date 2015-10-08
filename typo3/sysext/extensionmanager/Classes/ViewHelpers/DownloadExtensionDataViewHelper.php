@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Extensionmanager\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -42,7 +41,7 @@ class DownloadExtensionDataViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Link\
 
 		$filePrefix = PATH_site . $extension['siteRelPath'];
 		if (!file_exists(($filePrefix . 'ext_tables.sql')) && !file_exists(($filePrefix . 'ext_tables_static+adt.sql'))) {
-			return '<span class="btn btn-default disabled">' . $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL) . '</span>';
+			return '<span class="btn btn-default disabled">' . $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>';
 		}
 		$uriBuilder = $this->controllerContext->getUriBuilder();
 		$uriBuilder->reset();

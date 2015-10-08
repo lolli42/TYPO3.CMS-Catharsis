@@ -16,12 +16,12 @@ namespace TYPO3\CMS\Tstemplate\Controller;
 
 use TYPO3\CMS\Backend\Module\AbstractFunctionModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -125,7 +125,7 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
 			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Tstemplate/ConstantEditor');
 			$saveId = $tplRow['_ORIG_uid'] ? $tplRow['_ORIG_uid'] : $tplRow['uid'];
 			// Update template ?
-			if (GeneralUtility::_POST('submit') ) {
+			if (GeneralUtility::_POST('_savedok') ) {
 				$templateService->changed = 0;
 				$templateService->ext_procesInput(GeneralUtility::_POST(), array(), $theConstants, $tplRow);
 				if ($templateService->changed) {
@@ -149,7 +149,8 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
 			$this->pObj->MOD_MENU['constant_editor_cat'] = $templateService->ext_getCategoryLabelArray();
 			$this->pObj->MOD_SETTINGS = BackendUtility::getModuleData($this->pObj->MOD_MENU, GeneralUtility::_GP('SET'), $this->pObj->MCONF['name']);
 			// Resetting the menu (stop)
-			$content = IconUtility::getSpriteIconForRecord('sys_template', $tplRow) . '<strong>' . $this->pObj->linkWrapTemplateTitle($tplRow['title'], 'constants') . '</strong>' . htmlspecialchars((trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : ''));
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$content = $iconFactory->getIconForRecord('sys_template', $tplRow, Icon::SIZE_SMALL)->render() . '<strong>' . $this->pObj->linkWrapTemplateTitle($tplRow['title'], 'constants') . '</strong>' . (trim($tplRow['sitetitle']) ? htmlspecialchars(' (' . $tplRow['sitetitle'] . ')') : '');
 			$theOutput .= $this->pObj->doc->section($lang->getLL('editConstants', TRUE), $content, FALSE, TRUE);
 			if ($manyTemplatesMenu) {
 				$theOutput .= $this->pObj->doc->section('', $manyTemplatesMenu);

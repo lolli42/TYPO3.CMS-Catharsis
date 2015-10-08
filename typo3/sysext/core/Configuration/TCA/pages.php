@@ -69,6 +69,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.type',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.div.page',
@@ -77,12 +78,12 @@ return array(
 					array(
 						'LLL:EXT:lang/locallang_tca.xlf:doktype.I.0',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_DEFAULT,
-						'i/pages.gif'
+						'apps-pagetree-page-default'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.I.4',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_BE_USER_SECTION,
-						'i/be_users_section.gif'
+						'apps-pagetree-page-backend-users'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.div.link',
@@ -91,17 +92,17 @@ return array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.I.2',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_SHORTCUT,
-						'i/pages_shortcut.gif'
+						'apps-pagetree-page-shortcut'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.I.5',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT,
-						'i/pages_mountpoint.gif'
+						'apps-pagetree-page-mountpoint'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.I.8',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_LINK,
-						'i/pages_link.gif'
+						'apps-pagetree-page-shortcut-external'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.div.special',
@@ -110,17 +111,17 @@ return array(
 					array(
 						'LLL:EXT:lang/locallang_tca.xlf:doktype.I.folder',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_SYSFOLDER,
-						'i/sysf.gif'
+						'apps-pagetree-folder-default'
 					),
 					array(
 						'LLL:EXT:lang/locallang_tca.xlf:doktype.I.2',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_RECYCLER,
-						'i/recycler.gif'
+						'apps-filetree-folder-recycler'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.I.7',
 						(string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_SPACER,
-						'i/spacer_icon.gif'
+						'apps-pagetree-spacer'
 					)
 				),
 				'default' => (string)\TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_DEFAULT,
@@ -221,6 +222,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.layout',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'LLL:EXT:lang/locallang_general.xlf:LGL.default_value',
@@ -247,6 +249,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.url_scheme',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'LLL:EXT:lang/locallang_general.xlf:LGL.default_value',
@@ -269,6 +272,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.fe_group',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectMultipleSideBySide',
 				'size' => 7,
 				'maxitems' => 20,
 				'items' => array(
@@ -370,6 +374,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.type',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'LLL:EXT:lang/locallang_core.xlf:labels.automatic',
@@ -421,6 +426,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.cache_timeout',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'LLL:EXT:lang/locallang_general.xlf:LGL.default_value',
@@ -530,6 +536,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.shortcut_mode',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.shortcut_mode.I.0',
@@ -710,6 +717,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.module',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'',
@@ -719,7 +727,7 @@ return array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.module.I.4',
 						'fe_users',
-						'i/fe_users.gif'
+						'apps-pagetree-folder-contains-fe_users'
 					)
 				),
 				'default' => '',
@@ -731,6 +739,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.fe_login_mode',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.fe_login_mode.enable',
@@ -773,6 +782,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.backend_layout_formlabel',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('', ''),
 					array('LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.backend_layout.none', -1)
@@ -788,6 +798,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.backend_layout_next_level_formlabel',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('', ''),
 					array('LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.backend_layout.none', -1)
@@ -802,6 +813,7 @@ return array(
 			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.tsconfig_includes',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectMultipleSideBySide',
 				'size' => 10,
 				'maxitems' => 100,
 				'items' => array(),

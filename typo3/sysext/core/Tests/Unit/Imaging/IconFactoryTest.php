@@ -19,11 +19,6 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconProvider\FontawesomeIconProvider;
 use TYPO3\CMS\Core\Resource\File;
-use TYPO3\CMS\Core\Resource\Folder;
-use TYPO3\CMS\Core\Resource\FolderInterface;
-use TYPO3\CMS\Core\Resource\InaccessibleFolder;
-use TYPO3\CMS\Core\Resource\ResourceStorage;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 /**
  * TestCase for \TYPO3\CMS\Core\Imaging\IconFactory
@@ -54,6 +49,28 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @var \TYPO3\CMS\Core\Imaging\IconRegistry
 	 */
 	protected $iconRegistryMock;
+
+	/**
+	 * @var array Simulate a tt_content record
+	 */
+	protected $mockRecord = array(
+		'header' => 'dummy content header',
+		'uid' => '1',
+		'pid' => '1',
+		'image' => '',
+		'hidden' => '0',
+		'starttime' => '0',
+		'endtime' => '0',
+		'fe_group' => '',
+		'CType' => 'text',
+		't3ver_id' => '0',
+		't3ver_state' => '0',
+		't3ver_wsid' => '0',
+		'sys_language_uid' => '0',
+		'l18n_parent' => '0',
+		'subheader' => '',
+		'bodytext' => '',
+	);
 
 	/**
 	 * Set up
@@ -259,7 +276,7 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 *
 	 * @test
 	 */
-	public function getIconForFileWithFileTypePdfReturnsPdfSprite() {
+	public function getIconForFileWithFileTypePdfReturnsPdfIcon() {
 		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-pdf">',
 			$this->subject->getIconForFileExtension('pdf')->render());
 	}
@@ -269,14 +286,10 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 *
 	 * @test
 	 */
-	public function getIconForFileWithFileTypePngReturnsPngSprite() {
+	public function getIconForFileWithFileTypePngReturnsPngIcon() {
 		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-media-image">',
 			$this->subject->getIconForFileExtension('png')->render());
 	}
-
-	//
-	// Tests for getIconForResource
-	//
 
 	/**
 	 * @test
@@ -288,6 +301,228 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-pdf">',
 			$this->subject->getIconForResource($resourceProphecy->reveal())->render());
+	}
+
+	//////////////////////////////////////////////
+	// Tests concerning getIconForResource
+	//////////////////////////////////////////////
+	/**
+	 * Tests the returns of no file
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithFileWithoutExtensionTypeReturnsOtherIcon() {
+		$fileObject = $this->getTestSubjectFileObject('');
+		$result = $this->subject->getIconForResource($fileObject)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-other-other">', $result);
+	}
+
+	/**
+	 * Tests the returns of unknown file
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithUnknownFileTypeReturnsOtherIcon() {
+		$fileObject = $this->getTestSubjectFileObject('foo');
+		$result = $this->subject->getIconForResource($fileObject)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-other-other">', $result);
+	}
+
+	/**
+	 * Tests the returns of file pdf
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithPdfReturnsPdfIcon() {
+		$fileObject = $this->getTestSubjectFileObject('pdf');
+		$result = $this->subject->getIconForResource($fileObject)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-pdf">', $result);
+	}
+
+	/**
+	 * Tests the returns of file png
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithPngFileReturnsIcon() {
+		$fileObject = $this->getTestSubjectFileObject('png');
+		$result = $this->subject->getIconForResource($fileObject)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-media-image">', $result);
+	}
+
+	/**
+	 * Tests the returns of normal folder
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithFolderReturnsFolderIcon() {
+		$folderObject = $this->getTestSubjectFolderObject('/test');
+		$result = $this->subject->getIconForResource($folderObject)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-apps-filetree-folder-default">', $result);
+	}
+
+	/**
+	 * Tests the returns of open folder
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithOpenFolderReturnsOpenFolderIcon() {
+		$folderObject = $this->getTestSubjectFolderObject('/test');
+		$result = $this->subject->getIconForResource($folderObject, Icon::SIZE_DEFAULT, NULL,  array('folder-open' => TRUE))->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-apps-filetree-folder-opened">', $result);
+	}
+
+	/**
+	 * Tests the returns of root folder
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithRootFolderReturnsRootFolderIcon() {
+		$folderObject = $this->getTestSubjectFolderObject('/');
+		$result = $this->subject->getIconForResource($folderObject)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-apps-filetree-root">', $result);
+	}
+
+	/**
+	 * Tests the returns of mount root
+	 *
+	 * @test
+	 */
+	public function getIconForResourceWithMountRootReturnsMountFolderIcon() {
+		$folderObject = $this->getTestSubjectFolderObject('/mount');
+		$result = $this->subject->getIconForResource($folderObject, Icon::SIZE_DEFAULT, NULL, array('mount-root' => TRUE))->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-apps-filetree-mount">', $result);
+	}
+
+	//
+	// Test for getIconForRecord
+	//
+
+	/**
+	 * Tests the returns of NULL table + empty array
+	 *
+	 * @test
+	 */
+	public function getIconForRecordWithNullTableReturnsMissingIcon() {
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-default-not-found">',
+			$this->subject->getIconForRecord('', array())->render());
+	}
+
+	/**
+	 * Tests the returns of tt_content + empty record
+	 *
+	 * @test
+	 */
+	public function getIconForRecordWithEmptyRecordReturnsNormalIcon() {
+		$GLOBALS['TCA'] = array(
+			'tt_content' => array(
+				'ctrl' => array(
+					'typeicon_column' => 'CType',
+					'typeicon_classes' => array(
+						'default' => 'mimetypes-x-content-text',
+					),
+				),
+			),
+		);
+		$result = $this->subject->getIconForRecord('tt_content', array())->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-x-content-text">', $result);
+	}
+
+	/**
+	 * Tests the returns of tt_content + mock record
+	 *
+	 * @test
+	 */
+	public function getIconForRecordWithMockRecordReturnsNormalIcon() {
+		$GLOBALS['TCA'] = array(
+			'tt_content' => array(
+				'ctrl' => array(
+					'typeicon_column' => 'CType',
+					'typeicon_classes' => array(
+						'text' => 'mimetypes-x-content-text',
+					),
+				),
+			),
+		);
+		$result = $this->subject->getIconForRecord('tt_content', $this->mockRecord)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-x-content-text">', $result);
+	}
+
+	/**
+	 * Tests the returns of tt_content + mock record of type 'list' (aka plugin)
+	 *
+	 * @test
+	 */
+	public function getIconForRecordWithMockRecordOfTypePluginReturnsPluginIcon() {
+		$GLOBALS['TCA'] = array(
+			'tt_content' => array(
+				'ctrl' => array(
+					'typeicon_column' => 'CType',
+					'typeicon_classes' => array(
+						'list' => 'mimetypes-x-content-plugin',
+					),
+				),
+			),
+		);
+		$mockRecord = $this->mockRecord;
+		$mockRecord['CType'] = 'list';
+		$result = $this->subject->getIconForRecord('tt_content', $mockRecord)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-x-content-plugin">', $result);
+	}
+
+	/**
+	 * Tests the returns of tt_content + mock record with hidden flag
+	 *
+	 * @test
+	 */
+	public function getIconForRecordWithMockRecordWithHiddenFlagReturnsNormalIconAndOverlay() {
+		$GLOBALS['TCA'] = array(
+			'tt_content' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden',
+					),
+					'typeicon_column' => 'CType',
+					'typeicon_classes' => array(
+						'text' => 'mimetypes-x-content-text',
+					),
+				),
+			),
+		);
+		$mockRecord = $this->mockRecord;
+		$mockRecord['hidden'] = '1';
+		$result = $this->subject->getIconForRecord('tt_content', $mockRecord)->render();
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-x-content-text">', $result);
+		$this->assertContains('<span class="icon-overlay icon-overlay-hidden">', $result);
+	}
+
+	/**
+	 * Create file object to use as test subject
+	 *
+	 * @param $extension
+	 * @return \TYPO3\CMS\Core\Resource\File
+	 */
+	protected function getTestSubjectFileObject($extension) {
+		$mockedStorage = $this->getMock(\TYPO3\CMS\Core\Resource\ResourceStorage::class, array(), array(), '', FALSE);
+		$mockedFile = $this->getMock(\TYPO3\CMS\Core\Resource\File::class, array(), array(array(), $mockedStorage));
+		$mockedFile->expects($this->once())->method('getExtension')->will($this->returnValue($extension));
+		return $mockedFile;
+	}
+
+	/**
+	 * Create folder object to use as test subject
+	 *
+	 * @param string $identifier
+	 * @return \TYPO3\CMS\Core\Resource\Folder
+	 */
+	protected function getTestSubjectFolderObject($identifier) {
+		$mockedStorage = $this->getMock(\TYPO3\CMS\Core\Resource\ResourceStorage::class, array(), array(), '', FALSE);
+		$mockedStorage->expects($this->any())->method('getRootLevelFolder')->will($this->returnValue(
+			new \TYPO3\CMS\Core\Resource\Folder($mockedStorage, '/', '/')
+		));
+		$mockedStorage->expects($this->any())->method('checkFolderActionPermission')->will($this->returnValue(TRUE));
+		$mockedStorage->expects($this->any())->method('isBrowsable')->will($this->returnValue(TRUE));
+		return new \TYPO3\CMS\Core\Resource\Folder($mockedStorage, $identifier, $identifier);
 	}
 
 }

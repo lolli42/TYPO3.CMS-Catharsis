@@ -47,6 +47,8 @@ class TcaMigration {
 		$tca = $this->migrateIconsForFormFieldWizardsToNewLocation($tca);
 		$tca = $this->migrateExtAndSysextPathToEXTPath($tca);
 		$tca = $this->migrateIconsInOptionTags($tca);
+		$tca = $this->migrateIconfileRelativePathOrFilenameOnlyToExtReference($tca);
+		$tca = $this->migrateSelectFieldRenderType($tca);
 		// @todo: if showitem/defaultExtras wizards[xy] is migrated to columnsOverrides here, enableByTypeConfig could be dropped
 		return $tca;
 	}
@@ -419,16 +421,16 @@ class TcaMigration {
 					foreach ($fieldConfig['config']['items'] as &$itemConfig) {
 						// more then two values? then the third entry is the image path
 						if (!empty($itemConfig[2])) {
+							$tcaPath = implode('.', [$table, 'columns', $fieldName, 'config', 'items']);
+							$pathParts = GeneralUtility::trimExplode('/', $itemConfig[2]);
+							// remove first element (ext or sysext)
+							array_shift($pathParts);
+							$path = implode('/', $pathParts);
 							// If the path starts with ext/ or sysext/ migrate it
 							if (
 								StringUtility::beginsWith($itemConfig[2], 'ext/')
 								|| StringUtility::beginsWith($itemConfig[2], 'sysext/')
 							) {
-								$tcaPath = implode('.', [$table, 'columns', $fieldName, 'config', 'items']);
-								$pathParts = GeneralUtility::trimExplode('/', $itemConfig[2]);
-								// remove first element (ext or sysext)
-								array_shift($pathParts);
-								$path = implode('/', $pathParts);
 								$this->messages[] = '[' . $tcaPath . '] ext/ or sysext/ within the path (' . $path . ') in items array is deprecated, use EXT: reference';
 								$itemConfig[2] = 'EXT:' . $path;
 							} elseif (StringUtility::beginsWith($itemConfig[2], 'i/')) {
@@ -460,6 +462,94 @@ class TcaMigration {
 				if (isset($fieldConfig['config']['iconsInOptionTags'])) {
 					unset($fieldConfig['config']['iconsInOptionTags']);
 					$this->messages[] = 'Configuration option "iconsInOptionTags" was removed from field "' . $fieldName . '" in TCA table "' . $table . '"';
+				}
+			}
+		}
+
+		return $newTca;
+	}
+
+	/**
+	 * Migrate "iconfile" references which starts with ../ to EXT: and consisting of filename only to absolute paths in EXT:t3skin
+	 *
+	 * @param array $tca Incoming TCA
+	 * @return array Migrated TCA
+	 */
+	protected function migrateIconfileRelativePathOrFilenameOnlyToExtReference($tca) {
+		foreach ($tca as $table => &$tableDefinition) {
+			if (!isset($tableDefinition['ctrl']) || !is_array($tableDefinition['ctrl'])) {
+				continue;
+			}
+			if (!isset($tableDefinition['ctrl']['iconfile'])) {
+				continue;
+			}
+			if (StringUtility::beginsWith($tableDefinition['ctrl']['iconfile'], '../typo3conf/ext/')) {
+				$tableDefinition['ctrl']['iconfile'] = str_replace('../typo3conf/ext/', 'EXT:', $tableDefinition['ctrl']['iconfile']);
+				$tcaPath = implode('.', [$table, 'ctrl', 'iconfile']);
+				$this->messages[] = '[' . $tcaPath . '] relative path to ../typo3conf/ext/ is deprecated, use EXT: instead';
+			} elseif (strpos($tableDefinition['ctrl']['iconfile'], '/') === FALSE) {
+				$tableDefinition['ctrl']['iconfile'] = 'EXT:t3skin/icons/gfx/i/' . $tableDefinition['ctrl']['iconfile'];
+				$tcaPath = implode('.', [$table, 'ctrl', 'iconfile']);
+				$this->messages[] = '[' . $tcaPath . '] filename only is deprecated, use EXT: or absolute reference instead';
+			}
+		}
+		return $tca;
+	}
+
+	/**
+	 * Migrate "type=select" with "renderMode=[tree|singlebox|checkbox]" to "renderType=[selectTree|selectSingleBox|selectCheckBox]".
+	 * This migration also take care of "maxitems" settings and set "renderType=[selectSingle|selectMultipleSideBySide]" if no other
+	 * renderType is already set.
+	 *
+	 * @param array $tca
+	 * @return array
+	 */
+	public function migrateSelectFieldRenderType(array $tca) {
+		$newTca = $tca;
+
+		foreach ($newTca as $table => &$tableDefinition) {
+
+			if (empty($tableDefinition['columns'])) {
+				continue;
+			}
+
+			foreach ($tableDefinition['columns'] as $columnName => &$columnDefinition) {
+				// Only handle select fields.
+				if (empty($columnDefinition['config']['type']) || $columnDefinition['config']['type'] !== 'select') {
+					continue;
+				}
+				// Do not handle field where the render type is set.
+				if (!empty($columnDefinition['config']['renderType'])) {
+					continue;
+				}
+
+				$tableColumnInfo = 'table "' . $table . '" and column "' . $columnName . '"';
+				$this->messages[] = 'Using select fields without the "renderType" setting is deprecated in ' . $tableColumnInfo;
+
+				$columnConfig = &$columnDefinition['config'];
+				if (!empty($columnConfig['renderMode'])) {
+					$this->messages[] = 'The "renderMode" setting for select fields is deprecated. Please use "renderType" instead in ' . $tableColumnInfo;
+					switch ($columnConfig['renderMode']) {
+						case 'tree':
+							$columnConfig['renderType'] = 'selectTree';
+							break;
+						case 'singlebox':
+							$columnConfig['renderType'] = 'selectSingleBox';
+							break;
+						case 'checkbox':
+							$columnConfig['renderType'] = 'selectCheckBox';
+							break;
+						default:
+							$this->messages[] = 'The render mode ' . $columnConfig['renderMode'] . ' is invalid for the select field in ' . $tableColumnInfo;
+					}
+					continue;
+				}
+
+				$maxItems = !empty($columnConfig['maxitems']) ? (int)$columnConfig['maxitems'] : 1;
+				if ($maxItems <= 1) {
+					$columnConfig['renderType'] = 'selectSingle';
+				} else {
+					$columnConfig['renderType'] = 'selectMultipleSideBySide';
 				}
 			}
 		}

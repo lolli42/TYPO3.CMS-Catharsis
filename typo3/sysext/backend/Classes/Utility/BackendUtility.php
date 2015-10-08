@@ -1710,7 +1710,7 @@ class BackendUtility {
 							'alt="' . htmlspecialchars($fileReferenceObject->getName()) . '" />';
 				} else {
 					// Icon
-					$imgTag = '<span title="' . htmlspecialchars($fileObject->getName()) . '">' . $iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>';
+					$imgTag = '<span title="' . htmlspecialchars($fileObject->getName()) . '">' . $iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL)->render() . '</span>';
 				}
 				if ($linkInfoPopup) {
 					$onClick = 'top.launchView(\'_FILE\',\'' . (int)$fileObject->getUid() . '\',' . GeneralUtility::quoteJSvalue($backPath) . '); return false;';
@@ -1765,7 +1765,7 @@ class BackendUtility {
 						}
 					} else {
 						// Gets the icon
-						$fileIcon = '<span title="' . htmlspecialchars($fileObject->getName()) . '">' . $iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>';
+						$fileIcon = '<span title="' . htmlspecialchars($fileObject->getName()) . '">' . $iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL)->render() . '</span>';
 						if ($linkInfoPopup) {
 							$onClick = 'top.launchView(\'_FILE\', ' . GeneralUtility::quoteJSvalue($fileName) . ',\'\',' . GeneralUtility::quoteJSvalue($backPath) . '); return false;';
 							$thumbData .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $fileIcon . '</a> ';
@@ -2784,7 +2784,7 @@ class BackendUtility {
 			if ($text == '') {
 				/** @var IconFactory $iconFactory */
 				$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-				$text = $iconFactory->getIcon('actions-system-help-open', Icon::SIZE_SMALL);
+				$text = $iconFactory->getIcon('actions-system-help-open', Icon::SIZE_SMALL)->render();
 				$abbrClassAdd = '-icon';
 			}
 			$text = '<abbr class="t3-help-teaser' . $abbrClassAdd . '">' . $text . '</abbr>';
@@ -3381,7 +3381,14 @@ class BackendUtility {
 	static public function getAjaxUrl($ajaxIdentifier, array $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
 		/** @var UriBuilder $uriBuilder */
 		$uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-		return (string)$uriBuilder->buildUriFromAjaxId($ajaxIdentifier, $urlParameters, $returnAbsoluteUrl ? UriBuilder::ABSOLUTE_URL : UriBuilder::ABSOLUTE_PATH);
+		try {
+			$routeIdentifier = 'ajax_' . $ajaxIdentifier;
+			$uri = $uriBuilder->buildUriFromRoute($routeIdentifier, $urlParameters, $returnAbsoluteUrl ? UriBuilder::ABSOLUTE_URL : UriBuilder::ABSOLUTE_PATH);
+		} catch (\TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException $e) {
+			// no route registered, use the fallback logic to check for a module
+			$uri = $uriBuilder->buildUriFromAjaxId($ajaxIdentifier, $urlParameters, $returnAbsoluteUrl ? UriBuilder::ABSOLUTE_URL : UriBuilder::ABSOLUTE_PATH);
+		}
+		return (string)$uri;
 	}
 
 	/**
@@ -3395,7 +3402,7 @@ class BackendUtility {
 	static public function getListViewLink($urlParameters = array(), $linkTitle = '', $linkText = '') {
 		/** @var IconFactory $iconFactory */
 		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-		return '<a href="' . htmlspecialchars(self::getModuleUrl('web_list', $urlParameters)) . '" title="' . htmlspecialchars($linkTitle) . '">' . $iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL) . htmlspecialchars($linkText) . '</a>';
+		return '<a href="' . htmlspecialchars(self::getModuleUrl('web_list', $urlParameters)) . '" title="' . htmlspecialchars($linkTitle) . '">' . $iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . htmlspecialchars($linkText) . '</a>';
 	}
 
 	/**
@@ -4428,11 +4435,14 @@ class BackendUtility {
 	 * @param string $table Table name
 	 * @param int $uid Record UID of online version
 	 * @param string $fields Field list, default is *
+	 * @param int|NULL $workspace The workspace to be used
 	 * @return array If found, the record, otherwise nothing.
 	 */
-	static public function getMovePlaceholder($table, $uid, $fields = '*') {
-		$workspace = static::getBackendUserAuthentication()->workspace;
-		if ($workspace !== 0 && $GLOBALS['TCA'][$table] && (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) {
+	static public function getMovePlaceholder($table, $uid, $fields = '*', $workspace = NULL) {
+		if ($workspace === NULL) {
+			$workspace = static::getBackendUserAuthentication()->workspace;
+		}
+		if ((int)$workspace !== 0 && $GLOBALS['TCA'][$table] && (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) {
 			// Select workspace version of record:
 			$row = static::getDatabaseConnection()->exec_SELECTgetSingleRow(
 				$fields,

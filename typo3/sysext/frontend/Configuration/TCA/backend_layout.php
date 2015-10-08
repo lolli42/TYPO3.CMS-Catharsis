@@ -14,7 +14,9 @@ return array(
 		'enablecolumns' => array(
 			'disabled' => 'hidden'
 		),
-		'iconfile' => 'backend_layout.gif',
+		'typeicon_classes' => array(
+			'default' => 'mimetypes-x-backend_layout'
+		),
 		'selicon_field' => 'icon',
 		'selicon_field_path' => 'uploads/media',
 		'thumbnail' => 'resources'
@@ -50,7 +52,7 @@ return array(
 					0 => array(
 						'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.wizard',
 						'type' => 'popup',
-						'icon' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('frontend') . 'Resources/Public/Images/wizard_backend_layout.png',
+						'icon' => 'EXT:frontend/Resources/Public/Images/wizard_backend_layout.png',
 						'module' => array(
 							'name' => 'wizard_backend_layout'
 						),

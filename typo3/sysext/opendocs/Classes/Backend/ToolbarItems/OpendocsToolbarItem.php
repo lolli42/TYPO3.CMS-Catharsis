@@ -14,8 +14,9 @@ namespace TYPO3\CMS\Opendocs\Backend\ToolbarItems;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -83,7 +84,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 		$title = $this->getLanguageService()->getLL('toolbaritem', TRUE);
 
 		$opendocsMenu = array();
-		$opendocsMenu[] = '<span title="' . $title . '">' . $this->iconFactory->getIcon('apps-toolbar-menu-opendocs', Icon::SIZE_SMALL) . '</span>';
+		$opendocsMenu[] = '<span title="' . $title . '">' . $this->iconFactory->getIcon('apps-toolbar-menu-opendocs', Icon::SIZE_SMALL)->render() . '</span>';
 		$opendocsMenu[] = '<span class="badge" id="tx-opendocs-counter">' . $numDocs . '</span>';
 
 		return implode(LF, $opendocsMenu);
@@ -143,7 +144,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 			return '';
 		}
 		$label = htmlspecialchars(strip_tags(htmlspecialchars_decode($document[0])));
-		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, $record);
+		$icon = $this->iconFactory->getIconForRecord($table, $record, Icon::SIZE_SMALL)->render();
 		$link = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('record_edit') . '&' . $document[2];
 		$pageId = (int)$document[3]['uid'];
 		if ($document[3]['table'] !== 'pages') {
@@ -153,7 +154,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 		if (!$isRecentDoc) {
 			$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE);
 			// Open document
-			$closeIcon = $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL);
+			$closeIcon = $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL)->render();
 			$entry = '
 				<li class="opendoc">
 					<a href="#" class="dropdown-list-link dropdown-link-list-add-close" onclick="' . htmlspecialchars($onClickCode) . '" target="content">' . $icon . ' ' . $label . '</a>
@@ -213,13 +214,13 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	/**
 	 * Closes a document in the session and
 	 *
-	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
-	 * @return string List item HTML attributes
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function closeDocument($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj = NULL) {
+	public function closeDocument(ServerRequestInterface $request, ResponseInterface $response) {
 		$backendUser = $this->getBackendUser();
-		$md5sum = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('md5sum');
+		$md5sum = isset($request->getParsedBody()['md5sum']) ? $request->getParsedBody()['md5sum'] : $request->getQueryParams()['md5sum'];
 		if ($md5sum && isset($this->openDocs[$md5sum])) {
 			// Add the document to be closed to the recent documents
 			$this->recentDocs = array_merge(array($md5sum => $this->openDocs[$md5sum]), $this->recentDocs);
@@ -233,18 +234,20 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 			$backendUser->pushModuleData('FormEngine', array($this->openDocs, $docDat));
 			$backendUser->pushModuleData('opendocs::recent', $this->recentDocs);
 		}
-		$this->renderAjax($params, $ajaxObj);
+		return $this->renderMenu($request, $response);
 	}
 
 	/**
 	 * Renders the menu so that it can be returned as response to an AJAX call
 	 *
-	 * @param array $params Array of parameters from the AJAX interface, currently unused
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
-	 * @return void
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function renderAjax($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj = NULL) {
-		$ajaxObj->addContent('opendocsMenu', $this->getDropDown());
+	public function renderMenu(ServerRequestInterface $request, ResponseInterface $response) {
+		$response->getBody()->write($this->getDropDown());
+		$response = $response->withHeader('Content-Type', 'html');
+		return $response;
 	}
 
 	/**

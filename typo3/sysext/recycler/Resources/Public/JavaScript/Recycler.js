@@ -187,7 +187,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 	 * Initialize the recycler module
 	 */
 	Recycler.initialize = function() {
-		NProgress.configure({parent: '#typo3-docheader', showSpinner: false});
+		NProgress.configure({parent: 'body', showSpinner: false});
 
 		Recycler.getElements();
 		Recycler.registerEvents();
@@ -254,7 +254,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 	 */
 	Recycler.loadAvailableTables = function() {
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::dispatch'],
+			url: TYPO3.settings.ajaxUrls['recycler'],
 			dataType: 'json',
 			async: false,
 			data: {
@@ -300,7 +300,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 	 */
 	Recycler.loadDeletedElements = function() {
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::dispatch'],
+			url: TYPO3.settings.ajaxUrls['recycler'],
 			dataType: 'json',
 			data: {
 				action: 'getDeletedRecords',
@@ -427,7 +427,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		}
 
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::dispatch'],
+			url: TYPO3.settings.ajaxUrls['recycler'],
 			dataType: 'json',
 			data: data,
 			beforeSend: function() {

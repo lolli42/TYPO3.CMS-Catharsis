@@ -14,7 +14,8 @@ namespace TYPO3\CMS\Backend\Backend\Avatar;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Service\DependencyOrderingService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -53,7 +54,8 @@ class Avatar {
 		// Icon
 		$icon = '';
 		if ($showIcon) {
-			$icon = '<span class="avatar-icon">' . IconUtility::getSpriteIconForRecord('be_users', $backendUser) . '</span>';
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$icon = '<span class="avatar-icon">' . $iconFactory->getIconForRecord('be_users', $backendUser, Icon::SIZE_SMALL)->render() . '</span>';
 		}
 
 		$image = $this->getImgTag($backendUser, $size);

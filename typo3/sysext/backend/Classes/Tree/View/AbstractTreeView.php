@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\Tree\View;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -632,9 +631,9 @@ abstract class AbstractTreeView {
 		if (is_int($row)) {
 			$row = BackendUtility::getRecord($this->table, $row);
 		}
-		$icon = IconUtility::getSpriteIconForRecord($this->table, $row, array(
-			'title' => $this->showDefaultTitleAttribute ? 'UID: ' . $row['uid'] : $this->getTitleAttrib($row)
-		));
+		$title = $this->showDefaultTitleAttribute ? htmlspecialchars('UID: ' . $row['uid']) : $this->getTitleAttrib($row);
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$icon = '<span title="' . $title. '">' . $iconFactory->getIconForRecord($this->table, $row, Icon::SIZE_SMALL)->render() . '</span>';
 		return $this->wrapIcon($icon, $row);
 	}
 

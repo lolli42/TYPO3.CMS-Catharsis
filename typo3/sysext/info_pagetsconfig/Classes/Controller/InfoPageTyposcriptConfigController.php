@@ -15,7 +15,6 @@ namespace TYPO3\CMS\InfoPagetsconfig\Controller;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -125,7 +124,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 								'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
 							];
 							$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
-							$editIcon = '<a href="' . htmlspecialchars($url) . '" title="' . $this->getLanguageService()->getLL('editTSconfig', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
+							$editIcon = '<a href="' . htmlspecialchars($url) . '" title="' . $this->getLanguageService()->getLL('editTSconfig', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '</a>';
 						}
 						$TScontent = nl2br(htmlspecialchars(trim($v) . LF));
 						$tsparser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
@@ -149,11 +148,11 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 						'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
 					];
 					$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
-					$editIcon = '<a href="' . htmlspecialchars($url) . '" title="' . $this->getLanguageService()->getLL('editTSconfig_all', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '<strong>' . $this->getLanguageService()->getLL('editTSconfig_all', TRUE) . '</strong>' . '</a>';
+					$editIcon = '<a href="' . htmlspecialchars($url) . '" title="' . $this->getLanguageService()->getLL('editTSconfig_all', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '<strong>' . $this->getLanguageService()->getLL('editTSconfig_all', TRUE) . '</strong>' . '</a>';
 				} else {
 					$editIcon = '';
 				}
-				$theOutput .= $this->pObj->doc->section('', BackendUtility::cshItem(('_MOD_' . $GLOBALS['MCONF']['name']), 'tsconfig_edit', NULL) . $menu . '
+				$theOutput .= $this->pObj->doc->section('', BackendUtility::cshItem('_MOD_web_info', 'tsconfig_edit', NULL) . $menu . '
 						<!-- Edit fields: -->
 						<table border="0" cellpadding="0" cellspacing="1">' . implode('', $lines) . '</table><br />' . $editIcon, 0, 1);
 
@@ -219,7 +218,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 					$modTSconfig = array();
 				}
 
-				$csh = BackendUtility::cshItem('_MOD_' . $GLOBALS['MCONF']['name'], 'tsconfig_hierarchy', NULL);
+				$csh = BackendUtility::cshItem('_MOD_web_info', 'tsconfig_hierarchy', NULL);
 				$tree = $tmpl->ext_getObjTree($modTSconfig, '', '', '', '', $this->pObj->MOD_SETTINGS['tsconf_alphaSort']);
 
 				$theOutput .= $this->pObj->doc->section(
@@ -321,6 +320,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 			return $lines;
 		}
 
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		foreach ($pageArray as $identifier => $_) {
 			if (!MathUtility::canBeInterpretedAsInteger($identifier)) {
 				continue;
@@ -331,21 +331,16 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 					<td nowrap style="' . $cellStyle . '">
 						<a href="'
 					. htmlspecialchars(GeneralUtility::linkThisScript(array('id' => $identifier)))
-					. '">'
-					. IconUtility::getSpriteIconForRecord(
-						'pages',
-						BackendUtility::getRecordWSOL('pages', $identifier), array('title' => ('ID: ' . $identifier))
-					)
+					. '" title="' . htmlspecialchars('ID: ' . $identifier) . '">'
+					. $iconFactory->getIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $identifier), Icon::SIZE_SMALL)->render()
 					. GeneralUtility::fixed_lgd_cs($pageArray[$identifier], 30) . '</a></td>
 					<td>' . ($pageArray[($identifier . '_')]['includeLines'] === 0 ? '' : $pageArray[($identifier . '_')]['includeLines']) . '</td>
 					<td>' . ($pageArray[$identifier . '_']['writtenLines'] === 0 ? '' : $pageArray[$identifier . '_']['writtenLines']) . '</td>
 					</tr>';
 			} else {
 				$lines[] = '<tr>
-					<td nowrap style="' . $cellStyle . '">
-					' . IconUtility::getSpriteIconForRecord(
-						'pages',
-						BackendUtility::getRecordWSOL('pages', $identifier))
+					<td nowrap style="' . $cellStyle . '">'
+					. $iconFactory->getIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $identifier), Icon::SIZE_SMALL)->render()
 					. GeneralUtility::fixed_lgd_cs($pageArray[$identifier], 30) . '</td>
 					<td></td>
 					<td></td>

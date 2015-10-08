@@ -2,7 +2,7 @@
 	"name": "typo3/cms-mediace",
 	"type": "typo3-cms-extension",
 	"description": "TYPO3 Core",
-	"homepage": "http://typo3.org",
+	"homepage": "https://typo3.org",
 	"license": ["GPL-2.0+"],
 
 	"require": {
@@ -12,7 +12,7 @@
 		"mediace": "*"
 	},
 	"extra": {
-		"helhum/class-alias-loader": {
+		"typo3/class-alias-loader": {
 			"class-alias-maps": [
 				"Migrations/Code/ClassAliasMap.php"
 			]

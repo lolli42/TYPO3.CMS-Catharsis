@@ -100,7 +100,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	}
 
 	/**
-	 * Load the necessarry javascript
+	 * Load the necessary javascript
 	 *
 	 * This will only be done when the referenced record is available
 	 *
@@ -115,6 +115,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 			'Ux/Ext.ux.spinner.js',
 			'Ux/Ext.ux.form.spinnerfield.js',
 			'Ux/Ext.ux.form.textfieldsubmit.js',
+			'Ux/Ext.ux.form.ValueCheckbox.js', // required by Viewport/Left/Options/Forms/Attributes.js
 			'Ux/Ext.ux.grid.CheckColumn.js',
 			'Ux/Ext.ux.grid.SingleSelectCheckColumn.js',
 			'Ux/Ext.ux.grid.ItemDeleter.js',
@@ -217,7 +218,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	}
 
 	/**
-	 * Load the necessarry css
+	 * Load the necessary css
 	 *
 	 * This will only be done when the referenced record is available
 	 *
@@ -329,7 +330,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 		$onClick = htmlspecialchars('jumpToUrl(unescape(\'' .
 			rawurlencode(GeneralUtility::sanitizeLocalUrl($getPostVariables['returnUrl'])) . '\')); return false;');
 		$buttons['close'] = '<a href="#" onclick="' . $onClick . '" ' . $title . '>' .
-			$iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
+			$iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL)->render() . '</a>';
 		return $buttons;
 	}
 

@@ -182,7 +182,7 @@ class Bootstrap {
 	 */
 	public function baseSetup($relativePathPart = '') {
 		SystemEnvironmentBuilder::run($relativePathPart);
-		if (!self::$usesComposerClassLoading) {
+		if (!self::$usesComposerClassLoading && ClassLoadingInformation::isClassLoadingInformationAvailable()) {
 			ClassLoadingInformation::registerClassLoadingInformation();
 		}
 		GeneralUtility::presetApplicationContext($this->applicationContext);
@@ -414,7 +414,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function ensureClassLoadingInformationExists() {
-		if (!self::$usesComposerClassLoading && !ClassLoadingInformation::classLoadingInformationExists()) {
+		if (!self::$usesComposerClassLoading && !ClassLoadingInformation::isClassLoadingInformationAvailable()) {
 			ClassLoadingInformation::dumpClassLoadingInformation();
 			ClassLoadingInformation::registerClassLoadingInformation();
 		}
@@ -864,21 +864,13 @@ class Bootstrap {
 	 */
 	public function checkSslBackendAndRedirectIfNeeded() {
 		if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL']) {
-			if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort']) {
-				$sslPortSuffix = ':' . (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort'];
-			} else {
-				$sslPortSuffix = '';
-			}
-			if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] === 3) {
-				$requestStr = substr(GeneralUtility::getIndpEnv('TYPO3_REQUEST_SCRIPT'), strlen(GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir));
-				if ($requestStr === 'index.php' && !GeneralUtility::getIndpEnv('TYPO3_SSL')) {
-					list(, $url) = explode('://', GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 2);
-					list($server, $address) = explode('/', $url, 2);
-					header('Location: https://' . $server . $sslPortSuffix . '/' . $address);
-					die;
-				}
-			} elseif (!GeneralUtility::getIndpEnv('TYPO3_SSL')) {
+			if (!GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 				if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] === 2) {
+					if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort']) {
+						$sslPortSuffix = ':' . (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort'];
+					} else {
+						$sslPortSuffix = '';
+					}
 					list(, $url) = explode('://', GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir, 2);
 					list($server, $address) = explode('/', $url, 2);
 					header('Location: https://' . $server . $sslPortSuffix . '/' . $address);
@@ -1029,6 +1021,18 @@ class Bootstrap {
 					$definedRoutesInPackage = require $routesFileNameForPackage;
 					if (is_array($definedRoutesInPackage)) {
 						$routesFromPackages += $definedRoutesInPackage;
+					}
+				}
+				$routesFileNameForPackage = $package->getPackagePath() . 'Configuration/Backend/AjaxRoutes.php';
+				if (file_exists($routesFileNameForPackage)) {
+					$definedRoutesInPackage = require $routesFileNameForPackage;
+					if (is_array($definedRoutesInPackage)) {
+						foreach ($definedRoutesInPackage as $routeIdentifier => $routeOptions) {
+							// prefix the route with "ajax_" as "namespace"
+							$routeOptions['path'] = '/ajax' . $routeOptions['path'];
+							$routesFromPackages['ajax_' . $routeIdentifier] = $routeOptions;
+							$routesFromPackages['ajax_' . $routeIdentifier]['ajax'] = TRUE;
+						}
 					}
 				}
 			}

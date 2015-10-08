@@ -26,6 +26,7 @@ $extraContentColumns = array(
 		'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:imagecaption_position',
 		'config' => array(
 			'type' => 'select',
+			'renderType' => 'selectSingle',
 			'items' => array(
 				array(
 					'LLL:EXT:lang/locallang_general.xlf:LGL.default_value',
@@ -76,6 +77,7 @@ $extraContentColumns = array(
 		'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:image_frames',
 		'config' => array(
 			'type' => 'select',
+			'renderType' => 'selectSingle',
 			'items' => array(
 				array(
 					'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:image_frames.I.0',
@@ -312,7 +314,7 @@ $GLOBALS['TCA']['tt_content']['palettes']['searchform'] = array(
 $additionalCTypeItem = array(
 	'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.9',
 	'search',
-	'EXT:t3skin/icons/gfx/i/tt_content_search.gif'
+	'content-special-indexed_search'
 );
 
 $existingCTypeItems = $GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'];
@@ -360,44 +362,46 @@ if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('form')) {
 		)
 	);
 
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTcaSelectItem('tt_content', 'CType', array(
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTcaSelectItem(
+		'tt_content',
+		'CType',
+		array(
 			'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.8',
 			'mailform',
-			'EXT:t3skin/icons/gfx/i/tt_content_form.gif'
+			'content-elements-mailform'
 		),
 		'search',
 		'before'
 	);
-}
 
+	// set up the fields
+	$GLOBALS['TCA']['tt_content']['types']['mailform'] = array(
+		'showitem' => '
+				--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.general;general,
+				--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.header;header,
+				bodytext;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:bodytext.ALT.mailform_formlabel,
+			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.appearance,
+				--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.frames;frames,
+			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access,
+				--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.visibility;visibility,
+				--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.access;access,
+			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.behaviour,
+				--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.mailform;mailform,
+			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.extended'
+	);
+	$baseDefaultExtrasOfBodytext = '';
+	if (!empty($GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'])) {
+		$baseDefaultExtrasOfBodytext = $GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'] . ':';
+	}
+	if (!is_array($GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides'])) {
+		$GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides'] = array();
+	}
+	if (!is_array($GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext'])) {
+		$GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext'] = array();
+	}
+	$GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'nowrap:wizards[forms]';
 
-// set up the fields
-$GLOBALS['TCA']['tt_content']['types']['mailform'] = array(
-	'showitem' => '
-		--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.general;general,
-		--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.header;header,
-		bodytext;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:bodytext.ALT.mailform_formlabel,
-	--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.appearance,
-		--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.frames;frames,
-	--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access,
-		--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.visibility;visibility,
-		--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.access;access,
-	--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.behaviour,
-		--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.mailform;mailform,
-	--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.extended'
-);
-$baseDefaultExtrasOfBodytext = '';
-if (!empty($GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'])) {
-	$baseDefaultExtrasOfBodytext = $GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'] . ':';
+	$GLOBALS['TCA']['tt_content']['palettes']['mailform'] = array(
+		'showitem' => 'pages;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:pages.ALT.mailform, --linebreak--, subheader;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:subheader.ALT.mailform_formlabel',
+	);
 }
-if (!is_array($GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides'])) {
-	$GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides'] = array();
-}
-if (!is_array($GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext'])) {
-	$GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext'] = array();
-}
-$GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'nowrap:wizards[forms]';
-
-$GLOBALS['TCA']['tt_content']['palettes']['mailform'] = array(
-	'showitem' => 'pages;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:pages.ALT.mailform, --linebreak--, subheader;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:subheader.ALT.mailform_formlabel',
-);

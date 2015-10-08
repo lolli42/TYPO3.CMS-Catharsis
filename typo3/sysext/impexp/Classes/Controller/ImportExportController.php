@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Impexp\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -244,7 +243,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					);
 					$title = $this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE);
 					$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $title . '">'
-						. $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
+						. $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
 				}
 			}
 		}
@@ -370,7 +369,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					$pid = $inData['pagetree']['id'];
 					$tree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\PageTreeView::class);
 					$tree->init('AND ' . $this->perms_clause . $this->filterPageIds($this->export->excludeMap));
-					$HTML = IconUtility::getSpriteIconForRecord('pages', $sPage);
+					$HTML = $this->iconFactory->getIconForRecord('pages', $sPage, Icon::SIZE_SMALL)->render();
 					$tree->tree[] = array('row' => $sPage, 'HTML' => $HTML);
 					$tree->buffer_idH = array();
 					if ($inData['pagetree']['levels'] > 0) {
@@ -660,7 +659,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				$row[] = '
 				<tr class="bgColor4">
 					<td><strong>' . $this->lang->getLL('makeconfig_record', TRUE) . '</strong></td>
-					<td>' . IconUtility::getSpriteIconForRecord($tName, $rec) . BackendUtility::getRecordTitle($tName, $rec, TRUE)
+					<td>' . $this->iconFactory->getIconForRecord($tName, $rec, Icon::SIZE_SMALL)->render() . BackendUtility::getRecordTitle($tName, $rec, TRUE)
 						. '<input type="hidden" name="tx_impexp[record][]" value="' . htmlspecialchars(($tName . ':' . $rUid)) . '" /></td>
 				</tr>';
 			}
@@ -680,10 +679,10 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					// If the page is actually the root, handle it differently
 					// NOTE: we don't compare integers, because the number actually comes from the split string above
 					if ($referenceParts[1] === '0') {
-						$iconAndTitle = $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL) . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
+						$iconAndTitle = $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL)->render() . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
 					} else {
 						$record = BackendUtility::getRecordWSOL('pages', $referenceParts[1]);
-						$iconAndTitle = IconUtility::getSpriteIconForRecord('pages', $record)
+						$iconAndTitle = $this->iconFactory->getIconForRecord('pages', $record, Icon::SIZE_SMALL)->render()
 							. BackendUtility::getRecordTitle('pages', $record, TRUE);
 					}
 					$tblList .= 'Table "' . $tableName . '" from ' . $iconAndTitle

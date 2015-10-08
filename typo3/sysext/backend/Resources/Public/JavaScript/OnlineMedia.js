@@ -34,7 +34,7 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 
 		me.addOnlineMedia = function(url) {
 			NProgress.start();
-			$.post(TYPO3.settings.ajaxUrls['OnlineMedia::add'],
+			$.post(TYPO3.settings.ajaxUrls['online_media_create'],
 				{
 					url: url,
 					targetFolder: me.target,
@@ -59,7 +59,7 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 								name: 'ok'
 							}]
 						).on('confirm.button.ok', function() {
-							$confirm.trigger('modal-dismiss');
+							$confirm.modal('hide');
 						});
 					}
 					NProgress.done();
@@ -70,10 +70,11 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 		// Bind key press enter event
 		me.$btn.on('click', function(evt) {
 			evt.preventDefault();
+
 			var $modal = top.TYPO3.Modal.show(
 				me.$btn.attr('title'),
 				'<div class="form-control-wrap">' +
-				'<input type="text" class="form-control online-media-url" placeholder="' + me.placeholder + '" />' +
+					'<input type="text" class="form-control online-media-url" placeholder="' + me.placeholder + '" />' +
 				'</div>',
 				top.TYPO3.Severity.notice,
 				[{
@@ -83,13 +84,17 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 					trigger: function() {
 						var url = $modal.find('input.online-media-url').val();
 						if (url) {
-							$modal.trigger('modal-dismiss');
+							$modal.modal('hide');
 							me.addOnlineMedia(url);
 						}
 					}
 				}]
 			);
 
+			$modal.on('shown.bs.modal', function(e) {
+				// focus the input field
+				$(this).find('input.online-media-url').first().focus();
+			});
 		});
 	};
 

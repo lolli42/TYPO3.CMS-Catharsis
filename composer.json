@@ -2,7 +2,7 @@
 	"name": "typo3/cms",
 	"description": "TYPO3 CMS is a free open source Content Management Framework initially created by Kasper Skaarhoj and licensed under GNU/GPL.",
 	"keywords": ["typo3", "cms", "content management system", "extbase"],
-	"homepage": "http://typo3.org/",
+	"homepage": "https://typo3.org/",
 	"type": "typo3-cms-core",
 	"license": "GPL-2.0+",
 	"authors": [
@@ -18,12 +18,13 @@
 		}
 	],
 	"support": {
-		"general": "http://typo3.org/support/",
+		"general": "https://typo3.org/support/",
 		"issues": "http://forge.typo3.org",
 		"irc": "irc://irc.freenode.net/#typo3-cms",
 		"news": "nntp://lists.typo3.org"
 	},
 	"config": {
+		"optimize-autoloader": true,
 		"bin-dir": "bin"
 	},
 	"require": {
@@ -39,10 +40,10 @@
 		"symfony/console": "~2.7.0",
 		"symfony/finder": "~2.7.0",
 		"doctrine/instantiator": "~1.0.4",
-		"helhum/class-alias-loader": "^2.0.0",
+		"typo3/class-alias-loader": "^1.0",
 		"typo3/cms-composer-installers": "^1.2.2",
 		"psr/http-message": "~1.0",
-		"cogpowered/finediff": "*"
+		"cogpowered/finediff": "~0.3.1"
 	},
 	"require-dev": {
 		"mikey179/vfsStream": "1.4.*@dev",
@@ -56,7 +57,7 @@
 		"ext-zip": ""
 	},
 	"extra": {
-		"helhum/class-alias-loader": {
+		"typo3/class-alias-loader": {
 			"always-add-alias-loader": true
 		},
 		"branch-alias": {
@@ -83,6 +84,7 @@
 		"typo3/cms-filelist": "self.version",
 		"typo3/cms-filemetadata": "self.version",
 		"typo3/cms-fluid": "self.version",
+		"typo3/cms-fluid-styled-content": "self.version",
 		"typo3/cms-form": "self.version",
 		"typo3/cms-frontend": "self.version",
 		"typo3/cms-func": "self.version",
@@ -139,6 +141,7 @@
 			"TYPO3\\CMS\\Felogin\\": "typo3/sysext/felogin/Classes/",
 			"TYPO3\\CMS\\Filelist\\": "typo3/sysext/filelist/Classes/",
 			"TYPO3\\CMS\\Fluid\\": "typo3/sysext/fluid/Classes/",
+			"TYPO3\\CMS\\FluidStyledContent\\": "typo3/sysext/fluid_styled_content/Classes/",
 			"TYPO3\\CMS\\Form\\": "typo3/sysext/form/Classes/",
 			"TYPO3\\CMS\\Frontend\\": "typo3/sysext/frontend/Classes/",
 			"TYPO3\\CMS\\Func\\": "typo3/sysext/func/Classes/",
@@ -166,7 +169,6 @@
 			"TYPO3\\CMS\\SysAction\\": "typo3/sysext/sys_action/Classes/",
 			"TYPO3\\CMS\\SysNote\\": "typo3/sysext/sys_note/Classes/",
 			"TYPO3\\CMS\\T3editor\\": "typo3/sysext/t3editor/Classes/",
-			"TYPO3\\CMS\\T3skin\\": "typo3/sysext/t3skin/Classes/",
 			"TYPO3\\CMS\\Taskcenter\\": "typo3/sysext/taskcenter/Classes/",
 			"TYPO3\\CMS\\Tstemplate\\": "typo3/sysext/tstemplate/Classes/",
 			"TYPO3\\CMS\\Version\\": "typo3/sysext/version/Classes/",
@@ -215,6 +217,7 @@
 		"classmap": ["typo3/sysext/extbase/Tests/Unit/Object/Container/Fixtures/"]
 	},
 	"include-path": [
-		"vendor/pear/http_request2/"
+		"vendor/pear/http_request2/",
+		"vendor/pear/net_url2/"
 	]
 }

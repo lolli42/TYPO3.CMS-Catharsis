@@ -15,22 +15,49 @@ namespace TYPO3\CMS\Core\Core;
  */
 
 use Composer\Autoload\ClassMapGenerator;
-use TYPO3\CMS\Core\Package\Exception\MissingPackageManifestException;
+use Composer\Autoload\ClassLoader;
 use TYPO3\CMS\Core\Package\PackageInterface;
-use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * Generates class loading information (class maps, class aliases etc.) and writes it to files
  * for further inclusion in the bootstrap
+ * @internal
  */
 class ClassLoadingInformationGenerator {
 
 	/**
 	 * @var PackageInterface[]
 	 */
-	static protected $activeExtensionPackages;
+	protected $activeExtensionPackages;
+
+	/**
+	 * @var ClassLoader
+	 */
+	protected $classLoader;
+
+	/**
+	 * @var string
+	 */
+	protected $installationRoot;
+
+	/**
+	 * @var bool
+	 */
+	protected $isDevMode;
+
+	/**
+	 * @param ClassLoader $classLoader
+	 * @param array $activeExtensionPackages
+	 * @param string $installationRoot
+	 * @param bool $isDevMode
+	 */
+	public function __construct(ClassLoader $classLoader, array $activeExtensionPackages, $installationRoot, $isDevMode = FALSE) {
+		$this->classLoader = $classLoader;
+		$this->activeExtensionPackages = $activeExtensionPackages;
+		$this->installationRoot = $installationRoot;
+		$this->isDevMode = $isDevMode;
+	}
 
 	/**
 	 * Returns class loading information for a single package
@@ -43,37 +70,91 @@ class ClassLoadingInformationGenerator {
 		$classMap = array();
 		$psr4 = array();
 		$packagePath = $package->getPackagePath();
+		$manifest = $package->getValueFromComposerManifest();
 
-		$manifest = self::getPackageManager()->getComposerManifest($package->getPackagePath());
-		if (!empty($manifest->autoload->{'psr-4'})) {
-			$psr4manifest = json_decode(json_encode($manifest->autoload->{'psr-4'}), TRUE);
-			if (is_array($psr4manifest)) {
-				foreach ($psr4manifest as $namespacePrefix => $path) {
+		if (empty($manifest->autoload)) {
+			// Legacy mode: Scan the complete extension directory for class files
+			$classMap = $this->createClassMap($packagePath, $useRelativePaths, !$this->isDevMode);
+		} else {
+			$autoloadPsr4 = $this->getAutoloadSectionFromManifest($manifest, 'psr-4');
+			if (!empty($autoloadPsr4)) {
+				$classLoaderPrefixesPsr4 = $this->classLoader->getPrefixesPsr4();
+				foreach ($autoloadPsr4 as $namespacePrefix => $path) {
 					$namespacePath = $packagePath . $path;
 					if ($useRelativePaths) {
 						$psr4[$namespacePrefix] = $this->makePathRelative($namespacePath, realpath($namespacePath));
 					} else {
 						$psr4[$namespacePrefix] = $namespacePath;
 					}
+					if (!empty($classLoaderPrefixesPsr4[$namespacePrefix])) {
+						// The namespace prefix has been registered already, which means there also might be
+						// a class map which we need to override
+						$classMap = array_merge($classMap, $this->createClassMap($namespacePath, $useRelativePaths, FALSE, $namespacePrefix));
+					}
 				}
 			}
-		} else {
-			foreach (ClassMapGenerator::createMap($packagePath) as $class => $path) {
-				if ($this->isIgnoredPath($packagePath, $path)) {
-					continue;
-				}
-				if ($this->isIgnoredClassName($class)) {
-					continue;
-				}
-				if ($useRelativePaths) {
-					$classMap[$class] = self::makePathRelative($packagePath, $path);
-				} else {
-					$classMap[$class] = $path;
+			$autoloadClassmap = $this->getAutoloadSectionFromManifest($manifest, 'classmap');
+			if (!empty($autoloadClassmap)) {
+				foreach ($autoloadClassmap as $path) {
+					$classMap = array_merge($classMap, $this->createClassMap($packagePath . $path, $useRelativePaths));
 				}
 			}
 		}
 
 		return array('classMap' => $classMap, 'psr-4' => $psr4);
+	}
+
+	/**
+	 * Fetches class loading info from the according section from the manifest file.
+	 * Development information will be extracted and merged as well.
+	 *
+	 * @param \stdClass $manifest
+	 * @param string $section
+	 * @return array
+	 */
+	protected function getAutoloadSectionFromManifest($manifest, $section) {
+		$finalAutoloadSection = [];
+		$autoloadDefinition = json_decode(json_encode($manifest->autoload), TRUE);
+		if (!empty($autoloadDefinition[$section]) && is_array($autoloadDefinition[$section])) {
+			$finalAutoloadSection = $autoloadDefinition[$section];
+		}
+		if ($this->isDevMode) {
+			$autoloadDefinitionDev = json_decode(json_encode($manifest->{'autoload-dev'}), TRUE);
+			if (!empty($autoloadDefinitionDev[$section]) && is_array($autoloadDefinitionDev[$section])) {
+				$finalAutoloadSection = array_merge($finalAutoloadSection, $autoloadDefinitionDev[$section]);
+			}
+		}
+
+		return $finalAutoloadSection;
+	}
+
+	/**
+	 * Creates a class map for a given (absolute) path
+	 *
+	 * @param string $classesPath
+	 * @param bool $useRelativePaths
+	 * @param bool $ignorePotentialTestClasses
+	 * @param string $namespace
+	 * @return array
+	 */
+	protected function createClassMap($classesPath, $useRelativePaths = FALSE, $ignorePotentialTestClasses = FALSE, $namespace = NULL) {
+		$classMap = array();
+		foreach (ClassMapGenerator::createMap($classesPath, NULL, NULL, $namespace) as $class => $path) {
+			if ($ignorePotentialTestClasses) {
+				if ($this->isIgnoredPath($classesPath, $path)) {
+					continue;
+				}
+				if ($this->isIgnoredClassName($class)) {
+					continue;
+				}
+			}
+			if ($useRelativePaths) {
+				$classMap[$class] = $this->makePathRelative($classesPath, $path);
+			} else {
+				$classMap[$class] = $path;
+			}
+		}
+		return $classMap;
 	}
 
 	/**
@@ -116,18 +197,31 @@ class ClassLoadingInformationGenerator {
 	 * @return array
 	 */
 	public function buildClassAliasMapForPackage(PackageInterface $package) {
-		$aliasToClassNameMapping = array();
-		$classNameToAliasMapping = array();
-		$possibleClassAliasFile = $package->getPackagePath() . 'Migrations/Code/ClassAliasMap.php';
-		if (file_exists($possibleClassAliasFile)) {
-			$packageAliasMap = require $possibleClassAliasFile;
-			if (!is_array($packageAliasMap)) {
-				throw new \TYPO3\CMS\Core\Error\Exception('"class alias maps" must return an array', 1422625075);
+		$aliasToClassNameMapping = [];
+		$classNameToAliasMapping = [];
+		$possibleClassAliasFiles = [];
+		$manifest = $package->getValueFromComposerManifest();
+		if (!empty($manifest->extra->{'typo3/class-alias-loader'}->{'class-alias-maps'})) {
+			$possibleClassAliasFiles = $manifest->extra->{'typo3/class-alias-loader'}->{'class-alias-maps'};
+			if (!is_array($possibleClassAliasFiles)) {
+				throw new \TYPO3\CMS\Core\Error\Exception('"typo3/class-alias-loader"/"class-alias-maps" must return an array!', 1444142481);
 			}
-			foreach ($packageAliasMap as $aliasClassName => $className) {
-				$lowerCasedAliasClassName = strtolower($aliasClassName);
-				$aliasToClassNameMapping[$lowerCasedAliasClassName] = $className;
-				$classNameToAliasMapping[$className][$lowerCasedAliasClassName] = $lowerCasedAliasClassName;
+		} else {
+			$possibleClassAliasFiles[] = 'Migrations/Code/ClassAliasMap.php';
+		}
+		$packagePath = $package->getPackagePath();
+		foreach ($possibleClassAliasFiles as $possibleClassAliasFile) {
+			$possiblePathToClassAliasFile = $packagePath . $possibleClassAliasFile;
+			if (file_exists($possiblePathToClassAliasFile)) {
+				$packageAliasMap = require $possiblePathToClassAliasFile;
+				if (!is_array($packageAliasMap)) {
+					throw new \TYPO3\CMS\Core\Error\Exception('"class alias maps" must return an array', 1422625075);
+				}
+				foreach ($packageAliasMap as $aliasClassName => $className) {
+					$lowerCasedAliasClassName = strtolower($aliasClassName);
+					$aliasToClassNameMapping[$lowerCasedAliasClassName] = $className;
+					$classNameToAliasMapping[$className][$lowerCasedAliasClassName] = $lowerCasedAliasClassName;
+				}
 			}
 		}
 
@@ -140,9 +234,6 @@ class ClassLoadingInformationGenerator {
 	 * @internal
 	 */
 	public function buildAutoloadInformationFiles() {
-		// Ensure that for each re-build, the packages are fetched again from the package manager
-		self::$activeExtensionPackages = NULL;
-
 		$psr4File = $classMapFile = <<<EOF
 <?php
 
@@ -155,8 +246,8 @@ return array(
 EOF;
 		$classMap = array();
 		$psr4 = array();
-		foreach ($this->getActiveExtensionPackages() as $package) {
-			$classLoadingInformation = self::buildClassLoadingInformationForPackage($package, TRUE);
+		foreach ($this->activeExtensionPackages as $package) {
+			$classLoadingInformation = $this->buildClassLoadingInformationForPackage($package, TRUE);
 			$classMap = array_merge($classMap, $classLoadingInformation['classMap']);
 			$psr4 = array_merge($psr4, $classLoadingInformation['psr-4']);
 		}
@@ -164,12 +255,12 @@ EOF;
 		ksort($classMap);
 		ksort($psr4);
 		foreach ($classMap as $class => $relativePath) {
-			$classMapFile .= sprintf('    %s => %s,', var_export($class, TRUE), self::getPathCode($relativePath)) . LF;
+			$classMapFile .= sprintf('    %s => %s,', var_export($class, TRUE), $this->getPathCode($relativePath)) . LF;
 		}
 		$classMapFile .= ");\n";
 
 		foreach ($psr4 as $prefix => $relativePath) {
-			$psr4File .= sprintf('    %s => array(%s),', var_export($prefix, TRUE), self::getPathCode($relativePath)) . LF;
+			$psr4File .= sprintf('    %s => array(%s),', var_export($prefix, TRUE), $this->getPathCode($relativePath)) . LF;
 		}
 		$psr4File .= ");\n";
 
@@ -187,9 +278,13 @@ EOF;
 	protected function makePathRelative($packagePath, $realPathOfClassFile, $relativeToRoot = TRUE) {
 		$realPathOfClassFile = GeneralUtility::fixWindowsFilePath($realPathOfClassFile);
 		$packageRealPath = GeneralUtility::fixWindowsFilePath(realpath($packagePath));
-		$relativePackagePath = rtrim(PathUtility::stripPathSitePrefix($packagePath), '/');
+		$relativePackagePath = rtrim(substr($packagePath, strlen($this->installationRoot)), '/');
 		if ($relativeToRoot) {
-			$relativePathToClassFile = $relativePackagePath . '/' . ltrim(substr($realPathOfClassFile, strlen($packageRealPath)), '/');
+			if ($realPathOfClassFile === $packageRealPath) {
+				$relativePathToClassFile = $relativePackagePath;
+			} else {
+				$relativePathToClassFile = $relativePackagePath . '/' . ltrim(substr($realPathOfClassFile, strlen($packageRealPath)), '/');
+			}
 		} else {
 			$relativePathToClassFile = ltrim(substr($realPathOfClassFile, strlen($packageRealPath)), '/');
 		}
@@ -217,8 +312,8 @@ EOF;
 	public function buildClassAliasMapFile() {
 		$aliasToClassNameMapping = array();
 		$classNameToAliasMapping = array();
-		foreach (self::getActiveExtensionPackages() as $package) {
-			$aliasMappingForPackage = self::buildClassAliasMapForPackage($package);
+		foreach ($this->activeExtensionPackages as $package) {
+			$aliasMappingForPackage = $this->buildClassAliasMapForPackage($package);
 			$aliasToClassNameMapping = array_merge($aliasToClassNameMapping, $aliasMappingForPackage['aliasToClassNameMapping']);
 			$classNameToAliasMapping = array_merge($classNameToAliasMapping, $aliasMappingForPackage['classNameToAliasMapping']);
 		}
@@ -230,44 +325,6 @@ EOF;
 		$fileContent .= var_export($exportArray, TRUE);
 		$fileContent .= ";\n";
 		return $fileContent;
-	}
-
-	/**
-	 * Get all packages except the protected ones, as they are covered already
-	 *
-	 * @return PackageInterface[]
-	 */
-	protected function getActiveExtensionPackages() {
-		if (self::$activeExtensionPackages === NULL) {
-			self::$activeExtensionPackages = array();
-			foreach (self::getPackageManager()->getActivePackages() as $package) {
-				if (self::isFrameworkPackage($package)) {
-					// Skip all core packages as the class loading info is prepared for them already
-					continue;
-				}
-				self::$activeExtensionPackages[] = $package;
-			}
-		}
-
-		return self::$activeExtensionPackages;
-	}
-
-	/**
-	 * Check if the package is a framework package (located in typo3/sysext)
-	 *
-	 * @param PackageInterface $package
-	 * @return bool
-	 */
-	protected function isFrameworkPackage(PackageInterface $package) {
-		return $package->getValueFromComposerManifest('type') === 'typo3-cms-framework';
-	}
-
-	/**
-	 * @return PackageManager
-	 * @throws \TYPO3\CMS\Core\Exception
-	 */
-	protected function getPackageManager() {
-		return Bootstrap::getInstance()->getEarlyInstance(PackageManager::class);
 	}
 
 }

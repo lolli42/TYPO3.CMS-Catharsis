@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Workspaces\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -45,13 +47,14 @@ class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
 	protected function initializeAction() {
 		// @todo Evaluate how the intval() call can be used with Extbase validators/filters
 		$this->pageId = (int)GeneralUtility::_GP('id');
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$icons = array(
-			'language' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('flags-multiple'),
-			'integrity' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('status-dialog-information'),
-			'success' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('status-dialog-ok'),
-			'info' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('status-dialog-information'),
-			'warning' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('status-dialog-warning'),
-			'error' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('status-dialog-error')
+			'language' => $iconFactory->getIcon('flags-multiple', Icon::SIZE_SMALL)->render(),
+			'integrity' => $iconFactory->getIcon('status-dialog-information', Icon::SIZE_SMALL)->render(),
+			'success' => $iconFactory->getIcon('status-dialog-ok', Icon::SIZE_SMALL)->render(),
+			'info' => $iconFactory->getIcon('status-dialog-information', Icon::SIZE_SMALL)->render(),
+			'warning' => $iconFactory->getIcon('status-dialog-warning', Icon::SIZE_SMALL)->render(),
+			'error' => $iconFactory->getIcon('status-dialog-error', Icon::SIZE_SMALL)->render()
 		);
 		$this->pageRenderer->addInlineSetting('Workspaces', 'icons', $icons);
 		$this->pageRenderer->addInlineSetting('Workspaces', 'id', $this->pageId);

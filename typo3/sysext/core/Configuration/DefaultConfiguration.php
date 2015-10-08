@@ -38,7 +38,7 @@ return array(
 		'im_useStripProfileByDefault' => TRUE,			// Boolean: If set, the im_stripProfileCommand is used with all IM Image operations by default. See tsRef for setting this parameter explocit for IMAGE generation.
 		'jpg_quality' => 70,							// Integer: Default JPEG generation quality
 		'png_truecolor' => TRUE,
-		'colorspace' => 'RGB',							// String: Specifiy the colorspace to use. Some ImageMagick versions (like 6.7.0 and above) use the sRGB colorspace, so all images are darker then the original. <br />Possible Values: CMY, CMYK, Gray, HCL, HSB, HSL, HWB, Lab, LCH, LMS, Log, Luv, OHTA, Rec601Luma, Rec601YCbCr, Rec709Luma, Rec709YCbCr, RGB, sRGB, Transparent, XYZ, YCbCr, YCC, YIQ, YCbCr, YUV
+		'colorspace' => 'RGB',							// String: Specify the colorspace to use. Some ImageMagick versions (like 6.7.0 and above) use the sRGB colorspace, so all images are darker then the original. <br />Possible Values: CMY, CMYK, Gray, HCL, HSB, HSL, HWB, Lab, LCH, LMS, Log, Luv, OHTA, Rec601Luma, Rec601YCbCr, Rec709Luma, Rec709YCbCr, RGB, sRGB, Transparent, XYZ, YCbCr, YCC, YIQ, YCbCr, YUV
 	),
 	'SYS' => array(
 		// System related concerning both frontend and backend.
@@ -86,7 +86,7 @@ return array(
 		 */
 		'curlTimeout' => 0,						// Integer: Timeout value for cURL requests in seconds. 0 means to wait indefinitely. Deprecated since 4.6 - will be removed in 6.2. See below for http options.
 		'textfile_ext' => 'txt,ts,typoscript,html,htm,css,tmpl,js,sql,xml,csv,xlf',	// Text file extensions. Those that can be edited. Executable PHP files may not be editable in webspace if disallowed!
-		'mediafile_ext' => 'gif,jpg,jpeg,bmp,png,pdf,svg,ai,mov,avi,youtube,vimeo',	// Commalist of file extensions perceived as media files by TYPO3. Lowercase and no spaces between!
+		'mediafile_ext' => 'gif,jpg,jpeg,bmp,png,pdf,svg,ai,mp3,wav,mp4,webm,youtube,vimeo',	// Commalist of file extensions perceived as media files by TYPO3. Lowercase and no spaces between!
 		'binPath' => '',						// String: List of absolute paths where external programs should be searched for. Eg. <code>/usr/local/webbin/,/home/xyz/bin/</code>. (ImageMagick path have to be configured separately)
 		'binSetup' => '',						// String (textarea): List of programs (separated by newline or comma). By default programs will be searched in default paths and the special paths defined by 'binPath'. When PHP has openbasedir enabled the programs can not be found and have to be configured here. Example: <code>perl=/usr/bin/perl,unzip=/usr/local/bin/unzip</code>
 		't3lib_cs_convMethod' => '',			// String (values: "iconv", "recode", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset conversion functions in \TYPO3\CMS\Core\Charset\CharsetConverter. Will speed up charset conversion radically.
@@ -95,7 +95,6 @@ return array(
 		'dbClientCompress' => FALSE,			// Boolean: if TRUE, data exchange between TYPO3 and database server will be compressed. This may improve performance if (1) database serever is on the different server and (2) network connection speed to database server is 100mbps or less. CPU usage will be higher if this option is used but database operations will be executed faster due to much less (up to 3 times) database network traffic. This option has no effect if MySQL server is localhost.
 		'setDBinit' => '',						// String (textarea): These commands are executed after the database connection was established. Hint: The previous default "SET NAMES utf8;" is not required any more and will be removed automatically if set!
 		'setMemoryLimit' => 0,					// Integer: memory_limit in MB: If more than 16, TYPO3 will try to use ini_set() to set the memory limit of PHP to the value. This works only if the function ini_set() is not disabled by your sysadmin.
-		'serverTimeZone' => 1,					// Integer: GMT offset of servers time (from time()). Default is "1" which is "GMT+1" (central european time). This value can be used in extensions that are GMT aware and wants to convert times to/from other timezones.
 		'phpTimeZone' => '',					// String: timezone to force for all date() and mktime() functions. A list of supported values can be found at <a href="http://php.net/manual/en/timezones.php" target="_blank">php.net</a>. If this is not set, a valid fallback will be searched for by PHP (php.ini's <a href="http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone" target="_blank">date.timezone</a> setting, server defaults, etc); and if no fallback is found, the value of "UTC" is used instead.
 		'systemLog' => '',						// <p>String: semi-colon separated list. Defines one or more logging methods. Possible methods:</p><dl><dt>file,&lt;abs-path-to-file&gt;[,&lt;level&gt;]</dt><dd>logs to a file</dd><dt>mail,&lt;to&gt;[/&lt;from&gt;][,&lt;level&gt;]</dt><dd>sends the log entries via mail</dd><dt>syslog,&lt;facility&gt;,[,&lt;level&gt;]</dt><dd>uses the operating system's log. Facility may be one of LOCAL0..LOCAL7, USER (on Windows USER is the only valid type).</dd><dt>error_log[,,&lt;level&gt;]</dt><dd>uses the PHP error log</dd></dl><p>The &lt;level&gt; is the individual logging level (see <a href="#SYS-systemLogLevel">[SYS][systemLogLevel]</a>).</p>
 		'systemLogLevel' => 0,					// <p>Integer (0, 1, 2, 3, 4): Only messages with same or higher severity are logged.</p><ul><li>0: info</li><li>1: notice</li><li>2: warning</li><li>3: error</li><li>4: fatal error</li></ul>
@@ -104,7 +103,7 @@ return array(
 		'UTF8filesystem' => FALSE,				// Boolean: If TRUE then TYPO3 uses utf-8 to store file names. This allows for accented Latin letters as well as any other non-latin characters like Cyrillic and Chinese.
 		'systemLocale' => '',					// String: locale used for certain system related functions, e.g. escaping shell commands. If problems with filenames containing special characters occur, the value of this option is probably wrong. See <a href="http://php.net/manual/en/function.setlocale.php" target="_blank">setlocale()</a>.
 		'lockingMode' => 'simple',				// String: *deprecated* Define which locking mode is used to control requests to pages being generated. Can be one of either "disable" (no locking), "simple" (checks for file existence), "flock" (using PHPs <a href="http://php.net/flock" target="_blank">flock()</a> function), "semaphore" (using PHPs <a href="http://php.net/sem-acquire" target="_blank">sem_acquire()</a> function). Default is "simple". (This option is deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8. The option is only used by extensions using the old Locker.)
-		'reverseProxyIP' => '',					// String: list of IP addresses. If TYPO3 is behind one or more (intransparent) reverese proxies the IP addresses must be added here.
+		'reverseProxyIP' => '',					// String: list of IP addresses. If TYPO3 is behind one or more (intransparent) reverse proxies the IP addresses must be added here.
 		'reverseProxyHeaderMultiValue' => 'none',	// String: "none","first","last": defines which values of a proxy header (eg HTTP_X_FORWARDED_FOR) to use, if more than one is found. "none" discards the value, "first" and "last" use the first/last of the values in the list.
 		'reverseProxyPrefix' => '',				// String: optional prefix to be added to the internal URL (SCRIPT_NAME and REQUEST_URI).
 		'reverseProxySSL' => '',				// String: '*' or list of IP addresses of proxies that use SSL (https) for the connection to the client, but an unencrypted connection (http) to the server. If '*' all proxies defined in <a href="#SYS-reverseProxyIP">[SYS][reverseProxyIP]</a> use SSL.
@@ -221,7 +220,7 @@ return array(
 			),
 		),
 		'defaultCategorizedTables' => 'pages,tt_content,sys_file_metadata', // List of comma separated tables that are categorizable by default.
-		'displayErrors' => -1,		// <p>Integer (-1, 0, 1). Configures whether PHP errors or Exceptions should be displayed.</p><dl><dt>0</dt><dd>Do not display any PHP error message. Sets PHP "display_errors" setting to 0. Overrides the value of [SYS][exceptionalErrors] and sets it to 0 (= no errors are turned into exceptions). The configured [SYS][productionExceptionHandler] is used as exception handler.</dd><dt>1</dt><dd>Display error messages with the registered [SYS][errorHandler]. Sets PHP "display_errors" setting to 1. The configured [SYS][debugExceptionHandler] is used as exception handler.</dd><dt>-1</dt><dd>Default setting. TYPO3 CMS does not touch the PHP "display_errors" setting. If [SYS][devIPmask] matches the user's IP address, the configured [SYS][debugExceptionHandler] is used instead of the [SYS][productionExceptionHandler] to handle exceptions.</dd></dl>
+		'displayErrors' => -1,		// <p>Integer (-1, 0, 1). Configures whether PHP errors or Exceptions should be displayed.</p><dl><dt>0</dt><dd>Do not display any PHP error message. Sets PHP "display_errors" setting to 0. Overrides the value of [SYS][exceptionalErrors] and sets it to 0 (= no errors are turned into exceptions). The configured [SYS][productionExceptionHandler] is used as exception handler.</dd><dt>1</dt><dd>Display error messages with the registered [SYS][errorHandler]. Sets PHP "display_errors" setting to 1. The configured [SYS][debugExceptionHandler] is used as exception handler.</dd><dt>-1</dt><dd>TYPO3 CMS does not touch the PHP "display_errors" setting. If [SYS][devIPmask] matches the user's IP address, the configured [SYS][debugExceptionHandler] is used instead of the [SYS][productionExceptionHandler] to handle exceptions.</dd></dl>
 		'productionExceptionHandler' => \TYPO3\CMS\Core\Error\ProductionExceptionHandler::class,		// String: Classname to handle exceptions that might happen in the TYPO3-code. Leave empty to disable exception handling. Default: "TYPO3\\CMS\\Core\\Error\\ProductionExceptionHandler". This exception handler displays a nice error message when something went wrong. The error message is logged to the configured logs. Note: The configured "productionExceptionHandler" is used if [SYS][displayErrors] is set to "0" or is set to "-1" and [SYS][devIPmask] doesn't match the user's IP.
 		'debugExceptionHandler' => \TYPO3\CMS\Core\Error\DebugExceptionHandler::class,		// String: Classname to handle exceptions that might happen in the TYPO3-code. Leave empty to disable exception handling. Default: "TYPO3\\CMS\\Core\\Error\\DebugExceptionHandler". This exception handler displays the complete stack trace of any encountered exception. The error message and the stack trace is logged to the configured logs. Note: The configured "debugExceptionHandler" is used if [SYS][displayErrors] is set to "1" or is set to "-1" or "2" and the [SYS][devIPmask] matches the user's IP.
 		'errorHandler' => \TYPO3\CMS\Core\Error\ErrorHandler::class,		// String: Classname to handle PHP errors. E.g.: TYPO3\CMS\Core\Error\ErrorHandler. This class displays and logs all errors that are registered as [SYS][errorHandlerErrors]. Leave empty to disable error handling. Errors can be logged to syslog (see: [SYS][systemLog]), to the installed developer log and to the "syslog" table. If an error is registered in [SYS][exceptionalErrors] it will be turned into an exception to be handled by the configured exceptionHandler.
@@ -356,14 +355,20 @@ return array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDateTimeFields::class
 						),
 					),
-					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class => array(
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordOverrideValues::class => array(
 						'depends' => array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordOverrideValues::class,
 						),
 					),
 					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseSystemLanguageRows::class => array(
 						'depends' => array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordOverrideValues::class,
 						),
 					),
 					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabasePageLanguageOverlayRows::class => array(
@@ -381,6 +386,8 @@ return array(
 					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class => array(
 						'depends' => array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseLanguageRows::class,
+							// As the ctrl.type can hold a nested key we need to resolve all relations
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class,
 						),
 					),
 					\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfigMerged::class => array(
@@ -410,12 +417,17 @@ return array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaColumnsOverrides::class
 						),
 					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesRemoveUnusedColumns::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesShowitem::class
+						),
+					),
 					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexFetch::class => array(
 						'depends' => array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
 							\TYPO3\CMS\Backend\Form\FormDataProvider\UserTsConfig::class,
 							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfigMerged::class,
-							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesShowitem::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesRemoveUnusedColumns::class,
 						),
 					),
 					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexPrepare::class => array(
@@ -431,7 +443,7 @@ return array(
 					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class => array(
 						'depends' => array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
-							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexFetch::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexProcess::class,
 						),
 					),
 					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaCheckboxItems::class => array(
@@ -446,14 +458,40 @@ return array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfigMerged::class,
 							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
 							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesShowitem::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesRemoveUnusedColumns::class,
 							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaCheckboxItems::class,
 							// GeneralUtility::getFlexFormDS() needs unchanged databaseRow values as string
 							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexFetch::class,
 						),
 					),
-					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class => array(
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState::class => array(
 						'depends' => array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInputPlaceholders::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRecordTitle::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\EvaluateDisplayConditions::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRecordTitle::class,
 						),
 					),
 				),
@@ -479,9 +517,80 @@ return array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class,
 						),
 					),
-					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class => array(
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState::class => array(
 						'depends' => array(
 							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration::class,
+						),
+					),
+				),
+				'tcaInputPlaceholderRecord' => array(
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class => array(),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaCheckboxItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaCheckboxItems::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration::class,
 						),
 					),
 				),
@@ -492,7 +601,7 @@ return array(
 		'allowGlobalInstall' => FALSE,		// Boolean: If set, global extensions in typo3/ext/ are allowed to be installed, updated and deleted etc.
 		'allowLocalInstall' => TRUE,		// Boolean: If set, local extensions in typo3conf/ext/ are allowed to be installed, updated and deleted etc.
 		'allowSystemInstall' => FALSE,		// Boolean: If set, you can install extensions in the sysext/ dir.
-		'excludeForPackaging' => '(?:\\..*|.*~|.*\\.swp|.*\\.bak)',		// String: List of directories and files which will not be packaged into extensions nor taken into account otherwise by the Extension Manager. Perl regular expression syntax!
+		'excludeForPackaging' => '(?:\\..*(?!htaccess)|.*~|.*\\.swp|.*\\.bak|\\.sass-cache|node_modules|bower_components)',		// String: List of directories and files which will not be packaged into extensions nor taken into account otherwise by the Extension Manager. Perl regular expression syntax!
 		'extConf' => array(
 			'saltedpasswords' => serialize(array(
 				'BE.' => array(
@@ -533,7 +642,7 @@ return array(
 		'sessionTimeout' => 3600,						// Integer: seconds. Session time out for backend users. The value must be at least 180 to avoid side effects. Default is 3600 seconds = 1 hour.
 		'IPmaskList' => '',								// String: Lets you define a list of IP-numbers (with *-wildcards) that are the ONLY ones allowed access to ANY backend activity. On error an error header is sent and the script exits. Works like IP masking for users configurable through TSconfig. See syntax for that (or look up syntax for the function \TYPO3\CMS\Core\Utility\GeneralUtility::cmpIP())
 		'lockBeUserToDBmounts' => TRUE,					// Boolean: If set, the backend user is allowed to work only within his page-mount. It's advisable to leave this on because it makes security easy to manage.
-		'lockSSL' => 0,									// <p>Integer (0, 1, 2, 3). If &gt;0, If set (1,2,3), the backend can only be operated from an SSL-encrypted connection (https)</p><dl><dt>0</dt><dd>no locking (default)</dd><dt>1</dt><dd>only allow access via SSL</dd><dt>2</dt><dd>redirect user trying to access non-https admin-urls to SSL URLs instead</dd><dt>3</dt><dd>only the login is forced to SSL, then the user switches back to non-SSL-mode</dd></dl>
+		'lockSSL' => 0,									// <p>Integer (0, 1, 2). If &gt;0, If set (1,2), the backend can only be operated from an SSL-encrypted connection (https)</p><dl><dt>0</dt><dd>no locking (default)</dd><dt>1</dt><dd>only allow access via SSL</dd><dt>2</dt><dd>redirect user trying to access non-https admin-urls to SSL URLs instead</dd></dl>
 		'lockSSLPort' => 0,								// Integer: Use a non-standard HTTPS port for lockSSL. Set this value if you use lockSSL and the HTTPS port of your webserver is not 443.
 		'enabledBeUserIPLock' => TRUE,					// Boolean: If set, the User/Group TSconfig option 'option.lockToIP' is enabled.
 		'lockHashKeyWords' => 'useragent',				// Keyword list (Strings comma separated). Currently only "useragent"; If set, then the BE user session is locked to the value of HTTP_USER_AGENT. This lowers the risk of session hi-jacking. However in some cases (like during development) you might need to switch the user agent while keeping the session. In this case you can disable that feature (e.g. with a blank string).
@@ -542,7 +651,7 @@ return array(
 		'loginSecurityLevel' => '',						// String: Keywords that determines the security level of login to the backend. "normal" means the password from the login form is sent in clear-text, "rsa" uses RSA password encryption (only if the rsaauth extension is installed).
 		'showRefreshLoginPopup' => FALSE,				// Boolean: If set, the Ajax relogin will show a real popup window for relogin after the count down. Some auth services need this as they add custom validation to the login form. If it's not set, the Ajax relogin will show an inline relogin window.
 		'adminOnly' => 0,								// <p>Integer (-1, 0, 1, 2)</p><dl><dt>-1</dt><dd>total shutdown for maintenance purposes</dd><dt>0</dt><dd>normal operation, everyone can login (default)</dd><dt>1</dt><dd>only admins can login</dd><dt>2</dt><dd>only admins and regular CLI users can login</dd></dl>
-		'disable_exec_function' => FALSE,				// Boolean: Don't use exec() function (except for ImageMagick which is disabled by <a href="#GFX-im">[GFX][im]</a>=0). If set, all fileoperations are done by the default PHP-functions. This is nescessary under Windows! On Unix the system commands by exec() can be used, unless this is disabled.
+		'disable_exec_function' => FALSE,				// Boolean: Don't use exec() function (except for ImageMagick which is disabled by <a href="#GFX-im">[GFX][im]</a>=0). If set, all fileoperations are done by the default PHP-functions. This is necessary under Windows! On Unix the system commands by exec() can be used, unless this is disabled.
 		'compressionLevel' => 0,						// Determines output compression of BE output. Makes output smaller but slows down the page generation depending on the compression level. Requires a) zlib in your PHP installation and b) special rewrite rules for .css.gzip and .js.gzip (please see _.htacces for an example). Range 1-9, where 1 is least compression and 9 is greatest compression. 'true' as value will set the compression based on the PHP default settings (usually 5). Suggested and most optimal value is 5.
 		'maxFileSize' => '10240',						// Integer: If set this is the max filesize in KB's for file operations in the backend. Can be overridden through $TCA per table field separately.
 		'installToolPassword' => '',					// String: This is the md5-hashed, salted password for the Install Tool. Set this to '' and access will be totally denied. You may consider to externally protect the typo3/sysext/install/ folder, eg. with a .htaccess file.
@@ -829,152 +938,28 @@ return array(
 		// String (exclude).Enter lines of default Page TSconfig.
 		'defaultPermissions' => array(),
 		'defaultUC' => array(),
-		// The control of fileextensions goes in two catagories. Webspace and Ftpspace. Webspace is folders accessible from a webbrowser (below TYPO3_DOCUMENT_ROOT) and ftpspace is everything else.
+		// The control of file extensions goes in two catagories. Webspace and Ftpspace. Webspace is folders accessible from a webbrowser (below TYPO3_DOCUMENT_ROOT) and ftpspace is everything else.
 		// The control is done like this: If an extension matches 'allow' then the check returns TRUE. If not and an extension matches 'deny' then the check return FALSE. If no match at all, returns TRUE.
 		// You list extensions comma-separated. If the value is a '*' every extension is matched
-		// If no fileextension, TRUE is returned if 'allow' is '*', FALSE if 'deny' is '*' and TRUE if none of these matches
+		// If no file extension, TRUE is returned if 'allow' is '*', FALSE if 'deny' is '*' and TRUE if none of these matches
 		// This configuration below accepts everything in ftpspace and everything in webspace except php3,php4,php5 or php files
 		'fileExtensions' => array(
 			'webspace' => array('allow' => '', 'deny' => PHP_EXTENSIONS_DEFAULT),
 			'ftpspace' => array('allow' => '*', 'deny' => '')
 		),
 		'customPermOptions' => array(),						// Array with sets of custom permission options. Syntax is; 'key' => array('header' => 'header string, language splitted', 'items' => array('key' => array('label, language splitted', 'icon reference', 'Description text, language splitted'))). Keys cannot contain ":|," characters.
-		'fileDenyPattern' => FILE_DENY_PATTERN_DEFAULT,		// A perl-compatible regular expression (without delimiters!) that - if it matches a filename - will deny the file upload/rename or whatever in the webspace. For security reasons, files with multiple extensions have to be denied on an Apache environment with mod_alias, if the filename contains a valid php handler in an arbitary position. Also, ".htaccess" files have to be denied. Matching is done case-insensitive. Default value is stored in constant FILE_DENY_PATTERN_DEFAULT
+		'fileDenyPattern' => FILE_DENY_PATTERN_DEFAULT,		// A perl-compatible regular expression (without delimiters!) that - if it matches a filename - will deny the file upload/rename or whatever in the webspace. For security reasons, files with multiple extensions have to be denied on an Apache environment with mod_alias, if the filename contains a valid php handler in an arbitrary position. Also, ".htaccess" files have to be denied. Matching is done case-insensitive. Default value is stored in constant FILE_DENY_PATTERN_DEFAULT
 		'interfaces' => 'backend',							// This determines which interface options is available in the login prompt and in which order (All options: ",backend,frontend")
 		'notificationPrefix' => '[TYPO3 Note]',				// String: Used to prefix the subject of mails sent in the taskcenter
 		'explicitADmode' => 'explicitDeny',					// Sets the general allow/deny mode for selector box values. Value can be either "explicitAllow" or "explicitDeny", nothing else!
 		'niceFlexFormXMLtags' => TRUE,						// If set, the flexform XML will be stored with meaningful tags which can be validated with DTD schema. If you rely on custom reading of the XML from pre-4.0 versions you should set this to FALSE if you don't like to change your reader code (internally it is insignificant since \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array() doesn't care for the tags if the index-attribute value is set)
-		'flexFormXMLincludeDiffBase' => TRUE,				// If set, an additional tag with index "vXX.vDEFbase" is created for translations in flexforms holding the value of the default language when translation was changed. Used to show diff of value. This setting will change whether the system thinks flexform XML looks clean. For example when FALSE XX.vDEFbase fields will be removed in cleaning while accepted if TRUE (of course)
 		'compactFlexFormXML' => 0,							// If set, the flexform XML will not contain indentation spaces making XML more compact
 		'flexformForceCDATA' => 0,							// Boolean:  If set, will add CDATA to Flexform XML. Some versions of libxml have a bug that causes HTML entities to be stripped from any XML content and this setting will avoid the bug by adding CDATA.
 		'explicitConfirmationOfTranslation' => FALSE,		// If set, then the diff-data of localized records is not saved automatically when updated but requires that a translator clicks the special finish_translation/save/close button that becomes available.
 		'versionNumberInFilename' => FALSE,					// <p>Boolean: If TRUE, included CSS and JS files will have the timestamp embedded in the filename, ie. filename.1269312081.js. This will make browsers and proxies reload the files if they change (thus avoiding caching issues). IMPORTANT: this feature requires extra .htaccess rules to work (please refer to _.htaccess or the _.htaccess file from the dummy package)</p><p>If FALSE the filemtime will be appended as a query-string.</p>
 		'spriteIconGenerator_handler' => \TYPO3\CMS\Backend\Sprite\SimpleSpriteHandler::class,		// String: Used to register own/other spriteGenerating Handler, they have to implement the interface \TYPO3\CMS\Backend\Sprite\SpriteIconGeneratorInterface. If set to "\TYPO3\CMS\Backend\Sprite\SpriteBuildingHandler" icons from extensions will automatically merged into sprites.
 		'debug' => FALSE,									// Boolean: If set, the loginrefresh is disabled and pageRenderer is set to debug mode. Use this to debug the backend only!
-		'AJAX' => array(									// array of key-value pairs for a unified use of AJAX calls in the TYPO3 backend. Keys are the unique ajaxIDs where the value will be resolved to call a method in an object. See ajax.php for more information.
-			'SC_alt_db_navframe::expandCollapse' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\PageTreeNavigationController::class . '->ajaxExpandCollapse',
-				'csrfTokenCheck' => TRUE
-			),
-			'SC_alt_file_navframe::expandCollapse' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FileSystemNavigationFrameController::class . '->ajaxExpandCollapse',
-				'csrfTokenCheck' => TRUE
-			),
-			'TYPO3_tcefile::process' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\File\FileController::class . '->processAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			'TYPO3_tcefile::fileExists' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\File\FileController::class . '->fileExistsAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			't3lib_TCEforms_inline::createNewRecord' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			't3lib_TCEforms_inline::getRecordDetails' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			't3lib_TCEforms_inline::synchronizeLocalizeRecords' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			't3lib_TCEforms_inline::setExpandedCollapsedState' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			't3lib_TCEforms_suggest::searchRecord' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\Wizard\SuggestWizard::class . '->processAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			'ShortcutMenu::getShortcutEditForm' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Backend\ToolbarItems\ShortcutToolbarItem::class . '->getAjaxShortcutEditForm',
-				'csrfTokenCheck' => TRUE
-			),
-			'ShortcutMenu::saveShortcut' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Backend\ToolbarItems\ShortcutToolbarItem::class . '->setAjaxShortcut',
-				'csrfTokenCheck' => TRUE
-			),
-			'ShortcutMenu::render' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Backend\ToolbarItems\ShortcutToolbarItem::class . '->renderAjaxMenu',
-				'csrfTokenCheck' => TRUE
-			),
-			'ShortcutMenu::delete' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Backend\ToolbarItems\ShortcutToolbarItem::class . '->deleteAjaxShortcut',
-				'csrfTokenCheck' => TRUE
-			),
-			'ShortcutMenu::create' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Backend\ToolbarItems\ShortcutToolbarItem::class . '->createAjaxShortcut',
-				'csrfTokenCheck' => TRUE
-			),
-			'SystemInformationMenu::load' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Backend\ToolbarItems\SystemInformationToolbarItem::class . '->renderAjax',
-				'csrfTokenCheck' => TRUE
-			),
-			'ModuleMenu::reload' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\BackendController::class . '->getModuleMenuForReload',
-				'csrfTokenCheck' => TRUE
-			),
-			'BackendLogin::login' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '->login',
-				// Needs to be unprotected
-				'csrfTokenCheck' => FALSE
-			),
-			'BackendLogin::logout' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '->logout',
-				// Needs to be unprotected
-				'csrfTokenCheck' => FALSE
-			),
-			'BackendLogin::refreshLogin' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '->refreshLogin',
-				// Needs to be unprotected
-				'csrfTokenCheck' => FALSE
-			),
-			'BackendLogin::isTimedOut' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '->isTimedOut',
-				// Needs to be unprotected
-				'csrfTokenCheck' => FALSE
-			),
-			'ExtDirect::getAPI' => array(
-				'callbackMethod' => \TYPO3\CMS\Core\ExtDirect\ExtDirectApi::class . '->getAPI',
-				// No need to be CSRF protected
-				'csrfTokenCheck' => FALSE
-			),
-			'ExtDirect::route' => array(
-				'callbackMethod' => \TYPO3\CMS\Core\ExtDirect\ExtDirectRouter::class . '->route',
-				// All ExtJS calls are CSRF protected with another token
-				'csrfTokenCheck' => FALSE
-			),
-			'DocumentTemplate::getFlashMessages' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Template\DocumentTemplate::class . '->renderFlashMessages',
-				'csrfTokenCheck' => TRUE
-			),
-			'ContextMenu::load' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\ClickMenuController::class . '->printContentForAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			'DataHandler::process' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\SimpleDataHandlerController::class . '->processAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			'UserSettings::process' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\UserSettingsController::class . '->processAjaxRequest',
-				'csrfTokenCheck' => TRUE
-			),
-			'ImageManipulationWizard::getHtmlForImageManipulationWizard' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\Wizard\ImageManipulationWizard::class . '->getHtmlForImageManipulationWizard',
-				'csrfTokenCheck' => TRUE
-			),
-			'LiveSearch' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\LiveSearchController::class . '->liveSearchAction',
-				'csrfTokenCheck' => TRUE
-			),
-			'OnlineMedia::add' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Controller\OnlineMediaController::class . '->addAjaxAction',
-				'csrfTokenCheck' => TRUE
-			)
-		),
+		'AJAX' => array(),									// array of key-value pairs for a unified use of AJAX calls in the TYPO3 backend. Keys are the unique ajaxIDs where the value will be resolved to call a method in an object. See the AjaxRequestHandler class for more information.
 		'toolbarItems' => array(), // Array: Registered toolbar items classes
 		'HTTP' => array(
 			'Response' => array(

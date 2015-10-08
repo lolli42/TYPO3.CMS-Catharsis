@@ -52,8 +52,9 @@ class PageInformationController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 	 * @return string Output HTML for the module.
 	 */
 	public function main() {
+		$theOutput = $this->pObj->doc->header($this->getLanguageService()->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:page_title'));
 		$dblist = GeneralUtility::makeInstance(PageLayoutView::class);
-		$dblist->descrTable = '_MOD_' . $GLOBALS['MCONF']['name'];
+		$dblist->descrTable = '_MOD_web_info';
 		$dblist->thumbs = 0;
 		$dblist->script = BackendUtility::getModuleUrl('web_info');
 		$dblist->showIcon = 0;
@@ -72,8 +73,9 @@ class PageInformationController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 			'',
 			BackendUtility::cshItem($dblist->descrTable, 'pagetree_overview', NULL, '|<br />')
 			. '<div class="form-inline form-inline-spaced">'
-			. $h_func . $dblist->HTMLcode
-			. '</div>',
+			. $h_func
+			. '</div>'
+			. $dblist->HTMLcode,
 			0,
 			1
 		);

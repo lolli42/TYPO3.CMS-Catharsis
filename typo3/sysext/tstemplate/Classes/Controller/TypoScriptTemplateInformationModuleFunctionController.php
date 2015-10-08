@@ -21,9 +21,7 @@ use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Backend\Module\AbstractFunctionModule;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -90,7 +88,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 		}
 		$title = $lang->sL('LLL:EXT:lang/locallang_common.xlf:editField', TRUE);
 		$startAnchor = '<a href="' . htmlspecialchars($url) . '" title="' . $title . '">';
-		$icon = $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL);
+		$icon = $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render();
 		$ret = '<tr><td>';
 		$ret .= $startAnchor . '<strong>' . $label . '</strong></a>';
 		$ret .= '</td><td width="80%">' . $data . '</td><td>' . $startAnchor . '<span class="btn btn-default">' . $icon . '</span></a></td></tr>';
@@ -202,8 +200,8 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 			// Update template ?
 			$POST = GeneralUtility::_POST();
 			if (
-				isset($POST['submit'])
-				|| isset($POST['saveclose'])
+				isset($POST['_savedok'])
+				|| isset($POST['_saveandclosedok'])
 			) {
 				// Set the data to be saved
 				$recData = array();
@@ -252,7 +250,8 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 					}
 				}
 			}
-			$content = '<a href="#" class="t3-js-clickmenutrigger" data-table="sys_template" data-uid="' . $tplRow['uid'] . '" data-listframe="1">' . IconUtility::getSpriteIconForRecord('sys_template', $tplRow) . '</a><strong>' . htmlspecialchars($tplRow['title']) . '</strong>' . htmlspecialchars((trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : ''));
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$content = '<a href="#" class="t3-js-clickmenutrigger" data-table="sys_template" data-uid="' . $tplRow['uid'] . '" data-listframe="1">' . $iconFactory->getIconForRecord('sys_template', $tplRow, Icon::SIZE_SMALL)->render() . '</a><strong>' . htmlspecialchars($tplRow['title']) . '</strong>' . (trim($tplRow['sitetitle']) ? htmlspecialchars(' (' . $tplRow['sitetitle'] . ')') : '');
 			$theOutput .= $this->pObj->doc->section($lang->getLL('templateInformation'), $content, 0, 1);
 			if ($manyTemplatesMenu) {
 				$theOutput .= $this->pObj->doc->section('', $manyTemplatesMenu);
@@ -260,7 +259,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 			$theOutput .= $this->pObj->doc->spacer(10);
 			$numberOfRows = 35;
 			// If abort pressed, nothing should be edited:
-			if (isset($POST['saveclose'])) {
+			if (isset($POST['_saveandclosedok'])) {
 				unset($e);
 			}
 			if (isset($e['constants'])) {
@@ -305,7 +304,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 			];
 			$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 			$title = $lang->getLL('editTemplateRecord', TRUE);
-			$icon = $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL);
+			$icon = $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render();
 			$outCode .= '<br /><a class="btn btn-default" href="' . htmlspecialchars($url)
 				. '"><strong>' . $icon . '&nbsp;' . $title . '</strong></a>';
 			$theOutput .= $this->pObj->doc->section('', $outCode);

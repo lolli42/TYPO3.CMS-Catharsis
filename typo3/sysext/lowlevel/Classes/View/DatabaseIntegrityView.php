@@ -14,9 +14,10 @@ namespace TYPO3\CMS\Lowlevel\View;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\BaseScriptClass;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\QueryView;
 use TYPO3\CMS\Core\Database\ReferenceIndex;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -211,9 +212,28 @@ class DatabaseIntegrityView extends BaseScriptClass {
 	 * Print content
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
+	}
+
+	/**
+	 * Injects the request object for the current request or subrequest
+	 * Simply calls main() and init() and outputs the content
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$GLOBALS['SOBE'] = $this;
+		$this->init();
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
 	}
 
 	/**
@@ -321,6 +341,7 @@ class DatabaseIntegrityView extends BaseScriptClass {
 	 * @return void
 	 */
 	public function func_records() {
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
 		/** @var $admin DatabaseIntegrityCheck */
 		$admin = GeneralUtility::makeInstance(DatabaseIntegrityCheck::class);
@@ -329,15 +350,15 @@ class DatabaseIntegrityView extends BaseScriptClass {
 		// Pages stat
 		$pageStatistic = array(
 			'total_pages' => array(
-				'icon' => IconUtility::getSpriteIconForRecord('pages', array()),
+				'icon' => $iconFactory->getIconForRecord('pages', array(), Icon::SIZE_SMALL)->render(),
 				'count' => count($admin->page_idArray)
 			),
 			'hidden_pages' => array(
-				'icon' => IconUtility::getSpriteIconForRecord('pages', array('hidden' => 1)),
+				'icon' => $iconFactory->getIconForRecord('pages', array('hidden' => 1), Icon::SIZE_SMALL)->render(),
 				'count' => $admin->recStats['hidden']
 			),
 			'deleted_pages' => array(
-				'icon' => IconUtility::getSpriteIconForRecord('pages', array('deleted' => 1)),
+				'icon' => $iconFactory->getIconForRecord('pages', array('deleted' => 1), Icon::SIZE_SMALL)->render(),
 				'count' => count($admin->recStats['deleted']['pages'])
 			)
 		);
@@ -351,7 +372,7 @@ class DatabaseIntegrityView extends BaseScriptClass {
 			foreach ($doktype as $setup) {
 				if ($setup[1] != '--div--') {
 					$doktypes[] = array(
-						'icon' => IconUtility::getSpriteIconForRecord('pages', array('doktype' => $setup[1])),
+						'icon' => $iconFactory->getIconForRecord('pages', array('doktype' => $setup[1]), Icon::SIZE_SMALL)->render(),
 						'title' => $lang->sL($setup[0]) . ' (' . $setup[1] . ')',
 						'count' => (int)$admin->recStats['doktype'][$setup[1]]
 					);
@@ -399,7 +420,7 @@ class DatabaseIntegrityView extends BaseScriptClass {
 					}
 				}
 				$tableStatistic[$t] = array(
-					'icon' => IconUtility::getSpriteIconForRecord($t, array()),
+					'icon' => $iconFactory->getIconForRecord($t, array(), Icon::SIZE_SMALL)->render(),
 					'title' => $lang->sL($GLOBALS['TCA'][$t]['ctrl']['title']),
 					'count' => $theNumberOfRe,
 					'lostRecords' => $lr

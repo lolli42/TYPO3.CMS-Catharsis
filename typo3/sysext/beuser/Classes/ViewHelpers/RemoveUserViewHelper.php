@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Beuser\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Beuser\Domain\Model\BackendUser;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -25,7 +24,6 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Displays 'Delete user' link with sprite icon to remove user
@@ -82,7 +80,7 @@ class RemoveUserViewHelper extends AbstractViewHelper implements CompilableInter
 			. ' data-title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_alt_doc.xlf:label.confirm.delete_record.title')) . '"'
 			. ' data-content="' . htmlspecialchars(LocalizationUtility::translate('confirm', 'beuser', array($backendUser->getUserName()))) . '" '
 			. ' data-button-close-text="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:cancel')) . '"'
-			. '>' . $iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL) . '</a>';
+			. '>' . $iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
 	}
 
 }

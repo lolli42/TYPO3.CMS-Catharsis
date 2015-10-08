@@ -10,6 +10,52 @@ if (!$_EXTCONF || $_EXTCONF['setPageTSconfig']) {
 	');
 }
 
+
+// Register language aware flex form handling in FormEngine
+// Register render elements
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['nodeRegistry'][1443361297] = [
+	'nodeName' => 'flex',
+	'priority' => 40,
+	'class' => \TYPO3\CMS\Compatibility6\Form\Container\FlexFormEntryContainer::class,
+];
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['nodeRegistry'][1443361298] = [
+	'nodeName' => 'flexFormNoTabsContainer',
+	'priority' => 40,
+	'class' => \TYPO3\CMS\Compatibility6\Form\Container\FlexFormNoTabsContainer::class,
+];
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['nodeRegistry'][1443361299] = [
+	'nodeName' => 'flexFormTabsContainer',
+	'priority' => 40,
+	'class' => \TYPO3\CMS\Compatibility6\Form\Container\FlexFormTabsContainer::class,
+];
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['nodeRegistry'][1443361300] = [
+	'nodeName' => 'flexFormElementContainer',
+	'priority' => 40,
+	'class' => \TYPO3\CMS\Compatibility6\Form\Container\FlexFormElementContainer::class,
+];
+// Unregister stock TcaFlexProcess data provider and substitute with own data provider at the same position
+unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['formDataGroup']['tcaDatabaseRecord']
+	[\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexProcess::class]
+);
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['formDataGroup']['tcaDatabaseRecord']
+	[\TYPO3\CMS\Compatibility6\Form\FormDataProvider\TcaFlexProcess::class] = [
+		'depends' => [
+			\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexPrepare::class,
+		]
+	];
+unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['formDataGroup']['tcaDatabaseRecord']
+	[\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class]['depends'][\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexProcess::class]
+);
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['formDataGroup']['tcaDatabaseRecord']
+	[\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class]['depends'][]
+		= \TYPO3\CMS\Compatibility6\Form\FormDataProvider\TcaFlexProcess::class;
+// Register "XCLASS" of FlexFormTools for language parsing
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools::class]['className']
+	= TYPO3\CMS\Compatibility6\Configuration\FlexForm\FlexFormTools::class;
+// Language diff updating in flex
+$GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] = TRUE;
+
+
 // TCA migration if TCA registration still happened in ext_tables.php
 if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'])) {
 	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'] = array();
@@ -40,41 +86,44 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['contentPo
 /**
  * CType "mailform"
  */
-// Add Default TypoScript for CType "mailform" after default content rendering
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript('compatibility6', 'constants', '<INCLUDE_TYPOSCRIPT: source="FILE:EXT:compatibility6/Configuration/TypoScript/Form/constants.txt">', 'defaultContentRendering');
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript('compatibility6', 'setup', '<INCLUDE_TYPOSCRIPT: source="FILE:EXT:compatibility6/Configuration/TypoScript/Form/setup.txt">', 'defaultContentRendering');
+// Only apply fallback to plain old FORM/mailform if extension "form" is not loaded
+if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('form')) {
+	// Add Default TypoScript for CType "mailform" after default content rendering
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript('compatibility6', 'constants', '<INCLUDE_TYPOSCRIPT: source="FILE:EXT:compatibility6/Configuration/TypoScript/Form/constants.txt">', 'defaultContentRendering');
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript('compatibility6', 'setup', '<INCLUDE_TYPOSCRIPT: source="FILE:EXT:compatibility6/Configuration/TypoScript/Form/setup.txt">', 'defaultContentRendering');
 
-// Add the search CType to the "New Content Element" wizard
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
-mod.wizards.newContentElement.wizardItems.forms {
-	elements.mailform {
-		icon = EXT:frontend/Resources/Public/Icons/ContentElementWizard/mailform.gif
-		title = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_mail_title
-		description = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_mail_description
-		tt_content_defValues {
-			CType = mailform
-			bodytext (
-		# Example content:
-		Name: | *name = input,40 | Enter your name here
-		Email: | *email=input,40 |
-		Address: | address=textarea,40,5 |
-		Contact me: | tv=check | 1
+	// Add the search CType to the "New Content Element" wizard
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
+	mod.wizards.newContentElement.wizardItems.forms {
+		elements.mailform {
+			iconIdentifier = content-elements-mailform
+			title = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_mail_title
+			description = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_mail_description
+			tt_content_defValues {
+				CType = mailform
+				bodytext (
+			# Example content:
+			Name: | *name = input,40 | Enter your name here
+			Email: | *email=input,40 |
+			Address: | address=textarea,40,5 |
+			Contact me: | tv=check | 1
 
-		|formtype_mail = submit | Send form!
-		|html_enabled=hidden | 1
-		|subject=hidden| This is the subject
-			)
+			|formtype_mail = submit | Send form!
+			|html_enabled=hidden | 1
+			|subject=hidden| This is the subject
+				)
+			}
 		}
+		show :=addToList(mailform)
 	}
-	show :=addToList(mailform)
+	');
+
+	// Register for hook to show preview of tt_content element of CType="mailform" in page module
+	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php']['tt_content_drawItem']['mailform'] = \TYPO3\CMS\Compatibility6\Hooks\PageLayoutView\MailformPreviewRenderer::class;
+
+	// Register for hook to show preview of tt_content element of CType="script" in page module
+	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php']['tt_content_drawItem']['script'] = \TYPO3\CMS\Compatibility6\Hooks\PageLayoutView\ScriptPreviewRenderer::class;
 }
-');
-
-// Register for hook to show preview of tt_content element of CType="mailform" in page module
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php']['tt_content_drawItem']['mailform'] = \TYPO3\CMS\Compatibility6\Hooks\PageLayoutView\MailformPreviewRenderer::class;
-
-// Register for hook to show preview of tt_content element of CType="script" in page module
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php']['tt_content_drawItem']['script'] = \TYPO3\CMS\Compatibility6\Hooks\PageLayoutView\ScriptPreviewRenderer::class;
 
 /**
  * CType "search"
@@ -88,7 +137,7 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php'][
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
 mod.wizards.newContentElement.wizardItems.forms {
 	elements.search {
-		icon = EXT:frontend/Resources/Public/Icons/ContentElementWizard/searchform.gif
+		iconIdentifier = content-elements-searchform
 		title = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_search_title
 		description = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_search_description
 		tt_content_defValues.CType = search

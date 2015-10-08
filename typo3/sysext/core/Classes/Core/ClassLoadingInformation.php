@@ -14,9 +14,10 @@ namespace TYPO3\CMS\Core\Core;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Composer\Autoload\ClassLoader as ComposerClassLoader;
-use Helhum\ClassAliasLoader\ClassAliasMap;
+use Composer\Autoload\ClassLoader;
+use TYPO3\ClassAliasLoader\ClassAliasMap;
 use TYPO3\CMS\Core\Package\PackageInterface;
+use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -55,13 +56,13 @@ class ClassLoadingInformation {
 	const AUTOLOAD_CLASSALIASMAP_FILENAME = 'autoload_classaliasmap.php';
 
 	/**
-	 * Checks if the autoload_classmap.php exists. Used to see if the ClassLoadingInformationGenerator
-	 * should be called.
+	 * Checks if the autoload_classmap.php exists and we are not in testing context.
+	 * Used to see if the ClassLoadingInformationGenerator should be called.
 	 *
 	 * @return bool
 	 */
-	static public function classLoadingInformationExists() {
-		return file_exists(self::getClassLoadingInformationDirectory() . self::AUTOLOAD_CLASSMAP_FILENAME);
+	static public function isClassLoadingInformationAvailable() {
+		return !self::isTestingContext() && file_exists(self::getClassLoadingInformationDirectory() . self::AUTOLOAD_CLASSMAP_FILENAME);
 	}
 
 	/**
@@ -69,8 +70,11 @@ class ClassLoadingInformation {
 	 */
 	static public function dumpClassLoadingInformation() {
 		self::ensureAutoloadInfoDirExists();
+		$composerClassLoader = static::getClassLoader();
+		$activeExtensionPackages = static::getActiveExtensionPackages();
+
 		/** @var ClassLoadingInformationGenerator  $generator */
-		$generator = GeneralUtility::makeInstance(ClassLoadingInformationGenerator::class);
+		$generator = GeneralUtility::makeInstance(ClassLoadingInformationGenerator::class, $composerClassLoader, $activeExtensionPackages, PATH_site, self::isTestingContext());
 		$classInfoFiles = $generator->buildAutoloadInformationFiles();
 		GeneralUtility::writeFile(self::getClassLoadingInformationDirectory() . self::AUTOLOAD_CLASSMAP_FILENAME, $classInfoFiles['classMapFile']);
 		GeneralUtility::writeFile(self::getClassLoadingInformationDirectory() . self::AUTOLOAD_PSR4_FILENAME, $classInfoFiles['psr-4File']);
@@ -97,7 +101,7 @@ class ClassLoadingInformation {
 		$dynamicClassMapFile = self::getClassLoadingInformationDirectory() . self::AUTOLOAD_CLASSMAP_FILENAME;
 		if (file_exists($dynamicClassMapFile)) {
 			$classMap = require $dynamicClassMapFile;
-			if (is_array($classMap)) {
+			if (!empty($classMap) && is_array($classMap)) {
 				$composerClassLoader->addClassMap($classMap);
 			}
 		}
@@ -121,9 +125,10 @@ class ClassLoadingInformation {
 	 */
 	static public function registerTransientClassLoadingInformationForPackage(PackageInterface $package) {
 		$composerClassLoader = static::getClassLoader();
+		$activeExtensionPackages = static::getActiveExtensionPackages();
 
 		/** @var ClassLoadingInformationGenerator  $generator */
-		$generator = GeneralUtility::makeInstance(ClassLoadingInformationGenerator::class);
+		$generator = GeneralUtility::makeInstance(ClassLoadingInformationGenerator::class, $composerClassLoader, $activeExtensionPackages, PATH_site, self::isTestingContext());
 
 		$classInformation = $generator->buildClassLoadingInformationForPackage($package);
 		$composerClassLoader->addClassMap($classInformation['classMap']);
@@ -140,7 +145,7 @@ class ClassLoadingInformation {
 	 * @return string
 	 */
 	static protected function getClassLoadingInformationDirectory() {
-		if (Bootstrap::getInstance()->getApplicationContext()->isTesting()) {
+		if (self::isTestingContext()) {
 			return PATH_site . self::AUTOLOAD_INFO_DIR_TESTS;
 		} else {
 			return PATH_site . self::AUTOLOAD_INFO_DIR;
@@ -165,19 +170,46 @@ class ClassLoadingInformation {
 		$autoloadInfoDir = self::getClassLoadingInformationDirectory();
 		if (!file_exists($autoloadInfoDir)) {
 			GeneralUtility::mkdir_deep($autoloadInfoDir);
-		} elseif (Bootstrap::getInstance()->getApplicationContext()->isTesting()) {
-			GeneralUtility::flushDirectory($autoloadInfoDir, TRUE);
 		}
 	}
 
 	/**
 	 * Internal method calling the bootstrap to fetch the composer class loader
 	 *
-	 * @return ComposerClassLoader
+	 * @return ClassLoader
 	 * @throws \TYPO3\CMS\Core\Exception
 	 */
 	static protected function getClassLoader() {
-		return Bootstrap::getInstance()->getEarlyInstance(ComposerClassLoader::class);
+		return Bootstrap::getInstance()->getEarlyInstance(ClassLoader::class);
+	}
+
+	/**
+	 * Internal method calling the bootstrap to get application context information
+	 *
+	 * @return bool
+	 * @throws \TYPO3\CMS\Core\Exception
+	 */
+	static protected function isTestingContext() {
+		return Bootstrap::getInstance()->getApplicationContext()->isTesting();
+	}
+
+	/**
+	 * Get all packages except the protected ones, as they are covered already
+	 *
+	 * @return PackageInterface[]
+	 */
+	static protected function getActiveExtensionPackages() {
+		$activeExtensionPackages = [];
+		/** @var PackageManager $packageManager */
+		$packageManager = Bootstrap::getInstance()->getEarlyInstance(PackageManager::class);
+		foreach ($packageManager->getActivePackages() as $package) {
+			if ($package->getValueFromComposerManifest('type') === 'typo3-cms-framework') {
+				// Skip all core packages as the class loading info is prepared for them already
+				continue;
+			}
+			$activeExtensionPackages[] = $package;
+		}
+		return $activeExtensionPackages;
 	}
 
 }

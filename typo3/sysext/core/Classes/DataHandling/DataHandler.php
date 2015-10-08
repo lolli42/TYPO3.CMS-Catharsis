@@ -141,6 +141,7 @@ class DataHandler {
 	 * If set, .vDEFbase values are unset in flexforms.
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
 	 */
 	public $clear_flexFormData_vDEFbase = FALSE;
 
@@ -1637,7 +1638,7 @@ class DataHandler {
 			// Get current value:
 			$curValueRec = $this->recordInfo($table, $id, $field);
 			// isset() won't work here, since values can be NULL
-			if (array_key_exists($field, $curValueRec)) {
+			if ($curValueRec !== NULL && array_key_exists($field, $curValueRec)) {
 				$curValue = $curValueRec[$field];
 			}
 		}
@@ -2448,6 +2449,7 @@ class DataHandler {
 				$currentValueArray = array();
 			}
 			if (isset($currentValueArray['meta']['currentLangId'])) {
+				// @deprecated call since TYPO3 7, will be removed with TYPO3 8
 				unset($currentValueArray['meta']['currentLangId']);
 			}
 			// Remove all old meta for languages...
@@ -3078,6 +3080,7 @@ class DataHandler {
 					// Finally, check if new and old values are different (or no .vDEFbase value is found) and if so, we record the vDEF value for diff'ing.
 					// We do this after $dataValues has been updated since I expect that $dataValues_current holds evaluated values from database (so this must be the right value to compare with).
 					if (substr($vKey, -9) != '.vDEFbase') {
+						// @deprecated: flexFormXMLincludeDiffBase is only enabled by ext:compatibility6 since TYPO3 CMS 7, vDEFbase can be unset / ignored with TYPO3 CMS 8
 						if ($this->clear_flexFormData_vDEFbase) {
 							$dataValues[$key][$vKey . '.vDEFbase'] = '';
 						} elseif ($this->updateModeL10NdiffData && $GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && $vKey !== 'vDEF' && ((string)$dataValues[$key][$vKey] !== (string)$dataValues_current[$key][$vKey] || !isset($dataValues_current[$key][($vKey . '.vDEFbase')]) || $this->updateModeL10NdiffData === 'FORCE_FFUPD')) {
@@ -3335,7 +3338,13 @@ class DataHandler {
 	public function copyRecord($table, $uid, $destPid, $first = FALSE, $overrideValues = array(), $excludeFields = '', $language = 0, $ignoreLocalization = FALSE) {
 		$uid = ($origUid = (int)$uid);
 		// Only copy if the table is defined in $GLOBALS['TCA'], a uid is given and the record wasn't copied before:
-		if (!$GLOBALS['TCA'][$table] || !$uid || $this->isRecordCopied($table, $uid)) {
+		if (empty($GLOBALS['TCA'][$table]) || $uid === 0) {
+			return NULL;
+		}
+		if ($this->isRecordCopied($table, $uid)) {
+			if (!empty($overrideValues)) {
+				$this->log($table, $uid, 5, 0, 1, 'Repeated attempt to copy record "' . $table . ':' . $uid . '" with override values');
+			}
 			return NULL;
 		}
 
@@ -3529,12 +3538,33 @@ class DataHandler {
 			foreach ($copyTablesArray as $table) {
 				// All records under the page is copied.
 				if ($table && is_array($GLOBALS['TCA'][$table]) && $table != 'pages') {
-					$mres = $this->databaseConnection->exec_SELECTquery('uid', $table, 'pid=' . (int)$uid . $this->deleteClause($table), '', $GLOBALS['TCA'][$table]['ctrl']['sortby'] ? $GLOBALS['TCA'][$table]['ctrl']['sortby'] . ' DESC' : '');
-					while ($row = $this->databaseConnection->sql_fetch_assoc($mres)) {
+					$fields = 'uid';
+					$languageField = NULL;
+					$transOrigPointerField = NULL;
+					if (BackendUtility::isTableLocalizable($table)) {
+						$languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'];
+						$transOrigPointerField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
+						$fields .= ',' . $languageField . ',' . $transOrigPointerField;
+					}
+					$rows = $this->databaseConnection->exec_SELECTgetRows(
+						$fields,
+						$table,
+						'pid=' . (int)$uid . $this->deleteClause($table),
+						'',
+						(!empty($GLOBALS['TCA'][$table]['ctrl']['sortby']) ? $GLOBALS['TCA'][$table]['ctrl']['sortby'] . ' DESC' : ''),
+						'',
+						'uid'
+					);
+					foreach ($rows as $row) {
+						// Skip localized records that will be processed in
+						// copyL10nOverlayRecords() on copying the default language record
+						$transOrigPointer = $row[$transOrigPointerField];
+						if ($row[$languageField] > 0 && $transOrigPointer > 0 && isset($rows[$transOrigPointer])) {
+							continue;
+						}
 						// Copying each of the underlying records...
 						$this->copyRecord($table, $row['uid'], $theNewRootID);
 					}
-					$this->databaseConnection->sql_free_result($mres);
 				}
 			}
 			$this->processRemapStack();
@@ -4657,7 +4687,7 @@ class DataHandler {
 	 * @param string $value Comma separated list of the destination and the target language
 	 * @return void
 	 */
-	public function copyRecordFromLanguage($table, $id, $value) {
+	protected function copyRecordFromLanguage($table, $id, $value) {
 		list($destination, $language) = GeneralUtility::intExplode(',', $value);
 
 		// array_reverse is required to keep the order of elements
@@ -4729,7 +4759,7 @@ class DataHandler {
 	 * @return void
 	 */
 	public function deleteVersionsForRecord($table, $uid, $forceHardDelete) {
-		$versions = BackendUtility::selectVersionsOfRecord($table, $uid, 'uid,pid', $this->BE_USER->workspace);
+		$versions = BackendUtility::selectVersionsOfRecord($table, $uid, 'uid,pid,t3ver_wsid,t3ver_state', $this->BE_USER->workspace ?: NULL);
 		if (is_array($versions)) {
 			foreach ($versions as $verRec) {
 				if (!$verRec['_CURRENT_VERSION']) {
@@ -4737,6 +4767,13 @@ class DataHandler {
 						$this->deletePages($verRec['uid'], TRUE, $forceHardDelete);
 					} else {
 						$this->deleteRecord($table, $verRec['uid'], TRUE, $forceHardDelete);
+					}
+
+					// Delete move-placeholder
+					$versionState = VersionState::cast($verRec['t3ver_state']);
+					if ($versionState->equals(VersionState::MOVE_POINTER)) {
+						$versionMovePlaceholder = BackendUtility::getMovePlaceholder($table, $uid, 'uid', $verRec['t3ver_wsid']);
+						$this->deleteEl($table, $versionMovePlaceholder['uid'], TRUE, $forceHardDelete);
 					}
 				}
 			}

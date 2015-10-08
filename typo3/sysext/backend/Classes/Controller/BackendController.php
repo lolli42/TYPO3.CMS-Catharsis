@@ -486,7 +486,7 @@ class BackendController {
 			'be_locked' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.be_locked'),
 			'refresh_login_countdown_singular' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_countdown_singular'),
 			'refresh_login_countdown' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_countdown'),
-			'login_about_to_expire' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_refresh_about_to_expire'),
+			'login_about_to_expire' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_about_to_expire'),
 			'login_about_to_expire_title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_about_to_expire_title'),
 			'refresh_login_logout_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_logout_button'),
 			'refresh_login_refresh_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_refresh_button'),
@@ -866,16 +866,17 @@ class BackendController {
 	}
 
 	/**
-	 * Returns the Module menu for the AJAX API
+	 * Returns the Module menu for the AJAX request
 	 *
-	 * @param array $params
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxRequestHandler
-	 * @return void
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function getModuleMenuForReload($params, $ajaxRequestHandler) {
+	public function getModuleMenu(ServerRequestInterface $request, ResponseInterface $response) {
 		$content = $this->generateModuleMenu();
-		$ajaxRequestHandler->addContent('menu', $content);
-		$ajaxRequestHandler->setContentFormat('json');
+
+		$response->getBody()->write(json_encode(['menu' => $content]));
+		return $response;
 	}
 
 	/**

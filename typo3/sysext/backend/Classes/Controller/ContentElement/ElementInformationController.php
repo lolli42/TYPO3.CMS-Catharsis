@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\Folder;
@@ -277,7 +276,7 @@ class ElementInformationController {
 		}
 
 		$previewTag = '';
-		$downloadLink = '';
+		$showLink = '';
 
 		// check if file is marked as missing
 		if ($this->fileObject->isMissing()) {
@@ -322,18 +321,18 @@ class ElementInformationController {
 				}
 			}
 
-			// Download
+			// Show
 			if ($url) {
-				$downloadLink .= '
+				$showLink .= '
 					<a class="btn btn-primary" href="' . htmlspecialchars($url) . '" target="_blank">
-						' . $this->iconFactory->getIcon('actions-edit-download', Icon::SIZE_SMALL) . '
-						' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:download', TRUE) . '
+						' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '
+						' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.show', TRUE) . '
 					</a>';
 			}
 		}
 
 		return ($previewTag ? '<p>' . $previewTag . '</p>' : '') .
-				($downloadLink ? '<p>' . $downloadLink . '</p>' : '');
+				($showLink ? '<p>' . $showLink . '</p>' : '');
 	}
 
 	/**
@@ -489,7 +488,7 @@ class ElementInformationController {
 		if ($returnUrl) {
 			$backLink .= '
 				<a class="btn btn-primary" href="' . htmlspecialchars($returnUrl) . '>
-					' . $this->iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL) . '
+					' . $this->iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL)->render() . '
 					' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:back', TRUE) . '
 				</a>';
 		}
@@ -590,7 +589,7 @@ class ElementInformationController {
 		$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 		$pageActionIcons = '
 			<a class="btn btn-default btn-sm" href="' . htmlspecialchars($url) . '">
-				' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '
+				' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '
 			</a>';
 
 		// History button
@@ -601,7 +600,7 @@ class ElementInformationController {
 		$url = BackendUtility::getModuleUrl('record_history', $urlParameters);
 		$pageActionIcons .= '
 			<a class="btn btn-default btn-sm" href="' . htmlspecialchars($url) . '">
-				' . $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '
+				' . $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL)->render() . '
 			</a>';
 
 		if ($table === 'pages') {
@@ -609,14 +608,14 @@ class ElementInformationController {
 			$url = BackendUtility::getModuleUrl('web_list', array('id' => $uid, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')));
 			$pageActionIcons .= '
 				<a class="btn btn-default btn-sm" href="' . htmlspecialchars($url) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList') . '">
-					' . $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL) . '
+					' . $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . '
 				</a>';
 
 			// View page button
 			$viewOnClick = BackendUtility::viewOnClick($uid, '', BackendUtility::BEgetRootLine($uid));
 			$pageActionIcons .= '
 				<a class="btn btn-default btn-sm" href="#" onclick="' . htmlspecialchars($viewOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">
-					' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '
+					' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '
 				</a>';
 		}
 
@@ -679,7 +678,7 @@ class ElementInformationController {
 				$parentRecordTitle = is_array($parentRecord)
 					? BackendUtility::getRecordTitle('pages', $parentRecord)
 					: '';
-				$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
+				$icon = $this->iconFactory->getIconForRecord($row['tablename'], $record, Icon::SIZE_SMALL)->render();
 				$actions = $this->getRecordActions($row['tablename'], $row['recuid']);
 				$urlParameters = [
 					'edit' => [
@@ -779,7 +778,7 @@ class ElementInformationController {
 		foreach ($rows as $row) {
 			$record = BackendUtility::getRecord($row['ref_table'], $row['ref_uid']);
 			if ($record) {
-				$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
+				$icon = $this->iconFactory->getIconForRecord($row['tablename'], $record, Icon::SIZE_SMALL)->render();
 				$actions = $this->getRecordActions($row['ref_table'], $row['ref_uid']);
 
 				$urlParameters = [

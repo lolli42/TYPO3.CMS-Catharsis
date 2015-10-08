@@ -18,7 +18,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -229,9 +228,9 @@ class BackendLayoutWizardController {
 		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$lang = $this->getLanguageService();
 		$resourcePath = ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/Images/BackendLayoutWizard/';
-		$content = '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());return true;">' . $iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL) . '</a>';
-		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());window.close();return true;">' . $iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL) . '</a>';
-		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '" onclick="window.close();return true;">' . $iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
+		$content = '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());return true;">' . $iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)->render() . '</a>';
+		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());window.close();return true;">' . $iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL)->render() . '</a>';
+		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '" onclick="window.close();return true;">' . $iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL)->render() . '</a>';
 		$content .= $this->doc->spacer(10);
 		$content .= '
 		<table border="0" width="90%" height="90%" id="outer_container">

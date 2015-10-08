@@ -14,8 +14,9 @@ namespace TYPO3\CMS\Backend\Template;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -548,7 +549,7 @@ function jumpToUrl(URL) {
 			'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
 		), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList'));
 		// Make link to view page
-		$str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
+		$str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
 		return $str;
 	}
 
@@ -595,11 +596,11 @@ function jumpToUrl(URL) {
 	public function getHeader($table, $row, $path, $noViewPageIcon = FALSE, $tWrap = array('', ''), $enableClickMenu = TRUE) {
 		$viewPage = '';
 		if (is_array($row) && $row['uid']) {
-			$iconImgTag = IconUtility::getSpriteIconForRecord($table, $row, array('title' => htmlspecialchars($path)));
+			$iconImgTag = '<span title="' . htmlspecialchars($path) . '">' . $this->iconFactory->getIconForRecord($table, $row, Icon::SIZE_SMALL)->render() . '</span>';
 			$title = strip_tags(BackendUtility::getRecordTitle($table, $row));
 			$viewPage = $noViewPageIcon ? '' : $this->viewPageIcon($row['uid']);
 		} else {
-			$iconImgTag = '<span title="' . htmlspecialchars($path) . '">' . $this->iconFactory->getIcon('apps-pagetree-page-domain', Icon::SIZE_SMALL) . '</span>';
+			$iconImgTag = '<span title="' . htmlspecialchars($path) . '">' . $this->iconFactory->getIcon('apps-pagetree-page-domain', Icon::SIZE_SMALL)->render() . '</span>';
 			$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
 		}
 
@@ -622,7 +623,7 @@ function jumpToUrl(URL) {
 	public function getResourceHeader(\TYPO3\CMS\Core\Resource\ResourceInterface $resource, $tWrap = array('', ''), $enableClickMenu = TRUE) {
 		try {
 			$path = $resource->getStorage()->getName() . $resource->getParentFolder()->getIdentifier();
-			$iconImgTag = '<span title="' . htmlspecialchars($path) . '">' . $this->iconFactory->getIconForResource($resource, Icon::SIZE_SMALL) . '</span>';
+			$iconImgTag = '<span title="' . htmlspecialchars($path) . '">' . $this->iconFactory->getIconForResource($resource, Icon::SIZE_SMALL)->render() . '</span>';
 		} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $e) {
 			$iconImgTag = '';
 		}
@@ -1760,13 +1761,13 @@ function jumpToUrl(URL) {
 	/**
 	 * Renders the FlashMessages from queue and returns them as AJAX.
 	 *
-	 * @param array $params Always empty.
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj The AjaxRequestHandler object used to return content and set content types
-	 * @return void
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function renderFlashMessages(array $params, \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj) {
-		$ajaxObj->addContent('result', $this->getFlashMessages());
-		$ajaxObj->setContentFormat('html');
+	public function renderQueuedFlashMessages(ServerRequestInterface $request, ResponseInterface $response) {
+		$response->getBody()->write($this->getFlashMessages());
+		return $response;
 	}
 
 	/**
@@ -1857,7 +1858,7 @@ function jumpToUrl(URL) {
 		// If there IS a real page
 		if (is_array($pageRecord) && $pageRecord['uid']) {
 			$alttext = BackendUtility::getRecordIconAltText($pageRecord, 'pages');
-			$iconImg = IconUtility::getSpriteIconForRecord('pages', $pageRecord, array('title' => $alttext));
+			$iconImg = '<span title="' . htmlspecialchars($alttext) . '">' . $this->iconFactory->getIconForRecord('pages', $pageRecord, Icon::SIZE_SMALL)->render() . '</span>';
 			// Make Icon:
 			$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($iconImg, 'pages', $pageRecord['uid']);
 			$uid = $pageRecord['uid'];
@@ -1865,7 +1866,7 @@ function jumpToUrl(URL) {
 		} else {
 			// On root-level of page tree
 			// Make Icon
-			$iconImg = '<span title="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '">' . $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL) . '</span>';
+			$iconImg = '<span title="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '">' . $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL)->render() . '</span>';
 			if ($GLOBALS['BE_USER']->user['admin']) {
 				$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($iconImg, 'pages', 0);
 			} else {

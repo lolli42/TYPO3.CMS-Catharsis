@@ -151,7 +151,7 @@ var inline = {
 
 	getRecordDetails: function (objectId, returnURL) {
 		var context = this.getContext(this.parseObjectId('full', objectId, 0, 1));
-		inline.makeAjaxCall('getRecordDetails', [objectId, returnURL], true, context);
+		inline.makeAjaxCall('details', [objectId, returnURL], true, context);
 		return false;
 	},
 
@@ -161,7 +161,7 @@ var inline = {
 			if (recordUid) {
 				objectId += this.structureSeparator + recordUid;
 			}
-			this.makeAjaxCall('createNewRecord', [objectId], true, context);
+			this.makeAjaxCall('create', [objectId], true, context);
 		} else {
 			var message = TBE_EDITOR.labels.maxItemsAllowed.replace('{0}', this.data.config[objectId].max);
 			var matches = objectId.match(/^(data-\d+-.*?-\d+-.*?)-(.*?)$/);
@@ -176,21 +176,20 @@ var inline = {
 
 	synchronizeLocalizeRecords: function (objectId, type) {
 		var context = this.getContext(objectId);
-		var parameters = [objectId, type];
-		this.makeAjaxCall('synchronizeLocalizeRecords', parameters, true, context);
+		this.makeAjaxCall('synchronizelocalize', [objectId, type], true, context);
 	},
 
 	setExpandedCollapsedState: function (objectId, expand, collapse) {
 		var context = this.getContext(objectId);
-		this.makeAjaxCall('setExpandedCollapsedState', [objectId, expand, collapse], false, context);
+		this.makeAjaxCall('expandcollapse', [objectId, expand, collapse], false, context);
 	},
 
 	makeAjaxCall: function (method, params, lock, context) {
 		var url = '', urlParams = '', options = {};
 		if (method && params && params.length && this.lockAjaxMethod(method, lock)) {
-			url = TYPO3.settings.ajaxUrls['t3lib_TCEforms_inline::' + method];
+			url = TYPO3.settings.ajaxUrls['record_inline_' + method];
 			urlParams = '';
-			for (var i = 0, max = params.length; i < max; i++) {
+			for (var i = 0; i < params.length; i++) {
 				urlParams += '&ajax[' + i + ']=' + encodeURIComponent(params[i]);
 			}
 			if (context) {
@@ -319,7 +318,7 @@ var inline = {
 			if (!this.data.unique || !this.data.unique[objectId]) {
 				$selector.find('option').eq(selectedIndex).prop('selected', false);
 			}
-			this.makeAjaxCall('createNewRecord', [objectId, selectedValue], true, context);
+			this.makeAjaxCall('create', [objectId, selectedValue], true, context);
 		}
 		return false;
 	},
@@ -327,7 +326,7 @@ var inline = {
 	// foreign_selector: used by element browser (type='group/db')
 	importElement: function (objectId, table, uid, type) {
 		var context = this.getContext(objectId);
-		inline.makeAjaxCall('createNewRecord', [objectId, uid], true, context);
+		inline.makeAjaxCall('create', [objectId, uid], true, context);
 	},
 
 	importElementMultiple: function (objectId, table, uidArray, type) {
@@ -336,7 +335,7 @@ var inline = {
 		});
 	},
 	delayedImportElement: function (objectId, table, uid, type) {
-		if (inline.lockedAjaxMethod['createNewRecord'] == true) {
+		if (inline.lockedAjaxMethod['create'] == true) {
 			window.setTimeout("inline.delayedImportElement('" + objectId + "','" + table + "'," + uid + ", null );",
 				300);
 		} else {
@@ -953,7 +952,7 @@ var inline = {
 			// If the record already exists in storage, mark it to be deleted on clicking the save button:
 		} else {
 			document.getElementsByName('cmd' + shortName + '[delete]')[0].disabled = false;
-			TYPO3.jQuery('#' + objectId + '_div').fadeOut();
+			TYPO3.jQuery('#' + objectId + '_div').fadeOut(200);
 		}
 
 		var recordCount = this.memorizeRemoveRecord(
@@ -1208,18 +1207,16 @@ var inline = {
 	},
 
 	hideElementsWithClassName: function (selector, parentElement) {
-		TYPO3.jQuery('#' + parentElement).find(selector).fadeOut();
+		TYPO3.jQuery('#' + parentElement).find(selector).fadeOut(200);
 	},
 
 	showElementsWithClassName: function (selector, parentElement) {
-		TYPO3.jQuery('#' + parentElement).find(selector).fadeIn();
+		TYPO3.jQuery('#' + parentElement).find(selector).fadeIn(200);
 	},
 
+	// sets the opacity to 0.2 and then fades in to opacity 1
 	fadeOutFadeIn: function (objectId) {
-		objectId = this.escapeObjectId(objectId);
-		TYPO3.jQuery('#' + objectId).fadeTo(500, 0.5, 'linear', function () {
-			TYPO3.jQuery('#' + objectId).fadeTo(500, 1, 'linear');
-		});
+		TYPO3.jQuery('#' + this.escapeObjectId(objectId)).css({opacity: 0.2}).fadeTo(200, 1, 'linear');
 	},
 
 	isNewRecord: function (objectId) {
@@ -1250,7 +1247,7 @@ var inline = {
 	},
 
 	fadeAndRemove: function (element) {
-		TYPO3.jQuery('#' + this.escapeObjectId(element)).fadeOut(500, function () {
+		TYPO3.jQuery('#' + this.escapeObjectId(element)).fadeOut(200, function () {
 			TYPO3.jQuery(this).remove();
 		});
 	},

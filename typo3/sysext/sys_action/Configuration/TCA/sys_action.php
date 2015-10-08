@@ -19,8 +19,7 @@ return array(
 		'typeicon_classes' => array(
 			'default' => 'mimetypes-x-sys_action'
 		),
-		'type' => 'type',
-		'iconfile' => 'EXT:sys_action/Resources/Public/Images/x-sys_action.png',
+		'type' => 'type'
 	),
 	'interface' => array(
 		'showRecordFieldList' => 'hidden,title,type,description,assign_to_groups'
@@ -53,6 +52,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.type',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('', '0'),
 					array('LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.type.1', '1'),
@@ -67,6 +67,7 @@ return array(
 			'label' => 'LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.assign_to_groups',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectMultipleSideBySide',
 				'foreign_table' => 'be_groups',
 				'foreign_table_where' => 'ORDER BY be_groups.title',
 				'MM' => 'sys_action_asgr_mm',
@@ -89,6 +90,7 @@ return array(
 			'label' => 'LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.t1_allowed_groups',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectMultipleSideBySide',
 				'foreign_table' => 'be_groups',
 				'foreign_table_where' => 'ORDER BY be_groups.title',
 				'size' => '10',
@@ -140,6 +142,7 @@ return array(
 			'label' => 'LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.t3_tables',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectMultipleSideBySide',
 				'special' => 'tables',
 				'items' => array(
 					array('', '')

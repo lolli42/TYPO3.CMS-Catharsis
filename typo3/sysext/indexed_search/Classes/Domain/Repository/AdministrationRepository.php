@@ -16,11 +16,12 @@ namespace TYPO3\CMS\IndexedSearch\Domain\Repository;
 
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Dbal\Database\DatabaseConnection;
@@ -335,7 +336,8 @@ class AdministrationRepository {
 		$tree = GeneralUtility::makeInstance(PageTreeView::class);
 		$perms_clause = $this->getBackendUserAuthentication()->getPagePermsClause(1);
 		$tree->init('AND ' . $perms_clause);
-		$HTML = IconUtility::getSpriteIconForRecord('pages', $pageRecord, array('title' => $pageRecord['title']));
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$HTML = '<span title="' . htmlspecialchars($pageRecord['title']) . '">' . $iconFactory->getIconForRecord('pages', $pageRecord, Icon::SIZE_SMALL)->render() . '</span>';
 		$tree->tree[] = array(
 			'row' => $pageRecord,
 			'HTML' => $HTML

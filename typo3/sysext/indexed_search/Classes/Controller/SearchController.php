@@ -158,6 +158,9 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 		if (!is_array($searchData)) {
 			$searchData = array();
 		}
+
+		$this->loadSettings();
+
 		// setting default values
 		if (is_array($this->settings['defaultOptions'])) {
 			$searchData = array_merge($this->settings['defaultOptions'], $searchData);
@@ -294,7 +297,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 		}
 		// Print a message telling which words in which sections we searched for
 		if (substr($this->searchData['sections'], 0, 2) === 'rl') {
-			$result['searchedInSectionInfo'] = LocalizationUtility::translate('result.inSection', 'IndexedSearch') . ' "' . substr($this->getPathFromPageId(substr($this->searchData['sections'], 4)), 1) . '"';
+			$result['searchedInSectionInfo'] = LocalizationUtility::translate('result.inSection', 'IndexedSearch') . ' "' . $this->getPathFromPageId(substr($this->searchData['sections'], 4)) . '"';
 		}
 		return $result;
 	}
@@ -359,7 +362,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 					$sectionTitleLinked = LocalizationUtility::translate('result.unnamedSection', 'IndexedSearch') . ':';
 				} else {
 					$onclick = 'document.forms[\'tx_indexedsearch\'][\'tx_indexedsearch_pi2[search][_sections]\'].value=' . GeneralUtility::quoteJSvalue($theRLid) . ';document.forms[\'tx_indexedsearch\'].submit();return false;';
-					$sectionTitleLinked = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . htmlspecialchars($sectionName) . ':</a>';
+					$sectionTitleLinked = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . $sectionName . ':</a>';
 				}
 				$resultRowsCount = count($resultRows);
 				$this->resultSections[$id] = array($sectionName, $resultRowsCount);
@@ -406,6 +409,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 			}
 		}
 		$title = $resultData['item_title'] . $resultData['titleaddition'];
+		$title = $GLOBALS['TSFE']->csConvObj->crop('utf-8', $title, $this->settings['results.']['titleCropAfter'], $this->settings['results.']['titleCropSignifier']);
 		// If external media, link to the media-file instead.
 		if ($row['item_type']) {
 			if ($row['show_resume']) {
@@ -424,20 +428,25 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 		} else {
 			// Else the page:
 			// Prepare search words for markup in content:
-			if ($this->settings['forwardSearchWordsInResultLink']) {
-				$markUpSwParams = array('no_cache' => 1);
+			$markUpSwParams = array();
+			if ($this->settings['forwardSearchWordsInResultLink']['_typoScriptNodeValue']) {
+				if ($this->settings['forwardSearchWordsInResultLink']['no_cache']) {
+					$markUpSwParams = array('no_cache' => 1);
+				}
 				foreach ($this->searchWords as $d) {
 					$markUpSwParams['sword_list'][] = $d['sword'];
 				}
-			} else {
-				$markUpSwParams = array();
 			}
 			$title = $this->linkPage($row['data_page_id'], $title, $row, $markUpSwParams);
 		}
 		$resultData['title'] = $title;
 		$resultData['icon'] = $this->makeItemTypeIcon($row['item_type'], '', $specRowConf);
 		$resultData['rating'] = $this->makeRating($row);
-		$resultData['description'] = $this->makeDescription($row, $this->searchData['extResume'] && !$headerOnly ? 0 : 1);
+		$resultData['description'] = $this->makeDescription(
+			$row,
+			(bool)!($this->searchData['extResume'] && !$headerOnly),
+			$this->settings['results.']['summaryCropAfter']
+		);
 		$resultData['language'] = $this->makeLanguageIndication($row);
 		$resultData['size'] = GeneralUtility::formatSize($row['item_size']);
 		$resultData['created'] = $row['item_crdate'];
@@ -635,13 +644,13 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 				$res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'index_fulltext', 'phash=' . (int)$row['phash']);
 				if ($ftdrow = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
 					// Cut HTTP references after some length
-					$content = preg_replace('/(http:\\/\\/[^ ]{60})([^ ]+)/i', '$1...', $ftdrow['fulltextdata']);
+					$content = preg_replace('/(http:\\/\\/[^ ]{' . $this->settings['results.']['hrefInSummaryCropAfter'] . '})([^ ]+)/i', '$1...', $ftdrow['fulltextdata']);
 					$markedSW = $this->markupSWpartsOfString($content);
 				}
 				$this->getDatabaseConnection()->sql_free_result($res);
 			}
 			if (!trim($markedSW)) {
-				$outputStr = $GLOBALS['TSFE']->csConvObj->crop('utf-8', $row['item_description'], $length);
+				$outputStr = $GLOBALS['TSFE']->csConvObj->crop('utf-8', $row['item_description'], $length, $this->settings['results.']['summaryCropSignifier']);
 				$outputStr = htmlspecialchars($outputStr);
 			}
 			$output = $outputStr ?: $markedSW;
@@ -672,10 +681,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 		// Split and combine:
 		$parts = preg_split('/' . $regExString . '/i', ' ' . $str . ' ', 20000, PREG_SPLIT_DELIM_CAPTURE);
 		// Constants:
-		$summaryMax = 300;
-		$postPreLgd = 60;
-		$postPreLgd_offset = 5;
-		$divider = ' ... ';
+		$summaryMax = $this->settings['results.']['markupSW_summaryMax'];
+		$postPreLgd = $this->settings['results.']['markupSW_postPreLgd'];
+		$postPreLgd_offset = $this->settings['results.']['markupSW_postPreLgd_offset'];
+		$divider = $this->settings['results.']['markupSW_divider'];
 		$occurencies = (count($parts) - 1) / 2;
 		if ($occurencies) {
 			$postPreLgd = MathUtility::forceIntegerInRange($summaryMax / $occurencies, $postPreLgd, $summaryMax / 2);
@@ -1264,8 +1273,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * Returns the path to the page $id
 	 *
 	 * @param int $id Page ID
-	 * @param string $pathMP MP variable content
-	 * @return string Path
+	 * @param string $pathMP Content of the MP (mount point) variable
+	 * @return string Path (HTML-escaped)
 	 */
 	protected function getPathFromPageId($id, $pathMP = '') {
 		$identStr = $id . '|' . $pathMP;
@@ -1274,7 +1283,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 			$this->domainRecords[$id] = array();
 			$rl = $GLOBALS['TSFE']->sys_page->getRootLine($id, $pathMP);
 			$path = '';
+			$pageCount = count($rl);
 			if (is_array($rl) && !empty($rl)) {
+				$breadcrumbWrap = isset($this->settings['breadcrumbWrap']) ? $this->settings['breadcrumbWrap'] : '/';
+				$breadcrumbWraps = $GLOBALS['TSFE']->tmpl->splitConfArray(array('wrap' => $breadcrumbWrap), $pageCount);
 				foreach ($rl as $k => $v) {
 					// Check fe_user
 					if ($v['fe_group'] && ($v['uid'] == $id || $v['extendToSubpages'])) {
@@ -1292,9 +1304,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 					}
 					// Stop, if we find that the current id is the current root page.
 					if ($v['uid'] == $GLOBALS['TSFE']->config['rootLine'][0]['uid']) {
+						array_pop($breadcrumbWraps);
 						break;
 					}
-					$path = '/' . $v['title'] . $path;
+					$path = $GLOBALS['TSFE']->cObj->wrap(htmlspecialchars($v['title']), array_pop($breadcrumbWraps)['wrap']) . $path;
 				}
 			}
 			$this->pathCache[$identStr] = $path;
@@ -1368,5 +1381,45 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 */
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
+	}
+
+
+	/**
+	 * Load settings and apply stdWrap to them
+	 */
+	protected function loadSettings() {
+		if(!is_array($this->settings['results.'])) {
+			$this->settings['results.'] = array();
+		}
+		$typoScriptArray = $this->typoScriptService->convertPlainArrayToTypoScriptArray($this->settings['results']);
+
+		$this->settings['results.']['summaryCropAfter'] = MathUtility::forceIntegerInRange(
+			$GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['summaryCropAfter'], $typoScriptArray['summaryCropAfter.']),
+			10, 5000, 180
+		);
+		$this->settings['results.']['summaryCropSignifier'] = $GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['summaryCropSignifier'], $typoScriptArray['summaryCropSignifier.']);
+		$this->settings['results.']['titleCropAfter'] = MathUtility::forceIntegerInRange(
+			$GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['titleCropAfter'], $typoScriptArray['titleCropAfter.']),
+			10, 500, 50
+		);
+		$this->settings['results.']['titleCropSignifier'] = $GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['titleCropSignifier'], $typoScriptArray['titleCropSignifier.']);
+		$this->settings['results.']['markupSW_summaryMax'] = MathUtility::forceIntegerInRange(
+			$GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['markupSW_summaryMax'], $typoScriptArray['markupSW_summaryMax.']),
+			10, 5000, 300
+		);
+		$this->settings['results.']['markupSW_postPreLgd'] = MathUtility::forceIntegerInRange(
+			$GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['markupSW_postPreLgd'], $typoScriptArray['markupSW_postPreLgd.']),
+			1, 500, 60
+		);
+		$this->settings['results.']['markupSW_postPreLgd_offset'] = MathUtility::forceIntegerInRange(
+			$GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['markupSW_postPreLgd_offset'], $typoScriptArray['markupSW_postPreLgd_offset.']),
+			1, 50, 5
+		);
+		$this->settings['results.']['markupSW_divider'] = $GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['markupSW_divider'], $typoScriptArray['markupSW_divider.']);
+		$this->settings['results.']['hrefInSummaryCropAfter'] = MathUtility::forceIntegerInRange(
+			$GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['hrefInSummaryCropAfter'], $typoScriptArray['hrefInSummaryCropAfter.']),
+			10, 400, 60
+		);
+		$this->settings['results.']['hrefInSummaryCropSignifier'] = $GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['hrefInSummaryCropSignifier'], $typoScriptArray['hrefInSummaryCropSignifier.']);
 	}
 }

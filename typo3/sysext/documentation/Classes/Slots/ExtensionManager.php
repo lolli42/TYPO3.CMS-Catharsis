@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Documentation\Slots;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -76,9 +75,10 @@ class ExtensionManager {
 			}
 		} else {
 			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-			$actions[] = '<span class="btn btn-default disabled">' . $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL) . '</span>';
-			$actions[] = '<span class="btn btn-default disabled">' . $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL) . '</span>';
-			$actions[] = '<span class="btn btn-default disabled">' . $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL) . '</span>';
+			$emptyIcon = $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render();
+			$actions[] = '<span class="btn btn-default disabled">' . $emptyIcon . '</span>';
+			$actions[] = '<span class="btn btn-default disabled">' . $emptyIcon . '</span>';
+			$actions[] = '<span class="btn btn-default disabled">' . $emptyIcon . '</span>';
 		}
 	}
 

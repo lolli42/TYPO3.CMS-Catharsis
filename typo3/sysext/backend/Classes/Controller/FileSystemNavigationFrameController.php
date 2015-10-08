@@ -145,7 +145,7 @@ class FileSystemNavigationFrameController {
 		$this->doc->showFlashMessages = FALSE;
 		// Adding javascript code for drag&drop and the filetree as well as the click menu code
 		$dragDropCode = '
-			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
+			Tree.ajaxID = "sc_alt_file_navframe_expandtoggle";
 			Tree.registerDragDropHandlers()';
 		if ($this->doHighlight) {
 			$hlClass = $this->getBackendUser()->workspace === 0 ? 'active' : 'active active-ws wsver' . $GLOBALS['BE_USER']->workspace;
@@ -224,7 +224,7 @@ class FileSystemNavigationFrameController {
 		);
 		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		// Refresh
-		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . $iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL) . '</a>';
+		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . $iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL)->render() . '</a>';
 		// CSH
 		$buttons['csh'] = str_replace('typo3-csh-inline', 'typo3-csh-inline show-right', BackendUtility::cshItem('xMOD_csh_corebe', 'filetree'));
 		return $buttons;
@@ -237,19 +237,22 @@ class FileSystemNavigationFrameController {
 	 **********************************/
 	/**
 	 * Makes the AJAX call to expand or collapse the foldertree.
-	 * Called by typo3/ajax.php
+	 * Called by an AJAX Route, see AjaxRequestHandler
 	 *
-	 * @param array $params Additional parameters (not used here)
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj The AjaxRequestHandler object of this request
-	 * @return void
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function ajaxExpandCollapse($params, $ajaxObj) {
+	public function ajaxExpandCollapse(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->init();
 		$tree = $this->foldertree->getBrowsableTree();
 		if ($this->foldertree->getAjaxStatus() === FALSE) {
-			$ajaxObj->setError($tree);
+			$response->withStatus(500);
 		} else {
-			$ajaxObj->addContent('tree', $tree);
+			$response->getBody()->write(json_encode($tree));
 		}
+
+		return $response;
 	}
 
 	/**

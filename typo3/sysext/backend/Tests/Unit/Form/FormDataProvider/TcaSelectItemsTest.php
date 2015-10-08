@@ -45,7 +45,7 @@ class TcaSelectItemsTest extends UnitTestCase {
 	 */
 	protected $singletonInstances = [];
 
-	public function setUp() {
+	protected function setUp() {
 		$this->singletonInstances = GeneralUtility::getSingletonInstances();
 		$this->subject = new TcaSelectItems();
 	}
@@ -272,7 +272,7 @@ class TcaSelectItemsTest extends UnitTestCase {
 			0 => [
 				0 => 'aTitle',
 				1 => 'aTable',
-				2 => 'status-status-icon-missing',
+				2 => 'default-not-found',
 				3 => [
 					'description' => 'aDescription',
 				],
@@ -333,7 +333,7 @@ class TcaSelectItemsTest extends UnitTestCase {
 			0 => [
 				0 => 'aLabel',
 				1 => 'aValue',
-				2 => 'status-status-icon-missing',
+				2 => 'default-not-found',
 				3 => NULL,
 			]
 		];
@@ -369,7 +369,7 @@ class TcaSelectItemsTest extends UnitTestCase {
 					0 => [
 						0 => 'fooTableTitle',
 						1 => '--div--',
-						2 => 'status-status-icon-missing',
+						2 => 'default-not-found',
 						3 => NULL,
 					],
 					1 => [
@@ -404,7 +404,7 @@ class TcaSelectItemsTest extends UnitTestCase {
 					0 => [
 						0 => 'fooTableTitle',
 						1 => '--div--',
-						2 => 'status-status-icon-missing',
+						2 => 'default-not-found',
 						3 => NULL,
 					],
 					1 => [
@@ -560,7 +560,7 @@ class TcaSelectItemsTest extends UnitTestCase {
 			0 => [
 				0 => 'fooTableTitle',
 				1 => '--div--',
-				2 => 'status-status-icon-missing',
+				2 => 'default-not-found',
 				3 => NULL,
 			],
 			1 => [
@@ -1119,6 +1119,17 @@ class TcaSelectItemsTest extends UnitTestCase {
 				'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldValue\'',
 				[],
 			],
+			'replace REC_FIELD fullQuoteWithArray' => [
+				'AND fTable.title=###REC_FIELD_rowFieldThree###',
+				'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldThreeValue\'',
+				[
+					'databaseRow' => [
+						'rowFieldThree' => [
+							0 => 'rowFieldThreeValue'
+						]
+					],
+				],
+			],
 			'replace REC_FIELD multiple markers' => [
 				'AND fTable.title=\'###REC_FIELD_rowField###\' AND fTable.pid=###REC_FIELD_rowFieldTwo###',
 				'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldValue\' AND fTable.pid=\'rowFieldTwoValue\'',
@@ -1503,13 +1514,13 @@ class TcaSelectItemsTest extends UnitTestCase {
 			0 => [
 				0 => 'aPrefix[LLL:EXT:lang/locallang_core.xlf:labels.no_title]',
 				1 => 1,
-				2 => 'status-status-icon-missing',
+				2 => 'default-not-found',
 				3 => NULL,
 			],
 			1 => [
 				0 => 'aPrefix[LLL:EXT:lang/locallang_core.xlf:labels.no_title]',
 				1 => 2,
-				2 => 'status-status-icon-missing',
+				2 => 'default-not-found',
 				3 => NULL,
 			],
 		];
@@ -2412,5 +2423,101 @@ class TcaSelectItemsTest extends UnitTestCase {
 
 		$this->assertEquals($expected, $this->subject->addData($input));
 
+	}
+
+	/**
+	 * @test
+	 * @dataProvider correctValuesForMmRelationWithSingleValueAllowedDataProvider
+	 */
+	public function correctValuesForMmRelationWithSingleValueAllowed($input, $relationHandlerUids) {
+
+		$GLOBALS['TCA']['foreignTable'] = [];
+
+		/** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
+		$backendUserProphecy = $this->prophesize(BackendUserAuthentication::class);
+		$GLOBALS['BE_USER'] = $backendUserProphecy->reveal();
+
+		/** @var DatabaseConnection|ObjectProphecy $database */
+		$database = $this->prophesize(DatabaseConnection::class);
+		$GLOBALS['TYPO3_DB'] = $database->reveal();
+
+		$fieldConfig = $input['processedTca']['columns']['aField']['config'];
+		/** @var RelationHandler|ObjectProphecy $relationHandlerProphecy */
+		$relationHandlerProphecy = $this->prophesize(RelationHandler::class);
+		GeneralUtility::addInstance(RelationHandler::class, $relationHandlerProphecy->reveal());
+
+		$field = $input['databaseRow']['aField'];
+		$foreignTable = $input['processedTca']['columns']['aField']['config']['foreign_table'];
+		$mmTable = $input['processedTca']['columns']['aField']['config']['MM'];
+		$uid = $input['databaseRow']['uid'];
+		$tableName = $input['tableName'];
+		$fieldConfig = $input['processedTca']['columns']['aField']['config'];
+
+		$relationHandlerProphecy->start($field, $foreignTable, $mmTable, $uid, $tableName, $fieldConfig)->shouldBeCalled();
+		$relationHandlerProphecy->getValueArray()->shouldBeCalled()->willReturn($relationHandlerUids);
+
+		$expected = $input;
+		$expected['databaseRow']['aField'] = $relationHandlerUids;
+
+		$this->assertEquals($expected, $this->subject->addData($input));
+	}
+
+	/**
+	 * Data Provider
+	 */
+	public function correctValuesForMmRelationWithSingleValueAllowedDataProvider() {
+		return array(
+			'Relation with MM table and maxitems = 1 processes field value (item count)' => [
+				[
+					'tableName' => 'aTable',
+					'databaseRow' => [
+						'uid' => 42,
+						// MM relation with one item has 1 in field value
+						'aField' => 1,
+					],
+					'processedTca' => [
+						'columns' => [
+							'aField' => [
+								'config' => [
+									'type' => 'select',
+									'maxitems' => 1,
+									'MM' => 'mm_aTable_foreignTable',
+									'foreign_table' => 'foreignTable',
+									'items' => [],
+								],
+							],
+						],
+					],
+				],
+				[
+					24
+				]
+			],
+			'Relation with MM table and maxitems = 1 results in empty array if no items are set' => [
+				[
+					'tableName' => 'aTable',
+					'databaseRow' => [
+						'uid' => 58,
+						// MM relation with no items has 0 in field value
+						'aField' => 0,
+					],
+					'processedTca' => [
+						'columns' => [
+							'aField' => [
+								'config' => [
+									'type' => 'select',
+									'maxitems' => 1,
+									'MM' => 'mm_aTable_foreignTable',
+									'foreign_table' => 'foreignTable',
+									'items' => [],
+								],
+							],
+						],
+					],
+				],
+				[
+				]
+			]
+		);
 	}
 }

@@ -7,7 +7,7 @@ styles.content.loginform {
     # cat=content/cLogin; type=int+; label= PID of user archive: Enter the page-uid number (PID) of the folder where you keep your fe_users that are supposed to login on this site. This setting is necessary, if login is going to work!
   pid =
     # cat=content/cLogin; type=; label= Login template: Enter the path for the HTML template to be used
-  templateFile = EXT:felogin/template.html
+  templateFile = EXT:felogin/Resources/Private/Templates/FrontendLogin.html
 }
 ', 'defaultContentRendering');
 
@@ -26,7 +26,7 @@ if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
 	mod.wizards.newContentElement.wizardItems.forms {
 		elements.login {
-			icon = EXT:frontend/Resources/Public/Icons/ContentElementWizard/login_form.gif
+			iconIdentifier = content-elements-login
 			title = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_login_title
 			description = LLL:EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf:forms_login_description
 			tt_content_defValues {

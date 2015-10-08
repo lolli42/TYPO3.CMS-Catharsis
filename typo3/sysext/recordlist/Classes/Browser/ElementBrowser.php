@@ -22,13 +22,13 @@ use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
 use TYPO3\CMS\Backend\Tree\View\ElementBrowserPageTreeView;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\ElementBrowser\ElementBrowserHookInterface;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Resource\FileRepository;
 use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\Exception;
@@ -270,10 +270,21 @@ class ElementBrowser {
 	protected $hookName = 'typo3/class.browse_links.php';
 
 	/**
+	 * @var string
+	 */
+	protected $searchWord;
+
+	/**
+	 * @var FileRepository
+	 */
+	protected $fileRepository;
+
+	/**
 	* Construct
 	*/
 	public function __construct() {
 		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$this->fileRepository = GeneralUtility::makeInstance(FileRepository::class);
 		$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$this->pageRenderer->loadJquery();
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Recordlist/FieldSelectBox');
@@ -349,6 +360,7 @@ class ElementBrowser {
 		$this->expandFolder = GeneralUtility::_GP('expandFolder');
 		$this->PM = GeneralUtility::_GP('PM');
 		$this->RTEtsConfigParams = GeneralUtility::_GP('RTEtsConfigParams');
+		$this->searchWord = (string)GeneralUtility::_GP('searchWord');
 
 		// Site URL
 		// Current site url
@@ -898,7 +910,7 @@ class ElementBrowser {
 	protected function main_rte($wiz = FALSE) {
 		// needs to be executed before doc->startPage()
 		if (in_array($this->act, array('file', 'folder'))) {
-			$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse"');
+			$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "sc_alt_file_navframe_expandtoggle"');
 		} elseif ($this->act === 'page') {
 			$this->doc->getDragDropCode('pages');
 		}
@@ -1394,7 +1406,7 @@ class ElementBrowser {
 	 */
 	protected function main_file() {
 		// include JS files and set prefs for foldertree
-		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse"');
+		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "sc_alt_file_navframe_expandtoggle"');
 		// Starting content:
 		$content = $this->doc->startPage('TBE file selector');
 		// Add the FlashMessages if any
@@ -1501,6 +1513,8 @@ class ElementBrowser {
 				</tr>
 			</table>
 			';
+
+
 		// Adding create folder + upload forms if applicable:
 		if (!$backendUser->getTSConfigVal('options.uploadFieldsInTopOfEB')) {
 			$content .= $uploadForm;
@@ -1527,7 +1541,7 @@ class ElementBrowser {
 	protected function main_folder() {
 		// include JS files
 		// Setting prefs for foldertree
-		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";');
+		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "sc_alt_file_navframe_expandtoggle";');
 		// Starting content:
 		$content = $this->doc->startPage('TBE folder selector');
 		// Add the FlashMessages if any
@@ -1615,8 +1629,8 @@ class ElementBrowser {
 				<ul class="list-tree list-tree-root list-tree-root-clean">
 					<li class="list-tree-control-open">
 						<span class="list-tree-group">
-							<span class="list-tree-icon">' . IconUtility::getSpriteIconForRecord('pages', $mainPageRec) . '</span>
-							<span class="list-tree-title">' . BackendUtility::getRecordTitle('pages', $mainPageRec, TRUE) . '</span>
+							<span class="list-tree-icon">' . $this->iconFactory->getIconForRecord('pages', $mainPageRec, Icon::SIZE_SMALL)->render() . '</span>
+							<span class="list-tree-title">' . htmlspecialchars(BackendUtility::getRecordTitle('pages', $mainPageRec, TRUE)) . '</span>
 						</span>
 						<ul>
 				';
@@ -1634,7 +1648,7 @@ class ElementBrowser {
 			$c = 0;
 			while ($row = $db->sql_fetch_assoc($res)) {
 				$c++;
-				$icon = IconUtility::getSpriteIconForRecord('tt_content', $row);
+				$icon = $this->iconFactory->getIconForRecord('tt_content', $row, Icon::SIZE_SMALL)->render();
 				$selected = '';
 				if ($this->curUrlInfo['act'] == 'page' && $this->curUrlInfo['cElement'] == $row['uid']) {
 					$selected = ' class="active"';
@@ -1648,7 +1662,7 @@ class ElementBrowser {
 							</span>
 							<span class="list-tree-title">
 								<a href="#" onclick="return link_typo3Page(\'' . $expPageId . '\',\'#' . $row['uid'] . '\');">
-									' . BackendUtility::getRecordTitle('tt_content', $row, TRUE) . '
+									' . htmlspecialchars(BackendUtility::getRecordTitle('tt_content', $row, TRUE)) . '
 								</a>
 							</span>
 						</span>
@@ -1696,7 +1710,7 @@ class ElementBrowser {
 		$ATag2 = '';
 		$picon = '';
 		if (is_array($mainPageRec)) {
-			$picon = IconUtility::getSpriteIconForRecord('pages', $mainPageRec);
+			$picon = $this->iconFactory->getIconForRecord('pages', $mainPageRec, Icon::SIZE_SMALL)->render();
 			if (in_array('pages', $tablesArr)) {
 				$ATag = '<a href="#" onclick="return insertElement(\'pages\', \'' . $mainPageRec['uid'] . '\', \'db\', '
 					. GeneralUtility::quoteJSvalue($mainPageRec['title']) . ', \'\', \'\', \'\',\'\',1);">';
@@ -1804,7 +1818,7 @@ class ElementBrowser {
 		}
 		// Create header element; The folder from which files are listed.
 		$titleLen = (int)$this->getBackendUser()->uc['titleLen'];
-		$folderIcon = $this->iconFactory->getIconForResource($folder, Icon::SIZE_SMALL);
+		$folderIcon = $this->iconFactory->getIconForResource($folder, Icon::SIZE_SMALL)->render();
 		$folderIcon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs($folder->getIdentifier(), $titleLen));
 		$selected = '';
 		if ($this->curUrlInfo['act'] == 'folder' && $currentIdentifier == $folder->getCombinedIdentifier()) {
@@ -1829,20 +1843,19 @@ class ElementBrowser {
 				$c++;
 				if ($renderFolders) {
 					$fileIdentifier = $fileOrFolderObject->getCombinedIdentifier();
-					$overlays = array();
+					$overlay = NULL;
 					if ($fileOrFolderObject instanceof InaccessibleFolder) {
-						$overlays = array('status-overlay-locked' => array());
+						$overlay = array('status-overlay-locked' => array());
 					}
-					$icon = IconUtility::getSpriteIcon(
-						IconUtility::mapFileExtensionToSpriteIconName('folder'),
-						array('title' => $fileOrFolderObject->getName()),
-						$overlays);
+					$icon = '<span title="' . htmlspecialchars($fileOrFolderObject->getName()) . '">'
+						. $this->iconFactory->getIcon('apps-filetree-folder-default', Icon::SIZE_SMALL, $overlay)->render()
+						. '</span>';
 					$itemUid = 'file:' . $fileIdentifier;
 				} else {
 					$fileIdentifier = $fileOrFolderObject->getUid();
 					// Get size and icon:
 					$size = ' (' . GeneralUtility::formatSize($fileOrFolderObject->getSize()) . 'bytes)';
-					$icon = '<span title="' . htmlspecialchars($fileOrFolderObject->getName() . $size) . '">' . $this->iconFactory->getIconForResource($fileOrFolderObject, Icon::SIZE_SMALL) . '</span>';
+					$icon = '<span title="' . htmlspecialchars($fileOrFolderObject->getName() . $size) . '">' . $this->iconFactory->getIconForResource($fileOrFolderObject, Icon::SIZE_SMALL)->render() . '</span>';
 					$itemUid = 'file:' . $fileIdentifier;
 				}
 				$selected = '';
@@ -1878,7 +1891,12 @@ class ElementBrowser {
 			return '';
 		}
 		$extensionList = $extensionList == '*' ? '' : $extensionList;
-		$files = $this->getFilesInFolder($folder, $extensionList);
+		if ($this->searchWord !== '') {
+			$files = $this->fileRepository->searchByName($folder, $this->searchWord);
+		} else {
+			$files = $this->getFilesInFolder($folder, $extensionList);
+		}
+
 		return $this->fileList($files, $folder, $noThumbs);
 	}
 
@@ -1898,6 +1916,7 @@ class ElementBrowser {
 		// Create headline (showing number of files):
 		$filesCount = count($files);
 		$out .= $this->barheader(sprintf($lang->getLL('files') . ' (%s):', $filesCount));
+		$out .= $this->getFileSearchField();
 		$out .= '<div id="filelist">';
 		$out .= $this->getBulkSelector($filesCount);
 		$titleLen = (int)$this->getBackendUser()->uc['titleLen'];
@@ -1905,7 +1924,7 @@ class ElementBrowser {
 		if ($folder) {
 			$folderIcon = $this->iconFactory->getIconForResource($folder, Icon::SIZE_SMALL);
 			$lines[] = '<tr class="t3-row-header">
-				<td colspan="4">' . $folderIcon
+				<td colspan="4">' . $folderIcon->render()
 				. htmlspecialchars(GeneralUtility::fixed_lgd_cs($folder->getIdentifier(), $titleLen)) . '</td>
 			</tr>';
 		}
@@ -1942,7 +1961,7 @@ class ElementBrowser {
 			}
 			// Create file icon:
 			$size = ' (' . GeneralUtility::formatSize($fileObject->getSize()) . 'bytes' . ($pDim ? ', ' . $pDim : '') . ')';
-			$icon = '<span title="' . htmlspecialchars($fileObject->getName() . $size) . '">' . $this->iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>';
+			$icon = '<span title="' . htmlspecialchars($fileObject->getName() . $size) . '">' . $this->iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL)->render() . '</span>';
 			// Create links for adding the file:
 			$filesIndex = count($this->elements);
 			$this->elements['file_' . $filesIndex] = array(
@@ -1983,7 +2002,7 @@ class ElementBrowser {
 					<tr class="file_list_normal">
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
 						<td>' . $ATag . '<span title="' .  $lang->getLL('addToList', TRUE) . '">' . $this->iconFactory->getIcon('actions-edit-add', Icon::SIZE_SMALL)->render() . '</span>' . $ATag_e . '</td>
-						<td nowrap="nowrap"><a href="' . htmlspecialchars($Ahref) . '" title="' . $lang->getLL('info', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
+						<td nowrap="nowrap"><a href="' . htmlspecialchars($Ahref) . '" title="' . $lang->getLL('info', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL)->render() . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
 						<td nowrap="nowrap">&nbsp;' . $pDim . '</td>
 					</tr>';
 				$lines[] = '
@@ -1995,7 +2014,7 @@ class ElementBrowser {
 					<tr class="file_list_normal">
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
 						<td>' . $ATag . '<span title="' . $lang->getLL('addToList', TRUE) . '">' . $this->iconFactory->getIcon('actions-edit-add', Icon::SIZE_SMALL)->render() . '</span>' . $ATag_e . '</td>
-						<td nowrap="nowrap"><a href="' . htmlspecialchars($Ahref) . '" title="' . $lang->getLL('info', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
+						<td nowrap="nowrap"><a href="' . htmlspecialchars($Ahref) . '" title="' . $lang->getLL('info', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL)->render() . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
 						<td>&nbsp;</td>
 					</tr>';
 			}
@@ -2047,7 +2066,7 @@ class ElementBrowser {
 			. ', \'\', \'\',\'\',1);">';
 		// Add the foder icon
 		$folderIcon = $aTag;
-		$folderIcon .= $this->iconFactory->getIcon('apps-filetree-folder-default', Icon::SIZE_SMALL);
+		$folderIcon .= $this->iconFactory->getIcon('apps-filetree-folder-default', Icon::SIZE_SMALL)->render();
 		$folderIcon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs($baseFolder->getName(), $titleLength));
 		$folderIcon .= '</a>';
 		$content .= $folderIcon . '<br />';
@@ -2058,7 +2077,7 @@ class ElementBrowser {
 			$subFolderIdentifier = $subFolder->getCombinedIdentifier();
 			// Create folder icon:
 			$icon = '<span style="width: 16px; height: 16px; display: inline-block;"></span>';
-			$icon .= '<span title="' . htmlspecialchars($subFolder->getName()) . '">' . $this->iconFactory->getIcon('apps-filetree-folder-default', Icon::SIZE_SMALL) . '</span>';
+			$icon .= '<span title="' . htmlspecialchars($subFolder->getName()) . '">' . $this->iconFactory->getIcon('apps-filetree-folder-default', Icon::SIZE_SMALL)->render() . '</span>';
 			// Create links for adding the folder:
 			if ($this->P['itemName'] != '' && $this->P['formName'] != '') {
 				$aTag = '<a href="#" onclick="return set_folderpath(' . GeneralUtility::quoteJSvalue($subFolderIdentifier)
@@ -2138,7 +2157,7 @@ class ElementBrowser {
 
 		$out .= $this->barheader(sprintf($lang->getLL('files') . ' (%s):', count($files)));
 		$titleLen = (int)$this->getBackendUser()->uc['titleLen'];
-		$picon = IconUtility::getSpriteIcon('apps-filetree-folder-default');
+		$picon = $this->iconFactory->getIcon('apps-filetree-folder-default', Icon::SIZE_SMALL)->render();
 		$picon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs(basename($folder->getName()), $titleLen));
 		$out .= $picon . '<br />';
 		// Init row-array:
@@ -2163,7 +2182,7 @@ class ElementBrowser {
 				);
 				$pDim = $imgInfo[0] . 'x' . $imgInfo[1] . ' pixels';
 				$size = ' (' . GeneralUtility::formatSize($fileObject->getSize()) . 'bytes' . ($pDim ? ', ' . $pDim : '') . ')';
-				$filenameAndIcon = '<span title="' . htmlspecialchars($fileObject->getName() . $size) . '">' . $this->iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>';
+				$filenameAndIcon = '<span title="' . htmlspecialchars($fileObject->getName() . $size) . '">' . $this->iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL)->render() . '</span>';
 				if (GeneralUtility::_GP('noLimit')) {
 					$maxW = 10000;
 					$maxH = 10000;
@@ -2600,10 +2619,10 @@ class ElementBrowser {
 		$noThumbsInEB = $this->getBackendUser()->getTSConfigVal('options.noThumbsInEB');
 		$out = $this->doc->spacer(10) . '<div>' . '<a href="#" onclick="BrowseLinks.Selector.handle()"'
 			. 'title="' . $labelImportSelection . '">'
-			. $this->iconFactory->getIcon('actions-document-import-t3d', Icon::SIZE_SMALL)
+			. $this->iconFactory->getIcon('actions-document-import-t3d', Icon::SIZE_SMALL)->render()
 			. $labelImportSelection . '</a>&nbsp;&nbsp;&nbsp;'
 			. '<a href="#" onclick="BrowseLinks.Selector.toggle()" title="' . $labelToggleSelection . '">'
-			. $this->iconFactory->getIcon('actions-document-select', Icon::SIZE_SMALL)
+			. $this->iconFactory->getIcon('actions-document-select', Icon::SIZE_SMALL)->render()
 			. $labelToggleSelection . '</a>' . '</div>';
 		if (!$noThumbsInEB && $this->selectedFolder) {
 			// MENU-ITEMS, fetching the setting for thumbnails from File>List module:
@@ -2620,6 +2639,28 @@ class ElementBrowser {
 		} else {
 			$out .= $this->doc->spacer(15);
 		}
+		return $out;
+	}
+
+	/**
+	 * Get the HTML data required for the file search field of the TYPO3 Element Browser.
+	 *
+	 * @return string HTML data required for the search field in the file list of the Element Browser
+	 */
+	protected function getFileSearchField() {
+		$action = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
+		$out = '
+			<form method="post" action="' . htmlspecialchars($action) . '">
+				<div class="input-group">
+					<input class="form-control" type="text" name="searchWord" value="' . htmlspecialchars($this->searchWord) . '">
+					<span class="input-group-btn">
+						<button class="btn btn-default" type="submit">' . $this->getLanguageService()->sL('LLL:EXT:filelist/Resources/Private/Language/locallang.xlf:search', TRUE) .'</button>
+					</span>
+				</div>
+			</form>';
+		$out .= $this->doc->spacer(15);
 		return $out;
 	}
 

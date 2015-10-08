@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Imaging\IconProviderInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Testcase for \TYPO3\CMS\Core\Imaging\IconRegistry
+ * TestCase for \TYPO3\CMS\Core\Imaging\IconRegistry
  */
 class IconRegistryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -113,4 +113,57 @@ class IconRegistryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getAllRegisteredIconIdentifiersReturnsAnArrayWithIconIdentiefiers() {
 		$this->assertInternalType('array', $this->subject->getAllRegisteredIconIdentifiers());
 	}
+
+	/**
+	 * @test
+	 */
+	public function getAllRegisteredIconIdentifiersReturnsArrayWithAllRegisteredIconIdentifiers() {
+		$result = $this->subject->getAllRegisteredIconIdentifiers();
+		$this->assertInternalType('array', $result);
+		$this->assertContains('default-not-found', $result);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getIconIdentifierForFileExtensionReturnsDefaultIconIdentifierForEmptyFileExtension() {
+		$result = $this->subject->getIconIdentifierForFileExtension('');
+		$this->assertEquals('mimetypes-other-other', $result);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getIconIdentifierForFileExtensionReturnsDefaultIconIdentifierForUnknownFileExtension() {
+		$result = $this->subject->getIconIdentifierForFileExtension('xyz');
+		$this->assertEquals('mimetypes-other-other', $result);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getIconIdentifierForFileExtensionReturnsImageIconIdentifierForImageFileExtension() {
+		$result = $this->subject->getIconIdentifierForFileExtension('jpg');
+		$this->assertEquals('mimetypes-media-image', $result);
+	}
+
+	/**
+	 * @test
+	 */
+	public function registerFileExtensionRegisterAnIcon() {
+		$this->subject->registerFileExtension('abc', 'xyz');
+		$result = $this->subject->getIconIdentifierForFileExtension('abc');
+		$this->assertEquals('xyz', $result);
+	}
+
+	/**
+	 * @test
+	 */
+	public function registerFileExtensionOverwriteAnExistingIcon() {
+		$this->subject->registerFileExtension('jpg', 'xyz');
+		$result = $this->subject->getIconIdentifierForFileExtension('jpg');
+		$this->assertEquals('xyz', $result);
+	}
+
+
 }

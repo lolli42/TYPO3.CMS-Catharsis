@@ -16,6 +16,9 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
 
 use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\IndexedSearch\Utility;
+use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Index search frontend
@@ -169,8 +172,6 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 */
 	public $lexerObj;
 
-	const WILDCARD_LEFT = 1;
-	const WILDCARD_RIGHT = 2;
 	/**
 	 * Main function, called from TypoScript as a USER_INT object.
 	 *
@@ -230,7 +231,10 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		if ($this->piVars['sword_prev_include'] && $this->piVars['sword_prev']) {
 			$this->piVars['sword'] = trim($this->piVars['sword_prev']) . ' ' . $this->piVars['sword'];
 		}
-		$this->piVars['results'] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->piVars['results'], 1, 100000, $this->defaultResultNumber);
+		$this->piVars['results'] = MathUtility::forceIntegerInRange($this->piVars['results'], 1, 100000, $this->defaultResultNumber);
+		// Make sure that some cropping and markup constants used later are defined
+		$this->loadSettings();
+
 		// Selector-box values defined here:
 		$this->optValues = array(
 			'type' => array(
@@ -535,7 +539,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		if ($res) {
 			$totalSearchResultCount = $this->databaseConnection->sql_num_rows($res);
 			// Total search-result count
-			$currentPageNumber = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->piVars['pointer'], 0, floor($totalSearchResultCount / $this->piVars['results']));
+			$currentPageNumber = MathUtility::forceIntegerInRange($this->piVars['pointer'], 0, floor($totalSearchResultCount / $this->piVars['results']));
 			// The pointer is set to the result page that is currently being viewed
 			// Initialize result accumulation variables:
 			$positionInSearchResults = 0;
@@ -664,7 +668,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			if ($resData['count']) {
 				$this->internal['res_count'] = $resData['count'];
 				$this->internal['results_at_a_time'] = $this->piVars['results'];
-				$this->internal['maxPages'] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['search.']['page_links'], 1, 100, 10);
+				$this->internal['maxPages'] = MathUtility::forceIntegerInRange($this->conf['search.']['page_links'], 1, 100, 10);
 				$resultSectionsCount = count($this->resultSections);
 				$addString = $resData['count'] && $this->piVars['group'] == 'sections' && $freeIndexUid <= 0 ? ' ' . sprintf($this->pi_getLL(($resultSectionsCount > 1 ? 'inNsections' : 'inNsection')), $resultSectionsCount) : '';
 				$browseBox1 = $this->pi_list_browseresults(1, $addString, $this->printResultSectionLinks(), $freeIndexUid);
@@ -679,7 +683,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$content .= '<p' . $this->pi_classParam('noresults') . '>' . $this->pi_getLL('noResults', '', TRUE) . '</p>';
 		}
 		// Print a message telling which words we searched for, and in which sections etc.
-		$what = $this->tellUsWhatIsSeachedFor($sWArr) . (substr($this->piVars['sections'], 0, 2) == 'rl' ? ' ' . $this->pi_getLL('inSection', '', TRUE) . ' "' . substr($this->getPathFromPageId(substr($this->piVars['sections'], 4)), 1) . '"' : '');
+		$what = $this->tellUsWhatIsSeachedFor($sWArr) . (substr($this->piVars['sections'], 0, 2) == 'rl' ? ' ' . $this->pi_getLL('inSection', '', TRUE) . ' "' . $this->getPathFromPageId(substr($this->piVars['sections'], 4)) . '"' : '');
 		$what = '<div' . $this->pi_classParam('whatis') . '>' . $this->cObj->stdWrap($what, $this->conf['whatis_stdWrap.']) . '</div>';
 		$content = $what . $content;
 		// Return content:
@@ -742,9 +746,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 						} elseif ($this->conf['linkSectionTitles']) {
 							$quotedPrefix = GeneralUtility::quoteJSvalue($this->prefixId);
 							$onclick = 'document.forms[' . $quotedPrefix . '][' . GeneralUtility::quoteJSvalue($this->prefixId . '[_sections]') . '].value=' . GeneralUtility::quoteJSvalue($theRLid) . ';document.forms[' . $quotedPrefix . '].submit();return false;';
-							$sectionTitleLinked = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . htmlspecialchars($sectionName) . ':</a>';
+							$sectionTitleLinked = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . $sectionName . ':</a>';
 						} else {
-							$sectionTitleLinked = htmlspecialchars($sectionName);
+							$sectionTitleLinked = $sectionName;
 						}
 						$resultRowsCount = count($resultRows);
 						$this->resultSections[$id] = array($sectionName, $resultRowsCount);
@@ -807,15 +811,15 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			switch ($theType) {
 				case '1':
 					// Part of word
-					$res = $this->searchWord($sWord, self::WILDCARD_LEFT | self::WILDCARD_RIGHT);
+					$res = $this->searchWord($sWord, Utility\LikeWildcard::BOTH);
 					break;
 				case '2':
 					// First part of word
-					$res = $this->searchWord($sWord, self::WILDCARD_RIGHT);
+					$res = $this->searchWord($sWord, Utility\LikeWildcard::RIGHT);
 					break;
 				case '3':
 					// Last part of word
-					$res = $this->searchWord($sWord, self::WILDCARD_LEFT);
+					$res = $this->searchWord($sWord, Utility\LikeWildcard::LEFT);
 					break;
 				case '10':
 					// Sounds like
@@ -892,13 +896,17 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * Search for a word
 	 *
 	 * @param string $sWord Word to search for
-	 * @param int $mode Bit-field which can contain WILDCARD_LEFT and/or WILDCARD_RIGHT
+	 * @param int $wildcard Bit-field of Utility\LikeWildcard
 	 * @return bool|\mysqli_result SQL result pointer
 	 */
-	public function searchWord($sWord, $mode) {
-		$wildcard_left = $mode & self::WILDCARD_LEFT ? '%' : '';
-		$wildcard_right = $mode & self::WILDCARD_RIGHT ? '%' : '';
-		$wSel = 'IW.baseword LIKE \'' . $wildcard_left . $this->databaseConnection->quoteStr($sWord, 'index_words') . $wildcard_right . '\'';
+	public function searchWord($sWord, $wildcard) {
+		$likeWildcard = Utility\LikeWildcard::cast($wildcard);
+		$wSel = $likeWildcard->getLikeQueryPart(
+			'index_words',
+			'IW.baseword',
+			$sWord
+		);
+
 		$this->wSelClauses[] = $wSel;
 		$res = $this->execPHashListQuery($wSel, ' AND is_stopword=0');
 		return $res;
@@ -924,11 +932,18 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return bool|\mysqli_result SQL result pointer
 	 */
 	public function searchSentence($sSentence) {
-		$res = $this->databaseConnection->exec_SELECTquery('ISEC.phash', 'index_section ISEC, index_fulltext IFT', 'IFT.fulltextdata LIKE \'%' . $this->databaseConnection->quoteStr($sSentence, 'index_fulltext') . '%\' AND
-				ISEC.phash = IFT.phash
-			' . $this->sectionTableWhere(), 'ISEC.phash');
 		$this->wSelClauses[] = '1=1';
-		return $res;
+		$likeWildcard = Utility\LikeWildcard::cast(Utility\LikeWildcard::BOTH);
+		$likePart = $likeWildcard->getLikeQueryPart(
+			'index_fulltext',
+			'IFT.fulltextdata',
+			$sSentence
+		);
+
+		return $this->databaseConnection->exec_SELECTquery('ISEC.phash',
+			'index_section ISEC, index_fulltext IFT',
+			$likePart . ' AND ISEC.phash = IFT.phash' . $this->sectionTableWhere(), 'ISEC.phash'
+		);
 	}
 
 	/**
@@ -1493,7 +1508,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		foreach ($this->resultSections as $id => $dat) {
 			$markerArray = array();
 			$aBegin = '<a href="' . htmlspecialchars($anchorPrefix . '#anchor_' . md5($id)) . '">';
-			$aContent = htmlspecialchars((trim($dat[0]) ? trim($dat[0]) : $this->pi_getLL('unnamedSection'))) . ' (' . $dat[1] . ' ' . $this->pi_getLL(($dat[1] > 1 ? 'word_pages' : 'word_page'), '', TRUE) . ')';
+			$aContent = (trim($dat[0]) ? trim($dat[0]) : htmlspecialchars($this->pi_getLL('unnamedSection'))) . ' (' . $dat[1] . ' ' . $this->pi_getLL(($dat[1] > 1 ? 'word_pages' : 'word_page'), '', TRUE) . ')';
 			$aEnd = '</a>';
 			$markerArray['###LINK###'] = $aBegin . $aContent . $aEnd;
 			$links[] = $this->cObj->substituteMarkerArrayCached($item, $markerArray, array(), array());
@@ -1585,13 +1600,13 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Initializing variables:
 		$pointer = (int)$this->piVars['pointer'];
 		$count = (int)$this->internal['res_count'];
-		$results_at_a_time = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->internal['results_at_a_time'], 1, 1000);
+		$results_at_a_time = MathUtility::forceIntegerInRange($this->internal['results_at_a_time'], 1, 1000);
 		$pageCount = (int)ceil($count / $results_at_a_time);
 
 		$links = array();
 		// only show the result browser if more than one page is needed
 		if ($pageCount > 1) {
-			$maxPages = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->internal['maxPages'], 1, $pageCount);
+			$maxPages = MathUtility::forceIntegerInRange($this->internal['maxPages'], 1, $pageCount);
 
 			// Make browse-table/links:
 			if ($pointer > 0) {
@@ -1681,7 +1696,11 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			// Else the page:
 			// Prepare search words for markup in content:
 			if ($this->conf['forwardSearchWordsInResultLink']) {
-				$markUpSwParams = array('no_cache' => 1);
+				if ($this->conf['forwardSearchWordsInResultLink.']['no_cache']) {
+					$markUpSwParams = array('no_cache' => 1);
+				} else {
+					$markUpSwParams = array();
+				}
 				foreach ($this->sWArr as $d) {
 					$markUpSwParams['sword_list'][] = $d['sword'];
 				}
@@ -1695,7 +1714,11 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		$tmplContent['result_number'] = $this->conf['show.']['resultNumber'] ? $row['result_number'] . ': ' : '&nbsp;';
 		$tmplContent['icon'] = $this->makeItemTypeIcon($row['item_type'], '', $specRowConf);
 		$tmplContent['rating'] = $this->makeRating($row);
-		$tmplContent['description'] = $this->makeDescription($row, $this->piVars['extResume'] && !$headerOnly ? 0 : 1);
+		$tmplContent['description'] = $this->makeDescription(
+			$row,
+			!($this->piVars['extResume'] && !$headerOnly),
+			$this->conf['results.']['summaryCropAfter']
+		);
 		$tmplContent = $this->makeInfo($row, $tmplContent);
 		$tmplContent['access'] = $this->makeAccessIndication($row['page_id']);
 		$tmplContent['language'] = $this->makeLanguageIndication($row);
@@ -1845,7 +1868,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				break;
 			case 'rank_first':
 				// Close to top of page
-				return ceil(\TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange((255 - $row['order_val']), 1, 255) / 255 * 100) . '%';
+				return ceil(MathUtility::forceIntegerInRange((255 - $row['order_val']), 1, 255) / 255 * 100) . '%';
 				break;
 			case 'rank_flag':
 				// Based on priority assigned to <title> / <meta-keywords> / <meta-description> / <body>
@@ -1854,14 +1877,14 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					// (3 MSB bit, 224 is highest value of order_val1 currently)
 					$freqNumber = $row['order_val2'] / $this->firstRow['order_val2'] * pow(2, 12);
 					// 15-3 MSB = 12
-					$total = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($base + $freqNumber, 0, 32767);
+					$total = MathUtility::forceIntegerInRange($base + $freqNumber, 0, 32767);
 					return ceil(log($total) / log(32767) * 100) . '%';
 				}
 				break;
 			case 'rank_freq':
 				// Based on frequency
 				$max = 10000;
-				$total = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($row['order_val'], 0, $max);
+				$total = MathUtility::forceIntegerInRange($row['order_val'], 0, $max);
 				return ceil(log($total) / log($max) * 100) . '%';
 				break;
 			case 'crdate':
@@ -1886,10 +1909,11 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @param int $lgd String length
 	 * @return string HTML string
 	 */
-	public function makeDescription($row, $noMarkup = 0, $lgd = 180) {
+	public function makeDescription($row, $noMarkup = FALSE, $lgd = 180) {
 		if ($row['show_resume']) {
+			$markedSW = '';
+			$outputStr = '';
 			if (!$noMarkup) {
-				$markedSW = '';
 				if (\TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_fulltext')) {
 					$res = $this->databaseConnection->exec_SELECTquery('*', 'index_fulltext', 'phash=' . (int)$row['phash']);
 				} else {
@@ -1898,14 +1922,14 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				if ($res) {
 					if ($ftdrow = $this->databaseConnection->sql_fetch_assoc($res)) {
 						// Cut HTTP references after some length
-						$content = preg_replace('/(http:\\/\\/[^ ]{60})([^ ]+)/i', '$1...', $ftdrow['fulltextdata']);
+						$content = preg_replace('/(http:\\/\\/[^ ]{' . $this->conf['results.']['hrefInSummaryCropAfter'] . '})([^ ]+)/i', '$1...', $ftdrow['fulltextdata']);
 						$markedSW = $this->markupSWpartsOfString($content);
 					}
 					$this->databaseConnection->sql_free_result($res);
 				}
 			}
 			if (!trim($markedSW)) {
-				$outputStr = $this->frontendController->csConvObj->crop('utf-8', $row['item_description'], $lgd);
+				$outputStr = $this->frontendController->csConvObj->crop('utf-8', $row['item_description'], $lgd, $this->conf['results.']['summaryCropSignifier']);
 				$outputStr = htmlspecialchars($outputStr);
 			}
 			$output = $this->utf8_to_currentCharset($outputStr ?: $markedSW);
@@ -1935,13 +1959,13 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Split and combine:
 		$parts = preg_split('/' . $regExString . '/ui', ' ' . $str . ' ', 20000, PREG_SPLIT_DELIM_CAPTURE);
 		// Constants:
-		$summaryMax = 300;
-		$postPreLgd = 60;
-		$postPreLgd_offset = 5;
-		$divider = ' ... ';
+		$summaryMax = $this->conf['results.']['markupSW_summaryMax'];
+		$postPreLgd = $this->conf['results.']['markupSW_postPreLgd'];
+		$postPreLgd_offset = $this->conf['results.']['markupSW_postPreLgd_offset'];
+		$divider = $this->conf['results.']['markupSW_divider'];
 		$occurencies = (count($parts) - 1) / 2;
 		if ($occurencies) {
-			$postPreLgd = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($summaryMax / $occurencies, $postPreLgd, $summaryMax / 2);
+			$postPreLgd = MathUtility::forceIntegerInRange($summaryMax / $occurencies, $postPreLgd, $summaryMax / 2);
 		}
 		// Variable:
 		$summaryLgd = 0;
@@ -2002,7 +2026,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				$add = ', ' . $this->pi_getLL('word_page') . ' ' . $pp[0];
 			}
 		}
-		$outputString = $this->frontendController->csConvObj->crop('utf-8', $row['item_title'], 50, '...');
+		$outputString = $this->frontendController->csConvObj->crop('utf-8', $row['item_title'], $this->conf['results.']['titleCropAfter'], $this->conf['results.']['titleCropSignifier']);
 		return $this->utf8_to_currentCharset($outputString) . $add;
 	}
 
@@ -2027,7 +2051,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			}
 			$tmplArray['path'] = '<a href="' . htmlspecialchars($row['data_filename']) . '"' . $targetAttribute . '>' . htmlspecialchars($row['data_filename']) . '</a>';
 		} else {
-			$pathStr = htmlspecialchars($this->getPathFromPageId($pathId, $pathMP));
+			$pathStr = $this->getPathFromPageId($pathId, $pathMP);
 			$tmplArray['path'] = $this->linkPage($pathId, $pathStr, array(
 				'cHashParams' => $row['cHashParams'],
 				'data_page_type' => $row['data_page_type'],
@@ -2172,7 +2196,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 *
 	 * @param int $id Page ID
 	 * @param string $pathMP MP variable content
-	 * @return string Path
+	 * @return string Path (HTML-escaped)
 	 */
 	public function getPathFromPageId($id, $pathMP = '') {
 		$identStr = $id . '|' . $pathMP;
@@ -2180,9 +2204,12 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$this->fe_groups_required[$id] = array();
 			$this->domain_records[$id] = array();
 			$rl = $this->getRootLine($id, $pathMP);
-			$hitRoot = 0;
 			$path = '';
+			$pageCount = count($rl);
 			if (is_array($rl) && !empty($rl)) {
+				$index = 0;
+				$breadcrumbWrap = isset($this->conf['breadcrumbWrap']) ? $this->conf['breadcrumbWrap'] : '/';
+				$breadcrumbWraps = $GLOBALS['TSFE']->tmpl->splitConfArray(array('wrap' => $breadcrumbWrap), $pageCount);
 				foreach ($rl as $k => $v) {
 					// Check fe_user
 					if ($v['fe_group'] && ($v['uid'] == $id || $v['extendToSubpages'])) {
@@ -2200,9 +2227,10 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					}
 					// Stop, if we find that the current id is the current root page.
 					if ($v['uid'] == $this->frontendController->config['rootLine'][0]['uid']) {
+						array_pop($breadcrumbWraps);
 						break;
 					}
-					$path = '/' . $v['title'] . $path;
+					$path = $this->cObj->wrap(htmlspecialchars($v['title']), array_pop($breadcrumbWraps)['wrap']) . $path;
 				}
 			}
 			$this->cache_path[$identStr] = $path;
@@ -2369,5 +2397,42 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 */
 	public function getJoinPagesForQuery() {
 		return (bool)$this->join_pages;
+	}
+
+	/**
+	 * Load settings and apply stdWrap to them
+	 */
+	protected function loadSettings() {
+		if(!is_array($this->conf['results.'])) {
+			$this->conf['results.'] = array();
+		}
+		$this->conf['results.']['summaryCropAfter'] = MathUtility::forceIntegerInRange(
+			$this->cObj->stdWrap($this->conf['results.']['summaryCropAfter'], $this->conf['results.']['summaryCropAfter.']),
+			10, 5000, 180
+		);
+		$this->conf['results.']['summaryCropSignifier'] = $this->cObj->stdWrap($this->conf['results.']['summaryCropSignifier'], $this->conf['results.']['summaryCropSignifier.']);
+		$this->conf['results.']['titleCropAfter'] = MathUtility::forceIntegerInRange(
+			$this->cObj->stdWrap($this->conf['results.']['titleCropAfter'], $this->conf['results.']['titleCropAfter.']),
+			10, 500, 50
+		);
+		$this->conf['results.']['titleCropSignifier'] = $this->cObj->stdWrap($this->conf['results.']['titleCropSignifier'], $this->conf['results.']['titleCropSignifier.']);
+		$this->conf['results.']['markupSW_summaryMax'] = MathUtility::forceIntegerInRange(
+			$this->cObj->stdWrap($this->conf['results.']['markupSW_summaryMax'], $this->conf['results.']['markupSW_summaryMax.']),
+			10, 5000, 300
+		);
+		$this->conf['results.']['markupSW_postPreLgd'] = MathUtility::forceIntegerInRange(
+			$this->cObj->stdWrap($this->conf['results.']['markupSW_postPreLgd'], $this->conf['results.']['markupSW_postPreLgd.']),
+			1, 500, 60
+		);
+		$this->conf['results.']['markupSW_postPreLgd_offset'] = MathUtility::forceIntegerInRange(
+			$this->cObj->stdWrap($this->conf['results.']['markupSW_postPreLgd_offset'], $this->conf['results.']['markupSW_postPreLgd_offset.']),
+			1, 50, 5
+		);
+		$this->conf['results.']['markupSW_divider'] = $this->cObj->stdWrap($this->conf['results.']['markupSW_divider'], $this->conf['results.']['markupSW_divider.']);
+		$this->conf['results.']['hrefInSummaryCropAfter'] = MathUtility::forceIntegerInRange(
+			$this->cObj->stdWrap($this->conf['results.']['hrefInSummaryCropAfter'], $this->conf['results.']['hrefInSummaryCropAfter.']),
+			10, 400, 60
+		);
+		$this->conf['results.']['hrefInSummaryCropSignifier'] = $this->cObj->stdWrap($this->conf['results.']['hrefInSummaryCropSignifier'], $this->conf['results.']['hrefInSummaryCropSignifier.']);
 	}
 }

@@ -46,9 +46,6 @@ class SelectTreeElement extends AbstractFormElement {
 		$possibleSelectboxItems = $config['items'];
 
 		$selectedNodes = $parameterArray['itemFormElValue'];
-		if ($config['maxitems'] === 1 && count($selectedNodes) === 1 && empty($selectedNodes[0])) {
-			$selectedNodes = array();
-		}
 
 		$selectedNodesForApi = array();
 		foreach ($selectedNodes as $selectedNode) {
@@ -101,7 +98,6 @@ class SelectTreeElement extends AbstractFormElement {
 		*/
 
 		$itemArray[] = $treeData;
-		$treeData = json_encode($itemArray);
 		$id = md5($parameterArray['itemFormElName']);
 		if (isset($config['size']) && (int)$config['size'] > 0) {
 			$height = (int)$config['size'] * 20;
@@ -136,14 +132,18 @@ class SelectTreeElement extends AbstractFormElement {
 			&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
 		) {
 			if ($this->getBackendUserAuthentication()->jsConfirmation(JsConfirmation::TYPE_CHANGE)) {
-				$onChange .= 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && ' . 'TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
+				$onChange = 'top.TYPO3.Modal.confirm(TBE_EDITOR.labels.refreshRequired.title, TBE_EDITOR.labels.refreshRequired.content).on("button.clicked", function(e) { if (e.target.name == "ok" && TBE_EDITOR.checkSubmit(-1)) { TBE_EDITOR.submitForm() } top.TYPO3.Modal.dismiss(); });';
 			} else {
 				$onChange .= 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
 			}
 		}
 		$html = '
 			<div class="typo3-tceforms-tree">
-				<input class="treeRecord" type="hidden" name="' . htmlspecialchars($parameterArray['itemFormElName']) . '" id="treeinput' . $id . '" value="' . htmlspecialchars(implode(',', $selectedNodesForApi)) . '" />
+				<input class="treeRecord" type="hidden" '
+					.  $this->getValidationDataAsDataAttribute($config)
+					. ' data-formengine-input-name="' . htmlspecialchars($parameterArray['itemFormElName']) . '"'
+					. ' data-relatedfieldname="' . htmlspecialchars($parameterArray['itemFormElName']) . '"'
+					. ' name="' . htmlspecialchars($parameterArray['itemFormElName']) . '" id="treeinput' . $id . '" value="' . htmlspecialchars(implode(',', $selectedNodesForApi)) . '" />
 			</div>
 			<div id="tree_' . $id . '">
 
@@ -165,13 +165,13 @@ class SelectTreeElement extends AbstractFormElement {
 		$resultArray = $this->initializeResultArray();
 		$resultArray['extJSCODE'] .= LF .
 			'Ext.onReady(function() {
-			TYPO3.Components.Tree.StandardTreeItemData["' . $id . '"] = ' . $treeData . ';
+			TYPO3.Components.Tree.StandardTreeItemData["' . $id . '"] = ' . json_encode($itemArray) . ';
 			var tree' . $id . ' = new TYPO3.Components.Tree.StandardTree({
 				id: "' . $id . '",
 				showHeader: ' . (int)$header . ',
-				onChange: "' . $onChange . '",
+				onChange: ' . GeneralUtility::quoteJSvalue($onChange) . ',
 				countSelectedNodes: ' . count($selectedNodes) . ',
-				width: ' . $width . ',
+				width: ' . (int)$width . ',
 				listeners: {
 					click: function(node, event) {
 						if (typeof(node.attributes.checked) == "boolean") {

@@ -29,7 +29,7 @@ class NodeFactory {
 	 * @var array
 	 */
 	protected $nodeTypes = array(
-		'flex' => Container\FlexFormLanguageContainer::class,
+		'flex' => Container\FlexFormEntryContainer::class,
 		'flexFormContainerContainer' => Container\FlexFormContainerContainer::class,
 		'flexFormElementContainer' => Container\FlexFormElementContainer::class,
 		'flexFormNoTabsContainer' => Container\FlexFormNoTabsContainer::class,
@@ -95,23 +95,6 @@ class NodeFactory {
 			throw new Exception('No renderType definition found', 1431452406);
 		}
 		$type = $data['renderType'];
-
-		if ($type === 'select') {
-			$config = $data['parameterArray']['fieldConf']['config'];
-			$maxItems = (int)$config['maxitems'];
-			if (isset($config['renderMode']) && $config['renderMode'] === 'tree') {
-				$type = 'selectTree';
-			} elseif ($maxItems <= 1) {
-				$type = 'selectSingle';
-			} elseif (isset($config['renderMode']) && $config['renderMode'] === 'singlebox') {
-				$type = 'selectSingleBox';
-			} elseif (isset($config['renderMode']) && $config['renderMode'] === 'checkbox') {
-				$type = 'selectCheckBox';
-			} else {
-				// @todo: This "catch all" else should be removed to allow registration of own renderTypes for type=select
-				$type = 'selectMultipleSideBySide';
-			}
-		}
 
 		$className = isset($this->nodeTypes[$type]) ? $this->nodeTypes[$type] : $this->nodeTypes['unknown'];
 

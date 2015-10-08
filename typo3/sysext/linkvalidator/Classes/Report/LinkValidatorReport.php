@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Linkvalidator\Report;
 
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -474,14 +473,17 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		$requestUri = GeneralUtility::getIndpEnv('REQUEST_URI') .
 			'&id=' . $this->pObj->id .
 			'&search_levels=' . $this->searchLevel;
-		$actionLink = '<a href="#" onclick="';
-		$actionLink .= htmlspecialchars(BackendUtility::editOnClick(
-			'&edit[' . $table . '][' . $row['record_uid'] . ']=edit',
-			'',
-			$requestUri
-		));
+		$url = BackendUtility::getModuleUrl('record_edit', [
+			'edit' => [
+				$table => [
+					$row['record_uid'] => 'edit'
+				]
+			],
+			'returnUrl' => $requestUri
+		]);
+		$actionLink = '<a href="' . htmlspecialchars($url);
 		$actionLink .= '" title="' . $this->getLanguageService()->getLL('list.edit') . '">';
-		$actionLink .= $iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL);
+		$actionLink .= $iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render();
 		$actionLink .= '</a>';
 		$elementHeadline = $row['headline'];
 		if (empty($elementHeadline)) {
@@ -498,11 +500,8 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		// Fallback, if there is no label
 		$fieldName = !empty($fieldName) ? $fieldName : $row['field'];
 		// column "Element"
-		$element = IconUtility::getSpriteIconForRecord(
-			$table,
-			$row,
-			array('title' => $table . ':' . $row['record_uid'])
-		);
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$element = '<span title="' . htmlspecialchars($table . ':' . $row['record_uid']) . '">' . $iconFactory->getIconForRecord($table, $row, Icon::SIZE_SMALL)->render() . '</span>';
 		$element .= $elementHeadline;
 		$element .= ' ' . sprintf($this->getLanguageService()->getLL('list.field'), $fieldName);
 		$markerArray['actionlink'] = $actionLink;

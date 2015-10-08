@@ -16,11 +16,12 @@ namespace TYPO3\CMS\Backend\Form\Container;
 
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Render header and footer row.
@@ -61,15 +62,8 @@ class OuterWrapContainer extends AbstractContainer {
 			$recordPath = BackendUtility::getRecordPath($this->data['effectivePid'], $permissionsClause, 15);
 		}
 
-		// @todo: Hack for getSpriteIconForRecord
-		$recordForIconUtility = $row;
-		if (isset($GLOBALS['TCA'][$table]['ctrl']['typeicon_column']) && is_array($row[$GLOBALS['TCA'][$table]['ctrl']['typeicon_column']])) {
-			$recordForIconUtility[$GLOBALS['TCA'][$table]['ctrl']['typeicon_column']] = implode(
-				',',
-				$row[$GLOBALS['TCA'][$table]['ctrl']['typeicon_column']]
-			);
-		}
-		$icon = IconUtility::getSpriteIconForRecord($table, $recordForIconUtility, array('title' => $recordPath));
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$icon = '<span title="' . htmlspecialchars($recordPath) . '">' . $iconFactory->getIconForRecord($table, $row, Icon::SIZE_SMALL)->render() . '</span>';
 
 		// @todo: Could this be done in a more clever way? Does it work at all?
 		$tableTitle = $languageService->sL($this->data['processedTca']['ctrl']['title']);
@@ -98,7 +92,8 @@ class OuterWrapContainer extends AbstractContainer {
 
 			$newOrUid = ' <span class="typo3-TCEforms-recUid">[' . htmlspecialchars($row['uid']) . ']</span>';
 
-			$recordLabel = BackendUtility::getRecordTitle($table, FormEngineUtility::databaseRowCompatibility($row), TRUE, FALSE);
+			// @todo: getRecordTitlePrep applies an htmlspecialchars here
+			$recordLabel = BackendUtility::getRecordTitlePrep($this->data['recordTitle']);
 			if ($table === 'pages') {
 				$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editPage', TRUE);
 				$pageTitle = sprintf($label, $tableTitle, $recordLabel);
@@ -106,13 +101,13 @@ class OuterWrapContainer extends AbstractContainer {
 				$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecord', TRUE);
 				$workspacedPageRecord = BackendUtility::getRecordWSOL('pages', $row['pid'], 'uid,title');
 				$pageTitle = BackendUtility::getRecordTitle('pages', $workspacedPageRecord, TRUE, FALSE);
-				if ($recordLabel === BackendUtility::getNoRecordTitle(TRUE)) {
+				if (empty($recordLabel)) {
 					$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecordNoTitle', TRUE);
 				}
 				if ($this->data['effectivePid'] === 0) {
 					$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecordRootLevel', TRUE);
 				}
-				if ($recordLabel !== BackendUtility::getNoRecordTitle(TRUE)) {
+				if (!empty($recordLabel)) {
 					// Use record title and prepend an edit label.
 					$pageTitle = sprintf($label, $tableTitle, $recordLabel, $pageTitle);
 				} else {

@@ -13,7 +13,9 @@ return array(
 			'disabled' => 'hidden',
 			'starttime' => 'starttime'
 		),
-		'iconfile' => 'default.gif'
+		'typeicon_classes' => array(
+			'default' => 'mimetypes-x-index_config'
+		)
 	),
 	'interface' => array(
 		'showRecordFieldList' => 'hidden,starttime,title,description,type,depth,table2index,alternative_source_pid,get_params,chashcalc,filepath,extensions'
@@ -57,6 +59,7 @@ return array(
 			'label' => 'LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.type',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.type.I.0', '0'),
 					array('LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.type.I.1', '1'),
@@ -73,6 +76,7 @@ return array(
 			'label' => 'LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.depth',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('LLL:EXT:lang/locallang_core.xlf:labels.depth_0', '0'),
 					array('LLL:EXT:lang/locallang_core.xlf:labels.depth_1', '1'),
@@ -88,6 +92,7 @@ return array(
 			'label' => 'LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.table2index',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.table2index.I.0', '0')
 				),
@@ -208,6 +213,7 @@ return array(
 			'label' => 'LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.timer_frequency',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.timer_frequency.I.0', '3600'),
 					array('LLL:EXT:indexed_search/Resources/Private/Language/locallang_db.xlf:index_config.timer_frequency.I.1', '86400'),

@@ -131,7 +131,6 @@ abstract class AbstractFormElement extends AbstractNode {
 
 		$fieldChangeFunc = $PA['fieldChangeFunc'];
 		$item = $itemKinds[0];
-		$fName = '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
 		$md5ID = 'ID' . GeneralUtility::shortmd5($itemName);
 		$fieldConfig = $PA['fieldConf']['config'];
 		$prefixOfFormElName = 'data[' . $table . '][' . $row['uid'] . '][' . $field . ']';
@@ -140,17 +139,9 @@ abstract class AbstractFormElement extends AbstractNode {
 			$flexFormPath = str_replace('][', '/', substr($PA['itemFormElName'], strlen($prefixOfFormElName) + 1, -1));
 		}
 
-		// Manipulate the field name (to be the TRUE form field name) and remove
-		// a suffix-value if the item is a selector box with renderMode "singlebox":
-		$listFlag = '_list';
-		if ($PA['fieldConf']['config']['type'] == 'select') {
-			// Single select situation:
-			if ($PA['fieldConf']['config']['maxitems'] <= 1) {
-				$listFlag = '';
-			} elseif ($PA['fieldConf']['config']['renderMode'] == 'singlebox') {
-				$itemName .= '[]';
-				$listFlag = '';
-			}
+		// Add a suffix-value if the item is a selector box with renderMode "singlebox":
+		if ($PA['fieldConf']['config']['type'] === 'select' && (int)$PA['fieldConf']['config']['maxitems'] > 1 && $PA['fieldConf']['config']['renderMode'] === 'singlebox') {
+			$itemName .= '[]';
 		}
 
 		// Contains wizard identifiers enabled for this record type, see "special configuration" docs
@@ -295,7 +286,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					if (isset($wizardConfiguration['popup_onlyOpenIfSelected']) && $wizardConfiguration['popup_onlyOpenIfSelected']) {
 						$notSelectedText = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.noSelItemForEdit');
 						$onlyIfSelectedJS =
-							'if (!TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName . $listFlag) . ')){' .
+							'if (!TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName) . ')){' .
 								'alert(' . GeneralUtility::quoteJSvalue($notSelectedText) . ');' .
 								'return false;' .
 							'}';
@@ -306,7 +297,7 @@ abstract class AbstractFormElement extends AbstractNode {
 						'vHWin=window.open(' . GeneralUtility::quoteJSvalue($url) . '+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
 								'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value,200' .
 							')' .
-							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName . $listFlag) . '),' .
+							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName) . '),' .
 							GeneralUtility::quoteJSvalue('popUp' . $md5ID) . ',' .
 							GeneralUtility::quoteJSvalue($wizardConfiguration['JSopenParams']) .
 						');' .
@@ -351,7 +342,7 @@ abstract class AbstractFormElement extends AbstractNode {
 						'vHWin=window.open('. GeneralUtility::quoteJSvalue($url) . '+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
 							'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value,200' .
 							')' .
-							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName . $listFlag) . '),' .
+							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName) . '),' .
 							GeneralUtility::quoteJSvalue('popUp' . $md5ID) . ',' .
 							GeneralUtility::quoteJSvalue($wizardConfiguration['JSopenParams']) .
 						');' .
@@ -364,10 +355,10 @@ abstract class AbstractFormElement extends AbstractNode {
 					$params = array();
 					$params['fieldConfig'] = $fieldConfig;
 					$params['field'] = $field;
+					$params['table'] = $table;
 					$params['flexFormPath'] = $flexFormPath;
 					$params['md5ID'] = $md5ID;
 					$params['itemName'] = $itemName;
-					$params['fieldChangeFunc'] = $fieldChangeFunc;
 					$params['wConf'] = $wizardConfiguration;
 					$params['row'] = $row;
 
@@ -425,17 +416,16 @@ abstract class AbstractFormElement extends AbstractNode {
 						$options[] = '<option value="' . htmlspecialchars($selectWizardItem[1]) . '">' . htmlspecialchars($selectWizardItem[0]) . '</option>';
 					}
 					if ($wizardConfiguration['mode'] == 'append') {
-						$assignValue = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value=\'\'+this.options[this.selectedIndex].value+document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value';
+						$assignValue = 'document.querySelectorAll(' . GeneralUtility::quoteJSvalue('[data-formengine-input-name="' . $itemName . '"]') . ')[0].value=\'\'+this.options[this.selectedIndex].value+document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value';
 					} elseif ($wizardConfiguration['mode'] == 'prepend') {
-						$assignValue = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value+=\'\'+this.options[this.selectedIndex].value';
+						$assignValue = 'document.querySelectorAll(' . GeneralUtility::quoteJSvalue('[data-formengine-input-name="' . $itemName . '"]') . ')[0].value+=\'\'+this.options[this.selectedIndex].value';
 					} else {
-						$assignValue = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value=this.options[this.selectedIndex].value';
+						$assignValue = 'document.querySelectorAll(' . GeneralUtility::quoteJSvalue('[data-formengine-input-name="' . $itemName . '"]') . ')[0].value=this.options[this.selectedIndex].value';
 					}
 					$otherWizards[] =
 						'<select' .
 							' id="' . StringUtility::getUniqueId('tceforms-select-') . '"' .
 							' class="form-control tceforms-select tceforms-wizardselect"' .
-							' name="_WIZARD' . $fName . '"' .
 							' onchange="' . htmlspecialchars($assignValue . ';this.blur();this.selectedIndex=0;' . implode('', $fieldChangeFunc)) . '"'.
 						'>' .
 							implode('', $options) .
@@ -605,7 +595,7 @@ abstract class AbstractFormElement extends AbstractNode {
 						onclick="' . htmlspecialchars($aOnClick) . '"
 						class="btn btn-default"
 						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.browse_' . ($mode == 'db' ? 'db' : 'file'))) . '">
-						' . $this->iconFactory->getIcon('actions-insert-record', Icon::SIZE_SMALL) . '
+						' . $this->iconFactory->getIcon('actions-insert-record', Icon::SIZE_SMALL)->render() . '
 					</a>';
 			}
 			if (!$params['dontShowMoveIcons']) {
@@ -615,7 +605,7 @@ abstract class AbstractFormElement extends AbstractNode {
 							class="btn btn-default t3-btn-moveoption-top"
 							data-fieldname="' . $fName . '"
 							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_top')) . '">
-							' . $this->iconFactory->getIcon('actions-move-to-top', Icon::SIZE_SMALL) . '
+							' . $this->iconFactory->getIcon('actions-move-to-top', Icon::SIZE_SMALL)->render() . '
 						</a>';
 
 				}
@@ -624,14 +614,14 @@ abstract class AbstractFormElement extends AbstractNode {
 						class="btn btn-default t3-btn-moveoption-up"
 						data-fieldname="' . $fName . '"
 						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_up')) . '">
-						' . $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL) . '
+						' . $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL)->render() . '
 					</a>';
 				$icons['L'][] = '
 					<a href="#"
 						class="btn btn-default t3-btn-moveoption-down"
 						data-fieldname="' . $fName . '"
 						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_down')) . '">
-						' . $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL) . '
+						' . $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL)->render() . '
 					</a>';
 				if ($sSize >= 5) {
 					$icons['L'][] = '
@@ -639,7 +629,7 @@ abstract class AbstractFormElement extends AbstractNode {
 							class="btn btn-default t3-btn-moveoption-bottom"
 							data-fieldname="' . $fName . '"
 							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_bottom')) . '">
-							' . $this->iconFactory->getIcon('actions-move-to-bottom', Icon::SIZE_SMALL) . '
+							' . $this->iconFactory->getIcon('actions-move-to-bottom', Icon::SIZE_SMALL)->render() . '
 						</a>';
 				}
 			}
@@ -664,7 +654,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					<a href="#"
 						onclick="' . htmlspecialchars($aOnClick) . '"
 						title="' . htmlspecialchars(sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.clipInsert_' . ($mode == 'db' ? 'db' : 'file')), count($clipElements))) . '">
-						' . $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL) . '
+						' . $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL)->render() . '
 					</a>';
 			}
 		}
@@ -675,7 +665,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					onClick="' . $rOnClickInline . '"
 					data-fieldname="' . $fName . '"
 					title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remove_selected')) . '">
-					' . $this->iconFactory->getIcon('actions-selection-delete', Icon::SIZE_SMALL) . '
+					' . $this->iconFactory->getIcon('actions-selection-delete', Icon::SIZE_SMALL)->render() . '
 				</a>';
 		}
 

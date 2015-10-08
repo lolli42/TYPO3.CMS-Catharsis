@@ -16,11 +16,9 @@ namespace TYPO3\CMS\Filelist\Controller;
 
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\DuplicationBehavior;
 use TYPO3\CMS\Core\Resource\Exception;
 use TYPO3\CMS\Core\Resource\Folder;
@@ -310,7 +308,7 @@ class FileListController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
 		// There there was access to this file path, continue, make the list
 		if ($this->folderObject) {
 
-			$requireJsModules = ['TYPO3/CMS/Filelist/FileListLocalisation'];
+			$requireJsModules = ['TYPO3/CMS/Filelist/FileListLocalisation', 'TYPO3/CMS/Filelist/FileSearch'];
 			$addJsInlineLabels = [];
 
 			// Create filelisting object
@@ -443,7 +441,7 @@ class FileListController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
 			}
 		}
 
-		$this->view->assign('requireJsModules', ['TYPO3/CMS/Filelist/FileList']);
+		$this->view->assign('requireJsModules', ['TYPO3/CMS/Filelist/FileList', 'TYPO3/CMS/Filelist/FileSearch']);
 		$this->view->assign('searchWord', $searchWord);
 		$this->view->assign('files', $fileFacades);
 		$this->view->assign('settings', [
@@ -503,7 +501,7 @@ class FileListController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
 						'target' => $this->folderObject->getCombinedIdentifier(),
 						'returnUrl' => $this->filelist->listURL(),
 					)
-				)) . '" id="button-upload" title="' . $this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload', TRUE)) . '">' . $iconFactory->getIcon('actions-edit-upload', Icon::SIZE_SMALL) . '</a>';
+				)) . '" id="button-upload" title="' . $this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload', TRUE)) . '">' . $iconFactory->getIcon('actions-edit-upload', Icon::SIZE_SMALL)->render() . '</a>';
 		}
 		// New folder button
 		if ($this->folderObject && $this->folderObject->checkActionPermission('write')
@@ -516,7 +514,7 @@ class FileListController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
 						'target' => $this->folderObject->getCombinedIdentifier(),
 						'returnUrl' => $this->filelist->listURL(),
 					)
-				)) . '" title="' . $this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.new', TRUE)) . '">' . $iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL) . '</a>';
+				)) . '" title="' . $this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.new', TRUE)) . '">' . $iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL)->render() . '</a>';
 		}
 		return $buttons;
 	}

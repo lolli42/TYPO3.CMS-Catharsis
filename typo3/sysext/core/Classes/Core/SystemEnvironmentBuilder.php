@@ -83,25 +83,25 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '7.5.0-dev');
-		define('TYPO3_branch', '7.5');
+		define('TYPO3_version', '7.6.0-dev');
+		define('TYPO3_branch', '7.6');
 		define('TYPO3_copyright_year', '1998-2015');
 
 		// TYPO3 external links
-		define('TYPO3_URL_GENERAL', 'http://typo3.org/');
-		define('TYPO3_URL_LICENSE', 'http://typo3.org/typo3-cms/overview/licenses/');
-		define('TYPO3_URL_EXCEPTION', 'http://typo3.org/go/exception/CMS/');
+		define('TYPO3_URL_GENERAL', 'https://typo3.org/');
+		define('TYPO3_URL_LICENSE', 'https://typo3.org/typo3-cms/overview/licenses/');
+		define('TYPO3_URL_EXCEPTION', 'https://typo3.org/go/exception/CMS/');
 		define('TYPO3_URL_MAILINGLISTS', 'http://lists.typo3.org/cgi-bin/mailman/listinfo');
-		define('TYPO3_URL_DOCUMENTATION', 'http://typo3.org/documentation/');
+		define('TYPO3_URL_DOCUMENTATION', 'https://typo3.org/documentation/');
 		define('TYPO3_URL_DOCUMENTATION_TSREF', 'https://docs.typo3.org/typo3cms/TyposcriptReference/');
 		define('TYPO3_URL_DOCUMENTATION_TSCONFIG', 'https://docs.typo3.org/typo3cms/TSconfigReference/');
-		define('TYPO3_URL_CONSULTANCY', 'http://typo3.org/support/professional-services/');
-		define('TYPO3_URL_CONTRIBUTE', 'http://typo3.org/contribute/');
-		define('TYPO3_URL_SECURITY', 'http://typo3.org/teams/security/');
-		define('TYPO3_URL_DOWNLOAD', 'http://typo3.org/download/');
-		define('TYPO3_URL_SYSTEMREQUIREMENTS', 'http://typo3.org/typo3-cms/overview/requirements/');
-		define('TYPO3_URL_DONATE', 'http://typo3.org/donate/online-donation/');
-		define('TYPO3_URL_WIKI_OPCODECACHE', 'http://wiki.typo3.org/Opcode_Cache');
+		define('TYPO3_URL_CONSULTANCY', 'https://typo3.org/support/professional-services/');
+		define('TYPO3_URL_CONTRIBUTE', 'https://typo3.org/contribute/');
+		define('TYPO3_URL_SECURITY', 'https://typo3.org/teams/security/');
+		define('TYPO3_URL_DOWNLOAD', 'https://typo3.org/download/');
+		define('TYPO3_URL_SYSTEMREQUIREMENTS', 'https://typo3.org/typo3-cms/overview/requirements/');
+		define('TYPO3_URL_DONATE', 'https://typo3.org/donate/online-donation/');
+		define('TYPO3_URL_WIKI_OPCODECACHE', 'https://wiki.typo3.org/Opcode_Cache');
 
 		// A null, a tabulator, a linefeed, a carriage return, a substitution, a CR-LF combination
 		define('NUL', chr(0));
@@ -350,9 +350,9 @@ class SystemEnvironmentBuilder {
 	 * We have two main scenarios for entry points:
 	 * - Directly called documentRoot/index.php (-> FE call or eiD include): index.php sets $relativePathPart to
 	 * empty string to hint this code that the document root is identical to the directory the script is located at.
-	 * - An indirect include of any Backend related script (-> a backend module, the install tool, or scripts like ajax.php).
+	 * - An indirect include of any Backend related script (-> typo3/index.php or the install tool).
 	 * - A Backend script: This is the case for the index.php dispatcher and other entry scripts like 'cli_dispatch.phpsh'
-	 * or 'ajax.php' that are located inside typo3/ directly. In this case the Bootstrap->run() command sets
+	 * or 'typo3/index.php' that are located inside typo3/ directly. In this case the Bootstrap->run() command sets
 	 * 'typo3/' as $relativePathPart as base to calculate the document root.
 	 *
 	 * @param string $relativePathPart Relative directory part from document root to script path

@@ -33,7 +33,7 @@ define('TYPO3/CMS/Backend/ValueSlider', ['jquery', 'twbs/bootstrap-slider'], fun
 			$sliders.slider({
 				formatter: ValueSlider.renderTooltipValue
 			});
-			$sliders.on('slide', ValueSlider.updateValue);
+			$sliders.on('change', ValueSlider.updateValue);
 		}
 	};
 
@@ -44,27 +44,21 @@ define('TYPO3/CMS/Backend/ValueSlider', ['jquery', 'twbs/bootstrap-slider'], fun
 	 */
 	ValueSlider.updateValue = function(e) {
 		var $slider = $(e.currentTarget),
-			$foreignField = $('[name="' + $slider.data('sliderItemName') + '"]'),
+			$foreignField = $('[data-formengine-input-name="' + $slider.data('sliderItemName') + '"]'),
 			elementType = $slider.data('sliderElementType'),
 			sliderField = $slider.data('sliderField'),
-			sliderCallback = $slider.data('sliderCallback');
+			sliderCallbackParams = $slider.data('sliderCallbackParams');
 
 		switch (elementType) {
 			case 'input':
-				$foreignField.val(e.value);
+				$foreignField.val(e.value.newValue);
 				break;
 			case 'select':
-				$foreignField.find('option').eq(e.value).prop('selected', true);
+				$foreignField.find('option').eq(e.value.newValue).prop('selected', true);
 				break;
 		}
 
-		if (sliderField) {
-			eval(sliderField);
-		}
-
-		if (sliderCallback) {
-			eval(sliderCallback);
-		}
+		TBE_EDITOR.fieldChanged.apply(sliderCallbackParams);
 	};
 
 	/**
@@ -74,11 +68,11 @@ define('TYPO3/CMS/Backend/ValueSlider', ['jquery', 'twbs/bootstrap-slider'], fun
 	 */
 	ValueSlider.renderTooltipValue = function(value) {
 		var renderedValue,
-			$slider = $('[data-slider-id="' + $(this).get(0).id + '"]'),
+			$slider = $('[data-slider-id="' + this.id + '"]'),
 			data = $slider.data();
 		switch (data.sliderValueType) {
 			case 'array':
-				var $foreignField = $('[name="' + data.sliderItemName + '"]');
+				var $foreignField = $('[data-formengine-input-name="' + data.sliderItemName + '"]');
 				renderedValue = $foreignField.find('option').eq(value).text();
 				break;
 			case 'double':

@@ -14,13 +14,14 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Toolbar\Enumeration\InformationStatus;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Core\Http\AjaxRequestHandler;
-use \TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\CommandUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -52,9 +53,9 @@ class SystemInformationToolbarItem implements ToolbarItemInterface {
 	/**
 	 * Holds the highest severity
 	 *
-	 * @var string
+	 * @var InformationStatus
 	 */
-	protected $highestSeverity = '';
+	protected $highestSeverity;
 
 	/**
 	 * The CSS class for the badge
@@ -98,6 +99,8 @@ class SystemInformationToolbarItem implements ToolbarItemInterface {
 		$this->standaloneView->setTemplatePathAndFilename($extPath . 'Resources/Private/Templates/ToolbarMenu/' . static::TOOLBAR_MENU_TEMPLATE);
 
 		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu');
+
+		$this->highestSeverity = InformationStatus::cast(InformationStatus::STATUS_INFO);
 	}
 
 	/**
@@ -114,18 +117,22 @@ class SystemInformationToolbarItem implements ToolbarItemInterface {
 		$this->emitGetSystemInformation();
 		$this->emitLoadMessages();
 
-		$this->severityBadgeClass = $this->highestSeverity !== InformationStatus::STATUS_NOTICE ? 'badge-' . $this->highestSeverity : '';
+		$this->severityBadgeClass = !$this->highestSeverity->equals(InformationStatus::STATUS_NOTICE) ? 'badge-' . (string)$this->highestSeverity : '';
 	}
 
 	/**
 	 * Renders the menu for AJAX calls
 	 *
-	 * @param array $params
-	 * @param AjaxRequestHandler $ajaxObj
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
 	 */
-	public function renderAjax($params = array(), $ajaxObj) {
+	public function renderMenuAction(ServerRequestInterface $request, ResponseInterface $response) {
 		$this->collectInformation();
-		$ajaxObj->addContent('systemInformationMenu', $this->getDropDown());
+
+		$response->getBody()->write($this->getDropDown());
+		$response = $response->withHeader('Content-Type', 'text/html; charset=utf-8');
+		return $response;
 	}
 
 	/**
@@ -259,9 +266,11 @@ class SystemInformationToolbarItem implements ToolbarItemInterface {
 			$this->totalCount += (int)$message['count'];
 		}
 
+		/** @var InformationStatus $messageSeverity */
+		$messageSeverity = InformationStatus::cast($message['status']);
 		// define the severity for the badge
-		if (InformationStatus::mapStatusToInt($message['status']) > InformationStatus::mapStatusToInt($this->highestSeverity)) {
-			$this->highestSeverity = $message['status'];
+		if ($messageSeverity->isGreaterThan($this->highestSeverity)) {
+			$this->highestSeverity = $messageSeverity;
 		}
 
 		$this->systemMessages[] = $message;
@@ -283,7 +292,7 @@ class SystemInformationToolbarItem implements ToolbarItemInterface {
 	 */
 	public function getItem() {
 		$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo', TRUE);
-		$icon = $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL);
+		$icon = $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render();
 		return '<span title="' . $title . '">' . $icon . '<span id="t3js-systeminformation-counter" class="badge"></span></span>';
 	}
 

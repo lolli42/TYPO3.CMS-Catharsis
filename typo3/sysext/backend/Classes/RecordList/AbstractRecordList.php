@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\RecordList;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -333,11 +332,11 @@ abstract class AbstractRecordList {
 		switch ($type) {
 			case 'fwd':
 				$href = $this->listURL() . '&pointer=' . ($pointer - $this->iLimit) . $tParam;
-				$content = '<a href="' . htmlspecialchars($href) . '">' . $iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL) . '</a> <i>[1 - ' . $pointer . ']</i>';
+				$content = '<a href="' . htmlspecialchars($href) . '">' . $iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL)->render() . '</a> <i>[1 - ' . $pointer . ']</i>';
 				break;
 			case 'rwd':
 				$href = $this->listURL() . '&pointer=' . $pointer . $tParam;
-				$content = '<a href="' . htmlspecialchars($href) . '">' . $iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL) . '</a> <i>[' . ($pointer + 1) . ' - ' . $this->totalItems . ']</i>';
+				$content = '<a href="' . htmlspecialchars($href) . '">' . $iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL)->render() . '</a> <i>[' . ($pointer + 1) . ' - ' . $this->totalItems . ']</i>';
 				break;
 		}
 		return $content;
@@ -413,7 +412,8 @@ abstract class AbstractRecordList {
 		$out = '';
 		$title = htmlspecialchars($this->languageIconTitles[$sys_language_uid]['title']);
 		if ($this->languageIconTitles[$sys_language_uid]['flagIcon']) {
-			$out .= IconUtility::getSpriteIcon($this->languageIconTitles[$sys_language_uid]['flagIcon'], array('title' => $title));
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$out .= '<span title="' . $title . '">' . $iconFactory->getIcon($this->languageIconTitles[$sys_language_uid]['flagIcon'], Icon::SIZE_SMALL)->render() . '</span>';
 			if (!$addAsAdditionalText) {
 				return $out;
 			}

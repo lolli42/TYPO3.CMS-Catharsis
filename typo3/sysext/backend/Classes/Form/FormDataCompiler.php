@@ -116,6 +116,8 @@ class FormDataCompiler {
 			'vanillaUid' => 0,
 			// Url to return to
 			'returnUrl' => NULL,
+			// Title of the handled record.
+			'recordTitle' => '',
 			// Parent page record is either the full row of the parent page the record is located at or should
 			// be added to, or it is NULL, if a record is added or edited below the root page node.
 			'parentPageRow' => NULL,
@@ -172,11 +174,26 @@ class FormDataCompiler {
 			// BackendUser->uc['inlineView'] - This array holds status of expand / collapsed inline items
 			'inlineExpandCollapseStateArray' => array(),
 			// The "entry" pid for inline records. Nested inline records can potentially hang around on different
-			// * pid's, but the entry pid is needed for AJAX calls, so that they would know where the action takes place on the page structure.
+			// pid's, but the entry pid is needed for AJAX calls, so that they would know where the action takes place on the page structure.
 			'inlineFirstPid' => NULL,
 			// This array of fields will be set as hidden-fields instead of rendered normally!
 			// This is used by EditDocumentController to force some field values if set as "overrideVals" in _GP
 			'overrideValues' => [],
+
+			// Inline scenario: A localized parent record is handled and localizationMode is set to "select", so inline
+			// parents can have localized children. This value is set to TRUE if this array represents a localized child
+			// overlay record that has no default language record.
+			'inlineIsDanglingLocalization' => FALSE,
+			// Inline scenario: A localized parent record is handled and localizationMode is set to "select", so inline
+			// parents can have localized childen. This value is set to TRUE if this array represents a default language
+			// child record that was not yet localized.
+			'inlineIsDefaultLanguage' => FALSE,
+			// If set, inline children will be resolved. This is set to FALSE in inline ajax context where new children
+			// are created an existing children don't matter much.
+			'inlineResolveExistingChildren' => TRUE,
+			// @todo - for input placeholder inline to suppress an infinite loop, this *may* become obsolete if
+			// @todo compilation of certain fields is possible
+			'inlineCompileExistingChildren' => TRUE,
 
 			// @todo: must be handled / further defined
 			'elementBaseName' => '',

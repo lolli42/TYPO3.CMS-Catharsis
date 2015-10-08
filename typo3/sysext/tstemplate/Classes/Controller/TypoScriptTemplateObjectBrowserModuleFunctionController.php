@@ -16,14 +16,14 @@ namespace TYPO3\CMS\Tstemplate\Controller;
 
 use TYPO3\CMS\Backend\Module\AbstractFunctionModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -221,9 +221,10 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 		// initialize
 		$theOutput = '';
 		if ($existTemplate) {
-			$content = ' ' . IconUtility::getSpriteIconForRecord('sys_template', $tplRow) . ' <strong>'
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$content = ' ' . $iconFactory->getIconForRecord('sys_template', $tplRow, Icon::SIZE_SMALL)->render() . ' <strong>'
 				. $this->pObj->linkWrapTemplateTitle($tplRow['title'], ($bType == 'setup' ? 'config' : 'constants')) . '</strong>'
-				. htmlspecialchars(trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : '');
+				. (trim($tplRow['sitetitle']) ? htmlspecialchars(' (' . $tplRow['sitetitle'] . ')') : '');
 			$theOutput .= $this->pObj->doc->section($lang->getLL('currentTemplate'), $content);
 			if ($manyTemplatesMenu) {
 				$theOutput .= $this->pObj->doc->section('', $manyTemplatesMenu);
@@ -402,24 +403,27 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 			$theOutput .= '
 				<div class="tsob-menu">
 					<div class="form-inline">';
-			if(is_array($this->pObj->MOD_MENU['ts_browser_type']) && count($this->pObj->MOD_MENU['ts_browser_type']) > 1){
+			if (is_array($this->pObj->MOD_MENU['ts_browser_type']) && count($this->pObj->MOD_MENU['ts_browser_type']) > 1) {
 				$theOutput .= '
 						<div class="form-group">
 							<label class="control-label">' . $lang->getLL('browse') . '</label>'
 							. BackendUtility::getDropdownMenu($this->pObj->id, 'SET[ts_browser_type]', $bType, $this->pObj->MOD_MENU['ts_browser_type']). '
 						</div>';
 			}
-			if(is_array($this->pObj->MOD_MENU['ts_browser_toplevel_' . $bType]) && count($this->pObj->MOD_MENU['ts_browser_toplevel_' . $bType]) > 1){
+			if (is_array($this->pObj->MOD_MENU['ts_browser_toplevel_' . $bType]) && count($this->pObj->MOD_MENU['ts_browser_toplevel_' . $bType]) > 1) {
 				$theOutput .= '
 						<div class="form-group">
 							<label class="control-label" for="ts_browser_toplevel_' . $bType . '">' . $lang->getLL('objectList') . '</label> '
 							. BackendUtility::getDropdownMenu($this->pObj->id, 'SET[ts_browser_toplevel_' . $bType . ']', $this->pObj->MOD_SETTINGS['ts_browser_toplevel_' . $bType], $this->pObj->MOD_MENU['ts_browser_toplevel_' . $bType]) . '
 						</div>';
 			}
+
+			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Tstemplate/TypoScriptObjectBrowser');
+
 			$theOutput .= '
 						<div class="form-group">
 							<label class="control-label" for="search_field">' . $lang->getLL('search') . '</label>
-							<input class="form-control" type="search" name="search_field" id="search_field" value="' . htmlspecialchars($POST['search_field']) . '"' . $documentTemplate->formWidth(20) . '/>
+							<div class="form-group"><input class="form-control" type="search" name="search_field" id="search_field" value="' . htmlspecialchars($POST['search_field']) . '" /></div>
 						</div>
 						<input class="btn btn-default tsob-search-submit" type="submit" name="search" value="' . $lang->sL('LLL:EXT:lang/locallang_common.xlf:search') . '" />
 					</div>

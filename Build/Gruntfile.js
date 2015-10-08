@@ -36,7 +36,8 @@ module.exports = function(grunt) {
 			sysext    : '<%= paths.root %>typo3/sysext/',
 			t3skin    : '<%= paths.sysext %>t3skin/Resources/',
 			backend   : '<%= paths.sysext %>backend/Resources/',
-			core      : '<%= paths.sysext %>core/Resources/'
+			core      : '<%= paths.sysext %>core/Resources/',
+			flags     : 'bower_components/region-flags/svg/'
 		},
 		less: {
 			t3skin: {
@@ -49,10 +50,27 @@ module.exports = function(grunt) {
 				}
 			}
 		},
+		postcss: {
+			options: {
+				map: false,
+				processors: [
+					require('autoprefixer')({ // add vendor prefixes
+						browsers: [
+							'Last 2 versions',
+							'Firefox ESR',
+							'IE 9'
+						]
+					})
+				]
+			},
+			t3skin: {
+				src: '<%= paths.t3skin %>Public/Css/*.css'
+			}
+		},
 		watch: {
 			less: {
 				files: '<%= paths.less %>**/*.less',
-				tasks: 'less'
+				tasks: 'css'
 			}
 		},
 		bowercopy: {
@@ -71,6 +89,7 @@ module.exports = function(grunt) {
 					'jquery.dataTables.js': 'datatables/media/js/jquery.dataTables.min.js',
 					'require.js': 'requirejs/require.js',
 					'moment.js': 'moment/moment.js',
+					'moment-timezone.js': 'moment-timezone/builds/moment-timezone-with-data.min.js',
 					'cropper.min.js': 'cropper/dist/cropper.min.js',
 					'imagesloaded.pkgd.min.js': 'imagesloaded/imagesloaded.pkgd.min.js',
 					'bootstrap-datetimepicker.js': 'eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js',
@@ -131,6 +150,7 @@ module.exports = function(grunt) {
 			icons_action: {
 				files: {
 					'<%= paths.backend %>Public/Icons/Action/actions-document-duplicates-select.svg': '<%= paths.icons %>Action/actions-document-duplicates-select.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-export-csv.svg': '<%= paths.icons %>Action/actions-document-export-csv.svg',
 					'<%= paths.backend %>Public/Icons/Action/actions-document-paste-after.svg': '<%= paths.icons %>Action/actions-document-paste-after.svg',
 					'<%= paths.backend %>Public/Icons/Action/actions-document-paste-before.svg': '<%= paths.icons %>Action/actions-document-paste-before.svg',
 					'<%= paths.backend %>Public/Icons/Action/actions-document-paste-into.svg': '<%= paths.icons %>Action/actions-document-paste-into.svg',
@@ -185,11 +205,13 @@ module.exports = function(grunt) {
 				files: {
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-compressed.svg': '<%= paths.icons %>Mimetype/mimetypes-compressed.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-excel.svg': '<%= paths.icons %>Mimetype/mimetypes-excel.svg',
-					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-executable-executable.svg': '<%= paths.icons %>Mimetype/mimetypes-executable-executable.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-application.svg': '<%= paths.icons %>Mimetype/mimetypes-application.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-audio.svg': '<%= paths.icons %>Mimetype/mimetypes-media-audio.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-flash.svg': '<%= paths.icons %>Mimetype/mimetypes-media-flash.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-image.svg': '<%= paths.icons %>Mimetype/mimetypes-media-image.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-video.svg': '<%= paths.icons %>Mimetype/mimetypes-media-video.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-video-vimeo.svg': '<%= paths.icons %>Mimetype/mimetypes-media-video-vimeo.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-video-youtube.svg': '<%= paths.icons %>Mimetype/mimetypes-media-video-youtube.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-other-other.svg': '<%= paths.icons %>Mimetype/mimetypes-other-other.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-pdf.svg': '<%= paths.icons %>Mimetype/mimetypes-pdf.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-powerpoint.svg': '<%= paths.icons %>Mimetype/mimetypes-powerpoint.svg',
@@ -201,6 +223,21 @@ module.exports = function(grunt) {
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-text.svg': '<%= paths.icons %>Mimetype/mimetypes-text-text.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-ts.svg': '<%= paths.icons %>Mimetype/mimetypes-text-ts.svg',
 					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-word.svg': '<%= paths.icons %>Mimetype/mimetypes-word.svg'
+				}
+			},
+			// ContentElement Icons
+			icons_contentelement: {
+				files: {
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-bullets.svg': '<%= paths.icons %>ContentElement/content-bullets.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-header.svg': '<%= paths.icons %>ContentElement/content-header.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-image.svg': '<%= paths.icons %>ContentElement/content-image.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-plugin.svg': '<%= paths.icons %>ContentElement/content-plugin.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-special-divider.svg': '<%= paths.icons %>ContentElement/content-special-divider.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-special-html.svg': '<%= paths.icons %>ContentElement/content-special-html.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-special-menu.svg': '<%= paths.icons %>ContentElement/content-special-menu.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-table.svg': '<%= paths.icons %>ContentElement/content-table.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-text.svg': '<%= paths.icons %>ContentElement/content-text.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/ContentElement/content-textpic.svg': '<%= paths.icons %>ContentElement/content-textpic.svg'
 				}
 			},
 			// Miscellaneous Icons
@@ -257,6 +294,17 @@ module.exports = function(grunt) {
 					'<%= paths.backend %>Public/Icons/Overlay/overlay-scheduled.svg': '<%= paths.icons %>Overlay/overlay-scheduled.svg',
 					'<%= paths.backend %>Public/Icons/Overlay/overlay-translated.svg': '<%= paths.icons %>Overlay/overlay-translated.svg'
 				}
+			},
+			// Flags
+			flags: {
+				files: [{
+					expand: true,
+					cwd: '<%= paths.flags %>',
+					src: '*.svg',
+					dest: '<%= paths.sysext %>core/Resources/Public/Icons/Flags/SVG/',
+					ext: '.svg',
+					extDot: 'first'
+				}]
 			}
 		}
 	});
@@ -269,15 +317,27 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-bower-just-install');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-svgmin');
+	grunt.loadNpmTasks('grunt-postcss');
 
 	/**
 	 * grunt default task
 	 *
 	 * call "$ grunt"
 	 *
-	 * this will trigger the less build
+	 * this will trigger the CSS build
 	 */
-	grunt.registerTask('default', ['less']);
+	grunt.registerTask('default', ['css']);
+
+	/**
+	 * grunt css task
+	 *
+	 * call "$ grunt css"
+	 *
+	 * this task does the following things:
+	 * - less
+	 * - postcss
+	 */
+	grunt.registerTask('css', ['less', 'postcss']);
 
 	/**
 	 * grunt update task
@@ -285,7 +345,7 @@ module.exports = function(grunt) {
 	 * call "$ grunt update"
 	 *
 	 * this task does the following things:
-	 * - npn install
+	 * - npm install
 	 * - bower install
 	 * - copy some bower components to a specific destinations because they need to be included via PHP
 	 */
@@ -302,5 +362,5 @@ module.exports = function(grunt) {
 	 * - uglify js files
 	 * - minifies svg files
 	 */
-	grunt.registerTask('build', ['update', 'less', 'uglify', 'svgmin']);
+	grunt.registerTask('build', ['update', 'css', 'uglify', 'svgmin']);
 };

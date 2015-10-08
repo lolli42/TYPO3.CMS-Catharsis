@@ -11,7 +11,9 @@ return array(
 			'starttime' => 'starttime',
 			'endtime' => 'endtime'
 		),
-		'iconfile' => 'EXT:rtehtmlarea/Resources/Public/Images/Plugins/Abbreviation/abbreviation.gif'
+		'typeicon_classes' => array(
+			'default' => 'mimetypes-x-tx_rtehtmlarea_acronym'
+		)
 	),
 	'interface' => array(
 		'showRecordFieldList' => 'hidden,sys_language_uid,term,acronym'
@@ -58,6 +60,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.language',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'foreign_table' => 'sys_language',
 				'foreign_table_where' => 'ORDER BY sys_language.title',
 				'items' => array(
@@ -103,6 +106,7 @@ return array(
 			'displayCond' => 'EXT:static_info_tables:LOADED:true',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(
 					array('', 0),
 				),

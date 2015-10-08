@@ -178,14 +178,10 @@ class InputTextElement extends AbstractFormElement {
 		if (!empty($classes)) {
 			$attributes['class'] = implode(' ', $classes);
 		}
-		if (isset($config['max']) && (int)$config['max'] > 0) {
-			$attributes['maxlength'] = (int)$config['max'];
-		}
 
 		// This is the EDITABLE form field.
-		$placeholderValue = $this->getPlaceholderValue($table, $config, $row);
-		if (!empty($placeholderValue)) {
-			$attributes['placeholder'] = trim($languageService->sL($placeholderValue));
+		if (!empty($config['placeholder'])) {
+			$attributes['placeholder'] = trim($config['placeholder']);
 		}
 
 		// Build the attribute string
@@ -222,7 +218,7 @@ class InputTextElement extends AbstractFormElement {
 					' . $html . '
 					<span class="input-group-btn">
 						<label class="btn btn-default" for="' . $attributes['id'] . '">
-							' . $iconFactory->getIcon('actions-edit-pick-date', Icon::SIZE_SMALL) . '
+							' . $iconFactory->getIcon('actions-edit-pick-date', Icon::SIZE_SMALL)->render() . '
 						</label>
 					</span>
 				</div>';

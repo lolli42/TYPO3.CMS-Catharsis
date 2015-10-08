@@ -9,7 +9,7 @@ $GLOBALS['TCA']['tt_content']['ctrl']['typeicon_classes']['mailform'] = 'mimetyp
 $additionalCTypeItem = array(
 	'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.8',
 	'mailform',
-	'EXT:t3skin/icons/gfx/i/tt_content_form.gif'
+	'content-elements-mailform'
 );
 
 $existingCTypeItems = $GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'];
@@ -70,7 +70,3 @@ if (!empty($GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras']
 	$baseDefaultExtrasOfBodytext = $GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'] . ':';
 }
 $GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'nowrap:wizards[forms]';
-
-
-// Add Default TS to Include static (from extensions)
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addStaticFile('form', 'Configuration/TypoScript/', 'Default TS');

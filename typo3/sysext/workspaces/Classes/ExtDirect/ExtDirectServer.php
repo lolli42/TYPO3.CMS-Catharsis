@@ -15,7 +15,10 @@ namespace TYPO3\CMS\Workspaces\ExtDirect;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
 
 /**
  * ExtDirect server
@@ -114,8 +117,9 @@ class ExtDirectServer extends AbstractHandler {
 		$parseObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\RteHtmlParser::class);
 		$liveRecord = BackendUtility::getRecord($parameter->table, $parameter->t3ver_oid);
 		$versionRecord = BackendUtility::getRecord($parameter->table, $parameter->uid);
-		$icon_Live = \TYPO3\CMS\Backend\Utility\IconUtility::mapRecordTypeToSpriteIconClass($parameter->table, $liveRecord);
-		$icon_Workspace = \TYPO3\CMS\Backend\Utility\IconUtility::mapRecordTypeToSpriteIconClass($parameter->table, $versionRecord);
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$icon_Live = $iconFactory->getIconForRecord($parameter->table, $liveRecord, Icon::SIZE_SMALL)->render();
+		$icon_Workspace = $iconFactory->getIconForRecord($parameter->table, $versionRecord, Icon::SIZE_SMALL)->render();
 		$stagePosition = $this->getStagesService()->getPositionOfCurrentStage($parameter->stage);
 		$fieldsOfRecords = array_keys($liveRecord);
 		if ($GLOBALS['TCA'][$parameter->table]) {
@@ -245,11 +249,12 @@ class ExtDirectServer extends AbstractHandler {
 	 * @return array
 	 */
 	public function getSystemLanguages() {
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$systemLanguages = array(
 			array(
 				'uid' => 'all',
 				'title' => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('language.allLanguages', 'workspaces'),
-				'cls' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses('empty-empty')
+				'icon' => $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render()
 			)
 		);
 		foreach ($this->getGridDataService()->getSystemLanguages() as $id => $systemLanguage) {
@@ -259,7 +264,7 @@ class ExtDirectServer extends AbstractHandler {
 			$systemLanguages[] = array(
 				'uid' => $id,
 				'title' => htmlspecialchars($systemLanguage['title']),
-				'cls' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses($systemLanguage['flagIcon'])
+				'icon' => $iconFactory->getIcon($systemLanguage['flagIcon'], Icon::SIZE_SMALL)->render()
 			);
 		}
 		$result = array(
@@ -291,6 +296,13 @@ class ExtDirectServer extends AbstractHandler {
 			$this->stagesService = GeneralUtility::makeInstance(\TYPO3\CMS\Workspaces\Service\StagesService::class);
 		}
 		return $this->stagesService;
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Extbase\Object\ObjectManager
+	 */
+	protected function getObjectManager() {
+		return GeneralUtility::makeInstance(ObjectManager::class);
 	}
 
 }

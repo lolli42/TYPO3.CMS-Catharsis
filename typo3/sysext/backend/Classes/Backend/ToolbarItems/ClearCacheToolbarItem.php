@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Toolbar\ClearCacheActionsHookInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -57,7 +56,7 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesTitle', TRUE),
 				'description' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesDescription', TRUE),
 				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'pages', 'ajaxCall' => 1]),
-				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-low', Icon::SIZE_SMALL)
+				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-low', Icon::SIZE_SMALL)->render()
 			);
 			$this->optionValues[] = 'pages';
 		}
@@ -69,7 +68,7 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushGeneralCachesTitle', TRUE),
 				'description' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushGeneralCachesDescription', TRUE),
 				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'all', 'ajaxCall' => 1]),
-				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-medium', Icon::SIZE_SMALL)
+				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-medium', Icon::SIZE_SMALL)->render()
 			);
 			$this->optionValues[] = 'all';
 		}
@@ -85,7 +84,7 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushSystemCachesTitle', TRUE),
 				'description' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushSystemCachesDescription', TRUE),
 				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'system', 'ajaxCall' => 1]),
-				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-high', Icon::SIZE_SMALL)
+				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-high', Icon::SIZE_SMALL)->render()
 			);
 			$this->optionValues[] = 'system';
 		}

@@ -112,9 +112,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		parent::tearDown();
 	}
 
-	////////////////////////
-	// Utitility functions
-	////////////////////////
+	//////////////////////
+	// Utility functions
+	//////////////////////
 
 	/**
 	 * Avoid logging to the file system (file writer is currently the only configured writer)
@@ -184,9 +184,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 
-	/*************************
-	 * Tests concerning getContentObject
-	 ************************/
+	//////////////////////////////////////
+	// Tests concerning getContentObject
+	//////////////////////////////////////
 
 	public function getContentObjectValidContentObjectsDataProvider() {
 		$dataProvider = array();
@@ -435,9 +435,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		return str_replace(array('[', ']'), array('%5B', '%5D'), $string);
 	}
 
-	//////////////////////////////
+	//////////////////////////
 	// Tests concerning crop
-	//////////////////////////////
+	//////////////////////////
 	/**
 	 * @test
 	 */
@@ -827,6 +827,18 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
+	 * Checks if stdWrap.cropHTML handles linebreaks correctly (by ignoring them)
+	 *
+	 * @test
+	 */
+	public function cropHtmlWorksWithLinebreaks() {
+		$subject = "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\nsed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam";
+		$expected = "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\nsed diam nonumy eirmod tempor invidunt ut labore et dolore magna";
+		$result = $this->subject->cropHTML($subject, '121');
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
 	 * @return array
 	 */
 	public function stdWrap_roundDataProvider() {
@@ -873,18 +885,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Checks if stdWrap.cropHTML handles linebreaks correctly (by ignoring them)
-	 *
-	 * @test
-	 */
-	public function cropHtmlWorksWithLinebreaks() {
-		$subject = "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\nsed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam";
-		$expected = "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\nsed diam nonumy eirmod tempor invidunt ut labore et dolore magna";
-		$result = $this->subject->cropHTML($subject, '121');
-		$this->assertEquals($expected, $result);
-	}
-
-	/**
 	 * Test for the stdWrap function "round"
 	 *
 	 * @param float $float
@@ -899,6 +899,206 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'round.' => $conf
 		);
 		$result = $this->subject->stdWrap_round($float, $conf);
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function stdWrap_numberFormatDataProvider() {
+		return array(
+			'testing decimals' => array(
+				0.8,
+				array(
+					'numberFormat.' => array(
+						'decimals' => 2
+					),
+				),
+				'0.80'
+			),
+			'testing decimals with input as string' => array(
+				'0.8',
+				array(
+					'numberFormat.' => array(
+						'decimals' => 2
+					),
+				),
+				'0.80'
+			),
+			'testing dec_point' => array(
+				0.8,
+				array(
+					'numberFormat.' => array(
+						'decimals' => 1,
+						'dec_point' => ','
+					),
+				),
+				'0,8'
+			),
+			'testing thousands_sep' => array(
+				999.99,
+				array(
+					'numberFormat.' => array(
+						'decimals' => 0,
+						'thousands_sep.' => array(
+							'char' => 46
+						),
+					),
+				),
+				'1.000'
+			),
+			'testing mixture' => array(
+				1281731.45,
+				array(
+					'numberFormat.' => array(
+						'decimals' => 1,
+						'dec_point.' => array(
+							'char' => 44
+						),
+						'thousands_sep.' => array(
+							'char' => 46
+						),
+					),
+				),
+				'1.281.731,5'
+			)
+		);
+	}
+
+	/**
+	 * Test for the stdWrap function "round"
+	 *
+	 * @param float $float
+	 * @param array $conf
+	 * @param string $expected
+	 * @return void
+	 * @dataProvider stdWrap_numberFormatDataProvider
+	 * @test
+	 */
+	public function stdWrap_numberFormat($float, $conf, $expected) {
+		$result = $this->subject->stdWrap_numberFormat($float, $conf);
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function stdWrap_expandListDataProvider() {
+		return array(
+			'numbers' => array(
+				'1,2,3',
+				'1,2,3',
+			),
+			'range' => array(
+				'3-5',
+				'3,4,5',
+			),
+			'numbers and range' => array(
+				'1,3-5,7',
+				'1,3,4,5,7',
+			),
+		);
+	}
+
+	/**
+	 * Test for the stdWrap function "expandList"
+	 *
+	 * @param string $content
+	 * @param string $expected
+	 *
+	 * @dataProvider stdWrap_expandListDataProvider
+	 * @test
+	 */
+	public function stdWrap_expandList($content, $expected) {
+		$result = $this->subject->stdWrap_expandList($content);
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function stdWrap_trimDataProvider() {
+		return array(
+			'trimstring' => array(
+				'trimstring',
+				'trimstring',
+			),
+			'trim string with space inside' => array(
+				'trim string',
+				'trim string',
+			),
+			'trim string with space at the begin and end' => array(
+				' trim string ',
+				'trim string',
+			),
+		);
+	}
+
+	/**
+	 * Test for the stdWrap function "trim"
+	 *
+	 * @param string $content
+	 * @param string $expected
+	 *
+	 * @dataProvider stdWrap_trimDataProvider
+	 * @test
+	 */
+	public function stdWrap_trim($content, $expected) {
+		$result = $this->subject->stdWrap_trim($content);
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function stdWrap_intvalDataProvider() {
+		return array(
+			'number' => array(
+				'123',
+				123,
+			),
+			'float' => array(
+				'123.45',
+				123,
+			),
+			'string' => array(
+				'string',
+				0,
+			),
+			'zero' => array(
+				'0',
+				0,
+			),
+			'empty' => array(
+				'',
+				0,
+			),
+			'NULL' => array(
+				NULL,
+				0,
+			),
+			'bool TRUE' => array(
+				TRUE,
+				1,
+			),
+			'bool FALSE' => array(
+				FALSE,
+				0,
+			),
+		);
+	}
+
+	/**
+	 * Test for the stdWrap function "intval"
+	 *
+	 * @param string $content
+	 * @param int $expected
+	 *
+	 * @dataProvider stdWrap_intvalDataProvider
+	 * @test
+	 */
+	public function stdWrap_intval($content, $expected) {
+		$result = $this->subject->stdWrap_intval($content);
 		$this->assertEquals($expected, $result);
 	}
 
@@ -1456,6 +1656,64 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
+	 * Data provider for the stdWrap_date test
+	 *
+	 * @return array multi-dimensional array with the second level like this:
+	 * @see stdWrap_date
+	 */
+	public function stdWrap_dateDataProvider() {
+		return array(
+			'given timestamp' => array(
+				1443780000, // This is 2015-10-02 12:00
+				array(
+					'date' => 'd.m.Y',
+				),
+				'02.10.2015',
+			),
+			'empty string' => array(
+				'',
+				array(
+					'date' => 'd.m.Y',
+				),
+				'02.10.2015',
+			),
+			'testing null' => array(
+				NULL,
+				array(
+					'date' => 'd.m.Y',
+				),
+				'02.10.2015',
+			),
+			'given timestamp return GMT' => array(
+				1443780000, // This is 2015-10-02 12:00
+				array(
+					'date' => 'd.m.Y H:i:s',
+					'date.' => array(
+						'GMT' => TRUE,
+					)
+				),
+				'02.10.2015 10:00:00',
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider stdWrap_dateDataProvider
+	 * @param string|int|NULL $content
+	 * @param array $conf
+	 * @param string $expected
+	 */
+	public function stdWrap_date($content, $conf, $expected) {
+		// Set exec_time to a hard timestamp
+		$GLOBALS['EXEC_TIME'] = 1443780000;
+
+		$result = $this->subject->stdWrap_date($content, $conf);
+
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
 	 * Data provider for the stdWrap_strftime test
 	 *
 	 * @return array multi-dimensional array with the second level like this:
@@ -1582,6 +1840,224 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
+	 * @test
+	 */
+	public function stdWrap_ageCallsCalcAgeWithSubtractedTimestampAndSubPartOfArray() {
+		$subject = $this->getMock(
+			\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
+			array('calcAge')
+		);
+		// Set exec_time to a hard timestamp
+		$GLOBALS['EXEC_TIME'] = 10;
+		$subject->expects($this->once())->method('calcAge')->with(1, 'Min| Hrs| Days| Yrs');
+		$subject->stdWrap_age(9, array('age' => 'Min| Hrs| Days| Yrs'));
+	}
+
+	/**
+	 * Data provider for calcAgeCalculatesAgeOfTimestamp
+	 *
+	 * @return array
+	 * @see calcAge
+	 */
+	public function calcAgeCalculatesAgeOfTimestampDataProvider() {
+		return array(
+			'minutes' => array(
+				120,
+				' min| hrs| days| yrs',
+				'2 min',
+			),
+			'hours' => array(
+				7200,
+				' min| hrs| days| yrs',
+				'2 hrs',
+			),
+			'days' => array(
+				604800,
+				' min| hrs| days| yrs',
+				'7 days',
+			),
+			'day with provided singular labels' => array(
+				86400,
+				' min| hrs| days| yrs| min| hour| day| year',
+				'1 day',
+			),
+			'years' => array(
+				1417997800,
+				' min| hrs| days| yrs',
+				'45 yrs',
+			),
+			'different labels' => array(
+				120,
+				' Minutes| Hrs| Days| Yrs',
+				'2 Minutes',
+			),
+			'negative values' => array(
+				-604800,
+				' min| hrs| days| yrs',
+				'-7 days',
+			),
+			'default label values for wrong label input' => array(
+				121,
+				10,
+				'2 min',
+			),
+			'default singular label values for wrong label input' => array(
+				31536000,
+				10,
+				'1 year',
+			)
+		);
+	}
+
+	/**
+	 * @param int $timestamp
+	 * @param string $labels
+	 * @param int $expectation
+	 * @dataProvider calcAgeCalculatesAgeOfTimestampDataProvider
+	 * @test
+	 */
+	public function calcAgeCalculatesAgeOfTimestamp($timestamp, $labels, $expectation) {
+		$result = $this->subject->calcAge($timestamp, $labels);
+		$this->assertEquals($result, $expectation);
+	}
+
+	/**
+	 * Data provider for stdWrap_case test
+	 *
+	 * @return array
+	 */
+	public function stdWrap_caseDataProvider() {
+		return array(
+			'lower case text to upper' => array(
+				'<span>text</span>',
+				array(
+					'case' => 'upper',
+				),
+				'<span>TEXT</span>',
+			),
+			'upper case text to lower' => array(
+				'<span>TEXT</span>',
+				array(
+					'case' => 'lower',
+				),
+				'<span>text</span>',
+			),
+			'capitalize text' => array(
+				'<span>this is a text</span>',
+				array(
+					'case' => 'capitalize',
+				),
+				'<span>This Is A Text</span>',
+			),
+			'ucfirst text' => array(
+				'<span>this is a text</span>',
+				array(
+					'case' => 'ucfirst',
+				),
+				'<span>This is a text</span>',
+			),
+			'lcfirst text' => array(
+				'<span>This is a Text</span>',
+				array(
+					'case' => 'lcfirst',
+				),
+				'<span>this is a Text</span>',
+			),
+			'uppercamelcase text' => array(
+				'<span>this_is_a_text</span>',
+				array(
+					'case' => 'uppercamelcase',
+				),
+				'<span>ThisIsAText</span>',
+			),
+			'lowercamelcase text' => array(
+				'<span>this_is_a_text</span>',
+				array(
+					'case' => 'lowercamelcase',
+				),
+				'<span>thisIsAText</span>',
+			),
+		);
+	}
+
+	/**
+	 * @param string|NULL $content
+	 * @param array $configuration
+	 * @param string $expected
+	 * @dataProvider stdWrap_caseDataProvider
+	 * @test
+	 */
+	public function stdWrap_case($content, array $configuration, $expected) {
+		$result = $this->subject->stdWrap_case($content, $configuration);
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
+	 * Data provider for stdWrap_stdWrapValue test
+	 *
+	 * @return array
+	 */
+	public function stdWrap_stdWrapValueDataProvider() {
+		return array(
+			'only key returns value' => array(
+				'ifNull',
+				array(
+					'ifNull' => '1',
+				),
+				'',
+				'1',
+			),
+			'array without key returns empty string' => array(
+				'ifNull',
+				array(
+					'ifNull.' => '1',
+				),
+				'',
+				'',
+			),
+			'array without key returns default' => array(
+				'ifNull',
+				array(
+					'ifNull.' => '1',
+				),
+				'default',
+				'default',
+			),
+			'non existing key returns default' => array(
+				'ifNull',
+				array(
+					'noTrimWrap' => 'test',
+					'noTrimWrap.' => '1',
+				),
+				'default',
+				'default',
+			),
+			'existing key and array returns stdWrap' => array(
+				'test',
+				array(
+					'test' => 'value',
+					'test.' => array('case' => 'upper'),
+				),
+				'default',
+				'VALUE'
+			),
+		);
+	}
+
+	/**
+	 * @param string $key
+	 * @param array $configuration
+	 * @param string $defaultValue
+	 * @param string $expected
+	 * @dataProvider stdWrap_stdWrapValueDataProvider
+	 * @test
+	 */
+	public function stdWrap_stdWrapValue($key, array $configuration, $defaultValue, $expected) {
+		$result = $this->subject->stdWrapValue($key, $configuration, $defaultValue);
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
 	 * @param string|NULL $content
 	 * @param array $configuration
 	 * @param string $expected
@@ -1615,6 +2091,56 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'0',
 			),
 		);
+	}
+
+	/**
+	 * Data provider for stdWrap_ifEmptyDeterminesEmptyValues test
+	 *
+	 * @return array
+	 */
+	public function stdWrap_ifEmptyDeterminesEmptyValuesDataProvider() {
+		return array(
+			'null value' => array(
+				NULL,
+				array(
+					'ifEmpty' => '1',
+				),
+				'1',
+			),
+			'empty value' => array(
+				'',
+				array(
+					'ifEmpty' => '1',
+				),
+				'1',
+			),
+			'string value' => array(
+				'string',
+				array(
+					'ifEmpty' => '1',
+				),
+				'string',
+			),
+			'empty string value' => array(
+				'        ',
+				array(
+					'ifEmpty' => '1',
+				),
+				'1',
+			),
+		);
+	}
+
+	/**
+	 * @param string|NULL $content
+	 * @param array $configuration
+	 * @param string $expected
+	 * @dataProvider stdWrap_ifEmptyDeterminesEmptyValuesDataProvider
+	 * @test
+	 */
+	public function stdWrap_ifEmptyDeterminesEmptyValues($content, array $configuration, $expected) {
+		$result = $this->subject->stdWrap_ifEmpty($content, $configuration);
+		$this->assertEquals($expected, $result);
 	}
 
 	/**
@@ -1782,9 +2308,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 
-	/////////////////////////////
+	///////////////////////////////
 	// Tests concerning getData()
-	/////////////////////////////
+	///////////////////////////////
 
 	/**
 	 * @return array
@@ -3663,9 +4189,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertEquals($expectedResult, $contentObjectRenderer->getWhere($table, $configuration));
 	}
 
-	/////////////////////////////////////
-	// Test concerning link generation //
-	/////////////////////////////////////
+	////////////////////////////////////
+	// Test concerning link generation
+	////////////////////////////////////
 
 	/**
 	 * @test

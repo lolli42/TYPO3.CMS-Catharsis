@@ -13,7 +13,9 @@ return array(
 		'enablecolumns' => array(
 			'disabled' => 'hidden'
 		),
-		'iconfile' => '_icon_ftp.gif',
+		'typeicon_classes' => array(
+			'default' => 'mimetypes-x-sys_filemounts'
+		),
 		'useColumnsForDefaultValues' => 'path,base',
 		'versioningWS_alwaysAllowLiveEdit' => TRUE,
 		'searchFields' => 'title,path'
@@ -50,6 +52,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.baseStorage',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'foreign_table' => 'sys_file_storage',
 				'size' => 1,
 				'maxitems' => 1
@@ -59,6 +62,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.folder',
 			'config' => array(
 				'type' => 'select',
+				'renderType' => 'selectSingle',
 				'items' => array(),
 				'itemsProcFunc' => 'typo3/sysext/core/Classes/Resource/Service/UserFileMountService.php:TYPO3\CMS\Core\Resource\Service\UserFileMountService->renderTceformsSelectDropdown',
 			)

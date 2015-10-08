@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\Form\Element;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -259,7 +258,7 @@ class GroupElement extends AbstractFormElement {
 						$allowedTables[] = array(
 							// @todo: access to globals!
 							'name' => htmlspecialchars($languageService->sL($GLOBALS['TCA'][$allowedTable]['ctrl']['title'])),
-							'icon' => IconUtility::getSpriteIconForRecord($allowedTable, array()),
+							'icon' => $this->iconFactory->getIconForRecord($allowedTable, array(), Icon::SIZE_SMALL)->render(),
 							'onClick' => 'setFormValueOpenBrowser(\'db\', ' . GeneralUtility::quoteJSvalue($parameterArray['itemFormElName'] . '|||' . $allowedTable) . '); return false;'
 						);
 					}
@@ -282,7 +281,7 @@ class GroupElement extends AbstractFormElement {
 						$rr = BackendUtility::getRecordWSOL($this_table, $this_uid);
 						$thumbnails[] = array(
 							'name' => BackendUtility::getRecordTitle($this_table, $rr, TRUE),
-							'image' => IconUtility::getSpriteIconForRecord($this_table, $rr),
+							'image' => $this->iconFactory->getIconForRecord($this_table, $rr, Icon::SIZE_SMALL)->render(),
 							'path' => BackendUtility::getRecordPath($rr['pid'], $perms_clause, 15),
 							'uid' => $rr['uid'],
 							'table' => $this_table
