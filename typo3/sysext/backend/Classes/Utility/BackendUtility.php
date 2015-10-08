@@ -143,7 +143,7 @@ class BackendUtility {
 	 * @param string $table Table name (not necessarily in TCA)
 	 * @param string $where WHERE clause
 	 * @param string $fields $fields is a list of fields to select, default is '*'
-	 * @return array First row found, if any, FALSE otherwise
+	 * @return array|bool First row found, if any, FALSE otherwise
 	 */
 	static public function getRecordRaw($table, $where = '', $fields = '*') {
 		$row = FALSE;
@@ -1953,7 +1953,7 @@ class BackendUtility {
 			$l10n_mode = isset($GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode'])
 				? $GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode']
 				: '';
-			if ($l10n_mode === 'exclude' || ($l10n_mode === 'mergeIfNotBlank' && trim($originalRow[$field]) !== '')) {
+			if ($l10n_mode === 'exclude' || ($l10n_mode === 'mergeIfNotBlank' && trim($row[$field]) === '')) {
 				$row[$field] = $originalRow[$field];
 			}
 		}
@@ -3163,7 +3163,6 @@ class BackendUtility {
 	 * @param bool/string $backPathOverride Backpath that should be used instead of the global $BACK_PATH
 	 * @param bool $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
 	 * @return string Calculated URL
-	 * @internal
 	 */
 	static public function getAjaxUrl($ajaxIdentifier, array $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
 		if ($backPathOverride) {
@@ -3778,15 +3777,14 @@ class BackendUtility {
 	 * @param string $table Table name to select from
 	 * @param integer $uid Record uid for which to find versions.
 	 * @param string $fields Field list to select
-	 * @param integer $workspace Workspace ID, if zero all versions regardless of workspace is found.
-	 * @param boolean $includeDeletedRecords If set, deleted-flagged versions are included! (Only for clean-up script!)
+	 * @param integer|NULL $workspace Search in workspace ID and Live WS, if 0 search only in LiveWS, if NULL search in all WS.
+	 * @param bool $includeDeletedRecords If set, deleted-flagged versions are included! (Only for clean-up script!)
 	 * @param array $row The current record
 	 * @return array Array of versions of table/uid
 	 */
 	static public function selectVersionsOfRecord($table, $uid, $fields = '*', $workspace = 0, $includeDeletedRecords = FALSE, $row = NULL) {
 		$realPid = 0;
 		$outputRows = array();
-		$workspace = (int)$workspace;
 		if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
 			if (is_array($row) && !$includeDeletedRecords) {
 				$row['_CURRENT_VERSION'] = TRUE;
@@ -3802,12 +3800,20 @@ class BackendUtility {
 					$outputRows[] = $row;
 				}
 			}
+			$workspaceSqlPart = '';
+			if ($workspace === 0) {
+				// Only in Live WS
+				$workspaceSqlPart = ' AND t3ver_wsid=0';
+			} elseif ($workspace !== NULL) {
+				// In Live WS and Workspace with given ID
+				$workspaceSqlPart = ' AND t3ver_wsid IN (0,' . (int)$workspace . ')';
+			}
 			// Select all offline versions of record:
 			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 				$fields,
 				$table,
 				'pid=-1 AND uid<>' . (int)$uid . ' AND t3ver_oid=' . (int)$uid
-					. ' AND t3ver_wsid' . ($workspace !== 0 ? ' IN (0,' . (int)$workspace . ')' : '=0')
+					. $workspaceSqlPart
 					. ($includeDeletedRecords ? '' : self::deleteClause($table)),
 				'',
 				't3ver_id DESC'
@@ -3860,6 +3866,17 @@ class BackendUtility {
 					if (is_array($oidRec)) {
 						$rr['_ORIG_pid'] = $rr['pid'];
 						$rr['pid'] = $oidRec['pid'];
+					}
+				}
+				// Use target PID in case of move pointer
+				if (
+					!isset($rr['t3ver_state'])
+					|| VersionState::cast($rr['t3ver_state'])->equals(VersionState::MOVE_POINTER)
+				) {
+					$movePlaceholder = self::getMovePlaceholder($table, $oid, 'pid');
+					if ($movePlaceholder) {
+						$rr['_ORIG_pid'] = $rr['pid'];
+						$rr['pid'] = $movePlaceholder['pid'];
 					}
 				}
 			}
@@ -4125,11 +4142,14 @@ class BackendUtility {
 	 * @param string $table Table name
 	 * @param integer $uid Record UID of online version
 	 * @param string $fields Field list, default is *
+	 * @param int|NULL $workspace The workspace to be used
 	 * @return array If found, the record, otherwise nothing.
 	 */
-	static public function getMovePlaceholder($table, $uid, $fields = '*') {
-		$workspace = $GLOBALS['BE_USER']->workspace;
-		if ($workspace !== 0 && $GLOBALS['TCA'][$table] && (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) {
+	static public function getMovePlaceholder($table, $uid, $fields = '*', $workspace = NULL) {
+		if ($workspace === NULL) {
+			$workspace = $GLOBALS['BE_USER']->workspace;
+		}
+		if ((int)$workspace !== 0 && $GLOBALS['TCA'][$table] && (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) {
 			// Select workspace version of record:
 			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
 				$fields,
@@ -4217,8 +4237,18 @@ class BackendUtility {
 	 * @internal
 	 */
 	static public function ADMCMD_previewCmds($pageinfo) {
+		$simUser = '';
+		$simTime = '';
 		if ($pageinfo['fe_group'] > 0) {
 			$simUser = '&ADMCMD_simUser=' . $pageinfo['fe_group'];
+		} elseif ((int)$pageinfo['fe_group'] === -2) {
+			// -2 means "show at any login". We simulate first available fe_group.
+			/** @var \TYPO3\CMS\Frontend\Page\PageRepository $sysPage */
+			$sysPage = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
+			$activeFeGroupRow = BackendUtility::getRecordRaw('fe_groups', '1=1' . $sysPage->enableFields('fe_groups'), 'uid');
+			if (!empty($activeFeGroupRow)) {
+				$simUser = '&ADMCMD_simUser=' . $activeFeGroupRow['uid'];
+			}
 		}
 		if ($pageinfo['starttime'] > $GLOBALS['EXEC_TIME']) {
 			$simTime = '&ADMCMD_simTime=' . $pageinfo['starttime'];

@@ -90,7 +90,7 @@ class DatabaseConnectionPostgresqlTest extends AbstractTestCase {
 	 */
 	public function findInSetIsProperlyRemapped() {
 		$result = $this->subject->SELECTquery('*', 'fe_users', 'FIND_IN_SET(10, usergroup)');
-		$expected = 'SELECT * FROM "fe_users" WHERE FIND_IN_SET(10, "usergroup") != 0';
+		$expected = 'SELECT * FROM "fe_users" WHERE FIND_IN_SET(10, CAST("usergroup" AS CHAR)) != 0';
 		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
@@ -142,6 +142,20 @@ class DatabaseConnectionPostgresqlTest extends AbstractTestCase {
 		$result = $this->subject->SELECTquery('*', 'pages', 'pid<>3');
 		$expected = 'SELECT * FROM "pages" WHERE "pid" <> 3';
 		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/69304
+	 */
+	public function alterTableAddFieldWithAutoIncrementIsRemappedToSerialType() {
+		$parseString = 'ALTER TABLE sys_file ADD uid INT(11) NOT NULL AUTO_INCREMENT';
+		$components = $this->subject->SQLparser->_callRef('parseALTERTABLE', $parseString);
+		$this->assertInternalType('array', $components);
+
+		$result = $this->subject->SQLparser->compileSQL($components);
+		$expected = array('ALTER TABLE "sys_file" ADD COLUMN "uid" SERIAL');
+		$this->assertSame($expected, $this->cleanSql($result));
 	}
 
 }

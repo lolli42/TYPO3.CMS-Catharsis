@@ -25,6 +25,7 @@
 	},
 	"config": {
 		"vendor-dir": "Packages/Libraries",
+		"optimize-autoloader": true,
 		"bin-dir": "bin"
 	},
 	"require": {
@@ -33,8 +34,8 @@
 		"ext-pcre": "*",
 		"ext-session": "*",
 		"ext-xml": "*",
-		"helhum/class-alias-loader": "~1.1",
-		"typo3/cms-composer-installers": "1.1.*@dev"
+		"helhum/class-alias-loader": "1.1.5",
+		"typo3/cms-composer-installers": "1.1.4"
 	},
 	"require-dev": {
 		"mikey179/vfsStream": "1.3.*@dev",

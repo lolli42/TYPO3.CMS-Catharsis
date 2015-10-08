@@ -1,10 +1,5 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility;
-use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
-use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * This file is part of the TYPO3 CMS project.
@@ -18,6 +13,13 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
+use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
+use TYPO3\CMS\Lang\LanguageService;
+
 /**
  * Utility for dealing with files and folders
  *
@@ -36,6 +38,13 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @inject
 	 */
 	protected $installUtility;
+
+	/**
+	 * Initialize method - loads language file
+	 */
+	public function initializeObject() {
+		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_mod_tools_em.xlf');
+	}
 
 	/**
 	 * Unpack an extension in t3x data format and write files
@@ -262,6 +271,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Constructs emConf and writes it to corresponding file
+	 * In case the file has been extracted already, the properties of the meta data take precedence but are merged with the present ext_emconf.php
 	 *
 	 * @param array $extensionData
 	 * @param string $rootPath
@@ -269,6 +279,16 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	protected function writeEmConfToFile(array $extensionData, $rootPath, Extension $extension = NULL) {
+		$emConfFileData = array();
+		if (file_exists($rootPath . 'ext_emconf.php')) {
+			$emConfFileData = $this->emConfUtility->includeEmConf(
+				array(
+					'key' => $extensionData['extKey'],
+					'siteRelPath' => PathUtility::stripPathSitePrefix($rootPath)
+				)
+			);
+		}
+		$extensionData['EM_CONF'] = array_replace_recursive($emConfFileData, $extensionData['EM_CONF']);
 		$emConfContent = $this->emConfUtility->constructEmConf($extensionData, $extension);
 		GeneralUtility::writeFile($rootPath . 'ext_emconf.php', $emConfContent);
 	}
@@ -412,7 +432,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 					$last = strrpos(zip_entry_name($zipEntry), '/');
 					$dir = substr(zip_entry_name($zipEntry), 0, $last);
 					$file = substr(zip_entry_name($zipEntry), strrpos(zip_entry_name($zipEntry), '/') + 1);
-					if (!is_dir($dir)) {
+					if (!is_dir($extensionDir . $dir)) {
 						GeneralUtility::mkdir_deep($extensionDir . $dir);
 					}
 					if (strlen(trim($file)) > 0) {

@@ -15,7 +15,9 @@ namespace TYPO3\CMS\Frontend\Controller;
  */
 
 use TYPO3\CMS\Core\Error\Http\PageNotFoundException;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\StorageRepository;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -1077,9 +1079,9 @@ class TypoScriptFrontendController {
 	/**
 	 * This is needed for USER_INT processing
 	 *
-	 * @param \TYPO3\CMS\Core\Page\PageRenderer $pageRenderer
+	 * @param PageRenderer $pageRenderer
 	 */
-	protected function setPageRenderer(\TYPO3\CMS\Core\Page\PageRenderer $pageRenderer) {
+	protected function setPageRenderer(PageRenderer $pageRenderer) {
 		$this->pageRenderer = $pageRenderer;
 	}
 
@@ -1666,7 +1668,7 @@ class TypoScriptFrontendController {
 			$ws = $this->whichWorkspace();
 			if ($this->sys_page->error_getRootLine_failPid == -1 && $ws) {
 				$this->sys_page->versioningPreview = TRUE;
-				$this->versioningWorkspaceId = $ws;
+				$this->sys_page->versioningWorkspaceId = $ws;
 				$this->rootLine = $this->sys_page->getRootLine($this->id, $this->MP);
 			}
 			if (!count($this->rootLine)) {
@@ -2266,7 +2268,7 @@ class TypoScriptFrontendController {
 				$realGet = array();
 			}
 			// Merge new values on top:
-			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($realGet, $GET_VARS);
+			ArrayUtility::mergeRecursiveWithOverrule($realGet, $GET_VARS);
 			// Write values back to $_GET:
 			GeneralUtility::_GETset($realGet);
 			// Setting these specifically (like in the init-function):
@@ -2592,14 +2594,17 @@ class TypoScriptFrontendController {
 						throw new \TYPO3\CMS\Core\Error\Http\ServiceUnavailableException($message . ' ' . $explanation, 1294587217);
 					}
 				} else {
-					$this->config['config'] = array();
+					if (!isset($this->config['config'])) {
+						$this->config['config'] = array();
+					}
 					// Filling the config-array, first with the main "config." part
 					if (is_array($this->tmpl->setup['config.'])) {
+						ArrayUtility::mergeRecursiveWithOverrule($this->tmpl->setup['config.'], $this->config['config']);
 						$this->config['config'] = $this->tmpl->setup['config.'];
 					}
 					// override it with the page/type-specific "config."
 					if (is_array($this->pSetup['config.'])) {
-						\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($this->config['config'], $this->pSetup['config.']);
+						ArrayUtility::mergeRecursiveWithOverrule($this->config['config'], $this->pSetup['config.']);
 					}
 					if ($this->config['config']['typolinkEnableLinksAcrossDomains']) {
 						$this->config['config']['typolinkCheckRootline'] = TRUE;
@@ -2648,7 +2653,7 @@ class TypoScriptFrontendController {
 		// Merge GET with defaultGetVars
 		if (!empty($this->config['config']['defaultGetVars.'])) {
 			$modifiedGetVars = GeneralUtility::removeDotsFromTS($this->config['config']['defaultGetVars.']);
-			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($modifiedGetVars, GeneralUtility::_GET());
+			ArrayUtility::mergeRecursiveWithOverrule($modifiedGetVars, GeneralUtility::_GET());
 			GeneralUtility::_GETset($modifiedGetVars);
 		}
 		// Hook for postProcessing the configuration array
@@ -3632,7 +3637,8 @@ class TypoScriptFrontendController {
 		if (!empty($this->config['INTincScript_ext']['pageRenderer'])) {
 			/** @var PageRenderer $pageRenderer */
 			$pageRenderer = unserialize($this->config['INTincScript_ext']['pageRenderer']);
-			$this->setPageRenderer($pageRenderer);
+			$this->pageRenderer = $pageRenderer;
+			GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Page\\PageRenderer', $pageRenderer);
 		}
 
 		$this->recursivelyReplaceIntPlaceholdersInContent();
@@ -4835,7 +4841,7 @@ if (version == "n3") {
 			if ($this->lang !== 'default' && isset($tempLL[$language])) {
 				// Merge current language labels onto labels from previous language
 				// This way we have a label with fall back applied
-				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($localLanguage[$this->lang], $tempLL[$language], TRUE, FALSE);
+				ArrayUtility::mergeRecursiveWithOverrule($localLanguage[$this->lang], $tempLL[$language], TRUE, FALSE);
 			}
 		}
 
@@ -5007,15 +5013,14 @@ if (version == "n3") {
 		$enableFields = $this->sys_page->enableFields($tableName, $showHidden, array('starttime' => TRUE, 'endtime' => TRUE));
 		// For each start or end time field, get the minimum value
 		foreach (array('starttime', 'endtime') as $field) {
-			// Note: there is no need to load TCA because we need only enable columns!
 			if (isset($GLOBALS['TCA'][$tableName]['ctrl']['enablecolumns'][$field])) {
 				$timeField = $GLOBALS['TCA'][$tableName]['ctrl']['enablecolumns'][$field];
 				$selectField = 'MIN(' . $timeField . ') AS ' . $field;
 				$whereCondition = $timeField . ' > ' . $now;
 				// Find the smallest timestamp which could influence the cache duration (but is larger than 0)
 				$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow($selectField, $tableName, 'pid = ' . (int)$pid . ' AND ' . $whereCondition . $enableFields);
-				if ($row && !is_null($row[$timeField])) {
-					$result = min($result, $row[$timeField]);
+				if ($row && !is_null($row[$field])) {
+					$result = min($result, $row[$field]);
 				}
 			}
 		}

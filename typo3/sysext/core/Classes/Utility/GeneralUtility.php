@@ -368,7 +368,7 @@ class GeneralUtility {
 	static public function fixed_lgd_cs($string, $chars, $appendString = '...') {
 		if (is_object($GLOBALS['LANG'])) {
 			return $GLOBALS['LANG']->csConvObj->crop($GLOBALS['LANG']->charSet, $string, $chars, $appendString);
-		} elseif (is_object($GLOBALS['TSFE'])) {
+		} elseif (is_object($GLOBALS['TSFE']) && is_object($GLOBALS['TSFE']->csConvObj)) {
 			$charSet = $GLOBALS['TSFE']->renderCharset != '' ? $GLOBALS['TSFE']->renderCharset : $GLOBALS['TSFE']->defaultCharSet;
 			return $GLOBALS['TSFE']->csConvObj->crop($charSet, $string, $chars, $appendString);
 		} else {
@@ -1212,13 +1212,12 @@ class GeneralUtility {
 		if (!isset($bytes[($bytesToReturn - 1)])) {
 			if (TYPO3_OS === 'WIN') {
 				// Openssl seems to be deadly slow on Windows, so try to use mcrypt
-				// Windows PHP versions have a bug when using urandom source (see #24410)
-				$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate, MCRYPT_RAND);
+				$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate);
 			} else {
 				// Try to use native PHP functions first, precedence has openssl
 				$bytes .= self::generateRandomBytesOpenSsl($bytesToGenerate);
 				if (!isset($bytes[($bytesToReturn - 1)])) {
-					$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate, MCRYPT_DEV_URANDOM);
+					$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate);
 				}
 				// If openssl and mcrypt failed, try /dev/urandom
 				if (!isset($bytes[($bytesToReturn - 1)])) {
@@ -1254,14 +1253,13 @@ class GeneralUtility {
 	 * Generate random bytes using mcrypt if available
 	 *
 	 * @param $bytesToGenerate
-	 * @param $randomSource
 	 * @return string
 	 */
-	static protected function generateRandomBytesMcrypt($bytesToGenerate, $randomSource) {
+	static protected function generateRandomBytesMcrypt($bytesToGenerate) {
 		if (!function_exists('mcrypt_create_iv')) {
 			return '';
 		}
-		return (string) (@mcrypt_create_iv($bytesToGenerate, $randomSource));
+		return (string)(@mcrypt_create_iv($bytesToGenerate, MCRYPT_DEV_URANDOM));
 	}
 
 	/**
@@ -2614,7 +2612,7 @@ Connection: close
 			$content = @file_get_contents($url, FALSE, $ctx);
 			if ($content === FALSE && isset($report)) {
 				$report['error'] = -1;
-				$report['message'] = 'Couldn\'t get URL: ' . implode(LF, $http_response_header);
+				$report['message'] = 'Couldn\'t get URL: ' . (isset($http_response_header) ? implode(LF, $http_response_header) : $url);
 			}
 		} else {
 			if (isset($report)) {
@@ -2623,7 +2621,7 @@ Connection: close
 			$content = @file_get_contents($url);
 			if ($content === FALSE && isset($report)) {
 				$report['error'] = -1;
-				$report['message'] = 'Couldn\'t get URL: ' . implode(LF, $http_response_header);
+				$report['message'] = 'Couldn\'t get URL: ' . (isset($http_response_header) ? implode(LF, $http_response_header) : $url);
 			}
 		}
 		return $content;
@@ -2902,7 +2900,7 @@ Connection: close
 		if (file_exists($path)) {
 			$OK = TRUE;
 			if (!is_link($path) && is_dir($path)) {
-				if ($removeNonEmpty == TRUE && ($handle = opendir($path))) {
+				if ($removeNonEmpty == TRUE && ($handle = @opendir($path))) {
 					while ($OK && FALSE !== ($file = readdir($handle))) {
 						if ($file == '.' || $file == '..') {
 							continue;
@@ -2915,14 +2913,14 @@ Connection: close
 					$OK = @rmdir($path);
 				}
 			} elseif (is_link($path) && is_dir($path) && TYPO3_OS === 'WIN') {
-				$OK = rmdir($path);
+				$OK = @rmdir($path);
 			} else {
 				// If $path is a file, simply remove it
-				$OK = unlink($path);
+				$OK = @unlink($path);
 			}
 			clearstatcache();
 		} elseif (is_link($path)) {
-			$OK = unlink($path);
+			$OK = @unlink($path);
 			clearstatcache();
 		}
 		return $OK;
@@ -2935,14 +2933,16 @@ Connection: close
 	 *
 	 * @param string $directory The directory to be renamed and flushed
 	 * @param bool $keepOriginalDirectory Whether to only empty the directory and not remove it
+	 * @param bool $flushOpcodeCache Also flush the opcode cache right after renaming the directory.
 	 * @return boolean Whether the action was successful
 	 */
-	static public function flushDirectory($directory, $keepOriginalDirectory = FALSE) {
+	static public function flushDirectory($directory, $keepOriginalDirectory = FALSE, $flushOpcodeCache = FALSE) {
 		$result = FALSE;
 
 		if (is_dir($directory)) {
 			$temporaryDirectory = rtrim($directory, '/') . '.' . uniqid('remove', TRUE) . '/';
 			if (rename($directory, $temporaryDirectory)) {
+				$flushOpcodeCache && OpcodeCacheUtility::clearAllActive($directory);
 				if ($keepOriginalDirectory) {
 					self::mkdir($directory);
 				}
@@ -3922,6 +3922,7 @@ Connection: close
 		$sanitizedUrl = '';
 		$decodedUrl = rawurldecode($url);
 		if (!empty($url) && self::removeXSS($decodedUrl) === $decodedUrl) {
+			$parsedUrl = parse_url($decodedUrl);
 			$testAbsoluteUrl = self::resolveBackPath($decodedUrl);
 			$testRelativeUrl = self::resolveBackPath(self::dirname(self::getIndpEnv('SCRIPT_NAME')) . '/' . $decodedUrl);
 			// Pass if URL is on the current host:
@@ -3933,7 +3934,7 @@ Connection: close
 				$sanitizedUrl = $url;
 			} elseif (strpos($testAbsoluteUrl, self::getIndpEnv('TYPO3_SITE_PATH')) === 0 && $decodedUrl[0] === '/') {
 				$sanitizedUrl = $url;
-			} elseif (strpos($testRelativeUrl, self::getIndpEnv('TYPO3_SITE_PATH')) === 0 && $decodedUrl[0] !== '/') {
+			} elseif (empty($parsedUrl['scheme']) && strpos($testRelativeUrl, self::getIndpEnv('TYPO3_SITE_PATH')) === 0 && $decodedUrl[0] !== '/') {
 				$sanitizedUrl = $url;
 			}
 		}

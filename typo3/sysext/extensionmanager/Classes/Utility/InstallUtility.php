@@ -13,7 +13,9 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Impexp\Utility\ImportExportUtility;
+use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
 
 /**
  * Extension Manager Install Utility
@@ -280,6 +282,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	public function reloadCaches() {
+		\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive();
 		// Reload class aliases defined in Migrations/Code/ClassAliasMap.php
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->getEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader')
 			->setPackages($this->packageManager->getActivePackages());
@@ -426,13 +429,18 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		/** @var $extensionUpdates[] \TYPO3\CMS\Extensionmanager\Domain\Model\Extension */
 		$extensionUpdates = $this->extensionRepository->findByVersionRangeAndExtensionKeyOrderedByVersion(
 			$extensionData->getExtensionKey(),
-			$version + 1
+			$version,
+			0,
+			FALSE
 		);
 		if ($extensionUpdates->count() > 0) {
 			foreach ($extensionUpdates as $extensionUpdate) {
-				$this->dependencyUtility->checkDependencies($extensionUpdate);
-				if (!$this->dependencyUtility->hasDependencyErrors()) {
-					return $extensionUpdate;
+				try {
+					$this->dependencyUtility->checkDependencies($extensionUpdate);
+					if (!$this->dependencyUtility->hasDependencyErrors()) {
+						return $extensionUpdate;
+					}
+				} catch (ExtensionManagerException $e) {
 				}
 			}
 		}

@@ -2014,42 +2014,96 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	// Tests concerning sanitizeLocalUrl
 	////////////////////////////////////////
 	/**
-	 * Data provider for valid sanitizeLocalUrl's
+	 * Data provider for valid sanitizeLocalUrl paths
 	 *
 	 * @return array Valid url
 	 */
-	public function sanitizeLocalUrlValidUrlDataProvider() {
-		$subDirectory = Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
-		$typo3SiteUrl = Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
-		$typo3RequestHost = Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST');
+	public function sanitizeLocalUrlValidPathsDataProvider() {
 		return array(
 			'alt_intro.php' => array('alt_intro.php'),
 			'alt_intro.php?foo=1&bar=2' => array('alt_intro.php?foo=1&bar=2'),
-			$subDirectory . 'typo3/alt_intro.php' => array($subDirectory . 'typo3/alt_intro.php'),
-			$subDirectory . 'index.php' => array($subDirectory . 'index.php'),
 			'../index.php' => array('../index.php'),
 			'../typo3/alt_intro.php' => array('../typo3/alt_intro.php'),
 			'../~userDirectory/index.php' => array('../~userDirectory/index.php'),
 			'../typo3/mod.php?var1=test-case&var2=~user' => array('../typo3/mod.php?var1=test-case&var2=~user'),
 			PATH_site . 'typo3/alt_intro.php' => array(PATH_site . 'typo3/alt_intro.php'),
-			$typo3SiteUrl . 'typo3/alt_intro.php' => array($typo3SiteUrl . 'typo3/alt_intro.php'),
-			$typo3RequestHost . $subDirectory . '/index.php' => array($typo3RequestHost . $subDirectory . '/index.php')
 		);
 	}
 
 	/**
 	 * @test
-	 * @dataProvider sanitizeLocalUrlValidUrlDataProvider
+	 * @param string $path
+	 * @dataProvider sanitizeLocalUrlValidPathsDataProvider
 	 */
-	public function sanitizeLocalUrlAcceptsNotEncodedValidUrls($url) {
+	public function sanitizeLocalUrlAcceptsNotEncodedValidPaths($path) {
+		$this->assertEquals($path, Utility\GeneralUtility::sanitizeLocalUrl($path));
+	}
+
+	/**
+	 * @test
+	 * @param string $path
+	 * @dataProvider sanitizeLocalUrlValidPathsDataProvider
+	 */
+	public function sanitizeLocalUrlAcceptsEncodedValidPaths($path) {
+		$this->assertEquals(rawurlencode($path), Utility\GeneralUtility::sanitizeLocalUrl(rawurlencode($path)));
+	}
+
+	/**
+	 * Data provider for valid sanitizeLocalUrl's
+	 *
+	 * @return array Valid url
+	 */
+	public function sanitizeLocalUrlValidUrlsDataProvider() {
+		$host = 'localhost';
+		$subDirectory = '/cms/';
+
+		return array(
+			$subDirectory . 'typo3/alt_intro.php' => array(
+				$subDirectory . 'typo3/alt_intro.php',
+				$host,
+				$subDirectory,
+			),
+			$subDirectory . 'index.php' => array(
+				$subDirectory . 'index.php',
+				$host,
+				$subDirectory,
+			),
+			'http://' . $host . '/typo3/alt_intro.php' => array(
+				'http://' . $host . '/typo3/alt_intro.php',
+				$host,
+				'',
+			),
+			'http://' . $host . $subDirectory . 'typo3/alt_intro.php' => array(
+				'http://' . $host . $subDirectory . 'typo3/alt_intro.php',
+				$host,
+				$subDirectory,
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @param string $url
+	 * @param string $host
+	 * @param string $subDirectory
+	 * @dataProvider sanitizeLocalUrlValidUrlsDataProvider
+	 */
+	public function sanitizeLocalUrlAcceptsNotEncodedValidUrls($url, $host, $subDirectory) {
+		$_SERVER['HTTP_HOST'] = $host;
+		$_SERVER['SCRIPT_NAME'] = $subDirectory . 'typo3/index.php';
 		$this->assertEquals($url, Utility\GeneralUtility::sanitizeLocalUrl($url));
 	}
 
 	/**
 	 * @test
-	 * @dataProvider sanitizeLocalUrlValidUrlDataProvider
+	 * @param string $url
+	 * @param string $host
+	 * @param string $subDirectory
+	 * @dataProvider sanitizeLocalUrlValidUrlsDataProvider
 	 */
-	public function sanitizeLocalUrlAcceptsEncodedValidUrls($url) {
+	public function sanitizeLocalUrlAcceptsEncodedValidUrls($url, $host, $subDirectory) {
+		$_SERVER['HTTP_HOST'] = $host;
+		$_SERVER['SCRIPT_NAME'] = $subDirectory . 'typo3/index.php';
 		$this->assertEquals(rawurlencode($url), Utility\GeneralUtility::sanitizeLocalUrl(rawurlencode($url)));
 	}
 
@@ -2063,7 +2117,8 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'empty string' => array(''),
 			'http domain' => array('http://www.google.de/'),
 			'https domain' => array('https://www.google.de/'),
-			'relative path with XSS' => array('../typo3/whatever.php?argument=javascript:alert(0)')
+			'relative path with XSS' => array('../typo3/whatever.php?argument=javascript:alert(0)'),
+			'base64 encoded string' => array('data:%20text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4='),
 		);
 	}
 
@@ -2603,44 +2658,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function quoteJsValueTest($input, $expected) {
 		$this->assertSame('\'' . $expected . '\'', Utility\GeneralUtility::quoteJSvalue($input));
-	}
-
-	//////////////////////////////////
-	// Tests concerning readLLfile
-	//////////////////////////////////
-	/**
-	 * @test
-	 */
-	public function readLLfileHandlesLocallangXMLOverride() {
-		$unique = 'locallangXMLOverrideTest' . substr($this->getUniqueId(), 0, 10);
-		$xml = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-			<T3locallang>
-				<data type="array">
-					<languageKey index="default" type="array">
-						<label index="buttons.logout">EXIT</label>
-					</languageKey>
-				</data>
-			</T3locallang>';
-		$file = PATH_site . 'typo3temp/' . $unique . '.xml';
-		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $xml);
-		// Make sure there is no cached version of the label
-		Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('l10n')->flush();
-		// Get default value
-		$defaultLL = Utility\GeneralUtility::readLLfile('EXT:lang/locallang_core.xlf', 'default');
-		// Clear language cache again
-		Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('l10n')->flush();
-		// Set override file
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['locallangXMLOverride']['EXT:lang/locallang_core.xlf'][$unique] = $file;
-		/** @var $store \TYPO3\CMS\Core\Localization\LanguageStore */
-		$store = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Localization\\LanguageStore');
-		$store->flushData('EXT:lang/locallang_core.xlf');
-		// Get override value
-		$overrideLL = Utility\GeneralUtility::readLLfile('EXT:lang/locallang_core.xlf', 'default');
-		// Clean up again
-		unlink($file);
-		$this->assertNotEquals($overrideLL['default']['buttons.logout'][0]['target'], '');
-		$this->assertNotEquals($defaultLL['default']['buttons.logout'][0]['target'], $overrideLL['default']['buttons.logout'][0]['target']);
-		$this->assertEquals($overrideLL['default']['buttons.logout'][0]['target'], 'EXIT');
 	}
 
 	///////////////////////////////

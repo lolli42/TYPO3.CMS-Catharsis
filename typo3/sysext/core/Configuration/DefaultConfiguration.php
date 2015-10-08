@@ -156,7 +156,7 @@ return array(
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend',
 					'options' => array(
 						'compression' => TRUE,
-						'defaultLifetime' => 2592000   //  30 days; set this to a lower value in case your cache gets too big
+						'defaultLifetime' => 2592000, // 30 days; set this to a lower value in case your cache gets too big
 					),
 					'groups' => array('pages', 'all')
 				),
@@ -177,7 +177,9 @@ return array(
 				'cache_rootline' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend',
-					'options' => array(),
+					'options' => array(
+						'defaultLifetime' => 2592000, // 30 days; set this to a lower value in case your cache gets too big
+					),
 					'groups' => array('pages', 'all')
 				),
 				'l10n' => array(
@@ -785,7 +787,7 @@ return array(
 		'follow_redirects' => FALSE,		// Boolean: If set, redirects are followed by default. If number of tries are exceeded, an exception is thrown.
 		'max_redirects' => 5,		// Integer: Maximum number of tries before an exception is thrown.
 		'strict_redirects' => FALSE,		// Boolean: Whether to keep request method on redirects via status 301 and 302 (TRUE, needed for compatibility with <a href="http://www.faqs.org/rfcs/rfc2616">RFC 2616</a>) or switch to GET (FALSE, needed for compatibility with most browsers). There are some <a href="http://pear.php.net/manual/en/package.http.http-request2.adapters.php#package.http.http-request2.adapters.curl">issues with cURL adapter</a>. Defaults to FALSE.
-		'proxy_host' => '',		// String: Default proxy server as "http://proxy.example.org" (You must not set the port here. Set the port below.)
+		'proxy_host' => '',		// String: Default proxy server as "proxy.example.org" (You must not set the protocol or the port here. Set the port below.)
 		'proxy_port' => '',		// Integer: Default proxy server port.
 		'proxy_user' => '',		// String: Default user name.
 		'proxy_password' => '',		// String: Default password.

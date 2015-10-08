@@ -104,16 +104,18 @@ class Folder implements FolderInterface {
 	 * @return string
 	 */
 	public function getReadablePath($rootId = NULL) {
-		$oldPermissionFlag = $this->getStorage()->getEvaluatePermissions();
-		$this->getStorage()->setEvaluatePermissions(FALSE);
 		if ($rootId === NULL) {
-			$rootId = $this->storage->getRootLevelFolder(FALSE)->getIdentifier();
+			$rootId = $this->storage->getRootLevelFolder()->getIdentifier();
 		}
-		$readablePath = '';
+		$readablePath = '/';
 		if ($this->identifier !== $rootId) {
-			$readablePath = $this->getParentFolder()->getReadablePath($rootId);
+			try {
+				$readablePath = $this->getParentFolder()->getReadablePath($rootId);
+			} catch (Exception\InsufficientFolderAccessPermissionsException $e) {
+				// May no access to parent folder (e.g. because of mount point)
+				$readablePath = '/';
+			}
 		}
-		$this->getStorage()->setEvaluatePermissions($oldPermissionFlag);
 		return $readablePath . $this->name . '/';
 	}
 
@@ -213,9 +215,9 @@ class Folder implements FolderInterface {
 	 * the given pattern
 	 *
 	 * @param array $filterMethods
-	 * @param boolean $recursive
-	 *
-	 * @return integer
+	 * @param bool $recursive
+	 * @return int
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */
 	public function getFileCount(array $filterMethods = array(), $recursive = FALSE) {
 		return count($this->storage->getFileIdentifiersInFolder($this->identifier, TRUE, $recursive));
@@ -370,7 +372,11 @@ class Folder implements FolderInterface {
 	 * @return boolean
 	 */
 	public function checkActionPermission($action) {
-		return $this->getStorage()->checkFolderActionPermission($action, $this);
+		try {
+			return $this->getStorage()->checkFolderActionPermission($action, $this);
+		} catch (Exception\ResourcePermissionsUnavailableException $e) {
+			return FALSE;
+		}
 	}
 
 	/**

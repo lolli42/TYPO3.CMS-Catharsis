@@ -816,6 +816,9 @@ abstract class AbstractUserAuthentication {
 			} elseif ($haveSession) {
 				$this->user = $authInfo['userSession'];
 			}
+			if ($activeLogin && !$this->newSessionID) {
+				$this->regenerateSessionId();
+			}
 			// User logged in - write that to the log!
 			if ($this->writeStdLog && $activeLogin) {
 				$this->writelog(255, 1, 0, 1, 'User %s logged in from %s (%s)', array($tempuser[$this->username_column], GeneralUtility::getIndpEnv('REMOTE_ADDR'), GeneralUtility::getIndpEnv('REMOTE_HOST')), '', '', '', -1, '', $tempuser['uid']);
@@ -854,6 +857,21 @@ abstract class AbstractUserAuthentication {
 			if ($this->writeDevLog) {
 				GeneralUtility::devLog('Call checkLogFailures: ' . GeneralUtility::arrayToLogString(array('warningEmail' => $this->warningEmail, 'warningPeriod' => $this->warningPeriod, 'warningMax' => $this->warningMax)), 'TYPO3\\CMS\\Core\\Authentication\\AbstractUserAuthentication', -1);
 			}
+
+			// Hook to implement login failure tracking methods
+			if (
+				!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['postLoginFailureProcessing'])
+				&& is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['postLoginFailureProcessing'])
+			) {
+				$_params = array();
+				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['postLoginFailureProcessing'] as $_funcRef) {
+					GeneralUtility::callUserFunction($_funcRef, $_params, $this);
+				}
+			} else {
+				// If no hook is implemented, wait for 5 seconds
+				sleep(5);
+			}
+
 			$this->checkLogFailures($this->warningEmail, $this->warningPeriod, $this->warningMax);
 		}
 	}
@@ -865,6 +883,24 @@ abstract class AbstractUserAuthentication {
 	 */
 	public function createSessionId() {
 		return GeneralUtility::getRandomHexString($this->hash_length);
+	}
+
+	/**
+	 * Regenerate the session ID and transfer the session to new ID
+	 * Call this method whenever a user proceeds to a higher authorization level
+	 * e.g. when an anonymous session is now authenticated.
+	 */
+	protected function regenerateSessionId() {
+		$oldSessionId = $this->id;
+		$this->id = $this->createSessionId();
+		// Update session record with new ID
+		$this->db->exec_UPDATEquery(
+			$this->session_table,
+			'ses_id = ' . $this->db->fullQuoteStr($oldSessionId, $this->session_table)
+				. ' AND ses_name = ' . $this->db->fullQuoteStr($this->name, $this->session_table),
+			array('ses_id' => $this->id)
+		);
+		$this->newSessionID = TRUE;
 	}
 
 	/*************************
@@ -1284,7 +1320,7 @@ abstract class AbstractUserAuthentication {
 	 * @todo Define visibility
 	 */
 	public function getModuleData($module, $type = '') {
-		if ($type != 'ses' || $this->uc['moduleSessionID'][$module] == $this->id) {
+		if ($type != 'ses' || (isset($this->uc['moduleSessionID'][$module]) && $this->uc['moduleSessionID'][$module] == $this->id)) {
 			return $this->uc['moduleData'][$module];
 		}
 		return NULL;

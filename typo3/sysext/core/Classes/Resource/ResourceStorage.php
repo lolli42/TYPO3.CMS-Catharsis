@@ -603,10 +603,16 @@ class ResourceStorage implements ResourceStorageInterface {
 			$isMissing = $file->isMissing();
 		}
 
+		if ($this->driver->fileExists($file->getIdentifier()) === FALSE) {
+			$file->setMissing(TRUE);
+			$isMissing = TRUE;
+		}
+
 		// Check 4: Check the capabilities of the storage (and the driver)
 		if ($isWriteCheck && ($isMissing || !$this->isWritable())) {
 			return FALSE;
 		}
+
 		// Check 5: "File permissions" of the driver (only when file isn't marked as missing)
 		if (!$isMissing) {
 			$filePermissions = $this->driver->getPermissions($file->getIdentifier());
@@ -725,7 +731,17 @@ class ResourceStorage implements ResourceStorageInterface {
 	 */
 	protected function assureFolderReadPermission(Folder $folder = NULL) {
 		if (!$this->checkFolderActionPermission('read', $folder)) {
-			throw new Exception\InsufficientFolderAccessPermissionsException('You are not allowed to access the given folder', 1375955684);
+			if ($folder === NULL) {
+				throw new Exception\InsufficientFolderAccessPermissionsException(
+					'You are not allowed to read folders',
+					1430657869
+				);
+			} else {
+				throw new Exception\InsufficientFolderAccessPermissionsException(
+					'You are not allowed to access the given folder: "' . $folder->getName() . '"',
+					1375955684
+				);
+			}
 		}
 	}
 
@@ -1578,9 +1594,11 @@ class ResourceStorage implements ResourceStorageInterface {
 
 		$this->emitPreFileDeleteSignal($fileObject);
 
-		$result = $this->driver->deleteFile($fileObject->getIdentifier());
-		if ($result === FALSE) {
-			throw new Exception\FileOperationErrorException('Deleting the file "' . $fileObject->getIdentifier() . '\' failed.', 1329831691);
+		if ($this->driver->fileExists($fileObject->getIdentifier())) {
+			$result = $this->driver->deleteFile($fileObject->getIdentifier());
+			if (!$result) {
+				throw new Exception\FileOperationErrorException('Deleting the file "' . $fileObject->getIdentifier() . '\' failed.', 1329831691);
+			}
 		}
 		// Mark the file object as deleted
 		if ($fileObject instanceof File) {
@@ -2142,6 +2160,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */
 	public function getFolder($identifier, $returnInaccessibleFolderObject = FALSE) {
+
 		$data = $this->driver->getFolderInfoByIdentifier($identifier);
 		$folder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
 
@@ -2645,6 +2664,10 @@ class ResourceStorage implements ResourceStorageInterface {
 					}
 				}
 			} catch(Exception\InsufficientFolderWritePermissionsException $e) {
+				$this->processingFolder = GeneralUtility::makeInstance(
+					'TYPO3\\CMS\\Core\\Resource\\InaccessibleFolder', $this, $processingFolder, $processingFolder
+				);
+			} catch(Exception\ResourcePermissionsUnavailableException $e) {
 				$this->processingFolder = GeneralUtility::makeInstance(
 					'TYPO3\\CMS\\Core\\Resource\\InaccessibleFolder', $this, $processingFolder, $processingFolder
 				);

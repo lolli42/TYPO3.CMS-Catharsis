@@ -102,12 +102,13 @@ class ListController extends AbstractController {
 	 * @return void
 	 */
 	public function terAction($search = '') {
+		$search = trim($search);
 		if (!empty($search)) {
 			$extensions = $this->extensionRepository->findByTitleOrAuthorNameOrExtensionKey($search);
 		} else {
 			$extensions = $this->extensionRepository->findAll();
 		}
-		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensionsWithAdditionalInformation();
+		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensions($this->listUtility->getAvailableExtensions());
 		$this->view->assign('extensions', $extensions)
 				->assign('search', $search)
 				->assign('availableAndInstalled', $availableAndInstalledExtensions);

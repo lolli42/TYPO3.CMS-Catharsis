@@ -2260,7 +2260,7 @@ class DataHandler {
 			if (!is_array($currentValueArray)) {
 				$currentValueArray = array();
 			}
-			if (is_array($currentValueArray['meta']['currentLangId'])) {
+			if (isset($currentValueArray['meta']['currentLangId'])) {
 				unset($currentValueArray['meta']['currentLangId']);
 			}
 			// Remove all old meta for languages...
@@ -3089,13 +3089,15 @@ class DataHandler {
 	 * @param array $overrideValues Associative array with field/value pairs to override directly. Notice; Fields must exist in the table record and NOT be among excluded fields!
 	 * @param string $excludeFields Commalist of fields to exclude from the copy process (might get default values)
 	 * @param integer $language Language ID (from sys_language table)
-	 * @return integer ID of new record, if any
-	 * @todo Define visibility
+	 * @return NULL|int ID of new record, if any
 	 */
 	public function copyRecord($table, $uid, $destPid, $first = 0, $overrideValues = array(), $excludeFields = '', $language = 0) {
 		$uid = ($origUid = (int)$uid);
+		if (empty($GLOBALS['TCA'][$table]) || $uid === 0) {
+			return NULL;
+		}
 		// Only copy if the table is defined in $GLOBALS['TCA'], a uid is given and the record wasn't copied before:
-		if ($GLOBALS['TCA'][$table] && $uid && !$this->isRecordCopied($table, $uid)) {
+		if (!$this->isRecordCopied($table, $uid)) {
 			// This checks if the record can be selected which is all that a copy action requires.
 			if ($this->doesRecordExist($table, $uid, 'show')) {
 				// Check if table is allowed on destination page
@@ -3199,6 +3201,8 @@ class DataHandler {
 			} else {
 				$this->log($table, $uid, 3, 0, 1, 'Attempt to copy record without permission');
 			}
+		} elseif (!empty($overrideValues)) {
+			$this->log($table, $uid, 5, 0, 1, 'Repeated attemp to copy record "' . $table . ':' . $uid . '" with override values');
 		}
 	}
 
@@ -3270,12 +3274,33 @@ class DataHandler {
 			foreach ($copyTablesArray as $table) {
 				// All records under the page is copied.
 				if ($table && is_array($GLOBALS['TCA'][$table]) && $table != 'pages') {
-					$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', $table, 'pid=' . (int)$uid . $this->deleteClause($table), '', $GLOBALS['TCA'][$table]['ctrl']['sortby'] ? $GLOBALS['TCA'][$table]['ctrl']['sortby'] . ' DESC' : '');
-					while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($mres)) {
+					$fields = 'uid';
+					$languageField = NULL;
+					$transOrigPointerField = NULL;
+					if (BackendUtility::isTableLocalizable($table)) {
+						$languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'];
+						$transOrigPointerField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
+						$fields .= ',' . $languageField . ',' . $transOrigPointerField;
+					}
+					$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+						$fields,
+						$table,
+						'pid=' . (int)$uid . $this->deleteClause($table),
+						'',
+						(!empty($GLOBALS['TCA'][$table]['ctrl']['sortby']) ? $GLOBALS['TCA'][$table]['ctrl']['sortby'] . ' DESC' : ''),
+						'',
+						'uid'
+					);
+					foreach ($rows as $row) {
+						// Skip localized records that will be processed in
+						// copyL10nOverlayRecords() on copying the default language record
+						$transOrigPointer = $row[$transOrigPointerField];
+						if ($row[$languageField] > 0 && $transOrigPointer > 0 && isset($rows[$transOrigPointer])) {
+							continue;
+						}
 						// Copying each of the underlying records...
 						$this->copyRecord($table, $row['uid'], $theNewRootID);
 					}
-					$GLOBALS['TYPO3_DB']->sql_free_result($mres);
 				}
 			}
 			return $theNewRootID;
@@ -4345,7 +4370,7 @@ class DataHandler {
 	 * @todo Define visibility
 	 */
 	public function deleteVersionsForRecord($table, $uid, $forceHardDelete) {
-		$versions = BackendUtility::selectVersionsOfRecord($table, $uid, 'uid,pid', $this->BE_USER->workspace);
+		$versions = BackendUtility::selectVersionsOfRecord($table, $uid, 'uid,pid,t3ver_wsid,t3ver_state', $this->BE_USER->workspace ?: NULL);
 		if (is_array($versions)) {
 			foreach ($versions as $verRec) {
 				if (!$verRec['_CURRENT_VERSION']) {
@@ -4353,6 +4378,13 @@ class DataHandler {
 						$this->deletePages($verRec['uid'], TRUE, $forceHardDelete);
 					} else {
 						$this->deleteRecord($table, $verRec['uid'], TRUE, $forceHardDelete);
+					}
+
+					// Delete move-placeholder
+					$versionState = VersionState::cast($verRec['t3ver_state']);
+					if ($versionState->equals(VersionState::MOVE_POINTER)) {
+						$versionMovePlaceholder = BackendUtility::getMovePlaceholder($table, $uid, 'uid', $verRec['t3ver_wsid']);
+						$this->deleteEl($table, $versionMovePlaceholder['uid'], TRUE, $forceHardDelete);
 					}
 				}
 			}
@@ -5610,7 +5642,15 @@ class DataHandler {
 		}
 
 		$res = FALSE;
-		$pageExists = (bool)$this->doesRecordExist('pages', $pid, ($insertTable === 'pages' ? $this->pMap['new'] : $this->pMap['editcontent']));
+		if ($insertTable === 'pages') {
+			$perms = $this->pMap['new'];
+		// @todo: find a more generic way to handle content relations of a page (without needing content editing access to that page)
+		} elseif (($insertTable === 'sys_file_reference') && array_key_exists('pages', $this->datamap)) {
+			$perms = $this->pMap['edit'];
+		} else {
+			$perms = $this->pMap['editcontent'];
+		}
+		$pageExists = (bool)$this->doesRecordExist('pages', $pid, $perms);
 		// If either admin and root-level or if page record exists and 1) if 'pages' you may create new ones 2) if page-content, new content items may be inserted on the $pid page
 		if ($pageExists || $pid === 0 && ($this->admin || BackendUtility::isRootLevelRestrictionIgnored($insertTable))) {
 			// Check permissions
@@ -5691,7 +5731,11 @@ class DataHandler {
 
 					case 'new':
 						// This holds it all in case the record is not page!!
+					if ($table === 'sys_file_reference' && array_key_exists('pages', $this->datamap)) {
+						$perms = 'edit';
+					} else {
 						$perms = 'editcontent';
+					}
 						break;
 				}
 			}

@@ -747,6 +747,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	public function replaceFile($fileIdentifier, $localFilePath) {
 		$filePath = $this->getAbsolutePath($fileIdentifier);
 		$result = rename($localFilePath, $filePath);
+		GeneralUtility::fixPermissions($filePath);
 		if ($result === FALSE) {
 			throw new \RuntimeException('Replacing file ' . $fileIdentifier . ' with ' . $localFilePath . ' failed.', 1315314711);
 		}
@@ -1076,13 +1077,16 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 *
 	 * @param string $identifier
 	 * @return array
-	 * @throws \RuntimeException
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\ResourcePermissionsUnavailableException
 	 */
 	public function getPermissions($identifier) {
 		$path = $this->getAbsolutePath($identifier);
 		$permissionBits = fileperms($path);
 		if ($permissionBits === FALSE) {
-			throw new \RuntimeException('Error while fetching permissions for ' . $path, 1319455097);
+			throw new \TYPO3\CMS\Core\Resource\Exception\ResourcePermissionsUnavailableException(
+				'Error while fetching permissions for ' . $path,
+				1319455097
+			);
 		}
 		return array(
 			'r' => (bool)is_readable($path),

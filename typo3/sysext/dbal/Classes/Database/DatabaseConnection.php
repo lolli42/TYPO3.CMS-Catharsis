@@ -1750,7 +1750,17 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						// but it's not overridden from \TYPO3\CMS\Core\Database\DatabaseConnection at the moment...
 						$patternForLike = $this->escapeStrForLike($pattern, $where_clause[$k]['func']['table']);
 						$where_clause[$k]['func']['str_like'] = $patternForLike;
-						// Intentional fallthrough
+						if ($where_clause[$k]['func']['table'] !== '') {
+							$where_clause[$k]['func']['table'] = $this->quoteName($v['func']['table']);
+						}
+						if ($where_clause[$k]['func']['field'] !== '') {
+							if (!empty($this->dbmsSpecifics) && $this->dbmsSpecifics->getSpecific(Specifics\AbstractSpecifics::CAST_FIND_IN_SET)) {
+								$where_clause[$k]['func']['field'] = 'CAST(' . $this->quoteName($v['func']['field']) . ' AS CHAR)';
+							} else {
+								$where_clause[$k]['func']['field'] = $this->quoteName($v['func']['field']);
+							}
+						}
+						break;
 					case 'IFNULL':
 						// Intentional fallthrough
 					case 'LOCATE':
@@ -1786,9 +1796,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					}
 				} else {
 					// Detecting value type; list or plain:
-					if (GeneralUtility::inList('NOTIN,IN', strtoupper(str_replace(array(' ', '
-', '
-', '	'), '', $where_clause[$k]['comparator'])))) {
+					if (GeneralUtility::inList('NOTIN,IN', strtoupper(str_replace(array(' ', LF, CR, TAB), '', $where_clause[$k]['comparator'])))) {
 						if (isset($v['subquery'])) {
 							$where_clause[$k]['subquery'] = $this->quoteSELECTsubquery($v['subquery']);
 						}
@@ -1798,6 +1806,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 							&& is_string($where_clause[$k]['value'][0]) && strstr($where_clause[$k]['value'][0], '.')
 						) {
 							$where_clause[$k]['value'][0] = $this->quoteFieldNames($where_clause[$k]['value'][0]);
+						} elseif ($this->runningADOdbDriver('mssql')) {
+							$where_clause[$k]['value'][0] = substr($this->handlerInstance[$this->lastHandlerKey]->qstr($where_clause[$k]['value'][0]), 1, -1);
 						}
 					}
 				}
@@ -2662,7 +2672,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 							// Skip tables from the Oracle 10 Recycle Bin
 							continue;
 						}
-						$whichTables[$theTable] = $theTable;
+						$whichTables[$theTable] = array('Name' => $theTable);
 					}
 				}
 				break;
@@ -2684,6 +2694,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			foreach ($whichTables as $tN => $tDefinition) {
 				if (isset($tMap[$tN])) {
 					$tN = $tMap[$tN];
+					$tDefinition = array('Name' => $tN);
 				}
 				$newList[$tN] = $tDefinition;
 			}
@@ -2692,7 +2703,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		// Adding tables configured to reside in other DBMS (handler by other handlers than the default):
 		if (is_array($this->table2handlerKeys)) {
 			foreach ($this->table2handlerKeys as $key => $handlerKey) {
-				$whichTables[$key] = $key;
+				$whichTables[$key] = array('Name' => $key);
 			}
 		}
 		return $whichTables;

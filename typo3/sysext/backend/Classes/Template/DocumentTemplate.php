@@ -568,8 +568,12 @@ function jumpToUrl(URL) {
 	 * @return string
 	 */
 	public function getResourceHeader(\TYPO3\CMS\Core\Resource\ResourceInterface $resource, $tWrap = array('', ''), $enableClickMenu = TRUE) {
-		$path = $resource->getStorage()->getName() . $resource->getParentFolder()->getIdentifier();
-		$iconImgTag = IconUtility::getSpriteIconForResource($resource, array('title' => htmlspecialchars($path)));
+		try {
+			$path = $resource->getStorage()->getName() . $resource->getParentFolder()->getIdentifier();
+			$iconImgTag = IconUtility::getSpriteIconForResource($resource, array('title' => htmlspecialchars($path)));
+		} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $e) {
+			$iconImgTag = '';
+		}
 
 		if ($enableClickMenu && ($resource instanceof \TYPO3\CMS\Core\Resource\File)) {
 			$metaData = $resource->_getMetaData();
@@ -1292,7 +1296,7 @@ function jumpToUrl(URL) {
 	 * @todo Define visibility
 	 */
 	public function generator() {
-		$str = 'TYPO3 ' . TYPO3_branch . ', ' . TYPO3_URL_GENERAL . ', &#169; Kasper Sk&#229;rh&#248;j ' . TYPO3_copyright_year . ', extensions are copyright of their respective owners.';
+		$str = 'TYPO3 CMS, ' . TYPO3_URL_GENERAL . ', &#169; Kasper Sk&#229;rh&#248;j ' . TYPO3_copyright_year . ', extensions are copyright of their respective owners.';
 		return '<meta name="generator" content="' . $str . '" />';
 	}
 

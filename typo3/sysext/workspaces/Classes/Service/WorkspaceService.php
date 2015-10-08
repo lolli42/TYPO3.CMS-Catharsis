@@ -15,6 +15,8 @@ namespace TYPO3\CMS\Workspaces\Service;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 
@@ -23,12 +25,17 @@ use TYPO3\CMS\Core\Versioning\VersionState;
  *
  * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
-class WorkspaceService implements \TYPO3\CMS\Core\SingletonInterface {
+class WorkspaceService implements SingletonInterface {
 
 	/**
 	 * @var array
 	 */
 	protected $pageCache = array();
+
+	/**
+	 * @var array
+	 */
+	protected $versionsOnPageCache = array();
 
 	const TABLE_WORKSPACE = 'sys_workspace';
 	const SELECT_ALL_WORKSPACES = -98;
@@ -291,7 +298,7 @@ class WorkspaceService implements \TYPO3\CMS\Core\SingletonInterface {
 		// Select all records from this table in the database from the workspace
 		// This joins the online version with the offline version as tables A and B
 		// Order by UID, mostly to have a sorting in the backend overview module which doesn't "jump around" when swapping.
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($fields, $from, $where, '', 'B.uid');
+		$res = $this->getDatabaseConnection()->exec_SELECTgetRows($fields, $from, $where, '', 'B.uid');
 		return is_array($res) ? $res : array();
 	}
 
@@ -338,7 +345,7 @@ class WorkspaceService implements \TYPO3\CMS\Core\SingletonInterface {
 		$where .= BackendUtility::deleteClause($table, 'A');
 		$where .= BackendUtility::deleteClause($table, 'B');
 		$where .= BackendUtility::deleteClause($table, 'C');
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($fields, $from, $where, '', 'A.uid');
+		$res = $this->getDatabaseConnection()->exec_SELECTgetRows($fields, $from, $where, '', 'A.uid');
 		return is_array($res) ? $res : array();
 	}
 
@@ -391,7 +398,7 @@ class WorkspaceService implements \TYPO3\CMS\Core\SingletonInterface {
 			} while ($changed);
 			$pageList = implode(',', $newList);
 			// In case moving pages is enabled we need to replace all move-to pointer with their origin
-			$pages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid, t3ver_move_id', 'pages', 'uid IN (' . $pageList . ')' . BackendUtility::deleteClause('pages'), '', 'uid', '', 'uid');
+			$pages = $this->getDatabaseConnection()->exec_SELECTgetRows('uid, t3ver_move_id', 'pages', 'uid IN (' . $pageList . ')' . BackendUtility::deleteClause('pages'), '', 'uid', '', 'uid');
 			$newList = array();
 			$pageIds = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $pageList, TRUE);
 			if (!in_array($pageId, $pageIds)) {
@@ -475,7 +482,7 @@ class WorkspaceService implements \TYPO3\CMS\Core\SingletonInterface {
 		$cacheKey = 'workspace-oldstyleworkspace-notused';
 		$cacheResult = $GLOBALS['BE_USER']->getSessionData($cacheKey);
 		if (!$cacheResult) {
-			$where = 'adminusers != "" AND adminusers NOT LIKE "%be_users%" AND adminusers NOT LIKE "%be_groups%" AND deleted=0';
+			$where = 'adminusers != \'\' AND adminusers NOT LIKE \'%be_users%\' AND adminusers NOT LIKE \'%be_groups%\' AND deleted=0';
 			$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'sys_workspace', $where);
 			$oldStyleWorkspaceIsUsed = $count > 0;
 			$GLOBALS['BE_USER']->setAndSaveSessionData($cacheKey, !$oldStyleWorkspaceIsUsed);
@@ -640,6 +647,24 @@ class WorkspaceService implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
+	 * Generate workspace preview links for all available languages of a page
+	 *
+	 * @param int $uid
+	 * @return array
+	 */
+	public function generateWorkspacePreviewLinksForAllLanguages($uid) {
+		$previewUrl = $this->generateWorkspacePreviewLink($uid);
+		$previewLanguages = $this->getAvailableLanguages($uid);
+		$previewLinks = array();
+
+		foreach ($previewLanguages as $languageUid => $language) {
+			$previewLinks[$language] = $previewUrl . '&L=' . $languageUid;
+		}
+
+		return $previewLinks;
+	}
+
+	/**
 	 * Find the Live-Uid for a given page,
 	 * the results are cached at run-time to avoid too many database-queries
 	 *
@@ -660,10 +685,103 @@ class WorkspaceService implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
+	 * Checks if a page has record versions according to a given workspace
+	 *
+	 * @param int $workspace
+	 * @param int $pageId
+	 * @return bool
+	 */
+	public function hasPageRecordVersions($workspace, $pageId) {
+		$workspace = (int)$workspace;
+		$pageId = (int)$pageId;
+		if ($workspace === 0) {
+			return FALSE;
+		}
+
+		if (isset($this->versionsOnPageCache[$pageId][$workspace])) {
+			return $this->versionsOnPageCache[$pageId][$workspace];
+		}
+
+		if (!empty($this->versionsOnPageCache)) {
+			return FALSE;
+		}
+
+		$this->versionsOnPageCache[$pageId][$workspace] = FALSE;
+		foreach ($GLOBALS['TCA'] as $tableName => $tableConfiguration) {
+			if ($tableName === 'pages' || empty($tableConfiguration['ctrl']['versioningWS'])) {
+				continue;
+			}
+			$joinStatement = 'A.t3ver_oid=B.uid';
+			// Consider records that are moved to a different page
+			if (BackendUtility::isTableMovePlaceholderAware($tableName)) {
+				$movePointer = new VersionState(VersionState::MOVE_POINTER);
+				$joinStatement = '(A.t3ver_oid=B.uid AND A.t3ver_state<>' . $movePointer
+					. ' OR A.t3ver_oid=B.t3ver_move_id AND A.t3ver_state=' . $movePointer . ')';
+			}
+			// Select all records from this table in the database from the workspace
+			// This joins the online version with the offline version as tables A and B
+			$records = $this->getDatabaseConnection()->exec_SELECTgetRows(
+				'B.uid as live_uid, B.pid as live_pid, A.uid as offline_uid',
+				$tableName . ' A,' . $tableName . ' B',
+				'A.pid=-1 AND A.t3ver_wsid=' . $workspace . ' AND ' . $joinStatement .
+				BackendUtility::deleteClause($tableName, 'A') . BackendUtility::deleteClause($tableName, 'B'),
+				'live_pid'
+			);
+
+			if (!empty($records)) {
+				foreach ($records as $record) {
+					$this->versionsOnPageCache[$record['live_pid']][$workspace] = TRUE;
+				}
+			}
+		}
+
+		return $this->versionsOnPageCache[$pageId][$workspace];
+	}
+
+	/**
+	 * @return DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
 	 * @return \TYPO3\CMS\Extbase\Object\ObjectManager
 	 */
 	protected function getObjectManager() {
 		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 	}
 
+	/**
+	 * Get the available languages of a certain page
+	 *
+	 * @param int $pageId
+	 * @return array
+	 */
+	public function getAvailableLanguages($pageId) {
+		$languageOptions = array();
+		/** @var \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider $translationConfigurationProvider */
+		$translationConfigurationProvider = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
+		$systemLanguages = $translationConfigurationProvider->getSystemLanguages($pageId);
+
+		if ($GLOBALS['BE_USER']->checkLanguageAccess(0)) {
+			// Use configured label for default language
+			$languageOptions[0] = $systemLanguages[0]['title'];
+		}
+		$pages = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $pageId);
+
+		if (!is_array($pages)) {
+			return $languageOptions;
+		}
+
+		foreach ($pages as $page) {
+			$languageId = (int)$page['sys_language_uid'];
+			// Only add links to active languages the user has access to
+			if (isset($systemLanguages[$languageId]) && $GLOBALS['BE_USER']->checkLanguageAccess($languageId)) {
+				$languageOptions[$page['sys_language_uid']] = $systemLanguages[$languageId]['title'];
+			}
+		}
+
+		return $languageOptions;
+	}
 }
