@@ -12,15 +12,20 @@
  */
 
 /**
+ * Module: @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/HtmlArea
  * Initialization script of TYPO3 htmlArea RTE
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/HTMLArea',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Configuration/Config',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor'],
 	function (UserAgent, Util, Config, Editor) {
 
+		/**
+		 *
+		 * @type {{RE_htmlTag: RegExp, RE_tagName: RegExp, RE_head: RegExp, RE_body: RegExp, reservedClassNames: RegExp, RE_email: RegExp, RE_url: RegExp, RE_numberOrPunctuation: RegExp, init: Function, initEditor: Function, localize: Function, appendToLog: Function}}
+		 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/HtmlArea
+		 */
 		var HtmlArea = {
 
 			/***************************************************
@@ -110,16 +115,9 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/HTMLArea',
 				if (typeof type === 'undefined') {
 					var type = 'info';
 				}
-				if (typeof console === 'object' && console !== null) {
-					// If console is TYPO3.Backend.DebugConsole, write only error messages
-					if (typeof console.addTab === 'function') {
-						if (type === 'error') {
-							console[type](str);
-						}
-					// IE may not have any console
-					} else if (typeof console[type] !== 'undefined') {
-						console[type](str);
-					}
+				// IE may not have any console
+				if (typeof console === 'object' && console !== null && typeof console[type] !== 'undefined') {
+					console[type](str);
 				}
 			}
 		};

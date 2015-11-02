@@ -11,8 +11,17 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
+/**
+ * Module: TYPO3/CMS/T3editor/T3editor
+ */
+define(['jquery', 'TYPO3/CMS/Backend/SplitButtons'], function ($, SplitButtons) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{instances: {}}}
+	 * @exports TYPO3/CMS/T3editor/T3editor
+	 */
 	var T3editor = {
 		instances: {}
 	};
@@ -28,6 +37,9 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Initialize an editor
+	 *
+	 * @param {Object} $editor
+	 * @param {Number} index
 	 */
 	T3editor.initializeEditor = function($editor, index) {
 		var $textarea = $editor.find('textarea'),
@@ -65,9 +77,11 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Initializes editor events
+	 *
+	 * @param {Object} codemirror
 	 */
 	T3editor.initializeEditorEvents = function(codemirror) {
-		$('button[name^="_save"]').on('click', function(e) {
+		SplitButtons.addPreSubmitCallback(function() {
 			codemirror.options.originalTextarea.val(codemirror.editor.getCode());
 		});
 
@@ -81,6 +95,8 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Set the ajax save callback
+	 *
+	 * @param {Object} codemirror
 	 */
 	T3editor.setAjaxSavetypeCallback = function(codemirror) {
 		if (codemirror.options.ajaxSaveType !== '') {
@@ -110,6 +126,8 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Save method called upon saving
+	 *
+	 * @param {Object} codemirror
 	 */
 	T3editor.saveFunction = function(codemirror) {
 		if (!codemirror.options.ajaxSaveType || codemirror.options.ajaxSaveType === '') {
@@ -125,6 +143,10 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Method invoked by saveFunction() on completion
+	 *
+	 * @param {Object} codemirror
+	 * @param {Boolean} wasSuccessful
+	 * @param {Object} returnedData
 	 */
 	T3editor.saveFunctionComplete = function(codemirror, wasSuccessful, returnedData) {
 		if (wasSuccessful) {
@@ -140,6 +162,8 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Updates the textarea
+	 *
+	 * @param {Object} codemirror
 	 */
 	T3editor.updateTextarea = function(codemirror) {
 		codemirror.options.originalTextarea.val(codemirror.editor.getCode());
@@ -147,10 +171,13 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Resize the editor
+	 *
+	 * @param {Object} codemirror
+	 * @param {Number} w
+	 * @param {Number} h
 	 */
 	T3editor.resize = function(codemirror, w, h) {
-		var height = (h - 1),
-			width = (w + 11),
+		var width = (w + 11),
 			$outerDiv = codemirror.options.originalTextarea.prev('.t3e_wrap'),
 			$mirrorWrap = codemirror.options.originalTextarea.parents('div.t3editor').find('.t3e_iframe_wrap');
 
@@ -161,6 +188,8 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 
 	/**
 	 * Toggle fullscreen mode of editor
+	 *
+	 * @param {Object} codemirror
 	 */
 	T3editor.toggleFullscreen = function(codemirror) {
 		var $outerDiv = codemirror.options.originalTextarea.prev('.t3e_wrap'),
@@ -181,7 +210,7 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 		}
 
 		T3editor.resize(codemirror, w, h);
-	}
+	};
 
 	/**
 	 * Convert all textareas to enable tab
@@ -220,11 +249,10 @@ define('TYPO3/CMS/T3editor/T3editor', ['jquery'], function ($) {
 	/**
 	 * Initialize and return the T3editor object
 	 */
-	$(document).ready(function() {
+	$(function() {
 		T3editor.findAndInitializeEditors();
 		T3editor.convertTextareasEnableTab();
 	});
 
-	TYPO3.T3editor = T3editor;
 	return T3editor;
 });

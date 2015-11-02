@@ -12,15 +12,17 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Notification
  * Notification API for the TYPO3 backend
  */
-
-define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
+define(['jquery'], function ($) {
+	'use strict';
 
 	/**
 	 * Severity object
 	 *
 	 * @type {{notice: number, information: number, info: number, ok: number, warning: number, error: number}}
+	 * @exports TYPO3/CMS/Backend/Severity
 	 */
 	var Severity = {
 		notice: -2,
@@ -36,6 +38,7 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	 * The main Notification object
 	 *
 	 * @type {{NOTICE: number, INFO: number, OK: number, WARNING: number, ERROR: number, messageContainer: null}}
+	 * @exports TYPO3/CMS/Backend/Notification
 	 */
 	var Notification = {
 		NOTICE: -2,
@@ -49,8 +52,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show a notice notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -62,8 +65,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show an info notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -75,8 +78,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show an ok notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -88,8 +91,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show a warning notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -100,9 +103,9 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 
 	/**
 	 * Show an error notification
-	 *, duration
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 *
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 0, 0 = sticky
 	 *
 	 * @public
@@ -115,8 +118,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show message
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {int} severity See constants in this object
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
@@ -156,7 +159,7 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 		if (Notification.messageContainer === null) {
 			Notification.messageContainer = $('<div id="alert-container"></div>').appendTo('body');
 		}
-		$box = $(
+		var $box = $(
 			'<div class="alert alert-' + className + ' alert-dismissible fade" role="alert">' +
 				'<button type="button" class="close" data-dismiss="alert">' +
 					'<span aria-hidden="true"><i class="fa fa-times-circle"></i></span>' +
@@ -204,22 +207,18 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 		}
 	};
 
-	/**
-	 * return the Notification object
-	 */
-	return function () {
-		if (typeof TYPO3.Severity === 'undefined') {
-			TYPO3.Severity = Severity;
-		}
-		if (typeof top.TYPO3.Severity === 'undefined') {
-			top.TYPO3.Severity = Severity;
-		}
-		if (typeof TYPO3.Notification === 'undefined') {
-			TYPO3.Notification = Notification;
-		}
-		if (typeof top.TYPO3.Notification === 'undefined') {
-			top.TYPO3.Notification = Notification;
-		}
-		return Notification;
-	}();
+	if (typeof TYPO3.Severity === 'undefined') {
+		TYPO3.Severity = Severity;
+	}
+	if (typeof top.TYPO3.Severity === 'undefined') {
+		top.TYPO3.Severity = Severity;
+	}
+	if (typeof TYPO3.Notification === 'undefined') {
+		TYPO3.Notification = Notification;
+	}
+	if (typeof top.TYPO3.Notification === 'undefined') {
+		top.TYPO3.Notification = Notification;
+	}
+
+	return Notification;
 });

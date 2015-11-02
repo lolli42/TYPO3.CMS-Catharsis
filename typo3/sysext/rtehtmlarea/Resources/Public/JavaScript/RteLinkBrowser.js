@@ -1,0 +1,42 @@
+/*
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+
+/**
+ * Module: TYPO3/CMS/Rtehtmlarea/RteLinkBrowser
+ * LinkBrowser communication with parent window
+ */
+define(['jquery', 'TYPO3/CMS/Recordlist/LinkBrowser'], function($, LinkBrowser) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{plugin: null, HTMLArea: null}}
+	 * @exports TYPO3/CMS/Rtehtmlarea/RteLinkBrowser
+	 */
+	var RteLinkBrowser = {
+		plugin: null,
+		HTMLArea: null
+	};
+
+	/**
+	 *
+	 */
+	RteLinkBrowser.initialize = function() {
+		RteLinkBrowser.plugin = window.parent.RTEarea[LinkBrowser.urlParameters.editorNo].editor.getPlugin("TYPO3Link");
+		RteLinkBrowser.HTMLArea = window.parent.HTMLArea;
+	};
+
+	$(RteLinkBrowser.initialize);
+
+	return RteLinkBrowser;
+});

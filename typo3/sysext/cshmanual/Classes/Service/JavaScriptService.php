@@ -13,29 +13,32 @@ namespace TYPO3\CMS\Cshmanual\Service;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * JavaScript Service adding JS code to each backend page
  */
-class JavaScriptService {
-
-	/**
-	 * Include the JS for the Context Sensitive Help
-	 *
-	 * @param string $title the title of the page
-	 * @param \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplateObject
-	 */
-	public function addJavaScript($title, $documentTemplateObject) {
-		if (TYPO3_MODE === 'BE' && is_object($GLOBALS['BE_USER'])) {
-			$pageRenderer = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Page\PageRenderer::class);
-			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ContextHelp');
-			$pageRenderer->addInlineSetting('ContextHelp', 'moduleUrl', \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('help_CshmanualCshmanual', array(
-				'tx_cshmanual_help_cshmanualcshmanual' => array(
-					'controller' => 'Help',
-					'action' => 'detail'
-				)
-			)));
-		}
-	}
+class JavaScriptService
+{
+    /**
+     * Include the JS for the Context Sensitive Help
+     *
+     * @param string $title the title of the page
+     * @param \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplateObject
+     */
+    public function addJavaScript($title, $documentTemplateObject)
+    {
+        if (TYPO3_MODE === 'BE' && is_object($GLOBALS['BE_USER'])) {
+            $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+            $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ContextHelp');
+            $pageRenderer->addInlineSetting('ContextHelp', 'moduleUrl', BackendUtility::getModuleUrl('help_CshmanualCshmanual', array(
+                'tx_cshmanual_help_cshmanualcshmanual' => array(
+                    'controller' => 'Help',
+                    'action' => 'detail'
+                )
+            )));
+        }
+    }
 }
-

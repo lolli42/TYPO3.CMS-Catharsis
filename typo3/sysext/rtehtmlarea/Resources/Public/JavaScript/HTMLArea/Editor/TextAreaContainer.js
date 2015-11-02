@@ -12,16 +12,20 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/TextAreaContainer
  * The container of the textarea within the editor framework
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/TextAreaContainer',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
 	function (Util, Dom, Event) {
 
 	/**
 	 * Status bar constructor
+	 *
+	 * @param {Object} config
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/TextAreaContainer
 	 */
 	var TextAreaContainer = function (config) {
 		Util.apply(this, config);

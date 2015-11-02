@@ -12,9 +12,17 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/LegacyCssClasses
  * JavaScript replacement for Legacy CSS Classes
  */
-define('TYPO3/CMS/Backend/LegacyCssClasses', ['jquery'], function($) {
+define(['jquery'], function($) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{replacements: Array}}
+	 * @exports TYPO3/CMS/Backend/LegacyCssClasses
+	 */
 	var LegacyCssClasses = {
 		replacements: [
 			{
@@ -25,12 +33,12 @@ define('TYPO3/CMS/Backend/LegacyCssClasses', ['jquery'], function($) {
 		]
 	};
 
-	LegacyCssClasses.initialize = function() {
+	$(function() {
 		$.each(LegacyCssClasses.replacements, function(key, replacement) {
-			$items = $(replacement.selector);
+			var $items = $(replacement.selector);
 			if ($items.length > 0) {
 				$items.each(function() {
-					$item = $(this);
+					var $item = $(this);
 					if (replacement.remove.length > 0) {
 						$.each(replacement.remove, function(oldClassId, oldClassName) {
 							$item.removeClass(oldClassName);
@@ -44,14 +52,7 @@ define('TYPO3/CMS/Backend/LegacyCssClasses', ['jquery'], function($) {
 				});
 			}
 		});
-	};
+	});
 
-	/**
-	 * initialize function
-	 */
-	return function() {
-		LegacyCssClasses.initialize();
-		return LegacyCssClasses;
-	}();
-
+	return LegacyCssClasses;
 });

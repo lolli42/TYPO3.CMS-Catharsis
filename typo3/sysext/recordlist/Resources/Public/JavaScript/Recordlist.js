@@ -12,50 +12,64 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Recordlist/Recordlist
  * Usability improvements for the record list
  */
-define('TYPO3/CMS/Recordlist/Recordlist', ['jquery', 'TYPO3/CMS/Backend/Storage'], function($, Storage) {
+define(['jquery', 'TYPO3/CMS/Backend/Storage', 'TYPO3/CMS/Backend/Icons'], function($, Storage, Icons) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{identifier: {toggle: string, icons: {collapse: string, expand: string}}}}
+	 * @exports TYPO3/CMS/Recordlist/Recordlist
+	 */
 	var Recordlist = {
 		identifier: {
-			toggle: '.t3js-toggle-recordlist'
-		},
-		classes: {
-			toggleIconState: {
-				collapsed: 'fa-chevron-down',
-				expanded: 'fa-chevron-up'
+			toggle: '.t3js-toggle-recordlist',
+			icons: {
+				collapse: 'actions-view-list-collapse',
+				expand: 'actions-view-list-expand'
 			}
 		}
 	};
 
-	Recordlist.initialize = function() {
-		$(document).on('click', Recordlist.identifier.toggle, function(e) {
-			e.preventDefault();
+	/**
+	 *
+	 * @param {Event} e
+	 */
+	Recordlist.toggleClick = function(e) {
+		e.preventDefault();
 
-			var $me = $(this),
-				table = $me.data('table'),
-				$target = $($me.data('target')),
-				isExpanded = $target.data('state') === 'expanded';
+		var $me = $(this),
+			table = $me.data('table'),
+			$target = $($me.data('target')),
+			isExpanded = $target.data('state') === 'expanded',
+			$collapseIcon = $me.find('.collapseIcon'),
+			toggleIcon = isExpanded ? Recordlist.identifier.icons.expand : Recordlist.identifier.icons.collapse;
 
-			$me.find('.collapseIcon .icon-unify .fa').toggleClass(Recordlist.classes.toggleIconState.collapsed).toggleClass(Recordlist.classes.toggleIconState.expanded);
+		Icons.getIcon(toggleIcon, Icons.sizes.small).done(function(toggleIcon) {
+			$collapseIcon.html(toggleIcon);
+		});
 
-			// Store collapse state in UC
-			var storedModuleDataList = {};
+		// Store collapse state in UC
+		var storedModuleDataList = {};
 
-			if (Storage.Persistent.isset('moduleData.list')) {
-				storedModuleDataList = Storage.Persistent.get('moduleData.list');
-			}
+		if (Storage.Persistent.isset('moduleData.list')) {
+			storedModuleDataList = Storage.Persistent.get('moduleData.list');
+		}
 
-			var collapseConfig = {};
-			collapseConfig[table] = isExpanded ? 1 : 0;
+		var collapseConfig = {};
+		collapseConfig[table] = isExpanded ? 1 : 0;
 
-			$.extend(true, storedModuleDataList, collapseConfig);
-			Storage.Persistent.set('moduleData.list', storedModuleDataList).done(function() {
-				$target.data('state', isExpanded ? 'collapsed' : 'expanded');
-			});
+		$.extend(true, storedModuleDataList, collapseConfig);
+		Storage.Persistent.set('moduleData.list', storedModuleDataList).done(function() {
+			$target.data('state', isExpanded ? 'collapsed' : 'expanded');
 		});
 	};
 
-	$(document).ready(function() {
-		Recordlist.initialize();
+	$(function() {
+		$(document).on('click', Recordlist.identifier.toggle, Recordlist.toggleClick);
 	});
+
+	return Recordlist;
 });

@@ -12,10 +12,10 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Button
  * A button in the toolbar
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Button',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
@@ -23,6 +23,10 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Button',
 
 	/**
 	 * Button constructor
+	 *
+	 * @param config
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Button
 	 */
 	var Button = function (config) {
 		Util.apply(this, config);		

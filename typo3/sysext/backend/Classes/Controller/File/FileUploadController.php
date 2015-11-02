@@ -14,9 +14,11 @@ namespace TYPO3\CMS\Backend\Controller\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -24,196 +26,200 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * Script Class for display up to 10 upload fields
  */
-class FileUploadController {
+class FileUploadController extends AbstractModule
+{
+    /**
+     * Name of the filemount
+     *
+     * @var string
+     */
+    public $title;
 
-	/**
-	 * Document template object
-	 *
-	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 */
-	public $doc;
+    /**
+     * Set with the target path inputted in &target
+     *
+     * @var string
+     */
+    public $target;
 
-	/**
-	 * Name of the filemount
-	 *
-	 * @var string
-	 */
-	public $title;
+    /**
+     * Return URL of list module.
+     *
+     * @var string
+     */
+    public $returnUrl;
 
-	/**
-	 * Set with the target path inputted in &target
-	 *
-	 * @var string
-	 */
-	public $target;
+    /**
+     * Accumulating content
+     *
+     * @var string
+     */
+    public $content;
 
-	/**
-	 * Return URL of list module.
-	 *
-	 * @var string
-	 */
-	public $returnUrl;
+    /**
+     * The folder object which is the target directory for the upload
+     *
+     * @var \TYPO3\CMS\Core\Resource\Folder $folderObject
+     */
+    protected $folderObject;
 
-	/**
-	 * Accumulating content
-	 *
-	 * @var string
-	 */
-	public $content;
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $GLOBALS['SOBE'] = $this;
+        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
+        $this->init();
+    }
 
-	/**
-	 * The folder object which is the target directory for the upload
-	 *
-	 * @var \TYPO3\CMS\Core\Resource\Folder $folderObject
-	 */
-	protected $folderObject;
+    /**
+     * Initialize
+     *
+     * @throws InsufficientFolderAccessPermissionsException
+     */
+    protected function init()
+    {
+        // Initialize GPvars:
+        $this->target = GeneralUtility::_GP('target');
+        $this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
+        if (!$this->returnUrl) {
+            $this->returnUrl = GeneralUtility::getIndpEnv('TYPO3_SITE_URL')
+                . TYPO3_mainDir . BackendUtility::getModuleUrl('file_list')
+                . '&id=' . rawurlencode($this->target);
+        }
+        // Create the folder object
+        if ($this->target) {
+            $this->folderObject = ResourceFactory::getInstance()
+                ->retrieveFileOrFolderObject($this->target);
+        }
+        if ($this->folderObject->getStorage()->getUid() === 0) {
+            throw new InsufficientFolderAccessPermissionsException(
+                'You are not allowed to access folders outside your storages',
+                1375889834
+            );
+        }
 
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$GLOBALS['SOBE'] = $this;
-		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
-		$this->init();
-	}
+        // Cleaning and checking target directory
+        if (!$this->folderObject) {
+            $title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:paramError', true);
+            $message = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:targetNoDir', true);
+            throw new \RuntimeException($title . ': ' . $message, 1294586843);
+        }
 
-	/**
-	 * Initialize
-	 *
-	 * @return void
-	 */
-	protected function init() {
-		// Initialize GPvars:
-		$this->target = GeneralUtility::_GP('target');
-		$this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
-		if (!$this->returnUrl) {
-			$this->returnUrl = GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir . BackendUtility::getModuleUrl('file_list') . '&id=' . rawurlencode($this->target);
-		}
-		// Create the folder object
-		if ($this->target) {
-			$this->folderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->target);
-		}
-		if ($this->folderObject->getStorage()->getUid() === 0) {
-			throw new \TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException('You are not allowed to access folders outside your storages', 1375889834);
-		}
+        // Setting up the context sensitive menu
+        $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
 
-		// Cleaning and checking target directory
-		if (!$this->folderObject) {
-			$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:paramError', TRUE);
-			$message = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:targetNoDir', TRUE);
-			throw new \RuntimeException($title . ': ' . $message, 1294586843);
-		}
-		// Setting the title and the icon
-		/** @var IconFactory $iconFactory */
-		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-		$icon = $iconFactory->getIcon('apps-filetree-root', Icon::SIZE_SMALL)->render();
-		$this->title = $icon . htmlspecialchars($this->folderObject->getStorage()->getName()) . ': ' . htmlspecialchars($this->folderObject->getIdentifier());
-		// Setting template object
-		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_upload.html');
-		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform" enctype="multipart/form-data">';
-	}
+        // building pathInfo for metaInformation
+        $pathInfo = [
+            'combined_identifier' => $this->folderObject->getCombinedIdentifier(),
+        ];
+        $this->moduleTemplate->getDocHeaderComponent()->setMetaInformation($pathInfo);
+    }
 
-	/**
-	 * Main function, rendering the upload file form fields
-	 *
-	 * @return void
-	 */
-	public function main() {
-		// Make page header:
-		$this->content = $this->doc->startPage($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.pagetitle'));
-		$form = $this->renderUploadForm();
-		$pageContent = $this->doc->header($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.pagetitle')) . $this->doc->section('', $form);
-		// Header Buttons
-		$docHeaderButtons = array(
-			'csh' => BackendUtility::cshItem('xMOD_csh_corebe', 'file_upload'),
-			'back' => ''
-		);
-		$markerArray = array(
-			'CSH' => $docHeaderButtons['csh'],
-			'FUNC_MENU' => '',
-			'CONTENT' => $pageContent,
-			'PATH' => $this->title
-		);
-		// Back
-		if ($this->returnUrl) {
-			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-			$docHeaderButtons['back'] = '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisUrl($this->returnUrl)) . '" class="typo3-goBack" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . $iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL)->render() . '</a>';
-		}
-		$this->content .= $this->doc->moduleBody(array(), $docHeaderButtons, $markerArray);
-		$this->content .= $this->doc->endPage();
-		$this->content = $this->doc->insertStylesAndJS($this->content);
-	}
+    /**
+     * Main function, rendering the upload file form fields
+     *
+     * @return void
+     */
+    public function main()
+    {
+        $lang = $this->getLanguageService();
 
-	/**
-	 * This function renders the upload form
-	 *
-	 * @return string The HTML form as a string, ready for outputting
-	 */
-	public function renderUploadForm() {
-		// Make checkbox for "overwrite"
-		$content = '
+        // set page title
+        $this->moduleTemplate->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.pagetitle'));
+
+        $pageContent = '<form action="'
+            . htmlspecialchars(BackendUtility::getModuleUrl('tce_file'))
+            . '" method="post" id="FileUploadController" name="editform" enctype="multipart/form-data">';
+        // Make page header:
+        $pageContent .= '<h1>' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.pagetitle') . '</h1>';
+        $pageContent .= $this->renderUploadForm();
+
+        // Header Buttons
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
+
+        // csh button
+        $cshButton = $buttonBar->makeHelpButton()
+            ->setModuleName('xMOD_csh_corebe')
+            ->setFieldName('file_upload');
+        $buttonBar->addButton($cshButton);
+
+        // back button
+        if ($this->returnUrl) {
+            $backButton = $buttonBar->makeLinkButton()
+                ->setHref(GeneralUtility::linkThisUrl($this->returnUrl))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', true))
+                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
+            $buttonBar->addButton($backButton);
+        }
+
+        $pageContent .= '</form>';
+        $this->content .= $this->moduleTemplate->section('', $pageContent);
+        $this->moduleTemplate->setContent($this->content);
+    }
+
+    /**
+     * This function renders the upload form
+     *
+     * @return string The HTML form as a string, ready for outputting
+     */
+    public function renderUploadForm()
+    {
+        // Make checkbox for "overwrite"
+        $content = '
 			<div id="c-override">
 				<p><label for="overwriteExistingFiles"><input type="checkbox" class="checkbox" name="overwriteExistingFiles" id="overwriteExistingFiles" value="replace" /> ' . $this->getLanguageService()->getLL('overwriteExistingFiles', 1) . '</label></p>
 				<p>&nbsp;</p>
-				<p>' . $this->getLanguageService()->getLL('uploadMultipleFilesInfo', TRUE) . '</p>
+				<p>' . $this->getLanguageService()->getLL('uploadMultipleFilesInfo', true) . '</p>
 			</div>
 			';
-		// Produce the number of upload-fields needed:
-		$content .= '
+        // Produce the number of upload-fields needed:
+        $content .= '
 			<div id="c-upload">
 		';
-		// Adding 'size="50" ' for the sake of Mozilla!
-		$content .= '
-				<input type="file" multiple="true" name="upload_1[]" />
+        // Adding 'size="50" ' for the sake of Mozilla!
+        $content .= '
+				<input type="file" multiple="multiple" name="upload_1[]" />
 				<input type="hidden" name="file[upload][1][target]" value="' . htmlspecialchars($this->folderObject->getCombinedIdentifier()) . '" />
 				<input type="hidden" name="file[upload][1][data]" value="1" /><br />
 			';
-		$content .= '
+        $content .= '
 			</div>
 		';
-		// Submit button:
-		$content .= '
+        // Submit button:
+        $content .= '
 			<div id="c-submit">
 				<input type="hidden" name="redirect" value="' . $this->returnUrl . '" /><br />
-				<input class="btn btn-default" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.submit', TRUE) . '" />
+				<input class="btn btn-default" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.submit', true) . '" />
 			</div>
 		';
-		return $content;
-	}
+        return $content;
+    }
 
-	/**
-	 * Processes the request, currently everything is handled and put together via "main()"
-	 *
-	 * @param ServerRequestInterface $request the current request
-	 * @param ResponseInterface $response
-	 * @return ResponseInterface the response with the content
-	 */
-	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
-		$this->main();
+    /**
+     * Processes the request, currently everything is handled and put together via "main()"
+     *
+     * @param ServerRequestInterface $request the current request
+     * @param ResponseInterface $response
+     * @return ResponseInterface the response with the content
+     */
+    public function mainAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $this->main();
+        $response->getBody()->write($this->moduleTemplate->renderContent());
 
-		$response->getBody()->write($this->content);
-		return $response;
-	}
+        return $response;
+    }
 
-	/**
-	 * Outputting the accumulated content to screen
-	 *
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the mainAction() method instead
-	 */
-	public function printContent() {
-		GeneralUtility::logDeprecatedFunction();
-		echo $this->content;
-	}
-
-	/**
-	 * Returns LanguageService
-	 *
-	 * @return \TYPO3\CMS\Lang\LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
-
+    /**
+     * Returns LanguageService
+     *
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

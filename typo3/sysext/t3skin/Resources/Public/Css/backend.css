@@ -7553,7 +7553,7 @@ button.close {
   width: 32px;
   overflow: hidden;
   border-radius: 50%;
-  background-image: url('../../../../../../typo3/sysext/backend/Resources/Public/Icons/avatar-default.svg');
+  background-image: url('../../../../../../typo3/sysext/core/Resources/Public/Icons/T3Icons/avatar/avatar-default.svg');
   background-size: 100%;
 }
 .avatar-image:after {
@@ -7695,10 +7695,13 @@ button.close {
   white-space: nowrap;
   vertical-align: -22%;
 }
+.icon svg,
 .icon img {
   display: block;
   height: 100%;
   width: 100%;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 .icon * {
   display: block;
@@ -7717,8 +7720,8 @@ button.close {
   position: absolute;
   bottom: 0;
   right: 0;
-  height: 60%;
-  width: 60%;
+  height: 68.75%;
+  width: 68.75%;
   text-align: center;
 }
 .icon-spin .icon-markup {
@@ -7944,6 +7947,9 @@ button.close {
 }
 .module-body {
   padding: 24px 24px;
+}
+.module-body > .callout:first-child {
+  margin-top: 0;
 }
 .module-docheader + .module-body {
   padding-top: 89px;
@@ -9211,6 +9217,9 @@ iframe,
   max-width: none!important;
   max-height: none!important;
 }
+.ratio-buttons .btn.btn-default {
+  margin-bottom: 5px;
+}
 .typo3-csh-inline {
   padding: 4px;
 }
@@ -9466,11 +9475,11 @@ body#typo3-alt-clickmenu-php {
 }
 div#contentMenu0 {
   position: absolute;
-  z-index: 10;
+  z-index: 300;
 }
 div#contentMenu1 {
   position: absolute;
-  z-index: 20;
+  z-index: 310;
 }
 #typo3-docheader {
   background: #eeeeee;
@@ -10696,7 +10705,7 @@ fieldset[disabled] .table .btn-default.active {
 .table .col-nowrap,
 .table .col-control,
 .table .col-clipboard {
-  white-space: nowrap;
+  white-space: nowrap!important;
 }
 .table .col-control,
 .table .col-clipboard {
@@ -10854,6 +10863,7 @@ fieldset[disabled] .table .btn-default.active {
 .panel-heading {
   position: relative;
 }
+.panel-heading[data-toggle="formengine-flex"],
 .panel-heading[data-toggle="formengine-inline"] {
   cursor: pointer;
 }
@@ -10973,35 +10983,20 @@ fieldset[disabled] .table .btn-default.active {
 .sortableHandle {
   cursor: move;
 }
-.t3-flex-section-header .t3-record-title {
-  font-weight: bold;
-}
 .t3-flex-section {
   clear: both;
   margin: 5px 0;
-}
-.t3-flex-section-header,
-.t3-form-field-container-flexsection {
-  padding-left: 20px;
 }
 .t3-form-field-header-flexsection {
   width: 100%;
   height: 16px;
 }
-.t3-form-field-label-flexsection {
-  border-top: 1px solid #cdcdcd;
-  padding: 5px 10px;
-}
-.t3-form-field-toggle-flexsection {
-  padding: 5px 0 5px 20px;
-}
 .t3-form-field-add-flexsection {
   border-top: 1px solid #cdcdcd;
-  padding: 10px 5px 5px 20px;
+  padding: 10px 5px 5px 0;
 }
 .t3-form-flex,
 .t3-form-field-container-flexsections {
-  background: #dadada;
   margin: 5px 0;
   clear: both;
 }
@@ -11223,6 +11218,9 @@ div.t3-form-field-container:first-child .t3-form-field-label-flex {
   left: 0;
   width: 11px;
   bottom: 0;
+}
+.list-tree li .icon {
+  margin-right: 2px;
 }
 .list-tree-group {
   position: relative;
@@ -11570,6 +11568,9 @@ a.badge-danger:focus {
 .btn-group .collapse + .btn.collapsed:last-child {
   border-radius: 2px;
 }
+.btn-group .btn-default.disabled {
+  color: #999;
+}
 .btn-radio input[type="radio"],
 .btn-checkbox input[type="radio"],
 .btn-radio input[type="checkbox"],
@@ -11587,6 +11588,12 @@ a.badge-danger:focus {
 .btn-radio input[type=checkbox]:checked + .fa:before,
 .btn-checkbox input[type=checkbox]:checked + .fa:before {
   content: "\f00c";
+}
+.btn-danger .icon-color,
+.btn-success .icon-color,
+.btn-warning .icon-color,
+.btn-info .icon-color {
+  fill: currentColor;
 }
 .dropzone {
   position: relative;
@@ -11919,8 +11926,26 @@ fieldset[disabled] .btn-login.active {
   color: #ff8800;
   background-color: #ffffff;
 }
+.btn-login:active,
+.btn-login:active:focus,
+.btn-login:active:hover,
+.btn-login:focus,
+.btn-login:hover,
+.btn-login:visited {
+  background-color: #ff8800;
+}
+.btn-login:active:focus,
 .btn-login:focus {
   outline: none;
+}
+.btn-login:hover {
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.125);
+}
+.btn-login:active:focus,
+.btn-login:active:hover {
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+.btn-login:focus {
   box-shadow: none;
 }
 .typo3-login-carousel-control {
@@ -12106,8 +12131,8 @@ em {
   position: relative;
   display: inline-block;
   padding: 0;
-  height: 28px;
-  width: 28px;
+  height: 32px;
+  width: 32px;
   overflow: hidden;
   border-radius: 2px;
   background-color: #484848;
@@ -12124,8 +12149,8 @@ em {
   vertical-align: middle;
 }
 .typo3-app-icon img {
-  max-height: 28px;
-  max-width: 28px;
+  max-height: 32px;
+  max-width: 32px;
   margin: 0 auto;
 }
 .typo3-app-icon .fa {
@@ -12301,6 +12326,11 @@ span.typo3-moduleHeader img {
 }
 .row > .form-group > .form-control-wrap {
   margin-bottom: 0;
+}
+.form-control[disabled],
+.form-control[readonly],
+fieldset[disabled] .form-control {
+  color: #737373;
 }
 .form-group.has-error label:before {
   font-family: FontAwesome;
@@ -12562,7 +12592,7 @@ select.icon-select option {
     white-space: nowrap;
   }
 }
-textarea.t3js-formengine-textarea {
+textarea.formengine-textarea {
   resize: none;
 }
 body#typo3-backend-php {
@@ -12626,7 +12656,7 @@ iframe {
   position: relative;
   cursor: pointer;
   display: block;
-  padding: 4px 9px;
+  padding: 3px 9px;
   text-transform: uppercase;
 }
 [id="typo3-menu"] .typo3-module-menu-group-header:before,
@@ -12652,7 +12682,7 @@ iframe {
   position: relative;
   cursor: pointer;
   display: block;
-  padding: 4px 9px;
+  padding: 3px 9px;
   color: #aaaaaa;
   border-radius: 0 2px 2px 0;
   text-decoration: none;
@@ -12692,14 +12722,14 @@ iframe {
   background-color: transparent;
 }
 [id="typo3-menu"] .typo3-module-menu-group-icon > span {
-  line-height: 28px;
+  line-height: 32px;
 }
 [id="typo3-menu"] .typo3-module-menu-group-icon > span > .t3-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
 }
 [id="typo3-menu"] .typo3-module-menu-group-icon > span > .t3-icon:before {
-  line-height: 28px;
+  line-height: 32px;
 }
 [id="typo3-menu"] .typo3-module-menu-group-icon:after {
   display: none;
@@ -12708,7 +12738,7 @@ iframe {
 [id="typo3-menu"] .typo3-module-menu-item-title {
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding-top: 5px;
+  padding-top: 7px;
   display: block;
   overflow: hidden;
   *zoom: 1;
@@ -12785,13 +12815,18 @@ iframe {
   white-space: normal;
   color: #737373;
 }
+.tstemplate-constanteditor .input-group.userTS .input-group-addon.colorbox {
+  display: inline-block;
+  height: 100%;
+  position: absolute;
+}
 .t3-grid-table {
   border-collapse: separate;
   border-spacing: 10px 0;
   width: 100%;
 }
 .t3-grid-container {
-  margin: 0px -10px;
+  margin: 0px -10px 18px;
 }
 .t3-grid-cell {
   background-color: #fafafa;
@@ -13028,6 +13063,9 @@ iframe {
   list-style: none;
   float: left;
 }
+.typo3-topbar-navigation-items .icon-color {
+  fill: #dddddd;
+}
 .typo3-topbar-navigation-items a {
   color: #dddddd;
   text-decoration: none;
@@ -13087,6 +13125,9 @@ iframe {
   line-height: 15px;
   bottom: 5px;
   right: 5px;
+}
+.typo3-topbar-navigation-items .live-search-wrapper + .dropdown-menu {
+  width: 100%;
 }
 .typo3-topbar-navigation-items .dropdown-menu {
   left: auto;
@@ -13175,7 +13216,7 @@ iframe {
 .typo3-topbar-navigation-items .dropdown-list .modlink .submodule-label {
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding-top: 5px;
+  padding-top: 7px;
   display: block;
   overflow: hidden;
   *zoom: 1;
@@ -13239,7 +13280,6 @@ iframe {
 .typo3-topbar-navigation-items .dropdown-list-link-edit:hover,
 .typo3-topbar-navigation-items .dropdown-list-link-delete:hover,
 .typo3-topbar-navigation-items .dropdown-list-link-close:hover {
-  color: #ffffff;
   background-color: #333333;
 }
 .typo3-topbar-navigation-items .dropdown-list-link-edit {
@@ -13247,7 +13287,6 @@ iframe {
 }
 .typo3-topbar-navigation-items .dropdown-list-link-delete:hover,
 .typo3-topbar-navigation-items .dropdown-list-link-close:hover {
-  color: #ffffff;
   background-color: #c83c3c;
 }
 .typo3-topbar-navigation-items .dropdown-link-list-add-close {
@@ -13276,6 +13315,11 @@ iframe {
   left: 15px;
   margin-top: -8px;
   z-index: 1;
+}
+.typo3-topbar-navigation-search .form-group button.close {
+  opacity: 1;
+  color: #dddddd;
+  text-shadow: none;
 }
 .typo3-topbar-navigation-search .form-control {
   background-color: #222222;
@@ -13314,6 +13358,12 @@ iframe {
 }
 .typo3-topbar-navigation-search .dropdown-list-link .typeahead-highlight {
   font-weight: normal;
+}
+#typo3-cms-backend-backend-toolbaritems-shortcuttoolbaritem .dropdown-list {
+  max-height: 270px;
+  overflow: hidden;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 #typo3-debug-console {
   background-color: #f5f5f5;

@@ -12,15 +12,17 @@
  */
 
 /**
- * contains all JS functions related to TYPO3 TCEforms/FormEngineValidation
+ * Module: TYPO3/CMS/Backend/FormEngineValidation
+ * Contains all JS functions related to TYPO3 TCEforms/FormEngineValidation
  * @internal
  */
-define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
+define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 
 	/**
 	 * The main FormEngineValidation object
 	 *
 	 * @type {{rulesSelector: string, inputSelector: string, markerSelector: string, dateTimeSelector: string, groupFieldHiddenElement: string, relatedFieldSelector: string, errorClass: string, lastYear: number, lastDate: number, lastTime: number, refDate: Date, USmode: number, passwordDummy: string}}
+	 * @exports TYPO3/CMS/Backend/FormEngineValidation
 	 */
 	var FormEngineValidation = {
 		rulesSelector: '[data-formengine-validation-rules]',
@@ -58,6 +60,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 
 			// Bind to datepicker change event, but wait some milliseconds, because the init is not so fast
 			window.setTimeout(function() {
+				//noinspection JSUnusedLocalSymbols
 				$(document).on('dp.change', FormEngineValidation.dateTimeSelector, function(event) {
 					FormEngineValidation.validate();
 					var $paletteField = $(this).closest('.t3js-formengine-palette-field');
@@ -75,9 +78,9 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	};
 
 	/**
-	 * initialize all input fields
+	 * Initialize all input fields
 	 *
-	 * @returns {*|jQuery}
+	 * @returns {Object}
 	 */
 	FormEngineValidation.initializeInputFields = function() {
 		return $(document).find(FormEngineValidation.inputSelector).each(function() {
@@ -96,7 +99,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 
 	/**
 	 *
-	 * @param {number} mode
+	 * @param {Number} mode
 	 */
 	FormEngineValidation.setUsMode = function(mode) {
 		FormEngineValidation.USmode = mode;
@@ -105,12 +108,11 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Initialize field by name
 	 *
-	 * @param {string} fieldName
+	 * @param {String} fieldName
 	 */
 	FormEngineValidation.initializeInputField = function(fieldName) {
 		var $field = $('[name="' + fieldName + '"]');
 		var $humanReadableField = $('[data-formengine-input-name="' + fieldName + '"]');
-		var $checkboxField = $('[name="' + fieldName + '_cb"]');
 		var $mainField = $('[name="' + $field.data('main-field') + '"]');
 		if ($mainField.length === 0) {
 			$mainField = $field;
@@ -121,22 +123,12 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 			var evalList = FormEngineValidation.trimExplode(',', config.evalList);
 			var value = $field.val();
 
-			if (config.checkbox && value == config.checkboxValue) {
-				$field.val('');
-				if ($checkboxField.length) {
-					$checkboxField.attr('checked', '');
-				}
-			} else {
-				for (var i = 0; i < evalList.length; i++) {
-					value = FormEngineValidation.formatValue(evalList[i], value, config)
-				}
-				// Prevent password fields to be overwritten with original value
-				if (value.length && $humanReadableField.attr('type') != 'password') {
-					$humanReadableField.val(value);
-				}
-				if ($checkboxField.length) {
-					$checkboxField.attr('checked', 'checked');
-				}
+			for (var i = 0; i < evalList.length; i++) {
+				value = FormEngineValidation.formatValue(evalList[i], value, config)
+			}
+			// Prevent password fields to be overwritten with original value
+			if (value.length && $humanReadableField.attr('type') != 'password') {
+				$humanReadableField.val(value);
 			}
 		}
 
@@ -146,21 +138,15 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 			FormEngineValidation.updateInputField($(this).attr('data-formengine-input-name'));
 		});
 		$humanReadableField.on('keyup', FormEngineValidation.validate);
-
-		$checkboxField.data('main-field', fieldName);
-		$checkboxField.data('config', config);
-		$checkboxField.on('click', function() {
-			FormEngineValidation.updateInputField($(this).attr('data-formengine-input-name'));
-		});
 	};
 
 	/**
 	 * Format field value
 	 *
-	 * @param {string} type
-	 * @param {string} value
+	 * @param {String} type
+	 * @param {String} value
 	 * @param {array} config
-	 * @returns {string}
+	 * @returns {String}
 	 */
 	FormEngineValidation.formatValue = function(type, value, config) {
 		var theString = '';
@@ -196,9 +182,6 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 			case 'password':
 				theString = (value) ? FormEngineValidation.passwordDummy : '';
 				break;
-			case 'int':
-				theString = (config.checkbox && value == config.checkboxValue) ? '' : value;
-				break;
 			default:
 				theString = value;
 		}
@@ -208,7 +191,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Update input field after change
 	 *
-	 * @param {string} fieldName
+	 * @param {String} fieldName
 	 */
 	FormEngineValidation.updateInputField = function(fieldName) {
 		var $field = $('[name="' + fieldName + '"]');
@@ -223,21 +206,23 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 			var evalList = FormEngineValidation.trimExplode(',', config.evalList);
 			var origValue = $humanReadableField.val();
 			var newValue = $humanReadableField.val();
+			var i;
 
-			for (var i = 0; i < evalList.length; i++) {
+			for (i = 0; i < evalList.length; i++) {
 				newValue = FormEngineValidation.processValue(evalList[i], newValue, config);
 			}
-			var typeConfig = $field.data('formengine-validation-rules');
-			var type = '';
-			if (typeof typeConfig !== 'undefined' && typeConfig.length) {
-				type = typeConfig[0].type;
+
+			var formattedValue = newValue;
+			for (i = 0; i < evalList.length; i++) {
+				formattedValue = FormEngineValidation.formatValue(evalList[i], formattedValue, config);
 			}
+
 			if ($.inArray('password', evalList) !== -1) {
 				$mainField.val(origValue);
 				$humanReadableField.val(newValue);
 			} else {
 				$mainField.val(newValue);
-				$humanReadableField.val(newValue);
+				$humanReadableField.val(formattedValue);
 			}
 		}
 	};
@@ -245,9 +230,9 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Run validation for field
 	 *
-	 * @param {object} $field
-	 * @param {string} value
-	 * @returns {string}
+	 * @param {Object} $field
+	 * @param {String} [value=$field.val()]
+	 * @returns {String}
 	 */
 	FormEngineValidation.validateField = function($field, value) {
 		value = value || FormEngineValidation.ltrim($field.val());
@@ -256,6 +241,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 		var markParent = false;
 		var selected = 0;
 		var returnValue = value;
+		var $relatedField;
 		$.each(rules, function(k, rule) {
 			switch (rule.type) {
 				case 'required':
@@ -280,12 +266,11 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 									markParent = true;
 									$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 								}
-
 							}
 						}
 						if (rule.config.lower || rule.config.upper) {
-							minValue = rule.config.lower || 0;
-							maxValue = rule.config.upper || Number.MAX_VALUE;
+							var minValue = rule.config.lower || 0;
+							var maxValue = rule.config.upper || Number.MAX_VALUE;
 							if (value < minValue || value > maxValue) {
 								markParent = true;
 								$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
@@ -308,7 +293,6 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 								markParent = true;
 								$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 							}
-
 						}
 					}
 					break;
@@ -346,10 +330,10 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Process a value by given command and config
 	 *
-	 * @param {string} command
-	 * @param {string} value
-	 * @param {array} config
-	 * @returns {string}
+	 * @param {String} command
+	 * @param {String} value
+	 * @param {Array} config
+	 * @returns {String}
 	 */
 	FormEngineValidation.processValue = function(command, value, config) {
 		var newString = '';
@@ -498,6 +482,9 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 
 	/**
 	 * Set the caret position in a text field
+	 *
+	 * @param {Object} $element
+	 * @param {Number} caretPos
 	 */
 	FormEngineValidation.setCaretPosition = function($element, caretPos) {
 		var elem = $element.get(0);
@@ -519,8 +506,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Helper function to get clean trimmed array from comma list
 	 *
-	 * @param {string} delimiter
-	 * @param {string} string
+	 * @param {String} delimiter
+	 * @param {String} string
 	 * @returns {Array}
 	 */
 	FormEngineValidation.trimExplode = function(delimiter, string) {
@@ -538,8 +525,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Parse value to integer
 	 *
-	 * @param {string} value
-	 * @returns {number}
+	 * @param {(Number|String)} value
+	 * @returns {Number}
 	 */
 	FormEngineValidation.parseInt = function(value) {
 		var theVal = '' + value;
@@ -557,8 +544,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Parse value to double
 	 *
-	 * @param {string} value
-	 * @returns {string}
+	 * @param {String} value
+	 * @returns {String}
 	 */
 	FormEngineValidation.parseDouble = function(value) {
 		var theVal = '' + value;
@@ -582,8 +569,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 
 	/**
 	 *
-	 * @param {string} value
-	 * @returns {string}
+	 * @param {String} value
+	 * @returns {String}
 	 */
 	FormEngineValidation.ltrim = function(value) {
 		var theVal = '' + value;
@@ -600,8 +587,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 
 	/**
 	 *
-	 * @param {string} value
-	 * @returns {string}
+	 * @param {String} value
+	 * @returns {String}
 	 */
 	FormEngineValidation.btrim = function(value) {
 		var theVal = '' + value;
@@ -619,28 +606,27 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Parse datetime value
 	 *
-	 * @param {string} value
-	 * @param {string} command
+	 * @param {String} value
+	 * @param {String} command
 	 * @returns {*}
 	 */
 	FormEngineValidation.parseDateTime = function(value, command) {
 		var today = new Date();
-		var lastTime;
 		var values = FormEngineValidation.split(value);
-		var add;
+		var add = 0;
 		switch (command) {
 			case 'd':
 			case 't':
 			case 'n':
-				lastTime = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(today), 0);
+				FormEngineValidation.lastTime = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(today), 0);
 				if (values.valPol[1]) {
 					add = FormEngineValidation.pol(values.valPol[1], FormEngineValidation.parseInt(values.values[1]));
 				}
 				break;
 			case '+':
 			case '-':
-				if (lastTime == 0) {
-					lastTime = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(today), 0);
+				if (FormEngineValidation.lastTime == 0) {
+					FormEngineValidation.lastTime = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(today), 0);
 				}
 				if (values.valPol[1]) {
 					add = FormEngineValidation.pol(values.valPol[1], FormEngineValidation.parseInt(values.values[1]));
@@ -649,36 +635,35 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 			default:
 				var index = value.indexOf(' ');
 				if (index != -1) {
-					var dateVal = FormEngineValidation.parseDate(value, value.substr(index,value.length));
+					var dateVal = FormEngineValidation.parseDate(value.substr(index, value.length), value.substr(0, 1));
 					// set refDate so that evalFunc_input on time will work with correct DST information
 					FormEngineValidation.refDate = new Date(dateVal * 1000);
-					lastTime = dateVal + FormEngineValidation.parseTime(value, value.substr(0,index));
+					FormEngineValidation.lastTime = dateVal + FormEngineValidation.parseTime(value.substr(0,index), value.substr(0, 1), 'time');
 				} else {
 					// only date, no time
-					lastTime = FormEngineValidation.parseDate(value, value);
+					FormEngineValidation.lastTime = FormEngineValidation.parseDate(value, value.substr(0, 1));
 				}
 		}
-		lastTime += add * 24 * 60 * 60;
-		return lastTime;
+		FormEngineValidation.lastTime += add * 24 * 60 * 60;
+		return FormEngineValidation.lastTime;
 	};
 
 	/**
 	 * Parse date value
 	 *
-	 * @param {string} value
-	 * @param {string} command
+	 * @param {String} value
+	 * @param {String} command
 	 * @returns {*}
 	 */
 	FormEngineValidation.parseDate = function(value, command) {
 		var today = new Date();
-		var lastDate;
 		var values = FormEngineValidation.split(value);
-		var add;
+		var add = 0;
 		switch (command) {
 			case 'd':
 			case 't':
 			case 'n':
-				lastDate = FormEngineValidation.getTimestamp(today);
+				FormEngineValidation.lastDate = FormEngineValidation.getTimestamp(today);
 				if (values.valPol[1]) {
 					add = FormEngineValidation.pol(values.valPol[1], FormEngineValidation.parseInt(values.values[1]));
 				}
@@ -718,37 +703,37 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 				var theTime = new Date(parseInt(year), parseInt(month)-1, parseInt(day));
 
 				// Substract timezone offset from client
-				lastDate = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(theTime), 0);
+				FormEngineValidation.lastDate = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(theTime), 0);
 		}
-		lastDate += add * 24 * 60 * 60;
-		return lastDate;
+		FormEngineValidation.lastDate += add * 24 * 60 * 60;
+		return FormEngineValidation.lastDate;
 	};
 
 	/**
 	 * Parse time value
 	 *
-	 * @param {string} value
-	 * @param {string} command
+	 * @param {String} value
+	 * @param {String} command
+	 * @param {String} type
 	 * @returns {*}
 	 */
 	FormEngineValidation.parseTime = function(value, command, type) {
 		var today = new Date();
-		var lastTime;
 		var values = FormEngineValidation.split(value);
-		var add;
+		var add = 0;
 		switch (command) {
 			case 'd':
 			case 't':
 			case 'n':
-				lastTime = FormEngineValidation.getTimeSecs(today);
+				FormEngineValidation.lastTime = FormEngineValidation.getTimeSecs(today);
 				if (values.valPol[1]) {
 					add = FormEngineValidation.pol(values.valPol[1], FormEngineValidation.parseInt(values.values[1]));
 				}
 				break;
 			case '+':
 			case '-':
-				if (lastTime == 0) {
-					lastTime = FormEngineValidation.getTimeSecs(today);
+				if (FormEngineValidation.lastTime == 0) {
+					FormEngineValidation.lastTime = FormEngineValidation.getTimeSecs(today);
 				}
 				if (values.valPol[1]) {
 					add = FormEngineValidation.pol(values.valPol[1], FormEngineValidation.parseInt(values.values[1]));
@@ -782,20 +767,20 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 				var theTime = new Date(FormEngineValidation.getYear(FormEngineValidation.refDate), FormEngineValidation.refDate.getUTCMonth(), FormEngineValidation.refDate.getUTCDate(), hour, min, (( type == 'timesec' ) ? sec : 0));
 
 				// Substract timezone offset from client
-				lastTime = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(theTime), 1);
+				FormEngineValidation.lastTime = FormEngineValidation.convertClientTimestampToUTC(FormEngineValidation.getTimestamp(theTime), 1);
 		}
-		lastTime += add * 60;
-		if (lastTime < 0) {
-			lastTime += 24 * 60 * 60;
+		FormEngineValidation.lastTime += add * 60;
+		if (FormEngineValidation.lastTime < 0) {
+			FormEngineValidation.lastTime += 24 * 60 * 60;
 		}
-		return lastTime;
+		return FormEngineValidation.lastTime;
 	};
 
 	/**
 	 * Parse year value
 	 *
-	 * @param {string} value
-	 * @param {string} command
+	 * @param {String} value
+	 * @param {String} command
 	 * @returns {*}
 	 */
 	FormEngineValidation.parseYear = function(value, command) {
@@ -839,11 +824,11 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	 * Get year from date object
 	 *
 	 * @param {Date} timeObj
-	 * @returns {number}
+	 * @returns {?number}
 	 */
 	FormEngineValidation.getYear = function(timeObj) {
 		if (timeObj === null) {
-			return;
+			return null;
 		}
 		return timeObj.getUTCFullYear();
 	};
@@ -852,7 +837,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	 * Get date as timestamp from Date object
 	 *
 	 * @param {Date} timeObj
-	 * @returns {number}
+	 * @returns {Number}
 	 */
 	FormEngineValidation.getDate = function(timeObj) {
 		var theTime = new Date(FormEngineValidation.getYear(timeObj), timeObj.getUTCMonth(), timeObj.getUTCDate());
@@ -861,8 +846,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 
 	/**
 	 *
-	 * @param {string} foreign
-	 * @param {string} value
+	 * @param {String} foreign
+	 * @param {String} value
 	 * @returns {Object}
 	 */
 	FormEngineValidation.pol = function(foreign, value) {
@@ -872,8 +857,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Substract timezone offset from client to a timestamp to get UTC-timestamp to be send to server
 	 *
-	 * @param {number} timestamp
-	 * @param {number} timeonly
+	 * @param {Number} timestamp
+	 * @param {Number} timeonly
 	 * @returns {*}
 	 */
 	FormEngineValidation.convertClientTimestampToUTC = function(timestamp, timeonly) {
@@ -891,8 +876,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Parse date string or object and return unix timestamp
 	 *
-	 * @param {string} timeObj
-	 * @returns {number}
+	 * @param {(String|Date)} timeObj
+	 * @returns {Number}
 	 */
 	FormEngineValidation.getTimestamp = function(timeObj) {
 		return Date.parse(timeObj)/1000;
@@ -911,7 +896,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 *
 	 * @param timeObj
-	 * @returns {number}
+	 * @returns {Number}
 	 */
 	FormEngineValidation.getSecs = function(timeObj) {
 		return timeObj.getUTCSeconds();
@@ -920,7 +905,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 *
 	 * @param timeObj
-	 * @returns {number}
+	 * @returns {Number}
 	 */
 	FormEngineValidation.getTimeSecs = function(timeObj) {
 		return timeObj.getHours() * 60 * 60 + timeObj.getMinutes() * 60 + timeObj.getSeconds();
@@ -929,7 +914,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	/**
 	 * Find tab by field and mark it as has-validation-error
 	 *
-	 * @param {object} $element
+	 * @param {Object} $element
 	 */
 	FormEngineValidation.markParentTab = function($element) {
 		var $panes = $element.parents('.tab-pane');
@@ -970,17 +955,17 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	FormEngineValidation.splitStr = function(theStr1, delim, index) {
 		var theStr = '' + theStr1;
 		var lengthOfDelim = delim.length;
-		sPos = -lengthOfDelim;
+		var sPos = -lengthOfDelim;
 		if (index < 1) {
 			index = 1;
 		}
-		for (a = 1; a < index; a++) {
+		for (var a = 1; a < index; a++) {
 			sPos = theStr.indexOf(delim, sPos + lengthOfDelim);
 			if (sPos == -1) {
 				return null;
 			}
 		}
-		ePos = theStr.indexOf(delim, sPos + lengthOfDelim);
+		var ePos = theStr.indexOf(delim, sPos + lengthOfDelim);
 		if (ePos == -1) {
 			ePos = theStr.length;
 		}
@@ -1022,7 +1007,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	};
 
 	FormEngineValidation.registerReady = function() {
-		$(document).ready(function() {
+		$(function() {
 			FormEngineValidation.initialize();
 			// Start first validation after one second, because all fields are initial empty (typo3form.fieldSet)
 			window.setTimeout(function() {
@@ -1031,11 +1016,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 		});
 	};
 
-	/**
-	 * Initialize function
-	 */
-
-
 	FormEngine.Validation = FormEngineValidation;
+
 	return FormEngine.Validation;
 });

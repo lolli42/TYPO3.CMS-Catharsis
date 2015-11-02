@@ -12,13 +12,13 @@
  */
 
 /**
+ * @AMD-Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin
  * HTMLArea.plugin class
  *
  * Every plugin should be a subclass of this class
  *
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
 	function (UserAgent, Util, Event) {
@@ -26,10 +26,10 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
 	/**
 	 * Constructor method
 	 *
-	 * @param object editor: a reference to the parent object, instance of RTE
-	 * @param string pluginName: the name of the plugin
-	 *
-	 * @return boolean true if the plugin was configured
+	 * @param {Object} editor: a reference to the parent object, instance of RTE
+	 * @param {String} pluginName: the name of the plugin
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin
 	 */
 	var Plugin = function (editor, pluginName) {
 		this.editor = editor;

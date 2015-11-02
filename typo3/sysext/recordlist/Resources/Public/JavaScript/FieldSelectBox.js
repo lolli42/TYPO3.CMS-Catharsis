@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -12,13 +12,14 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Recordlist/FieldSelectBox
  * Check-all / uncheck-all for the Database Recordlist fieldSelectBox
+ * @exports TYPO3/CMS/Recordlist/FieldSelectBox
  */
-define('TYPO3/CMS/Recordlist/FieldSelectBox', ['jquery'], function($) {
+define(['jquery'], function($) {
+	'use strict';
 
-	var FieldSelectBox = {};
-
-	FieldSelectBox.initializeEvents = function() {
+	$(function() {
 		$('.fieldSelectBox .checkAll').change(function() {
 			var checked = $(this).prop('checked');
 			var $checkboxes = $('.fieldSelectBox tbody').find(':checkbox');
@@ -28,15 +29,6 @@ define('TYPO3/CMS/Recordlist/FieldSelectBox', ['jquery'], function($) {
 				}
 			});
 		});
-	};
+	});
 
-	// initialize and return the FieldSelectBox object
-	return function() {
-		$(document).ready(function() {
-			FieldSelectBox.initializeEvents();
-		});
-
-		TYPO3.FieldSelectBox = FieldSelectBox;
-		return FieldSelectBox;
-	}();
 });

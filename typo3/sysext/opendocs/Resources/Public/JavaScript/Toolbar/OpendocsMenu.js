@@ -12,23 +12,27 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Opendocs/OpendocsMenu
  * main JS part taking care of
  *  - navigating to the documents
  *  - updating the menu
  */
-define('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu', ['jquery'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Icons'], function($, Icons) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{options: {containerSelector: string, hashDataAttributeName: string, closeSelector: string, menuContainerSelector: string, menuItemSelector: string, toolbarIconSelector: string, openDocumentsItemsSelector: string, counterSelector: string}}}
+	 * @exports TYPO3/CMS/Opendocs/OpendocsMenu
+	 */
 	var OpendocsMenu = {
-		$spinnerElement: $('<span>', {
-			'class': 'fa fa-circle-o-notch fa-spin'
-		}),
 		options: {
 			containerSelector: '#typo3-cms-opendocs-backend-toolbaritems-opendocstoolbaritem',
 			hashDataAttributeName: 'opendocsidentifier',
 			closeSelector: '.dropdown-list-link-close',
 			menuContainerSelector: '.dropdown-menu',
 			menuItemSelector: '.dropdown-menu li a',
-			toolbarIconSelector: '.dropdown-toggle i.fa',
+			toolbarIconSelector: '.dropdown-toggle span.icon',
 			openDocumentsItemsSelector: 'li.opendoc',
 			counterSelector: '#tx-opendocs-counter'
 		}
@@ -52,10 +56,12 @@ define('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu', ['jquery'], function($) {
 	 * Displays the menu and does the AJAX call to the TYPO3 backend
 	 */
 	OpendocsMenu.updateMenu = function() {
-		var $toolbarItemIcon = $(OpendocsMenu.options.toolbarIconSelector, OpendocsMenu.options.containerSelector);
+		var $toolbarItemIcon = $(OpendocsMenu.options.toolbarIconSelector, OpendocsMenu.options.containerSelector),
+			$existingIcon = $toolbarItemIcon.clone();
 
-		var $spinnerIcon = OpendocsMenu.$spinnerElement.clone();
-		var $existingIcon = $toolbarItemIcon.replaceWith($spinnerIcon);
+		Icons.getIcon('spinner-circle-light', Icons.sizes.small).done(function(spinner) {
+			$toolbarItemIcon.replaceWith(spinner);
+		});
 
 		$.ajax({
 			url: TYPO3.settings.ajaxUrls['opendocs_menu'],
@@ -64,7 +70,7 @@ define('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu', ['jquery'], function($) {
 			success: function(data) {
 				$(OpendocsMenu.options.containerSelector).find(OpendocsMenu.options.menuContainerSelector).html(data);
 				OpendocsMenu.updateNumberOfDocs();
-				$spinnerIcon.replaceWith($existingIcon);
+				$(OpendocsMenu.options.toolbarIconSelector, OpendocsMenu.options.containerSelector).replaceWith($existingIcon);
 			}
 		});
 	};
@@ -81,11 +87,11 @@ define('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu', ['jquery'], function($) {
 	/**
 	 * Closes an open document
 	 *
-	 * @param string md5sum
+	 * @param {String} md5sum
 	 */
 	OpendocsMenu.closeDocument = function(md5sum) {
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['opendocs_close'],
+			url: TYPO3.settings.ajaxUrls['opendocs_closedoc'],
 			type: 'post',
 			cache: false,
 			data: {
@@ -107,16 +113,13 @@ define('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu', ['jquery'], function($) {
 		$(OpendocsMenu.options.containerSelector).toggleClass('open');
 	};
 
-	/**
-	 * initialize and return the Opendocs object
-	 */
-	return function() {
-		$(document).ready(function() {
-			OpendocsMenu.initializeEvents();
-			OpendocsMenu.updateMenu();
-		});
+	$(function() {
+		OpendocsMenu.initializeEvents();
+		OpendocsMenu.updateMenu();
+	});
 
-		TYPO3.OpendocsMenu = OpendocsMenu;
-		return OpendocsMenu;
-	}();
+	// expose to global
+	TYPO3.OpendocsMenu = OpendocsMenu;
+
+	return OpendocsMenu;
 });

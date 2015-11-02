@@ -4,12 +4,6 @@
 
 <f:layout name="Permission" />
 
-<f:section name="iconButtons">
-	<a href="#" onclick="{previewUrl}" title="{f:translate(key: 'LLL:EXT:lang/locallang_core.xlf:labels.showPage')}">
-		<core:icon identifier="actions-document-view" />
-	</a>
-</f:section>
-
 <f:section name="headline">
 	<h1><f:translate key="LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:permissions" /></h1>
 </f:section>
@@ -63,6 +57,7 @@
 											<f:link.action
 												action="edit"
 												arguments="{id: data.row._ORIG_uid, depth: depth}"
+												class="btn btn-default"
 												title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:ch_permissions')}"
 											>
 												<core:icon identifier="actions-document-open" />
@@ -72,6 +67,7 @@
 											<f:link.action
 												action="edit"
 												arguments="{id: data.row.uid, depth: depth}"
+												class="btn btn-default"
 												title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:ch_permissions')}"
 											>
 												<core:icon identifier="actions-document-open" />
@@ -113,22 +109,22 @@
 										<f:if condition="{data.row.editlock}">
 											<f:then>
 												<a
-													class="editlock"
+													class="editlock btn btn-default"
 													data-page="{data.row.uid}"
 													data-lockstate="1"
 													title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:EditLock_descr')}"
 												>
-													<core:icon identifier="status-warning-lock" />
+													<core:icon identifier="actions-unlock" />
 												</a>
 											</f:then>
 											<f:else>
 												<a
-													class="editlock"
+													class="editlock btn btn-default"
 													data-page="{data.row.uid}"
 													data-lockstate="0"
 													title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:EditLock_descr2')}"
 												>
-													[+]
+													<core:icon identifier="actions-lock" />
 												</a>
 											</f:else>
 										</f:if>

@@ -12,10 +12,10 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/StatusBar
  * The optional status bar at the bottom of the editor framework
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/StatusBar',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
@@ -23,6 +23,10 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/StatusBar',
 
 	/**
 	 * Status bar constructor
+	 *
+	 * @param {Object} config
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/StatusBar
 	 */
 	var StatusBar = function (config) {
 		Util.apply(this, config);

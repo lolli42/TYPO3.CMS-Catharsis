@@ -12,16 +12,23 @@
  */
 
 /**
- * contains all JS functions related to TYPO3 Flexforms
+ * Module: TYPO3/CMS/Backend/FormEngineFlexForm
+ * Contains all JS functions related to TYPO3 Flexforms
  * available under the latest jQuery version
  * can be used by $('myflexform').t3FormEngineFlexFormElement({options});, all .t3-flex-form containers will be called on load
  *
  * currently TYPO3.FormEngine.FlexFormElement represents one Flexform element
  * which can contain one ore more sections
  */
+define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($) {
 
-define('TYPO3/CMS/Backend/FormEngineFlexForm', ['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($) {
-
+	/**
+	 *
+	 * @param {HTMLElement} el
+	 * @param {Object} options
+	 * @constructor
+	 * @exports TYPO3/CMS/Backend/FormEngineFlexForm
+	 */
 	TYPO3.FormEngine.FlexFormElement = function(el, options) {
 		var me = this;	// avoid scope issues
 		var opts;	// shorthand options notation
@@ -95,6 +102,8 @@ define('TYPO3/CMS/Backend/FormEngineFlexForm', ['jquery', 'TYPO3/CMS/Backend/For
 					evt.preventDefault();
 					var $sectionEl = $(this).closest(opts.sectionSelector);
 					me.toggleSection($sectionEl);
+				}).on('click', opts.sectionToggleButtonSelector + ' .form-irre-header-control', function(evt) {
+					evt.stopPropagation();
 				});
 			}
 
@@ -107,18 +116,18 @@ define('TYPO3/CMS/Backend/FormEngineFlexForm', ['jquery', 'TYPO3/CMS/Backend/For
 
 	// setting some default values
 	TYPO3.FormEngine.FlexFormElement.defaults = {
-		'deleteIconSelector': '.t3-js-delete',
-		'sectionSelector': '.t3-flex-section',
-		'sectionContentSelector': '.t3-flex-section-content',
-		'sectionHeaderSelector': '.t3-flex-section-header',
-		'sectionHeaderPreviewSelector': '.t3-flex-section-header-preview',
-		'sectionActionInputFieldSelector': '.t3-flex-control-action',
-		'sectionToggleInputFieldSelector': '.t3-flex-control-toggle',
-		'sectionToggleIconOpenSelector': '.t3-flex-control-toggle-icon-open',
-		'sectionToggleIconCloseSelector': '.t3-flex-control-toggle-icon-close',
-		'sectionToggleButtonSelector': 'a.t3-flex-control-toggle-button',
-		'flexFormToggleAllSectionsSelector': '.t3-form-field-toggle-flexsection',
-		'sectionDeletedClass': 't3-flex-section-deleted',
+		'deleteIconSelector': '.t3js-delete',
+		'sectionSelector': '.t3js-flex-section',
+		'sectionContentSelector': '.t3js-flex-section-content',
+		'sectionHeaderSelector': '.t3js-flex-section-header',
+		'sectionHeaderPreviewSelector': '.t3js-flex-section-header-preview',
+		'sectionActionInputFieldSelector': '.t3js-flex-control-action',
+		'sectionToggleInputFieldSelector': '.t3js-flex-control-toggle',
+		'sectionToggleIconOpenSelector': '.t3js-flex-control-toggle-icon-open',
+		'sectionToggleIconCloseSelector': '.t3js-flex-control-toggle-icon-close',
+		'sectionToggleButtonSelector': '[data-toggle="formengine-flex"]',
+		'flexFormToggleAllSectionsSelector': '.t3js-form-field-toggle-flexsection',
+		'sectionDeletedClass': 't3js-flex-section-deleted',
 		'allowRestructure': 0,	// whether the form can be modified
 		'flexformId': false
 	};
@@ -133,7 +142,7 @@ define('TYPO3/CMS/Backend/FormEngineFlexForm', ['jquery', 'TYPO3/CMS/Backend/For
 		require(['jquery-ui/sortable'], function () {
 			me.$el.sortable({
 				containment: 'parent',
-				handle: '.t3-js-sortable-handle',
+				handle: '.t3js-sortable-handle',
 				axis: 'y',
 				tolerance: 'pointer',
 				stop: function () {
@@ -196,8 +205,8 @@ define('TYPO3/CMS/Backend/FormEngineFlexForm', ['jquery', 'TYPO3/CMS/Backend/For
 		}
 
 		// create a preview container span element
-		if ($sectionEl.find(this.options.sectionHeaderPreviewSelector).length == 0) {
-			$sectionEl.find(this.options.sectionHeaderSelector).children(':first').append('<span class="' + this.options.sectionHeaderPreviewSelector.replace(/\./, '') + '"></span>');
+		if ($sectionEl.find(this.options.sectionHeaderPreviewSelector).length === 0) {
+			$sectionEl.find(this.options.sectionHeaderSelector).find('.t3js-record-title').parent().append('<span class="' + this.options.sectionHeaderPreviewSelector.replace(/\./, '') + '"></span>');
 		}
 
 		$sectionEl.find(this.options.sectionHeaderPreviewSelector).text(previewContent);
@@ -212,7 +221,7 @@ define('TYPO3/CMS/Backend/FormEngineFlexForm', ['jquery', 'TYPO3/CMS/Backend/For
 	};
 
 	// Initialization Code
-	$(document).ready(function() {
+	$(function() {
 		// run the flexform functions on all containers (which contains one or more sections)
 		$('.t3-flex-container').t3FormEngineFlexFormElement();
 	});

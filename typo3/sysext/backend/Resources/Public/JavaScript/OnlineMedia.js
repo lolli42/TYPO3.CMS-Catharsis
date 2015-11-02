@@ -12,11 +12,18 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/OnlineMedia
  * Javascript for show the online media dialog
  */
-define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/Lang', 'TYPO3/CMS/Backend/Modal'], function($, NProgress) {
-	"use strict";
+define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Lang/Lang'], function($, NProgress, Modal) {
+	'use strict';
 
+	/**
+	 *
+	 * @param element
+	 * @constructor
+	 * @exports TYPO3/CMS/Backend/OnlineMedia
+	 */
 	var OnlineMediaPlugin = function(element) {
 		var me = this;
 		me.$btn = $(element);
@@ -26,12 +33,10 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 		me.btnSubmit = me.$btn.data('data-btn-submit') || 'Add';
 		me.placeholder = me.$btn.data('placeholder') || 'Paste media url here...';
 
-		// No IRRE element found then hide input+button
-		if (!me.irreObjectUid) {
-			me.$btn.hide();
-			return;
-		}
-
+		/**
+		 *
+		 * @param {String} url
+		 */
 		me.addOnlineMedia = function(url) {
 			NProgress.start();
 			$.post(TYPO3.settings.ajaxUrls['online_media_create'],
@@ -49,14 +54,15 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 							'file'
 						);
 					} else {
-						var $confirm = top.TYPO3.Modal.confirm(
+						var $confirm = Modal.confirm(
 							'ERROR',
 							data.error,
 							top.TYPO3.Severity.error,
 							[{
 								text: TYPO3.lang['button.ok'] || 'OK',
-								btnClass: 'btn-' + top.TYPO3.Modal.getSeverityClass(top.TYPO3.Severity.error),
-								name: 'ok'
+								btnClass: 'btn-' + Modal.getSeverityClass(top.TYPO3.Severity.error),
+								name: 'ok',
+								active: true
 							}]
 						).on('confirm.button.ok', function() {
 							$confirm.modal('hide');
@@ -67,11 +73,11 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 			);
 		};
 
-		// Bind key press enter event
-		me.$btn.on('click', function(evt) {
-			evt.preventDefault();
-
-			var $modal = top.TYPO3.Modal.show(
+		/**
+		 * Trigger the modal
+		 */
+		me.triggerModal = function() {
+			var $modal = Modal.show(
 				me.$btn.attr('title'),
 				'<div class="form-control-wrap">' +
 					'<input type="text" class="form-control online-media-url" placeholder="' + me.placeholder + '" />' +
@@ -91,28 +97,27 @@ define('TYPO3/CMS/Backend/OnlineMedia', ['jquery', 'nprogress', 'TYPO3/CMS/Lang/
 				}]
 			);
 
-			$modal.on('shown.bs.modal', function(e) {
+			$modal.on('shown.bs.modal', function() {
 				// focus the input field
-				$(this).find('input.online-media-url').first().focus();
+				$(this).find('input.online-media-url').first().focus().on('keydown', function(e) {
+					if (e.keyCode === 13) {
+						$modal.find('button[name="ok"]').trigger('click');
+					}
+				});
 			});
-		});
+		};
+
+		return {triggerModal: me.triggerModal};
 	};
 
-	// register the jQuery plugin "OnlineMediaPlugin"
-	$.fn.onlineMedia = function(option) {
-		return this.each(function() {
-			var $this = $(this),
-				data = $this.data('OnlineMediaPlugin');
-			if (!data) {
-				$this.data('OnlineMediaPlugin', (data = new OnlineMediaPlugin(this)));
-			}
-			if (typeof option === 'string') {
-				data[option]();
-			}
-		});
-	};
-
-	$(function() {
-		$('.t3js-online-media-add-btn').onlineMedia();
+	$(document).on('click', '.t3js-online-media-add-btn', function(evt) {
+		evt.preventDefault();
+		var $this = $(this),
+			onlineMediaPlugin = $this.data('OnlineMediaPlugin');
+		if (!onlineMediaPlugin) {
+			$this.data('OnlineMediaPlugin', (onlineMediaPlugin = new OnlineMediaPlugin(this)));
+		}
+		onlineMediaPlugin.triggerModal();
 	});
+
 });

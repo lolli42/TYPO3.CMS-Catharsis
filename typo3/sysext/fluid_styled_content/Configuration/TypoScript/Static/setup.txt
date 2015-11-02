@@ -1,7 +1,7 @@
-<INCLUDE_TYPOSCRIPT: source="FILE: EXT:fluid_styled_content/Configuration/TypoScript/Static/Setup/lib.parseFunc.ts">
-<INCLUDE_TYPOSCRIPT: source="FILE: EXT:fluid_styled_content/Configuration/TypoScript/Static/Setup/lib.fluidContent.ts">
-<INCLUDE_TYPOSCRIPT: source="FILE: EXT:fluid_styled_content/Configuration/TypoScript/Static/Setup/lib.stdheader.ts">
-<INCLUDE_TYPOSCRIPT: source="FILE: EXT:fluid_styled_content/Configuration/TypoScript/Static/Setup/styles.content.get.ts">
+<INCLUDE_TYPOSCRIPT: source="FILE:./Setup/lib.parseFunc.ts">
+<INCLUDE_TYPOSCRIPT: source="FILE:./Setup/lib.fluidContent.ts">
+<INCLUDE_TYPOSCRIPT: source="FILE:./Setup/lib.stdheader.ts">
+<INCLUDE_TYPOSCRIPT: source="FILE:./Setup/styles.content.get.ts">
 
 tt_content = CASE
 tt_content {
@@ -174,7 +174,7 @@ tt_content {
 		dataProcessing {
 			10 = TYPO3\CMS\Frontend\DataProcessing\FilesProcessor
 			10 {
-				references.fieldName = media
+				references.fieldName = assets
 			}
 			20 = TYPO3\CMS\Frontend\DataProcessing\GalleryProcessor
 			20 {
@@ -187,7 +187,7 @@ tt_content {
 		}
 		stdWrap {
 			# Setup the edit icon for content element "textmedia"
-			editIcons = tt_content: header [header_layout], bodytext, media [imageorient|imagewidth|imageheight], [imagecols|imageborder], image_zoom
+			editIcons = tt_content: header [header_layout], bodytext, assets [imageorient|imagewidth|imageheight], [imagecols|imageborder], image_zoom
 			editIcons {
 				iconTitle.data = LLL:EXT:fluid_styled_content/Resources/Private/Language/FrontendEditing.xlf:editIcon.textmedia
 			}

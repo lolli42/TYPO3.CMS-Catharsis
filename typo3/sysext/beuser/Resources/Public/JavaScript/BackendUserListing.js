@@ -12,9 +12,11 @@
  */
 
 /**
- *  JavaScript for backend user listing
+ * Module: TYPO3/CMS/Beuser/BackendUserListing
+ * JavaScript for backend user listing
+ * @exports TYPO3/CMS/Beuser/BackendUserListing
  */
-define('TYPO3/CMS/Beuser/BackendUserListing', ['jquery', 'TYPO3/CMS/Backend/jquery.clearable'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/jquery.clearable'], function($) {
 
 	var $searchFields = $('#tx_Beuser_username');
 	var searchResultShown = ('' !== $searchFields.first().val());

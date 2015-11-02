@@ -114,6 +114,9 @@
 	padding-left: 0;
 	list-style: none;
 	float: left;
+	.icon-color {
+		fill: @topbar-navigation-color;
+	}
 	a {
 		color: @topbar-navigation-color;
 		text-decoration: none;
@@ -180,6 +183,11 @@
 			right: 5px;
 		}
 	}
+	.live-search-wrapper {
+		&+ .dropdown-menu {
+			width: 100%;
+		}
+	}
 	.dropdown-menu {
 		left: auto;
 		right: 0;
@@ -234,7 +242,7 @@
 			.submodule-label {
 				white-space: nowrap;
 				text-overflow: ellipsis;
-				padding-top: 5px;
+				padding-top: 7px;
 				display: block;
 				overflow: hidden;
 				*zoom: 1;
@@ -299,7 +307,6 @@
 		width: 26px;
 		height: 26px;
 		&:hover {
-			color: @topbar-dropdown-link-hover-color;
 			background-color: @topbar-dropdown-link-hover-bg;
 		}
 	}
@@ -309,7 +316,6 @@
 	.dropdown-list-link-delete,
 	.dropdown-list-link-close {
 		&:hover {
-			color: @topbar-dropdown-link-hover-color;
 			background-color: @btn-danger-bg;
 		}
 	}
@@ -340,6 +346,12 @@
 			left: 15px;
 			margin-top: -8px;
 			z-index: 1;
+		}
+
+		button.close {
+			opacity: 1;
+			color: @topbar-navigation-color;
+			text-shadow: none;
 		}
 	}
 	.form-control {
@@ -380,4 +392,14 @@
 			font-weight: normal;
 		}
 	}
+}
+
+// Bookmark dropdown menu
+#typo3-cms-backend-backend-toolbaritems-shortcuttoolbaritem {
+  .dropdown-list {
+	max-height: (10 * (18px + (@topbar-dropdown-padding / 2) + 1px)); // 18px=12px font with line-height 1.5; 1px margin-top for padding; 10 rows
+	overflow: hidden;
+	overflow-y: auto;
+	padding-right: 10px;
+  }
 }

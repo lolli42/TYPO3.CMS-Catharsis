@@ -12,21 +12,34 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Lang/LanguageModule
  * Language module class
  */
-define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable'], function($, moment) {
+define(['jquery', 'moment', 'TYPO3/CMS/Backend/Icons', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable'], function($, moment, Icons) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{me: *, context: null, table: null, topMenu: null, currentRequest: null, settings: {}, icons: {}, labels: {}, identifiers: {searchField: string, topMenu: string, activateIcon: string, deactivateIcon: string, downloadIcon: string, loadingIcon: string, completeIcon: string, progressBar: string, progressBarText: string, progressBarInner: string, lastUpdate: string, languagePrefix: string, extensionPrefix: string}, classes: {enabled: string, disabled: string, processing: string, complete: string, extension: string, actions: string, progressBar: string, loading: string, lastUpdate: string}}}
+	 * @exports TYPO3/CMS/Lang/LanguageModule
+	 */
 	var LanguageModule = {
 		me: this,
 		context: null,
 		table: null,
 		topMenu: null,
 		currentRequest: null,
+		userAbortRequest: false,
 		settings: {},
 		icons: {},
 		labels: {},
+		buttons: {
+			update: null,
+			cancel: null
+		},
 		identifiers: {
 			searchField: '.t3js-language-searchfield',
-			topMenu: 'div.menuItems',
+			topMenu: 'div.t3js-module-docheader',
 			activateIcon: 'span.activateIcon',
 			deactivateIcon: 'span.deactivateIcon',
 			downloadIcon: 'span.downloadIcon',
@@ -54,6 +67,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Initialize language table
+	 *
+	 * @param {HTMLElement} contextElement
+	 * @param {HTMLElement} tableElement
 	 */
 	LanguageModule.initializeLanguageTable = function(contextElement, tableElement) {
 		LanguageModule.context = $(contextElement);
@@ -64,10 +80,14 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 		LanguageModule.table = LanguageModule.buildLanguageTable(tableElement);
 		LanguageModule.initializeSearchField();
 		LanguageModule.initializeEventHandler();
-	}
+		LanguageModule.initializeButtons();
+	};
 
 	/**
 	 * Initialize translation table
+	 *
+	 * @param {HTMLElement} contextElement
+	 * @param {HTMLElement} tableElement
 	 */
 	LanguageModule.initializeTranslationTable = function(contextElement, tableElement) {
 		LanguageModule.context = $(contextElement);
@@ -82,6 +102,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Activate a language
+	 *
+	 * @param {HTMLElement} triggerElement
+	 * @param {Object} parameters
 	 */
 	LanguageModule.activateLanguageAction = function(triggerElement, parameters) {
 		var $row = $(triggerElement).closest('tr'),
@@ -102,6 +125,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Deactivate a language
+	 *
+	 * @param {HTMLElement} triggerElement
+	 * @param {Object} parameters
 	 */
 	LanguageModule.deactivateLanguageAction = function(triggerElement, parameters) {
 		var $row = $(triggerElement).closest('tr'),
@@ -122,6 +148,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Update a language
+	 *
+	 * @param {HTMLElement} triggerElement
+	 * @param {Object} parameters
 	 */
 	LanguageModule.updateLanguageAction = function(triggerElement, parameters) {
 		var $row = $(triggerElement).closest('tr'),
@@ -146,10 +175,13 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Update all active languages
+	 *
+	 * @param {HTMLElement} triggerElement
+	 * @param {Object} parameters
 	 */
 	LanguageModule.updateActiveLanguagesAction = function(triggerElement, parameters) {
 		var $activeRows = $('tr.' + LanguageModule.classes.enabled, LanguageModule.table.table().container());
-
+		LanguageModule.updateButtonStatus('update');
 		LanguageModule.topMenu.addClass(LanguageModule.classes.processing);
 		$activeRows.addClass(LanguageModule.classes.processing);
 		LanguageModule.loadTranslationsByRows($activeRows, function(row, status, data, response) {
@@ -173,10 +205,13 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Cancel language update
+	 *
+	 * @param {HTMLElement} triggerElement
+	 * @param {Object} parameters
 	 */
 	LanguageModule.cancelLanguageUpdateAction = function(triggerElement, parameters) {
 		var $activeRows = $('tr.' + LanguageModule.classes.enabled, LanguageModule.table.table().container());
-
+		LanguageModule.updateButtonStatus('cancel');
 		LanguageModule.topMenu.removeClass(LanguageModule.classes.processing);
 		$activeRows.removeClass(LanguageModule.classes.processing);
 		LanguageModule.abortAjaxRequest();
@@ -184,6 +219,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Update an extension translation
+	 *
+	 * @param {HTMLElement} triggerElement
+	 * @param {Object} parameters
 	 */
 	LanguageModule.updateTranslationAction = function(triggerElement, parameters) {
 		var $row = $(triggerElement).closest('tr'),
@@ -204,6 +242,8 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Build icons
+	 *
+	 * @returns {{activate: (*|jQuery), deactivate: (*|jQuery), download: (*|jQuery), loading: (*|jQuery), complete: (*|jQuery), progressBar: (*|jQuery)}}
 	 */
 	LanguageModule.buildIcons = function() {
 		return {
@@ -218,6 +258,8 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Build labels
+	 *
+	 * @returns {{processing: *, search: *, loadingRecords: *, zeroRecords: *, emptyTable: *, dateFormat: *, errorHeader: *, infoHeader: *, successHeader: *, languageActivated: *, errorOccurred: *, languageDeactivated: *, updateComplete: *}}
 	 */
 	LanguageModule.buildLabels = function() {
 		return {
@@ -233,12 +275,16 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 			languageActivated: TYPO3.lang['flashmessage.languageActivated'],
 			errorOccurred: TYPO3.lang['flashmessage.errorOccurred'],
 			languageDeactivated: TYPO3.lang['flashmessage.languageDeactivated'],
-			updateComplete: TYPO3.lang['flashmessage.updateComplete']
+			updateComplete: TYPO3.lang['flashmessage.updateComplete'],
+			canceled: TYPO3.lang['flashmessage.canceled']
 		}
 	};
 
 	/**
 	 * Build language table
+	 *
+	 * @param {HTMLElement} tableElement
+	 * @returns {Object}
 	 */
 	LanguageModule.buildLanguageTable = function(tableElement) {
 		return $(tableElement).DataTable({
@@ -255,6 +301,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Initialize translation table
+	 *
+	 * @param {HTMLElement} tableElement
+	 * @returns {Object}
 	 */
 	LanguageModule.buildTranslationTable = function(tableElement) {
 		var languageCount = $(tableElement).data('languageCount'),
@@ -338,21 +387,53 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 	LanguageModule.initializeEventHandler = function() {
 		$(document).on('click', function(event) {
 			var $element = $(event.target);
+			var $parent = $element.closest('[data-action]');
 
 			if ($element.data('action') !== undefined) {
 				LanguageModule.handleActionEvent($element, event);
-			} else if ($element.parent().data('action') !== undefined) {
-				LanguageModule.handleActionEvent($element.parent(), event);
-			} else if ($element.parent().parent().data('action') !== undefined) {
-				LanguageModule.handleActionEvent($element.parent().parent(), event);
-			} else if ($element.parent().parent().parent().parent().data('action') !== undefined) {
-				LanguageModule.handleActionEvent($element.parent().parent().parent().parent(), event);
+			} else if ($parent.data('action') !== undefined) {
+				LanguageModule.handleActionEvent($parent, event);
 			}
 		});
 	};
 
 	/**
+	 * Initialize buttons
+	 */
+	LanguageModule.initializeButtons = function() {
+		LanguageModule.buttons.update = LanguageModule.topMenu.find('.t3js-button-update');
+		LanguageModule.buttons.cancel = LanguageModule.topMenu.find('.t3js-button-cancel');
+	};
+
+	/**
+	 * Update buttons in top menu
+	 *
+	 * @param {String} action
+	 */
+	LanguageModule.updateButtonStatus = function(action) {
+		switch (action) {
+			case 'update':
+				LanguageModule.buttons.update.data('action', 'cancelLanguageUpdate');
+				LanguageModule.buttons.cancel.removeClass('disabled');
+				Icons.getIcon('spinner-circle-dark', Icons.sizes.small).done(function(spinner) {
+					LanguageModule.buttons.update.find('span.icon').replaceWith(spinner);
+				});
+				break;
+			case 'cancel':
+				LanguageModule.buttons.update.data('action', 'updateActiveLanguages');
+				LanguageModule.buttons.cancel.addClass('disabled');
+				Icons.getIcon('actions-system-extension-download', Icons.sizes.small).done(function(download) {
+					LanguageModule.buttons.update.find('span.icon').replaceWith(download);
+				});
+				break;
+		}
+	};
+
+	/**
 	 * Handler for "action" events
+	 *
+	 * @param {Object} element
+	 * @param {Event} event
 	 */
 	LanguageModule.handleActionEvent = function(element, event) {
 		event.preventDefault();
@@ -365,6 +446,10 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Load translations for all extensions by given locale
+	 *
+	 * @param {String} locale
+	 * @param {function} callback
+	 * @param {Number} counter
 	 */
 	LanguageModule.loadTranslationsByLocale = function(locale, callback, counter) {
 		counter = counter || 0;
@@ -386,6 +471,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Load translations for all extensions by given rows
+	 *
+	 * @param {Object} rows
+	 * @param {function} callback
 	 */
 	LanguageModule.loadTranslationsByRows = function(rows, callback) {
 		if (rows) {
@@ -408,6 +496,10 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Load translation for one extension by given locale
+	 *
+	 * @param {String} extension
+	 * @param {String} locale
+	 * @param {function} callback
 	 */
 	LanguageModule.loadTranslationByExtensionAndLocale = function(extension, locale, callback) {
 		var data = {extension: extension, locale: locale};
@@ -422,6 +514,10 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Execute AJAX request
+	 *
+	 * @param {String} uri
+	 * @param {Object} data
+	 * @param {function} callback
 	 */
 	LanguageModule.executeAjaxRequest = function(uri, data, callback) {
 		var newData = {};
@@ -452,21 +548,28 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 	 */
 	LanguageModule.abortAjaxRequest = function() {
 		if (LanguageModule.currentRequest) {
+			LanguageModule.userAbortRequest = true;
 			LanguageModule.currentRequest.abort();
 		}
 	};
 
 	/**
 	 * Display error flash message
+	 *
+	 * @param {String} label
 	 */
 	LanguageModule.displayError = function(label) {
-		if (typeof label === 'string' && label !== '') {
+		if (LanguageModule.userAbortRequest) {
+			LanguageModule.displaySuccess(LanguageModule.labels.canceled);
+		} else if (typeof label === 'string' && label !== '') {
 			top.TYPO3.Notification.error(LanguageModule.labels.errorHeader, label);
 		}
 	};
 
 	/**
 	 * Display information flash message
+	 *
+	 * @param {String} label
 	 */
 	LanguageModule.displayInformation = function(label) {
 		if (typeof label === 'string' && label !== '') {
@@ -476,6 +579,8 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Display success flash message
+	 *
+	 * @param {String} label
 	 */
 	LanguageModule.displaySuccess = function(label) {
 		if (typeof label === 'string' && label !== '') {
@@ -485,6 +590,11 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Build action link
+	 *
+	 * @param {String} action
+	 * @param {Object} parameters
+	 * @param {String} content
+	 * @returns {Object}
 	 */
 	LanguageModule.buildActionLink = function(action, parameters, content) {
 		var $link = $('<a>');
@@ -492,7 +602,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 		$link.addClass(action + 'Link');
 		$link.attr('data-action', action);
 		for (var name in parameters) {
-			$link.attr('data-' + name, parameters[name]);
+			if (parameters.hasOwnProperty(name)) {
+				$link.attr('data-' + name, parameters[name]);
+			}
 		}
 		$link.html(content);
 		return $link.wrap('<span>').parent().html();
@@ -500,6 +612,8 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Build progress bar
+	 *
+	 * @returns {Object}
 	 */
 	LanguageModule.buildProgressBar = function() {
 		var $span = $('<span>');
@@ -510,6 +624,8 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Build loading indicator
+	 *
+	 * @returns {Object}
 	 */
 	LanguageModule.buildLoadingIndicator = function() {
 		var $span = $('<span>');
@@ -520,6 +636,8 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Build complete state indicator
+	 *
+	 * @returns {Object}
 	 */
 	LanguageModule.buildCompleteIndicator = function() {
 		var $span = $('<span>');
@@ -530,6 +648,13 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Build image
+	 *
+	 * @param {String} uri
+	 * @param {String} alt
+	 * @param {String} title
+	 * @param {Number} width
+	 * @param {Number} heigth
+	 * @returns {Object}
 	 */
 	LanguageModule.buildImage = function(uri, alt, title, width, heigth) {
 		var $image = $('<img>');
@@ -546,6 +671,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Format date
+	 *
+	 * @param {Number} timestamp
+	 * @returns {*}
 	 */
 	LanguageModule.formatDate = function(timestamp) {
 		return moment.unix(timestamp).format(LanguageModule.labels.dateFormat);
@@ -553,6 +681,9 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 
 	/**
 	 * Set progress bar progress
+	 *
+	 * @param {Object} progressBar
+	 * @param {String} progress
 	 */
 	LanguageModule.setProgress = function(progressBar, progress) {
 		var $inner = $(LanguageModule.identifiers.progressBarInner, progressBar),
@@ -562,7 +693,11 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 		$text.text(Math.round(progress) + '%');
 	};
 
-	// Utility method to retrieve query parameters
+	/**
+	 * Utility method to retrieve query parameters
+	 *
+	 * @returns {Array}
+	 */
 	LanguageModule.getUrlVars = function getUrlVars() {
 		var vars = [], hash;
 		var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
@@ -574,16 +709,13 @@ define('TYPO3/CMS/Lang/LanguageModule', ['jquery', 'moment', 'datatables', 'TYPO
 		return vars;
 	};
 
-	return function() {
-		$(document).ready(function() {
-			if ($('div.typo3-module-lang #typo3-language-list').length) {
-				LanguageModule.initializeLanguageTable('div.typo3-module-lang', '#typo3-language-list');
-			} else if ($('div.typo3-module-lang #typo3-translation-list').length) {
-				LanguageModule.initializeTranslationTable('div.typo3-module-lang', '#typo3-translation-list');
-			}
-		});
+	$(function() {
+		if ($('#typo3-language-list').length) {
+			LanguageModule.initializeLanguageTable('div.typo3-module-lang', '#typo3-language-list');
+		} else if ($('#typo3-translation-list').length) {
+			LanguageModule.initializeTranslationTable('div.typo3-module-lang', '#typo3-translation-list');
+		}
+	});
 
-		TYPO3.LanguageModule = LanguageModule;
-		return LanguageModule;
-	}();
+	return LanguageModule;
 });

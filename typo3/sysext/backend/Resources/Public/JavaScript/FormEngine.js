@@ -27,10 +27,16 @@ var setFormValueOpenBrowser
 	,setFormValueManipulate
 	,setFormValue_getFObj;
 
+/**
+ * Module: TYPO3/CMS/Backend/FormEngine
+ */
+define(['jquery', 'TYPO3/CMS/Backend/Modal'], function ($, Modal) {
 
-define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
-
-	// main options
+	/**
+	 *
+	 * @type {{formName: *, backPath: *, openedPopupWindow: null, legacyFieldChangedCb: Function, browserUrl: string}}
+	 * @exports TYPO3/CMS/Backend/FormEngine
+	 */
 	var FormEngine = {
 		formName: TYPO3.settings.FormEngine.formName
 		,backPath: TYPO3.settings.FormEngine.backPath
@@ -39,6 +45,10 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 		,browserUrl: ''
 	};
 
+	/**
+	 *
+	 * @param {String} browserUrl
+	 */
 	FormEngine.setBrowserUrl = function(browserUrl) {
 		FormEngine.browserUrl = browserUrl;
 	};
@@ -48,10 +58,10 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	/**
 	 * opens a popup window with the element browser (browser.php)
 	 *
-	 * @param mode can be "db" or "file"
-	 * @param params additional params for the browser window
-	 * @param width width of the window
-	 * @param height height of the window
+	 * @param {String} mode can be "db" or "file"
+	 * @param {String} params additional params for the browser window
+	 * @param {Number} width width of the window
+	 * @param {Number} height height of the window
 	 */
 	FormEngine.openPopupWindow = setFormValueOpenBrowser = function(mode, params, width, height) {
 		var url = FormEngine.backPath + FormEngine.browserUrl + '&mode=' + mode + '&bparams=' + params;
@@ -67,11 +77,11 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 * or from a multi-select (two selects side-by-side)
 	 * previously known as "setFormValueFromBrowseWin"
 	 *
-	 * @param fieldName formerly known as "fName" name of the field, like [tt_content][2387][header]
-	 * @param value the value to fill in (could be an integer)
-	 * @param label the visible name in the selector
-	 * @param title the title when hovering over it
-	 * @param exclusiveValues if the select field has exclusive options that are not combine-able
+	 * @param {String} fieldName formerly known as "fName" name of the field, like [tt_content][2387][header]
+	 * @param {(String|Number)} value the value to fill in (could be an integer)
+	 * @param {String} label the visible name in the selector
+	 * @param {String} title the title when hovering over it
+	 * @param {String} exclusiveValues if the select field has exclusive options that are not combine-able
 	 */
 	FormEngine.setSelectOptionFromExternalSource = setFormValueFromBrowseWin = function(fieldName, value, label, title, exclusiveValues) {
 		exclusiveValues = String(exclusiveValues);
@@ -160,9 +170,10 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 		} else {
 
 			// The incoming value consists of the table name, an underscore and the uid
+			// or just the uid
 			// For a single selection field we need only the uid, so we extract it
 			var pattern = /_(\\d+)$/
-					,result = value.match(pattern);
+					,result = value.toString().match(pattern);
 
 			if (result != null) {
 				value = result[1];
@@ -180,8 +191,8 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 * sets the value of the hidden field, from the select list, always executed after the select field was updated
 	 * previously known as global function setHiddenFromList()
 	 *
-	 * @param selectFieldEl the select field
-	 * @param originalFieldEl the hidden form field
+	 * @param {HTMLElement} selectFieldEl the select field
+	 * @param {HTMLElement} originalFieldEl the hidden form field
 	 */
 	FormEngine.updateHiddenFieldValueFromSelect = setHiddenFromList = function(selectFieldEl, originalFieldEl) {
 		var selectedValues = [];
@@ -194,7 +205,13 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 		$(originalFieldEl).val(selectedValues.join(','));
 	};
 
-	// legacy function, can be removed once this function is not in use anymore
+	/**
+	 * legacy function, can be removed once this function is not in use anymore
+	 *
+	 * @param {String} fName
+	 * @param {String} type
+	 * @param {Number} maxLength
+	 */
 	setFormValueManipulate = function(fName, type, maxLength) {
 		var $formEl = FormEngine.getFormElement(fName);
 		if ($formEl.length > 0) {
@@ -360,12 +377,12 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 
 
 	/**
-	 * legacy function
+	 * Legacy function
 	 * returns the DOM object for the given form name of the current form,
 	 * but only if the given field name is valid, legacy function, use "getFormElement" instead
 	 *
-	 * @param fieldName the name of the field name
-	 * @returns {*|DOMElement}
+	 * @param {String} fieldName the name of the field name
+	 * @returns {*|HTMLElement}
 	 */
 	setFormValue_getFObj = function(fieldName) {
 		var $formEl = FormEngine.getFormElement(fieldName);
@@ -382,7 +399,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 * if the parameter "fieldName" is given, then the form element is only returned if the field name is available
 	 * the latter behaviour mirrors the one of the function "setFormValue_getFObj"
 	 *
-	 * @param fieldName the field name to check for, optional
+	 * @param {String} fieldName the field name to check for, optional
 	 * @returns {*|HTMLElement}
 	 */
 	FormEngine.getFormElement = function(fieldName) {
@@ -410,12 +427,12 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 
 
 	/**
-	 * returns a jQuery object of the field DOM element of the current form, can also be used to
+	 * Returns a jQuery object of the field DOM element of the current form, can also be used to
 	 * request an alternative field like "_hr", "_list" or "_mul"
 	 *
-	 * @param fieldName the name of the field (<input name="fieldName">)
-	 * @param appendix optional
-	 * @param noFallback if set, then the appendix value is returned no matter if it exists or not
+	 * @param {String} fieldName the name of the field (<input name="fieldName">)
+	 * @param {String} appendix optional
+	 * @param {Boolean} noFallback if set, then the appendix value is returned no matter if it exists or not
 	 * @returns {*|HTMLElement}
 	 */
 	FormEngine.getFieldElement = function(fieldName, appendix, noFallback) {
@@ -448,10 +465,10 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 **************************************************/
 
 	/**
-	 * moves currently selected options from a select field to the very top,
+	 * Moves currently selected options from a select field to the very top,
 	 * can be multiple entries as well
 	 *
-	 * @param $fieldEl a jQuery object, containing the select field
+	 * @param {Object} $fieldEl a jQuery object, containing the select field
 	 */
 	FormEngine.moveOptionToTop = function($fieldEl) {
 		// remove the selected options
@@ -465,7 +482,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 * moves currently selected options from a select field up by one position,
 	 * can be multiple entries as well
 	 *
-	 * @param $fieldEl a jQuery object, containing the select field
+	 * @param {Object} $fieldEl a jQuery object, containing the select field
 	 */
 	FormEngine.moveOptionUp = function($fieldEl) {
 		// remove the selected options and add it before the previous sibling
@@ -487,7 +504,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 * moves currently selected options from a select field down one position,
 	 * can be multiple entries as well
 	 *
-	 * @param $fieldEl a jQuery object, containing the select field
+	 * @param {Object} $fieldEl a jQuery object, containing the select field
 	 */
 	FormEngine.moveOptionDown = function($fieldEl) {
 		// remove the selected options and add it after the next sibling
@@ -512,7 +529,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	/**
 	 * moves currently selected options from a select field as the very last entries
 	 *
-	 * @param $fieldEl a jQuery object, containing the select field
+	 * @param {Object} $fieldEl a jQuery object, containing the select field
 	 */
 	FormEngine.moveOptionToBottom = function($fieldEl) {
 		// remove the selected options
@@ -524,7 +541,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	/**
 	 * removes currently selected options from a select field
 	 *
-	 * @param $fieldEl a jQuery object, containing the select field
+	 * @param {Object} $fieldEl a jQuery object, containing the select field
 	 */
 	FormEngine.removeOption = function($fieldEl) {
 		// remove the selected options
@@ -595,10 +612,11 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			var title = TYPO3.lang['label.confirm.delete_record.title'] || 'Delete this record?';
 			var content = TYPO3.lang['label.confirm.delete_record.content'] || 'Are you sure you want to delete this record?';
 			var $anchorElement = $(this);
-			var $modal = top.TYPO3.Modal.confirm(title, content, top.TYPO3.Severity.warning, [
+			var $modal = Modal.confirm(title, content, top.TYPO3.Severity.warning, [
 				{
 					text: TYPO3.lang['buttons.confirm.delete_record.no'] || 'Cancel',
 					active: true,
+					btnClass: 'btn-default',
 					name: 'no'
 				},
 				{
@@ -609,10 +627,10 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			]);
 			$modal.on('button.clicked', function(e) {
 				if (e.target.name === 'no') {
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				} else if (e.target.name === 'yes') {
 					deleteRecord($anchorElement.data('table'), $anchorElement.data('uid'), $anchorElement.data('return-url'));
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				}
 			});
 		});
@@ -622,10 +640,11 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			var title = TYPO3.lang['label.confirm.delete_record.title'] || 'Delete this record?';
 			var content = TYPO3.lang['label.confirm.delete_record.content'] || 'Are you sure you want to delete this record?';
 			var $anchorElement = $(this);
-			var $modal = top.TYPO3.Modal.confirm(title, content, top.TYPO3.Severity.warning, [
+			var $modal = Modal.confirm(title, content, top.TYPO3.Severity.warning, [
 				{
 					text: TYPO3.lang['buttons.confirm.delete_record.no'] || 'Cancel',
 					active: true,
+					btnClass: 'btn-default',
 					name: 'no'
 				},
 				{
@@ -636,19 +655,22 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			]);
 			$modal.on('button.clicked', function(e) {
 				if (e.target.name === 'no') {
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				} else if (e.target.name === 'yes') {
 					var objectId = $anchorElement.data('objectid');
 					inline.deleteRecord(objectId);
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				}
 			});
 		});
 
 		// remember the clicked submit button. we need to know that in TBE_EDITOR.submitForm();
 		$(document).on('click', '.t3js-editform-submitButton', function(event) {
-			var $elem = $('<input />').attr('type', 'hidden').attr('name', this.name).attr('value', '1');
-			$(this).parents('form').append($elem);
+			var $me = $(this),
+				name = $me.data('name') || this.name,
+				$elem = $('<input />').attr('type', 'hidden').attr('name', name).attr('value', '1');
+
+			$me.parents('form').append($elem);
 		});
 	};
 
@@ -688,6 +710,9 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 
 	/**
 	 * Get the properties required for proper rendering of the character counter
+	 *
+	 * @param {Object} $field
+	 * @returns {{remainingCharacters: number, labelClass: string}}
 	 */
 	FormEngine.getCharacterCounterProperties = function($field) {
 		var fieldText = $field.val(),
@@ -713,7 +738,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	};
 
 	/**
-	 * select field filter functions, see TCA option "enableMultiSelectFilterTextfield"
+	 * Select field filter functions, see TCA option "enableMultiSelectFilterTextfield"
 	 * and "multiSelectFilterItems"
 	 */
 	FormEngine.SelectBoxFilter = {
@@ -727,7 +752,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	};
 
 	/**
-	 * make sure that all selectors and input filters are recognized
+	 * Make sure that all selectors and input filters are recognized
 	 * note: this also works on elements that are loaded asynchronously via AJAX, no need to call this method
 	 * after an AJAX load.
 	 */
@@ -742,7 +767,10 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	};
 
 	/**
-	 * fetch the "itemstoselect" select element where a filter item is attached to
+	 * Fetch the "itemstoselect" select element where a filter item is attached to
+	 *
+	 * @param {Object} $relativeElement
+	 * @returns {*}
 	 */
 	FormEngine.SelectBoxFilter.getSelectElement = function($relativeElement) {
 		var $containerElement = $relativeElement.closest(FormEngine.SelectBoxFilter.options.fieldContainerSelector);
@@ -750,7 +778,10 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	};
 
 	/**
-	 * filter the actual items
+	 * Filter the actual items
+	 *
+	 * @param {Object} $selectElement
+	 * @param {String} filterText
 	 */
 	FormEngine.SelectBoxFilter.filter = function($selectElement, filterText) {
 		var $allOptionElements;
@@ -832,10 +863,11 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 		if ($('.has-change').length > 0) {
 			var title = TYPO3.lang['label.confirm.close_without_save.title'] || 'Do you want to quit without saving?';
 			var content = TYPO3.lang['label.confirm.close_without_save.content'] || 'You have currently unsaved changes. Are you sure that you want to discard all changes?';
-			$modal = top.TYPO3.Modal.confirm(title, content, top.TYPO3.Severity.warning, [
+			var $modal = Modal.confirm(title, content, top.TYPO3.Severity.warning, [
 				{
 					text: TYPO3.lang['buttons.confirm.close_without_save.no'] || 'No, I will continue editing',
 					active: true,
+					btnClass: 'btn-default',
 					name: 'no'
 				},
 				{
@@ -846,9 +878,9 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			]);
 			$modal.on('button.clicked', function(e) {
 				if (e.target.name === 'no') {
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				} else if (e.target.name === 'yes') {
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 					FormEngine.closeDocument();
 				}
 			});
@@ -864,7 +896,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 		if ($('.has-error').length > 0) {
 			var title = TYPO3.lang['label.alert.save_with_error.title'] || 'You have errors in your form!';
 			var content = TYPO3.lang['label.alert.save_with_error.content'] || 'Please check the form, there is at least one error in your form.';
-			$modal = top.TYPO3.Modal.confirm(title, content, top.TYPO3.Severity.error, [
+			$modal = Modal.confirm(title, content, top.TYPO3.Severity.error, [
 				{
 					text: TYPO3.lang['buttons.alert.save_with_error.ok'] || 'OK',
 					btnClass: 'btn-danger',
@@ -873,7 +905,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			]);
 			$modal.on('button.clicked', function(e) {
 				if (e.target.name === 'ok') {
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				}
 			});
 			return false;

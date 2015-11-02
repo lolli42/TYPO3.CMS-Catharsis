@@ -12,15 +12,21 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/DateTimePicker
  * contains all logic for the date time picker used in FormEngine
  * and EXT:belog and EXT:scheduler
  */
-define('TYPO3/CMS/Backend/DateTimePicker', ['jquery'], function ($) {
+define(['jquery'], function ($) {
 
+	/**
+	 *
+	 * @type {{options: {fieldSelector: string, format: *}}}
+	 * @exports TYPO3/CMS/Backend/DateTimePicker
+	 */
 	var DateTimePicker = {
 		options: {
 			fieldSelector: '.t3js-datetimepicker',
-			format: (opener ? opener.top : top).TYPO3.settings.DateTimePicker.DateFormat
+			format: (opener !== null && typeof opener.top.TYPO3 !== 'undefined' ? opener.top : top).TYPO3.settings.DateTimePicker.DateFormat
 		}
 	};
 

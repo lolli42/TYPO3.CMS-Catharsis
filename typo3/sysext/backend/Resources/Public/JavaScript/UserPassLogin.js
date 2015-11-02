@@ -12,9 +12,17 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/UserPassLogin
  * JavaScript module for the UsernamePasswordLoginProvider
  */
-define('TYPO3/CMS/Backend/UserPassLogin', ['jquery', 'TYPO3/CMS/Backend/Login'], function($, Login) {
+define(['jquery', 'TYPO3/CMS/Backend/Login'], function($, Login) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{options: {usernameField: string, passwordField: string}}}
+	 * @exports TYPO3/CMS/Backend/UserPassLogin
+	 */
 	var UserPassLogin = {
 		options: {
 			usernameField: '.t3js-login-username-field',
@@ -22,8 +30,13 @@ define('TYPO3/CMS/Backend/UserPassLogin', ['jquery', 'TYPO3/CMS/Backend/Login'],
 		}
 	};
 
-	// Checks whether capslock is enabled (returns TRUE if enabled, false otherwise)
-	// thanks to http://24ways.org/2007/capturing-caps-lock
+	/**
+	 * Checks whether capslock is enabled (returns TRUE if enabled, false otherwise)
+	 * thanks to http://24ways.org/2007/capturing-caps-lock
+	 *
+	 * @param {Event} e
+	 * @returns {Boolean}
+	 */
 	UserPassLogin.isCapslockEnabled = function(e) {
 		var ev = e ? e : window.event;
 		if (!ev) {
@@ -51,8 +64,6 @@ define('TYPO3/CMS/Backend/UserPassLogin', ['jquery', 'TYPO3/CMS/Backend/Login'],
 	 * Reset user password field to prevent it from being submitted
 	 */
 	UserPassLogin.resetPassword = function() {
-		"use strict";
-
 		var $passwordField = $(UserPassLogin.options.passwordField);
 		if ($passwordField.val()) {
 			$(Login.options.useridentField).val($passwordField.val());
@@ -62,13 +73,15 @@ define('TYPO3/CMS/Backend/UserPassLogin', ['jquery', 'TYPO3/CMS/Backend/Login'],
 
 	/**
 	 * To prevent its unintended use when typing the password, the user is warned when Capslock is on
+	 *
+	 * @param {Event} event
 	 */
 	UserPassLogin.showCapsLockWarning = function(event) {
 		$(this).parent().parent().find('.t3js-login-alert-capslock').toggleClass('hidden', !UserPassLogin.isCapslockEnabled(event));
 	};
 
 	// initialize and return the UserPassLogin object
-	$(document).ready(function() {
+	$(function() {
 		// register submit handler
 		Login.options.submitHandler = UserPassLogin.resetPassword;
 
@@ -86,7 +99,7 @@ define('TYPO3/CMS/Backend/UserPassLogin', ['jquery', 'TYPO3/CMS/Backend/Login'],
 			}
 		} catch (error) {} // continue
 
-		if ($usernameField.val() == '') {
+		if ($usernameField.val() === '') {
 			$usernameField.focus();
 		} else {
 			$passwordField.focus();

@@ -12,15 +12,20 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/PageActions
  * JavaScript implementations for page actions
  */
-define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Storage'], function($, Storage) {
 	'use strict';
 
+	/**
+	 *
+	 * @type {{settings: {pageId: number, language: {pageOverlayId: number}}, identifier: {pageTitle: string, hiddenElements: string}, elements: {$pageTitle: null, $showHiddenElementsCheckbox: null}, documentIsReady: boolean}}
+	 * @exports TYPO3/CMS/Backend/PageActions
+	 */
 	var PageActions = {
 		settings: {
 			pageId: 0,
-			canEditPage: false,
 			language: {
 				pageOverlayId: 0
 			}
@@ -41,12 +46,12 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 	 */
 	PageActions.initializePageTitleRenaming = function() {
 		if (!PageActions.documentIsReady) {
-			$(document).ready(function() {
+			$(function() {
 				PageActions.initializePageTitleRenaming();
 			});
 			return;
 		}
-		if (PageActions.settings.pageId <= 0 || !PageActions.settings.canEditPage) {
+		if (PageActions.settings.pageId <= 0) {
 			return;
 		}
 
@@ -62,6 +67,9 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 			.append($editActionLink);
 	};
 
+	/**
+	 * Initialize elements
+	 */
 	PageActions.initializeElements = function() {
 		PageActions.elements.$pageTitle = $(PageActions.identifier.pageTitle + ':first');
 		PageActions.elements.$showHiddenElementsCheckbox = $('#checkTt_content_showHidden');
@@ -91,7 +99,7 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 			$hiddenElements.slideUp();
 		}
 
-		top.TYPO3.Storage.Persistent.set('moduleData.web_layout.tt_content_showHidden', $me.prop('checked') ? 1 : 0).done(function() {
+		Storage.Persistent.set('moduleData.web_layout.tt_content_showHidden', $me.prop('checked') ? 1 : 0).done(function() {
 			$spinner.remove();
 			$me.show();
 		});
@@ -102,15 +110,15 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 	 */
 	PageActions.editPageTitle = function() {
 		var $inputFieldWrap = $(
-				'<form class="row">' +
-					'<div class="col-lg-4 col-md-6 col-sm-12">' +
-						'<div class="input-group">' +
+				'<form>' +
+					'<div class="form-group">' +
+						'<div class="input-group input-group-lg">' +
 							'<input class="form-control">' +
 							'<span class="input-group-btn">' +
-								'<button class="btn btn-default" type="button" data-action="submit"><span class="t3-icon fa fa-floppy-o"></span></button>' +
+								'<button class="btn btn-default" type="button" data-action="submit"><span class="t3-icon fa fa-floppy-o"></span></button> ' +
 							'</span>' +
 							'<span class="input-group-btn">' +
-								'<button class="btn btn-danger" type="button" data-action="cancel"><span class="t3-icon fa fa-times"></span></button>' +
+								'<button class="btn btn-default" type="button" data-action="cancel"><span class="t3-icon fa fa-times"></span></button> ' +
 							'</span>' +
 						'</div>' +
 					'</div>' +
@@ -157,20 +165,17 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 
 	/**
 	 * Set the page id (used in the RequireJS callback)
+	 *
+	 * @param {Number} pageId
 	 */
 	PageActions.setPageId = function(pageId) {
 		PageActions.settings.pageId = pageId;
 	};
 
 	/**
-	 * Set if user can edit the page properties
-	 */
-	PageActions.setCanEditPage = function(allowed) {
-		PageActions.settings.canEditPage = allowed;
-	};
-
-	/**
 	 * Set the overlay id
+	 *
+	 * @param {Number} overlayId
 	 */
 	PageActions.setLanguageOverlayId = function(overlayId) {
 		PageActions.settings.language.pageOverlayId = overlayId;
@@ -178,6 +183,8 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 
 	/**
 	 * Save the changes and reload the page tree
+	 *
+	 * @param {Object} $field
 	 */
 	PageActions.saveChanges = function($field) {
 		var $inputFieldWrap = $field.parents('form');
@@ -212,7 +219,7 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 		});
 	};
 
-	$(document).ready(function() {
+	$(function() {
 		PageActions.initializeElements();
 		PageActions.initializeEvents();
 		PageActions.documentIsReady = true;

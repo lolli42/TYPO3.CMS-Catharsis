@@ -10,11 +10,12 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-/***************************************************
- *  Color utilities
- ***************************************************/
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/String',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent'],
+/**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/String
+ * String utilities
+ * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/String
+ */
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent'],
 	function (UserAgent) {
 
 	// Create the ruler

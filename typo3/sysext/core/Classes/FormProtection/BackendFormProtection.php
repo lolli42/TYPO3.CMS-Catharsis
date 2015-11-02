@@ -25,7 +25,7 @@ namespace TYPO3\CMS\Core\FormProtection;
  * matter; you only need it to get the form token for verifying it.
  *
  * <pre>
- * $formToken = TYPO3\CMS\Core\FormProtection\BackendFormProtectionFactory::get()
+ * $formToken = TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()
  * ->generateToken(
  * 'BE user setup', 'edit'
  * );
@@ -42,7 +42,7 @@ namespace TYPO3\CMS\Core\FormProtection;
  * For editing a tt_content record, the call could look like this:
  *
  * <pre>
- * $formToken = \TYPO3\CMS\Core\FormProtection\BackendFormProtectionFactory::get()
+ * $formToken = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()
  * ->getFormProtection()->generateToken(
  * 'tt_content', 'edit', $uid
  * );
@@ -53,7 +53,7 @@ namespace TYPO3\CMS\Core\FormProtection;
  * that the form token is valid like this:
  *
  * <pre>
- * if ($dataHasBeenSubmitted && TYPO3\CMS\Core\FormProtection\BackendFormProtectionFactory::get()
+ * if ($dataHasBeenSubmitted && TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()
  * ->validateToken(
  * \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('formToken'),
  * 'BE user setup', 'edit
@@ -66,173 +66,122 @@ namespace TYPO3\CMS\Core\FormProtection;
  * }
  * </pre>
  */
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
+
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Registry;
 
 /**
  * Backend form protection
  */
-class BackendFormProtection extends AbstractFormProtection {
+class BackendFormProtection extends AbstractFormProtection
+{
+    /**
+     * Keeps the instance of the user which existed during creation
+     * of the object.
+     *
+     * @var BackendUserAuthentication
+     */
+    protected $backendUser;
 
-	/**
-	 * Keeps the instance of the user which existed during creation
-	 * of the object.
-	 *
-	 * @var \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
-	 */
-	protected $backendUser;
+    /**
+     * Instance of the registry, which is used to permanently persist
+     * the session token so that it can be restored during re-login.
+     *
+     * @var Registry
+     */
+    protected $registry;
 
-	/**
-	 * Instance of the registry, which is used to permanently persist
-	 * the session token so that it can be restored during re-login.
-	 *
-	 * @var \TYPO3\CMS\Core\Registry
-	 */
-	protected $registry;
+    /**
+     * Only allow construction if we have an authorized backend session
+     *
+     * @param BackendUserAuthentication $backendUser
+     * @param Registry $registry
+     * @param \Closure $validationFailedCallback
+     * @throws \TYPO3\CMS\Core\Error\Exception
+     */
+    public function __construct(BackendUserAuthentication $backendUser, Registry $registry, \Closure $validationFailedCallback = null)
+    {
+        $this->backendUser = $backendUser;
+        $this->registry = $registry;
+        $this->validationFailedCallback = $validationFailedCallback;
+        if (!$this->isAuthorizedBackendSession()) {
+            throw new \TYPO3\CMS\Core\Error\Exception('A back-end form protection may only be instantiated if there is an active back-end session.', 1285067843);
+        }
+    }
 
-	/**
-	 * Only allow construction if we have a backend session
-	 *
-	 * @throws \TYPO3\CMS\Core\Error\Exception
-	 */
-	public function __construct() {
-		if (!$this->isAuthorizedBackendSession()) {
-			throw new \TYPO3\CMS\Core\Error\Exception('A back-end form protection may only be instantiated if there' . ' is an active back-end session.', 1285067843);
-		}
-		$this->backendUser = $GLOBALS['BE_USER'];
-	}
+    /**
+     * Retrieves the saved session token or generates a new one.
+     *
+     * @return string
+     */
+    protected function retrieveSessionToken()
+    {
+        $this->sessionToken = $this->backendUser->getSessionData('formProtectionSessionToken');
+        if (empty($this->sessionToken)) {
+            $this->sessionToken = $this->generateSessionToken();
+            $this->persistSessionToken();
+        }
+        return $this->sessionToken;
+    }
 
-	/**
-	 * Creates or displays an error message telling the user that the submitted
-	 * form token is invalid.
-	 *
-	 * @return void
-	 */
-	protected function createValidationErrorMessage() {
-		/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
-		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-			\TYPO3\CMS\Core\Messaging\FlashMessage::class,
-			$this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:error.formProtection.tokenInvalid'),
-			'',
-			\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR,
-			!$this->isAjaxRequest()
-		);
-		/** @var $flashMessageService FlashMessageService */
-		$flashMessageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(FlashMessageService::class);
+    /**
+     * Saves the tokens so that they can be used by a later incarnation of this
+     * class.
+     *
+     * @access private
+     * @return void
+     */
+    public function persistSessionToken()
+    {
+        $this->backendUser->setAndSaveSessionData('formProtectionSessionToken', $this->sessionToken);
+    }
 
-		/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
-		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-		$defaultFlashMessageQueue->enqueue($flashMessage);
-	}
+    /**
+     * Sets the session token for the user from the registry
+     * and returns it additionally.
+     *
+     * @access private
+     * @return string
+     * @throws \UnexpectedValueException
+     */
+    public function setSessionTokenFromRegistry()
+    {
+        $this->sessionToken = $this->registry->get('core', 'formProtectionSessionToken:' . $this->backendUser->user['uid']);
+        if (empty($this->sessionToken)) {
+            throw new \UnexpectedValueException('Failed to restore the session token from the registry.', 1301827270);
+        }
+        return $this->sessionToken;
+    }
 
-	/**
-	 * Checks if the current request is an Ajax request
-	 *
-	 * @return bool
-	 */
-	protected function isAjaxRequest() {
-		return (bool)(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX);
-	}
+    /**
+     * Stores the session token in the registry to have it
+     * available during re-login of the user.
+     *
+     * @access private
+     * @return void
+     */
+    public function storeSessionTokenInRegistry()
+    {
+        $this->registry->set('core', 'formProtectionSessionToken:' . $this->backendUser->user['uid'], $this->getSessionToken());
+    }
 
-	/**
-	 * Retrieves the saved session token or generates a new one.
-	 *
-	 * @return string
-	 */
-	protected function retrieveSessionToken() {
-		$this->sessionToken = $this->backendUser->getSessionData('formSessionToken');
-		if (empty($this->sessionToken)) {
-			$this->sessionToken = $this->generateSessionToken();
-			$this->persistSessionToken();
-		}
-		return $this->sessionToken;
-	}
+    /**
+     * Removes the session token for the user from the registry.
+     *
+     * @access private
+     */
+    public function removeSessionTokenFromRegistry()
+    {
+        $this->registry->remove('core', 'formProtectionSessionToken:' . $this->backendUser->user['uid']);
+    }
 
-	/**
-	 * Saves the tokens so that they can be used by a later incarnation of this
-	 * class.
-	 *
-	 * @access private
-	 * @return void
-	 */
-	public function persistSessionToken() {
-		$this->backendUser->setAndSaveSessionData('formSessionToken', $this->sessionToken);
-	}
-
-	/**
-	 * Sets the session token for the user from the registry
-	 * and returns it additionally.
-	 *
-	 * @access private
-	 * @return string
-	 * @throws \UnexpectedValueException
-	 */
-	public function setSessionTokenFromRegistry() {
-		$this->sessionToken = $this->getRegistry()->get('core', 'formSessionToken:' . $this->backendUser->user['uid']);
-		if (empty($this->sessionToken)) {
-			throw new \UnexpectedValueException('Failed to restore the session token from the registry.', 1301827270);
-		}
-		return $this->sessionToken;
-	}
-
-	/**
-	 * Stores the session token in the registry to have it
-	 * available during re-login of the user.
-	 *
-	 * @access private
-	 * @return void
-	 */
-	public function storeSessionTokenInRegistry() {
-		$this->getRegistry()->set('core', 'formSessionToken:' . $this->backendUser->user['uid'], $this->getSessionToken());
-	}
-
-	/**
-	 * Removes the session token for the user from the registry.
-	 *
-	 * @access private
-	 */
-	public function removeSessionTokenFromRegistry() {
-		$this->getRegistry()->remove('core', 'formSessionToken:' . $this->backendUser->user['uid']);
-	}
-
-	/**
-	 * Returns the instance of the registry.
-	 *
-	 * @return \TYPO3\CMS\Core\Registry
-	 */
-	protected function getRegistry() {
-		if (!$this->registry instanceof \TYPO3\CMS\Core\Registry) {
-			$this->registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Registry::class);
-		}
-		return $this->registry;
-	}
-
-	/**
-	 * Inject the registry. Currently only used in unit tests.
-	 *
-	 * @access private
-	 * @param \TYPO3\CMS\Core\Registry $registry
-	 * @return void
-	 */
-	public function injectRegistry(\TYPO3\CMS\Core\Registry $registry) {
-		$this->registry = $registry;
-	}
-
-	/**
-	 * Checks if a user is logged in and the session is active.
-	 *
-	 * @return bool
-	 */
-	protected function isAuthorizedBackendSession() {
-		return isset($GLOBALS['BE_USER']) && $GLOBALS['BE_USER'] instanceof \TYPO3\CMS\Core\Authentication\BackendUserAuthentication && isset($GLOBALS['BE_USER']->user['uid']);
-	}
-
-	/**
-	 * Return language service instance
-	 *
-	 * @return \TYPO3\CMS\Lang\LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
-
+    /**
+     * Checks if a user is logged in and the session is active.
+     *
+     * @return bool
+     */
+    protected function isAuthorizedBackendSession()
+    {
+        return !empty($this->backendUser->user['uid']);
+    }
 }

@@ -46,8 +46,8 @@
 		"cogpowered/finediff": "~0.3.1"
 	},
 	"require-dev": {
-		"mikey179/vfsStream": "1.4.*@dev",
-		"phpunit/phpunit": "~4.8.0"
+		"phpunit/phpunit": "~4.8.0",
+		"mikey179/vfsStream": "1.6.0"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -151,7 +151,6 @@
 			"TYPO3\\CMS\\Info\\": "typo3/sysext/info/Classes/",
 			"TYPO3\\CMS\\InfoPagetsconfig\\": "typo3/sysext/info_pagetsconfig/Classes/",
 			"TYPO3\\CMS\\Install\\": "typo3/sysext/install/Classes/",
-			"TYPO3\\CMS\\Jumpurl\\": "typo3/sysext/jumpurl/Classes/",
 			"TYPO3\\CMS\\Lang\\": "typo3/sysext/lang/Classes/",
 			"TYPO3\\CMS\\Linkvalidator\\": "typo3/sysext/linkvalidator/Classes/",
 			"TYPO3\\CMS\\Lowlevel\\": "typo3/sysext/lowlevel/Classes/",
@@ -201,11 +200,8 @@
 			"TYPO3\\CMS\\Impexp\\Tests\\": "typo3/sysext/impexp/Tests/",
 			"TYPO3\\CMS\\IndexedSearch\\Tests\\": "typo3/sysext/indexed_search/Tests/",
 			"TYPO3\\CMS\\Install\\Tests\\": "typo3/sysext/install/Tests/",
-			"TYPO3\\CMS\\Jumpurl\\Tests\\": "typo3/sysext/jumpurl/Tests/",
 			"TYPO3\\CMS\\Lang\\Tests\\": "typo3/sysext/lang/Tests/",
 			"TYPO3\\CMS\\Lowlevel\\Tests\\": "typo3/sysext/lowlevel/Tests/",
-			"TYPO3\\CMS\\Mediace\\": "typo3/sysext/mediace/Classes/",
-			"TYPO3\\CMS\\Mediace\\Tests\\": "typo3/sysext/mediace/Tests/",
 			"TYPO3\\CMS\\Recordlist\\Tests\\": "typo3/sysext/recordlist/Tests/",
 			"TYPO3\\CMS\\Reports\\Tests\\": "typo3/sysext/reports/Tests/",
 			"TYPO3\\CMS\\Rsaauth\\Tests\\": "typo3/sysext/rsaauth/Tests/",

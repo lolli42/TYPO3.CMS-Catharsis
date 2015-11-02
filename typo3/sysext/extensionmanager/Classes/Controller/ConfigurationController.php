@@ -14,130 +14,213 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\View\BackendTemplateView;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
 
 /**
  * Controller for configuration related actions.
  */
-class ConfigurationController extends AbstractController {
+class ConfigurationController extends AbstractModuleController
+{
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository
+     */
+    protected $configurationItemRepository;
 
-	/**
-	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository
-	 */
-	protected $configurationItemRepository;
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
+     */
+    protected $extensionRepository;
 
-	/**
-	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
-	 */
-	protected $extensionRepository;
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository $configurationItemRepository
+     */
+    public function injectConfigurationItemRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository $configurationItemRepository)
+    {
+        $this->configurationItemRepository = $configurationItemRepository;
+    }
 
-	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository $configurationItemRepository
-	 */
-	public function injectConfigurationItemRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ConfigurationItemRepository $configurationItemRepository) {
-		$this->configurationItemRepository = $configurationItemRepository;
-	}
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository
+     */
+    public function injectExtensionRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository)
+    {
+        $this->extensionRepository = $extensionRepository;
+    }
 
-	/**
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository
-	 */
-	public function injectExtensionRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository) {
-		$this->extensionRepository = $extensionRepository;
-	}
+    /**
+     * Set up the doc header properly here
+     *
+     * @param ViewInterface $view
+     * @return void
+     */
+    protected function initializeView(ViewInterface $view)
+    {
+        if ($view instanceof BackendTemplateView) {
+            /** @var BackendTemplateView $view */
+            parent::initializeView($view);
+            $this->generateMenu();
+            $this->registerDocheaderButtons();
+        }
+    }
 
-	/**
-	 * Show the extension configuration form. The whole form field handling is done
-	 * in the corresponding view helper
-	 *
-	 * @param array $extension Extension information, must contain at least the key
-	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
-	 * @return void
-	 */
-	public function showConfigurationFormAction(array $extension) {
-		if (!isset($extension['key'])) {
-			throw new ExtensionManagerException('Extension key not found.', 1359206803);
-		}
-		$extKey = $extension['key'];
-		$configuration = $this->configurationItemRepository->findByExtensionKey($extKey);
-		if ($configuration) {
-			$this->view
-				->assign('configuration', $configuration)
-				->assign('extension', $extension);
-		} else {
-			/** @var Extension $extension */
-			$extension = $this->extensionRepository->findOneByCurrentVersionByExtensionKey($extKey);
-			// Extension has no configuration and is a distribution
-			if ($extension->getCategory() === Extension::DISTRIBUTION_CATEGORY) {
-				$this->redirect('welcome', 'Distribution', NULL, array('extension' => $extension->getUid()));
-			}
-			throw new ExtensionManagerException('The extension ' . $extKey . ' has no configuration.');
-		}
-	}
+    /**
+     * Show the extension configuration form. The whole form field handling is done
+     * in the corresponding view helper
+     *
+     * @param array $extension Extension information, must contain at least the key
+     * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+     * @return void
+     */
+    public function showConfigurationFormAction(array $extension)
+    {
+        if (!isset($extension['key'])) {
+            throw new ExtensionManagerException('Extension key not found.', 1359206803);
+        }
+        $extKey = $extension['key'];
+        $configuration = $this->configurationItemRepository->findByExtensionKey($extKey);
+        if ($configuration) {
+            $this->view
+                ->assign('configuration', $configuration)
+                ->assign('extension', $extension);
+        } else {
+            /** @var Extension $extension */
+            $extension = $this->extensionRepository->findOneByCurrentVersionByExtensionKey($extKey);
+            // Extension has no configuration and is a distribution
+            if ($extension->getCategory() === Extension::DISTRIBUTION_CATEGORY) {
+                $this->redirect('welcome', 'Distribution', null, array('extension' => $extension->getUid()));
+            }
+            throw new ExtensionManagerException('The extension ' . $extKey . ' has no configuration.');
+        }
+    }
 
-	/**
-	 * Save configuration and redirects back to form
-	 * or to the welcome page of a distribution
-	 *
-	 * @param array $config The new extension configuration
-	 * @param string $extensionKey The extension key
-	 * @return void
-	 */
-	public function saveAction(array $config, $extensionKey) {
-		$this->saveConfiguration($config, $extensionKey);
-		/** @var Extension $extension */
-		$extension = $this->extensionRepository->findOneByCurrentVersionByExtensionKey($extensionKey);
-		// Different handling for distribution installation
-		if ($extension instanceof Extension &&
-			$extension->getCategory() === Extension::DISTRIBUTION_CATEGORY
-		) {
-			$this->redirect('welcome', 'Distribution', NULL, array('extension' => $extension->getUid()));
-		} else {
-			$this->redirect('showConfigurationForm', NULL, NULL, array('extension' => array('key' => $extensionKey)));
-		}
-	}
+    /**
+     * Save configuration and redirects back to form
+     * or to the welcome page of a distribution
+     *
+     * @param array $config The new extension configuration
+     * @param string $extensionKey The extension key
+     * @return void
+     */
+    public function saveAction(array $config, $extensionKey)
+    {
+        $this->saveConfiguration($config, $extensionKey);
+        /** @var Extension $extension */
+        $extension = $this->extensionRepository->findOneByCurrentVersionByExtensionKey($extensionKey);
+        // Different handling for distribution installation
+        if ($extension instanceof Extension &&
+            $extension->getCategory() === Extension::DISTRIBUTION_CATEGORY
+        ) {
+            $this->redirect('welcome', 'Distribution', null, array('extension' => $extension->getUid()));
+        } else {
+            $this->redirect('showConfigurationForm', null, null, array('extension' => array('key' => $extensionKey)));
+        }
+    }
 
-	/**
-	 * Saves new configuration and redirects back to list
-	 *
-	 * @param array $config
-	 * @param string $extensionKey
-	 * @return void
-	 */
-	public function saveAndCloseAction(array $config, $extensionKey) {
-		$this->saveConfiguration($config, $extensionKey);
-		$this->redirect('index', 'List');
-	}
+    /**
+     * Saves new configuration and redirects back to list
+     *
+     * @param array $config
+     * @param string $extensionKey
+     * @return void
+     */
+    public function saveAndCloseAction(array $config, $extensionKey)
+    {
+        $this->saveConfiguration($config, $extensionKey);
+        $this->redirect('index', 'List');
+    }
 
 
-	/**
-	 * Emits a signal after the configuration file was written
-	 *
-	 * @param string $extensionKey
-	 * @param array $newConfiguration
-	 * @return void
-	 */
-	protected function emitAfterExtensionConfigurationWriteSignal($extensionKey, array $newConfiguration) {
-		$this->signalSlotDispatcher->dispatch(__CLASS__, 'afterExtensionConfigurationWrite', array($extensionKey, $newConfiguration, $this));
-	}
+    /**
+     * Emits a signal after the configuration file was written
+     *
+     * @param string $extensionKey
+     * @param array $newConfiguration
+     * @return void
+     */
+    protected function emitAfterExtensionConfigurationWriteSignal($extensionKey, array $newConfiguration)
+    {
+        $this->signalSlotDispatcher->dispatch(__CLASS__, 'afterExtensionConfigurationWrite', array($extensionKey, $newConfiguration, $this));
+    }
 
-	/**
-	 * Merge and save new configuration
-	 *
-	 * @param array $config
-	 * @param $extensionKey
-	 * @return void
-	 */
-	protected function saveConfiguration(array $config, $extensionKey) {
-		/** @var $configurationUtility \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility */
-		$configurationUtility = $this->objectManager->get(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility::class);
-		$newConfiguration = $configurationUtility->getCurrentConfiguration($extensionKey);
-		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newConfiguration, $config);
-		$configurationUtility->writeConfiguration(
-			$configurationUtility->convertValuedToNestedConfiguration($newConfiguration),
-			$extensionKey
-		);
-		$this->emitAfterExtensionConfigurationWriteSignal($extensionKey, $newConfiguration);
-	}
+    /**
+     * Merge and save new configuration
+     *
+     * @param array $config
+     * @param $extensionKey
+     * @return void
+     */
+    protected function saveConfiguration(array $config, $extensionKey)
+    {
+        /** @var $configurationUtility \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility */
+        $configurationUtility = $this->objectManager->get(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility::class);
+        $newConfiguration = $configurationUtility->getCurrentConfiguration($extensionKey);
+        \TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newConfiguration, $config);
+        $configurationUtility->writeConfiguration(
+            $configurationUtility->convertValuedToNestedConfiguration($newConfiguration),
+            $extensionKey
+        );
+        $this->emitAfterExtensionConfigurationWriteSignal($extensionKey, $newConfiguration);
+    }
 
+    /**
+     * Registers the Icons into the docheader
+     *
+     * @return void
+     * @throws \InvalidArgumentException
+     */
+    protected function registerDocheaderButtons()
+    {
+        $moduleTemplate = $this->view->getModuleTemplate();
+        $lang = $this->getLanguageService();
+
+        /** @var ButtonBar $buttonBar */
+        $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
+
+        $uriBuilder = $this->controllerContext->getUriBuilder();
+        $uri = $uriBuilder->reset()->uriFor('index', [], 'List');
+
+        $icon = $this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL);
+        $goBackButton = $buttonBar->makeLinkButton()
+            ->setHref($uri)
+            ->setTitle($this->translate('extConfTemplate.backToList'))
+            ->setIcon($icon);
+        $buttonBar->addButton($goBackButton, ButtonBar::BUTTON_POSITION_LEFT);
+
+        $saveSplitButton = $buttonBar->makeSplitButton();
+        // SAVE button:
+        $saveButton = $buttonBar->makeInputButton()
+            ->setName('_savedok')
+            ->setValue('1')
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true))
+            ->setForm('configurationform')
+            ->setIcon($moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL));
+        $saveSplitButton->addItem($saveButton, true);
+
+        // SAVE / CLOSE
+        $saveAndCloseButton = $buttonBar->makeInputButton()
+            ->setName('_saveandclosedok')
+            ->setClasses('t3js-save-close')
+            ->setValue('1')
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', true))
+            ->setForm('configurationform')
+            ->setIcon($moduleTemplate->getIconFactory()->getIcon(
+                'actions-document-save-close',
+                Icon::SIZE_SMALL
+            ));
+        $saveSplitButton->addItem($saveAndCloseButton);
+        $buttonBar->addButton($saveSplitButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
+    }
+
+    /**
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

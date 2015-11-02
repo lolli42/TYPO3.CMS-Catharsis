@@ -83,6 +83,11 @@ span.typo3-moduleHeader img {
 		}
 	}
 }
+.form-control[disabled],
+.form-control[readonly],
+fieldset[disabled] .form-control {
+	color: @input-color-disabled;
+}
 
 
 //
@@ -386,7 +391,7 @@ select {
 // as it is handled by JS: "autosize"
 //
 textarea {
-	&.t3js-formengine-textarea {
+	&.formengine-textarea {
 		resize: none;
 	}
 }

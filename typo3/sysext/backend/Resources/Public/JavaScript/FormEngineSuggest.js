@@ -12,9 +12,10 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/FormEngineSuggest
  * Functionality to load suggest functionality
  */
-define('TYPO3/CMS/Backend/FormEngineSuggest', ['jquery', 'jquery/autocomplete'], function ($) {
+define(['jquery', 'jquery/autocomplete'], function ($) {
 	var initialize = function($searchField) {
 		var $containerElement = $searchField.closest('.t3-form-suggest-container');
 		var table = $searchField.data('table'),
@@ -92,7 +93,8 @@ define('TYPO3/CMS/Backend/FormEngineSuggest', ['jquery', 'jquery/autocomplete'],
 	};
 
 	/**
-	 * return a function that gets DOM elements that are checked if suggest is already initialized
+	 * Return a function that gets DOM elements that are checked if suggest is already initialized
+	 * @exports TYPO3/CMS/Backend/FormEngineSuggest
 	 */
 	return function(selectorElements) {
 		$(selectorElements).each(function(key, el) {

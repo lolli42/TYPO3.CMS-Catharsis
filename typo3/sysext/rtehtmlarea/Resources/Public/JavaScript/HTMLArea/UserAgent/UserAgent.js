@@ -12,9 +12,11 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent
  * Identify the current user agent
+ * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent', [], function () {
+define([], function () {
 
 	var userAgent = navigator.userAgent.toLowerCase();
 	var documentMode = document.documentMode,

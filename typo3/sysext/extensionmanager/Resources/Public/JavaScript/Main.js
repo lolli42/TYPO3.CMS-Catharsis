@@ -11,13 +11,20 @@
  * The TYPO3 project - inspiring people to share!
  */
 /**
+ * Module: TYPO3/CMS/Extensionmanager/Main
  * main logic holding everything together, consists of multiple parts
  * ExtensionManager => Various functions for displaying the extension list / sorting
  * Repository => Various AJAX functions for TER downloads
  * ExtensionManager.Update => Various AJAX functions to display updates
  * ExtensionManager.uploadForm => helper to show the upload form
  */
-define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable'], function($, NProgress) {
+define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable'], function($, NProgress, Modal) {
+
+	/**
+	 *
+	 * @type {{identifier: {extensionlist: string, searchField: string, extensionManager: string}}}
+	 * @exports TYPO3/CMS/Extensionmanager/Main
+	 */
 	var ExtensionManager = {
 		identifier: {
 			extensionlist: '#typo3-extension-list',
@@ -26,6 +33,10 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		}
 	};
 
+	/**
+	 *
+	 * @returns {Object}
+	 */
 	ExtensionManager.manageExtensionListing = function() {
 		var $searchField = $(this.identifier.searchField),
 			dataTable = $(this.identifier.extensionlist).DataTable({
@@ -66,6 +77,9 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		return dataTable;
 	};
 
+	/**
+	 *
+	 */
 	ExtensionManager.bindExtensionListActions = function() {
 		$('.removeExtension').not('.transformed').each(function() {
 			var $me = $(this);
@@ -73,7 +87,7 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 			$me.attr('href', '#');
 			$me.addClass('transformed');
 			$me.click(function() {
-				top.TYPO3.Modal.confirm(
+				Modal.confirm(
 					TYPO3.lang['extensionList.removalConfirmation.title'],
 					TYPO3.lang['extensionList.removalConfirmation.question'],
 					top.TYPO3.Severity.error,
@@ -81,15 +95,16 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 						{
 							text: TYPO3.lang['button.cancel'],
 							active: true,
+							btnClass: 'btn-default',
 							trigger: function() {
-								top.TYPO3.Modal.dismiss();
+								Modal.dismiss();
 							}
 						}, {
 							text: TYPO3.lang['button.remove'],
 							btnClass: 'btn-danger',
 							trigger: function() {
 								ExtensionManager.removeExtensionFromDisk($me);
-								top.TYPO3.Modal.dismiss();
+								Modal.dismiss();
 							}
 						}
 					]
@@ -98,6 +113,10 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
+	/**
+	 *
+	 * @param {Object} $extension
+	 */
 	ExtensionManager.removeExtensionFromDisk = function($extension) {
 		var $extManager = $(Repository.identifier.extensionManager);
 		$extManager.mask();
@@ -118,6 +137,10 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
+	/**
+	 *
+	 * @returns {Array}
+	 */
 	ExtensionManager.getUrlVars = function() {
 		var vars = [], hash;
 		var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
@@ -138,6 +161,12 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		return ExtensionManager.compare(a, b);
 	};
 
+	/**
+	 *
+	 * @param {String} a
+	 * @param {String} b
+	 * @returns {Number}
+	 */
 	ExtensionManager.compare = function(a, b) {
 		if (a === b) {
 			return 0;
@@ -173,6 +202,10 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		return 0;
 	};
 
+	/**
+	 *
+	 * @param {Object} data
+	 */
 	ExtensionManager.updateExtension = function(data) {
 		var message = '<h1>' + TYPO3.lang['extensionList.updateConfirmation.title'] + '</h1>';
 		message += '<h2>' + TYPO3.lang['extensionList.updateConfirmation.message'] + '</h2>';
@@ -189,7 +222,7 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		NProgress.done();
 		$extManager.unmask();
 
-		top.TYPO3.Modal.confirm(
+		Modal.confirm(
 			TYPO3.lang['extensionList.updateConfirmation.questionVersionComments'],
 			message,
 			top.TYPO3.Severity.warning,
@@ -197,8 +230,9 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 				{
 					text: TYPO3.lang['button.cancel'],
 					active: true,
+					btnClass: 'btn-default',
 					trigger: function() {
-						top.TYPO3.Modal.dismiss();
+						Modal.dismiss();
 					}
 				}, {
 					text: TYPO3.lang['button.updateExtension'],
@@ -208,7 +242,7 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 							url: data.url,
 							data: {
 								tx_extensionmanager_tools_extensionmanagerextensionmanager: {
-									version: $('input:radio[name=version]:checked', top.TYPO3.Modal.currentModal).val()
+									version: $('input:radio[name=version]:checked', Modal.currentModal).val()
 								}
 							},
 							dataType: 'json',
@@ -220,7 +254,7 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 								location.reload();
 							}
 						});
-						top.TYPO3.Modal.dismiss();
+						Modal.dismiss();
 					}
 				}
 			]
@@ -300,6 +334,10 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
+	/**
+	 *
+	 * @type {{downloadPath: string, identifier: {extensionManager: string}}}
+	 */
 	var Repository = {
 		downloadPath: '',
 		identifier: {
@@ -307,8 +345,11 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		}
 	};
 
+	/**
+	 *
+	 */
 	Repository.initDom = function() {
-		NProgress.configure({parent: '#typo3-docheader', showSpinner: false});
+		NProgress.configure({parent: '.t3js-module-body', showSpinner: false});
 
 		$('#terTable').DataTable({
 			lengthChange: false,
@@ -358,6 +399,9 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		Repository.bindSearchFieldResetter();
 	};
 
+	/**
+	 *
+	 */
 	Repository.bindDownload = function() {
 		var installButtons = $('.downloadFromTer form.download button[type=submit]');
 		installButtons.off('click');
@@ -377,24 +421,30 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
+	/**
+	 *
+	 * @param {Object} data
+	 * @returns {Boolean}
+	 */
 	Repository.getDependencies = function(data) {
 		var $extManager = $(Repository.identifier.extensionManager);
 		NProgress.done();
 		$extManager.unmask();
 		if (data.hasDependencies) {
-			top.TYPO3.Modal.confirm(data.title, data.message, top.TYPO3.Severity.info, [
+			Modal.confirm(data.title, data.message, top.TYPO3.Severity.info, [
 				{
 					text: TYPO3.lang['button.cancel'],
 					active: true,
+					btnClass: 'btn-default',
 					trigger: function() {
-						top.TYPO3.Modal.dismiss();
+						Modal.dismiss();
 					}
 				}, {
 					text: TYPO3.lang['button.resolveDependencies'],
 					btnClass: 'btn-info',
 					trigger: function() {
 						Repository.getResolveDependenciesAndInstallResult(data.url + '&tx_extensionmanager_tools_extensionmanagerextensionmanager[downloadPath]=' + Repository.downloadPath);
-						top.TYPO3.Modal.dismiss();
+						Modal.dismiss();
 					}
 				}
 			]);
@@ -408,6 +458,10 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		return false;
 	};
 
+	/**
+	 *
+	 * @param {String} url
+	 */
 	Repository.getResolveDependenciesAndInstallResult = function(url) {
 		var $extManager = $(Repository.identifier.extensionManager);
 		$.ajax({
@@ -419,24 +473,25 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 			},
 			success: function (data) {
 				if (data.errorCount > 0) {
-					top.TYPO3.Modal.confirm(data.errorTitle, data.errorMessage, top.TYPO3.Severity.error, [
+					Modal.confirm(data.errorTitle, data.errorMessage, top.TYPO3.Severity.error, [
 						{
 							text: TYPO3.lang['button.cancel'],
 							active: true,
+							btnClass: 'btn-default',
 							trigger: function() {
-								top.TYPO3.Modal.dismiss();
+								Modal.dismiss();
 							}
 						}, {
 							text: TYPO3.lang['button.resolveDependenciesIgnore'],
 							btnClass: 'btn-danger disabled t3js-dependencies',
 							trigger: function() {
 								Repository.getResolveDependenciesAndInstallResult(data.skipDependencyUri);
-								top.TYPO3.Modal.dismiss();
+								Modal.dismiss();
 							}
 						}
 					]);
-					top.TYPO3.Modal.currentModal.on('shown.bs.modal', function() {
-						var $actionButton = top.TYPO3.Modal.currentModal.find('.t3js-dependencies');
+					Modal.currentModal.on('shown.bs.modal', function() {
+						var $actionButton = Modal.currentModal.find('.t3js-dependencies');
 						top.TYPO3.jQuery('input[name=unlockDependencyIgnoreButton]').on('change', function() {
 							$actionButton.toggleClass('disabled', !$(this).prop('checked'));
 						});
@@ -462,6 +517,9 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
+	/**
+	 *
+	 */
 	Repository.bindSearchFieldResetter = function() {
 		var $searchFields = $('.typo3-extensionmanager-searchTerForm input[type="text"]');
 		var searchResultShown = ('' !== $searchFields.first().val());
@@ -477,6 +535,10 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		);
 	};
 
+	/**
+	 *
+	 * @type {{identifier: {extensionTable: string, terUpdateAction: string, pagination: string, splashscreen: string, terTableWrapper: string, terTableDataTableWrapper: string}}}
+	 */
 	ExtensionManager.Update = {
 		identifier: {
 			extensionTable: '#terTable',
@@ -488,7 +550,9 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		}
 	};
 
-	// Register "update from ter" action
+	/**
+	 * Register "update from ter" action
+	 */
 	ExtensionManager.Update.initializeEvents = function() {
 		$(ExtensionManager.Update.identifier.terUpdateAction).each(function() {
 
@@ -512,6 +576,11 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
+	/**
+	 *
+	 * @param {String} url
+	 * @param {Number} forceUpdate
+	 */
 	ExtensionManager.Update.updateFromTer = function(url, forceUpdate) {
 		if (forceUpdate == 1) {
 			url = url + '&tx_extensionmanager_tools_extensionmanagerextensionmanager%5BforceUpdateCheck%5D=1';
@@ -587,6 +656,9 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
+	/**
+	 *
+	 */
 	ExtensionManager.Update.transformPaginatorToAjax = function () {
 		$(ExtensionManager.Update.identifier.pagination + ' a').each(function() {
 			var $me = $(this);
@@ -619,9 +691,12 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		expandedUploadFormClass: 'transformed'
 	};
 
+	/**
+	 *
+	 */
 	ExtensionManager.UploadForm.initializeEvents = function() {
 		// Show upload form
-		$(document).on('click', '#upload-button-wrap > a', function(event) {
+		$(document).on('click', '.t3js-upload', function(event) {
 			var $me = $(this),
 				$uploadForm = $('.uploadForm');
 
@@ -644,66 +719,66 @@ define(['jquery', 'nprogress', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable
 		});
 	};
 
-	return function() {
-		$(document).ready(function() {
-			var dataTable = ExtensionManager.manageExtensionListing();
+	$(function() {
+		var dataTable = ExtensionManager.manageExtensionListing();
 
-			$(document).on('click', '.onClickMaskExtensionManager', function() {
-				$(ExtensionManager.identifier.extensionManager).mask();
-				NProgress.start();
-			}).on('click', 'a[data-action=update-extension]', function(e) {
-				e.preventDefault();
-				$.ajax({
-					url: $(this).attr('href'),
-					dataType: 'json',
-					beforeSend: function() {
-						$(ExtensionManager.identifier.extensionManager).mask();
-						NProgress.start();
-					},
-					success: ExtensionManager.updateExtension
-				});
-			}).on('change', 'input[name=unlockDependencyIgnoreButton]', function() {
-				var $actionButton = TYPO3.jQuery('.t3js-dependencies');
-				$actionButton.toggleClass('disabled', !$(this).prop('checked'));
-			});
-
-			$(ExtensionManager.identifier.searchField).clearable({
-				onClear: function() {
-					dataTable.search('').draw();
-				}
-			});
-
-			$('.expandable').expander({
-				expandEffect: 'slideDown',
-				collapseEffect: 'slideUp',
-				beforeExpand: function() {
-					$(this).parent().css('z-index', 199);
+		$(document).on('click', '.onClickMaskExtensionManager', function() {
+			$(ExtensionManager.identifier.extensionManager).mask();
+			NProgress.start();
+		}).on('click', 'a[data-action=update-extension]', function(e) {
+			e.preventDefault();
+			$.ajax({
+				url: $(this).attr('href'),
+				dataType: 'json',
+				beforeSend: function() {
+					$(ExtensionManager.identifier.extensionManager).mask();
+					NProgress.start();
 				},
-				afterCollapse: function() {
-					$(this).parent().css('z-index', 1);
-				}
+				success: ExtensionManager.updateExtension
 			});
-
-			$(document).on('click', '.t3-button-action-installdistribution', function() {
-				$(ExtensionManager.identifier.extensionManager).mask();
-			});
-
-			ExtensionManager.configurationFieldSupport();
-			var $validate = $('.validate');
-			$validate.validate();
-			$(document).on('click', '.t3js-save-close', function() {
-				$validate.append($('<input />', {type: 'hidden', name: 'tx_extensionmanager_tools_extensionmanagerextensionmanager[action]', value: 'saveAndClose'})).submit();
-			});
-
-			// initialize the repository
-			Repository.initDom();
-
-			ExtensionManager.Update.initializeEvents();
-			ExtensionManager.UploadForm.initializeEvents();
+		}).on('change', 'input[name=unlockDependencyIgnoreButton]', function() {
+			var $actionButton = TYPO3.jQuery('.t3js-dependencies');
+			$actionButton.toggleClass('disabled', !$(this).prop('checked'));
 		});
 
-		if (typeof TYPO3.ExtensionManager === 'undefined') {
-			TYPO3.ExtensionManager = ExtensionManager;
-		}
-	}();
+		$(ExtensionManager.identifier.searchField).clearable({
+			onClear: function() {
+				dataTable.search('').draw();
+			}
+		});
+
+		$('.expandable').expander({
+			expandEffect: 'slideDown',
+			collapseEffect: 'slideUp',
+			beforeExpand: function() {
+				$(this).parent().css('z-index', 199);
+			},
+			afterCollapse: function() {
+				$(this).parent().css('z-index', 1);
+			}
+		});
+
+		$(document).on('click', '.t3-button-action-installdistribution', function() {
+			$(ExtensionManager.identifier.extensionManager).mask();
+		});
+
+		ExtensionManager.configurationFieldSupport();
+		var $validate = $('.validate');
+		$validate.validate();
+		$(document).on('click', '.t3js-save-close', function() {
+			$validate.append($('<input />', {type: 'hidden', name: 'tx_extensionmanager_tools_extensionmanagerextensionmanager[action]', value: 'saveAndClose'}));
+		});
+
+		// initialize the repository
+		Repository.initDom();
+
+		ExtensionManager.Update.initializeEvents();
+		ExtensionManager.UploadForm.initializeEvents();
+	});
+
+	if (typeof TYPO3.ExtensionManager === 'undefined') {
+		TYPO3.ExtensionManager = ExtensionManager;
+	}
+
+	return ExtensionManager;
 });

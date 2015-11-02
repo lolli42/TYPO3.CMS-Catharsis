@@ -12,16 +12,19 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/LiveSearch
  * Global search to deal with everything in the backend that is search-related
+ * @exports TYPO3/CMS/Backend/LiveSearch
  */
-define('TYPO3/CMS/Backend/LiveSearch', ['jquery', 'jquery/autocomplete'], function ($) {
+define(['jquery', 'jquery/autocomplete', 'TYPO3/CMS/Backend/jquery.clearable'], function ($) {
+	'use strict';
 
 	var containerSelector = '#typo3-cms-backend-backend-toolbaritems-livesearchtoolbaritem';
 	var searchFieldSelector = '.t3js-topbar-navigation-search-field';
 	var url = TYPO3.settings.ajaxUrls['livesearch'];
 	var category = '';
 
-	var initialize = function() {
+	$(function() {
 		$(searchFieldSelector).autocomplete({
 			// ajax options
 			serviceUrl: url,
@@ -92,9 +95,12 @@ define('TYPO3/CMS/Backend/LiveSearch', ['jquery', 'jquery/autocomplete'], functi
 			evt.preventDefault();
 			jump($(this).data('target'), 'web_list', 'web', $(this).data('pageid'));
 		});
-	};
 
-	$(document).ready(function() {
-		initialize();
+		$(searchFieldSelector).clearable({
+				onClear: function() {
+					$(containerSelector).removeClass('open');
+				}
+		});
 	});
+
 });

@@ -12,16 +12,20 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText
  * A text item in the toolbar
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
 	function (Dom, Util, Event) {
 
 	/**
 	 * Toolbar text item constructor
+	 *
+	 * @param {Object} config
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText
 	 */
 	var ToolbarText = function (config) {
 		Util.apply(this, config);

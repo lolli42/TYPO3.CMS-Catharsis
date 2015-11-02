@@ -12,20 +12,33 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Wizard/Colorpicker
  * Colorpicker JavaScript
  */
-define('TYPO3/CMS/Backend/Wizard/Colorpicker', ['jquery'], function ($) {
+define(['jquery'], function ($) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{options: {}}}
+	 * @exports TYPO3/CMS/Backend/Wizard/Colorpicker
+	 */
 	var Colorpicker = {
 		options: {}
 	};
 
+	/**
+	 *
+	 * @param {Object} options
+	 */
 	Colorpicker.setFieldChangeFunctions = function(options) {
 		Colorpicker.options = options;
 	};
 
+	/**
+	 *
+	 */
 	Colorpicker.initializeEvents = function() {
-
 		// Set color value
 		$('.t3js-colorpicker-value').on('click', function(e) {
 			e.preventDefault();
@@ -56,9 +69,7 @@ define('TYPO3/CMS/Backend/Wizard/Colorpicker', ['jquery'], function ($) {
 		});
 	};
 
-	$(document).ready(function() {
-		Colorpicker.initializeEvents();
-	});
+	$(Colorpicker.initializeEvents);
 
 	return Colorpicker;
 });

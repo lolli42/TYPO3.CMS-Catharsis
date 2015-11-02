@@ -10,14 +10,19 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-/***************************************************
- *  Make resizable
- ***************************************************/
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable',
-	['jquery',
+/**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable
+ * Make resizable
+ */
+define(['jquery',
 	'jquery-ui/resizable'],
 	function ($, Resizable) {
 
+	/**
+	 *
+	 * @type {{makeResizable: Function, destroy: Function}}
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable
+	 */
 	var Resizable = {
 
 		/**

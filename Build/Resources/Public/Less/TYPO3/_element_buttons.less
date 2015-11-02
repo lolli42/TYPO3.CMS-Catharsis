@@ -13,6 +13,9 @@
 	.collapse + .btn.collapsed:last-child {
 		border-radius: @border-radius-base;
 	}
+	.btn-default.disabled {
+		color: #999;
+	}
 }
 
 //
@@ -34,5 +37,14 @@
 		+ .fa:before {
 			content: "\f00c";
 		}
+	}
+}
+
+.btn-danger,
+.btn-success,
+.btn-warning,
+.btn-info {
+	.icon-color {
+		fill: currentColor;
 	}
 }

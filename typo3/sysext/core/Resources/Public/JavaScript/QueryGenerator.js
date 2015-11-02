@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -12,14 +12,16 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Core/QueryGenerator
  * This module handle the QueryGenerator forms.
  */
-define('TYPO3/CMS/Core/QueryGenerator', ['jquery', 'TYPO3/CMS/Backend/DateTimePicker', 'TYPO3/CMS/Backend/jquery.clearable'], function ($) {
+define(['jquery', 'TYPO3/CMS/Backend/DateTimePicker', 'TYPO3/CMS/Backend/jquery.clearable'], function ($) {
 
 	/**
 	 * The QueryGenerator AMD module
 	 *
 	 * @type {{form: null, limitField: null}}
+	 * @exports TYPO3/CMS/Core/QueryGenerator
 	 */
 	var QueryGenerator = {
 		form: null,
@@ -66,7 +68,7 @@ define('TYPO3/CMS/Core/QueryGenerator', ['jquery', 'TYPO3/CMS/Backend/DateTimePi
 	/**
 	 * Set query limit
 	 *
-	 * @param {string} value
+	 * @param {String} value
 	 */
 	QueryGenerator.setLimit = function(value) {
 		QueryGenerator.limitField.val(value);
@@ -75,8 +77,8 @@ define('TYPO3/CMS/Core/QueryGenerator', ['jquery', 'TYPO3/CMS/Backend/DateTimePi
 	/**
 	 * Add value to text field
 	 *
-	 * @param {string} field the name of the field
-	 * @param {string} value the value to add
+	 * @param {String} field the name of the field
+	 * @param {String} value the value to add
 	 */
 	QueryGenerator.addValueToField = function(field, value) {
 		var $target = QueryGenerator.form.find('[name="' + field + '"]');

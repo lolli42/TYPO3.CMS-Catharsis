@@ -12,15 +12,32 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Modal
  * API for modal windows powered by Twitter Bootstrap.
  * This module depends on TYPO3/CMS/Backend/Notification due to top.TYPO3.Severity.
  */
-define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($) {
+	'use strict';
+
+	// fetch from parent
+	if (parent && parent.window.TYPO3 && parent.window.TYPO3.Modal) {
+		// we need to trigger the event capturing again, in order to make sure this works inside iframes
+		parent.window.TYPO3.Modal.initializeMarkupTrigger(document);
+		return parent.window.TYPO3.Modal;
+	}
+
+	// fetch object from outer frame
+	if (top && top.TYPO3.Modal) {
+		// we need to trigger the event capturing again, in order to make sure this works inside iframes
+		top.TYPO3.Modal.initializeMarkupTrigger(document);
+		return top.TYPO3.Modal;
+	}
 
 	/**
 	 * The main object of the modal API
 	 *
 	 * @type {{instances: Array, currentModal: null, template: (*|jQuery|HTMLElement)}}
+	 * @exports TYPO3/CMS/Backend/Modal
 	 */
 	var Modal = {
 		instances: [],
@@ -48,7 +65,7 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 	 * Get the correct css class for given severity
 	 *
 	 * @param {int} severity use constants from top.TYPO3.Severity.*
-	 * @returns {string}
+	 * @returns {String}
 	 * @private
 	 */
 	Modal.getSeverityClass = function(severity) {
@@ -81,8 +98,8 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 	 * - confirm.button.cancel
 	 * - confirm.button.ok
 	 *
-	 * @param {string} title the title for the confirm modal
-	 * @param {string} content the content for the conform modal, e.g. the main question
+	 * @param {String} title the title for the confirm modal
+	 * @param {String} content the content for the conform modal, e.g. the main question
 	 * @param {int} severity default top.TYPO3.Severity.warning
 	 * @param {array} buttons an array with buttons, default no buttons
 	 * @param {array} additionalCssClasses additional css classes to add to the modal
@@ -93,6 +110,7 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 				{
 					text: $(this).data('button-close-text') || TYPO3.lang['button.cancel'] || 'Cancel',
 					active: true,
+					btnClass: 'btn-default',
 					name: 'cancel'
 				},
 				{
@@ -102,7 +120,7 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 				}
 			];
 		additionalCssClasses = additionalCssClasses || [];
-		$modal = Modal.show(title, content, severity, buttons, additionalCssClasses);
+		var $modal = Modal.show(title, content, severity, buttons, additionalCssClasses);
 		$modal.on('button.clicked', function(e) {
 			if (e.target.name === 'cancel') {
 				$(this).trigger('confirm.button.cancel');
@@ -117,11 +135,11 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 	 * load URL with AJAX, append the content to the modal-body
 	 * and trigger the callback
 	 *
-	 * @param {string} title
+	 * @param {String} title
 	 * @param {int} severity
 	 * @param {array} buttons
-	 * @param {string} url
-	 * @param {string} target
+	 * @param {String} url
+	 * @param {String} target
 	 * @param {function} callback
 	 */
 	Modal.loadUrl = function(title, severity, buttons, url, callback, target) {
@@ -141,20 +159,22 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 	 * Events:
 	 * - button.clicked
 	 *
-	 * @param {string} title the title for the confirm modal
-	 * @param {string} content the content for the conform modal, e.g. the main question
+	 * @param {String} title the title for the confirm modal
+	 * @param {String} content the content for the conform modal, e.g. the main question
 	 * @param {int} severity default top.TYPO3.Severity.info
 	 * @param {array} buttons an array with buttons, default no buttons
 	 * @param {array} additionalCssClasses additional css classes to add to the modal
 	 */
 	Modal.show = function(title, content, severity, buttons, additionalCssClasses) {
+		var i;
+
 		severity = (typeof severity !== 'undefined' ? severity : top.TYPO3.Severity.info);
 		buttons = buttons || [];
 		additionalCssClasses = additionalCssClasses || [];
 
 		var currentModal = Modal.template.clone();
 		if (additionalCssClasses.length) {
-			for (var i=0; i < additionalCssClasses.length; i++) {
+			for (i = 0; i < additionalCssClasses.length; i++) {
 				currentModal.addClass(additionalCssClasses[i]);
 			}
 		}
@@ -176,7 +196,7 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 
 		currentModal.addClass('t3-modal-' + Modal.getSeverityClass(severity));
 		if (buttons.length > 0) {
-			for (var i=0; i<buttons.length; i++) {
+			for (i = 0; i<buttons.length; i++) {
 				var button = buttons[i];
 				var $button = $('<button />', {class: 'btn'});
 				$button.html(button.text);
@@ -268,9 +288,11 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 
 	/**
 	 * Initialize markup with data attributes
+	 *
+	 * @param {object} theDocument
 	 */
-	Modal.initializeMarkupTrigger = function() {
-		$(document).on('click', '.t3js-modal-trigger', function(evt) {
+	Modal.initializeMarkupTrigger = function(theDocument) {
+		$(theDocument).on('click', '.t3js-modal-trigger', function(evt) {
 			evt.preventDefault();
 			var $element = $(this);
 			var url = $element.data('url') || null;
@@ -283,40 +305,24 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 					active: true,
 					btnClass: 'btn-default',
 					trigger: function() {
-						if (typeof top.TYPO3 !== 'undefined' && typeof top.TYPO3.Modal !== 'undefined') {
-							top.TYPO3.Modal.currentModal.trigger('modal-dismiss');
-						} else {
-							Modal.trigger('modal-dismiss');
-						}
+						Modal.currentModal.trigger('modal-dismiss');
 					}
 				},
 				{
 					text: $element.data('button-ok-text') || 'OK',
 					btnClass: 'btn-' + Modal.getSeverityClass(severity),
 					trigger: function() {
-						if (typeof top.TYPO3 !== 'undefined' && typeof top.TYPO3.Modal !== 'undefined') {
-							top.TYPO3.Modal.currentModal.trigger('modal-dismiss');
-						} else {
-							Modal.trigger('modal-dismiss');
-						}
-						self.location.href = $element.data('href') || $element.attr('href');
+						Modal.currentModal.trigger('modal-dismiss');
+						evt.target.ownerDocument.location.href = $element.data('href') || $element.attr('href');
 					}
 				}
 			];
 			if (url !== null) {
 				var separator = (url.indexOf('?') > -1) ? '&' : '?';
 				var params = $.param({data: $element.data()});
-				if (typeof top.TYPO3 !== 'undefined' && typeof top.TYPO3.Modal !== 'undefined') {
-					top.TYPO3.Modal.loadUrl(title, severity, buttons, url + separator + params);
-				} else {
-					Modal.loadUrl(title, severity, buttons, url + separator + params);
-				}
+				Modal.loadUrl(title, severity, buttons, url + separator + params);
 			} else {
-				if (typeof top.TYPO3 !== 'undefined' && typeof top.TYPO3.Modal !== 'undefined') {
-					top.TYPO3.Modal.show(title, content, severity, buttons);
-				} else {
-					Modal.show(title, content, severity, buttons);
-				}
+				Modal.show(title, content, severity, buttons);
 			}
 		});
 	};
@@ -326,12 +332,10 @@ define('TYPO3/CMS/Backend/Modal', ['jquery', 'TYPO3/CMS/Backend/Notification', '
 	 */
 	$(document).on('modal-dismiss', Modal.dismiss);
 
-	/**
-	 * Return the Modal object
-	 */
-	return function() {
-		Modal.initializeMarkupTrigger();
-		TYPO3.Modal = Modal;
-		return Modal;
-	}();
+	Modal.initializeMarkupTrigger(document);
+
+	// expose as global object
+	TYPO3.Modal = Modal;
+
+	return Modal;
 });

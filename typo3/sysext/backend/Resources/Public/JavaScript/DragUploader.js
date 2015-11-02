@@ -12,15 +12,15 @@
  */
 
 /**
- * JavaScript RequireJS module called "TYPO3/CMS/Backend/DragUploader"
+ * Module: TYPO3/CMS/Backend/DragUploader
  *
  */
-define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO3/CMS/Lang/Lang', 'TYPO3/CMS/Backend/Modal'], function($, moment, NProgress) {
+define(['jquery', 'moment', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Lang/Lang'], function($, moment, NProgress, Modal) {
 
 	/**
 	 * Array of files which are asked for being overridden
 	 *
-	 * @type {Array}
+	 * @type {array}
 	 */
 	var askForOverride = [],
 		percentagePerFile = 1;
@@ -40,6 +40,12 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 	 */
 
 	// register the constructor
+	/**
+	 *
+	 * @param {HTMLElement} element
+	 * @constructor
+	 * @exports TYPO3/CMS/Backend/DragUploader
+	 */
 	var DragUploaderPlugin = function(element) {
 		var me = this;
 		me.$body = $('body');
@@ -70,16 +76,28 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			Progress: "upload" in new XMLHttpRequest
 		};
 
+		/**
+		 *
+		 */
 		me.showDropzone = function() {
 			me.$dropzone.show();
 		};
 
+		/**
+		 *
+		 * @param {Event} event
+		 */
 		me.hideDropzone = function(event) {
 			event.stopPropagation();
 			event.preventDefault();
 			me.$dropzone.hide();
 		};
 
+		/**
+		 *
+		 * @param {Event} event
+		 * @returns {Boolean}
+		 */
 		me.dragFileIntoDocument = function(event) {
 			event.stopPropagation();
 			event.preventDefault();
@@ -88,6 +106,11 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			return false;
 		};
 
+		/**
+		 *
+		 * @param {Event} event
+		 * @returns {Boolean}
+		 */
 		me.dragAborted = function(event) {
 			event.stopPropagation();
 			event.preventDefault();
@@ -95,6 +118,11 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			return false;
 		};
 
+		/**
+		 *
+		 * @param {Event} event
+		 * @returns {Boolean}
+		 */
 		me.ignoreDrop = function(event) {
 			// stops the browser from redirecting.
 			event.stopPropagation();
@@ -103,12 +131,20 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			return false;
 		};
 
+		/**
+		 *
+		 * @param {Event} event
+		 */
 		me.handleDrop = function(event) {
 			me.ignoreDrop(event);
 			me.processFiles(event.originalEvent.dataTransfer.files);
 			me.$dropzone.removeClass('drop-status-ok');
 		};
 
+		/**
+		 *
+		 * @param {Array} files
+		 */
 		me.processFiles = function(files) {
 			me.queueLength = files.length;
 
@@ -155,16 +191,27 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			me.$fileInput.val('');
 		};
 
-
+		/**
+		 *
+		 * @param {Event} event
+		 */
 		me.fileInDropzone = function(event) {
 			me.$dropzone.addClass('drop-status-ok');
 		};
 
+		/**
+		 *
+		 * @param {Event} event
+		 */
 		me.fileOutOfDropzone = function(event) {
 			me.$dropzone.removeClass('drop-status-ok');
 		};
 
-		// bind file picker to default upload button
+		/**
+		 * bind file picker to default upload button
+		 *
+		 * @param {Object} button
+		 */
 		me.bindUploadButton = function(button) {
 			button.click(function(event) {
 				event.preventDefault();
@@ -219,6 +266,9 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			me.bindUploadButton(me.$trigger.length ? me.$trigger : me.$element);
 		}
 
+		/**
+		 *
+		 */
 		me.decrementQueueLength = function() {
 			if (me.queueLength > 0) {
 				me.queueLength--;
@@ -239,6 +289,9 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			}
 		};
 
+		/**
+		 *
+		 */
 		me.drawOverrideModal = function() {
 			var amountOfItems = Object.keys(askForOverride).length;
 			if (amountOfItems === 0) {
@@ -284,10 +337,11 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 				$modalContent.find('table').append($record);
 			}
 
-			var $modal = top.TYPO3.Modal.confirm(TYPO3.lang['file_upload.existingfiles.title'], $modalContent, top.TYPO3.Severity.warning, [
+			var $modal = Modal.confirm(TYPO3.lang['file_upload.existingfiles.title'], $modalContent, top.TYPO3.Severity.warning, [
 				{
 					text: $(this).data('button-close-text') || TYPO3.lang['file_upload.button.cancel'] || 'Cancel',
 					active: true,
+					btnClass: 'btn-default',
 					name: 'cancel'
 				},
 				{
@@ -333,7 +387,7 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 			}).on('button.clicked', function(e) {
 				if (e.target.name === 'cancel') {
 					askForOverride = [];
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				} else if (e.target.name === 'continue') {
 					$.each(askForOverride, function(key, fileInfo) {
 						if (fileInfo.action === actions.USE_EXISTING) {
@@ -346,7 +400,7 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 						}
 					});
 					askForOverride = [];
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				}
 			}).on('hidden.bs.modal', function() {
 				askForOverride = [];
@@ -415,7 +469,7 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 				me.$progressBar.outerWidth('100%');
 
 				// replace file icon
-				if (data.result.upload[0].icon) {
+				if (data.upload[0].icon) {
 					me.$iconCol.html('<a href="#" class="t3-js-clickmenutrigger" data-table="' + data.upload[0].id + '" data-listframe="1">' + data.upload[0].icon + '&nbsp;</span></a>');
 				}
 
@@ -580,10 +634,12 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery', 'moment', 'nprogress', 'TYPO
 				if (typeof option === 'string') {
 					data[option]();
 				}
-			})
+			});
 		};
 
-		$('.t3js-drag-uploader').dragUploader();
+		$(function() {
+			$('.t3js-drag-uploader').dragUploader();
+		});
 	};
 
 

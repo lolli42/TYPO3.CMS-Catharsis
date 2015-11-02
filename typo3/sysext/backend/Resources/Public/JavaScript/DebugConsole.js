@@ -12,9 +12,17 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/DebugConsole
  * The debug console shown at the bottom of the backend
  */
-define('TYPO3/CMS/Backend/DebugConsole', ['jquery'], function ($) {
+define(['jquery'], function ($) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{$consoleDom: null, settings: {autoscroll: boolean}}}
+	 * @exports TYPO3/CMS/Backend/DebugConsole
+	 */
 	var DebugConsole = {
 		$consoleDom: null,
 		settings: {
@@ -98,6 +106,10 @@ define('TYPO3/CMS/Backend/DebugConsole', ['jquery'], function ($) {
 
 	/**
 	 * Adds a button and it's callback to the console's toolbar
+	 *
+	 * @param {Object} $button
+	 * @param {function} callback
+	 * @returns {{$consoleDom: null, settings: {autoscroll: boolean}}}
 	 */
 	DebugConsole.addButton = function($button, callback) {
 		$button.on('click', callback);
@@ -118,6 +130,10 @@ define('TYPO3/CMS/Backend/DebugConsole', ['jquery'], function ($) {
 
 	/**
 	 * Add the debug message to the console
+	 *
+	 * @param {String} message
+	 * @param {String} header
+	 * @param {String} [group=Debug]
 	 */
 	DebugConsole.add = function(message, header, group) {
 		DebugConsole.attachToViewport();
@@ -176,6 +192,8 @@ define('TYPO3/CMS/Backend/DebugConsole', ['jquery'], function ($) {
 
 	/**
 	 * Gets a proper console icon depending on the amount of tabs
+	 *
+	 * @param {Object} $tabs
 	 */
 	DebugConsole.identifyTabLengthPresentationIcon = function($tabs) {
 		var terminalIcon1 = true,
@@ -193,6 +211,8 @@ define('TYPO3/CMS/Backend/DebugConsole', ['jquery'], function ($) {
 
 	/**
 	 * Increment the counter of unread messages in the given tab
+	 *
+	 * @param {Object} $tab
 	 */
 	DebugConsole.incrementInactiveTabCounter = function($tab) {
 		if (!$tab.hasClass('active')) {
@@ -255,11 +275,11 @@ define('TYPO3/CMS/Backend/DebugConsole', ['jquery'], function ($) {
 		DebugConsole.$consoleDom = null;
 	};
 
-	return function () {
-		$(document).ready(function() {
-			DebugConsole.initialize();
-		});
-		TYPO3.DebugConsole = DebugConsole;
-		return DebugConsole;
-	}();
+	$(DebugConsole.initialize);
+
+	// expose as global object
+	TYPO3.DebugConsole = DebugConsole;
+
+	return DebugConsole;
+
 });

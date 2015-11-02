@@ -11,12 +11,19 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-define('TYPO3/CMS/Backend/ToggleSearchToolbox', ['jquery', 'TYPO3/CMS/Backend/jquery.clearable'], function($) {
-	$(document).ready(function() {
+/**
+ * Module: TYPO3/CMS/Backend/ToggleSearchToolbox
+ * Toggle the search toolbox
+ * @exports TYPO3/CMS/Backend/ToggleSearchToolbox
+ */
+define(['jquery', 'TYPO3/CMS/Backend/DocumentHeader', 'TYPO3/CMS/Backend/jquery.clearable'], function($, DocumentHeader) {
+	'use strict';
+
+	$(function() {
 		var $toolbar = $('#db_list-searchbox-toolbar');
 		$('.t3js-toggle-search-toolbox').on('click', function() {
 			$toolbar.toggle();
-
+			DocumentHeader.reposition();
 			if ($toolbar.is(':visible')) {
 				$('#search_field').focus();
 			}
@@ -26,14 +33,12 @@ define('TYPO3/CMS/Backend/ToggleSearchToolbox', ['jquery', 'TYPO3/CMS/Backend/jq
 		var searchResultShown = ('' !== $searchFields.val());
 
 		// make search field clearable
-		$searchFields.clearable(
-			{
-				onClear: function() {
-					if (searchResultShown) {
-						$(this).closest('form').submit();
-					}
+		$searchFields.clearable({
+			onClear: function() {
+				if (searchResultShown) {
+					$(this).closest('form').submit();
 				}
 			}
-		);
+		});
 	});
 });
