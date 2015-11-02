@@ -919,7 +919,7 @@ class ADORecordSet_postgres64 extends ADORecordSet{
 		$this->adodbFetchMode = $mode;
 
 		// Parent's constructor
-		$this->ADORecordSet($queryID);
+		parent::__construct($queryID);
 	}
 
 	function GetRowAssoc($upper=true)
