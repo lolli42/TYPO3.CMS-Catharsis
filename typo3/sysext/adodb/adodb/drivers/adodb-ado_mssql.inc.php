@@ -39,6 +39,11 @@ class  ADODB_ado_mssql extends ADODB_ado {
 
 	//var $_inTransaction = 1; // always open recordsets, so no transaction problems.
 
+	function ADODB_ado_mssql()
+	{
+	        $this->ADODB_ado();
+	}
+
 	function _insertid()
 	{
 	        return $this->GetOne('select SCOPE_IDENTITY()');
@@ -141,8 +146,8 @@ class  ADODB_ado_mssql extends ADODB_ado {
 
 	var $databaseType = 'ado_mssql';
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_ado_mssql($id,$mode=false)
 	{
-	        return parent::__construct($id,$mode);
+	        return $this->ADORecordSet_ado($id,$mode);
 	}
 }

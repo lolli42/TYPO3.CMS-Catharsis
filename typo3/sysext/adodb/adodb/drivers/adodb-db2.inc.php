@@ -61,7 +61,7 @@ class ADODB_db2 extends ADOConnection {
         return ADOConnection::GetOne('VALUES IDENTITY_VAL_LOCAL()');
     }
 
-	function __construct()
+	function ADODB_db2()
 	{
 		$this->_haserrorfunctions = ADODB_PHPVER >= 0x4050;
 	}
@@ -726,7 +726,7 @@ class ADORecordSet_db2 extends ADORecordSet {
 	var $dataProvider = "db2";
 	var $useFetchArray;
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_db2($id,$mode=false)
 	{
 		if ($mode === false) {
 			global $ADODB_FETCH_MODE;

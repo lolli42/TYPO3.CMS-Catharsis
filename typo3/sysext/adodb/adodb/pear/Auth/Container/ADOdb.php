@@ -61,7 +61,7 @@ class Auth_Container_ADOdb extends Auth_Container
      * @param  string Connection data or DB object
      * @return object Returns an error object if something went wrong
      */
-    function __construct($dsn)
+    function Auth_Container_ADOdb($dsn)
     {
         $this->_setDefaults();
 

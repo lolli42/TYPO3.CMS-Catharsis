@@ -34,7 +34,7 @@ class ADODB_sqlite3 extends ADOConnection {
 	var $fmtTimeStamp = "'Y-m-d H:i:s'";
 
 	//function ADODB_sqlite3() **change
-	function __construct()
+	function ADODB_sqlite3()
 	{
 	}
 
@@ -342,7 +342,7 @@ class ADORecordset_sqlite3 extends ADORecordSet {
 	var $bind = false;
 
 	//function ADORecordset_sqlite($queryID,$mode=false)**change
-	function __construct($queryID,$mode=false)
+	function ADORecordset_sqlite3($queryID,$mode=false)
 	{
 
 		if ($mode === false) {

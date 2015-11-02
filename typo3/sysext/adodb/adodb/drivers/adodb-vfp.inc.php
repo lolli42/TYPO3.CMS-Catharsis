@@ -34,6 +34,11 @@ class ADODB_vfp extends ADODB_odbc {
 	var $hasTransactions = false;
 	var $curmode = false ; // See sqlext.h, SQL_CUR_DEFAULT == SQL_CUR_USE_DRIVER == 2L
 
+	function ADODB_vfp()
+	{
+		$this->ADODB_odbc();
+	}
+
 	function Time()
 	{
 		return time();
@@ -67,9 +72,9 @@ class  ADORecordSet_vfp extends ADORecordSet_odbc {
 	var $databaseType = "vfp";
 
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_vfp($id,$mode=false)
 	{
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet_odbc($id,$mode);
 	}
 
 	function MetaType($t,$len=-1)

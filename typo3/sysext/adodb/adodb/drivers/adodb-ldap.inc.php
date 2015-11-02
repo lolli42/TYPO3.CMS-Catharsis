@@ -43,7 +43,7 @@ class ADODB_ldap extends ADOConnection {
 	# error on binding, eg. "Binding: invalid credentials"
 	var $_bind_errmsg = "Binding: %s";
 
-	function __construct()
+	function ADODB_ldap()
 	{
 	}
 
@@ -290,7 +290,7 @@ class ADORecordSet_ldap extends ADORecordSet{
 	var $canSeek = false;
 	var $_entryID; /* keeps track of the entry resource identifier */
 
-	function __construct($queryID,$mode=false)
+	function ADORecordSet_ldap($queryID,$mode=false)
 	{
 		if ($mode === false) {
 			global $ADODB_FETCH_MODE;
@@ -311,7 +311,7 @@ class ADORecordSet_ldap extends ADORecordSet{
 		break;
 		}
 
-		parent::__construct($queryID);
+		$this->ADORecordSet($queryID);
 	}
 
 	function _initrs()

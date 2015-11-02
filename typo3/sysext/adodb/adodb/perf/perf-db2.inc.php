@@ -56,7 +56,7 @@ class perf_db2 extends adodb_perf{
 	);
 
 
-	function __construct(&$conn)
+	function perf_db2(&$conn)
 	{
 		$this->conn = $conn;
 	}

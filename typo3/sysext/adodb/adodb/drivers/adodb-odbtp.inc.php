@@ -33,7 +33,7 @@ class ADODB_odbtp extends ADOConnection{
 	var $_canPrepareSP = false;
 	var $_dontPoolDBC = true;
 
-	function __construct()
+	function ADODB_odbtp()
 	{
 	}
 
@@ -668,14 +668,14 @@ class ADORecordSet_odbtp extends ADORecordSet {
 	var $databaseType = 'odbtp';
 	var $canSeek = true;
 
-	function __construct($queryID,$mode=false)
+	function ADORecordSet_odbtp($queryID,$mode=false)
 	{
 		if ($mode === false) {
 			global $ADODB_FETCH_MODE;
 			$mode = $ADODB_FETCH_MODE;
 		}
 		$this->fetchMode = $mode;
-		parent::__construct($queryID);
+		$this->ADORecordSet($queryID);
 	}
 
 	function _initrs()
@@ -791,9 +791,9 @@ class ADORecordSet_odbtp_mssql extends ADORecordSet_odbtp {
 
 	var $databaseType = 'odbtp_mssql';
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_odbtp_mssql($id,$mode=false)
 	{
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet_odbtp($id,$mode);
 	}
 }
 
@@ -801,9 +801,9 @@ class ADORecordSet_odbtp_access extends ADORecordSet_odbtp {
 
 	var $databaseType = 'odbtp_access';
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_odbtp_access($id,$mode=false)
 	{
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet_odbtp($id,$mode);
 	}
 }
 
@@ -811,9 +811,9 @@ class ADORecordSet_odbtp_vfp extends ADORecordSet_odbtp {
 
 	var $databaseType = 'odbtp_vfp';
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_odbtp_vfp($id,$mode=false)
 	{
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet_odbtp($id,$mode);
 	}
 }
 
@@ -821,9 +821,9 @@ class ADORecordSet_odbtp_oci8 extends ADORecordSet_odbtp {
 
 	var $databaseType = 'odbtp_oci8';
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_odbtp_oci8($id,$mode=false)
 	{
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet_odbtp($id,$mode);
 	}
 }
 
@@ -831,8 +831,8 @@ class ADORecordSet_odbtp_sybase extends ADORecordSet_odbtp {
 
 	var $databaseType = 'odbtp_sybase';
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_odbtp_sybase($id,$mode=false)
 	{
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet_odbtp($id,$mode);
 	}
 }

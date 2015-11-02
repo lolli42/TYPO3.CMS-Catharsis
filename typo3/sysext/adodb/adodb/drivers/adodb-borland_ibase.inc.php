@@ -20,6 +20,12 @@ include_once(ADODB_DIR."/drivers/adodb-ibase.inc.php");
 class ADODB_borland_ibase extends ADODB_ibase {
 	var $databaseType = "borland_ibase";
 
+
+	function ADODB_borland_ibase()
+	{
+		$this->ADODB_ibase();
+	}
+
 	function BeginTrans()
 	{
 		if ($this->transOff) return true;
@@ -78,8 +84,8 @@ class  ADORecordSet_borland_ibase extends ADORecordSet_ibase {
 
 	var $databaseType = "borland_ibase";
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_borland_ibase($id,$mode=false)
 	{
-		parent::__construct($id,$mode);
+		$this->ADORecordSet_ibase($id,$mode);
 	}
 }

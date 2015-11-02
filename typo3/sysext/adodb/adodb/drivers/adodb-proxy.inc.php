@@ -23,9 +23,9 @@ if (! defined("_ADODB_PROXY_LAYER")) {
 	class ADORecordset_proxy extends ADORecordset_csv {
 	var $databaseType = "proxy";
 
-		function __construct($id,$mode=false)
+		function ADORecordset_proxy($id,$mode=false)
 		{
-			parent::__construct($id,$mode);
+			$this->ADORecordset($id,$mode);
 		}
 	};
 } // define

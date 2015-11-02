@@ -25,7 +25,7 @@ class ADODB_mysqlt extends ADODB_mysql {
 	var $hasTransactions = true;
 	var $autoRollback = true; // apparently mysql does not autorollback properly
 
-	function __construct()
+	function ADODB_mysqlt()
 	{
 	global $ADODB_EXTENSION; if ($ADODB_EXTENSION) $this->rsPrefix .= 'ext_';
 	}
@@ -72,7 +72,7 @@ class ADODB_mysqlt extends ADODB_mysql {
 class ADORecordSet_mysqlt extends ADORecordSet_mysql{
 	var $databaseType = "mysqlt";
 
-	function __construct($queryID,$mode=false)
+	function ADORecordSet_mysqlt($queryID,$mode=false)
 	{
 		if ($mode === false) {
 			global $ADODB_FETCH_MODE;
@@ -90,7 +90,7 @@ class ADORecordSet_mysqlt extends ADORecordSet_mysql{
 		}
 
 		$this->adodbFetchMode = $mode;
-		parent::__construct($queryID);
+		$this->ADORecordSet($queryID);
 	}
 
 	function MoveNext()
@@ -109,9 +109,24 @@ class ADORecordSet_mysqlt extends ADORecordSet_mysql{
 
 class ADORecordSet_ext_mysqlt extends ADORecordSet_mysqlt {
 
-	function __construct($queryID,$mode=false)
+	function ADORecordSet_ext_mysqlt($queryID,$mode=false)
 	{
-		parent::__construct($queryID,$mode);
+		if ($mode === false) {
+			global $ADODB_FETCH_MODE;
+			$mode = $ADODB_FETCH_MODE;
+		}
+		switch ($mode)
+		{
+		case ADODB_FETCH_NUM: $this->fetchMode = MYSQL_NUM; break;
+		case ADODB_FETCH_ASSOC:$this->fetchMode = MYSQL_ASSOC; break;
+
+		case ADODB_FETCH_DEFAULT:
+		case ADODB_FETCH_BOTH:
+		default:
+			$this->fetchMode = MYSQL_BOTH; break;
+		}
+		$this->adodbFetchMode = $mode;
+		$this->ADORecordSet($queryID);
 	}
 
 	function MoveNext()

@@ -81,7 +81,7 @@ class perf_mysql extends adodb_perf{
 		false
 	);
 
-	function __construct(&$conn)
+	function perf_mysql(&$conn)
 	{
 		$this->conn = $conn;
 	}

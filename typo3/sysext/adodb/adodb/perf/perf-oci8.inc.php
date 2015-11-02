@@ -198,7 +198,7 @@ FROM v\$parameter v1, v\$parameter v2 WHERE v1.name='log_archive_dest' AND v2.na
 	);
 
 
-	function __construct(&$conn)
+	function perf_oci8(&$conn)
 	{
 	global $gSQLBlockRows;
 

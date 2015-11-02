@@ -54,7 +54,7 @@ class ADODB_ibase extends ADOConnection {
 	var $blobEncodeType = 'C';
 	var $role = false;
 
-	function __construct()
+	function ADODB_ibase()
 	{
 		 if (defined('IBASE_DEFAULT')) $this->ibasetrans = IBASE_DEFAULT;
   	}
@@ -730,12 +730,12 @@ class ADORecordset_ibase extends ADORecordSet
 	var $bind=false;
 	var $_cacheType;
 
-	function __construct($id,$mode=false)
+	function ADORecordset_ibase($id,$mode=false)
 	{
 	global $ADODB_FETCH_MODE;
 
 			$this->fetchMode = ($mode === false) ? $ADODB_FETCH_MODE : $mode;
-			parent::__construct($id);
+			$this->ADORecordSet($id);
 	}
 
 	/*		Returns: an object containing field information.

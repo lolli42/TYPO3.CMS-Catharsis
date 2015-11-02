@@ -48,7 +48,7 @@ class ADODB_netezza extends ADODB_postgres64 {
 							// http://bugs.php.net/bug.php?id=25404
 
 
-	function __construct()
+	function ADODB_netezza()
 	{
 
 	}
@@ -139,9 +139,23 @@ class ADORecordSet_netezza extends ADORecordSet_postgres64
 	var $databaseType = "netezza";
 	var $canSeek = true;
 
-	function __construct($queryID,$mode=false)
+	function ADORecordSet_netezza($queryID,$mode=false)
 	{
-		parent::__construct($queryID,$mode);
+		if ($mode === false) {
+			global $ADODB_FETCH_MODE;
+			$mode = $ADODB_FETCH_MODE;
+		}
+		switch ($mode)
+		{
+		case ADODB_FETCH_NUM: $this->fetchMode = PGSQL_NUM; break;
+		case ADODB_FETCH_ASSOC:$this->fetchMode = PGSQL_ASSOC; break;
+
+		case ADODB_FETCH_DEFAULT:
+		case ADODB_FETCH_BOTH:
+		default: $this->fetchMode = PGSQL_BOTH; break;
+		}
+		$this->adodbFetchMode = $mode;
+		$this->ADORecordSet($queryID);
 	}
 
 	// _initrs modified to disable blob handling

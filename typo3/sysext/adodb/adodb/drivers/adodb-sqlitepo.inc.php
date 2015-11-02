@@ -23,6 +23,11 @@ include_once(ADODB_DIR.'/drivers/adodb-sqlite.inc.php');
 
 class ADODB_sqlitepo extends ADODB_sqlite {
    var $databaseType = 'sqlitepo';
+
+   function ADODB_sqlitepo()
+   {
+      $this->ADODB_sqlite();
+   }
 }
 
 /*--------------------------------------------------------------------------------------
@@ -33,9 +38,9 @@ class ADORecordset_sqlitepo extends ADORecordset_sqlite {
 
    var $databaseType = 'sqlitepo';
 
-   function __construct($queryID,$mode=false)
+   function ADORecordset_sqlitepo($queryID,$mode=false)
    {
-      parent::__construct($queryID,$mode);
+      $this->ADORecordset_sqlite($queryID,$mode);
    }
 
    // Modified to strip table names from returned fields

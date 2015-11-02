@@ -37,7 +37,7 @@ class ADODB_ado extends ADOConnection {
 	var $poorAffectedRows = true;
 	var $charPage;
 
-	function __construct()
+	function ADODB_ado()
 	{
 		$this->_affectedRows = new VARIANT;
 	}
@@ -341,14 +341,14 @@ class ADORecordSet_ado extends ADORecordSet {
 	var $canSeek = true;
   	var $hideErrors = true;
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_ado($id,$mode=false)
 	{
 		if ($mode === false) {
 			global $ADODB_FETCH_MODE;
 			$mode = $ADODB_FETCH_MODE;
 		}
 		$this->fetchMode = $mode;
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet($id,$mode);
 	}
 
 

@@ -31,6 +31,11 @@ class  ADODB_odbc_oracle extends ADODB_odbc {
 
 	//var $_bindInputArray = false;
 
+	function ADODB_odbc_oracle()
+	{
+		$this->ADODB_odbc();
+	}
+
 	function MetaTables()
 	{
 		$false = false;
@@ -102,8 +107,8 @@ class  ADORecordSet_odbc_oracle extends ADORecordSet_odbc {
 
 	var $databaseType = 'odbc_oracle';
 
-	function __construct($id,$mode=false)
+	function ADORecordSet_odbc_oracle($id,$mode=false)
 	{
-		return parent::__construct($id,$mode);
+		return $this->ADORecordSet_odbc($id,$mode);
 	}
 }

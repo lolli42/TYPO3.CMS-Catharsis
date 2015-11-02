@@ -31,7 +31,7 @@ class ADODB_sqlite extends ADOConnection {
 	var $sysTimeStamp = "adodb_date('Y-m-d H:i:s')";
 	var $fmtTimeStamp = "'Y-m-d H:i:s'";
 
-	function __construct()
+	function ADODB_sqlite()
 	{
 	}
 
@@ -319,7 +319,7 @@ class ADORecordset_sqlite extends ADORecordSet {
 	var $databaseType = "sqlite";
 	var $bind = false;
 
-	function __construct($queryID,$mode=false)
+	function ADORecordset_sqlite($queryID,$mode=false)
 	{
 
 		if ($mode === false) {

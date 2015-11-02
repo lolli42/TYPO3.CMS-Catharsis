@@ -57,7 +57,7 @@ class ADODB_mysqli extends ADOConnection {
   	var $arrayClass = 'ADORecordSet_array_mysqli';
   	var $multiQuery = false;
 
-	function __construct()
+	function ADODB_mysqli()
 	{
 	 // if(!extension_loaded("mysqli"))
 	      ;//trigger_error("You must have the mysqli extension installed.", E_USER_ERROR);
@@ -878,7 +878,7 @@ class ADORecordSet_mysqli extends ADORecordSet{
 	var $databaseType = "mysqli";
 	var $canSeek = true;
 
-	function __construct($queryID, $mode = false)
+	function ADORecordSet_mysqli($queryID, $mode = false)
 	{
 	  if ($mode === false)
 	   {
@@ -901,7 +901,7 @@ class ADORecordSet_mysqli extends ADORecordSet{
 	      break;
 	    }
 	  $this->adodbFetchMode = $mode;
-	  parent::__construct($queryID);
+	  $this->ADORecordSet($queryID);
 	}
 
 	function _initrs()
@@ -1179,9 +1179,9 @@ class ADORecordSet_mysqli extends ADORecordSet{
 
 class ADORecordSet_array_mysqli extends ADORecordSet_array {
 
-  function __construct($id=-1,$mode=false)
+  function ADORecordSet_array_mysqli($id=-1,$mode=false)
   {
-    parent::__construct($id,$mode);
+    $this->ADORecordSet_array($id,$mode);
   }
 
 	function MetaType($t, $len = -1, $fieldobj = false)
