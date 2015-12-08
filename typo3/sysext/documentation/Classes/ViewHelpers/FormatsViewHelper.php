@@ -17,8 +17,8 @@ namespace TYPO3\CMS\Documentation\ViewHelpers;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
@@ -125,9 +125,8 @@ class FormatsViewHelper extends AbstractViewHelper implements CompilableInterfac
                 $iconHtml = $iconFactory->getIcon('actions-system-extension-documentation', Icon::SIZE_SMALL)->render();
                 break;
             default:
-                $iconHtml = $iconFactory->getIconForFileExtension($extension, Icon::SIZE_SMALL)->render();;
+                $iconHtml = $iconFactory->getIconForFileExtension($extension, Icon::SIZE_SMALL)->render();
         }
         return $iconHtml;
     }
-
 }

@@ -14,19 +14,18 @@ namespace TYPO3\CMS\Backend\Controller\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Script Class for the rename-file form.
  */
 class RenameFileController extends AbstractModule
 {
-
     /**
      * Name of the filemount
      *
@@ -125,7 +124,6 @@ class RenameFileController extends AbstractModule
             'RenameFileInlineJavaScript',
             'function backToList() {top.goToModule("file_FilelistList");}'
         );
-
     }
 
     /**
@@ -175,7 +173,7 @@ class RenameFileController extends AbstractModule
         if ($this->returnUrl) {
             $backButton = $buttonBar->makeLinkButton()
                 ->sethref(GeneralUtility::linkThisUrl($this->returnUrl))
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($backButton);
         }
@@ -184,7 +182,7 @@ class RenameFileController extends AbstractModule
         $this->content = '<h1>' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_rename.php.pagetitle') . '</h1>';
 
         // add section
-        $this->content .= $this->moduleTemplate->section('', $pageContent);
+        $this->content .= '<div>' . $pageContent . '</div>';
         $this->moduleTemplate->setContent($this->content);
     }
 

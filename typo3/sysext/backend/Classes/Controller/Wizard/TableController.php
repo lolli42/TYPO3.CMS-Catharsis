@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
@@ -161,19 +161,11 @@ class TableController extends AbstractWizardController
     {
         $this->content .= '<form action="' . htmlspecialchars($rUri) . '" method="post" id="TableController" name="wizardForm">';
         if ($this->P['table'] && $this->P['field'] && $this->P['uid']) {
-            $this->content .= $this->moduleTemplate->section(
-                $this->getLanguageService()->getLL('table_title'),
-                $this->tableWizard(),
-                0,
-                1
-            );
+            $this->content .= '<h2>' . $this->getLanguageService()->getLL('table_title', true) . '</h2>'
+                . '<div>' . $this->tableWizard() . '</div>';
         } else {
-            $this->content .= $this->moduleTemplate->section(
-                $this->getLanguageService()->getLL('table_title'),
-                '<span class="text-danger">' . $this->getLanguageService()->getLL('table_noData', true) . '</span>',
-                0,
-                1
-            );
+            $this->content .= '<h2>' . $this->getLanguageService()->getLL('table_title', true) . '</h2>'
+                . '<div><span class="text-danger">' . $this->getLanguageService()->getLL('table_noData', true) . '</span></div>';
         }
         $this->content .= '</form>';
         // Setting up the buttons and markers for docHeader
@@ -209,7 +201,7 @@ class TableController extends AbstractWizardController
             // Close
             $closeButton = $buttonBar->makeLinkButton()
                 ->setHref($this->P['returnUrl'])
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
             $buttonBar->addButton($closeButton);
             // Save
@@ -218,13 +210,13 @@ class TableController extends AbstractWizardController
                 ->setValue('1')
                 ->setForm('TableController')
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL))
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true));
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'));
             // Save & Close
             $saveAndCloseButton = $buttonBar->makeInputButton()
                 ->setName('_saveandclosedok')
                 ->setValue('1')
                 ->setForm('TableController')
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                     'actions-document-save-close',
                     Icon::SIZE_SMALL
@@ -239,7 +231,7 @@ class TableController extends AbstractWizardController
                 ->setName('_refresh')
                 ->setValue('1')
                 ->setForm('TableController')
-                ->setTitle($this->getLanguageService()->getLL('forms_refresh', true))
+                ->setTitle($this->getLanguageService()->getLL('forms_refresh'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-refresh', Icon::SIZE_SMALL));
             $buttonBar->addButton($reloadButton);
         }
@@ -451,6 +443,7 @@ class TableController extends AbstractWizardController
 				</tfoot>';
         }
         $content = '';
+        $addSubmitOnClick = 'onclick="document.getElementById(\'TableController\').submit();"';
         // Implode all table rows into a string, wrapped in table tags.
         $content .= '
 
@@ -467,7 +460,7 @@ class TableController extends AbstractWizardController
 			<div class="checkbox">
 				<input type="hidden" name="TABLE[textFields]" value="0" />
 				<label for="textFields">
-					<input type="checkbox" name="TABLE[textFields]" id="textFields" value="1"' . ($this->inputStyle ? ' checked="checked"' : '') . ' />
+					<input type="checkbox" ' . $addSubmitOnClick . ' name="TABLE[textFields]" id="textFields" value="1"' . ($this->inputStyle ? ' checked="checked"' : '') . ' />
 					' . $this->getLanguageService()->getLL('table_smallFields') . '
 				</label>
 			</div>';
@@ -535,7 +528,7 @@ class TableController extends AbstractWizardController
                             // will be TRUE after one row is added while if rows are added in the bottom
                             // of the table there will be no existing rows to stop the addition of new rows
                             // which means it will add up to $this->numNewRows rows then.
-                            if (!isset($this->TABLECFG['c'][($kk + $a)])) {
+                            if (!isset($this->TABLECFG['c'][$kk + $a])) {
                                 $this->TABLECFG['c'][$kk + $a] = array();
                             } else {
                                 break;

@@ -17,9 +17,9 @@ namespace TYPO3\CMS\Impexp\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\BaseScriptClass;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -27,7 +27,6 @@ use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\DuplicationBehavior;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Lang\LanguageService;
@@ -152,7 +151,7 @@ class ImportExportController extends BaseScriptClass
             . '<input type="hidden" name="id" value="' . $this->id . '" />';
         // Input data grabbed:
         $inData = GeneralUtility::_GP('tx_impexp');
-        $this->content .= $this->moduleTemplate->sectionHeader($this->lang->getLL('title_' . (string)$inData['action']));
+        $this->content .= '<h3>' . $this->lang->getLL('title_' . (string)$inData['action'], true) . '</h3>';
         $this->content .= '<div style="padding-top: 5px;"></div>';
         $this->checkUpload();
         switch ((string)$inData['action']) {
@@ -267,7 +266,7 @@ class ImportExportController extends BaseScriptClass
                         BackendUtility::BEgetRootLine($this->pageinfo['uid'])
                     );
                     $viewButton = $buttonBar->makeLinkButton()
-                        ->setTitle($this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true))
+                        ->setTitle($this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage'))
                         ->setHref('#')
                         ->setIcon($this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL))
                         ->setOnClick($onClick);
@@ -556,9 +555,9 @@ class ImportExportController extends BaseScriptClass
 
         $content = $this->moduleTemplate->getDynamicTabMenu($menuItems, 'tx_impexp_export', 1, false, true, false);
         $content .= '<input type="hidden" name="tx_impexp[action]" value="export" />';
-        $this->content .= $this->moduleTemplate->section('', $content, 0, 1);
+        $this->content .= '<div>' . $content . '</div>';
         // Output Overview:
-        $this->content .= $this->moduleTemplate->section($this->lang->getLL('execlistqu_structureToBeExported'), $overViewContent, 0, 1);
+        $this->content .= '<h2>' . $this->lang->getLL('execlistqu_structureToBeExported', true) . '</h2><div>' . $overViewContent . '</div>';
     }
 
     /**
@@ -1286,12 +1285,12 @@ class ImportExportController extends BaseScriptClass
                 $content = '<div style="border: 1px black solid; margin: 10px 10px 10px 10px; padding: 10px 10px 10px 10px;">'
                     . $this->moduleTemplate->icons(1) . htmlspecialchars($extensionInstallationMessage) . '</div>' . $content;
             }
-            $this->content .= $this->moduleTemplate->section('', $content, 0, 1);
+            $this->content .= '<div>' . $content . '</div>';
             // Print overview:
             if ($overviewContent) {
-                $this->content .= $this->moduleTemplate->section($inData['import_file']
+                $this->content .= '<h2>' . ($inData['import_file']
                     ? $this->lang->getLL('importdata_structureHasBeenImported', true)
-                    : $this->lang->getLL('filterpage_structureToBeImported', true), $overviewContent, 0, 1);
+                    : $this->lang->getLL('filterpage_structureToBeImported', true)) . '</h2><div>' . $overviewContent . '</div>';
             }
         }
     }
@@ -1446,7 +1445,6 @@ class ImportExportController extends BaseScriptClass
 
         return $defaultImportExportFolder;
     }
-
 
     /**
      * Check if a file has been uploaded

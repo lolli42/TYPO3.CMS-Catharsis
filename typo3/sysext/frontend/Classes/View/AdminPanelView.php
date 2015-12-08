@@ -51,6 +51,13 @@ class AdminPanelView
     protected $iconFactory;
 
     /**
+     * Determines whether EXT:feedit is loaded
+     *
+     * @var bool
+     */
+    protected $extFeEditLoaded = false;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -69,6 +76,7 @@ class AdminPanelView
         $this->saveConfigOptions();
         $typoScriptFrontend = $this->getTypoScriptFrontendController();
         // Setting some values based on the admin panel
+        $this->extFeEditLoaded = ExtensionManagementUtility::isLoaded('feedit');
         $typoScriptFrontend->forceTemplateParsing = $this->extGetFeAdminValue('tsdebug', 'forceTemplateParsing');
         $typoScriptFrontend->displayEditIcons = $this->extGetFeAdminValue('edit', 'displayIcons');
         $typoScriptFrontend->displayFieldEditIcons = $this->extGetFeAdminValue('edit', 'displayFieldIcons');
@@ -92,9 +100,9 @@ class AdminPanelView
         }
         if ($typoScriptFrontend->forceTemplateParsing) {
             $typoScriptFrontend->set_no_cache('Admin Panel: Force template parsing', true);
-        } elseif ($typoScriptFrontend->displayEditIcons) {
+        } elseif ($this->extFeEditLoaded && $typoScriptFrontend->displayEditIcons) {
             $typoScriptFrontend->set_no_cache('Admin Panel: Display edit icons', true);
-        } elseif ($typoScriptFrontend->displayFieldEditIcons) {
+        } elseif ($this->extFeEditLoaded && $typoScriptFrontend->displayFieldEditIcons) {
             $typoScriptFrontend->set_no_cache('Admin Panel: Display field edit icons', true);
         } elseif (GeneralUtility::_GP('ADMCMD_view')) {
             $typoScriptFrontend->set_no_cache('Admin Panel: Display preview', true);
@@ -240,7 +248,7 @@ class AdminPanelView
     public function display()
     {
         $this->getLanguageService()->includeLLFile('EXT:lang/locallang_tsfe.xlf');
-        $moduleContent = $footer = '';
+        $moduleContent = $updateButton = '';
 
         if ($this->getBackendUser()->uc['TSFE_adminConfig']['display_top']) {
             if ($this->isAdminModuleEnabled('preview')) {
@@ -273,9 +281,9 @@ class AdminPanelView
         $cssClassName = 'typo3-adminPanel-panel-' . ($isVisible ? 'open' : 'closed');
         $header = '<div class="typo3-adminPanel-header">' . '<div id="typo3-adminPanel-header" class="' . $cssClassName . '">' . '<span class="typo3-adminPanel-header-title">' . $row . '</span>' . $this->linkSectionHeader('top', '<span class="typo3-adminPanel-header-button fa"></span>', 'typo3-adminPanel-header-buttonWrapper') . '<input type="hidden" name="TSFE_ADMIN_PANEL[display_top]" value="' . $this->getBackendUser()->uc['TSFE_adminConfig']['display_top'] . '" /></div>' . '</div>';
         if ($moduleContent && $this->extNeedUpdate) {
-            $footer = '<div id="typo3-adminPanel-footer">
-							<input class="typo3-adminPanel-update btn btn-default" type="submit" value="' . $this->extGetLL('update') . '" />
-					</div>';
+            $updateButton = '<div class="typo3-adminPanel-itemRow updatebutton"><div class="typo3-adminPanel-section-content">
+							<input class="btn btn-default" type="submit" value="' . $this->extGetLL('update') . '" />
+					</div></div>';
         }
         $query = !GeneralUtility::_GET('id') ? '<input type="hidden" name="id" value="' . $this->getTypoScriptFrontendController()->id . '" />' : '';
 
@@ -296,7 +304,7 @@ class AdminPanelView
 	TYPO3 Admin panel start
 -->
 <a id="TSFE_ADMIN_PANEL"></a>
-<form id="TSFE_ADMIN_PANEL_FORM" name="TSFE_ADMIN_PANEL_FORM" action="' . htmlspecialchars(GeneralUtility::getIndpEnv('TYPO3_REQUEST_SCRIPT')) . '#TSFE_ADMIN_PANEL" method="get" onsubmit="document.forms.TSFE_ADMIN_PANEL_FORM[\'TSFE_ADMIN_PANEL[DUMMY]\'].value=Math.random().toString().substring(2,8)">' . $query . '<div class="typo3-adminPanel">' . $header . $moduleContent . $footer . '</div></form>';
+<form id="TSFE_ADMIN_PANEL_FORM" name="TSFE_ADMIN_PANEL_FORM" action="' . htmlspecialchars(GeneralUtility::getIndpEnv('TYPO3_REQUEST_SCRIPT')) . '#TSFE_ADMIN_PANEL" method="get" onsubmit="document.forms.TSFE_ADMIN_PANEL_FORM[\'TSFE_ADMIN_PANEL[DUMMY]\'].value=Math.random().toString().substring(2,8)">' . $query . '<div class="typo3-adminPanel">' . $header . $updateButton . $moduleContent . '</div></form>';
         if ($this->getBackendUser()->uc['TSFE_adminConfig']['display_top']) {
             $out .= '<script type="text/javascript" src="' . htmlspecialchars($this->getTypoScriptFrontendController()->absRefPrefix) . 'typo3/sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js"></script>';
             $out .= '<script type="text/javascript">/*<![CDATA[*/' . GeneralUtility::minifyJavaScript('
@@ -327,7 +335,9 @@ class AdminPanelView
 					TSFEtypo3FormFieldSet(theField, evallist, is_in, checkbox, checkboxValue);
 				}') . '/*]]>*/</script><script language="javascript" type="text/javascript">' . $this->extJSCODE . '</script>';
         }
+        $cssPath = htmlspecialchars($this->getTypoScriptFrontendController()->absRefPrefix . ExtensionManagementUtility::siteRelPath('t3skin')) . 'stylesheets/standalone/admin_panel.css';
         $out .= '<script src="' . GeneralUtility::locationHeaderUrl('typo3/sysext/frontend/Resources/Public/JavaScript/AdminPanel.js') . '" type="text/javascript"></script><script type="text/javascript">/*<![CDATA[*/' . 'typo3AdminPanel = new TYPO3AdminPanel();typo3AdminPanel.init("typo3-adminPanel-header", "TSFE_ADMIN_PANEL_FORM");' . '/*]]>*/</script>
+<link type="text/css" rel="stylesheet" href="' . $cssPath . '" media="all" />
 <!--
 	TYPO3 admin panel end
 -->
@@ -450,8 +460,12 @@ class AdminPanelView
             $newPageModule = trim($this->getBackendUser()->getTSConfigVal('options.overridePageModule'));
             $pageModule = BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
             $this->extNeedUpdate = true;
-            $out .= $this->extGetItem('edit_displayFieldIcons', '', '<input type="hidden" name="TSFE_ADMIN_PANEL[edit_displayFieldIcons]" value="0" /><input type="checkbox" id="edit_displayFieldIcons" name="TSFE_ADMIN_PANEL[edit_displayFieldIcons]" value="1"' . ($this->getBackendUser()->uc['TSFE_adminConfig']['edit_displayFieldIcons'] ? ' checked="checked"' : '') . ' />');
-            $out .= $this->extGetItem('edit_displayIcons', '', '<input type="hidden" name="TSFE_ADMIN_PANEL[edit_displayIcons]" value="0" /><input type="checkbox" id="edit_displayIcons" name="TSFE_ADMIN_PANEL[edit_displayIcons]" value="1"' . ($this->getBackendUser()->uc['TSFE_adminConfig']['edit_displayIcons'] ? ' checked="checked"' : '') . ' />');
+            if ($this->extFeEditLoaded) {
+                $out .= $this->extGetItem('edit_displayFieldIcons', '',
+                    '<input type="hidden" name="TSFE_ADMIN_PANEL[edit_displayFieldIcons]" value="0" /><input type="checkbox" id="edit_displayFieldIcons" name="TSFE_ADMIN_PANEL[edit_displayFieldIcons]" value="1"' . ($this->getBackendUser()->uc['TSFE_adminConfig']['edit_displayFieldIcons'] ? ' checked="checked"' : '') . ' />');
+                $out .= $this->extGetItem('edit_displayIcons', '',
+                    '<input type="hidden" name="TSFE_ADMIN_PANEL[edit_displayIcons]" value="0" /><input type="checkbox" id="edit_displayIcons" name="TSFE_ADMIN_PANEL[edit_displayIcons]" value="1"' . ($this->getBackendUser()->uc['TSFE_adminConfig']['edit_displayIcons'] ? ' checked="checked"' : '') . ' />');
+            }
             $out .= $this->extGetItem('', $this->ext_makeToolBar());
             if (!GeneralUtility::_GP('ADMCMD_view')) {
                 $out .= $this->extGetItem('', '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('
@@ -633,10 +647,10 @@ class AdminPanelView
     public function ext_makeToolBar()
     {
         $tsfe = $this->getTypoScriptFrontendController();
-        //  If mod.web_list.newContentWiz.overrideWithExtension is set, use that extension's create new content wizard instead:
-        $tsConfig = BackendUtility::getModTSconfig($tsfe->page['uid'], 'mod.web_list');
-        $tsConfig = $tsConfig['properties']['newContentWiz.']['overrideWithExtension'];
-        $newContentWizScriptPath = ExtensionManagementUtility::isLoaded($tsConfig) ? ExtensionManagementUtility::extRelPath($tsConfig) . 'mod1/db_new_content_el.php?' : BackendUtility::getModuleUrl('new_content_element') . '&';
+        //  If mod.newContentElementWizard.override is set, use that extension's create new content wizard instead:
+        $tsConfig = BackendUtility::getModTSconfig($tsfe->page['uid'], 'mod');
+        $moduleName = $tsConfig['properties']['newContentElementWizard.']['override'] ?: 'new_content_element';
+        $newContentWizScriptPath = BackendUtility::getModuleUrl($moduleName);
         $perms = $this->getBackendUser()->calcPerms($tsfe->page);
         $langAllowed = $this->getBackendUser()->checkLanguageAccess($tsfe->sys_language_uid);
         $id = $tsfe->id;

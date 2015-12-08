@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\ViewHelpers;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,12 +13,11 @@ namespace TYPO3\CMS\Backend\ViewHelpers;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
 use TYPO3\CMS\Backend\Backend\Avatar\Avatar;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
-use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Get avatar for backend user

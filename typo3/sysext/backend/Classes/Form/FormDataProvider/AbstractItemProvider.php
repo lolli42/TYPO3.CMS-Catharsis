@@ -61,6 +61,9 @@ abstract class AbstractItemProvider
             'row' => $result['databaseRow'],
             'field' => $fieldName,
         ];
+        if (!empty($result['flexParentDatabaseRow'])) {
+            $processorParameters['flexParentDatabaseRow'] = $result['flexParentDatabaseRow'];
+        }
 
         try {
             GeneralUtility::callUserFunction($config['itemsProcFunc'], $processorParameters, $this);
@@ -156,170 +159,187 @@ abstract class AbstractItemProvider
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
         $special = $result['processedTca']['columns'][$fieldName]['config']['special'];
-        if ($special === 'tables') {
-            foreach ($GLOBALS['TCA'] as $currentTable => $_) {
-                if (!empty($GLOBALS['TCA'][$currentTable]['ctrl']['adminOnly'])) {
-                    // Hide "admin only" tables
-                    continue;
-                }
-                $label = !empty($GLOBALS['TCA'][$currentTable]['ctrl']['title']) ? $GLOBALS['TCA'][$currentTable]['ctrl']['title'] : '';
-                $icon = $iconFactory->mapRecordTypeToIconIdentifier($currentTable, []);
-                $helpText = [];
-                $languageService->loadSingleTableDescription($currentTable);
-                // @todo: check if this actually works, currently help texts are missing
-                $helpTextArray = $GLOBALS['TCA_DESCR'][$currentTable]['columns'][''];
-                if (!empty($helpTextArray['description'])) {
-                    $helpText['description'] = $helpTextArray['description'];
-                }
-                $items[] = [$label, $currentTable, $icon, $helpText];
-            }
-        } elseif ($special === 'pagetypes') {
-            if (isset($GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'])
-                && is_array($GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'])
-            ) {
-                $specialItems = $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'];
-                foreach ($specialItems as $specialItem) {
-                    if (!is_array($specialItem) || $specialItem[1] === '--div--') {
-                        // Skip non arrays and divider items
+        switch (true) {
+            case ($special === 'tables'):
+                foreach ($GLOBALS['TCA'] as $currentTable => $_) {
+                    if (!empty($GLOBALS['TCA'][$currentTable]['ctrl']['adminOnly'])) {
+                        // Hide "admin only" tables
                         continue;
                     }
-                    $label = $specialItem[0];
-                    $value = $specialItem[1];
-                    $icon = $iconFactory->mapRecordTypeToIconIdentifier('pages', ['doktype' => $specialItem[1]]);
-                    $items[] = [$label, $value, $icon];
+                    $label = !empty($GLOBALS['TCA'][$currentTable]['ctrl']['title']) ? $GLOBALS['TCA'][$currentTable]['ctrl']['title'] : '';
+                    $icon = $iconFactory->mapRecordTypeToIconIdentifier($currentTable, []);
+                    $helpText = [];
+                    $languageService->loadSingleTableDescription($currentTable);
+                    // @todo: check if this actually works, currently help texts are missing
+                    $helpTextArray = $GLOBALS['TCA_DESCR'][$currentTable]['columns'][''];
+                    if (!empty($helpTextArray['description'])) {
+                        $helpText['description'] = $helpTextArray['description'];
+                    }
+                    $items[] = [$label, $currentTable, $icon, $helpText];
                 }
-            }
-        } elseif ($special === 'exclude') {
-            $excludeArrays = $this->getExcludeFields();
-            foreach ($excludeArrays as $excludeArray) {
-                list($theTable, $theFullField) = explode(':', $excludeArray[1]);
-                // If the field comes from a FlexForm, the syntax is more complex
-                $theFieldParts = explode(';', $theFullField);
-                $theField = array_pop($theFieldParts);
-                // Add header if not yet set for table:
-                if (!array_key_exists($theTable, $items)) {
-                    $icon = $iconFactory->mapRecordTypeToIconIdentifier($theTable, []);
-                    $items[$theTable] = [
-                        $GLOBALS['TCA'][$theTable]['ctrl']['title'],
-                        '--div--',
-                        $icon
-                    ];
-                }
-                // Add help text
-                $helpText = [];
-                $languageService->loadSingleTableDescription($theTable);
-                $helpTextArray = $GLOBALS['TCA_DESCR'][$theTable]['columns'][$theFullField];
-                if (!empty($helpTextArray['description'])) {
-                    $helpText['description'] = $helpTextArray['description'];
-                }
-                // Item configuration:
-                // @todo: the title calculation does not work well for flex form fields, see unit tests
-                $items[] = [
-                    rtrim($languageService->sL($GLOBALS['TCA'][$theTable]['columns'][$theField]['label']), ':') . ' (' . $theField . ')',
-                    $excludeArray[1],
-                    'empty-empty',
-                    $helpText
-                ];
-            }
-        } elseif ($special === 'explicitValues') {
-            $theTypes = $this->getExplicitAuthFieldValues();
-            $icons = [
-                'ALLOW' => 'status-status-permission-granted',
-                'DENY' => 'status-status-permission-denied'
-            ];
-            // Traverse types:
-            foreach ($theTypes as $tableFieldKey => $theTypeArrays) {
-                if (is_array($theTypeArrays['items'])) {
-                    // Add header:
-                    $items[] = [
-                        $theTypeArrays['tableFieldLabel'],
-                        '--div--',
-                    ];
-                    // Traverse options for this field:
-                    foreach ($theTypeArrays['items'] as $itemValue => $itemContent) {
-                        // Add item to be selected:
-                        $items[] = [
-                            '[' . $itemContent[2] . '] ' . $itemContent[1],
-                            $tableFieldKey . ':' . preg_replace('/[:|,]/', '', $itemValue) . ':' . $itemContent[0],
-                            $icons[$itemContent[0]]
-                        ];
+                break;
+            case ($special === 'pagetypes'):
+                if (isset($GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'])
+                    && is_array($GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'])
+                ) {
+                    $specialItems = $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'];
+                    foreach ($specialItems as $specialItem) {
+                        if (!is_array($specialItem) || $specialItem[1] === '--div--') {
+                            // Skip non arrays and divider items
+                            continue;
+                        }
+                        $label = $specialItem[0];
+                        $value = $specialItem[1];
+                        $icon = $iconFactory->mapRecordTypeToIconIdentifier('pages', ['doktype' => $specialItem[1]]);
+                        $items[] = [$label, $value, $icon];
                     }
                 }
-            }
-        } elseif ($special === 'languages') {
-            foreach ($result['systemLanguageRows'] as $language) {
-                if ($language['uid'] !== -1) {
-                    $items[] = [
-                        0 => $language['title'] . ' [' . $language['uid'] . ']',
-                        1 => $language['uid'],
-                        2 => $language['flagIconIdentifier']
-                    ];
+                break;
+            case ($special === 'exclude'):
+                $excludeArrays = $this->getExcludeFields();
+                foreach ($excludeArrays as $excludeArray) {
+                    // If the field comes from a FlexForm, the syntax is more complex
+                    if ($excludeArray['origin'] === 'flexForm') {
+                        // The field comes from a plugins FlexForm
+                        // Add header if not yet set for plugin section
+                        if (!isset($items[$excludeArray['sectionHeader']])) {
+                            // there is no icon handling for plugins - we take the icon from the table
+                            $icon = $iconFactory->mapRecordTypeToIconIdentifier($excludeArray['table'], array());
+                            $items[$excludeArray['sectionHeader']] = [
+                                $excludeArray['sectionHeader'],
+                                '--div--',
+                                $icon
+                            ];
+                        }
+                    } else {
+                        // Add header if not yet set for table
+                        if (!isset($items[$excludeArray['table']])) {
+                            $icon = $iconFactory->mapRecordTypeToIconIdentifier($excludeArray['table'], array());
+                            $items[$excludeArray['table']] = [
+                                $GLOBALS['TCA'][$excludeArray['table']]['ctrl']['title'],
+                                '--div--',
+                                $icon
+                            ];
+                        }
+                    }
+                    // Add help text
+                    $helpText = [];
+                    $languageService->loadSingleTableDescription($excludeArray['table']);
+                    $helpTextArray = $GLOBALS['TCA_DESCR'][$excludeArray['table']]['columns'][$excludeArray['table']];
+                    if (!empty($helpTextArray['description'])) {
+                        $helpText['description'] = $helpTextArray['description'];
+                    }
+                    // Item configuration:
+                    $items[] = array(
+                        rtrim($excludeArray['origin'] === 'flexForm' ? $excludeArray['fieldLabel'] : $languageService->sL($GLOBALS['TCA'][$excludeArray['table']]['columns'][$excludeArray['fieldName']]['label']), ':') . ' (' . $excludeArray['fieldName'] . ')',
+                        $excludeArray['table'] . ':' . $excludeArray['fullField'] ,
+                        'empty-empty',
+                        $helpText
+                    );
                 }
-            }
-        } elseif ($special === 'custom') {
-            $customOptions = $GLOBALS['TYPO3_CONF_VARS']['BE']['customPermOptions'];
-            if (is_array($customOptions)) {
-                foreach ($customOptions as $coKey => $coValue) {
-                    if (is_array($coValue['items'])) {
+                break;
+            case ($special === 'explicitValues'):
+                $theTypes = $this->getExplicitAuthFieldValues();
+                $icons = [
+                    'ALLOW' => 'status-status-permission-granted',
+                    'DENY' => 'status-status-permission-denied'
+                ];
+                // Traverse types:
+                foreach ($theTypes as $tableFieldKey => $theTypeArrays) {
+                    if (is_array($theTypeArrays['items'])) {
                         // Add header:
                         $items[] = [
-                            $languageService->sL($coValue['header']),
-                            '--div--'
+                            $theTypeArrays['tableFieldLabel'],
+                            '--div--',
                         ];
-                        // Traverse items:
-                        foreach ($coValue['items'] as $itemKey => $itemCfg) {
-                            $icon = 'empty-empty';
-                            $helpText = [];
-                            if (!empty($itemCfg[2])) {
-                                $helpText['description'] = $languageService->sL($itemCfg[2]);
-                            }
+                        // Traverse options for this field:
+                        foreach ($theTypeArrays['items'] as $itemValue => $itemContent) {
+                            // Add item to be selected:
                             $items[] = [
-                                $languageService->sL($itemCfg[0]),
-                                $coKey . ':' . preg_replace('/[:|,]/', '', $itemKey),
-                                $icon,
-                                $helpText
+                                '[' . $itemContent[2] . '] ' . $itemContent[1],
+                                $tableFieldKey . ':' . preg_replace('/[:|,]/', '', $itemValue) . ':' . $itemContent[0],
+                                $icons[$itemContent[0]]
                             ];
                         }
                     }
                 }
-            }
-        } elseif ($special === 'modListGroup' || $special === 'modListUser') {
-            $loadModules = GeneralUtility::makeInstance(ModuleLoader::class);
-            $loadModules->load($GLOBALS['TBE_MODULES']);
-            $modList = $special === 'modListUser' ? $loadModules->modListUser : $loadModules->modListGroup;
-            if (is_array($modList)) {
-                foreach ($modList as $theMod) {
-                    // Icon:
-                    $icon = $languageService->moduleLabels['tabs_images'][$theMod . '_tab'];
-                    if ($icon) {
-                        $icon = '../' . PathUtility::stripPathSitePrefix($icon);
+                break;
+            case ($special === 'languages'):
+                foreach ($result['systemLanguageRows'] as $language) {
+                    if ($language['uid'] !== -1) {
+                        $items[] = [
+                            0 => $language['title'] . ' [' . $language['uid'] . ']',
+                            1 => $language['uid'],
+                            2 => $language['flagIconIdentifier']
+                        ];
                     }
-                    // Add help text
-                    $helpText = [
-                        'title' => $languageService->moduleLabels['labels'][$theMod . '_tablabel'],
-                        'description' => $languageService->moduleLabels['labels'][$theMod . '_tabdescr']
-                    ];
-
-                    $label = '';
-                    // Add label for main module:
-                    $pp = explode('_', $theMod);
-                    if (count($pp) > 1) {
-                        $label .= $languageService->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
-                    }
-                    // Add modules own label now:
-                    $label .= $languageService->moduleLabels['tabs'][$theMod . '_tab'];
-
-                    // Item configuration:
-                    $items[] = [$label, $theMod, $icon, $helpText];
                 }
-            }
-        } else {
-            throw new \UnexpectedValueException(
-                'Unknown special value ' . $special . ' for field ' . $fieldName . ' of table ' . $result['tableName'],
-                1439298496
-            );
-        }
+                break;
+            case ($special === 'custom'):
+                $customOptions = $GLOBALS['TYPO3_CONF_VARS']['BE']['customPermOptions'];
+                if (is_array($customOptions)) {
+                    foreach ($customOptions as $coKey => $coValue) {
+                        if (is_array($coValue['items'])) {
+                            // Add header:
+                            $items[] = [
+                                $languageService->sL($coValue['header']),
+                                '--div--'
+                            ];
+                            // Traverse items:
+                            foreach ($coValue['items'] as $itemKey => $itemCfg) {
+                                $icon = 'empty-empty';
+                                $helpText = [];
+                                if (!empty($itemCfg[2])) {
+                                    $helpText['description'] = $languageService->sL($itemCfg[2]);
+                                }
+                                $items[] = [
+                                    $languageService->sL($itemCfg[0]),
+                                    $coKey . ':' . preg_replace('/[:|,]/', '', $itemKey),
+                                    $icon,
+                                    $helpText
+                                ];
+                            }
+                        }
+                    }
+                }
+                break;
+            case ($special === 'modListGroup' || $special === 'modListUser'):
+                $loadModules = GeneralUtility::makeInstance(ModuleLoader::class);
+                $loadModules->load($GLOBALS['TBE_MODULES']);
+                $modList = $special === 'modListUser' ? $loadModules->modListUser : $loadModules->modListGroup;
+                if (is_array($modList)) {
+                    foreach ($modList as $theMod) {
+                        // Icon:
+                        $icon = $languageService->moduleLabels['tabs_images'][$theMod . '_tab'];
+                        if ($icon) {
+                            $icon = '../' . PathUtility::stripPathSitePrefix($icon);
+                        }
+                        // Add help text
+                        $helpText = [
+                            'title' => $languageService->moduleLabels['labels'][$theMod . '_tablabel'],
+                            'description' => $languageService->moduleLabels['labels'][$theMod . '_tabdescr']
+                        ];
 
+                        $label = '';
+                        // Add label for main module:
+                        $pp = explode('_', $theMod);
+                        if (count($pp) > 1) {
+                            $label .= $languageService->moduleLabels['tabs'][$pp[0] . '_tab'] . '>';
+                        }
+                        // Add modules own label now:
+                        $label .= $languageService->moduleLabels['tabs'][$theMod . '_tab'];
+
+                        // Item configuration:
+                        $items[] = [$label, $theMod, $icon, $helpText];
+                    }
+                }
+                break;
+            default:
+                throw new \UnexpectedValueException(
+                    'Unknown special value ' . $special . ' for field ' . $fieldName . ' of table ' . $result['tableName'],
+                    1439298496
+                );
+        }
         return $items;
     }
 
@@ -469,10 +489,16 @@ abstract class AbstractItemProvider
     protected function removeItemsByKeepItemsPageTsConfig(array $result, $fieldName, array $items)
     {
         $table = $result['tableName'];
-        if (empty($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'])
+        if (!isset($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'])
             || !is_string($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'])
         ) {
             return $items;
+        }
+
+        // If keepItems is set but is an empty list all current items get removed
+        if (empty($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'])
+            && $result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'] !== '0') {
+            return [];
         }
 
         return ArrayUtility::keepItemsInArray(
@@ -624,7 +650,7 @@ abstract class AbstractItemProvider
         $tableToTranslation = [];
         // All TCA keys
         foreach ($GLOBALS['TCA'] as $table => $conf) {
-            $tableToTranslation[$table] = $languageService->sl($conf['ctrl']['title']);
+            $tableToTranslation[$table] = $languageService->sL($conf['ctrl']['title']);
         }
         // Sort by translations
         asort($tableToTranslation);
@@ -639,9 +665,18 @@ abstract class AbstractItemProvider
                 foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $_) {
                     if ($GLOBALS['TCA'][$table]['columns'][$field]['exclude']) {
                         // Get human readable names of fields
-                        $translatedField = $languageService->sl($GLOBALS['TCA'][$table]['columns'][$field]['label']);
-                        // Add entry
-                        $excludeArrayTable[] = [$translatedTable . ': ' . $translatedField, $table . ':' . $field];
+                        $translatedField = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
+                        // Add entry, key 'labels' needed for sorting
+                        $excludeArrayTable[] = [
+                            'labels' => $translatedTable . ':' . $translatedField,
+                            'sectionHeader' => $translatedTable,
+                            'table' => $table,
+                            'tableField' => $field,
+                            'fieldName' => $field,
+                            'fullField' => $field,
+                            'fieldLabel' => $translatedField,
+                            'origin' => 'tca',
+                        ];
                     }
                 }
             }
@@ -651,24 +686,35 @@ abstract class AbstractItemProvider
                 // Prefix for field label, e.g. "Plugin Options:"
                 $labelPrefix = '';
                 if (!empty($GLOBALS['TCA'][$table]['columns'][$tableField]['label'])) {
-                    $labelPrefix = $languageService->sl($GLOBALS['TCA'][$table]['columns'][$tableField]['label']);
+                    $labelPrefix = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$tableField]['label']);
                 }
                 // Get all sheets and title
                 foreach ($flexForms as $extIdent => $extConf) {
-                    $extTitle = $languageService->sl($extConf['title']);
+                    $extTitle = $languageService->sl(trim($extConf['title']));
                     // Get all fields in sheet
                     foreach ($extConf['ds']['sheets'] as $sheetName => $sheet) {
                         if (empty($sheet['ROOT']['el']) || !is_array($sheet['ROOT']['el'])) {
                             continue;
                         }
-                        foreach ($sheet['ROOT']['el'] as $fieldName => $field) {
+                        foreach ($sheet['ROOT']['el'] as $pluginFieldName => $field) {
                             // Use only fields that have exclude flag set
                             if (empty($field['TCEforms']['exclude'])) {
                                 continue;
                             }
-                            $fieldLabel = !empty($field['TCEforms']['label']) ? $languageService->sl($field['TCEforms']['label']) : $fieldName;
-                            $fieldIdent = $table . ':' . $tableField . ';' . $extIdent . ';' . $sheetName . ';' . $fieldName;
-                            $excludeArrayTable[] = [trim($labelPrefix . ' ' . $extTitle, ': ') . ': ' . $fieldLabel, $fieldIdent];
+                            $fieldLabel = !empty($field['TCEforms']['label'])
+                                ? $languageService->sL($field['TCEforms']['label'])
+                                : $pluginFieldName;
+                            $excludeArrayTable[] = [
+                                'labels' => trim($translatedTable . ' ' . $labelPrefix . ' ' . $extIdent, ': ') . ':' . $fieldLabel,
+                                'sectionHeader' => trim(($translatedTable . ' ' . $labelPrefix . ' ' . $extIdent), ':'),
+                                'table' => $table,
+                                'tableField' => $tableField,
+                                'extIdent' => $extIdent,
+                                'fieldName' => $pluginFieldName,
+                                'fullField' => $tableField . ';' . $extIdent . ';' . $sheetName . ';' . $pluginFieldName,
+                                'fieldLabel' => $fieldLabel,
+                                'origin' => 'flexForm',
+                            ];
                         }
                     }
                 }
@@ -705,9 +751,8 @@ abstract class AbstractItemProvider
         foreach ($GLOBALS['TCA'][$table]['columns'] as $tableField => $fieldConf) {
             if (!empty($fieldConf['config']['type']) && !empty($fieldConf['config']['ds']) && $fieldConf['config']['type'] == 'flex') {
                 $flexForms[$tableField] = [];
-                unset($fieldConf['config']['ds']['default']);
                 // Get pointer fields
-                $pointerFields = !empty($fieldConf['config']['ds_pointerField']) ? $fieldConf['config']['ds_pointerField'] : 'list_type,CType';
+                $pointerFields = !empty($fieldConf['config']['ds_pointerField']) ? $fieldConf['config']['ds_pointerField'] : 'list_type,CType,default';
                 $pointerFields = GeneralUtility::trimExplode(',', $pointerFields);
                 // Get FlexForms
                 foreach ($fieldConf['config']['ds'] as $flexFormKey => $dataStructure) {
@@ -738,7 +783,11 @@ abstract class AbstractItemProvider
                     $title = $extIdent;
                     $keyFields = GeneralUtility::trimExplode(',', $flexFormKey);
                     foreach ($pointerFields as $pointerKey => $pointerName) {
-                        if (empty($keyFields[$pointerKey]) || $keyFields[$pointerKey] === '*' || $keyFields[$pointerKey] === 'list') {
+                        if (empty($keyFields[$pointerKey])
+                            || $keyFields[$pointerKey] === '*'
+                            || $keyFields[$pointerKey] === 'list'
+                            || $keyFields[$pointerKey] === 'default'
+                        ) {
                             continue;
                         }
                         if (!empty($GLOBALS['TCA'][$table]['columns'][$pointerName]['config']['items'])) {
@@ -774,22 +823,22 @@ abstract class AbstractItemProvider
     {
         $languageService = static::getLanguageService();
         $adLabel = [
-            'ALLOW' => $languageService->sl('LLL:EXT:lang/locallang_core.xlf:labels.allow'),
-            'DENY' => $languageService->sl('LLL:EXT:lang/locallang_core.xlf:labels.deny')
+            'ALLOW' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.allow'),
+            'DENY' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.deny')
         ];
         $allowDenyOptions = [];
         foreach ($GLOBALS['TCA'] as $table => $_) {
             // All field names configured:
             if (is_array($GLOBALS['TCA'][$table]['columns'])) {
-                foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $_) {
+                foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $__) {
                     $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
                     if ($fieldConfig['type'] === 'select' && $fieldConfig['authMode']) {
                         // Check for items
                         if (is_array($fieldConfig['items'])) {
                             // Get Human Readable names of fields and table:
                             $allowDenyOptions[$table . ':' . $field]['tableFieldLabel'] =
-                                $languageService->sl($GLOBALS['TCA'][$table]['ctrl']['title']) . ': '
-                                . $languageService->sl($GLOBALS['TCA'][$table]['columns'][$field]['label']);
+                                $languageService->sL($GLOBALS['TCA'][$table]['ctrl']['title']) . ': '
+                                . $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
                             foreach ($fieldConfig['items'] as $iVal) {
                                 // Values '' is not controlled by this setting.
                                 if ((string)$iVal[1] !== '') {
@@ -814,7 +863,7 @@ abstract class AbstractItemProvider
                                     if ($iMode) {
                                         $allowDenyOptions[$table . ':' . $field]['items'][$iVal[1]] = [
                                             $iMode,
-                                            $languageService->sl($iVal[0]),
+                                            $languageService->sL($iVal[0]),
                                             $adLabel[$iMode]
                                         ];
                                     }
@@ -1021,6 +1070,21 @@ abstract class AbstractItemProvider
     }
 
     /**
+     * Convert the current database values into an array
+     *
+     * @param array $row database row
+     * @param string $fieldName fieldname to process
+     * @return array
+     */
+    protected function processDatabaseFieldValue(array $row, $fieldName)
+    {
+        $currentDatabaseValues = array_key_exists($fieldName, $row)
+            ? $row[$fieldName]
+            : '';
+        return GeneralUtility::trimExplode(',', $currentDatabaseValues, true);
+    }
+
+    /**
      * Validate and sanitize database row values of the select field with the given name.
      * Creates an array out of databaseRow[selectField] values.
      *
@@ -1035,24 +1099,12 @@ abstract class AbstractItemProvider
     {
         $fieldConfig = $result['processedTca']['columns'][$fieldName];
 
-        // For single select fields we just keep the current value because the renderer
-        // will take care of showing the "Invalid value" text.
-        // For maxitems=1 select fields is is also possible to select empty values.
-        // @todo: move handling of invalid values to this data provider.
-        if ($fieldConfig['config']['maxitems'] === 1 && empty($fieldConfig['config']['MM'])) {
-            return [$result['databaseRow'][$fieldName]];
-        }
-
-        $currentDatabaseValues = array_key_exists($fieldName, $result['databaseRow']) ? $result['databaseRow'][$fieldName] : '';
-        // Selecting empty values does not make sense for fields that can contain more than one item
-        // because it is impossible to determine if the empty value or nothing is selected.
-        // This is why empty values will be removed for multi value fields.
-        $currentDatabaseValuesArray = GeneralUtility::trimExplode(',', $currentDatabaseValues, true);
+        $currentDatabaseValueArray = array_key_exists($fieldName, $result['databaseRow']) ? $result['databaseRow'][$fieldName] : [];
         $newDatabaseValueArray = [];
 
         // Add all values that were defined by static methods and do not come from the relation
         // e.g. TCA, TSconfig, itemProcFunc etc.
-        foreach ($currentDatabaseValuesArray as $value) {
+        foreach ($currentDatabaseValueArray as $value) {
             if (isset($staticValues[$value])) {
                 $newDatabaseValueArray[] = $value;
             }
@@ -1065,7 +1117,7 @@ abstract class AbstractItemProvider
             if (!empty($fieldConfig['config']['MM']) && $result['command'] !== 'new') {
                 // MM relation
                 $relationHandler->start(
-                    $currentDatabaseValues,
+                    implode(',', $currentDatabaseValueArray),
                     $fieldConfig['config']['foreign_table'],
                     $fieldConfig['config']['MM'],
                     $result['databaseRow']['uid'],
@@ -1076,7 +1128,7 @@ abstract class AbstractItemProvider
                 // Non MM relation
                 // If not dealing with MM relations, use default live uid, not versioned uid for record relations
                 $relationHandler->start(
-                    $currentDatabaseValues,
+                    implode(',', $currentDatabaseValueArray),
                     $fieldConfig['config']['foreign_table'],
                     '',
                     $this->getLiveUid($result),
@@ -1114,7 +1166,7 @@ abstract class AbstractItemProvider
             ) {
                 $label = $languageService->sL($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['altLabels.'][$item[1]]);
             } else {
-                $label = $languageService->sL($item[0]);
+                $label = $languageService->sL(trim($item[0]));
             }
             $value = strlen((string)$item[1]) > 0 ? $item[1] : '';
             $icon = $item[2] ?: null;
@@ -1138,6 +1190,7 @@ abstract class AbstractItemProvider
      * @param mixed $itemArray
      * @param string $tableName
      * @param string $fieldName
+     * @throws \UnexpectedValueException
      * @return array
      */
     public function sanitizeItemArray($itemArray, $tableName, $fieldName)
@@ -1167,8 +1220,7 @@ abstract class AbstractItemProvider
      */
     public function sanitizeMaxItems($maxItems)
     {
-        if (
-            !empty($maxItems)
+        if (!empty($maxItems)
             && (int)$maxItems > 1
         ) {
             $maxItems = (int)$maxItems;

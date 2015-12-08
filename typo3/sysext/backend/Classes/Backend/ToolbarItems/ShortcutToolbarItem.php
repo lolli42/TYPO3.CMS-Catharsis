@@ -275,12 +275,12 @@ class ShortcutToolbarItem implements ToolbarItemInterface
             }
             // Check for module access
             $moduleName = $row['M_module_name'] ?: $row['module_name'];
+            if (!isset($this->getLanguageService()->moduleLabels['tabs_images'][$moduleName . '_tab'])) {
+                // Nice hack to check if the user has access to this module
+                // - otherwise the translation label would not have been loaded :-)
+                continue;
+            }
             if (!$backendUser->isAdmin()) {
-                if (!isset($this->getLanguageService()->moduleLabels['tabs_images'][$moduleName . '_tab'])) {
-                    // Nice hack to check if the user has access to this module
-                    // - otherwise the translation label would not have been loaded :-)
-                    continue;
-                }
                 $pageId = $this->getLinkedPageId($row['url']);
                 if (MathUtility::canBeInterpretedAsInteger($pageId)) {
                     // Check for webmount access
@@ -578,11 +578,12 @@ class ShortcutToolbarItem implements ToolbarItemInterface
                     $resourceFactory = ResourceFactory::getInstance();
                     $resource = $resourceFactory->getObjectFromCombinedIdentifier($queryParameters['id']);
                     $shortcutName = trim($shortcutNamePrepend . ' ' . $resource->getName());
-                } catch (ResourceDoesNotExistException $e) {}
+                } catch (ResourceDoesNotExistException $e) {
+                }
             } else {
                 // Lookup the title of this page and use it as default description
                 $pageId = (int)($shortcut['pid'] ?: ($shortcut['recordid'] ?: $this->getLinkedPageId($url)));
-                $page = FALSE;
+                $page = false;
                 if ($pageId) {
                     $page = BackendUtility::getRecord('pages', $pageId);
                 }
@@ -872,7 +873,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
             $splitModuleName = explode('_', $moduleName);
             $title = $languageService->moduleLabels['tabs'][$splitModuleName[0] . '_tab'];
             if (count($splitModuleName) > 1) {
-                $title .= '>' . $languageService->moduleLabels['tabs'][($moduleName . '_tab')];
+                $title .= '>' . $languageService->moduleLabels['tabs'][$moduleName . '_tab'];
             }
         }
         if ($parentModuleName) {

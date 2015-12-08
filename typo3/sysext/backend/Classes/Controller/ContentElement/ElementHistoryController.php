@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\History\RecordHistory;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
@@ -154,7 +154,7 @@ class ElementHistoryController extends AbstractModule
         if ($returnUrl) {
             $backButton = $buttonBar->makeLinkButton()
                 ->setHref($returnUrl)
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
         }
@@ -179,6 +179,4 @@ class ElementHistoryController extends AbstractModule
     {
         return $GLOBALS['BE_USER'];
     }
-
-
 }

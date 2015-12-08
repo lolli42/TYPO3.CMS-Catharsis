@@ -2,8 +2,6 @@ language: php
 
 matrix:
   fast_finish: true
-  allow_failures:
-    - php: 7
 
   include:
     - php: 5.5
@@ -46,6 +44,7 @@ notifications:
     on_start: never
 
 before_script:
+  - phpenv config-rm xdebug.ini
   - >
     if [[ "$TRAVIS_PHP_VERSION" < "7" && -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]]; then
         echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini

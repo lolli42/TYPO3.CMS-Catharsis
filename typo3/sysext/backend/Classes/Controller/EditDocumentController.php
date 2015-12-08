@@ -17,7 +17,10 @@ namespace TYPO3\CMS\Backend\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Form\Exception\AccessDeniedException;
+use TYPO3\CMS\Backend\Form\FormDataCompiler;
+use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
 use TYPO3\CMS\Backend\Form\FormResultCompiler;
+use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
@@ -35,9 +38,6 @@ use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 use TYPO3\CMS\Frontend\Page\PageRepository;
-use TYPO3\CMS\Backend\Form\FormDataCompiler;
-use TYPO3\CMS\Backend\Form\NodeFactory;
-use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
 
 /**
  * Script Class: Drawing the editing form for editing records in TYPO3.
@@ -214,7 +214,7 @@ class EditDocumentController extends AbstractModule
     /**
      * Workspace used for the editing action.
      *
-     * @var NULL|integer
+     * @var NULL|int
      */
     protected $workspace;
 
@@ -1219,7 +1219,7 @@ class EditDocumentController extends AbstractModule
             $saveSplitButton = $buttonBar->makeSplitButton();
             // SAVE button:
             $saveButton = $buttonBar->makeInputButton()
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'))
                 ->setName('_savedok')
                 ->setValue('1')
                 ->setForm('EditDocumentController')
@@ -1244,10 +1244,10 @@ class EditDocumentController extends AbstractModule
                     );
                 }
                 if (!in_array((int)$this->pageinfo['doktype'], $excludeDokTypes, true)
-                    || isset($pagesTSconfig['TCEMAIN.']['preview.'][$this->firstEl['table'].'.']['previewPageId'])
+                    || isset($pagesTSconfig['TCEMAIN.']['preview.'][$this->firstEl['table'] . '.']['previewPageId'])
                 ) {
                     $saveAndOpenButton = $buttonBar->makeInputButton()
-                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', true))
+                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow'))
                         ->setName('_savedokview')
                         ->setValue('1')
                         ->setForm('EditDocumentController')
@@ -1266,7 +1266,7 @@ class EditDocumentController extends AbstractModule
                     ->setClasses('t3js-editform-submitButton')
                     ->setValue('1')
                     ->setForm('EditDocumentController')
-                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveNewDoc', true))
+                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveNewDoc'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                         'actions-document-save-new',
                         Icon::SIZE_SMALL
@@ -1279,7 +1279,7 @@ class EditDocumentController extends AbstractModule
                 ->setClasses('t3js-editform-submitButton')
                 ->setValue('1')
                 ->setForm('EditDocumentController')
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', true))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                     'actions-document-save-close',
                     Icon::SIZE_SMALL
@@ -1291,7 +1291,7 @@ class EditDocumentController extends AbstractModule
                     ->setName('_translation_savedok')
                     ->setValue('1')
                     ->setForm('EditDocumentController')
-                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDoc', true))
+                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDoc'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                         'actions-document-save-cleartranslationcache',
                         Icon::SIZE_SMALL
@@ -1301,7 +1301,7 @@ class EditDocumentController extends AbstractModule
                     ->setName('_translation_savedokclear')
                     ->setValue('1')
                     ->setForm('EditDocumentController')
-                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDocClear', true))
+                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDocClear'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                         'actions-document-save-cleartranslationcache',
                         Icon::SIZE_SMALL
@@ -1314,7 +1314,7 @@ class EditDocumentController extends AbstractModule
         $closeButton = $buttonBar->makeLinkButton()
             ->setHref('#')
             ->setClasses('t3js-editform-close')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', true))
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                 'actions-document-close',
                 Icon::SIZE_SMALL
@@ -1325,7 +1325,7 @@ class EditDocumentController extends AbstractModule
             && !$GLOBALS['TCA'][$this->firstEl['table']]['ctrl']['readOnly']
             && count($this->elementsData) === 1
         ) {
-            if ($this->firstEl['cmd'] != 'new' && MathUtility::canBeInterpretedAsInteger($this->firstEl['uid'])) {
+            if ($this->firstEl['cmd'] !== 'new' && MathUtility::canBeInterpretedAsInteger($this->firstEl['uid'])) {
                 // Delete:
                 if ($this->firstEl['deleteAccess']
                     && !$GLOBALS['TCA'][$this->firstEl['table']]['ctrl']['readOnly']
@@ -1334,13 +1334,13 @@ class EditDocumentController extends AbstractModule
                     $deleteButton = $buttonBar->makeLinkButton()
                         ->setHref('#')
                         ->setClasses('t3js-editform-delete-record')
-                        ->setTitle($lang->getLL('deleteItem', true))
+                        ->setTitle($lang->getLL('deleteItem'))
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                             'actions-edit-delete',
                             Icon::SIZE_SMALL
                         ))
                         ->setDataAttributes([
-                            'return-url' => $this->retUrl,
+                            'return-url' => BackendUtility::getModuleUrl('web_layout', array('id' => $this->pageinfo['pid'])),
                             'uid' => $this->firstEl['uid'],
                             'table' => $this->firstEl['table']
                         ]);
@@ -1374,7 +1374,7 @@ class EditDocumentController extends AbstractModule
 
                     $undoButton = $buttonBar->makeLinkButton()
                         ->setHref('#')
-                        ->setOnClick(htmlspecialchars($aOnClick))
+                        ->setOnClick($aOnClick)
                         ->setTitle(
                             sprintf(
                                 $lang->getLL('undoLastChange'),
@@ -1415,8 +1415,8 @@ class EditDocumentController extends AbstractModule
                 // If only SOME fields are shown in the form, this will link the user to the FULL form:
                 if ($this->columnsOnly) {
                     $columnsOnlyButton = $buttonBar->makeLinkButton()
-                        ->setHref(htmlspecialchars(($this->R_URI . '&columnsOnly=')))
-                        ->setTitle($lang->getLL('editWholeRecord', true))
+                        ->setHref($this->R_URI . '&columnsOnly=')
+                        ->setTitle($lang->getLL('editWholeRecord'))
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                             'actions-document-open',
                             Icon::SIZE_SMALL
@@ -1503,12 +1503,9 @@ class EditDocumentController extends AbstractModule
             $openInNewWindowButton = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()
                 ->makeLinkButton()
                 ->setHref('#')
-                ->setTitle($this->getLanguageService()->sL(
-                    'LLL:EXT:lang/locallang_core.xlf:labels.openInNewWindow',
-                    true
-                ))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.openInNewWindow'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-window-open', Icon::SIZE_SMALL))
-                ->setOnClick(htmlspecialchars($aOnClick));
+                ->setOnClick($aOnClick);
             $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->addButton(
                 $openInNewWindowButton,
                 ButtonBar::BUTTON_POSITION_RIGHT
@@ -1617,7 +1614,6 @@ class EditDocumentController extends AbstractModule
                                 $menuItem->setActive(true);
                             }
                             $languageMenu->addMenuItem($menuItem);
-
                         }
                     }
                     $this->moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->addMenu($languageMenu);

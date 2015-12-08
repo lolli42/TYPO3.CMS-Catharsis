@@ -115,6 +115,7 @@ class RecyclerModuleController extends ActionController
         /** @var BackendTemplateView $view */
         parent::initializeView($view);
         $this->registerDocheaderButtons();
+        $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
     }
 
     /**
@@ -128,7 +129,9 @@ class RecyclerModuleController extends ActionController
         $jsConfiguration = $this->getJavaScriptConfiguration();
         $this->view->getModuleTemplate()->getPageRenderer()->addInlineSettingArray('Recycler', $jsConfiguration);
         $this->view->getModuleTemplate()->getPageRenderer()->addInlineLanguageLabelFile('EXT:recycler/Resources/Private/Language/locallang.xlf');
-        $this->view->getModuleTemplate()->getDocHeaderComponent()->setMetaInformation($this->pageRecord);
+        if ($this->isAccessibleForCurrentUser) {
+            $this->view->getModuleTemplate()->getDocHeaderComponent()->setMetaInformation($this->pageRecord);
+        }
 
         $this->view->assign('title', $this->getLanguageService()->getLL('title'));
         $this->view->assign('allowDelete', $this->allowDelete);
@@ -161,7 +164,7 @@ class RecyclerModuleController extends ActionController
         $reloadButton = $buttonBar->makeLinkButton()
             ->setHref('#')
             ->setDataAttributes(['action' => 'reload'])
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:recycler/Resources/Private/Language/locallang.xlf:button.reload', true))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:recycler/Resources/Private/Language/locallang.xlf:button.reload'))
             ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-refresh', Icon::SIZE_SMALL));
         $buttonBar->addButton($reloadButton, ButtonBar::BUTTON_POSITION_LEFT);
     }

@@ -14,15 +14,14 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Backend\Wizard\NewContentElementWizardHookInterface;
 use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconProvider\BitmapIconProvider;
 use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
@@ -240,14 +239,8 @@ class NewContentElementController extends AbstractModule
             $this->moduleTemplate->addJavaScriptCode(
                 'NewContentElementWizardInlineJavascript',
                 '
-				function goToalt_doc() {	//
+				function goToalt_doc() {
 					' . $this->onClickEvent . '
-				}
-
-				if(top.refreshMenu) {
-					top.refreshMenu();
-				} else {
-					top.TYPO3ModuleMenu.refreshMenu();
 				}'
             );
 
@@ -322,16 +315,13 @@ class NewContentElementController extends AbstractModule
                 'new-content-element-wizard'
             );
 
-            $this->content .= $this->moduleTemplate->section(
-                !$this->onClickEvent ? $lang->getLL('1_selectType') : '',
-                $code,
-                0,
-                1
-            );
+            $this->content .= !$this->onClickEvent ? '<h2>' . $lang->getLL('1_selectType', true) . '</h2>' : '';
+            $this->content .= '<div>' . $code . '</div>';
+
             // If the user must also select a column:
             if (!$this->onClickEvent) {
                 // Add anchor "sel2"
-                $this->content .= $this->moduleTemplate->section('', '<a name="sel2"></a>');
+                $this->content .= '<div><a name="sel2"></a></div>';
                 // Select position
                 $code = '<p>' . $lang->getLL('sel2', 1) . '</p>';
 
@@ -346,7 +336,7 @@ class NewContentElementController extends AbstractModule
                 $colPosList = implode(',', array_unique(array_map('intval', $colPosIds)));
                 // Finally, add the content of the column selector to the content:
                 $code .= $posMap->printContentElementColumns($this->id, 0, $colPosList, 1, $this->R_URI);
-                $this->content .= $this->moduleTemplate->section($lang->getLL('2_selectPosition'), $code, 0, 1);
+                $this->content .= '<h2>' . $lang->getLL('2_selectPosition', true) . '</h2><div>' . $code . '</div>';
             }
         } else {
             // In case of no access:
@@ -367,7 +357,7 @@ class NewContentElementController extends AbstractModule
         if ($this->R_URI) {
             $backButton = $buttonBar->makeLinkButton()
                 ->setHref($this->R_URI)
-                ->setTitle($this->getLanguageService()->getLL('goBack', true))
+                ->setTitle($this->getLanguageService()->getLL('goBack'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                     'actions-view-go-back',
                     Icon::SIZE_SMALL

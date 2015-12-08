@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Core\Resource\Index;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\ReferenceIndex;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Resource\File;
-use TYPO3\CMS\Core\Database\ReferenceIndex;
 
 /**
  * Repository Class as an abstraction layer to sys_file
@@ -64,7 +64,6 @@ class FileIndexRepository implements SingletonInterface
         return \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
     }
 
-
     /**
      * Returns an Instance of the Repository
      *
@@ -79,7 +78,7 @@ class FileIndexRepository implements SingletonInterface
      * Retrieves Index record for a given $combinedIdentifier
      *
      * @param string $combinedIdentifier
-     * @return array|boolean
+     * @return array|bool
      */
     public function findOneByCombinedIdentifier($combinedIdentifier)
     {
@@ -91,7 +90,7 @@ class FileIndexRepository implements SingletonInterface
      * Retrieves Index record for a given $fileUid
      *
      * @param int $fileUid
-     * @return array|boolean
+     * @return array|bool
      */
     public function findOneByUid($fileUid)
     {
@@ -108,7 +107,7 @@ class FileIndexRepository implements SingletonInterface
      *
      * @param int $storageUid
      * @param string $identifier
-     * @return array|boolean
+     * @return array|bool
      *
      * @internal only for use from FileRepository
      */
@@ -123,7 +122,7 @@ class FileIndexRepository implements SingletonInterface
      *
      * @param int $storageUid
      * @param string $identifierHash
-     * @return array|boolean
+     * @return array|bool
      *
      * @internal only for use from FileRepository
      */
@@ -141,7 +140,7 @@ class FileIndexRepository implements SingletonInterface
      * Retrieves Index record for a given $fileObject
      *
      * @param \TYPO3\CMS\Core\Resource\FileInterface $fileObject
-     * @return array|boolean
+     * @return array|bool
      *
      * @internal only for use from FileRepository
      */
@@ -329,7 +328,6 @@ class FileIndexRepository implements SingletonInterface
         );
     }
 
-
     /**
      * Helper function for the Indexer to detect missing files
      *
@@ -403,7 +401,6 @@ class FileIndexRepository implements SingletonInterface
         $this->emitRecordDeletedSignal($fileUid);
     }
 
-
     /**
      * Update Reference Index (sys_refindex) for a file
      *
@@ -416,7 +413,6 @@ class FileIndexRepository implements SingletonInterface
         $refIndexObj = GeneralUtility::makeInstance(ReferenceIndex::class);
         $refIndexObj->updateRefIndexTable($this->table, $id);
     }
-
 
     /*
      * Get the SignalSlot dispatcher
@@ -437,8 +433,6 @@ class FileIndexRepository implements SingletonInterface
     {
         return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
     }
-
-
 
     /**
      * Signal that is called after an IndexRecord is updated

@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Backend\Form\FormDataProvider;
 use TYPO3\CMS\Backend\Form\FormDataProviderInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
-use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -45,6 +44,7 @@ class TcaRecordTitle implements FormDataProviderInterface
         }
 
         if ($result['isInlineChild'] && isset($result['processedTca']['ctrl']['formattedLabel_userFunc'])) {
+            // inline child with formatted user func is first
             $parameters = [
                 'table' => $result['tableName'],
                 'row' => $result['databaseRow'],
@@ -62,8 +62,19 @@ class TcaRecordTitle implements FormDataProviderInterface
             $null = null;
             GeneralUtility::callUserFunction($result['processedTca']['ctrl']['formattedLabel_userFunc'], $parameters, $null);
             $result['recordTitle'] = $parameters['title'];
+        } elseif ($result['isInlineChild'] && (isset($result['inlineParentConfig']['foreign_label'])
+                || isset($result['inlineParentConfig']['symmetric_label']))
+        ) {
+            // inline child with foreign label or symmetric inline child with symmetric_label
+            $fieldName = $result['isOnSymmetricSide']
+                ? $result['inlineParentConfig']['symmetric_label']
+                : $result['inlineParentConfig']['foreign_label'];
+            // @todo: this is a mixup here. problem is the prep method cuts the string, but also hsc's the thing.
+            // @todo: this is uncool for the userfuncs, so it is applied only here. however, the OuterWrapContainer
+            // @todo: also prep()'s the title created by the else patch below ... find a better separation and clean this up!
+            $result['recordTitle'] = BackendUtility::getRecordTitlePrep($this->getRecordTitleForField($fieldName, $result));
         } elseif (isset($result['processedTca']['ctrl']['label_userFunc'])) {
-            // userFunc takes precedence over everything
+            // userFunc takes precedence over everything else
             $parameters = [
                 'table' => $result['tableName'],
                 'row' => $result['databaseRow'],
@@ -76,6 +87,7 @@ class TcaRecordTitle implements FormDataProviderInterface
             GeneralUtility::callUserFunction($result['processedTca']['ctrl']['label_userFunc'], $parameters, $null);
             $result['recordTitle'] = $parameters['title'];
         } else {
+            // standard record
             $result = $this->getRecordTitleByLabelProperties($result);
         }
 
@@ -166,7 +178,7 @@ class TcaRecordTitle implements FormDataProviderInterface
             case 'text':
                 $recordTitle = $this->getRecordTitleForTextType($rawValue);
             case 'flex':
-                // TODO: Check if and how a label could be generated from flex field data
+                // @todo: Check if and how a label could be generated from flex field data
             default:
 
         }

@@ -14,11 +14,11 @@ namespace TYPO3\CMS\Core\Tests\Unit\Tree\TableConfiguration;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Tree\TreeNode;
 use TYPO3\CMS\Backend\Tree\TreeNodeCollection;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider;
-use TYPO3\CMS\Backend\Tree\TreeNode;
 
 /**
  * Testcase for \TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider
@@ -121,7 +121,6 @@ class DatabaseTreeDataProviderTest extends UnitTestCase
 
         $expectedFirstLevelTreeNode->setChildNodes($expectedStorageOfSecondLevelChildren);
         $expectedStorage->append($expectedFirstLevelTreeNode);
-
 
         $this->initializeSubjectMock(array('getRelatedRecords', 'getRootUid'));
         $this->subject->_set('levelMaximum', 2);

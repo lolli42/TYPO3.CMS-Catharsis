@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Func\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -112,7 +111,9 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         // Access check...
         // The page will show only if there is a valid page and if this page may be viewed by the user
         $this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
-        $this->moduleTemplate->getDocHeaderComponent()->setMetaInformation($this->pageinfo);
+        if ($this->pageinfo) {
+            $this->moduleTemplate->getDocHeaderComponent()->setMetaInformation($this->pageinfo);
+        }
         $access = is_array($this->pageinfo);
         // We keep this here, in case somebody relies on the old doc being here
         $this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
@@ -127,7 +128,7 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             $this->content .= '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('web_func')) . '" id="PageFunctionsController" method="post"><input type="hidden" name="id" value="' . htmlspecialchars($this->id) . '" />';
             $vContent = $this->moduleTemplate->getVersionSelector($this->id, true);
             if ($vContent) {
-                $this->content .= $this->moduleTemplate->section('', $vContent);
+                $this->content .= '<div>' . $vContent . '</div>';
             }
             $this->extObjContent();
             // Setting up the buttons and markers for docheader
@@ -210,7 +211,7 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             // View page
             $viewButton = $buttonBar->makeLinkButton()
                 ->setOnClick(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid'])))
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage'))
                 ->setIcon($this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL))
                 ->setHref('#');
             $buttonBar->addButton($viewButton);

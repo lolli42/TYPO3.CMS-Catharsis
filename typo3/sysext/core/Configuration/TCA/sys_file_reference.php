@@ -184,7 +184,7 @@ return array(
                         'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.link',
                         'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_link.gif',
                         'module' => array(
-                            'name' => 'wizard_link_browser',
+                            'name' => 'wizard_link',
                         ),
                         'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
                     )
@@ -287,14 +287,12 @@ return array(
             'showitem' => '
 				title,description,--linebreak--,autoplay
 				',
-            'canNotCollapse' => true
         ),
         // Used for everything that is a audio file
         'audioOverlayPalette' => array(
             'showitem' => '
 				title,description,--linebreak--,autoplay
 				',
-            'canNotCollapse' => true
         ),
         // File palette, hidden but needs to be included all the time
         'filePalette' => array(

@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Core\Tests\Unit\Http;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Http\Message;
+use TYPO3\CMS\Core\Http\Stream;
 
 /**
  * Testcase for \TYPO3\CMS\Core\Http\Message
@@ -148,7 +148,6 @@ class MessageTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertNotSame($message, $message2);
         $this->assertEquals('Foo,Bar', $message2->getHeaderLine('X-Foo'));
     }
-
 
     /**
      * @test
@@ -286,6 +285,8 @@ class MessageTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             'array-value-with-lf'    => ['X-Foo-Bar', ["value\ninjection"]],
             'array-value-with-crlf'  => ['X-Foo-Bar', ["value\r\ninjection"]],
             'array-value-with-2crlf' => ['X-Foo-Bar', ["value\r\n\r\ninjection"]],
+            'multi-line-header-space' => ['X-Foo-Bar', "value\r\n injection"],
+            'multi-line-header-tab' => ['X-Foo-Bar', "value\r\n\tinjection"],
         ];
     }
 
@@ -309,21 +310,4 @@ class MessageTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->message->withAddedHeader($name, $value);
     }
 
-    /**
-     * @test
-     */
-    public function testWithHeaderAllowsHeaderContinuations()
-    {
-        $message = $this->message->withHeader('X-Foo-Bar', "value,\r\n second value");
-        $this->assertEquals("value,\r\n second value", $message->getHeaderLine('X-Foo-Bar'));
-    }
-
-    /**
-     * @test
-     */
-    public function testWithAddedHeaderAllowsHeaderContinuations()
-    {
-        $message = $this->message->withAddedHeader('X-Foo-Bar', "value,\r\n second value");
-        $this->assertEquals("value,\r\n second value", $message->getHeaderLine('X-Foo-Bar'));
-    }
 }

@@ -52,13 +52,26 @@ span.typo3-moduleHeader img {
 	width: 32px;
 	vertical-align: middle;
 	img {
-		width: auto;
+		width: 100%;
 		max-height: 18px;
 	}
 }
 .input-group-addon {
 	min-width: 2.5em;
 }
+
+
+//
+// IE: ensure DatePicker is opened on button click
+//
+label {
+	.icon {
+		img {
+			pointer-events: none;
+		}
+	}
+}
+
 
 //
 // Form control additions
@@ -104,6 +117,18 @@ fieldset[disabled] .form-control {
 		display: inline-block;
 	}
 
+	.btn-toolbar {
+		label:before {
+			font-family: inherit;
+			font-size: inherit;
+			margin-right: inherit;
+			text-align: inherit;
+			content: '';
+			color: inherit;
+			display: block;
+		}
+	}
+
 	.input-group-btn {
 		label {
 			border-color: @brand-danger;
@@ -137,6 +162,24 @@ select {
 		&[size="1"] {
 			height: @input-height-base;
 			min-height: 0;
+		}
+		&[size="1"],
+		&:not([size]) {
+			appearance: none;
+			background-image: url('@{path-sysext}/core/Resources/Public/Icons/T3Icons/actions/actions-view-list-expand.svg');
+			background-position: right 4px center;
+			background-repeat: no-repeat;
+			background-size: 16px 16px;
+			padding-right: 24px;
+
+			&::-ms-expand {
+				display: none;
+			}
+
+			&.input-sm,
+			.form-group-sm & {
+				line-height: 16px;
+			}
 		}
 		> optgroup {
 			margin-top: 9px;
@@ -302,6 +345,7 @@ select {
 .form-irre-header-body {
 	width: 100%;
 	font-weight: normal;
+	white-space: normal;
 	dl {
 		.dl-horizontal();
 		margin-bottom: 0;

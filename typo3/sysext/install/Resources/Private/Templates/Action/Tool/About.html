@@ -5,14 +5,14 @@
 <f:section name="Content">
 	<f:if condition="{contextService.standaloneContext}">
 		<f:then>
-			<h3>About</h3>
+			<h1>About</h1>
 		</f:then>
 		<f:else>
-			<h3>TYPO3 CMS {typo3Version} Install tool on site: {siteName}
+			<h1>TYPO3 CMS {typo3Version} Install tool on site: {siteName}</h1>
 		</f:else>
 	</f:if>
 
-	<h4>How to configure TYPO3 CMS</h4>
+	<h3>How to configure TYPO3 CMS</h3>
 	<p>
 		Local configuration is done by overriding default values in the
 		file typo3conf/LocalConfiguration.php. The options that you
@@ -31,13 +31,14 @@
 	<hr />
 
 
-	<h4>Using this script</h4>
+	<h3>Using this script</h3>
 	<p>
 		These are the primary steps for you to take:
 	</p>
+
+	<hr />
+	<h4>1: Important actions</h4>
 	<p>
-		<strong>1: Important actions</strong>
-		<br />
 		This step provides an overview of the main system information
 		(operating system, PHP information and database).
 		<br />
@@ -59,9 +60,10 @@
 				are no admin users in the database, for instance if this is a blank database</li>
 		</ul>
 	</p>
+
+	<hr />
+	<h4>2: Configuration presets</h4>
 	<p>
-		<strong>2: Configuration presets</strong>
-		<br />
 		The following configuration preset groups are available here:
 		<ul>
 			<li><strong>Character set conversion settings</strong> - charset conversion.</li>
@@ -73,33 +75,38 @@
 			<li><strong>Extbase object cache</strong> - choose between APC / Database cache backend</li>
 		</ul>
 	</p>
+
+	<hr />
+	<h4>3: All configuration</h4>
 	<p>
-		<strong>3: All configuration</strong>
-		<br />
 		In this step you can change the configuration values of your TYPO3 CMS installation.
 	</p>
+
+	<hr />
+	<h4>4: Upgrade Wizard</h4>
 	<p>
-		<strong>4: Upgrade Wizard</strong>
-		<br />
 		If you upgrade your TYPO3 CMS installation from one version to another (e.g. 6.1 to 6.2),
 		then the Upgrade Wizards guide you through the necessary steps to upgrade your database records
 		or explicitly install extensions that ship with the latest TYPO3 CMS version.
 	</p>
+
+	<hr />
+	<h4>5: System environment</h4>
 	<p>
-		<strong>5: System environment</strong>
-		<br />
 		In this step your system environment is checked. If there are any settings that will prevent TYPO3 CMS from
 		running correctly, you'll get warnings and errors with a description of the problem.
 	</p>
+
+	<hr />
+	<h4>6: Folder structure</h4>
 	<p>
-		<strong>6: Folder structure</strong>
-		<br />
 		This step checks the folder structure of your TYPO3 CMS installation and fixes errors that you might have
 		with files or folders.
 	</p>
+
+	<hr />
+	<h4>7: Test setup</h4>
 	<p>
-		<strong>7: Test setup</strong>
-		<br />
 		This gives you a set of tests for your TYPO3 CMS installation in order to test system settings:
 		<ul>
 			<li>Mail setup</li>
@@ -111,56 +118,70 @@
 			<li>GDlib</li>
 		</ul>
 	</p>
+
+	<hr />
+	<h4>8: Clean up</h4>
 	<p>
-		<strong>8: Clean up</strong>
-		<br />
 		Here you can clean up temporary files in the typo3temp/ folder and the database tables used for
 		caching. Furthermore you can reset the preferences of all backend users.
 	</p>
 	<hr />
 
 
-	<h4>Header legend</h4>
-	<h4 class="typo3-message message-notice">
-		Notice!
-	</h4>
-	<p>
-		Indicates that something is important to be aware of.
-		<br />
-		This does <em>not</em> indicate an error.
-	</p>
+	<h3>Header legend</h3>
+	<div class="alert alert-notice">
+		<h4 class="typo3-message message-notice">
+			Notice!
+		</h4>
+		<p class="messageText">
+			Indicates that something is important to be aware of.
+			<br />
+			This does <em>not</em> indicate an error.
+		</p>
+	</div>
 
-	<h4 class="typo3-message message-information">
-		Just information
-	</h4>
-	<p>
-		This is a simple message with some information about something.
-	</p>
+	<div class="alert alert-info">
+		<h4 class="typo3-message message-information">
+			Just information
+		</h4>
+		<p>
+			This is a simple message with some information about something.
+		</p>
+	</div>
 
-	<h4 class="typo3-message message-ok">
+	<div class="alert alert-success">
+		<h4 class="typo3-message message-ok">
 		Check was successful
 	</h4>
-	<p>
+	<p class="messageText">
 		Indicates that something was checked and returned an expected result.
-	</p>
+	</p></div>
 
-	<h4 class="typo3-message message-warning">
+	<div class="alert alert-warning"><h4 class="typo3-message message-warning">
 		Warning!
 	</h4>
-	<p>
+	<p class="messageText">
 		Indicates that something may very well cause trouble
 		and you should definitely look into it before proceeding.
 		<br />
 		This indicates a <em>potential</em> error.
-	</p>
+	</p></div>
 
-	<h4 class="typo3-message message-error">
+	<div class="alert alert-danger"><h4 class="typo3-message message-error">
 		Error!
 	</h4>
-	<p>
+	<p class="messageText">
 		Indicates that something is definitely wrong and that TYPO3 will most
 		likely not perform as expected if this problem is not solved.
 		<br />
 		This indicates an actual error.
-	</p>
+	</p></div>
+	<div class="row copyright">
+		<hr>
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<f:render partial="Action/Common/Copyright" arguments="{_all}" />
+			</div>
+		</div>
+	</div>
 </f:section>

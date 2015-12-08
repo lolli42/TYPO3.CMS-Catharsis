@@ -141,7 +141,13 @@ class GeneralUtility
         if (empty($var)) {
             return;
         }
-        $value = isset($_POST[$var]) ? $_POST[$var] : $_GET[$var];
+        if (isset($_POST[$var])) {
+            $value = $_POST[$var];
+        } elseif (isset($_GET[$var])) {
+            $value = $_GET[$var];
+        } else {
+            $value = null;
+        }
         // This is there for backwards-compatibility, in order to avoid NULL
         if (isset($value) && !is_array($value)) {
             $value = (string)$value;
@@ -959,7 +965,7 @@ class GeneralUtility
         }
         // @todo find out which locale is used for current BE user to cover the BE case as well
         $oldLocale = setlocale(LC_NUMERIC, 0);
-        $newLocale = is_object($GLOBALS['TSFE']) ? $GLOBALS['TSFE']->config['config']['locale_all'] : '';
+        $newLocale = isset($GLOBALS['TSFE']) ? $GLOBALS['TSFE']->config['config']['locale_all'] : '';
         if ($newLocale) {
             setlocale(LC_NUMERIC, $newLocale);
         }
@@ -1200,23 +1206,23 @@ class GeneralUtility
         static $bytes = '';
         $bytesToGenerate = max(4096, $bytesToReturn);
         // if we have not enough random bytes cached, we generate new ones
-        if (!isset($bytes[($bytesToReturn - 1)])) {
+        if (!isset($bytes[$bytesToReturn - 1])) {
             if (TYPO3_OS === 'WIN') {
                 // Openssl seems to be deadly slow on Windows, so try to use mcrypt
                 $bytes .= self::generateRandomBytesMcrypt($bytesToGenerate);
             } else {
                 // Try to use native PHP functions first, precedence has openssl
                 $bytes .= self::generateRandomBytesOpenSsl($bytesToGenerate);
-                if (!isset($bytes[($bytesToReturn - 1)])) {
+                if (!isset($bytes[$bytesToReturn - 1])) {
                     $bytes .= self::generateRandomBytesMcrypt($bytesToGenerate);
                 }
                 // If openssl and mcrypt failed, try /dev/urandom
-                if (!isset($bytes[($bytesToReturn - 1)])) {
+                if (!isset($bytes[$bytesToReturn - 1])) {
                     $bytes .= self::generateRandomBytesUrandom($bytesToGenerate);
                 }
             }
             // Fall back if other random byte generation failed until now
-            if (!isset($bytes[($bytesToReturn - 1)])) {
+            if (!isset($bytes[$bytesToReturn - 1])) {
                 $bytes .= self::generateRandomBytesFallback($bytesToReturn);
             }
         }
@@ -1286,7 +1292,7 @@ class GeneralUtility
         $bytes = '';
         // We initialize with somewhat random.
         $randomState = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . base_convert(memory_get_usage() % pow(10, 6), 10, 2) . microtime() . StringUtility::getUniqueId() . getmypid();
-        while (!isset($bytes[($bytesToReturn - 1)])) {
+        while (!isset($bytes[$bytesToReturn - 1])) {
             $randomState = sha1(microtime() . mt_rand() . $randomState);
             $bytes .= sha1(mt_rand() . $randomState, true);
         }
@@ -2096,15 +2102,15 @@ class GeneralUtility
             // Use tag based on grand-parent + parent tag name
             if (isset($options['grandParentTagMap'][$stackData['grandParentTagName'] . '/' . $stackData['parentTagName']])) {
                 $attr .= ' index="' . htmlspecialchars($tagName) . '"';
-                $tagName = (string)$options['grandParentTagMap'][($stackData['grandParentTagName'] . '/' . $stackData['parentTagName'])];
+                $tagName = (string)$options['grandParentTagMap'][$stackData['grandParentTagName'] . '/' . $stackData['parentTagName']];
             } elseif (isset($options['parentTagMap'][$stackData['parentTagName'] . ':_IS_NUM']) && MathUtility::canBeInterpretedAsInteger($tagName)) {
                 // Use tag based on parent tag name + if current tag is numeric
                 $attr .= ' index="' . htmlspecialchars($tagName) . '"';
-                $tagName = (string)$options['parentTagMap'][($stackData['parentTagName'] . ':_IS_NUM')];
+                $tagName = (string)$options['parentTagMap'][$stackData['parentTagName'] . ':_IS_NUM'];
             } elseif (isset($options['parentTagMap'][$stackData['parentTagName'] . ':' . $tagName])) {
                 // Use tag based on parent tag name + current tag
                 $attr .= ' index="' . htmlspecialchars($tagName) . '"';
-                $tagName = (string)$options['parentTagMap'][($stackData['parentTagName'] . ':' . $tagName)];
+                $tagName = (string)$options['parentTagMap'][$stackData['parentTagName'] . ':' . $tagName];
             } elseif (isset($options['parentTagMap'][$stackData['parentTagName']])) {
                 // Use tag based on parent tag name:
                 $attr .= ' index="' . htmlspecialchars($tagName) . '"';
@@ -2136,11 +2142,15 @@ class GeneralUtility
                     $subOptions = $options;
                     $clearStackPath = false;
                 }
-                $content = $nl . self::array2xml($v, $NSprefix, ($level + 1), '', $spaceInd, $subOptions, array(
-                    'parentTagName' => $tagName,
-                    'grandParentTagName' => $stackData['parentTagName'],
-                    'path' => ($clearStackPath ? '' : $stackData['path'] . '/' . $tagName)
-                )) . ($spaceInd >= 0 ? str_pad('', ($level + 1) * $indentN, $indentChar) : '');
+                if (empty($v)) {
+                    $content = '';
+                } else {
+                    $content = $nl . self::array2xml($v, $NSprefix, ($level + 1), '', $spaceInd, $subOptions, array(
+                            'parentTagName' => $tagName,
+                            'grandParentTagName' => $stackData['parentTagName'],
+                            'path' => ($clearStackPath ? '' : $stackData['path'] . '/' . $tagName)
+                        )) . ($spaceInd >= 0 ? str_pad('', ($level + 1) * $indentN, $indentChar) : '');
+                }
                 // Do not set "type = array". Makes prettier XML but means that empty arrays are not restored with xml2array
                 if ((int)$options['disableTypeAttrib'] != 2) {
                     $attr .= ' type="array"';
@@ -3136,6 +3146,7 @@ Connection: close
      *
      * @param string $path URL / path to prepend full URL addressing to.
      * @return string
+     * @throws \InvalidArgumentException
      */
     public static function locationHeaderUrl($path)
     {
@@ -3147,24 +3158,22 @@ Connection: close
             // No scheme either
             $path = self::getIndpEnv('TYPO3_REQUEST_DIR') . $path;
         }
+        // Can be removed once minimum PHP requirement is at least 5.5.22 or 5.6.6
+        if (strpbrk($path, "\r\n") !== false) {
+            throw new \InvalidArgumentException('HTTP header injection attempt in "' . $path . '"', 1448194036);
+        }
         return $path;
     }
 
     /**
      * Returns the maximum upload size for a file that is allowed. Measured in KB.
      * This might be handy to find out the real upload limit that is possible for this
-     * TYPO3 installation. The first parameter can be used to set something that overrides
-     * the maxFileSize, usually for the TCA values.
+     * TYPO3 installation.
      *
-     * @param int $localLimit the number of Kilobytes (!) that should be used as
      * @return int The maximum size of uploads that are allowed (measured in kilobytes)
      */
-    public static function getMaxUploadFileSize($localLimit = 0)
+    public static function getMaxUploadFileSize()
     {
-        // Don't allow more than the global max file size at all
-        $t3Limit = (int)($localLimit > 0 ? $localLimit : $GLOBALS['TYPO3_CONF_VARS']['BE']['maxFileSize']);
-        // As TYPO3 is handling the file size in KB, multiply by 1024 to get bytes
-        $t3Limit = $t3Limit * 1024;
         // Check for PHP restrictions of the maximum size of one of the $_FILES
         $phpUploadLimit = self::getBytesFromSizeMeasurement(ini_get('upload_max_filesize'));
         // Check for PHP restrictions of the maximum $_POST size
@@ -3172,8 +3181,7 @@ Connection: close
         // If the total amount of post data is smaller (!) than the upload_max_filesize directive,
         // then this is the real limit in PHP
         $phpUploadLimit = $phpPostLimit > 0 && $phpPostLimit < $phpUploadLimit ? $phpPostLimit : $phpUploadLimit;
-        // Is the allowed PHP limit (upload_max_filesize) lower than the TYPO3 limit?, also: revert back to KB
-        return floor(($phpUploadLimit < $t3Limit ? $phpUploadLimit : $t3Limit)) / 1024;
+        return floor(($phpUploadLimit)) / 1024;
     }
 
     /**
@@ -3472,8 +3480,9 @@ Connection: close
                 }
                 break;
             case 'HTTP_HOST':
-                $retVal = $_SERVER['HTTP_HOST'];
-                if (self::cmpIP($_SERVER['REMOTE_ADDR'], $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyIP'])) {
+                // if it is not set we're most likely on the cli
+                $retVal = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : null;
+                if (isset($_SERVER['REMOTE_ADDR']) && static::cmpIP($_SERVER['REMOTE_ADDR'], $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyIP'])) {
                     $host = self::trimExplode(',', $_SERVER['HTTP_X_FORWARDED_HOST']);
                     // Choose which host in list to use
                     if (!empty($host)) {
@@ -5219,7 +5228,7 @@ Connection: close
         if (!$GLOBALS['TYPO3_CONF_VARS']['SYS']['enableDeprecationLog']) {
             return;
         }
-        $trail = debug_backtrace();
+        $trail = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         if ($trail[1]['type']) {
             $function = new \ReflectionMethod($trail[1]['class'], $trail[1]['function']);
         } else {

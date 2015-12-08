@@ -28,6 +28,11 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 {
     /**
+     * @var string
+     */
+    protected $currentLocale;
+
+    /**
      * @var array A backup of registered singleton instances
      */
     protected $singletonInstances = array();
@@ -81,6 +86,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     protected function setUp()
     {
+        $this->currentLocale = setlocale(LC_NUMERIC, 0);
+
         $this->singletonInstances = \TYPO3\CMS\Core\Utility\GeneralUtility::getSingletonInstances();
         $this->createMockedLoggerAndLogManager();
 
@@ -110,6 +117,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
     protected function tearDown()
     {
+        setlocale(LC_NUMERIC, $this->currentLocale);
         GeneralUtility::resetSingletonInstances($this->singletonInstances);
         parent::tearDown();
     }
@@ -188,7 +196,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertTrue($parent instanceof \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer);
         return $imageResource;
     }
-
 
     //////////////////////////////////////
     // Tests concerning getContentObject
@@ -2061,6 +2068,214 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * Data provider for stdWrap_bytes test
+     *
+     * @return array
+     */
+    public function stdWrap_bytesDataProvider()
+    {
+        return array(
+            'value 1234 default' => array(
+                '1234',
+                array(
+                    'bytes.' => array(
+                        'labels' => '',
+                        'base' => 0,
+                    ),
+                ),
+                '1.21 Ki',
+                'en_US.UTF-8'
+            ),
+            'value 1234 si' => array(
+                '1234',
+                array(
+                    'bytes.' => array(
+                        'labels' => 'si',
+                        'base' => 0,
+                    ),
+                ),
+                '1.23 k',
+                'en_US.UTF-8'
+            ),
+            'value 1234 iec' => array(
+                '1234',
+                array(
+                    'bytes.' => array(
+                        'labels' => 'iec',
+                        'base' => 0,
+                    ),
+                ),
+                '1.21 Ki',
+                'en_US.UTF-8'
+            ),
+            'value 1234 a-i' => array(
+                '1234',
+                array(
+                    'bytes.' => array(
+                        'labels' => 'a|b|c|d|e|f|g|h|i',
+                        'base' => 1000,
+                    ),
+                ),
+                '1.23b',
+                'en_US.UTF-8'
+            ),
+            'value 1234 a-i invalid base' => array(
+                '1234',
+                array(
+                    'bytes.' => array(
+                        'labels' => 'a|b|c|d|e|f|g|h|i',
+                        'base' => 54,
+                    ),
+                ),
+                '1.21b',
+                'en_US.UTF-8'
+            ),
+            'value 1234567890 default' => array(
+                '1234567890',
+                array(
+                    'bytes.' => array(
+                        'labels' => '',
+                        'base' => 0,
+                    ),
+                ),
+                '1.15 Gi',
+                'en_US.UTF-8'
+            ),
+        );
+    }
+
+    /**
+     * @param string|NULL $content
+     * @param array $configuration
+     * @param string $expected
+     * @dataProvider stdWrap_bytesDataProvider
+     * @test
+     */
+    public function stdWrap_bytes($content, array $configuration, $expected, $locale)
+    {
+        if (!setlocale(LC_NUMERIC, $locale)) {
+            $this->markTestSkipped('Locale ' . $locale . ' is not available.');
+        }
+        $result = $this->subject->stdWrap_bytes($content, $configuration);
+        $this->assertSame($expected, $result);
+    }
+
+    /**
+     * Data provider for stdWrap_substring test
+     *
+     * @return array
+     */
+    public function stdWrap_substringDataProvider()
+    {
+        return array(
+            'sub -1' => array(
+                'substring',
+                array(
+                    'substring' => '-1',
+                ),
+                'g',
+            ),
+            'sub -1,0' => array(
+                'substring',
+                array(
+                    'substring' => '-1,0',
+                ),
+                'g',
+            ),
+            'sub -1,-1' => array(
+                'substring',
+                array(
+                    'substring' => '-1,-1',
+                ),
+                '',
+            ),
+            'sub -1,1' => array(
+                'substring',
+                array(
+                    'substring' => '-1,1',
+                ),
+                'g',
+            ),
+            'sub 0' => array(
+                'substring',
+                array(
+                    'substring' => '0',
+                ),
+                'substring',
+            ),
+            'sub 0,0' => array(
+                'substring',
+                array(
+                    'substring' => '0,0',
+                ),
+                'substring',
+            ),
+            'sub 0,-1' => array(
+                'substring',
+                array(
+                    'substring' => '0,-1',
+                ),
+                'substrin',
+            ),
+            'sub 0,1' => array(
+                'substring',
+                array(
+                    'substring' => '0,1',
+                ),
+                's',
+            ),
+            'sub 1' => array(
+                'substring',
+                array(
+                    'substring' => '1',
+                ),
+                'ubstring',
+            ),
+            'sub 1,0' => array(
+                'substring',
+                array(
+                    'substring' => '1,0',
+                ),
+                'ubstring',
+            ),
+            'sub 1,-1' => array(
+                'substring',
+                array(
+                    'substring' => '1,-1',
+                ),
+                'ubstrin',
+            ),
+            'sub 1,1' => array(
+                'substring',
+                array(
+                    'substring' => '1,1',
+                ),
+                'u',
+            ),
+            'sub' => array(
+                'substring',
+                array(
+                    'substring' => '',
+                ),
+                'substring',
+            ),
+        );
+    }
+
+    /**
+     * @param string $content
+     * @param array $configuration
+     * @param string $expected
+     * @dataProvider stdWrap_substringDataProvider
+     * @test
+     */
+    public function stdWrap_substring($content, array $configuration, $expected)
+    {
+        $result = $this->subject->stdWrap_substring($content, $configuration);
+        $this->assertSame($expected, $result);
+    }
+
+    /**
      * Data provider for stdWrap_stdWrapValue test
      *
      * @return array
@@ -2386,7 +2601,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $result = $this->subject->stdWrap_encodeForJavaScriptValue($input, $conf);
         $this->assertEquals($expected, $result);
     }
-
 
     ///////////////////////////////
     // Tests concerning getData()
@@ -4125,6 +4339,122 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * @param array $settings
+     * @param string $linkText
+     * @param string $mailAddress
+     * @param string $expected
+     * @dataProvider typoLinkEncodesMailAddressForSpamProtectionDataProvider
+     * @test
+     */
+    public function typoLinkEncodesMailAddressForSpamProtection(array $settings, $linkText, $mailAddress, $expected)
+    {
+        $this->getFrontendController()->spamProtectEmailAddresses = $settings['spamProtectEmailAddresses'];
+        $this->getFrontendController()->config['config'] = $settings;
+        $typoScript = array('parameter' => $mailAddress);
+
+        $this->assertEquals($expected, $this->subject->typoLink($linkText, $typoScript));
+    }
+
+    /**
+     * @return array
+     */
+    public function typoLinkEncodesMailAddressForSpamProtectionDataProvider()
+    {
+        return array(
+            'plain mail without mailto scheme' => array(
+                array(
+                    'spamProtectEmailAddresses' => '',
+                    'spamProtectEmailAddresses_atSubst' => '',
+                    'spamProtectEmailAddresses_lastDotSubst' => '',
+                ),
+                'some.body@test.typo3.org',
+                'some.body@test.typo3.org',
+                '<a href="mailto:some.body@test.typo3.org">some.body@test.typo3.org</a>',
+            ),
+            'plain mail with mailto scheme' => array(
+                array(
+                    'spamProtectEmailAddresses' => '',
+                    'spamProtectEmailAddresses_atSubst' => '',
+                    'spamProtectEmailAddresses_lastDotSubst' => '',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="mailto:some.body@test.typo3.org">some.body@test.typo3.org</a>',
+            ),
+            'plain with at and dot substitution' => array(
+                array(
+                    'spamProtectEmailAddresses' => '0',
+                    'spamProtectEmailAddresses_atSubst' => '(at)',
+                    'spamProtectEmailAddresses_lastDotSubst' => '(dot)',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="mailto:some.body@test.typo3.org">some.body@test.typo3.org</a>',
+            ),
+            'mono-alphabetic substitution offset +1' => array(
+                array(
+                    'spamProtectEmailAddresses' => '1',
+                    'spamProtectEmailAddresses_atSubst' => '',
+                    'spamProtectEmailAddresses_lastDotSubst' => '',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="javascript:linkTo_UnCryptMailto(\'nbjmup+tpnf\/cpezAuftu\/uzqp4\/psh\');">some.body(at)test.typo3.org</a>',
+            ),
+            'mono-alphabetic substitution offset +1 with at substitution' => array(
+                array(
+                    'spamProtectEmailAddresses' => '1',
+                    'spamProtectEmailAddresses_atSubst' => '@',
+                    'spamProtectEmailAddresses_lastDotSubst' => '',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="javascript:linkTo_UnCryptMailto(\'nbjmup+tpnf\/cpezAuftu\/uzqp4\/psh\');">some.body@test.typo3.org</a>',
+            ),
+            'mono-alphabetic substitution offset +1 with at and dot substitution' => array(
+                array(
+                    'spamProtectEmailAddresses' => '1',
+                    'spamProtectEmailAddresses_atSubst' => '(at)',
+                    'spamProtectEmailAddresses_lastDotSubst' => '(dot)',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="javascript:linkTo_UnCryptMailto(\'nbjmup+tpnf\/cpezAuftu\/uzqp4\/psh\');">some.body(at)test.typo3(dot)org</a>',
+            ),
+            'mono-alphabetic substitution offset -1 with at and dot substitution' => array(
+                array(
+                    'spamProtectEmailAddresses' => '-1',
+                    'spamProtectEmailAddresses_atSubst' => '(at)',
+                    'spamProtectEmailAddresses_lastDotSubst' => '(dot)',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="javascript:linkTo_UnCryptMailto(\'lzhksn9rnld-ancxZsdrs-sxon2-nqf\');">some.body(at)test.typo3(dot)org</a>',
+            ),
+            'entity substitution with at and dot substitution' => array(
+                array(
+                    'spamProtectEmailAddresses' => 'ascii',
+                    'spamProtectEmailAddresses_atSubst' => '',
+                    'spamProtectEmailAddresses_lastDotSubst' => '',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#115;&#111;&#109;&#101;&#46;&#98;&#111;&#100;&#121;&#64;&#116;&#101;&#115;&#116;&#46;&#116;&#121;&#112;&#111;&#51;&#46;&#111;&#114;&#103;">some.body(at)test.typo3.org</a>',
+            ),
+            'entity substitution with at and dot substitution with at and dot substitution' => array(
+                array(
+                    'spamProtectEmailAddresses' => 'ascii',
+                    'spamProtectEmailAddresses_atSubst' => '(at)',
+                    'spamProtectEmailAddresses_lastDotSubst' => '(dot)',
+                ),
+                'some.body@test.typo3.org',
+                'mailto:some.body@test.typo3.org',
+                '<a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#115;&#111;&#109;&#101;&#46;&#98;&#111;&#100;&#121;&#64;&#116;&#101;&#115;&#116;&#46;&#116;&#121;&#112;&#111;&#51;&#46;&#111;&#114;&#103;">some.body(at)test.typo3(dot)org</a>',
+            ),
+        );
+    }
+
+    /**
      * @test
      * @param string $linkText
      * @param array $configuration
@@ -4362,4 +4692,12 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
         \TYPO3\CMS\Core\Utility\GeneralUtility::unlink_tempfile($fileNameAndPath);
     }
+
+    /**
+     * @return \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController
+     */
+    protected function getFrontendController() {
+        return $GLOBALS['TSFE'];
+    }
+
 }

@@ -14,9 +14,9 @@ namespace TYPO3\CMS\Core\Tests\Unit\Http;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Core\Http\Request;
 use TYPO3\CMS\Core\Http\Stream;
+use TYPO3\CMS\Core\Http\Uri;
 
 /**
  * Testcase for \TYPO3\CMS\Core\Http\Request
@@ -455,6 +455,31 @@ class RequestTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $new = $request->withUri($uri);
 
         $this->assertEquals('www.example.com:10081', $new->getHeaderLine('Host'));
+    }
+
+    /**
+     * @return array
+     */
+    public function headersWithUpperAndLowerCaseValuesDataProvider()
+    {
+        // 'name' => [$headerName, $headerValue, $expectedValue]
+        return [
+            'Foo'             => ['Foo', 'bar', 'bar'],
+            'foo'             => ['foo', 'bar', 'bar'],
+            'Foo-with-array'  => ['Foo', ['bar'], 'bar'],
+            'foo-with-array'  => ['foo', ['bar'], 'bar'],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider headersWithUpperAndLowerCaseValuesDataProvider
+     */
+    public function headerCanBeRetrieved($header, $value, $expected)
+    {
+        $request = new Request(null, null, 'php://memory', [$header => $value]);
+        $this->assertEquals([$expected], $request->getHeader(strtolower($header)));
+        $this->assertEquals([$expected], $request->getHeader(strtoupper($header)));
     }
 
     /**

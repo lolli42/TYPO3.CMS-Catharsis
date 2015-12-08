@@ -238,20 +238,8 @@ class PageRepository
         if (is_array($this->cache_getPage[$uid][$cacheKey])) {
             return $this->cache_getPage[$uid][$cacheKey];
         }
-        $workspaceVersion = $this->getWorkspaceVersionOfRecord($this->versioningWorkspaceId, 'pages', $uid);
-        $db = $this->getDatabaseConnection();
-        if (is_array($workspaceVersion)) {
-            $workspaceVersionAccess = $db->exec_SELECTgetSingleRow(
-                'uid',
-                'pages',
-                'uid=' . intval($workspaceVersion['uid']) . $this->where_hid_del . $accessCheck
-            );
-            if (is_array($workspaceVersionAccess)) {
-                $accessCheck = '';
-            }
-        }
         $result = array();
-        $row = $db->exec_SELECTgetSingleRow('*', 'pages', 'uid=' . (int)$uid . $this->where_hid_del . $accessCheck);
+        $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'pages', 'uid=' . (int)$uid . $this->where_hid_del . $accessCheck);
         if ($row) {
             $this->versionOL('pages', $row);
             if (is_array($row)) {
@@ -484,7 +472,9 @@ class PageRepository
         }
         if ($row['uid'] > 0 && ($row['pid'] > 0 || in_array($table, $this->tableNamesAllowedOnRootLevel, true))) {
             if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']) {
-                if (!$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable']) {
+                // Return record for ALL languages untouched
+                // TODO: Fix call stack to prevent this situation in the first place
+                if (!$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'] && (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] !== -1) {
                     // Will not be able to work with other tables (Just didn't implement it yet;
                     // Requires a scan over all tables [ctrl] part for first FIND the table that
                     // carries localization information for this table (which could even be more
@@ -492,7 +482,7 @@ class PageRepository
                     // takes a little more....) Will try to overlay a record only if the
                     // sys_language_content value is larger than zero.
                     if ($sys_language_content > 0) {
-                        // Must be default language or [All], otherwise no overlaying:
+                        // Must be default language, otherwise no overlaying
                         if ((int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] === 0) {
                             // Select overlay record:
                             $res = $this->getDatabaseConnection()->exec_SELECTquery('*', $table, 'pid=' . (int)$row['pid'] . ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['languageField'] . '=' . (int)$sys_language_content . ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . '=' . (int)$row['uid'] . $this->enableFields($table), '', '', '1');
@@ -623,28 +613,6 @@ class PageRepository
             . ' '
             . $additionalWhereClause;
 
-        // Check the user group access for draft pages in preview
-        if ($this->versioningWorkspaceId != 0) {
-            $databaseResource = $db->exec_SELECTquery(
-                'uid',
-                'pages',
-                $relationField . ' IN (' . implode(',', $db->cleanIntArray($pageIds)) . ')'
-                    . $this->where_hid_del . ' ' . $additionalWhereClause,
-                '',
-                $sortField
-            );
-
-            $draftUserGroupAccessWhereStatement = $this->getDraftUserGroupAccessWhereStatement(
-                $databaseResource,
-                $sortField,
-                $additionalWhereClause
-            );
-
-            if ($draftUserGroupAccessWhereStatement !== false) {
-                $whereStatement = $draftUserGroupAccessWhereStatement;
-            }
-        };
-
         $databaseResource = $db->exec_SELECTquery(
             $fields,
             'pages',
@@ -658,6 +626,11 @@ class PageRepository
 
             // Versioning Preview Overlay
             $this->versionOL('pages', $page, true);
+            // Skip if page got disabled due to version overlay
+            // (might be delete or move placeholder)
+            if (empty($page)) {
+                continue;
+            }
 
             // Add a mount point parameter if needed
             $page = $this->addMountPointParameterToPage((array)$page);
@@ -677,49 +650,6 @@ class PageRepository
 
         // Finally load language overlays
         return $this->getPagesOverlay($pages);
-    }
-
-    /**
-     * Prevent pages being shown in menu's for preview which contain usergroup access rights in a draft workspace
-     *
-     * Returns an adapted "WHERE" statement if pages are in draft
-     *
-     * @param bool|\mysqli_result|object $databaseResource MySQLi result object / DBAL object
-     * @param string $sortField The field to sort by
-     * @param string $addWhere Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
-     * @return bool|string FALSE if no records are available in draft, a WHERE statement with the uid's if available
-     */
-    protected function getDraftUserGroupAccessWhereStatement($databaseResource, $sortField, $addWhere)
-    {
-        $draftUserGroupAccessWhereStatement = false;
-        $recordArray = [];
-
-        while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($databaseResource)) {
-            $workspaceRow = $this->getWorkspaceVersionOfRecord($this->versioningWorkspaceId, 'pages', $row['uid']);
-
-            $realUid = is_array($workspaceRow) ? $workspaceRow['uid'] : $row['uid'];
-
-            $result = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
-                'uid',
-                'pages',
-                'uid=' . intval($realUid)
-                . $this->where_hid_del
-                . $this->where_groupAccess
-                . ' ' . $addWhere,
-                '',
-                $sortField
-            );
-
-            if (is_array($result)) {
-                $recordArray[] = $row['uid'];
-            }
-        }
-
-        if (!empty($recordArray)) {
-            $draftUserGroupAccessWhereStatement = 'uid IN (' . implode(',', $recordArray) . ')';
-        }
-
-        return $draftUserGroupAccessWhereStatement;
     }
 
     /**

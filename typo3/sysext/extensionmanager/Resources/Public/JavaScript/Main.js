@@ -18,7 +18,14 @@
  * ExtensionManager.Update => Various AJAX functions to display updates
  * ExtensionManager.uploadForm => helper to show the upload form
  */
-define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable'], function($, NProgress, Modal) {
+define([
+	'jquery',
+	'nprogress',
+	'TYPO3/CMS/Backend/Modal',
+	'TYPO3/CMS/Backend/SplitButtons',
+	'datatables',
+	'TYPO3/CMS/Backend/jquery.clearable'
+], function($, NProgress, Modal, SplitButtons) {
 
 	/**
 	 *
@@ -497,14 +504,14 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 						});
 					});
 				} else {
-					var successMessage = TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.message' + data.installationTypeLanguageKey].replace(/\{0\}/g, data.extension) + ' <br />';
-					successMessage += '<br /><h3>' + TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.header'] + ':</h3>';
+					var successMessage = TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.message' + data.installationTypeLanguageKey].replace(/\{0\}/g, data.extension);
+
+					successMessage += '\n' + TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.header'] + ': ';
 					$.each(data.result, function(index, value) {
-						successMessage += TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.item'] + ' ' + index + ':<br /><ul>';
-						$.each(value, function(extkey, extdata) {
-							successMessage += '<li>' + extkey + '</li>';
+						successMessage += '\n\n' + TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.item'] + ' ' + index + ': ';
+						$.each(value, function(extkey) {
+							successMessage += '\n* ' + extkey
 						});
-						successMessage += '</ul>';
 					});
 					top.TYPO3.Notification.info(TYPO3.lang['extensionList.dependenciesResolveFlashMessage.title' + data.installationTypeLanguageKey].replace(/\{0\}/g, data.extension), successMessage, 15);
 					top.TYPO3.ModuleMenu.App.refreshMenu();
@@ -564,7 +571,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 			$me.attr('action', '#');
 			$me.submit(function() {
 				// Force update on click.
-				ExtensionManager.Update.updateFromTer(updateURL, 1);
+				ExtensionManager.Update.updateFromTer(updateURL, true);
 
 				// Prevent normal submit action.
 				return false;
@@ -572,17 +579,17 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 
 			// This might give problems when there are more "update"-buttons,
 			// each one would trigger a TER-ExtensionManager.Update.
-			ExtensionManager.Update.updateFromTer(updateURL, 0);
+			ExtensionManager.Update.updateFromTer(updateURL, false);
 		});
 	};
 
 	/**
 	 *
 	 * @param {String} url
-	 * @param {Number} forceUpdate
+	 * @param {Boolean} forceUpdate
 	 */
 	ExtensionManager.Update.updateFromTer = function(url, forceUpdate) {
-		if (forceUpdate == 1) {
+		if (forceUpdate) {
 			url = url + '&tx_extensionmanager_tools_extensionmanagerextensionmanager%5BforceUpdateCheck%5D=1';
 		}
 
@@ -596,6 +603,8 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 		$(ExtensionManager.Update.identifier.splashscreen).addClass('is-shown');
 		$(ExtensionManager.Update.identifier.terTableDataTableWrapper).addClass('is-loading');
 		$(ExtensionManager.Update.identifier.pagination).addClass('is-loading');
+
+		var reload = false;
 
 		$.ajax({
 			url: url,
@@ -619,14 +628,9 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 				);
 
 				if (data.updated) {
-					$.ajax({
-						url: window.location.href + '&tx_extensionmanager_tools_extensionmanagerextensionmanager%5Bformat%5D=json',
-						dataType: 'json',
-						success: function(data) {
-							$(ExtensionManager.Update.identifier.terTableWrapper).html(data);
-							ExtensionManager.Update.transformPaginatorToAjax();
-						}
-					});
+					// Reload page
+					reload = true;
+					window.location.replace(window.location.href);
 				}
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -642,16 +646,18 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 			complete: function() {
 				NProgress.done();
 
-				// Hide loaders
-				$(ExtensionManager.Update.identifier.splashscreen).removeClass('is-shown');
-				$(ExtensionManager.Update.identifier.terTableDataTableWrapper).removeClass('is-loading');
-				$(ExtensionManager.Update.identifier.pagination).removeClass('is-loading');
+				if (!reload) {
+					// Hide loaders
+					$(ExtensionManager.Update.identifier.splashscreen).removeClass('is-shown');
+					$(ExtensionManager.Update.identifier.terTableDataTableWrapper).removeClass('is-loading');
+					$(ExtensionManager.Update.identifier.pagination).removeClass('is-loading');
 
-				// Show triggers for TER-update
-				$(ExtensionManager.Update.identifier.terUpdateAction).removeClass('is-hidden');
+					// Show triggers for TER-update
+					$(ExtensionManager.Update.identifier.terUpdateAction).removeClass('is-hidden');
 
-				// Show extension table
-				$(ExtensionManager.Update.identifier.extensionTable).show();
+					// Show extension table
+					$(ExtensionManager.Update.identifier.extensionTable).show();
+				}
 			}
 		});
 	};
@@ -747,17 +753,6 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 			}
 		});
 
-		$('.expandable').expander({
-			expandEffect: 'slideDown',
-			collapseEffect: 'slideUp',
-			beforeExpand: function() {
-				$(this).parent().css('z-index', 199);
-			},
-			afterCollapse: function() {
-				$(this).parent().css('z-index', 1);
-			}
-		});
-
 		$(document).on('click', '.t3-button-action-installdistribution', function() {
 			$(ExtensionManager.identifier.extensionManager).mask();
 		});
@@ -765,8 +760,11 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'datatables', 'TYPO3/C
 		ExtensionManager.configurationFieldSupport();
 		var $validate = $('.validate');
 		$validate.validate();
-		$(document).on('click', '.t3js-save-close', function() {
-			$validate.append($('<input />', {type: 'hidden', name: 'tx_extensionmanager_tools_extensionmanagerextensionmanager[action]', value: 'saveAndClose'}));
+
+		SplitButtons.addPreSubmitCallback(function(e) {
+			if ($(e.target).hasClass('t3js-save-close')) {
+				$validate.append($('<input />', {type: 'hidden', name: 'tx_extensionmanager_tools_extensionmanagerextensionmanager[action]', value: 'saveAndClose'}));
+			}
 		});
 
 		// initialize the repository

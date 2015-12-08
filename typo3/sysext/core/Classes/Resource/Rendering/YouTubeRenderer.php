@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Rendering;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,13 +13,12 @@ namespace TYPO3\CMS\Core\Resource\Rendering;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
 use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\FileInterface;
+use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperInterface;
 use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Resource\FileInterface;
-use TYPO3\CMS\Core\Resource\FileReference;
 
 /**
  * YouTube renderer class

@@ -13,7 +13,6 @@ namespace TYPO3\CMS\Reports\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -27,7 +26,6 @@ use TYPO3\CMS\Reports\ReportInterface;
  */
 class ReportController extends ActionController
 {
-
     /**
      * @var BackendTemplateView
      */

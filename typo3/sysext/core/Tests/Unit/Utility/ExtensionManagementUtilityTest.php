@@ -21,10 +21,10 @@ use TYPO3\CMS\Core\Compatibility\LoadedExtensionsArray;
 use TYPO3\CMS\Core\Package\MetaData;
 use TYPO3\CMS\Core\Package\Package;
 use TYPO3\CMS\Core\Package\PackageManager;
+use TYPO3\CMS\Core\Tests\Unit\Utility\AccessibleProxies\ExtensionManagementUtilityAccessibleProxy;
 use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Tests\Unit\Utility\AccessibleProxies\ExtensionManagementUtilityAccessibleProxy;
 
 /**
  * Test case
@@ -488,7 +488,6 @@ class ExtensionManagementUtilityTest extends UnitTestCase
         $result = ExtensionManagementUtilityAccessibleProxy::removeDuplicatesForInsertion($insertionList, $list);
         $this->assertSame($expected, $result);
     }
-
 
     ///////////////////////////////////////////////////
     // Tests concerning addFieldsToAllPalettesOfField
@@ -998,7 +997,6 @@ class ExtensionManagementUtilityTest extends UnitTestCase
         $this->assertEquals($expected, $GLOBALS['TCA']);
     }
 
-
     ///////////////////////////////////////////////////
     // Tests concerning executePositionedStringInsertion
     ///////////////////////////////////////////////////
@@ -1027,7 +1025,7 @@ class ExtensionManagementUtilityTest extends UnitTestCase
                 'test',
             ),
             'commas' => array(
-                "test,",
+                'test,',
                 'test',
             ),
             'multiple commas with trailing spaces' => array(
@@ -1049,7 +1047,6 @@ class ExtensionManagementUtilityTest extends UnitTestCase
         $string = $extensionManagementUtility->_call('executePositionedStringInsertion', $string, '');
         $this->assertEquals($expectedResult, $string);
     }
-
 
     /////////////////////////////////////////
     // Tests concerning addTcaSelectItem
@@ -1252,7 +1249,6 @@ class ExtensionManagementUtilityTest extends UnitTestCase
         $GLOBALS['TYPO3_LOADED_EXT'] = new LoadedExtensionsArray($packageManager);
         ExtensionManagementUtilityAccessibleProxy::loadSingleExtLocalconfFiles();
     }
-
 
     /////////////////////////////////////////
     // Tests concerning addModule

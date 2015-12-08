@@ -25,13 +25,13 @@ use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\FolderInterface;
 use TYPO3\CMS\Core\Resource\InaccessibleFolder;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\Utility\ListUtility;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Resource\FolderInterface;
 use TYPO3\CMS\Filelist\Controller\FileListController;
 
 /**
@@ -307,7 +307,7 @@ class FileList extends AbstractRecordList
      */
     public function linkClipboardHeaderIcon($string, $_, $cmd, $warning = '')
     {
-        $onClickEvent = 'document.dblistForm.cmd.value=\'' . $cmd . '\';document.dblistForm.submit();';
+        $onClickEvent = 'document.dblistForm.cmd.value=' . GeneralUtility::quoteJSvalue($cmd) . ';document.dblistForm.submit();';
         if ($warning) {
             $onClickEvent = 'if (confirm(' . GeneralUtility::quoteJSvalue($warning) . ')){' . $onClickEvent . '}';
         }
@@ -433,7 +433,7 @@ class FileList extends AbstractRecordList
                     if ($this->clipObj->current !== 'normal' && $iOut) {
                         $cells[] = $this->linkClipboardHeaderIcon('<span title="' . $this->getLanguageService()->getLL('clip_selectMarked', true) . '">' . $this->iconFactory->getIcon('actions-edit-copy', Icon::SIZE_SMALL)->render() . '</span>', $table, 'setCB');
                         $cells[] = $this->linkClipboardHeaderIcon('<span title="' . $this->getLanguageService()->getLL('clip_deleteMarked', true) . '">' . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render(), $table, 'delete', $this->getLanguageService()->getLL('clip_deleteMarkedWarning'));
-                        $onClick = 'checkOffCB(\'' . implode(',', $this->CBnames) . '\', this); return false;';
+                        $onClick = 'checkOffCB(' . GeneralUtility::quoteJSvalue(implode(',', $this->CBnames)) . ', this); return false;';
                         $cells[] = '<a class="btn btn-default" rel="" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->getLL('clip_markRecords', true) . '">' . $this->iconFactory->getIcon('actions-document-select', Icon::SIZE_SMALL)->render() . '</a>';
                     }
                     $theData[$v] = implode('', $cells);
@@ -644,10 +644,12 @@ class FileList extends AbstractRecordList
      * the URL would be invalid
      *
      * @param string $altId
+     * @param string $table Table name to display. Enter "-1" for the current table.
+     * @param string $exclList Comma separated list of fields NOT to include ("sortField", "sortRev" or "firstElementNumber")
      *
      * @return string URL
      */
-    public function listURL($altId = '')
+    public function listURL($altId = '', $table = '-1', $exclList = '')
     {
         return GeneralUtility::linkThisScript(array(
             'target' => rawurlencode($this->folderObject->getCombinedIdentifier()),

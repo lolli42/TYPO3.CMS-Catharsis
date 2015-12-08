@@ -14,14 +14,14 @@ namespace TYPO3\CMS\Backend\Template\Components;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Template\Components\Buttons\Action\HelpButton;
+use TYPO3\CMS\Backend\Template\Components\Buttons\Action\ShortcutButton;
 use TYPO3\CMS\Backend\Template\Components\Buttons\ButtonInterface;
-use TYPO3\CMS\Backend\Template\Components\Buttons\PositionInterface;
 use TYPO3\CMS\Backend\Template\Components\Buttons\FullyRenderedButton;
 use TYPO3\CMS\Backend\Template\Components\Buttons\InputButton;
 use TYPO3\CMS\Backend\Template\Components\Buttons\LinkButton;
+use TYPO3\CMS\Backend\Template\Components\Buttons\PositionInterface;
 use TYPO3\CMS\Backend\Template\Components\Buttons\SplitButton;
-use TYPO3\CMS\Backend\Template\Components\Buttons\Action\HelpButton;
-use TYPO3\CMS\Backend\Template\Components\Buttons\Action\ShortcutButton;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -165,7 +165,15 @@ class ButtonBar
         foreach ($this->buttons as $position => $_) {
             ksort($this->buttons[$position]);
         }
-        // @todo do we want to provide a hook here?
+        // Hook for manipulating the docHeaderButtons
+        if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['Backend\Template\Components\ButtonBar']['getButtonsHook'])) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['Backend\Template\Components\ButtonBar']['getButtonsHook'] as $funcRef) {
+                $params = array(
+                    'buttons' => $this->buttons
+                );
+                $this->buttons = GeneralUtility::callUserFunction($funcRef, $params, $this);
+            }
+        }
         return $this->buttons;
     }
 }

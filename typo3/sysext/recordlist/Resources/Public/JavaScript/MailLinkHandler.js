@@ -25,29 +25,21 @@ define(['jquery', 'TYPO3/CMS/Recordlist/LinkBrowser'], function($, LinkBrowser) 
 	 */
 	var MailLinkHandler = {};
 
-	/**
-	 *
-	 * @param {Event} event
-	 */
-	MailLinkHandler.link = function(event) {
-		event.preventDefault();
-
-		var value = $(this).find('[name="lemail"]').val();
-		if (value === "mailto:") {
-			return;
-		}
-
-		while (value.substr(0, 7) === "mailto:") {
-			value = value.substr(7);
-		}
-
-		LinkBrowser.updateValueInMainForm(value);
-
-		close();
-	};
-
 	$(function() {
-		$('#lmailform').on('submit', MailLinkHandler.link);
+		$('#lmailform').on('submit', function(event) {
+			event.preventDefault();
+
+			var value = $(this).find('[name="lemail"]').val();
+			if (value === 'mailto:') {
+				return;
+			}
+
+			while (value.substr(0, 7) === 'mailto:') {
+				value = value.substr(7);
+			}
+
+			LinkBrowser.finalizeFunction('mailto:' + value);
+		});
 	});
 
 	return MailLinkHandler;

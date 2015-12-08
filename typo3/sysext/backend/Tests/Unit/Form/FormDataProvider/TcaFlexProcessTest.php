@@ -16,9 +16,11 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
 
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use TYPO3\CMS\Backend\Form\FormDataGroup\FlexFormSegment;
+use TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexProcess;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Tests\UnitTestCase;
-use TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexProcess;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -109,6 +111,11 @@ class TcaFlexProcessTest extends UnitTestCase
         $expected = $input;
         $expected['processedTca']['columns']['aField']['config']['ds'] = [
             'sheets' => [],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
+                ],
+            ],
         ];
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -185,6 +192,11 @@ class TcaFlexProcessTest extends UnitTestCase
                         ],
                         'sheetTitle' => 'aTitle',
                     ],
+                ],
+            ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
                 ],
             ],
         ];
@@ -265,6 +277,11 @@ class TcaFlexProcessTest extends UnitTestCase
                     ],
                 ],
             ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
+                ],
+            ],
         ];
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -341,6 +358,11 @@ class TcaFlexProcessTest extends UnitTestCase
                         ],
                         'sheetDescription' => 'sheetShortDescr',
                     ],
+                ],
+            ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
                 ],
             ],
         ];
@@ -421,6 +443,11 @@ class TcaFlexProcessTest extends UnitTestCase
                     ],
                 ],
             ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
+                ],
+            ],
         ];
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -481,6 +508,11 @@ class TcaFlexProcessTest extends UnitTestCase
                         'type' => 'array',
                         'el' => [],
                     ],
+                ],
+            ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
                 ],
             ],
         ];
@@ -553,6 +585,11 @@ class TcaFlexProcessTest extends UnitTestCase
                     ],
                 ],
             ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
+                ],
+            ],
         ];
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -621,6 +658,11 @@ class TcaFlexProcessTest extends UnitTestCase
                             ],
                         ],
                     ],
+                ],
+            ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
                 ],
             ],
         ];
@@ -693,6 +735,11 @@ class TcaFlexProcessTest extends UnitTestCase
                         'type' => 'array',
                         'el' => [],
                     ],
+                ],
+            ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
                 ],
             ],
         ];
@@ -800,6 +847,11 @@ class TcaFlexProcessTest extends UnitTestCase
                     ],
                 ],
             ],
+            'meta' => [
+                'dataStructurePointers' => [
+                    'pointerField' => 'aFlex',
+                ],
+            ],
         ];
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -862,6 +914,11 @@ class TcaFlexProcessTest extends UnitTestCase
         $this->backendUserProphecy->checkLanguageAccess(Argument::cetera())->willReturn(true);
 
         $expected = $input;
+        $expected['processedTca']['columns']['aField']['config']['ds']['meta'] = [
+            'dataStructurePointers' => [
+                'pointerField' => 'aFlex'
+            ],
+        ];
         $expected['databaseRow']['aField']['data']['sDEF']['lDEF']['aFlexField']['vDEF'] = 'defaultValue';
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -1073,5 +1130,120 @@ class TcaFlexProcessTest extends UnitTestCase
         $expected['databaseRow']['aField']['data']['sDEF']['lDEF']['section_1']['templateRows']['container_1']['el']['aFlexField']['vDEF'] = 'defaultValue';
 
         $this->assertEquals($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataCallsFlexFormSegmentGroupForFieldAndAddsFlexParentDatabaseRow()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'aField' => [
+                    'data' => [],
+                ],
+                'pointerField' => 'aFlex',
+            ],
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'flex',
+                            'ds_pointerField' => 'pointerField',
+                            'ds' => [
+                                'sheets' => [
+                                    'sDEF' => [
+                                        'ROOT' => [
+                                            'type' => 'array',
+                                            'el' => [
+                                                'aFlexField' => [
+                                                    'label' => 'aFlexFieldLabel',
+                                                    'config' => [
+                                                        'type' => 'input',
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'pageTsConfig' => [],
+        ];
+
+        /** @var FlexFormSegment|ObjectProphecy $dummyGroup */
+        $dummyGroup = $this->prophesize(FlexFormSegment::class);
+        GeneralUtility::addInstance(FlexFormSegment::class, $dummyGroup->reveal());
+
+        // Check array given to flex group contains databaseRow as flexParentDatabaseRow and check compile is called
+        $dummyGroup->compile(Argument::that(function ($result) use ($input) {
+            if ($result['flexParentDatabaseRow'] === $input['databaseRow']) {
+                return true;
+            }
+            return false;
+        }))->shouldBeCalled()->willReturnArgument(0);
+
+        $this->subject->addData($input);
+    }
+
+    /**
+     * @test
+     */
+    public function addDataCallsFlexFormSegmentGroupForDummyContainerAndAddsFlexParentDatabaseRow()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'aField' => [
+                    'data' => [],
+                ],
+                'pointerField' => 'aFlex',
+            ],
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'flex',
+                            'ds_pointerField' => 'pointerField',
+                            'ds' => [
+                                'sheets' => [
+                                    'sDEF' => [
+                                        'ROOT' => [
+                                            'type' => 'array',
+                                            'el' => [
+                                                'aFlexField' => [
+                                                    'label' => 'aFlexFieldLabel',
+                                                    'config' => [
+                                                        'type' => 'input',
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'pageTsConfig' => [],
+        ];
+
+        /** @var FlexFormSegment|ObjectProphecy $dummyGroupExisting */
+        $dummyGroupExisting = $this->prophesize(FlexFormSegment::class);
+        GeneralUtility::addInstance(FlexFormSegment::class, $dummyGroupExisting->reveal());
+        // Check array given to flex group contains databaseRow as flexParentDatabaseRow and check compile is called
+        $dummyGroupExisting->compile(Argument::that(function ($result) use ($input) {
+            if ($result['flexParentDatabaseRow'] === $input['databaseRow']) {
+                return true;
+            }
+            return false;
+        }))->shouldBeCalled()->willReturnArgument(0);
+
+        $this->subject->addData($input);
     }
 }

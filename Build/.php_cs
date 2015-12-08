@@ -60,6 +60,13 @@ return Symfony\CS\Config\Config::create()
         'spaces_before_semicolon',
         'unused_use',
         'concat_with_spaces',
-        'whitespacy_lines'
+        'whitespacy_lines',
+        'ordered_use',
+        'single_quote',
+        'duplicate_semicolon',
+        'extra_empty_lines',
+        'phpdoc_no_package',
+        'phpdoc_scalar',
+        'no_empty_lines_after_phpdocs'
     ])
     ->finder($finder);

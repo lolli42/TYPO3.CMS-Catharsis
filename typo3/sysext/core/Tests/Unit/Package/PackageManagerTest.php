@@ -11,13 +11,12 @@ namespace TYPO3\CMS\Core\Tests\Unit\Package;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use org\bovigo\vfs\vfsStream;
 use TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend;
 use TYPO3\CMS\Core\Cache\Frontend\PhpFrontend;
-use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Package\DependencyResolver;
-use org\bovigo\vfs\vfsStream;
-use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Package\Package;
+use TYPO3\CMS\Core\Package\PackageManager;
 
 /**
  * Testcase for the default package manager
@@ -97,7 +96,6 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $this->packageManager->getPackage('PrettyUnlikelyThatThisPackageExists');
     }
-
 
     /**
      * @test
@@ -181,7 +179,6 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $packageStates = require('vfs://Test/Configuration/PackageStates.php');
         $this->assertEquals('inactive', $packageStates['packages'][$packageKey]['state']);
     }
-
 
     /**
      * @test

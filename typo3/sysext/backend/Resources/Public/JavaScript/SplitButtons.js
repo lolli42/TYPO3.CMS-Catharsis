@@ -54,6 +54,10 @@ define(['jquery', 'TYPO3/CMS/Backend/Icons'], function($, Icons) {
 
 			// Disable submit buttons
 			$form.on('submit', function() {
+				if ($form.find('.has-error').length > 0) {
+					return false;
+				}
+
 				var $affectedButton,
 					$splitButton = $me.closest('.t3js-splitbutton');
 
@@ -70,7 +74,7 @@ define(['jquery', 'TYPO3/CMS/Backend/Icons'], function($, Icons) {
 				});
 			});
 
-			if (e.currentTarget.tagName === 'A' && !e.isDefaultPrevented()) {
+			if ((e.currentTarget.tagName === 'A' || $me.attr('form')) && !e.isDefaultPrevented()) {
 				$form.submit();
 				e.preventDefault();
 			}

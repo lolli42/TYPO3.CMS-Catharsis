@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Tstemplate\Controller;
 use TYPO3\CMS\Backend\Module\AbstractFunctionModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -96,7 +97,7 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
             }
             if (!empty($this->pObj->MOD_SETTINGS['ts_browser_TLKeys_' . $bType])) {
                 $modMenu['ts_browser_toplevel_' . $bType]['-'] = '---';
-                $modMenu['ts_browser_toplevel_' . $bType] = $modMenu[('ts_browser_toplevel_' . $bType)] + $this->pObj->MOD_SETTINGS[('ts_browser_TLKeys_' . $bType)];
+                $modMenu['ts_browser_toplevel_' . $bType] = $modMenu['ts_browser_toplevel_' . $bType] + $this->pObj->MOD_SETTINGS['ts_browser_TLKeys_' . $bType];
             }
         }
         return $modMenu;
@@ -252,23 +253,23 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
                     if ($POST['add_property']) {
                         $property = trim($POST['data'][$name]['name']);
                         if (preg_replace('/[^a-zA-Z0-9_\\.]*/', '', $property) != $property) {
-                            $badPropertyMessage = GeneralUtility::makeInstance(FlashMessage::class, $lang->getLL('noSpaces') . '<br />' . $lang->getLL('nothingUpdated'), $lang->getLL('badProperty'), FlashMessage::ERROR);
+                            $badPropertyMessage = GeneralUtility::makeInstance(FlashMessage::class, $lang->getLL('noSpaces') . $lang->getLL('nothingUpdated'), $lang->getLL('badProperty'), FlashMessage::ERROR);
                             $this->addFlashMessage($badPropertyMessage);
                         } else {
                             $pline = $name . '.' . $property . ' = ' . trim($POST['data'][$name]['propertyValue']);
-                            $propertyAddedMessage = GeneralUtility::makeInstance(FlashMessage::class, htmlspecialchars($pline), $lang->getLL('propertyAdded'));
+                            $propertyAddedMessage = GeneralUtility::makeInstance(FlashMessage::class, $pline, $lang->getLL('propertyAdded'));
                             $this->addFlashMessage($propertyAddedMessage);
                             $line .= LF . $pline;
                         }
                     } elseif ($POST['update_value']) {
                         $pline = $name . ' = ' . trim($POST['data'][$name]['value']);
-                        $updatedMessage = GeneralUtility::makeInstance(FlashMessage::class, htmlspecialchars($pline), $lang->getLL('valueUpdated'));
+                        $updatedMessage = GeneralUtility::makeInstance(FlashMessage::class, $pline, $lang->getLL('valueUpdated'));
                         $this->addFlashMessage($updatedMessage);
                         $line .= LF . $pline;
                     } elseif ($POST['clear_object']) {
                         if ($POST['data'][$name]['clearValue']) {
                             $pline = $name . ' >';
-                            $objectClearedMessage = GeneralUtility::makeInstance(FlashMessage::class, htmlspecialchars($pline), $lang->getLL('objectCleared'));
+                            $objectClearedMessage = GeneralUtility::makeInstance(FlashMessage::class, $pline, $lang->getLL('objectCleared'));
                             $this->addFlashMessage($objectClearedMessage);
                             $line .= LF . $pline;
                         }
@@ -358,7 +359,7 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
                 $out .= '	<input class="btn btn-default" type="submit" name="add_property" value="' . $lang->getLL('addButton') . '" />';
                 $out .= '</div>';
                 $theOutput .= '<div style="padding-top: 20px;"></div>';
-                $theOutput .= '<h3>'. $lang->getLL('addProperty', true) . '</h3>';
+                $theOutput .= '<h3>' . $lang->getLL('addProperty', true) . '</h3>';
                 $theOutput .= $out;
                 // clear
                 $out = '<div class="form-group">';
@@ -388,7 +389,7 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
                 'id' => $this->pObj->id
             );
             $aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
-            if (!$this->pObj->MOD_SETTINGS[('ts_browser_TLKeys_' . $bType)][$this->pObj->sObj]) {
+            if (!$this->pObj->MOD_SETTINGS['ts_browser_TLKeys_' . $bType][$this->pObj->sObj]) {
                 if (!empty($theSetup)) {
                     $out = '<a href="' . htmlspecialchars(($aHref . '&addKey[' . rawurlencode($this->pObj->sObj) . ']=1&SET[ts_browser_toplevel_' . $bType . ']=' . rawurlencode($this->pObj->sObj))) . '">';
                     $out .= sprintf($lang->getLL('addKey'), htmlspecialchars($this->pObj->sObj));
@@ -408,7 +409,20 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
             $templateService->tsbrowser_depthKeys = $this->pObj->MOD_SETTINGS['tsbrowser_depthKeys_' . $bType];
             if (GeneralUtility::_POST('search') && GeneralUtility::_POST('search_field')) {
                 // If any POST-vars are send, update the condition array
-                $templateService->tsbrowser_depthKeys = $templateService->ext_getSearchKeys($theSetup, '', GeneralUtility::_POST('search_field'), array());
+                $searchString = GeneralUtility::_POST('search_field');
+                try {
+                    $templateService->tsbrowser_depthKeys =
+                        $templateService->ext_getSearchKeys(
+                            $theSetup,
+                            '',
+                            $searchString,
+                            array()
+                        );
+                } catch (Exception $e) {
+                    $this->addFlashMessage(
+                        GeneralUtility::makeInstance(FlashMessage::class, sprintf($lang->getLL('error.' . $e->getCode()), $searchString), '', FlashMessage::ERROR)
+                    );
+                }
             }
             $theOutput .= '
 				<div class="tsob-menu">

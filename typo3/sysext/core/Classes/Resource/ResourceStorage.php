@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Core\Resource;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Resource\Exception\InvalidTargetFolderException;
 use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
 use TYPO3\CMS\Core\Resource\Index\Indexer;
+use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
@@ -1133,7 +1133,6 @@ class ResourceStorage implements ResourceStorageInterface
         return $fileName;
     }
 
-
     /********************
      * FILE ACTIONS
      ********************/
@@ -1152,7 +1151,8 @@ class ResourceStorage implements ResourceStorageInterface
     public function addFile($localFilePath, Folder $targetFolder, $targetFileName = '', $conflictMode = DuplicationBehavior::RENAME)
     {
         $localFilePath = PathUtility::getCanonicalPath($localFilePath);
-        if (!file_exists($localFilePath)) {
+        // File is not available locally NOR is it an uploaded file
+        if (!is_uploaded_file($localFilePath) && !file_exists($localFilePath)) {
             throw new \InvalidArgumentException('File "' . $localFilePath . '" does not exist.', 1319552745);
         }
         $conflictMode = DuplicationBehavior::cast($conflictMode);
@@ -1701,7 +1701,7 @@ class ResourceStorage implements ResourceStorageInterface
     /**
      * Previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::deleteFile()
      *
-     * @param $fileObject FileInterface
+     * @param FileInterface $fileObject
      * @throws Exception\InsufficientFileAccessPermissionsException
      * @throws Exception\FileOperationErrorException
      * @return bool TRUE if deletion succeeded
@@ -2271,7 +2271,7 @@ class ResourceStorage implements ResourceStorageInterface
         if (!$this->checkFolderActionPermission('add', $parentFolder)) {
             throw new Exception\InsufficientFolderWritePermissionsException('You are not allowed to create directories in the folder "' . $parentFolder->getIdentifier() . '"', 1323059807);
         }
-        if ($this->driver->folderExists($folderName)) {
+        if ($this->driver->folderExistsInFolder($folderName, $parentFolder->getIdentifier())) {
             throw new Exception\ExistingTargetFolderException('Folder "' . $folderName . '" already exists.', 1423347324);
         }
 
@@ -2847,7 +2847,13 @@ class ResourceStorage implements ResourceStorageInterface
             }
             try {
                 if (strpos($processingFolder, ':') !== false) {
-                    $this->processingFolder = ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier($processingFolder);
+                    list($storageUid, $processingFolderIdentifier) = explode(':', $processingFolder, 2);
+                    $storage = ResourceFactory::getInstance()->getStorageObject($storageUid);
+                    if ($storage->hasFolder($processingFolderIdentifier)) {
+                        $this->processingFolder = $storage->getFolder($processingFolderIdentifier);
+                    } else {
+                        $this->processingFolder = $storage->createFolder(ltrim($processingFolderIdentifier, '/'));
+                    }
                 } else {
                     if ($this->driver->folderExists($processingFolder) === false) {
                         $this->processingFolder = $this->createFolder($processingFolder);

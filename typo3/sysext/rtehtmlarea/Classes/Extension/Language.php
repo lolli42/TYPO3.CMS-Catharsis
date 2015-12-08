@@ -16,10 +16,10 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
 
 use SJBR\StaticInfoTables\Utility\LocalizationUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
 
 /**
  * Language plugin for htmlArea RTE
@@ -75,7 +75,7 @@ class Language extends RteHtmlAreaApi
     {
         $button = 'language';
         $jsArray = array();
-        if (!is_array($this->configuration['thisConfig']['buttons.']) || !is_array($this->configuration['thisConfig']['buttons.'][($button . '.')])) {
+        if (!is_array($this->configuration['thisConfig']['buttons.']) || !is_array($this->configuration['thisConfig']['buttons.'][$button . '.'])) {
             $jsArray[] = 'RTEarea[editornumber].buttons.' . $button . ' = new Object();';
         }
         $languages = array(

@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Workspaces\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Workspaces\Service\WorkspaceService;
 
 /**
@@ -34,6 +34,7 @@ class ReviewController extends AbstractController
     {
         parent::initializeView($view);
         $this->registerButtons();
+        $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
     }
 
     /**
@@ -111,7 +112,7 @@ class ReviewController extends AbstractController
             $showButton = $buttonBar->makeLinkButton()
                 ->setHref('#')
                 ->setOnClick('TYPO3.Workspaces.Actions.generateWorkspacePreviewLinksForAllLanguages();return false;')
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:tooltip.generatePagePreview', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:tooltip.generatePagePreview'))
                 ->setIcon($iconFactory->getIcon('module-workspaces-action-preview-link', Icon::SIZE_SMALL));
             $buttonBar->addButton($showButton);
         }
@@ -163,11 +164,19 @@ class ReviewController extends AbstractController
         $activeWorkspace = $GLOBALS['BE_USER']->workspace;
         $wsCur = array($activeWorkspace => true);
         $wsList = array_intersect_key($wsList, $wsCur);
+        $backendDomain = GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY');
         $this->view->assign('pageUid', GeneralUtility::_GP('id'));
         $this->view->assign('showGrid', true);
         $this->view->assign('showAllWorkspaceTab', false);
         $this->view->assign('workspaceList', $wsList);
-        $this->view->assign('backendDomain', GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY'));
+        $this->view->assign('backendDomain', $backendDomain);
+        // Setting the document.domain early before JavScript
+        // libraries are loaded, try to access top frame reference
+        // and possibly run into some CORS issue
+        $this->pageRenderer->setMetaCharsetTag(
+            $this->pageRenderer->getMetaCharsetTag() . LF
+            . GeneralUtility::wrapJS('document.domain = ' . GeneralUtility::quoteJSvalue($backendDomain) . ';')
+        );
         $this->pageRenderer->addInlineSetting('Workspaces', 'singleView', '1');
     }
 
@@ -241,6 +250,7 @@ class ReviewController extends AbstractController
         foreach ($this->getAdditionalResourceService()->getLocalizationResources() as $localizationResource) {
             $this->pageRenderer->addInlineLanguageLabelFile($localizationResource);
         }
+        $this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', BackendUtility::getModuleUrl('record_edit'));
         $this->pageRenderer->addInlineSetting('RecordHistory', 'moduleUrl', BackendUtility::getModuleUrl('record_history'));
     }
 

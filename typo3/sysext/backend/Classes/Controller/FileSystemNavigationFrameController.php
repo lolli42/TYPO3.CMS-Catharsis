@@ -16,13 +16,14 @@ namespace TYPO3\CMS\Backend\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Filelist\FileListFolderTree;
-use TYPO3\CMS\Backend\Template\DocumentTemplate;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Recordlist\Tree\View\DummyLinkParameterProvider;
 
 /**
@@ -43,13 +44,6 @@ class FileSystemNavigationFrameController
     public $foldertree;
 
     /**
-     * document template object
-     *
-     * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-     */
-    public $doc;
-
-    /**
      * @var string
      */
     public $currentSubScript;
@@ -68,6 +62,13 @@ class FileSystemNavigationFrameController
      * @var bool
      */
     public $doHighlight;
+
+    /**
+     * ModuleTemplate Container
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
 
     /**
      * Constructor
@@ -99,6 +100,8 @@ class FileSystemNavigationFrameController
      */
     protected function init()
     {
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
+
         // Setting GPvars:
         $this->currentSubScript = GeneralUtility::_GP('currentSubScript');
         $this->cMR = GeneralUtility::_GP('cMR');
@@ -117,9 +120,9 @@ class FileSystemNavigationFrameController
             $this->foldertree->ext_noTempRecyclerDirs = $this->scopeData['ext_noTempRecyclerDirs'];
             if ($this->foldertree instanceof ElementBrowserFolderTreeView) {
                 // create a fake provider to pass link data along properly
-                $linkParamProvider = GeneralUtility::makeInstance(DummyLinkParameterProvider::class,
-                    $this->scopeData['browser']['mode'],
-                    $this->scopeData['browser']['act'],
+                $linkParamProvider = GeneralUtility::makeInstance(
+                    DummyLinkParameterProvider::class,
+                    $this->scopeData['browser'],
                     $this->scopeData['script']
                 );
                 $this->foldertree->setLinkParameterProvider($linkParamProvider);
@@ -145,11 +148,9 @@ class FileSystemNavigationFrameController
     {
         // Setting highlight mode:
         $this->doHighlight = !$this->getBackendUser()->getTSConfigVal('options.pageTree.disableTitleHighlight');
-        // Create template object:
-        $this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-        $this->doc->bodyTagId = 'ext-backend-Modules-FileSystemNavigationFrame-index-php';
-        $this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/alt_file_navframe.html');
-        $this->doc->showFlashMessages = false;
+
+        $this->moduleTemplate->setBodyTag('<body id="ext-backend-Modules-FileSystemNavigationFrame-index-php">');
+
         // Adding javascript code for drag&drop and the filetree as well as the click menu code
         $dragDropCode = '
 			Tree.ajaxID = "sc_alt_file_navframe_expandtoggle";
@@ -161,12 +162,17 @@ class FileSystemNavigationFrameController
 			Tree.highlightActiveItem("", top.fsMod.navFrameHighlightedID["file"]);
 			';
         }
+
         // Adding javascript for drag & drop activation and highlighting
-        $this->doc->getDragDropCode('folders', $dragDropCode);
-        $this->doc->getContextMenuCode();
+        $pageRenderer = $this->moduleTemplate->getPageRenderer();
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function() {
+            DragDrop.table = "folders";
+            ' . $dragDropCode . '
+        }');
 
         // Setting JavaScript for menu.
-        $this->doc->JScode .= $this->doc->wrapScriptTags(($this->currentSubScript ? 'top.currentSubScript=unescape("' . rawurlencode($this->currentSubScript) . '");' : '') . '
+        $inlineJs = ($this->currentSubScript ? 'top.currentSubScript=unescape("' . rawurlencode($this->currentSubScript) . '");' : '') . '
 		// Function, loading the list frame from navigation tree:
 		function jumpTo(id, linkObj, highlightID, bank) {
 			var theUrl = top.currentSubScript;
@@ -182,7 +188,12 @@ class FileSystemNavigationFrameController
 			if (linkObj) { linkObj.blur(); }
 			return false;
 		}
-		' . ($this->cMR ? ' jumpTo(top.fsMod.recentIds[\'file\'],\'\');' : ''));
+		' . ($this->cMR ? ' jumpTo(top.fsMod.recentIds[\'file\'],\'\');' : '');
+
+        $this->moduleTemplate->getPageRenderer()->addJsInlineCode(
+            'FileSystemNavigationFrame',
+            $inlineJs
+        );
     }
 
     /**
@@ -195,18 +206,12 @@ class FileSystemNavigationFrameController
         // Produce browse-tree:
         $tree = $this->foldertree->getBrowsableTree();
         // Outputting page tree:
-        $this->content .= $tree;
-        // Setting up the buttons and markers for docheader
-        $docHeaderButtons = $this->getButtons();
-        $markers = array(
-            'CONTENT' => $this->content
-        );
-        $subparts = array();
+        $this->moduleTemplate->setContent($tree);
+        // Setting up the buttons
+        $this->getButtons();
         // Build the <body> for the module
-        $this->content = $this->doc->startPage('TYPO3 Folder Tree');
-        $this->content .= $this->doc->moduleBody(array(), $docHeaderButtons, $markers, $subparts);
-        $this->content .= $this->doc->endPage();
-        $this->content = $this->doc->insertStylesAndJS($this->content);
+        $this->moduleTemplate->setTitle('TYPO3 Folder Tree');
+        $this->content = $this->moduleTemplate->renderContent();
     }
 
     /**
@@ -222,28 +227,32 @@ class FileSystemNavigationFrameController
     }
 
     /**
-     * Create the panel of buttons for submitting the form or otherwise perform operations.
-     *
-     * @return array All available buttons as an assoc. array
+     * Register docHeader buttons
      */
     protected function getButtons()
     {
-        $buttons = array(
-            'csh' => '',
-            'refresh' => ''
-        );
-        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        /** @var ButtonBar $buttonBar */
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
+
+        /** @var IconFactory $iconFactory */
+        $iconFactory = $this->moduleTemplate->getIconFactory();
+
         // Refresh
-        $buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . $iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL)->render() . '</a>';
+        $refreshButton = $buttonBar->makeLinkButton()
+            ->setHref(GeneralUtility::getIndpEnv('REQUEST_URI'))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload'))
+            ->setIcon($iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL));
+        $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT);
+
         // CSH
-        $buttons['csh'] = str_replace('typo3-csh-inline', 'typo3-csh-inline show-right', BackendUtility::cshItem('xMOD_csh_corebe', 'filetree'));
-        return $buttons;
+        $cshButton = $buttonBar->makeHelpButton()
+            ->setModuleName('xMOD_csh_corebe')
+            ->setFieldName('filetree');
+        $buttonBar->addButton($cshButton);
     }
 
     /**********************************
-     *
      * AJAX Calls
-     *
      **********************************/
     /**
      * Makes the AJAX call to expand or collapse the foldertree.
@@ -272,5 +281,15 @@ class FileSystemNavigationFrameController
     protected function getBackendUser()
     {
         return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * Returns an instance of LanguageService
+     *
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
     }
 }

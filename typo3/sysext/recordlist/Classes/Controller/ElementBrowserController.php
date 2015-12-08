@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Recordlist\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -77,7 +77,7 @@ class ElementBrowserController
     }
 
     /**
-     * Injects the request object for the current request or subrequest
+     * Injects the request object for the current request or sub-request
      * As this controller goes only through the main() method, it is rather simple for now
      *
      * @param ServerRequestInterface $request the current request
@@ -88,7 +88,7 @@ class ElementBrowserController
     {
         // Fallback for old calls, which use mode "wizard" or "rte" for link selection
         if ($this->mode === 'wizard' || $this->mode === 'rte') {
-            return $response->withStatus(303)->withHeader('Location', BackendUtility::getModuleUrl('wizard_link_browser', $_GET, false, true));
+            return $response->withStatus(303)->withHeader('Location', BackendUtility::getModuleUrl('wizard_link', $_GET, false, true));
         }
 
         $response->getBody()->write($this->main());
@@ -135,7 +135,7 @@ class ElementBrowserController
     }
 
     /**
-     * Get instance of ElementBrowser
+     * Get instance of the actual element browser
      *
      * This method shall be overwritten in subclasses
      *

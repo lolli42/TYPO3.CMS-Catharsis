@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Core\Tests\Unit\Migrations;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Migrations\TcaMigration;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
@@ -833,7 +833,8 @@ class TcaMigrationTest extends UnitTestCase
     /**
      * @return array
      */
-    public function migrateSetsShowIconTableIfMissingDataProvider() {
+    public function migrateSetsShowIconTableIfMissingDataProvider()
+    {
         return [
             'not-a-select-is-kept' => [
                 [
@@ -960,7 +961,8 @@ class TcaMigrationTest extends UnitTestCase
      * @param array $givenConfig
      * @param array $expectedConfig
      */
-    public function migrateSetsShowIconTableIfMissing(array $givenConfig, array $expectedConfig) {
+    public function migrateSetsShowIconTableIfMissing(array $givenConfig, array $expectedConfig)
+    {
         $input = [
             'aTable' => [
                 'columns' => [
@@ -1010,7 +1012,7 @@ class TcaMigrationTest extends UnitTestCase
                             'wizards' => [
                                 'link' => [
                                     'module' => [
-                                        'name' => 'wizard_link_browser',
+                                        'name' => 'wizard_link',
                                     ],
                                 ],
                             ],

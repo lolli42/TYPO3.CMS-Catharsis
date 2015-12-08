@@ -14,16 +14,17 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * Public License for more details.                                       *
  *                                                                        */
 
+use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Domain\Model\AbstractFileFolder;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Service\ImageService;
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
-use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Resizes a given image (if required) and returns its relative path.
@@ -63,7 +64,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
  * Could not get image resource for "NonExistingImage.png".
  * </output>
  */
-class ImageViewHelper extends AbstractViewHelper  implements CompilableInterface
+class ImageViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Resizes the image (if required) and returns its path. If the image was not resized, the path will be equal to $src
@@ -123,24 +124,35 @@ class ImageViewHelper extends AbstractViewHelper  implements CompilableInterface
             throw new Exception('You must either specify a string src or a File object.', 1382284105);
         }
 
-        $imageService = self::getImageService();
-        $image = $imageService->getImage($src, $image, $treatIdAsReference);
+        try {
+            $imageService = self::getImageService();
+            $image = $imageService->getImage($src, $image, $treatIdAsReference);
 
-        if ($crop === null) {
-            $crop = $image instanceof FileReference ? $image->getProperty('crop') : null;
+            if ($crop === null) {
+                $crop = $image instanceof FileReference ? $image->getProperty('crop') : null;
+            }
+
+            $processingInstructions = array(
+                'width' => $arguments['width'],
+                'height' => $arguments['height'],
+                'minWidth' => $arguments['minWidth'],
+                'minHeight' => $arguments['minHeight'],
+                'maxWidth' => $arguments['maxWidth'],
+                'maxHeight' => $arguments['maxHeight'],
+                'crop' => $crop,
+            );
+            $processedImage = $imageService->applyProcessingInstructions($image, $processingInstructions);
+            return $imageService->getImageUri($processedImage, $absolute);
+        } catch (ResourceDoesNotExistException $e) {
+            // thrown if file does not exist
+        } catch (\UnexpectedValueException $e) {
+            // thrown if a file has been replaced with a folder
+        } catch (\RuntimeException $e) {
+            // RuntimeException thrown if a file is outside of a storage
+        } catch (\InvalidArgumentException $e) {
+            // thrown if file storage does not exist
         }
-
-        $processingInstructions = array(
-            'width' => $arguments['width'],
-            'height' => $arguments['height'],
-            'minWidth' => $arguments['minWidth'],
-            'minHeight' => $arguments['minHeight'],
-            'maxWidth' => $arguments['maxWidth'],
-            'maxHeight' => $arguments['maxHeight'],
-            'crop' => $crop,
-        );
-        $processedImage = $imageService->applyProcessingInstructions($image, $processingInstructions);
-        return $imageService->getImageUri($processedImage, $absolute);
+        return '';
     }
 
     /**

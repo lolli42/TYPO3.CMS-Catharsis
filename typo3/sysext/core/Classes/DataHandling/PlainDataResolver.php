@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Core\DataHandling;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
  * Plain data resolving.
@@ -55,6 +55,11 @@ class PlainDataResolver
      * @var bool
      */
     protected $keepDeletePlaceholder = false;
+
+    /**
+     * @var bool
+     */
+    protected $keepMovePlaceholder = true;
 
     /**
      * @var int[]
@@ -101,6 +106,16 @@ class PlainDataResolver
     public function setKeepDeletePlaceholder($keepDeletePlaceholder)
     {
         $this->keepDeletePlaceholder = (bool)$keepDeletePlaceholder;
+    }
+
+    /**
+     * Sets whether move placeholders shall be kept in case they cannot be substituted.
+     *
+     * @param bool $keepMovePlaceholder
+     */
+    public function setKeepMovePlaceholder($keepMovePlaceholder)
+    {
+        $this->keepMovePlaceholder = (bool)$keepMovePlaceholder;
     }
 
     /**
@@ -183,9 +198,12 @@ class PlainDataResolver
             foreach ($movePlaceholders as $movePlaceholder) {
                 $liveReferenceId = $movePlaceholder['t3ver_move_id'];
                 $movePlaceholderId = $movePlaceholder['uid'];
-                // If both, MOVE_PLACEHOLDER and MOVE_POINTER are set
-                if (isset($ids[$liveReferenceId]) && isset($ids[$movePlaceholderId])) {
+                // Substitute MOVE_PLACEHOLDER and purge live reference
+                if (isset($ids[$movePlaceholderId])) {
                     $ids[$movePlaceholderId] = $liveReferenceId;
+                    unset($ids[$liveReferenceId]);
+                // Just purge live reference
+                } elseif (!$this->keepMovePlaceholder) {
                     unset($ids[$liveReferenceId]);
                 }
             }

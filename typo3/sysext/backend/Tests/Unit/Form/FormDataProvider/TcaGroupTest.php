@@ -14,11 +14,12 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  * The TYPO3 project - inspiring people to share!
  */
 
-
 use Prophecy\Prophecy\ObjectProphecy;
-use TYPO3\CMS\Core\Database\RelationHandler;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup;
+use TYPO3\CMS\Core\Database\RelationHandler;
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -31,9 +32,21 @@ class TcaGroupTest extends UnitTestCase
      */
     protected $subject;
 
+    /**
+     * @var array
+     */
+    protected $singletonInstances;
+
     protected function setUp()
     {
         $this->subject = new TcaGroup();
+        $this->singletonInstances = GeneralUtility::getSingletonInstances();
+    }
+
+    protected function tearDown()
+    {
+        GeneralUtility::resetSingletonInstances($this->singletonInstances);
+        parent::tearDown();
     }
 
     /**
@@ -62,7 +75,7 @@ class TcaGroupTest extends UnitTestCase
     /**
      * @test
      */
-    public function addDataThrowsExceptionWithTypeGroupAndNoValiInternalType()
+    public function addDataThrowsExceptionWithTypeGroupAndNoValidInternalType()
     {
         $input = [
             'processedTca' => [
@@ -102,6 +115,43 @@ class TcaGroupTest extends UnitTestCase
         ];
         $expected = $input;
         $expected['databaseRow']['aField'] = '%2FaDir%2FaFile.txt|aFile.txt,%2FanotherDir%2FanotherFile.css|anotherFile.css';
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataSetsFolderData()
+    {
+        $input = [
+            'databaseRow' => [
+                'aField' => '1:/aFolder/anotherFolder/',
+            ],
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'group',
+                            'internal_type' => 'folder',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var Folder|ObjectProphecy $relationHandlerProphecy */
+        $folderProphecy = $this->prophesize(Folder::class);
+        $folderProphecy->getIdentifier()->shouldBeCalled()->willReturn('anotherFolder');
+
+        /** @var ResourceFactory|ObjectProphecy $relationHandlerProphecy */
+        $resourceFactoryProphecy = $this->prophesize(ResourceFactory::class);
+        GeneralUtility::setSingletonInstance(ResourceFactory::class, $resourceFactoryProphecy->reveal());
+        $resourceFactoryProphecy->retrieveFileOrFolderObject('1:/aFolder/anotherFolder/')
+            ->shouldBeCalled()
+            ->willReturn($folderProphecy->reveal());
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = '1%3A%2FaFolder%2FanotherFolder%2F|anotherFolder';
         $this->assertSame($expected, $this->subject->addData($input));
     }
 

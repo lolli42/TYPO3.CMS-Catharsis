@@ -82,11 +82,11 @@ class FileWriter extends AbstractWriter
      */
     public function setLogFile($relativeLogFile)
     {
-	$logFile = $relativeLogFile;
+        $logFile = $relativeLogFile;
         // Skip handling if logFile is a stream resource. This is used by unit tests with vfs:// directories
         if (false === strpos($logFile, '://') && !PathUtility::isAbsolutePath($logFile)) {
             $logFile = GeneralUtility::getFileAbsFileName($logFile);
-            if ($logFile === NULL) {
+            if ($logFile === null) {
                 throw new InvalidLogWriterConfigurationException('Log file path "' . $relativeLogFile . '" is not valid!', 1444374805);
             }
         }
@@ -191,8 +191,11 @@ class FileWriter extends AbstractWriter
         $logFileDirectory = dirname($this->logFile);
         if (!@is_dir($logFileDirectory)) {
             GeneralUtility::mkdir_deep($logFileDirectory);
-            // only create .htaccess, if we created the directory on our own
-            $this->createHtaccessFile($logFileDirectory . '/.htaccess');
+            // create .htaccess file if log file is within the site path
+            if (PathUtility::getCommonPrefix(array(PATH_site, $logFileDirectory)) === PATH_site) {
+                // only create .htaccess, if we created the directory on our own
+                $this->createHtaccessFile($logFileDirectory . '/.htaccess');
+            }
         }
         // create the log file
         GeneralUtility::writeFile($this->logFile, '');

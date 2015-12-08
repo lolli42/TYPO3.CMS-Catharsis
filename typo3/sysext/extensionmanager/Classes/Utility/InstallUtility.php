@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
 
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
 use TYPO3\CMS\Impexp\Utility\ImportExportUtility;
@@ -238,6 +237,14 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
     public function isLoaded($extensionKey)
     {
         return $this->packageManager->isPackageActive($extensionKey);
+    }
+
+    /**
+     * Reset and reload the available extensions
+     */
+    public function reloadAvailableExtensions()
+    {
+        $this->listUtility->reloadAvailableExtensions();
     }
 
     /**
@@ -559,7 +566,6 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
         }
         return $sqlData;
     }
-
 
     /**
      * Checks if an update for an extension is available which also resolves dependencies.

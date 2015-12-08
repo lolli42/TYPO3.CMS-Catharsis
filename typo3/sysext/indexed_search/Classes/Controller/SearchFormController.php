@@ -16,8 +16,8 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
 
 use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\IndexedSearch\Utility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\IndexedSearch\Utility;
 
 /**
  * Index search frontend
@@ -47,7 +47,6 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
      * @var int
      */
     public $join_pages = 0;
-
 
     public $defaultResultNumber = 10;
 
@@ -1841,7 +1840,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
      */
     public function makePointerSelector_link($str, $p, $freeIndexUid)
     {
-        $onclick = 'document.getElementById(\'' . $this->prefixId . '_pointer\').value=\'' . $p . '\';' . 'document.getElementById(\'' . $this->prefixId . '_freeIndexUid\').value=\'' . rawurlencode($freeIndexUid) . '\';' . 'document.getElementById(\'' . $this->prefixId . '\').submit();return false;';
+        $onclick = 'document.getElementById(' . GeneralUtility::quoteJSvalue($this->prefixId . '_pointer') . ').value=' . GeneralUtility::quoteJSvalue($p) . ';' . 'document.getElementById(' . GeneralUtility::quoteJSvalue($this->prefixId . '_freeIndexUid') . ').value=' . GeneralUtility::quoteJSvalue($freeIndexUid) . ';' . 'document.getElementById(' . GeneralUtility::quoteJSvalue($this->prefixId) . ').submit();return false;';
         return '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . $str . '</a>';
     }
 
@@ -2022,7 +2021,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                     if ($strLen > $postPreLgd) {
                         $output[$k] = $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $this->frontendController->csConvObj->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
                     }
-                } elseif ($summaryLgd > $summaryMax || !isset($parts[($k + 1)])) {
+                } elseif ($summaryLgd > $summaryMax || !isset($parts[$k + 1])) {
                     // In case summary length is exceed OR if there are no more entries at all:
                     if ($strLen > $postPreLgd) {
                         $output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $this->frontendController->csConvObj->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider;

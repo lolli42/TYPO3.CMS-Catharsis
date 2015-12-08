@@ -117,6 +117,109 @@ class TcaRecordTitleTest extends UnitTestCase
     /**
      * @test
      */
+    public function addDataReturnsRecordTitleForInlineChildWithForeignLabel()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'aField' => 'aValue',
+            ],
+            'processedTca' => [
+                'ctrl' => [
+                    'label' => 'foo',
+                    'label_userFunc' => function (&$parameters) {
+                        $parameters['title'] = 'Value that MUST NOT be used, otherwise the code is broken.';
+                    }
+                ],
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'input',
+                        ],
+                    ],
+                ],
+            ],
+            'isInlineChild' => true,
+            'inlineParentConfig' => [
+                'foreign_label' => 'aField',
+            ],
+        ];
+        $expected = $input;
+        $expected['recordTitle'] = 'aValue';
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataOverridesRecordTitleWithFormattedLabelUserFuncForInlineChildWithForeignLabel()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'aField' => 'aValue',
+            ],
+            'processedTca' => [
+                'ctrl' => [
+                    'label' => 'foo',
+                    'formattedLabel_userFunc' => function (&$parameters) {
+                        $parameters['title'] = 'aFormattedLabel';
+                    },
+                ],
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'input',
+                        ],
+                    ],
+                ],
+            ],
+            'isInlineChild' => true,
+            'inlineParentConfig' => [
+                'foreign_label' => 'aField',
+            ],
+        ];
+        $expected = $input;
+        $expected['recordTitle'] = 'aFormattedLabel';
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataReturnsRecordTitleForInlineChildWithSymmetricLabel()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'aField' => 'aValue',
+            ],
+            'processedTca' => [
+                'ctrl' => [
+                    'label' => 'foo',
+                ],
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'input',
+                        ],
+                    ],
+                ],
+            ],
+            'isInlineChild' => true,
+            'inlineParentConfig' => [
+                'symmetric_label' => 'aField',
+            ],
+            'isOnSymmetricSide' => true,
+        ];
+        $expected = $input;
+        $expected['recordTitle'] = 'aValue';
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
     public function addDataReturnsRecordTitleForUid()
     {
         $input = [

@@ -1131,7 +1131,7 @@ class DatabaseConnection
      * MySQLi fetch_assoc() wrapper function
      *
      * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
-     * @return array|boolean Associative array of result row.
+     * @return array|bool Associative array of result row.
      */
     public function sql_fetch_assoc($res)
     {
@@ -1153,7 +1153,7 @@ class DatabaseConnection
      * MySQLi fetch_row() wrapper function
      *
      * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
-     * @return array|boolean Array with result rows.
+     * @return array|bool Array with result rows.
      */
     public function sql_fetch_row($res)
     {
@@ -1373,7 +1373,7 @@ class DatabaseConnection
     public function admin_get_dbs()
     {
         $dbArr = array();
-        $db_list = $this->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA");
+        $db_list = $this->query('SELECT SCHEMA_NAME FROM information_schema.SCHEMATA');
         if ($db_list === false) {
             throw new \RuntimeException(
                 'MySQL Error: Cannot get tablenames: "' . $this->sql_error() . '"!',
@@ -1859,19 +1859,13 @@ class DatabaseConnection
         if ($res !== false) {
             return true;
         }
-        $msg = 'Invalid database result detected';
-        $trace = debug_backtrace();
+        $trace = debug_backtrace(0);
         array_shift($trace);
-        $cnt = count($trace);
-        for ($i = 0; $i < $cnt; $i++) {
-            // Complete objects are too large for the log
-            if (isset($trace['object'])) {
-                unset($trace['object']);
-            }
-        }
-        $msg .= ': function TYPO3\\CMS\\Core\\Database\\DatabaseConnection->' . $trace[0]['function'] . ' called from file ' . substr($trace[0]['file'], (strlen(PATH_site) + 2)) . ' in line ' . $trace[0]['line'];
+        $msg = 'Invalid database result detected: function TYPO3\\CMS\\Core\\Database\\DatabaseConnection->'
+            . $trace[0]['function'] . ' called from file ' . substr($trace[0]['file'], (strlen(PATH_site) + 2))
+            . ' in line ' . $trace[0]['line'] . '.';
         GeneralUtility::sysLog(
-            $msg . '. Use a devLog extension to get more details.',
+            $msg . ' Use a devLog extension to get more details.',
             'core',
             GeneralUtility::SYSLOG_SEVERITY_ERROR
         );
@@ -1884,7 +1878,7 @@ class DatabaseConnection
             if ($this->debug_lastBuiltQuery) {
                 $debugLogData = array('SQL Query' => $this->debug_lastBuiltQuery) + $debugLogData;
             }
-            GeneralUtility::devLog($msg . '.', 'Core/t3lib_db', 3, $debugLogData);
+            GeneralUtility::devLog($msg, 'Core/t3lib_db', 3, $debugLogData);
         }
         return false;
     }

@@ -12,14 +12,13 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-/**
+/*
  * Base wrapper for loading old entry points, which are all used within TYPO3 directly
  * This file is only a deprecation layer, and all @deprecated entrypoints fallbacks will be removed with TYPO3 CMS 8
  * Use the UriBuilder for generating routes in your scripts to link to Ajax pages, Modules or simple pages in the Backend.
  */
-
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Controller;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 call_user_func(function () {
     $classLoader = require __DIR__ . '/../vendor/autoload.php';

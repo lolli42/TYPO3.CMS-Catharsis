@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Backend\Form\Element;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 
@@ -42,7 +41,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
 
         // Creating the label for the "No Matching Value" entry.
         $noMatchingLabel = isset($parameterArray['fieldTSConfig']['noMatchingValue_label'])
-            ? $this->getLanguageService()->sL($parameterArray['fieldTSConfig']['noMatchingValue_label'])
+            ? $this->getLanguageService()->sL(trim($parameterArray['fieldTSConfig']['noMatchingValue_label']))
             : '[ ' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue') . ' ]';
 
         $selItems = $config['items'];
@@ -60,38 +59,24 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
         if (!$maxitems) {
             $maxitems = 100000;
         }
-        // Get "removeItems":
-        $removeItems = GeneralUtility::trimExplode(',', $parameterArray['fieldTSConfig']['removeItems'], true);
         // Get the array with selected items:
         $itemsArray = $parameterArray['itemFormElValue'] ?: [];
 
         // Perform modification of the selected items array:
-        // @todo: this part should probably be moved to TcaSelectItems provider?!
         foreach ($itemsArray as $itemNumber => $itemValue) {
             $itemArray = array(
                 0 => $itemValue,
                 1 => '',
             );
-            $itemIcon = null;
-            $isRemoved = in_array($itemValue, $removeItems)
-                || $config['type'] == 'select' && $config['authMode']
-                && !$this->getBackendUserAuthentication()->checkAuthMode($table, $field, $itemValue, $config['authMode']);
-            if ($isRemoved && !$parameterArray['fieldTSConfig']['disableNoMatchingValueElement'] && !$config['disableNoMatchingValueElement']) {
-                $itemArray[1] = rawurlencode(@sprintf($noMatchingLabel, $itemValue));
-            } else {
-                if (isset($parameterArray['fieldTSConfig']['altLabels.'][$itemValue])) {
-                    $itemArray[1] = rawurlencode($this->getLanguageService()->sL($parameterArray['fieldTSConfig']['altLabels.'][$itemValue]));
-                }
-                if (isset($parameterArray['fieldTSConfig']['altIcons.'][$itemValue])) {
-                    $itemArray[2] = $parameterArray['fieldTSConfig']['altIcons.'][$itemValue];
-                }
+
+            if (isset($parameterArray['fieldTSConfig']['altIcons.'][$itemValue])) {
+                $itemArray[2] = $parameterArray['fieldTSConfig']['altIcons.'][$itemValue];
             }
-            if ($itemArray[1] === '') {
-                foreach ($selItems as $selItem) {
-                    if ($selItem[1] == $itemValue) {
-                        $itemArray[1] = $selItem[0];
-                        break;
-                    }
+
+            foreach ($selItems as $selItem) {
+                if ($selItem[1] == $itemValue) {
+                    $itemArray[1] = $selItem[0];
+                    break;
                 }
             }
             $itemsArray[$itemNumber] = implode('|', $itemArray);
@@ -149,9 +134,9 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
             if (isset($config['multiSelectFilterItems']) && is_array($config['multiSelectFilterItems']) && count($config['multiSelectFilterItems']) > 1) {
                 $filterDropDownOptions = array();
                 foreach ($config['multiSelectFilterItems'] as $optionElement) {
-                    $optionValue = $this->getLanguageService()->sL(isset($optionElement[1]) && $optionElement[1] != '' ? $optionElement[1]
-                        : $optionElement[0]);
-                    $filterDropDownOptions[] = '<option value="' . htmlspecialchars($this->getLanguageService()->sL($optionElement[0])) . '">'
+                    $optionValue = $this->getLanguageService()->sL(isset($optionElement[1]) && trim($optionElement[1]) !== '' ? trim($optionElement[1])
+                        : trim($optionElement[0]));
+                    $filterDropDownOptions[] = '<option value="' . htmlspecialchars($this->getLanguageService()->sL(trim($optionElement[0]))) . '">'
                         . htmlspecialchars($optionValue) . '</option>';
                 }
                 $filterSelectbox = '<select class="form-control input-sm t3js-formengine-multiselect-filter-dropdown">'

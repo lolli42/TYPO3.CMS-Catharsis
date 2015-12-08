@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Rtehtmlarea;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\FrontendEditing\FrontendEditingController;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Core\FrontendEditing\FrontendEditingController;
 
 /**
  * API for extending htmlArea RTE
@@ -130,7 +130,7 @@ abstract class RteHtmlAreaApi
         $pluginButtons = GeneralUtility::trimExplode(',', $this->pluginButtons, true);
         foreach ($pluginButtons as $button) {
             if (in_array($button, $this->toolbar)) {
-                if (!is_array($this->configuration['thisConfig']['buttons.']) || !is_array($this->configuration['thisConfig']['buttons.'][($button . '.')])) {
+                if (!is_array($this->configuration['thisConfig']['buttons.']) || !is_array($this->configuration['thisConfig']['buttons.'][$button . '.'])) {
                     $jsArray[] = 'RTEarea[editornumber].buttons.' . $button . ' = new Object();';
                 }
             }
@@ -320,7 +320,7 @@ abstract class RteHtmlAreaApi
                 throw new \RuntimeException($failure, 1294585668);
             }
         }
-        if (isset($GLOBALS['TSFE'])) {
+        if ($this->isFrontend() || $this->isFrontendEditActive()) {
             $fileName = $relativeFilename;
         } else {
             $fileName = '../' . $relativeFilename;

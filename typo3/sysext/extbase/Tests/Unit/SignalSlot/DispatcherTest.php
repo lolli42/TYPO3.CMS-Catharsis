@@ -23,7 +23,7 @@ use TYPO3\CMS\Extbase\Tests\Unit\SignalSlot\Fixtures\SlotMethodDoesNotExistFixtu
 class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 {
     /**
-     * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher|\PHPUnit_Framework_MockObject_MockObject|\Tx_Phpunit_Interface_AccessibleObject
+     * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
      */
     protected $signalSlotDispatcher;
 
@@ -127,7 +127,6 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             ->method('slot')
             ->with('modified_bar', 'modified_quux');
 
-
         $this->signalSlotDispatcher->connect('Foo', 'emitBar', $firstMockSlot, 'slot', false);
         $this->signalSlotDispatcher->connect('Foo', 'emitBar', $secondMockSlot, 'slot', false);
 
@@ -183,7 +182,6 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $thirdMockSlot->expects($this->once())
             ->method('slot')
             ->with('modified_bar', 'modified_quux');
-
 
         $this->signalSlotDispatcher->connect('Foo', 'emitBar', $firstMockSlot, 'slot');
         $this->signalSlotDispatcher->connect('Foo', 'emitBar', $secondMockSlot, 'slot');

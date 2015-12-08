@@ -14,17 +14,17 @@ namespace TYPO3\CMS\Backend\Form\Container;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Resource\Folder;
-use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 
 /**
  * Inline element entry container.
@@ -121,6 +121,13 @@ class InlineControlContainer extends AbstractContainer
         }
         $inlineStackProcessor->pushStableStructureItem($newStructureItem);
 
+        // Transport the flexform DS identifier fields to the FormAjaxInlineController
+        if (!empty($newStructureItem['flexform'])
+            && isset($this->data['processedTca']['columns'][$field]['config']['ds']['meta']['dataStructurePointers'])
+        ) {
+            $config['flexDataStructurePointers'] = $this->data['processedTca']['columns'][$field]['config']['ds']['meta']['dataStructurePointers'];
+        }
+
         // e.g. data[<table>][<uid>][<field>]
         $nameForm = $inlineStackProcessor->getCurrentStructureFormPrefix();
         // e.g. data-<pid>-<table1>-<uid1>-<field1>-<table2>-<uid2>-<field2>
@@ -209,14 +216,27 @@ class InlineControlContainer extends AbstractContainer
 
         $resultArray['inlineData'] = $this->inlineData;
 
-        // Render the localization links
+        // @todo: It might be a good idea to have something like "isLocalizedRecord" or similar set by a data provider
+        $isLocalizedParent = $language > 0
+            && $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']][0] > 0
+            && MathUtility::canBeInterpretedAsInteger($row['uid']);
+        $numberOfFullLocalizedChildren = 0;
+        $numberOfNotYetLocalizedChildren = 0;
+        foreach ($this->data['parameterArray']['fieldConf']['children'] as $child) {
+            if (!$child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
+                $numberOfFullLocalizedChildren ++;
+            }
+            if ($isLocalizedParent && $child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
+                $numberOfNotYetLocalizedChildren ++;
+            }
+        }
+
+        // Render the localization links if needed
         $localizationLinks = '';
-        // @todo if isInlineDefaultLanguageRecordInLocalizedParentContext
-        // @todo: Would be even more cool if the localize button is only shown if there are any not yet localized children
-        if ($language > 0 && $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']][0] > 0 && MathUtility::canBeInterpretedAsInteger($row['uid'])) {
+        if ($numberOfNotYetLocalizedChildren) {
             // Add the "Localize all records" link before all child records:
             if (isset($config['appearance']['showAllLocalizationLink']) && $config['appearance']['showAllLocalizationLink']) {
-                $localizationLinks .= ' ' . $this->getLevelInteractionLink('localize', $nameObject . '-' . $foreign_table, $config);
+                $localizationLinks = ' ' . $this->getLevelInteractionLink('localize', $nameObject . '-' . $foreign_table, $config);
             }
             // Add the "Synchronize with default language" link before all child records:
             if (isset($config['appearance']['showSynchronizationLink']) && $config['appearance']['showSynchronizationLink']) {
@@ -224,21 +244,17 @@ class InlineControlContainer extends AbstractContainer
             }
         }
 
-        $numberOfFullChildren = 0;
-        foreach ($this->data['parameterArray']['fieldConf']['children'] as $child) {
-            if (!$child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
-                $numberOfFullChildren ++;
-            }
-        }
         // Define how to show the "Create new record" link - if there are more than maxitems, hide it
-        if ($numberOfFullChildren >= $config['maxitems'] || $uniqueMax > 0 && $numberOfFullChildren >= $uniqueMax) {
+        if ($numberOfFullLocalizedChildren >= $config['maxitems'] || $uniqueMax > 0 && $numberOfFullLocalizedChildren >= $uniqueMax) {
             $config['inline']['inlineNewButtonStyle'] = 'display: none;';
             $config['inline']['inlineNewRelationButtonStyle'] = 'display: none;';
         }
 
         // Render the level links (create new record):
-        $levelLinks = $this->getLevelInteractionLink('newRecord', $nameObject . '-' . $foreign_table, $config);
-
+        $levelLinks = '';
+        if (!empty($config['appearance']['enabledControls']['new'])) {
+            $levelLinks = $this->getLevelInteractionLink('newRecord', $nameObject . '-' . $foreign_table, $config);
+        }
         // Wrap all inline fields of a record with a <div> (like a container)
         $html = '<div class="form-group" id="' . $nameObject . '">';
         // Add the level links before all child records:
@@ -256,7 +272,7 @@ class InlineControlContainer extends AbstractContainer
             $html .= $selectorBox . $localizationLinks;
         }
 
-        $title = $languageService->sL($parameterArray['fieldConf']['label']);
+        $title = $languageService->sL(trim($parameterArray['fieldConf']['label']));
         $html .= '<div class="panel-group panel-hover" data-title="' . htmlspecialchars($title) . '" id="' . $nameObject . '_records">';
 
         $sortableRecordUids = [];
@@ -484,7 +500,7 @@ class InlineControlContainer extends AbstractContainer
                     $placeholder = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.placeholder', true);
                     $buttonSubmit = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.submit', true);
                     $item .= '
-						<span class="btn btn-default t3js-online-media-add-btn"
+						<span class="btn btn-default t3js-online-media-add-btn ' . $this->inlineData['config'][$nameObject]['md5'] . '"
 							data-file-irre-object="' . htmlspecialchars($objectPrefix) . '"
 							data-online-media-allowed="' . htmlspecialchars(implode(',', $onlineMediaAllowed)) . '"
 							data-target-folder="' . htmlspecialchars($folder->getCombinedIdentifier()) . '"

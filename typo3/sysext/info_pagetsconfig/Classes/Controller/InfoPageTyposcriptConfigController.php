@@ -156,7 +156,6 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 						<!-- Edit fields: -->
 						<table border="0" cellpadding="0" cellspacing="1">' . implode('', $lines) . '</table><br />' . $editIcon;
                 $theOutput .= '</div>';
-
             } else {
                 // Defined global here!
                 $tmpl = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\ExtendedTemplateService::class);
@@ -273,7 +272,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
         $hierarchicArray[$currentElement['uid']] = htmlspecialchars($currentElement['title']);
         array_shift($rootlineArray);
         if (!empty($rootlineArray)) {
-            if (!isset($hierarchicArray[($currentElement['uid'] . '.')])) {
+            if (!isset($hierarchicArray[$currentElement['uid'] . '.'])) {
                 $hierarchicArray[$currentElement['uid'] . '.'] = array();
             }
             $this->setInPageArray($hierarchicArray[$currentElement['uid'] . '.'], $rootlineArray, $row);
@@ -333,7 +332,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
                     . '" title="' . htmlspecialchars('ID: ' . $identifier) . '">'
                     . $this->iconFactory->getIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $identifier), Icon::SIZE_SMALL)->render()
                     . GeneralUtility::fixed_lgd_cs($pageArray[$identifier], 30) . '</a></td>
-					<td>' . ($pageArray[($identifier . '_')]['includeLines'] === 0 ? '' : $pageArray[($identifier . '_')]['includeLines']) . '</td>
+					<td>' . ($pageArray[$identifier . '_']['includeLines'] === 0 ? '' : $pageArray[($identifier . '_')]['includeLines']) . '</td>
 					<td>' . ($pageArray[$identifier . '_']['writtenLines'] === 0 ? '' : $pageArray[$identifier . '_']['writtenLines']) . '</td>
 					</tr>';
             } else {

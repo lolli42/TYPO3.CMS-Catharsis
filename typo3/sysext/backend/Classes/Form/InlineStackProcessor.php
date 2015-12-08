@@ -15,8 +15,8 @@ namespace TYPO3\CMS\Backend\Form;
  */
 
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Handle inline stack.
@@ -125,6 +125,8 @@ class InlineStackProcessor
         if (GeneralUtility::hmac(serialize($context['config'])) !== $context['hmac']) {
             return;
         }
+        // Remove the data structure pointers, only relevant for the FormInlineAjaxController
+        unset($context['flexDataStructurePointers']);
         $current['config'] = $context['config'];
         $current['localizationMode'] = BackendUtility::getInlineLocalizationMode(
             $current['table'],

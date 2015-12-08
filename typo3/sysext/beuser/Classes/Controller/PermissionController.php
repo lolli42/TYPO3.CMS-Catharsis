@@ -16,13 +16,13 @@ namespace TYPO3\CMS\Beuser\Controller;
 
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
@@ -138,6 +138,7 @@ class PermissionController extends ActionController
                 '
             );
             $this->registerDocHeaderButtons();
+            $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
         }
     }
 
@@ -168,9 +169,9 @@ class PermissionController extends ActionController
         if ($this->id > 0) {
             $iconFactory = $this->view->getModuleTemplate()->getIconFactory();
             $viewButton = $buttonBar->makeLinkButton()
-                ->setOnClick(htmlspecialchars(BackendUtility::viewOnClick($this->pageInfo['uid'], '',
-                    BackendUtility::BEgetRootLine($this->pageInfo['uid']))))
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true))
+                ->setOnClick(BackendUtility::viewOnClick($this->pageInfo['uid'], '',
+                    BackendUtility::BEgetRootLine($this->pageInfo['uid'])))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage'))
                 ->setIcon($iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL))
                 ->setHref('#');
 
@@ -192,8 +193,8 @@ class PermissionController extends ActionController
         if ($this->getBackendUser()->workspace != 0) {
             // Adding section with the permission setting matrix:
             $this->addFlashMessage(
-                'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:WorkspaceWarningText',
-                'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:WorkspaceWarning',
+                LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:WorkspaceWarningText', 'beuser'),
+                LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:WorkspaceWarning', 'beuser'),
                 FlashMessage::WARNING
             );
         }

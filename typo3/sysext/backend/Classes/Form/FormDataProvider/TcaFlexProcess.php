@@ -50,6 +50,7 @@ class TcaFlexProcess implements FormDataProviderInterface
             $result = $this->removeExcludeFieldsFromDataStructure($result, $fieldName, $flexIdentifier);
             $result = $this->removeDisabledFieldsFromDataStructure($result, $fieldName, $pageTsConfigOfFlex);
             $result = $this->modifyDataStructureAndDataValuesByFlexFormSegmentGroup($result, $fieldName, $pageTsConfigOfFlex);
+            $result = $this->addDataStructurePointersToMetaData($result, $fieldName);
         }
 
         return $result;
@@ -175,17 +176,16 @@ class TcaFlexProcess implements FormDataProviderInterface
             if (strpos($userNonExcludeField, $excludeFieldsPrefix) !== false) {
                 $exploded = explode(';', $userNonExcludeField);
                 $sheetName = $exploded[2];
-                $fieldName = $exploded[3];
-                $nonExcludeFields[$sheetName] = $fieldName;
+                $allowedFlexFieldName = $exploded[3];
+                $nonExcludeFields[$sheetName][$allowedFlexFieldName] = true;
             }
         }
-
         foreach ($dataStructure['sheets'] as $sheetName => $sheetDefinition) {
             if (!isset($sheetDefinition['ROOT']['el']) || !is_array($sheetDefinition['ROOT']['el'])) {
                 continue;
             }
             foreach ($sheetDefinition['ROOT']['el'] as $flexFieldName => $fieldDefinition) {
-                if (!empty($fieldDefinition['exclude']) && empty($nonExcludeFields[$sheetName])) {
+                if (!empty($fieldDefinition['exclude']) && !isset($nonExcludeFields[$sheetName][$flexFieldName])) {
                     unset($result['processedTca']['columns'][$fieldName]['config']['ds']['sheets'][$sheetName]['ROOT']['el'][$flexFieldName]);
                 }
             }
@@ -270,7 +270,7 @@ class TcaFlexProcess implements FormDataProviderInterface
             ];
             foreach ($dataStructureSheetElements as $dataStructureSheetElementName => $dataStructureSheetElementDefinition) {
                 if (isset($dataStructureSheetElementDefinition['type']) && $dataStructureSheetElementDefinition['type'] === 'array'
-                    && isset($dataStructureSheetElementDefinition['section']) && $dataStructureSheetElementDefinition['section'] === '1'
+                    && isset($dataStructureSheetElementDefinition['section']) && (string)$dataStructureSheetElementDefinition['section'] === '1'
                 ) {
                     // A section
 
@@ -323,6 +323,7 @@ class TcaFlexProcess implements FormDataProviderInterface
                                             'ctrl' => [],
                                             'columns' => [],
                                         ],
+                                        'flexParentDatabaseRow' => $result['databaseRow'],
                                     ];
 
                                     if (!empty($newColumns)) {
@@ -401,6 +402,7 @@ class TcaFlexProcess implements FormDataProviderInterface
                                                 $singleFieldName => $singleFieldConfiguration,
                                             ],
                                         ],
+                                        'flexParentDatabaseRow' => $result['databaseRow'],
                                     ];
                                     $flexSegmentResult = $formDataCompiler->compile($inputToFlexFormSegment);
                                     if (array_key_exists($singleFieldName, $flexSegmentResult['databaseRow'])) {
@@ -435,7 +437,6 @@ class TcaFlexProcess implements FormDataProviderInterface
                     } else {
                         $tcaNewColumns[$dataStructureSheetElementName] = $dataStructureSheetElementDefinition;
                     }
-
                 } // End of single element handling
             }
 
@@ -450,6 +451,7 @@ class TcaFlexProcess implements FormDataProviderInterface
                     'ctrl' => [],
                     'columns' => [],
                 ],
+                'flexParentDatabaseRow' => $result['databaseRow'],
             ];
 
             if (!empty($tcaNewColumns)) {
@@ -531,5 +533,37 @@ class TcaFlexProcess implements FormDataProviderInterface
     protected function getBackendUser()
     {
         return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * Add fields and values used by ds_pointerField to the meta data array so they can be used in AJAX context during rendering.
+     *
+     * @todo: This method is a stopgap measure to get required information into the AJAX controller
+     *
+     * @param array $result Result array
+     * @param string $fieldName Current handle field name
+     * @return array
+     * @internal
+     */
+    protected function addDataStructurePointersToMetaData(array $result, $fieldName)
+    {
+        if (empty($result['processedTca']['columns'][$fieldName]['config']['ds_pointerField'])) {
+            return $result;
+        }
+
+        $pointerFields = GeneralUtility::trimExplode(
+            ',',
+            $result['processedTca']['columns'][$fieldName]['config']['ds_pointerField']
+        );
+        $dsPointers = [
+            $pointerFields[0] => !empty($result['databaseRow'][$pointerFields[0]]) ? $result['databaseRow'][$pointerFields[0]] : ''
+        ];
+
+        if (!empty($pointerFields[1])) {
+            $dsPointers[$pointerFields[1]] =
+                !empty($result['databaseRow'][$pointerFields[1]]) ? $result['databaseRow'][$pointerFields[1]] : '';
+        }
+        $result['processedTca']['columns'][$fieldName]['config']['ds']['meta']['dataStructurePointers'] = $dsPointers;
+        return $result;
     }
 }

@@ -14,9 +14,9 @@ namespace TYPO3\CMS\Core\Resource;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Compressor
@@ -764,7 +764,7 @@ class ResourceCompressor
         // Strip all comment blocks, but keep double/single quoted strings.
         $contents = preg_replace(
             "<($double_quot|$single_quot)|$comment>Ss",
-            "$1",
+            '$1',
             $contents
         );
         // Remove certain whitespace.

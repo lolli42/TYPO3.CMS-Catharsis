@@ -21,7 +21,6 @@ use TYPO3\CMS\Backend\Form\FormDataGroup\InlineParentRecord;
 use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\NodeFactory;
-use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -72,15 +71,18 @@ class FormInlineAjaxController
             $databaseRow = [];
             $vanillaUid = (int)$inlineFirstPid;
         }
+        $databaseRow = $this->addFlexFormDataStructurePointersFromAjaxContext($ajaxArguments, $databaseRow);
+
         $formDataCompilerInputForParent = [
             'vanillaUid' => $vanillaUid,
             'command' => $command,
             'tableName' => $parent['table'],
             'databaseRow' => $databaseRow,
             'inlineFirstPid' => $inlineFirstPid,
-            'columnsToProcess' => [
-                $parentFieldName
-            ],
+            'columnsToProcess' => array_merge(
+                [$parentFieldName],
+                array_keys($databaseRow)
+            ),
             // Do not resolve existing children, we don't need them now
             'inlineResolveExistingChildren' => false,
         ];
@@ -101,7 +103,11 @@ class FormInlineAjaxController
             $childVanillaUid = (int)$inlineFirstPid;
         }
 
+        if ($parentConfig['type'] === 'flex') {
+            $parentConfig = $this->getParentConfigFromFlexForm($parentConfig, $domObjectId);
+        }
         $childTableName = $parentConfig['foreign_table'];
+
         /** @var TcaDatabaseRecord $formDataGroup */
         $formDataGroup = GeneralUtility::makeInstance(TcaDatabaseRecord::class);
         /** @var FormDataCompiler $formDataCompiler */
@@ -113,6 +119,9 @@ class FormInlineAjaxController
             'isInlineChild' => true,
             'inlineStructure' => $inlineStackProcessor->getStructure(),
             'inlineFirstPid' => $inlineFirstPid,
+            'inlineParentUid' => $parent['uid'],
+            'inlineParentTableName' => $parent['table'],
+            'inlineParentFieldName' => $parent['field'],
             'inlineParentConfig' => $parentConfig,
         ];
         if ($childChildUid) {
@@ -134,9 +143,8 @@ class FormInlineAjaxController
             }
         }
          */
-
         if ($parentConfig['foreign_selector'] && $parentConfig['appearance']['useCombination']) {
-            // We have a foreign_selector. So, we just created a new record on an intermediate table in $mainChild.
+            // We have a foreign_selector. So, we just created a new record on an intermediate table in $childData.
             // Now, if a valid id is given as second ajax parameter, the intermediate row should be connected to an
             // existing record of the child-child table specified by the given uid. If there is no such id, user
             // clicked on "created new" and a new child-child should be created, too.
@@ -145,7 +153,7 @@ class FormInlineAjaxController
                 $childData['databaseRow'][$parentConfig['foreign_selector']] = [
                     $childChildUid,
                 ];
-                $childData['combinationChild'] = $this->compileCombinationChild($childData, $parentConfig);
+                $childData['combinationChild'] = $this->compileChildChild($childData, $parentConfig, $inlineStackProcessor->getStructure());
             } else {
                 /** @var TcaDatabaseRecord $formDataGroup */
                 $formDataGroup = GeneralUtility::makeInstance(TcaDatabaseRecord::class);
@@ -155,6 +163,9 @@ class FormInlineAjaxController
                     'command' => 'new',
                     'tableName' => $childData['processedTca']['columns'][$parentConfig['foreign_selector']]['config']['foreign_table'],
                     'vanillaUid' => (int)$inlineFirstPid,
+                    'isInlineChild' => true,
+                    'isInlineAjaxOpeningContext' => true,
+                    'inlineStructure' => $inlineStackProcessor->getStructure(),
                     'inlineFirstPid' => (int)$inlineFirstPid,
                 ];
                 $childData['combinationChild'] = $formDataCompiler->compile($formDataCompilerInput);
@@ -343,10 +354,25 @@ class FormInlineAjaxController
             $formDataCompiler = GeneralUtility::makeInstance(FormDataCompiler::class, $formDataGroup);
             $parentData = $formDataCompiler->compile($formDataCompilerInputForParent);
             $parentConfig = $parentData['processedTca']['columns'][$parentFieldName]['config'];
+            $parentLanguageField = $parentData['processedTca']['ctrl']['languageField'];
+            $parentLanguage = $parentData['databaseRow'][$parentLanguageField];
             $oldItemList = $parentData['databaseRow'][$parentFieldName];
 
             $cmd = array();
-            $cmd[$parent['table']][$parent['uid']]['inlineLocalizeSynchronize'] = $parent['field'] . ',' . $type;
+            if (MathUtility::canBeInterpretedAsInteger($type)) {
+                $cmd[$parent['table']][$parent['uid']]['inlineLocalizeSynchronize'] = array(
+                    'field' => $parent['field'],
+                    'language' => $parentLanguage,
+                    'ids' => array($type),
+                );
+            } else {
+                $cmd[$parent['table']][$parent['uid']]['inlineLocalizeSynchronize'] = array(
+                    'field' => $parent['field'],
+                    'language' => $parentLanguage,
+                    'action' => $type,
+                );
+            }
+
             /** @var $tce DataHandler */
             $tce = GeneralUtility::makeInstance(DataHandler::class);
             $tce->stripslashes_values = false;
@@ -399,7 +425,6 @@ class FormInlineAjaxController
                     }
                     $jsonArray['scriptCall'][] = 'inline.fadeAndRemove(' . GeneralUtility::quoteJSvalue($nameObjectForeignTable . '-' . $transOrigPointerField . '_div') . ');';
                 }
-
             }
             // Tell JS to add new HTML of one or multiple (localize all) records to DOM
             if (!empty($jsonArray['data'])) {
@@ -478,19 +503,21 @@ class FormInlineAjaxController
      * @param array $inlineStructure Current inline structure
      * @return array Full result array
      *
-     * @todo: This clones methods compileChild and compileCombinationChild from TcaInline Provider.
-     * @todo: Find something around that, eg. some option to force TcaInline provider to calculate a
-     * @todo: specific forced-open element only :)
+     * @todo: This clones methods compileChild from TcaInline Provider. Find a better abstraction
+     * @todo: to also encapsulate the more complex scenarios with combination child and friends.
      */
     protected function compileChild(array $parentData, $parentFieldName, $childUid, array $inlineStructure)
     {
         $parentConfig = $parentData['processedTca']['columns'][$parentFieldName]['config'];
-        $childTableName = $parentConfig['foreign_table'];
 
         /** @var InlineStackProcessor $inlineStackProcessor */
         $inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
         $inlineStackProcessor->initializeByGivenStructure($inlineStructure);
         $inlineTopMostParent = $inlineStackProcessor->getStructureLevel(0);
+
+        // @todo: do not use stack processor here ...
+        $child = $inlineStackProcessor->getUnstableStructure();
+        $childTableName = $child['table'];
 
         /** @var TcaDatabaseRecord $formDataGroup */
         $formDataGroup = GeneralUtility::makeInstance(TcaDatabaseRecord::class);
@@ -522,7 +549,8 @@ class FormInlineAjaxController
         // is just the normal child record and $combinationChild is empty.
         $mainChild = $formDataCompiler->compile($formDataCompilerInput);
         if ($parentConfig['foreign_selector'] && $parentConfig['appearance']['useCombination']) {
-            $mainChild['combinationChild'] = $this->compileCombinationChild($mainChild, $parentConfig, $inlineStructure);
+            // This kicks in if opening an existing mainChild that has a child-child set
+            $mainChild['combinationChild'] = $this->compileChildChild($mainChild, $parentConfig, $inlineStructure);
         }
         return $mainChild;
     }
@@ -531,17 +559,36 @@ class FormInlineAjaxController
      * With useCombination set, not only content of the intermediate table, but also
      * the connected child should be rendered in one go. Prepare this here.
      *
-     * @param array $intermediate Full data array of "mm" record
+     * @param array $child Full data array of "mm" record
      * @param array $parentConfig TCA configuration of "parent"
      * @param array $inlineStructure Current inline structure
      * @return array Full data array of child
      */
-    protected function compileCombinationChild(array $intermediate, array $parentConfig, array $inlineStructure)
+    protected function compileChildChild(array $child, array $parentConfig, array $inlineStructure)
     {
         // foreign_selector on intermediate is probably type=select, so data provider of this table resolved that to the uid already
-        $intermediateUid = $intermediate['databaseRow'][$parentConfig['foreign_selector']][0];
-        $combinationChild = $this->compileChild($intermediate, $parentConfig['foreign_selector'], $intermediateUid, $inlineStructure);
-        return $combinationChild;
+        $childChildUid = $child['databaseRow'][$parentConfig['foreign_selector']][0];
+        // child-child table name is set in child tca "the selector field" foreign_table
+        $childChildTableName = $child['processedTca']['columns'][$parentConfig['foreign_selector']]['config']['foreign_table'];
+        /** @var TcaDatabaseRecord $formDataGroup */
+        $formDataGroup = GeneralUtility::makeInstance(TcaDatabaseRecord::class);
+        /** @var FormDataCompiler $formDataCompiler */
+        $formDataCompiler = GeneralUtility::makeInstance(FormDataCompiler::class, $formDataGroup);
+        $formDataCompilerInput = [
+            'command' => 'edit',
+            'tableName' => $childChildTableName,
+            'vanillaUid' => (int)$childChildUid,
+            'isInlineChild' => true,
+            'isInlineAjaxOpeningContext' => true,
+            // @todo: this is the wrong inline structure, isn't it? Shouldn't contain it the part from child child, too?
+            'inlineStructure' => $inlineStructure,
+            'inlineFirstPid' => $child['inlineFirstPid'],
+            // values of the top most parent element set on first level and not overridden on following levels
+            'inlineTopMostParentUid' => $child['inlineTopMostParentUid'],
+            'inlineTopMostParentTableName' => $child['inlineTopMostParentTableName'],
+            'inlineTopMostParentFieldName' => $child['inlineTopMostParentFieldName'],
+        ];
+        return $formDataCompiler->compile($formDataCompilerInput);
     }
 
     /**
@@ -733,5 +780,113 @@ class FormInlineAjaxController
     protected function getBackendUserAuthentication()
     {
         return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * Extract the inline child table configuration from the flexform data structure
+     * using the the domObjectId to traverse the XML structure.
+     *
+     * domObjectId parsing has been copied from InlineStackProcessor::initializeByDomObjectId
+     *
+     * @param array $parentConfig
+     * @param string $domObjectId
+     * @return array
+     */
+    protected function getParentConfigFromFlexForm(array $parentConfig, $domObjectId)
+    {
+        // Substitute FlexForm addition and make parsing a bit easier
+        $domObjectId = str_replace('---', ':', $domObjectId);
+        // The starting pattern of an object identifier (e.g. "data-<firstPidValue>-<anything>)
+        $pattern = '/^data' . '-' . '(?<firstPidValue>.+?)' . '-' . '(?<anything>.+)$/';
+
+        $flexFormPath = [];
+        // Will be checked against the FlexForm configuration as an additional safeguard
+        $foreignTableName = '';
+
+        if (preg_match($pattern, $domObjectId, $match)) {
+            // The flexform path should be the second to last array element,
+            // the foreign table name the last.
+            $parts = array_slice(explode('-', $match['anything']), -2, 2);
+
+            if (count($parts) !== 2 || !isset($parts[0]) || strpos($parts[0], ':') === false) {
+                throw new \UnexpectedValueException(
+                    'DOM Object ID' . $domObjectId . 'does not contain required information '
+                    . 'to extract inline field configuration.',
+                    1446996136
+                );
+            }
+
+            $fieldParts = GeneralUtility::trimExplode(':', $parts[0]);
+
+            // FlexForm parts start with data:
+            if (empty($fieldParts) || !isset($fieldParts[1]) || $fieldParts[1] !== 'data') {
+                throw new \UnexpectedValueException(
+                    'Malformed flexform identifier: ' . $parts[2],
+                    1446996254
+                );
+            }
+
+            $flexFormPath = array_slice($fieldParts, 2);
+            $foreignTableName = $parts[1];
+        }
+
+        $childConfig = $parentConfig['ds']['sheets'];
+
+        foreach ($flexFormPath as $flexFormNode) {
+            // We are dealing with configuration information from a flexform,
+            // not value storage, identifiers that reference language or
+            // value nodes must be skipped.
+            if (!isset($childConfig[$flexFormNode]) && preg_match('/^[lv][[:alpha:]]+$/', $flexFormNode)) {
+                continue;
+            }
+            $childConfig = $childConfig[$flexFormNode];
+
+            // Skip to the field configuration of a sheet
+            if (isset($childConfig['ROOT']) && $childConfig['ROOT']['type'] == 'array') {
+                $childConfig = $childConfig['ROOT']['el'];
+            }
+        }
+
+        if (!isset($childConfig['config'])
+            || !is_array($childConfig['config'])
+            || $childConfig['config']['type'] !== 'inline'
+            || $childConfig['config']['foreign_table'] !== $foreignTableName
+        ) {
+            throw new \UnexpectedValueException(
+                'Configuration retrieved from FlexForm is incomplete or not of type "inline".',
+                1446996319
+            );
+        }
+        return $childConfig['config'];
+    }
+
+    /**
+     * Flexforms require additional database columns to be processed to determine the correct
+     * data structure to be used from a flexform. The required columns and their values are
+     * transmitted in the AJAX context of the request and need to be added to the fake database
+     * row for the inline parent.
+     *
+     * @param array $ajaxArguments The AJAX request arguments
+     * @param array $databaseRow The fake database row
+     * @return array The database row with the flexform data structure pointer columns added
+     */
+    protected function addFlexFormDataStructurePointersFromAjaxContext(array $ajaxArguments, array $databaseRow)
+    {
+        if (!isset($ajaxArguments['context'])) {
+            return $databaseRow;
+        }
+
+        $context = json_decode($ajaxArguments['context'], true);
+        if (GeneralUtility::hmac(serialize($context['config'])) !== $context['hmac']) {
+            return $databaseRow;
+        }
+
+        if (isset($context['config']['flexDataStructurePointers'])
+            && is_array($context['config']['flexDataStructurePointers'])
+        ) {
+            $databaseRow = array_merge($context['config']['flexDataStructurePointers'], $databaseRow);
+        }
+
+        return $databaseRow;
     }
 }

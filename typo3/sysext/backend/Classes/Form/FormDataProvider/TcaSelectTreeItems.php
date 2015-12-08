@@ -42,14 +42,13 @@ class TcaSelectTreeItems extends AbstractItemProvider implements FormDataProvide
             }
 
             // Make sure we are only processing supported renderTypes
-            if ($this->isTargetRenderType($fieldConfig)) {
+            if (!$this->isTargetRenderType($fieldConfig)) {
                 continue;
             }
 
             $fieldConfig['config']['items'] = $this->sanitizeItemArray($fieldConfig['config']['items'], $table, $fieldName);
             $fieldConfig['config']['maxitems'] = $this->sanitizeMaxItems($fieldConfig['config']['maxitems']);
 
-            $fieldConfig['config']['items'] = $this->addItemsFromPageTsConfig($result, $fieldName, $fieldConfig['config']['items']);
             $fieldConfig['config']['items'] = $this->addItemsFromSpecial($result, $fieldName, $fieldConfig['config']['items']);
             $fieldConfig['config']['items'] = $this->addItemsFromFolder($result, $fieldName, $fieldConfig['config']['items']);
             $staticItems = $fieldConfig['config']['items'];
@@ -58,7 +57,9 @@ class TcaSelectTreeItems extends AbstractItemProvider implements FormDataProvide
             $dynamicItems = array_diff_key($fieldConfig['config']['items'], $staticItems);
 
             $fieldConfig['config']['items'] = $this->removeItemsByKeepItemsPageTsConfig($result, $fieldName, $fieldConfig['config']['items']);
+            $fieldConfig['config']['items'] = $this->addItemsFromPageTsConfig($result, $fieldName, $fieldConfig['config']['items']);
             $fieldConfig['config']['items'] = $this->removeItemsByRemoveItemsPageTsConfig($result, $fieldName, $fieldConfig['config']['items']);
+
             $fieldConfig['config']['items'] = $this->removeItemsByUserLanguageFieldRestriction($result, $fieldName, $fieldConfig['config']['items']);
             $fieldConfig['config']['items'] = $this->removeItemsByUserAuthMode($result, $fieldName, $fieldConfig['config']['items']);
             $fieldConfig['config']['items'] = $this->removeItemsByDoktypeUserRestriction($result, $fieldName, $fieldConfig['config']['items']);
@@ -74,6 +75,7 @@ class TcaSelectTreeItems extends AbstractItemProvider implements FormDataProvide
             $fieldConfig['config']['items'] = $this->translateLabels($result, $fieldConfig['config']['items'], $table, $fieldName);
 
             $staticValues = $this->getStaticValues($fieldConfig['config']['items'], $dynamicItems);
+            $result['databaseRow'][$fieldName] = $this->processDatabaseFieldValue($result['databaseRow'], $fieldName);
             $result['databaseRow'][$fieldName] = $this->processSelectFieldValue($result, $fieldName, $staticValues);
 
             // Keys may contain table names, so a numeric array is created
@@ -111,7 +113,7 @@ class TcaSelectTreeItems extends AbstractItemProvider implements FormDataProvide
             $fieldName,
             $result['databaseRow']
         );
-        $treeDataProvider->setSelectedList(implode(',', $result['databaseRow'][$fieldName]));
+        $treeDataProvider->setSelectedList(is_array($result['databaseRow'][$fieldName]) ? implode(',', $result['databaseRow'][$fieldName]) : $result['databaseRow'][$fieldName]);
         $treeDataProvider->setItemWhiteList($allowedUids);
         $treeDataProvider->initializeTreeData();
 
@@ -195,9 +197,6 @@ class TcaSelectTreeItems extends AbstractItemProvider implements FormDataProvide
      */
     protected function isTargetRenderType(array $fieldConfig)
     {
-        if ($fieldConfig['config']['renderType'] !== 'selectTree') {
-            return true;
-        }
-        return false;
+        return $fieldConfig['config']['renderType'] === 'selectTree';
     }
 }

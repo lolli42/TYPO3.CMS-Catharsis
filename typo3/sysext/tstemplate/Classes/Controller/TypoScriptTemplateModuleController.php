@@ -20,12 +20,12 @@ use TYPO3\CMS\Backend\Module\BaseScriptClass;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
@@ -212,11 +212,11 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
             // Build the module content
             $this->content = '<form action="' . htmlspecialchars($aHref) . '" method="post" enctype="multipart/form-data" id="TypoScriptTemplateModuleController" name="editForm" class="form">';
             $this->content .= $this->doc->header($lang->getLL('moduleTitle'));
-            $this->content .= '</form>';
             $this->extObjContent();
             // Setting up the buttons and markers for docheader
             $this->getButtons();
             $this->generateMenu();
+            $this->content .= '</form>';
         } else {
             // Template pages:
             $records = $this->getDatabaseConnection()->exec_SELECTgetRows(
@@ -248,7 +248,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
                     '</table></div>';
 
             $this->content = $this->doc->header($lang->getLL('moduleTitle'));
-            $this->content .= $this->moduleTemplate->section('', '<p class="lead">' . $lang->getLL('overview') . '</p>' . $table);
+            $this->content .= '<div><p class="lead">' . $lang->getLL('overview') . '</p>' . $table . '</div>';
 
             // RENDER LIST of pages with templates, END
             // Setting up the buttons and markers for docheader
@@ -340,7 +340,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
             $viewButton = $buttonBar->makeLinkButton()
                 ->setHref('#')
                 ->setOnClick(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid'])))
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-view', Icon::SIZE_SMALL));
             $buttonBar->addButton($viewButton, ButtonBar::BUTTON_POSITION_LEFT, 99);
             if ($this->extClassConf['name'] === TypoScriptTemplateInformationModuleFunctionController::class) {
@@ -357,13 +357,13 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
                         ->setValue('1')
                         ->setForm('TypoScriptTemplateModuleController')
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL))
-                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true));
+                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'));
 
                     $saveAndCloseButton = $buttonBar->makeInputButton()
                         ->setName('_saveandclosedok')
                         ->setValue('1')
                         ->setForm('TypoScriptTemplateModuleController')
-                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', true))
+                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc'))
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save-close', Icon::SIZE_SMALL));
 
                     $splitButtonElement = $buttonBar->makeSplitButton()
@@ -375,13 +375,13 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
                     // CLOSE button
                     $closeButton = $buttonBar->makeLinkButton()
                         ->setHref(BackendUtility::getModuleUrl('web_ts', array('id' => $this->id)))
-                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', true))
+                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc'))
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
                     $buttonBar->addButton($closeButton);
                 } else {
                     $newButton = $buttonBar->makeLinkButton()
                         ->setHref(BackendUtility::getModuleUrl('web_ts', $urlParameters))
-                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.pagetitle', true))
+                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.pagetitle'))
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-new', Icon::SIZE_SMALL));
                     $buttonBar->addButton($newButton);
                 }
@@ -391,7 +391,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
                     ->setName('_savedok')
                     ->setValue('1')
                     ->setForm('TypoScriptTemplateModuleController')
-                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true))
+                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL))
                     ->setShowLabelText(true);
                 $buttonBar->addButton($saveButton);
@@ -404,7 +404,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
                     $backButton = $buttonBar->makeLinkButton()
                         ->setHref(BackendUtility::getModuleUrl('web_ts', $urlParameters))
                         ->setClasses('typo3-goBack')
-                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', true))
+                        ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
                     $buttonBar->addButton($backButton);
                 }
@@ -494,16 +494,15 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
                 $staticsText = '';
             }
             // Extension?
-            $theOutput .= $this->moduleTemplate->section(
-                $lang->getLL('newWebsite') . $staticsText,
-                '<p>' . $lang->getLL('newWebsiteDescription') . '</p>' . $selector . '<input class="btn btn-primary" type="submit" form="TypoScriptTemplateModuleController" name="newWebsite" value="' . $lang->getLL('newWebsiteAction') . '" />',
-                0, 1);
+            $theOutput .= '<h2>' . $lang->getLL('newWebsite', true) . $staticsText . '</h2>';
+            $theOutput .= '<div><p>' . $lang->getLL('newWebsiteDescription') . '</p>' . $selector
+                . '<input class="btn btn-primary" type="submit" form="TypoScriptTemplateModuleController" name="newWebsite" value="'
+                . $lang->getLL('newWebsiteAction') . '" /></div>';
         }
         // Extension?
-        $theOutput .= $this->moduleTemplate->section(
-            $lang->getLL('extTemplate'),
-            '<p>' . $lang->getLL('extTemplateDescription') . '</p>' . '<input class="btn btn-default" type="submit" form="TypoScriptTemplateModuleController" name="createExtension" value="' . $lang->getLL('extTemplateAction') . '" />',
-            0, 1);
+        $theOutput .= '<h2>' . $lang->getLL('extTemplate') . '</h2>';
+        $theOutput .= '<div><p>' . $lang->getLL('extTemplateDescription') . '</p>' . '<input class="btn btn-default" type="submit" form="TypoScriptTemplateModuleController" name="createExtension" value="' . $lang->getLL('extTemplateAction') . '" /></div>';
+
         // Go to first appearing...
         $first = $tmpl->ext_prevPageWithTemplate($this->id, $this->perms_clause);
         if ($first) {
@@ -511,10 +510,8 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
                 'id' => $first['uid']
             );
             $aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
-            $theOutput .= $this->moduleTemplate->section(
-                $lang->getLL('goToClosest'),
-                sprintf('<p>' . $lang->getLL('goToClosestDescription') . '</p>%s' . $lang->getLL('goToClosestAction') . '%s', htmlspecialchars($first['title']), $first['uid'], '<a class="btn btn-default" href="' . htmlspecialchars($aHref) . '">', '</a>'),
-                0, 1);
+            $theOutput .= '<h3>' . $lang->getLL('goToClosest') . '</h3>';
+            $theOutput .= '<div>' . sprintf('<p>' . $lang->getLL('goToClosestDescription') . '</p>%s' . $lang->getLL('goToClosestAction') . '%s', htmlspecialchars($first['title']), $first['uid'], '<a class="btn btn-default" href="' . htmlspecialchars($aHref) . '">', '</a>') . '</div>';
         }
         return $theOutput;
     }
@@ -623,7 +620,7 @@ page.10.value = HELLO WORLD!
         $pArray[$cEl['uid']] = htmlspecialchars($cEl['title']);
         array_shift($rlArr);
         if (!empty($rlArr)) {
-            if (!isset($pArray[($cEl['uid'] . '.')])) {
+            if (!isset($pArray[$cEl['uid'] . '.'])) {
                 $pArray[$cEl['uid'] . '.'] = array();
             }
             $this->setInPageArray($pArray[$cEl['uid'] . '.'], $rlArr, $row);
@@ -654,7 +651,7 @@ page.10.value = HELLO WORLD!
                 if (isset($pArray[$k . '_'])) {
                     $lines[] = '<tr class="' . ($i++ % 2 == 0 ? 'bgColor4' : 'bgColor6') . '">
 						<td nowrap><span style="width: 1px; height: 1px; display:inline-block; margin-left: ' . $c * 20 . 'px"></span>' . '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('id' => $k))) . '" title="' . htmlspecialchars('ID: ' . $k) . '">' . $this->moduleTemplate->getIconFactory()->getIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $k), Icon::SIZE_SMALL)->render() . GeneralUtility::fixed_lgd_cs($pArray[$k], 30) . '</a></td>
-						<td>' . $pArray[($k . '_')]['count'] . '</td>
+						<td>' . $pArray[$k . '_']['count'] . '</td>
 						<td>' . ($pArray[$k . '_']['root_max_val'] > 0 ? $statusCheckedIcon : '&nbsp;') . '</td>
 						<td>' . ($pArray[$k . '_']['root_min_val'] == 0 ? $statusCheckedIcon : '&nbsp;') . '</td>
 						</tr>';

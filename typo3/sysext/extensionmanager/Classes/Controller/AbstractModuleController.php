@@ -14,13 +14,14 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 use TYPO3\CMS\Backend\View\BackendTemplateView;
+use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 
 /**
  * Abstract action controller.
  */
-class AbstractModuleController extends AbstractController {
-
+class AbstractModuleController extends AbstractController
+{
     /**
      * BackendTemplateContainer
      *
@@ -67,7 +68,7 @@ class AbstractModuleController extends AbstractController {
             ]
         ];
 
-        if (!$this->settings['offlineMode'] && !$this->settings['composerMode']) {
+        if (!$this->settings['offlineMode'] && !Bootstrap::usesComposerClassLoading()) {
             $menuItems['getExtensions'] = [
                 'controller' => 'List',
                 'action' => 'ter',
@@ -108,6 +109,7 @@ class AbstractModuleController extends AbstractController {
         }
 
         $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
+        $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
     }
 
     /**

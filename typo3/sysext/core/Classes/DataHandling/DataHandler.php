@@ -339,7 +339,6 @@ class DataHandler
      */
     public $pagetreeNeedsRefresh = false;
 
-
     // *********************
     // Internal Variables, do not touch.
     // *********************
@@ -1558,7 +1557,7 @@ class DataHandler
                 }
 
                 // Look for transformation flag:
-                if ((string)$incomingFieldArray[('_TRANSFORM_' . $vconf['field'])] === 'RTE') {
+                if ((string)$incomingFieldArray['_TRANSFORM_' . $vconf['field']] === 'RTE') {
                     if ($theTypeString === null) {
                         $theTypeString = BackendUtility::getTCAtypeValue($table, $currentRecord);
                     }
@@ -1601,7 +1600,6 @@ class DataHandler
         }
         return $value;
     }
-
 
     /*********************************************
      *
@@ -3131,7 +3129,7 @@ class DataHandler
                         // @deprecated: flexFormXMLincludeDiffBase is only enabled by ext:compatibility6 since TYPO3 CMS 7, vDEFbase can be unset / ignored with TYPO3 CMS 8
                         if ($this->clear_flexFormData_vDEFbase) {
                             $dataValues[$key][$vKey . '.vDEFbase'] = '';
-                        } elseif ($this->updateModeL10NdiffData && $GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && $vKey !== 'vDEF' && ((string)$dataValues[$key][$vKey] !== (string)$dataValues_current[$key][$vKey] || !isset($dataValues_current[$key][($vKey . '.vDEFbase')]) || $this->updateModeL10NdiffData === 'FORCE_FFUPD')) {
+                        } elseif ($this->updateModeL10NdiffData && $GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && $vKey !== 'vDEF' && ((string)$dataValues[$key][$vKey] !== (string)$dataValues_current[$key][$vKey] || !isset($dataValues_current[$key][$vKey . '.vDEFbase']) || $this->updateModeL10NdiffData === 'FORCE_FFUPD')) {
                             // Now, check if a vDEF value is submitted in the input data, if so we expect this has been processed prior to this operation (normally the case since those fields are higher in the form) and we can use that:
                             if (isset($dataValues[$key]['vDEF'])) {
                                 $diffValue = $dataValues[$key]['vDEF'];
@@ -3262,7 +3260,6 @@ class DataHandler
 
             // Traverse the command map:
             foreach ($this->cmdmap[$table] as $id => $incomingCmdArray) {
-                $pasteUpdate = false;
                 if (!is_array($incomingCmdArray)) {
                     continue;
                 }
@@ -3272,77 +3269,72 @@ class DataHandler
                     $this->pagetreeNeedsRefresh = true;
                 }
 
-                // have found a command.
-                // Get command and value (notice, only one command is observed at a time!):
-                reset($incomingCmdArray);
-                $command = key($incomingCmdArray);
-                $value = current($incomingCmdArray);
-                if (is_array($value) && isset($value['action']) && $value['action'] === 'paste') {
-                    // Extended paste command: $command is set to "move" or "copy"
-                    // $value['update'] holds field/value pairs which should be updated after copy/move operation
-                    // $value['target'] holds original $value (target of move/copy)
-                    $pasteUpdate = $value['update'];
-                    $value = $value['target'];
-                }
-                foreach ($hookObjectsArr as $hookObj) {
-                    if (method_exists($hookObj, 'processCmdmap_preProcess')) {
-                        $hookObj->processCmdmap_preProcess($command, $table, $id, $value, $this, $pasteUpdate);
+                foreach ($incomingCmdArray as $command => $value) {
+                    $pasteUpdate = false;
+                    if (is_array($value) && isset($value['action']) && $value['action'] === 'paste') {
+                        // Extended paste command: $command is set to "move" or "copy"
+                        // $value['update'] holds field/value pairs which should be updated after copy/move operation
+                        // $value['target'] holds original $value (target of move/copy)
+                        $pasteUpdate = $value['update'];
+                        $value = $value['target'];
                     }
-                }
-                // Init copyMapping array:
-                // Must clear this array before call from here to those functions:
-                // Contains mapping information between new and old id numbers.
-                $this->copyMappingArray = array();
-                // process the command
-                $commandIsProcessed = false;
-                foreach ($hookObjectsArr as $hookObj) {
-                    if (method_exists($hookObj, 'processCmdmap')) {
-                        $hookObj->processCmdmap($command, $table, $id, $value, $commandIsProcessed, $this, $pasteUpdate);
+                    foreach ($hookObjectsArr as $hookObj) {
+                        if (method_exists($hookObj, 'processCmdmap_preProcess')) {
+                            $hookObj->processCmdmap_preProcess($command, $table, $id, $value, $this, $pasteUpdate);
+                        }
                     }
-                }
-                // Only execute default commands if a hook hasn't been processed the command already
-                if (!$commandIsProcessed) {
-                    $procId = $id;
-                    // Branch, based on command
-                    switch ($command) {
-                        case 'move':
-                            $this->moveRecord($table, $id, $value);
-                            break;
-                        case 'copy':
-                            if ($table === 'pages') {
-                                $this->copyPages($id, $value);
-                            } else {
-                                $this->copyRecord($table, $id, $value, 1);
-                            }
-                            $procId = $this->copyMappingArray[$table][$id];
-                            break;
-                        case 'localize':
-                            $this->localize($table, $id, $value);
-                            break;
-                        case 'inlineLocalizeSynchronize':
-                            $this->inlineLocalizeSynchronize($table, $id, $value);
-                            break;
-                        case 'copyFromLanguage':
-                            $this->copyRecordFromLanguage($table, $id, $value);
-                            break;
-                        case 'delete':
-                            $this->deleteAction($table, $id);
-                            break;
-                        case 'undelete':
-                            $this->undeleteRecord($table, $id);
-                            break;
+                    // Init copyMapping array:
+                    // Must clear this array before call from here to those functions:
+                    // Contains mapping information between new and old id numbers.
+                    $this->copyMappingArray = array();
+                    // process the command
+                    $commandIsProcessed = false;
+                    foreach ($hookObjectsArr as $hookObj) {
+                        if (method_exists($hookObj, 'processCmdmap')) {
+                            $hookObj->processCmdmap($command, $table, $id, $value, $commandIsProcessed, $this, $pasteUpdate);
+                        }
                     }
-                    if (is_array($pasteUpdate)) {
-                        $pasteDatamap[$table][$procId] = $pasteUpdate;
+                    // Only execute default commands if a hook hasn't been processed the command already
+                    if (!$commandIsProcessed) {
+                        $procId = $id;
+                        // Branch, based on command
+                        switch ($command) {
+                            case 'move':
+                                $this->moveRecord($table, $id, $value);
+                                break;
+                            case 'copy':
+                                if ($table === 'pages') {
+                                    $this->copyPages($id, $value);
+                                } else {
+                                    $this->copyRecord($table, $id, $value, 1);
+                                }
+                                $procId = $this->copyMappingArray[$table][$id];
+                                break;
+                            case 'localize':
+                                $this->localize($table, $id, $value);
+                                break;
+                            case 'inlineLocalizeSynchronize':
+                                $this->inlineLocalizeSynchronize($table, $id, $value);
+                                break;
+                            case 'delete':
+                                $this->deleteAction($table, $id);
+                                break;
+                            case 'undelete':
+                                $this->undeleteRecord($table, $id);
+                                break;
+                        }
+                        if (is_array($pasteUpdate)) {
+                            $pasteDatamap[$table][$procId] = $pasteUpdate;
+                        }
                     }
-                }
-                foreach ($hookObjectsArr as $hookObj) {
-                    if (method_exists($hookObj, 'processCmdmap_postProcess')) {
-                        $hookObj->processCmdmap_postProcess($command, $table, $id, $value, $this, $pasteUpdate, $pasteDatamap);
+                    foreach ($hookObjectsArr as $hookObj) {
+                        if (method_exists($hookObj, 'processCmdmap_postProcess')) {
+                            $hookObj->processCmdmap_postProcess($command, $table, $id, $value, $this, $pasteUpdate, $pasteDatamap);
+                        }
                     }
+                    // Merging the copy-array info together for remapping purposes.
+                    ArrayUtility::mergeRecursiveWithOverrule($this->copyMappingArray_merged, $this->copyMappingArray);
                 }
-                // Merging the copy-array info together for remapping purposes.
-                ArrayUtility::mergeRecursiveWithOverrule($this->copyMappingArray_merged, $this->copyMappingArray);
             }
         }
         /** @var $copyTCE DataHandler */
@@ -3599,15 +3591,36 @@ class DataHandler
                         $transOrigPointerField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
                         $fields .= ',' . $languageField . ',' . $transOrigPointerField;
                     }
+                    if (!BackendUtility::isTableWorkspaceEnabled($table)) {
+                        $workspaceStatement = '';
+                    } elseif ((int)$this->BE_USER->workspace === 0) {
+                        $workspaceStatement = ' AND t3ver_wsid=0';
+                    } else {
+                        $workspaceStatement = ' AND t3ver_wsid IN (0,' . (int)$this->BE_USER->workspace . ')';
+                    }
+                    // Fetch records
                     $rows = $this->databaseConnection->exec_SELECTgetRows(
                         $fields,
                         $table,
-                        'pid=' . (int)$uid . $this->deleteClause($table),
+                        'pid=' . (int)$uid . $this->deleteClause($table) . $workspaceStatement,
                         '',
                         (!empty($GLOBALS['TCA'][$table]['ctrl']['sortby']) ? $GLOBALS['TCA'][$table]['ctrl']['sortby'] . ' DESC' : ''),
                         '',
                         'uid'
                     );
+                    // Resolve placeholders of workspace versions
+                    if (!empty($rows) && (int)$this->BE_USER->workspace !== 0 && BackendUtility::isTableWorkspaceEnabled($table)) {
+                        $rows = array_reverse(
+                            $this->resolveVersionedRecords(
+                                $table,
+                                $fields,
+                                $GLOBALS['TCA'][$table]['ctrl']['sortby'],
+                                array_keys($rows)
+                            ),
+                            true
+                        );
+                    }
+
                     foreach ($rows as $row) {
                         // Skip localized records that will be processed in
                         // copyL10nOverlayRecords() on copying the default language record
@@ -4631,37 +4644,76 @@ class DataHandler
             }
         }
 
-
         return $newId;
     }
 
     /**
      * Performs localization or synchronization of child records.
+     * The $command argument expects an array, but supports a string for backward-compatibility.
+     *
+     * $command = array(
+     *   'field' => 'tx_myfieldname',
+     *   'language' => 2,
+     *   // either the key 'action' or 'ids' must be set
+     *   'action' => 'synchronize', // or 'localize'
+     *   'ids' => array(1, 2, 3, 4) // child element ids
+     * );
      *
      * @param string $table The table of the localized parent record
      * @param int $id The uid of the localized parent record
-     * @param string $command Defines the type 'localize' or 'synchronize' (string) or a single uid to be localized (int)
+     * @param array|string $command Defines the command to be performed (see example above)
      * @return void
      */
     protected function inlineLocalizeSynchronize($table, $id, $command)
     {
-        // <field>, (localize | synchronize | <uid>):
-        $parts = GeneralUtility::trimExplode(',', $command);
-        $field = $parts[0];
-        $type = $parts[1];
-        if (!$field || (($type !== 'localize' && $type !== 'synchronize') && !MathUtility::canBeInterpretedAsInteger($type)) || !isset($GLOBALS['TCA'][$table]['columns'][$field]['config'])) {
+        $parentRecord = BackendUtility::getRecordWSOL($table, $id);
+
+        // Backward-compatibility handling
+        if (!is_array($command)) {
+            // <field>, (localize | synchronize | <uid>):
+            $parts = GeneralUtility::trimExplode(',', $command);
+            $command = array();
+            $command['field'] = $parts[0];
+            // The previous process expected $id to point to the localized record already
+            $command['language'] = (int)$parentRecord[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
+
+            if (!MathUtility::canBeInterpretedAsInteger($parts[1])) {
+                $command['action'] = $parts[1];
+            } else {
+                $command['ids'] = array($parts[1]);
+            }
+        }
+
+        // In case the parent record is the default language record, fetch the localization
+        if (empty($parentRecord[$GLOBALS['TCA'][$table]['ctrl']['languageField']])) {
+            // Fetch the live record
+            $parentRecordLocalization = BackendUtility::getRecordLocalization($table, $id, $command['language'], 'AND pid<>-1');
+            if (empty($parentRecordLocalization)) {
+                $this->newlog2('Localization for parent record ' . $table . ':' . $id . '" cannot be fetched', $table, $id, $parentRecord['pid']);
+                return;
+            }
+            $parentRecord = $parentRecordLocalization[0];
+            $id = $parentRecord['uid'];
+            // Process overlay for current selected workspace
+            BackendUtility::workspaceOL($table, $parentRecord);
+        }
+
+        $field = $command['field'];
+        $language = $command['language'];
+        $action = $command['action'];
+        $ids = $command['ids'];
+
+        if (!$field || !GeneralUtility::inList('localize,synchronize', $action) && empty($ids) || !isset($GLOBALS['TCA'][$table]['columns'][$field]['config'])) {
             return;
         }
 
         $config = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
         $foreignTable = $config['foreign_table'];
         $localizationMode = BackendUtility::getInlineLocalizationMode($table, $config);
-        if ($localizationMode != 'select') {
+        if ($localizationMode !== 'select') {
             return;
         }
 
-        $parentRecord = BackendUtility::getRecordWSOL($table, $id);
-        $language = (int)$parentRecord[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
         $transOrigPointer = (int)$parentRecord[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']];
         $transOrigTable = BackendUtility::getOriginalTranslationTable($table);
         $childTransOrigPointerField = $GLOBALS['TCA'][$foreignTable]['ctrl']['transOrigPointerField'];
@@ -4693,7 +4745,7 @@ class DataHandler
         $dbAnalysisCurrent = $this->createRelationHandlerInstance();
         $dbAnalysisCurrent->start($parentRecord[$field], $foreignTable, $mmTable, $id, $table, $config);
         // Perform synchronization: Possibly removal of already localized records:
-        if ($type == 'synchronize') {
+        if ($action === 'synchronize') {
             foreach ($dbAnalysisCurrent->itemArray as $index => $item) {
                 $childRecord = BackendUtility::getRecordWSOL($item['table'], $item['id']);
                 if (isset($childRecord[$childTransOrigPointerField]) && $childRecord[$childTransOrigPointerField] > 0) {
@@ -4707,13 +4759,18 @@ class DataHandler
             }
         }
         // Perform synchronization/localization: Possibly add unlocalized records for original language:
-        if (MathUtility::canBeInterpretedAsInteger($type) && isset($elementsOriginal[$type])) {
-            $item = $elementsOriginal[$type];
-            $item['id'] = $this->localize($item['table'], $item['id'], $language);
-            $item['id'] = $this->overlayAutoVersionId($item['table'], $item['id']);
-            $dbAnalysisCurrent->itemArray[] = $item;
-        } elseif ($type === 'localize' || $type === 'synchronize') {
+        if ($action === 'localize' || $action === 'synchronize') {
             foreach ($elementsOriginal as $originalId => $item) {
+                $item['id'] = $this->localize($item['table'], $item['id'], $language);
+                $item['id'] = $this->overlayAutoVersionId($item['table'], $item['id']);
+                $dbAnalysisCurrent->itemArray[] = $item;
+            }
+        } elseif (!empty($ids)) {
+            foreach ($ids as $childId) {
+                if (!MathUtility::canBeInterpretedAsInteger($childId) || !isset($elementsOriginal[$childId])) {
+                    continue;
+                }
+                $item = $elementsOriginal[$childId];
                 $item['id'] = $this->localize($item['table'], $item['id'], $language);
                 $item['id'] = $this->overlayAutoVersionId($item['table'], $item['id']);
                 $dbAnalysisCurrent->itemArray[] = $item;
@@ -4745,28 +4802,6 @@ class DataHandler
         // Update field referencing to child records of localized parent record:
         if (!empty($updateFields)) {
             $this->updateDB($table, $id, $updateFields);
-        }
-    }
-
-    /**
-     * Creates a independent copy of content elements into another language.
-     *
-     * @param string $table The table of the localized parent record
-     * @param string $id Comma separated list of content element ids
-     * @param string $value Comma separated list of the destination and the target language
-     * @return void
-     */
-    protected function copyRecordFromLanguage($table, $id, $value)
-    {
-        list($destination, $language) = GeneralUtility::intExplode(',', $value);
-
-        // array_reverse is required to keep the order of elements
-        $idList = array_reverse(GeneralUtility::intExplode(',', $id, true));
-        foreach ($idList as $contentElementUid) {
-            $this->copyRecord($table, $contentElementUid, $destination, true, array(
-                $GLOBALS['TCA'][$table]['ctrl']['languageField'] => $language,
-                $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] => 0
-            ), '', 0, true);
         }
     }
 
@@ -6071,7 +6106,7 @@ class DataHandler
      */
     public function isRecordInWebMount($table, $id)
     {
-        if (!isset($this->isRecordInWebMount_Cache[($table . ':' . $id)])) {
+        if (!isset($this->isRecordInWebMount_Cache[$table . ':' . $id])) {
             $recP = $this->getRecordProperties($table, $id);
             $this->isRecordInWebMount_Cache[$table . ':' . $id] = $this->isInWebMount($recP['event_pid']);
         }
@@ -7066,12 +7101,12 @@ class DataHandler
                 if (!$fieldConfiguration['MM'] && $this->isSubmittedValueEqualToStoredValue($val, $currentRecord[$col], $cRecTypes[$col], $isNullField)) {
                     unset($fieldArray[$col]);
                 } else {
-                    if (!isset($this->mmHistoryRecords[($table . ':' . $id)]['oldRecord'][$col])) {
+                    if (!isset($this->mmHistoryRecords[$table . ':' . $id]['oldRecord'][$col])) {
                         $this->historyRecords[$table . ':' . $id]['oldRecord'][$col] = $currentRecord[$col];
                     } elseif ($this->mmHistoryRecords[$table . ':' . $id]['oldRecord'][$col] != $this->mmHistoryRecords[$table . ':' . $id]['newRecord'][$col]) {
                         $this->historyRecords[$table . ':' . $id]['oldRecord'][$col] = $this->mmHistoryRecords[$table . ':' . $id]['oldRecord'][$col];
                     }
-                    if (!isset($this->mmHistoryRecords[($table . ':' . $id)]['newRecord'][$col])) {
+                    if (!isset($this->mmHistoryRecords[$table . ':' . $id]['newRecord'][$col])) {
                         $this->historyRecords[$table . ':' . $id]['newRecord'][$col] = $fieldArray[$col];
                     } elseif ($this->mmHistoryRecords[$table . ':' . $id]['newRecord'][$col] != $this->mmHistoryRecords[$table . ':' . $id]['oldRecord'][$col]) {
                         $this->historyRecords[$table . ':' . $id]['newRecord'][$col] = $this->mmHistoryRecords[$table . ':' . $id]['newRecord'][$col];
@@ -7300,18 +7335,45 @@ class DataHandler
     public function int_pageTreeInfo($CPtable, $pid, $counter, $rootID)
     {
         if ($counter) {
+            if ((int)$this->BE_USER->workspace === 0) {
+                $workspaceStatement = ' AND t3ver_wsid=0';
+            } else {
+                $workspaceStatement = ' AND t3ver_wsid IN (0,' . (int)$this->BE_USER->workspace . ')';
+            }
+
             $addW = !$this->admin ? ' AND ' . $this->BE_USER->getPagePermsClause($this->pMap['show']) : '';
-            $mres = $this->databaseConnection->exec_SELECTquery('uid', 'pages', 'pid=' . (int)$pid . $this->deleteClause('pages') . $addW, '', 'sorting DESC');
-            while ($row = $this->databaseConnection->sql_fetch_assoc($mres)) {
-                if ($row['uid'] != $rootID) {
-                    $CPtable[$row['uid']] = $pid;
+            $pages = $this->databaseConnection->exec_SELECTgetRows(
+                'uid',
+                'pages',
+                'pid=' . (int)$pid . $this->deleteClause('pages') . $workspaceStatement . $addW,
+                '',
+                'sorting DESC',
+                '',
+                'uid'
+            );
+
+            // Resolve placeholders of workspace versions
+            if (!empty($pages) && (int)$this->BE_USER->workspace !== 0) {
+                $pages = array_reverse(
+                    $this->resolveVersionedRecords(
+                        'pages',
+                        'uid',
+                        'sorting',
+                        array_keys($pages)
+                    ),
+                    true
+                );
+            }
+
+            foreach ($pages as $page) {
+                if ($page['uid'] != $rootID) {
+                    $CPtable[$page['uid']] = $pid;
                     // If the uid is NOT the rootID of the copyaction and if we are supposed to walk further down
                     if ($counter - 1) {
-                        $CPtable = $this->int_pageTreeInfo($CPtable, $row['uid'], $counter - 1, $rootID);
+                        $CPtable = $this->int_pageTreeInfo($CPtable, $page['uid'], $counter - 1, $rootID);
                     }
                 }
             }
-            $this->databaseConnection->sql_free_result($mres);
         }
         return $CPtable;
     }
@@ -8046,6 +8108,40 @@ class DataHandler
     }
 
     /**
+     * Resolves versioned records for the current workspace scope.
+     * Delete placeholders and move placeholders are substituted and removed.
+     *
+     * @param string $tableName Name of the table to be processed
+     * @param string $fieldNames List of the field names to be fetched
+     * @param string $sortingField Name of the sorting field to be used
+     * @param array $liveIds Flat array of (live) record ids
+     * @return array
+     */
+    protected function resolveVersionedRecords($tableName, $fieldNames, $sortingField, array $liveIds)
+    {
+        /** @var PlainDataResolver $resolver */
+        $resolver = GeneralUtility::makeInstance(
+            PlainDataResolver::class,
+            $tableName,
+            $liveIds,
+            $sortingField
+        );
+
+        $resolver->setWorkspaceId($this->BE_USER->workspace);
+        $resolver->setKeepDeletePlaceholder(false);
+        $resolver->setKeepMovePlaceholder(false);
+        $resolver->setKeepLiveIds(true);
+        $recordIds = $resolver->get();
+
+        $records = array();
+        foreach ($recordIds as $recordId) {
+            $records[$recordId] = BackendUtility::getRecord($tableName, $recordId, $fieldNames);
+        }
+
+        return $records;
+    }
+
+    /**
      * Gets the outer most instance of \TYPO3\CMS\Core\DataHandling\DataHandler
      * Since \TYPO3\CMS\Core\DataHandling\DataHandler can create nested objects of itself,
      * this method helps to determine the first (= outer most) one.
@@ -8055,7 +8151,7 @@ class DataHandler
     protected function getOuterMostInstance()
     {
         if (!isset($this->outerMostInstance)) {
-            $stack = array_reverse(debug_backtrace());
+            $stack = array_reverse(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT | DEBUG_BACKTRACE_IGNORE_ARGS));
             foreach ($stack as $stackItem) {
                 if (isset($stackItem['object']) && $stackItem['object'] instanceof DataHandler) {
                     $this->outerMostInstance = $stackItem['object'];

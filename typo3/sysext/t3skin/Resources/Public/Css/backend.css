@@ -6953,6 +6953,7 @@ button.close {
   transform: translate(0, -25%);
   transition: -webkit-transform 0.3s ease-out;
   transition: transform 0.3s ease-out;
+  transition: transform 0.3s ease-out, -webkit-transform 0.3s ease-out;
 }
 .modal.in .modal-dialog {
   -webkit-transform: translate(0, 0);
@@ -7315,6 +7316,7 @@ button.close {
   .carousel-inner > .item {
     transition: -webkit-transform 0.6s ease-in-out;
     transition: transform 0.6s ease-in-out;
+    transition: transform 0.6s ease-in-out, -webkit-transform 0.6s ease-in-out;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     -webkit-perspective: 1000px;
@@ -7723,6 +7725,9 @@ button.close {
   height: 68.75%;
   width: 68.75%;
   text-align: center;
+}
+.icon-color {
+  fill: currentColor;
 }
 .icon-spin .icon-markup {
   -webkit-animation: icon-spin 2s infinite linear;
@@ -9135,6 +9140,9 @@ div#typo3-docbody {
 .text-normal {
   font-weight: normal;
 }
+.text-pre-wrap {
+  white-space: pre-wrap;
+}
 .lead {
   font-size: 1.25em;
 }
@@ -9542,13 +9550,6 @@ div#contentMenu1 {
   padding-bottom: 3px;
   border-bottom: 1px solid #C3C3C3;
 }
-#typo3-navigationContainer-xsplit,
-#typo3-navigationContainer-xcollapsed {
-  background: #ffffff url(../../Public/Images/docheader-split-background.png) left top repeat-x;
-}
-#typo3-navigationContainer-xcollapsed {
-  width: 24px!important;
-}
 #typo3-navigationContainer-xcollapsed:before {
   content: "";
   position: absolute;
@@ -9596,7 +9597,6 @@ div#contentMenu1 {
   text-align: center;
 }
 .x-layout-split-west .x-layout-mini {
-  margin-left: -2px;
   background-color: #f5f5f5;
 }
 .x-layout-split-west .x-layout-mini:hover {
@@ -9617,33 +9617,6 @@ div#contentMenu1 {
   margin-top: -9px;
   color: #fff;
   content: "\f0da";
-}
-#typo3-pagetree-topPanelItems {
-  background: #eeeeee;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-body-noborder {
-  border-bottom: 1px solid #c3c3c3;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-tbar {
-  color: #2d2d2d;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-tbar a {
-  color: #2d2d2d;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-tbar a:hover {
-  color: #000;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-body {
-  color: #2d2d2d;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-body .typo3-pagetree-topPanel-button {
-  margin-top: 0;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-body a {
-  color: #2d2d2d;
-}
-#typo3-pagetree-topPanelItems #typo3-pagetree-topPanel .x-panel-body a:hover {
-  color: #000;
 }
 ul.typo3-messages {
   padding: 0;
@@ -9843,42 +9816,25 @@ ul.typo3-messages {
 #typo3-pagetree .x-panel-body {
   height: 100%;
 }
-#typo3-pagetree .x-toolbar {
-  background: none;
-  border: none;
-  padding: 0;
-}
-#typo3-pagetree .x-panel-tbar {
-  padding: 0;
-  margin: 0;
-}
-#typo3-pagetree .x-panel-tbar .x-toolbar {
-  height: 26px;
-}
-#typo3-pagetree .t3-icon {
-  margin-bottom: 2px;
-}
 #typo3-pagetree ul {
   padding-left: 0;
   list-style: none;
+}
+#typo3-pagetree .x-toolbar {
+  padding: 0;
+  border: none;
 }
 #typo3-pagetree ul.x-tree-root-ct {
   padding-top: 24px;
   margin-bottom: 50px;
 }
-#typo3-pagetree .typo3-pagetree-topPanel-button {
-  margin: 0;
-  margin-right: 1px;
-  padding: 2px 3px 4px 3px;
-}
-#typo3-pagetree .x-toolbar-ct {
-  height: 20px;
-}
-#typo3-pagetree .x-tree .x-panel-body {
+#typo3-pagetree .x-panel-body {
   background: none;
 }
 #typo3-pagetree .x-tree-node .x-tree-node-el {
-  margin-right: 0;
+  line-height: 18px;
+  height: 20px;
+  margin-right: 3px;
   border-top: 1px solid transparent;
   border-bottom: 1px solid transparent;
   border-left: 1px solid transparent;
@@ -9887,12 +9843,9 @@ ul.typo3-messages {
 #typo3-pagetree .x-tree-node .x-tree-selected {
   border-bottom: 1px solid #d7d7d7;
   border-top: 1px solid #d7d7d7;
-  border-left: 1px solid #d7d7d7;
+  border-right: 1px solid #d7d7d7;
 }
 #typo3-pagetree .x-tree-node .x-tree-node-over {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAABCAYAAAAb4BS0AAAAGElEQVR42gENAPL/AMjIyEzIyMizyMjI/zhvCQelaHPPAAAAAElFTkSuQmCC");
-  background-position: right;
-  background-repeat: repeat-y;
   background-color: #f2f2f2;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
@@ -10022,94 +9975,64 @@ ul.typo3-messages {
   background-color: inherit;
   border: none;
 }
-.typo3-pagetree-topPanel-button {
-  background: none;
-  border: none;
-  margin: 1px 5px 0 0;
-  padding: 1px 2px;
-  height: 25px;
+.typo3-pagetree-toppanel {
+  padding: 0 10px;
+  border-bottom: 1px solid #c3c3c3;
 }
-.typo3-pagetree-topPanel-button button {
-  height: 16px;
-  width: 16px;
-  border: none;
+.typo3-pagetree-toppanel .btn {
+  line-height: 16px;
 }
-#typo3-pagetree-topPanel .x-btn-icon:hover,
-#typo3-pagetree-topPanel .x-btn-pressed,
-#typo3-pagetree-topPanel .x-btn-over,
-#typo3-pagetree-topPanel .x-btn-click {
-  border: none;
-  top: 0;
-  left: 0;
-  background: none;
+.typo3-pagetree-toppanel .x-toolbar {
+  padding: 0;
+  border: 0!important;
 }
-#typo3-pagetree-topPanel button,
-#typo3-pagetree-topPanel button:hover {
-  background-color: transparent;
-  color: #000000;
+.typo3-pagetree-toppanel .x-toolbar-left-row .btn {
+  margin-right: 4px;
 }
-#typo3-pagetree-topPanel button:focus {
-  outline: none;
+.typo3-pagetree-toppanel .x-toolbar-right-row .btn {
+  margin-left: 4px;
 }
-#typo3-pagetree .typo3-pagetree-topPanel-item {
-  line-height: normal;
+.typo3-pagetree-toppanel .x-panel-body,
+.typo3-pagetree-toppanel .x-panel-tbar {
+  margin: 4px 0;
+  min-height: 26px;
+  height: auto!important;
 }
-#typo3-pagetree-topPanel-filter {
-  border: 1px solid #aeaeae;
-  box-shadow: inset 0 1px 1px #aeaeae;
+.typo3-pagetree-toppanel .x-panel-bwrap {
+  height: auto!important;
+  overflow: visible;
 }
-.typo3-pagetree-topPanel-filter-defaultText {
-  color: gray;
+.typo3-pagetree-toppanel .x-btn button {
+  font-size: inherit;
 }
-#typo3-pagetree .typo3-pagetree-topPanel-button {
-  border: none;
-  border-radius: 0;
+.typo3-pagetree-toppanel-filter {
+  width: 100%!important;
+  height: 26px!important;
+  padding-right: 25px;
+  padding-left: 8px;
+  box-sizing: inherit;
 }
-#typo3-pagetree .typo3-pagetree-topPanel-button button {
-  vertical-align: middle;
-}
-#typo3-pagetree-topPanel-defaultPanel {
-  color: #a2aab8;
-  line-height: 18px;
-}
-#typo3-pagetree-topPanel-item-newNode button {
-  cursor: move;
-}
-#typo3-pagetree-topPanel .x-toolbar-left {
-  height: 20px;
-  padding-left: 12px;
-}
-#typo3-pagetree-topPanel .x-toolbar-right {
-  padding-right: 12px;
-}
-.typo3-pagetree-topPanel-item {
-  padding: 0 3px 0 3px;
-  height: 22px;
-}
-#typo3-pagetree-topPanel-filter {
-  height: 15px;
-  width: 98% !important;
-  margin-top: 1px;
-  padding: 1px 0 1px 2px;
-}
-#typo3-pagetree-topPanel-filterWrap .t3-icon-input-clear {
+.typo3-pagetree-toppanel-filter-clear {
   position: absolute;
-  right: 6px;
-  top: 3px;
+  right: 5px;
+  top: 50%;
+  -webkit-transform: translate(0, -50%);
+      -ms-transform: translate(0, -50%);
+          transform: translate(0, -50%);
 }
-#typo3-pagetree-topPanel-defaultPanel {
-  padding-left: 6px;
+.typo3-pagetree-toppanel-item .x-form-field-wrap {
+  width: 100%!important;
 }
-#typo3-pagetree-topPanel-filterWrap .x-form-field-trigger-wrap {
-  width: 100% !important;
-  margin: 0 20px 0 0;
+.typo3-pagetree-toppanel-item .x-panel-body {
+  margin: 0;
 }
-.typo3-pagetree-topPanel-item .x-form-trigger {
-  margin: 4px 0 0;
-  display: none;
-}
-.typo3-pagetree-topPanel-item .x-form-field-trigger-wrap:hover .x-form-trigger {
-  display: block;
+.typo3-pagetree-toppanel-drag-node {
+  cursor: move;
+  padding: 5px;
+  border: none;
+  background: none;
+  font-size: 11px;
+  line-height: 16px;
 }
 #typo3-pagetree-deletionDropZone {
   color: #FFF;
@@ -10161,48 +10084,19 @@ ul.typo3-messages {
 .x-tree-node-readableRootline {
   font-style: italic;
 }
-#typo3-pagetree-indicatorBar-filter,
-#typo3-pagetree-indicatorBar-temporaryMountPoint {
-  background-color: #eaf7ff;
-  border-bottom: 1px solid #c5dbe6;
-  color: #4c73a1;
-}
-#typo3-pagetree-indicatorBar-filter p,
-#typo3-pagetree-indicatorBar-temporaryMountPoint p {
-  padding: 10px 35px;
-}
-#typo3-pagetree-indicatorBar-temporaryMountPoint p {
-  line-height: 13px;
-}
-#typo3-pagetree-indicatorBar-indicatorTitle {
-  background-color: #ffec97;
-  font-weight: bold;
-}
-#typo3-pagetree-indicatorBar-indicatorTitle span {
-  margin-right: 10px;
-}
-.typo3-pagetree-indicatorBar-item .typo3-pagetree-indicatorBar-item-rightIcon {
-  cursor: pointer;
-}
-.typo3-pagetree-indicatorBar-item p {
-  margin-bottom: 0;
-  padding: 5px 10px;
-}
-.typo3-pagetree-indicatorBar-item .typo3-pagetree-indicatorBar-item-leftIcon {
-  left: 10px;
-  top: 9px;
-  position: absolute;
-}
-.typo3-pagetree-indicatorBar-item .typo3-pagetree-indicatorBar-item-rightIcon {
-  right: 10px;
-  top: 5px;
-  position: absolute;
-}
-.x-menu-floating {
-  z-index: 50 !important;
+[id=typo3-pagetree-indicatorBar] .alert {
+  margin: 10px 10px 0;
 }
 .x-shadow {
   z-index: 40 !important;
+}
+[id=typo3-pagetree-indicatorBar-temporaryMountPoint] .media-right {
+  position: absolute;
+  right: 16px;
+  -webkit-transform: translateY(-100%);
+      -ms-transform: translateY(-100%);
+          transform: translateY(-100%);
+  background-color: #6daae0;
 }
 #typo3-browse-links-php {
   background: #ececec;
@@ -10290,10 +10184,6 @@ table#typo3-linkTarget {
 }
 input.typo3-link-input {
   width: 250px;
-}
-form#typo3-uplFilesForm,
-form#typo3-crFolderForm {
-  border-top: 1px solid #adadad;
 }
 table#typo3-linkPages tr td.c-wCell,
 table#typo3-linkFiles tr td.c-wCell,
@@ -11321,7 +11211,7 @@ div.t3-form-field-container:first-child .t3-form-field-label-flex {
 [id=ext-backend-Modules-FileSystemNavigationFrame-index-php] .list-tree-control > .fa:before {
   background-color: #f5f5f5;
 }
-[id=ext-backend-Modules-FileSystemNavigationFrame-index-php] [id=typo3-inner-docbody] {
+[id=ext-backend-Modules-FileSystemNavigationFrame-index-php] .module-body {
   padding-left: 10px;
   padding-right: 10px;
 }
@@ -11378,8 +11268,7 @@ div.t3-form-field-container:first-child .t3-form-field-label-flex {
 .treeline-icon-clear:after {
   display: none;
 }
-#typo3-pagetree #typo3-docheader div.buttonsright,
-#ext-backend-Modules-FileSystemNavigationFrame-index-php #typo3-docheader div.buttonsright {
+#typo3-pagetree #typo3-docheader div.buttonsright {
   margin-right: 3px;
 }
 body#typo3-alt-db-navframe-php div.c-notice {
@@ -11389,8 +11278,7 @@ body#typo3-alt-db-navframe-php div.c-notice {
   padding: 5px 5px 5px 5px;
   width: 95%;
 }
-body#typo3-pagetree,
-body#ext-backend-Modules-FileSystemNavigationFrame-index-php {
+body#typo3-pagetree {
   margin: 0;
   padding: 0;
 }
@@ -11476,29 +11364,22 @@ ul.tree div.treeLinkItem span.dragIcon {
   opacity: 0.5;
   white-space: nowrap;
 }
-#typo3-pagetree #typo3-docheader img {
-  margin: 2px;
-}
-body#typo3-pagetree,
-body#ext-backend-Modules-FileSystemNavigationFrame-index-php {
-  background: #ebebeb;
-}
-#ext-backend-Modules-FileSystemNavigationFrame-index-php #typo3-docbody,
-#ext-backend-Modules-FileSystemNavigationFrame-index-php #typo3-docheader-row1,
-#ext-backend-Modules-FileSystemNavigationFrame-index-php #typo3-docheader-row2,
-.typo3-pagetree-indicatorBar-item,
-#typo3-pagetree-topPanelItems,
-#typo3-pagetree-topPanel .typo3-pagetree-topPanel-item,
-#typo3-pagetree-treeContainer,
-#typo3-pagetree .x-panel-tbar,
 #typo3-pagetree-deletionDropZone .x-panel-body {
   background-position: right;
   background-repeat: repeat-y;
 }
-#ext-backend-Modules-FileSystemNavigationFrame-index-php #typo3-docbody,
-#typo3-pagetree-treeContainer {
-  border-right: 1px solid #c3c3c3;
+[id=ext-backend-Modules-FileSystemNavigationFrame-index-php],
+[id=ext-backend-Modules-FileSystemNavigationFrame-index-php] .module-body,
+[id=typo3-pagetree-treeContainer] {
   background-color: #f5f5f5;
+}
+[id=ext-backend-Modules-FileSystemNavigationFrame-index-php] .module-docheader {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+.x-layout-split {
+  width: 1px;
+  background-color: #c3c3c3;
 }
 .pagination .t3-icon {
   margin: 0;
@@ -11588,12 +11469,6 @@ a.badge-danger:focus {
 .btn-radio input[type=checkbox]:checked + .fa:before,
 .btn-checkbox input[type=checkbox]:checked + .fa:before {
   content: "\f00c";
-}
-.btn-danger .icon-color,
-.btn-success .icon-color,
-.btn-warning .icon-color,
-.btn-info .icon-color {
-  fill: currentColor;
 }
 .dropzone {
   position: relative;
@@ -12224,6 +12099,11 @@ span.warningboxheader {
 .t3-btn {
   cursor: pointer;
 }
+.element-browser-section {
+  border-bottom: 1px solid #d7d7d7;
+  padding-bottom: 30px;
+  margin: 0 15px 30px 15px;
+}
 *::-ms-clear {
   display: none;
 }
@@ -12305,11 +12185,14 @@ span.typo3-moduleHeader img {
   vertical-align: middle;
 }
 .input-group-icon img {
-  width: auto;
+  width: 100%;
   max-height: 18px;
 }
 .input-group-addon {
   min-width: 2.5em;
+}
+label .icon img {
+  pointer-events: none;
 }
 .form-control {
   min-width: 120px;
@@ -12341,6 +12224,15 @@ fieldset[disabled] .form-control {
   color: #c83c3c;
   display: inline-block;
 }
+.form-group.has-error .btn-toolbar label:before {
+  font-family: inherit;
+  font-size: inherit;
+  margin-right: inherit;
+  text-align: inherit;
+  content: '';
+  color: inherit;
+  display: block;
+}
 .form-group.has-error .input-group-btn label {
   border-color: #c83c3c;
 }
@@ -12364,6 +12256,27 @@ select.form-control[size] {
 select.form-control[size="1"] {
   height: 32px;
   min-height: 0;
+}
+select.form-control[size="1"],
+select.form-control:not([size]) {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  background-image: url('../../../../../../typo3/sysext/core/Resources/Public/Icons/T3Icons/actions/actions-view-list-expand.svg');
+  background-position: right 4px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  padding-right: 24px;
+}
+select.form-control[size="1"]::-ms-expand,
+select.form-control:not([size])::-ms-expand {
+  display: none;
+}
+select.form-control[size="1"].input-sm,
+select.form-control:not([size]).input-sm,
+.form-group-sm select.form-control[size="1"],
+.form-group-sm select.form-control:not([size]) {
+  line-height: 16px;
 }
 select.form-control > optgroup {
   margin-top: 9px;
@@ -12486,6 +12399,7 @@ select.icon-select option {
 .form-irre-header-body {
   width: 100%;
   font-weight: normal;
+  white-space: normal;
 }
 .form-irre-header-body dl {
   margin-bottom: 0;
@@ -12656,7 +12570,7 @@ iframe {
   position: relative;
   cursor: pointer;
   display: block;
-  padding: 3px 9px;
+  padding: 4px 9px;
   text-transform: uppercase;
 }
 [id="typo3-menu"] .typo3-module-menu-group-header:before,
@@ -12682,7 +12596,7 @@ iframe {
   position: relative;
   cursor: pointer;
   display: block;
-  padding: 3px 9px;
+  padding: 4px 9px;
   color: #aaaaaa;
   border-radius: 0 2px 2px 0;
   text-decoration: none;
@@ -12956,6 +12870,24 @@ iframe {
 .t3-page-ce:hover .t3-page-ce-header-icons-right {
   opacity: 1;
 }
+.t3-page-ce-danger:hover .t3-page-ce-header {
+  background-color: #a32e2e;
+  border-color: #a32e2e;
+}
+.t3-page-ce-danger:hover .t3-page-ce-body {
+  border-color: #a32e2e;
+}
+.t3-page-ce-danger .t3-page-ce-header {
+  background-color: #c83c3c;
+  border-color: #c83c3c;
+}
+.t3-page-ce-danger .t3-page-ce-header:hover {
+  background-color: #a32e2e;
+  border-color: #a32e2e;
+}
+.t3-page-ce-danger .t3-page-ce-body {
+  border-color: #c83c3c;
+}
 .t3-page-ce-hidden {
   opacity: 0.4;
   transition: opacity 0.15s ease-in;
@@ -13128,6 +13060,9 @@ iframe {
 }
 .typo3-topbar-navigation-items .live-search-wrapper + .dropdown-menu {
   width: 100%;
+}
+.typo3-topbar-navigation-items .live-search-wrapper + .dropdown-menu .dropdown-list {
+  position: relative!important;
 }
 .typo3-topbar-navigation-items .dropdown-menu {
   left: auto;
@@ -13514,7 +13449,7 @@ iframe {
   right: 0px;
 }
 .distribution-holder {
-  top: 0px;
+  margin-top: 1em;
   bottom: 0px;
   margin-left: -20px;
 }
@@ -13572,12 +13507,6 @@ iframe {
 }
 .distribution-meta .distribution-install {
   margin-top: 0.5em;
-}
-.distribution-detail-flashmessage {
-  margin-bottom: 2.5em;
-}
-.distribution-detail-flashmessage p {
-  padding-bottom: 0;
 }
 .distribution-detail {
   min-width: 750px;
@@ -13699,6 +13628,7 @@ iframe {
 }
 #terTableWrapper {
   position: relative;
+  margin-top: 1em;
 }
 #terTableWrapper .splash-receivedata {
   display: none;
@@ -13933,6 +13863,9 @@ div.typo3-module-lang div.progress-bar {
   max-width: 28px;
   max-height: 28px;
 }
+.localization-wizard .option {
+  margin-bottom: 4px;
+}
 .workspace-info {
   padding: 7px;
 }
@@ -13943,6 +13876,10 @@ input.c-inputButton,
 img.c-inputButton {
   margin-right: 2px;
   vertical-align: middle;
+}
+.media input[type="radio"],
+.media input[type="checkbox"] {
+  margin: 4px 0 0 1px;
 }
 table.typo3-dblist tr.c-table-row-spacer td {
   display: none;

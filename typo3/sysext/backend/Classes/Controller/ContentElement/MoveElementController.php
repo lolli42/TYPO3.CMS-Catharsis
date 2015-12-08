@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Tree\View\ContentMovingPagePositionMap;
 use TYPO3\CMS\Backend\Tree\View\PageMovingPagePositionMap;
@@ -143,9 +143,9 @@ class MoveElementController extends AbstractModule
             $headerLine .= BackendUtility::getRecordTitle($this->table, $elRow, true);
             // Make-copy checkbox (clicking this will reload the page with the GET var makeCopy set differently):
             $onClick = 'window.location.href=' . GeneralUtility::quoteJSvalue(GeneralUtility::linkThisScript(array('makeCopy' => !$this->makeCopy))) . ';';
-            $headerLine .= '<input type="hidden" name="makeCopy" value="0" />' . '<input type="checkbox" name="makeCopy" id="makeCopy" value="1"' . ($this->makeCopy ? ' checked="checked"' : '') . ' onclick="' . htmlspecialchars($onClick) . '" /> <label for="makeCopy" class="t3-label-valign-top">' . $lang->getLL('makeCopy', 1) . '</label>';
+            $headerLine .= '<div><input type="hidden" name="makeCopy" value="0" />' . '<input type="checkbox" name="makeCopy" id="makeCopy" value="1"' . ($this->makeCopy ? ' checked="checked"' : '') . ' onclick="' . htmlspecialchars($onClick) . '" /> <label for="makeCopy" class="t3-label-valign-top">' . $lang->getLL('makeCopy', 1) . '</label></div>';
             // Add the header-content to the module content:
-            $this->content .= $this->moduleTemplate->section('', $headerLine, false, true);
+            $this->content .= '<div>' . $headerLine . '</div>';
             // Reset variable to pick up the module content in:
             $code = '';
             // IF the table is "pages":
@@ -227,12 +227,8 @@ class MoveElementController extends AbstractModule
                 }
             }
             // Add the $code content as a new section to the module:
-            $this->content .= $this->moduleTemplate->section(
-                $lang->getLL('selectPositionOfElement'),
-                $code,
-                false,
-                true
-            );
+            $this->content .= '<h2>' . $lang->getLL('selectPositionOfElement') . '</h2>';
+            $this->content .= '<div>' . $code . '</div>';
         }
         // Setting up the buttons and markers for docheader
         $this->getButtons();
@@ -274,7 +270,7 @@ class MoveElementController extends AbstractModule
             if ($this->R_URI) {
                 $backButton = $buttonBar->makeLinkButton()
                     ->setHref($this->R_URI)
-                    ->setTitle($this->getLanguageService()->getLL('goBack', true))
+                    ->setTitle($this->getLanguageService()->getLL('goBack'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                         'actions-view-go-back',
                         Icon::SIZE_SMALL

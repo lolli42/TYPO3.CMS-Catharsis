@@ -14,11 +14,11 @@ namespace TYPO3\CMS\Backend\Form\Container;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * The container handles single elements.
@@ -63,8 +63,8 @@ class FlexFormElementContainer extends AbstractContainer
                 }
 
                 $sectionTitle = '';
-                if (!empty($flexFormFieldArray['title'])) {
-                    $sectionTitle = $languageService->sL($flexFormFieldArray['title']);
+                if (!empty(trim($flexFormFieldArray['title']))) {
+                    $sectionTitle = $languageService->sL(trim($flexFormFieldArray['title']));
                 }
 
                 $options = $this->data;
@@ -81,6 +81,7 @@ class FlexFormElementContainer extends AbstractContainer
                     'fieldConf' => [
                         'label' => $languageService->sL(trim($flexFormFieldArray['label'])),
                         'config' => $flexFormFieldArray['config'],
+                        'children' => $flexFormFieldArray['children'],
                         'defaultExtras' => $flexFormFieldArray['defaultExtras'],
                         'onChange' => $flexFormFieldArray['onChange'],
                     ],

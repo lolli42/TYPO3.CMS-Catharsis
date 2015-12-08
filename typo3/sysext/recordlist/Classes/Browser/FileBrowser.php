@@ -135,6 +135,8 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
                 $fileOrFolderObject = ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
             } catch (Exception $accessException) {
                 // We're just catching the exception here, nothing to be done if folder does not exist or is not accessible.
+            } catch (\InvalidArgumentException $driverMissingExecption) {
+                // We're just catching the exception here, nothing to be done if the driver does not exist anymore.
             }
 
             if ($fileOrFolderObject instanceof Folder) {
@@ -200,12 +202,14 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
 			<!--
 				Wrapper table for folder tree / filelist:
 			-->
+			<div class="element-browser-section element-browser-filetree">
 			<table border="0" cellpadding="0" cellspacing="0" id="typo3-EBfiles">
 				<tr>
 					<td class="c-wCell" valign="top"><h3>' . $this->getLanguageService()->getLL('folderTree', true) . ':</h3>' . $tree . '</td>
 					<td class="c-wCell" valign="top">' . $files . '</td>
 				</tr>
 			</table>
+			</div>
 			';
         // Adding create folder + upload forms if applicable:
         if (!$backendUser->getTSConfigVal('options.uploadFieldsInTopOfEB')) {
@@ -247,13 +251,13 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
 
         // Create the header of current folder:
         $folderIcon = $this->iconFactory->getIconForResource($folder, Icon::SIZE_SMALL);
-        $lines[] = '<tr class="t3-row-header"><td colspan="4">'
-            . $folderIcon . htmlspecialchars(GeneralUtility::fixed_lgd_cs($folder->getIdentifier(), $titleLen))
-            . '</td></tr>';
+        $lines[] = '<tr class="t3-row-header"><th colspan="4">'
+            . $folderIcon . ' ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($folder->getIdentifier(), $titleLen))
+            . '</th></tr>';
 
         if ($filesCount === 0) {
             $lines[] = '
-				<tr class="file_list_normal">
+				<tr>
 					<td colspan="4">No files found.</td>
 				</tr>';
         }
@@ -318,7 +322,7 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
             $filenameAndIcon = $bulkCheckBox . $ATag_alt . $icon . htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileObject->getName(), $titleLen)) . $ATag_e;
             // Show element:
             $lines[] = '
-					<tr class="file_list_normal">
+					<tr>
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
 						<td>' . $ATag . '<span title="' .  $lang->getLL('addToList', true) . '">' . $this->iconFactory->getIcon('actions-edit-add', Icon::SIZE_SMALL)->render() . '</span>' . $ATag_e . '</td>
 						<td nowrap="nowrap"><a href="' . htmlspecialchars($Ahref) . '" title="' . $lang->getLL('info', true) . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . $lang->getLL('info', true) . '</a></td>
@@ -343,7 +347,7 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
 	<!--
 		Filelisting
 	-->
-			<table cellpadding="0" cellspacing="0" id="typo3-filelist">
+			<table class="table table-striped table-hover" id="typo3-filelist">
 				' . implode('', $lines) . '
 			</table>';
         // Return accumulated content for filelisting:
@@ -385,10 +389,10 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
         $labelToggleSelection = $lang->sL('LLL:EXT:lang/locallang_browse_links.xlf:toggleSelection', true);
         $labelImportSelection = $lang->sL('LLL:EXT:lang/locallang_browse_links.xlf:importSelection', true);
 
-        $out = '<div style="padding-top:10px;">' . '<a href="#" id="t3-js-importSelection" title="' . $labelImportSelection . '">'
+        $out = '<div style="padding-top:10px;">' . '<a href="#" id="t3js-importSelection" title="' . $labelImportSelection . '">'
             . $this->iconFactory->getIcon('actions-document-import-t3d', Icon::SIZE_SMALL)
             . $labelImportSelection . '</a>&nbsp;&nbsp;&nbsp;'
-            . '<a href="#" id="t3-js-toggleSelection" title="' . $labelToggleSelection . '">'
+            . '<a href="#" id="t3js-toggleSelection" title="' . $labelToggleSelection . '">'
             . $this->iconFactory->getIcon('actions-document-select', Icon::SIZE_SMALL)
             . $labelToggleSelection . '</a>' . '</div>';
 

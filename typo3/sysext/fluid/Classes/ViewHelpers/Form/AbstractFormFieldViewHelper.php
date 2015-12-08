@@ -190,6 +190,8 @@ abstract class AbstractFormFieldViewHelper extends AbstractFormViewHelper
             $value = $this->getValueFromSubmittedFormData($value);
         } elseif ($this->hasArgument('value')) {
             $value = $this->arguments['value'];
+        } elseif ($this->isObjectAccessorMode()) {
+            $value = $this->getPropertyValue();
         }
 
         $value = $this->convertToPlainValue($value);
@@ -299,7 +301,7 @@ abstract class AbstractFormFieldViewHelper extends AbstractFormViewHelper
         // If count == 2 -> we need to go through the for-loop exactly once
         for ($i = 1; $i < count($propertySegments); $i++) {
             $object = ObjectAccess::getPropertyPath($formObject, implode('.', array_slice($propertySegments, 0, $i)));
-            $objectName .= '[' . $propertySegments[($i - 1)] . ']';
+            $objectName .= '[' . $propertySegments[$i - 1] . ']';
             $hiddenIdentityField = $this->renderHiddenIdentityField($object, $objectName);
             // Add the hidden identity field to the ViewHelperVariableContainer
             $additionalIdentityProperties = $this->viewHelperVariableContainer->get(
@@ -329,11 +331,7 @@ abstract class AbstractFormFieldViewHelper extends AbstractFormViewHelper
         $formObject = $this->viewHelperVariableContainer->get(
             \TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formObject'
         );
-        $propertyName = $this->arguments['property'];
-        if (is_array($formObject)) {
-            return isset($formObject[$propertyName]) ? $formObject[$propertyName] : null;
-        }
-        return ObjectAccess::getPropertyPath($formObject, $propertyName);
+        return ObjectAccess::getPropertyPath($formObject, $this->arguments['property']);
     }
 
     /**

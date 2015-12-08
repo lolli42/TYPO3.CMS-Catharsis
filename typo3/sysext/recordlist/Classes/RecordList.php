@@ -403,7 +403,7 @@ class RecordList extends AbstractModule
                 }
             }
             // Initialize the listing object, dblist, for rendering the list:
-            $this->pointer = MathUtility::forceIntegerInRange($this->pointer, 0, 100000);
+            $this->pointer = max(0, (int)$this->pointer);
             $dblist->start($this->id, $this->table, $this->pointer, $this->search_field, $this->search_levels, $this->showLimit);
             $dblist->setDispFields();
             // Render versioning selector:
@@ -563,14 +563,16 @@ class RecordList extends AbstractModule
         if (!$this->modTSconfig['properties']['disableSearchBox'] && ($dblist->HTMLcode || !empty($dblist->searchString))) {
             $this->content = $dblist->getSearchBox();
             $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ToggleSearchToolbox');
+
+            $searchButton = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->makeLinkButton();
+            $searchButton
+                ->setHref('#')
+                ->setClasses('t3js-toggle-search-toolbox')
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchIcon'))
+                ->setIcon($this->iconFactory->getIcon('actions-search', Icon::SIZE_SMALL));
+            $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->addButton($searchButton,
+                ButtonBar::BUTTON_POSITION_LEFT, 90);
         }
-        $searchButton = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->makeLinkButton();
-        $searchButton
-            ->setHref('#')
-            ->setClasses('t3js-toggle-search-toolbox')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchIcon', true))
-            ->setIcon($this->iconFactory->getIcon('actions-search', Icon::SIZE_SMALL));
-        $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->addButton($searchButton, ButtonBar::BUTTON_POSITION_LEFT, 90);
 
         if ($this->pageinfo) {
             $this->moduleTemplate->getDocHeaderComponent()->setMetaInformation($this->pageinfo);

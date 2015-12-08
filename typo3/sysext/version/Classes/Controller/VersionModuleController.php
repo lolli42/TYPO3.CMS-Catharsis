@@ -16,12 +16,12 @@ namespace TYPO3\CMS\Version\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Template\ModuleTemplate;
 
 /**
  * Versioning module, including workspace management
@@ -541,7 +541,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             // Perform some access checks:
             $a_wl = $GLOBALS['BE_USER']->check('modules', 'web_list');
             $a_wp = $GLOBALS['BE_USER']->check('modules', $pageModule);
-            $adminLink .= '<a class="btn btn-default" href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">'
+            $adminLink .= '<a class="btn btn-default" href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(' . GeneralUtility::quoteJSvalue($pageModule) . '); return false;">'
                 . $this->moduleTemplate->getIconFactory()->getIcon('actions-page-open', Icon::SIZE_SMALL)->render()
                 . '</a>';
             $adminLink .= '<a class="btn btn-default" href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . '</a>';
@@ -556,7 +556,6 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         }
         return '<div class="btn-group btn-group-sm" role="group">' . $adminLink . '</div>';
     }
-
 
     /**
      * Injects the request object for the current request and gathers all data.

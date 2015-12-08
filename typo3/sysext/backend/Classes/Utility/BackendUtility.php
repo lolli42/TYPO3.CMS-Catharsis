@@ -19,12 +19,14 @@ use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\PreparedStatement;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
@@ -38,7 +40,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -81,7 +82,7 @@ class BackendUtility
      */
     public static function deleteClause($table, $tableAlias = '')
     {
-        if ($GLOBALS['TCA'][$table]['ctrl']['delete']) {
+        if (!empty($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
             return ' AND ' . ($tableAlias ?: $table) . '.' . $GLOBALS['TCA'][$table]['ctrl']['delete'] . '=0';
         } else {
             return '';
@@ -1732,7 +1733,7 @@ class BackendUtility
                 }
 
                 // Preview web image or media elements
-                if (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'] . ',' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext'], $fileReferenceObject->getExtension())) {
+                if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails'] && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'] . ',' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext'], $fileReferenceObject->getExtension())) {
                     $processedImage = $fileObject->process(ProcessedFile::CONTEXT_IMAGECROPSCALEMASK, array(
                                         'width' => $sizeParts[0],
                                         'height' => $sizeParts[1] . 'c',
@@ -1769,6 +1770,12 @@ class BackendUtility
                     try {
                         /** @var File $fileObject */
                         $fileObject = ResourceFactory::getInstance()->retrieveFileOrFolderObject($fileName);
+                        // Skip the resource if it's not of type AbstractFile. One case where this can happen if the
+                        // storage has been externally modified and the field value now points to a folder
+                        // instead of a file.
+                        if (!$fileObject instanceof AbstractFile) {
+                            continue;
+                        }
                         if ($fileObject->isMissing()) {
                             $flashMessage = \TYPO3\CMS\Core\Resource\Utility\BackendUtility::getFlashMessageForMissingFile($fileObject);
                             $thumbData .= $flashMessage->render();
@@ -1963,10 +1970,10 @@ class BackendUtility
             if ($table == 'pages' && $row['alias']) {
                 $out .= ' / ' . $row['alias'];
             }
-            if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS'] && $row['pid'] < 0) {
+            if (static::isTableWorkspaceEnabled($table) && $row['pid'] < 0) {
                 $out .= ' - v#1.' . $row['t3ver_id'];
             }
-            if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+            if (static::isTableWorkspaceEnabled($table)) {
                 switch (VersionState::cast($row['t3ver_state'])) {
                     case new VersionState(VersionState::NEW_PLACEHOLDER):
                         $out .= ' - PLH WSID#' . $row['t3ver_wsid'];
@@ -2629,7 +2636,7 @@ class BackendUtility
                 $fields[] = $prefix . $fieldN;
             }
         }
-        if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+        if (static::isTableWorkspaceEnabled($table)) {
             $fields[] = $prefix . 't3ver_id';
             $fields[] = $prefix . 't3ver_state';
             $fields[] = $prefix . 't3ver_wsid';
@@ -3656,7 +3663,7 @@ class BackendUtility
                     $userName,
                     self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears'))
                 );
-                if ($row['record_pid'] && !isset($GLOBALS['LOCKED_RECORDS'][($row['record_table'] . ':' . $row['record_pid'])])) {
+                if ($row['record_pid'] && !isset($GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_pid']])) {
                     $GLOBALS['LOCKED_RECORDS']['pages:' . $row['record_pid']]['msg'] = sprintf(
                         $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser_content'),
                         $userType,
@@ -4224,7 +4231,7 @@ class BackendUtility
     {
         $realPid = 0;
         $outputRows = array();
-        if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+        if ($GLOBALS['TCA'][$table] && static::isTableWorkspaceEnabled($table)) {
             if (is_array($row) && !$includeDeletedRecords) {
                 $row['_CURRENT_VERSION'] = true;
                 $realPid = $row['pid'];
@@ -4294,7 +4301,7 @@ class BackendUtility
             return;
         }
         // Check that the input record is an offline version from a table that supports versioning:
-        if (is_array($rr) && $rr['pid'] == -1 && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+        if (is_array($rr) && $rr['pid'] == -1 && static::isTableWorkspaceEnabled($table)) {
             // Check values for t3ver_oid and t3ver_wsid:
             if (isset($rr['t3ver_oid']) && isset($rr['t3ver_wsid'])) {
                 // If "t3ver_oid" is already a field, just set this:
@@ -4376,7 +4383,7 @@ class BackendUtility
             // If version was found, swap the default record with that one.
             if (is_array($wsAlt)) {
                 // Check if this is in move-state:
-                if ($previewMovePlaceholders && !$movePldSwap && $GLOBALS['TCA'][$table]['ctrl']['versioningWS'] && $unsetMovePointers) {
+                if ($previewMovePlaceholders && !$movePldSwap && static::isTableWorkspaceEnabled($table) && $unsetMovePointers) {
                     // Only for WS ver 2... (moving)
                     // If t3ver_state is not found, then find it... (but we like best if it is here...)
                     if (!isset($wsAlt['t3ver_state'])) {
@@ -4428,7 +4435,7 @@ class BackendUtility
      */
     public static function movePlhOL($table, &$row)
     {
-        if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+        if (static::isTableWorkspaceEnabled($table)) {
             // If t3ver_move_id or t3ver_state is not found, then find it... (but we like best if it is here...)
             if (!isset($row['t3ver_move_id']) || !isset($row['t3ver_state'])) {
                 $moveIDRec = self::getRecord($table, $row['uid'], 't3ver_move_id, t3ver_state');
@@ -4461,7 +4468,7 @@ class BackendUtility
     public static function getWorkspaceVersionOfRecord($workspace, $table, $uid, $fields = '*')
     {
         if (ExtensionManagementUtility::isLoaded('version')) {
-            if ($workspace !== 0 && $GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+            if ($workspace !== 0 && $GLOBALS['TCA'][$table] && self::isTableWorkspaceEnabled($table)) {
                 // Select workspace version of record:
                 $row = static::getDatabaseConnection()->exec_SELECTgetSingleRow($fields, $table, 'pid=-1 AND ' . 't3ver_oid=' . (int)$uid . ' AND ' . 't3ver_wsid=' . (int)$workspace . self::deleteClause($table));
                 if (is_array($row)) {
@@ -4517,7 +4524,7 @@ class BackendUtility
      */
     public static function versioningPlaceholderClause($table)
     {
-        if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+        if (static::isTableWorkspaceEnabled($table)) {
             $currentWorkspace = (int)static::getBackendUserAuthentication()->workspace;
             return ' AND (' . $table . '.t3ver_state <= ' . new VersionState(VersionState::DEFAULT_STATE) . ' OR ' . $table . '.t3ver_wsid = ' . $currentWorkspace . ')';
         }
@@ -4621,7 +4628,7 @@ class BackendUtility
         if ($workspace === null) {
             $workspace = static::getBackendUserAuthentication()->workspace;
         }
-        if ((int)$workspace !== 0 && $GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+        if ((int)$workspace !== 0 && $GLOBALS['TCA'][$table] && static::isTableWorkspaceEnabled($table)) {
             // Select workspace version of record:
             $row = static::getDatabaseConnection()->exec_SELECTgetSingleRow(
                 $fields,

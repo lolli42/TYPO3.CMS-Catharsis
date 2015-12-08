@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Core\Authentication;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * TYPO3 backend user authentication
@@ -1603,7 +1603,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
             }
         }
 
-
         // Personal or Group filemounts are not accessible if file mount list is set in workspace record
         if ($this->workspace <= 0 || empty($this->workspaceRec['file_mountpoints'])) {
             // If userHomePath is set, we attempt to mount it
@@ -1818,7 +1817,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * @param int $pid PageUid
      * @param string $table Table name
      * @param string $field Field name
-     * @return \TYPO3\CMS\Core\Resource\Folder|boolean The default upload folder for this user
+     * @return \TYPO3\CMS\Core\Resource\Folder|bool The default upload folder for this user
      */
     public function getDefaultUploadFolder($pid = null, $table = null, $field = null)
     {

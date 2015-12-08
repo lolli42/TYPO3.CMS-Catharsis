@@ -1,5 +1,5 @@
 <p>
-	If you upgrade your TYPO3 installation from one major version to another (e.g. 6.1 to 6.2),
+	If you upgrade your TYPO3 installation from one major version to another (e.g. 6.2 to 7 LTS),
 	then the Upgrade Wizards guide you through the necessary steps to upgrade your database
 	records or explicitly install extensions that ship with the latest TYPO3 version.
 </p>
@@ -14,10 +14,12 @@
 				<h4>{availableUpdate.title}</h4>
 				<f:format.raw>{availableUpdate.explanation}</f:format.raw>
 				<f:if condition="{availableUpdate.renderNext}">
-					<f:render
-						partial="Action/Common/SubmitButton"
-						arguments="{name:'getUserInput', text:'Execute'}"
-					/>
+					<div>
+						<f:render
+							partial="Action/Common/SubmitButton"
+							arguments="{name:'getUserInput', text:'Execute', className: 'btn-primary'}"
+						/>
+					</div>
 				</f:if>
 				<hr />
 			</form>
@@ -36,6 +38,6 @@
 	When all updates are done you can check the database for tables and fields no longer required.
 	Perform the Database Analyzer steps until no more changes are required.
 </p>
-<a href="Install.php?install[action]=importantActions&amp;install[context]={context}&amp;install[controller]=tool">
+<a href="Install.php?install[action]=importantActions&amp;install[context]={context}&amp;install[controller]=tool" class="btn btn-default">
 	Go to Database Analyzer
 </a>

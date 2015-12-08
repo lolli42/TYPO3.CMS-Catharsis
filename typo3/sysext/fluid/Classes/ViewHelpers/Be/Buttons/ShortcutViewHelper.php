@@ -64,7 +64,6 @@ class ShortcutViewHelper extends AbstractBackendViewHelper implements Compilable
      * @return string the rendered shortcut button
      * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::makeShortcutIcon()
      */
-
     public function render(array $getVars = array(), array $setVars = array())
     {
         return static::renderStatic(
@@ -89,7 +88,6 @@ class ShortcutViewHelper extends AbstractBackendViewHelper implements Compilable
         $setVars = $arguments['setVars'];
 
         $mayMakeShortcut = $GLOBALS['BE_USER']->mayMakeShortcut();
-
 
         if ($mayMakeShortcut) {
             $doc = GeneralUtility::makeInstance(DocumentTemplate::class);

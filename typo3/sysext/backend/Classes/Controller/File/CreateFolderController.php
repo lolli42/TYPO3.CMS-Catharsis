@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -21,8 +23,6 @@ use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsExcepti
 use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
@@ -198,13 +198,8 @@ class CreateFolderController extends AbstractModule
 				';
 
             // Switching form tags:
-            $pageContent .= $this->moduleTemplate->section(
-                $lang->sL(
-                    'LLL:EXT:lang/locallang_core.xlf:file_newfolder.php.newfolders'
-                ),
-                $code
-            );
-            $pageContent .= '</form>';
+            $pageContent .= '<h3>' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:file_newfolder.php.newfolders', true) . '</h3>';
+            $pageContent .= '<div>' . $code . '</form></div>';
         }
 
         if ($this->folderObject->getStorage()->checkUserActionPermission('add', 'File')) {
@@ -243,13 +238,8 @@ class CreateFolderController extends AbstractModule
 					<input type="hidden" name="redirect" value="' . htmlspecialchars($this->returnUrl) . '" />
 				</div>
 				';
-            $pageContent .= $this->moduleTemplate->section(
-                $lang->sL(
-                    'LLL:EXT:lang/locallang_core.xlf:online_media.new_media',
-                    true
-                ),
-                $code
-            );
+            $pageContent .= '<h3>' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media', true) . '</h3>';
+            $pageContent .= '<div>' . $code . '</div>';
             $pageContent .= '</form>';
 
             $pageContent .= '<form action="' . BackendUtility::getModuleUrl('tce_file') . '" method="post" name="editform3">';
@@ -286,13 +276,8 @@ class CreateFolderController extends AbstractModule
 					<input type="hidden" name="redirect" value="' . htmlspecialchars($this->returnUrl) . '" />
 				</div>
 			';
-            $pageContent .= $this->moduleTemplate->section(
-                $lang->sL(
-                    'LLL:EXT:lang/locallang_core.xlf:file_newfolder.php.newfile',
-                    true
-                ),
-                $code
-            );
+            $pageContent .= '<h3>' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:file_newfolder.php.newfile', true) . '</h3>';
+            $pageContent .= '<div>' . $code . '</div>';
             $pageContent .= '</form>';
         }
 
@@ -301,12 +286,12 @@ class CreateFolderController extends AbstractModule
         if ($this->returnUrl) {
             $backButton = $buttonBar->makeLinkButton()
                ->setHref(GeneralUtility::linkThisUrl($this->returnUrl))
-               ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', true))
+               ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($backButton);
         }
 
-        $this->content .= $this->moduleTemplate->section('', $pageContent);
+        $this->content .= '<div>' . $pageContent . '</div>';
         $this->moduleTemplate->setContent($this->content);
     }
 

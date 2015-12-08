@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -198,7 +198,6 @@ class FileStreamWrapper
         }
         self::$registered = false;
     }
-
 
     /*
      * The following list of functions is implemented as of

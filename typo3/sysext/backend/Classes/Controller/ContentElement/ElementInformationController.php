@@ -14,8 +14,9 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Backend\Avatar\Avatar;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -23,7 +24,6 @@ use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Backend\Avatar\Avatar;
 
 /**
  * Script Class for showing information about an item.
@@ -505,7 +505,7 @@ class ElementInformationController
         $returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GET('returnUrl'));
         if ($returnUrl) {
             $backLink .= '
-				<a class="btn btn-primary" href="' . htmlspecialchars($returnUrl) . '>
+				<a class="btn btn-primary" href="' . htmlspecialchars($returnUrl) . '">
 					' . $this->iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL)->render() . '
 					' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:back', true) . '
 				</a>';

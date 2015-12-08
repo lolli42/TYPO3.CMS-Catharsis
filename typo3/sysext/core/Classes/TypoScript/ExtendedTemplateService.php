@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\TypoScript;
 
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -472,7 +473,7 @@ class ExtendedTemplateService extends TemplateService
                         }
                         $aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
                         if ($this->bType != 'const') {
-                            $ln = is_array($arr[$key . '.ln..']) ? 'Defined in: ' . $this->lineNumberToScript($arr[($key . '.ln..')]) : 'N/A';
+                            $ln = is_array($arr[$key . '.ln..']) ? 'Defined in: ' . $this->lineNumberToScript($arr[$key . '.ln..']) : 'N/A';
                         } else {
                             $ln = '';
                         }
@@ -585,6 +586,7 @@ class ExtendedTemplateService extends TemplateService
      * @param string $searchString
      * @param array $keyArray
      * @return array
+     * @throws Exception
      */
     public function ext_getSearchKeys($arr, $depth_in, $searchString, $keyArray)
     {
@@ -598,20 +600,28 @@ class ExtendedTemplateService extends TemplateService
         if ($depth_in) {
             $depth_in = $depth_in . '.';
         }
+        $searchPattern = '';
+        if ($this->regexMode) {
+            $searchPattern = '/' . addcslashes($searchString, '/') . '/';
+            $matchResult = @preg_match($searchPattern, '');
+            if ($matchResult === false) {
+                throw new Exception(sprintf('Error evaluating regular expression "%s".', $searchPattern), 1446559458);
+            }
+        }
         foreach ($keyArr as $key => $value) {
             $depth = $depth_in . $key;
             $deeper = is_array($arr[$key . '.']);
             if ($this->regexMode) {
                 // The value has matched
-                if (preg_match('/' . $searchString . '/', $arr[$key])) {
+                if (preg_match($searchPattern, $arr[$key])) {
                     $this->tsbrowser_searchKeys[$depth] += 2;
                 }
                 // The key has matched
-                if (preg_match('/' . $searchString . '/', $key)) {
+                if (preg_match($searchPattern, $key)) {
                     $this->tsbrowser_searchKeys[$depth] += 4;
                 }
                 // Just open this subtree if the parent key has matched the search
-                if (preg_match('/' . $searchString . '/', $depth_in)) {
+                if (preg_match($searchPattern, $depth_in)) {
                     $this->tsbrowser_searchKeys[$depth] = 1;
                 }
             } else {
@@ -863,7 +873,7 @@ class ExtendedTemplateService extends TemplateService
         // Query is taken from the runThroughTemplates($theRootLine) function in the parent class.
         if ((int)$id) {
             $addC = $template_uid ? ' AND uid=' . (int)$template_uid : '';
-            $where = 'pid=' . (int)$id . $addC . ' ' . $this->whereClause;
+            $where = 'pid=' . (int)$id . $addC . BackendUtility::deleteClause('sys_template');
             $res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'sys_template', $where, '', 'sorting', '1');
             $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
             BackendUtility::workspaceOL('sys_template', $row);
@@ -885,7 +895,14 @@ class ExtendedTemplateService extends TemplateService
         }
 
         // Query is taken from the runThroughTemplates($theRootLine) function in the parent class.
-        $res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'sys_template', 'pid=' . (int)$id . ' ' . $this->whereClause, '', 'sorting');
+        $res = $this->getDatabaseConnection()->exec_SELECTquery(
+            '*',
+            'sys_template',
+            'pid=' . (int)$id
+                . BackendUtility::deleteClause('sys_template'),
+            '',
+            'sorting'
+        );
 
         $outRes = array();
         while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {

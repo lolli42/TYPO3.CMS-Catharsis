@@ -109,6 +109,9 @@ class Adodb extends AbstractCompiler
             case 'CHANGE':
                 $query = $this->databaseConnection->handlerInstance[$this->databaseConnection->lastHandlerKey]->DataDictionary->AlterColumnSQL($tableName, $fieldName . ' ' . $this->compileFieldCfg($components['definition']));
                 break;
+            case 'RENAME':
+                $query = $this->databaseConnection->handlerInstance[$this->databaseConnection->lastHandlerKey]->DataDictionary->RenameTableSQL($tableName, $fieldName);
+                break;
             case 'DROP':
 
             case 'DROPKEY':
@@ -347,7 +350,12 @@ class Adodb extends AbstractCompiler
                 } elseif (isset($v['func']) && $v['func']['type'] === 'EXISTS') {
                     $output .= ' ' . trim($v['modifier']) . ' EXISTS (' . $this->compileSELECT($v['func']['subquery']) . ')';
                 } else {
-                    if (isset($v['func']) && $v['func']['type'] === 'LOCATE') {
+                    if (isset($v['func']) && $v['func']['type'] === 'CAST') {
+                        $output .= ' ' . trim($v['modifier']);
+                        $output .= ' CAST(';
+                        $output .= ($v['func']['table'] ? $v['func']['table'] . '.' : '') . $v['func']['field'];
+                        $output .= ' AS ' . $v['func']['datatype'][0] . ')';
+                    } elseif (isset($v['func']) && $v['func']['type'] === 'LOCATE') {
                         $output .= ' ' . trim($v['modifier']);
                         switch (true) {
                             case $this->databaseConnection->runningADOdbDriver('mssql') && $functionMapping:

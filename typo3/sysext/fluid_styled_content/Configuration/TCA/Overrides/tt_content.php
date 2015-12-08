@@ -37,8 +37,8 @@ call_user_func(function () {
     $GLOBALS['TCA']['tt_content']['types']['textmedia'] = [
         'showitem' => '
 				--palette--;' . $frontendLanguageFilePrefix . 'palette.general;general,
-				--palette--;' . $frontendLanguageFilePrefix . 'palette.header;header,
-				bodytext;' . $frontendLanguageFilePrefix . 'bodytext_formlabel;;richtext:rte_transform[mode=ts_css],
+				--palette--;' . $frontendLanguageFilePrefix . 'palette.header;header,rowDescription,
+				bodytext;' . $frontendLanguageFilePrefix . 'bodytext_formlabel,
 			--div--;' . $frontendLanguageFilePrefix . 'tabs.media,
 				assets,
 				--palette--;' . $frontendLanguageFilePrefix . 'palette.imagelinks;imagelinks,
@@ -52,6 +52,7 @@ call_user_func(function () {
 				--palette--;' . $frontendLanguageFilePrefix . 'palette.access;access,
 			--div--;' . $frontendLanguageFilePrefix . 'tabs.extended
 		',
+        'columnsOverrides' => ['bodytext' => ['defaultExtras' => 'richtext:rte_transform[mode=ts_css]']]
     ];
 
     // Add category tab when categories column exits

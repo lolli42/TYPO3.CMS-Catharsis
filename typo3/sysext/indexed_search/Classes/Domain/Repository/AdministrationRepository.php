@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Domain\Repository;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,9 +13,9 @@ namespace TYPO3\CMS\IndexedSearch\Domain\Repository;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
@@ -23,7 +23,6 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Dbal\Database\DatabaseConnection;
 use TYPO3\CMS\IndexedSearch\FileContentParser;
 

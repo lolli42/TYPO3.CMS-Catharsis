@@ -48,6 +48,35 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
     /**
      * @test
      */
+    public function getValueAttributeBuildsValueFromPropertyAndFormObjectIfInObjectAccessorModeAndRespectSubmittedDataValueSetFalse()
+    {
+        $formViewHelper = $this->getAccessibleMock(
+            \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper::class,
+            ['isObjectAccessorMode', 'addAdditionalIdentityPropertiesIfNeeded'], [], '', false
+        );
+        $this->injectDependenciesIntoViewHelper($formViewHelper);
+        $formViewHelper->_set('respectSubmittedDataValue', false);
+
+        $mockObject = new \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\Fixtures\ClassWithTwoGetters();
+
+        $formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(true));
+        $this->viewHelperVariableContainer->expects($this->atLeastOnce())->method('get')->with(
+            \TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formObject'
+        )->will($this->returnValue($mockObject));
+        $this->viewHelperVariableContainer->expects($this->atLeastOnce())->method('exists')->with(
+            \TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formObject'
+        )->will($this->returnValue(true));
+
+        $arguments = ['name' => null, 'value' => null, 'property' => 'value.something'];
+        $formViewHelper->_set('arguments', $arguments);
+        $expected = 'MyString';
+        $actual = $formViewHelper->_call('getValueAttribute');
+        $this->assertSame($expected, $actual);
+    }
+
+    /**
+     * @test
+     */
     public function ifAnAttributeValueIsAnObjectMaintainedByThePersistenceManagerItIsConvertedToAUID()
     {
         $mockPersistenceManager = $this->getMock(\TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface::class);
@@ -535,5 +564,32 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
         $expected = '<input type="hidden" name="SomeFieldName[WithBrackets][foo]" value="" />';
         $actual = $formViewHelper->_call('renderHiddenFieldForEmptyValue');
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * @test
+     */
+    public function getPropertyValueReturnsArrayValueByPropertyPath()
+    {
+        $formFieldViewHelper = $this->getAccessibleMock(
+            \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper::class,
+            ['renderHiddenIdentityField'],
+            [],
+            '',
+            false
+        );
+
+        $this->injectDependenciesIntoViewHelper($formFieldViewHelper);
+        $formFieldViewHelper->_set('arguments', ['property' => 'key1.key2']);
+
+        $this->viewHelperVariableContainer->expects($this->at(0))->method('exists')->with(
+            \TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formObject'
+        )->will($this->returnValue(true));
+        $this->viewHelperVariableContainer->expects($this->at(1))->method('get')->with(
+            \TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formObject'
+        )->will($this->returnValue(['key1' => ['key2' => 'valueX']]));
+
+        $actual = $formFieldViewHelper->_call('getPropertyValue');
+        $this->assertEquals('valueX', $actual);
     }
 }

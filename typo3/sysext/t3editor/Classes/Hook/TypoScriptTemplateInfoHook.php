@@ -71,8 +71,8 @@ class TypoScriptTemplateInfoHook
         $t3editor->getJavascriptCode();
         foreach (array('constants', 'config') as $type) {
             if ($parameters['e'][$type]) {
-                $attributes = 'rows="' . $parameters['numberOfRows'] . '" ' . 'wrap="off" ' . $pObj->pObj->doc->formWidth(48, true, 'width:98%;height:60%');
-                $title = $GLOBALS['LANG']->getLL('template') . ' ' . htmlspecialchars($parameters['tplRow']['title']) . $GLOBALS['LANG']->getLL('delimiter') . ' ' . $GLOBALS['LANG']->getLL($type);
+                $attributes = 'rows="' . (int)$parameters['numberOfRows'] . '" wrap="off"' . $pObj->pObj->doc->formWidth(48, true, 'width:98%;height:60%');
+                $title = $GLOBALS['LANG']->getLL('template') . ' ' . $parameters['tplRow']['title'] . $GLOBALS['LANG']->getLL('delimiter') . ' ' . $GLOBALS['LANG']->getLL($type);
                 $outCode = $t3editor->getCodeEditor('data[' . $type . ']', 'text-monospace enable-tab', '$1', $attributes, $title, array(
                     'pageId' => (int)$pObj->pObj->id
                 ));
@@ -103,7 +103,8 @@ class TypoScriptTemplateInfoHook
             // Do not log time-performance information
             $tmpl->tt_track = 0;
             $tmpl->init();
-            // Get the row of the first VISIBLE template of the page. whereclause like the frontend.
+            // Get the first template record on the page, which might be hidden as well
+            // (for instance the TypoScript constant editor is persisting to the first template)
             $tplRow = $tmpl->ext_getFirstTemplate($pageId, $template_uid);
             $existTemplate = is_array($tplRow);
             if ($existTemplate) {

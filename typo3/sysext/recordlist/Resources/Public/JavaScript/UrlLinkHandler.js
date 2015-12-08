@@ -37,13 +37,9 @@ define(['jquery', 'TYPO3/CMS/Recordlist/LinkBrowser'], function($, LinkBrowser) 
 			return;
 		}
 
-		if (value.substr(0, 7) === "http://") {
-			value = value.substr(7);
-		}
+		LinkBrowser.setAdditionalLinkAttribute('data-htmlarea-external', '1');
 
-		LinkBrowser.updateValueInMainForm(value);
-
-		close();
+		LinkBrowser.finalizeFunction(value);
 	};
 
 	$(function() {

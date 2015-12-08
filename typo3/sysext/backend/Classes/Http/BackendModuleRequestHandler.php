@@ -14,17 +14,17 @@ namespace TYPO3\CMS\Backend\Http;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Core\Bootstrap;
+use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\FormProtection\BackendFormProtection;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
-use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\Http\Dispatcher;
 use TYPO3\CMS\Core\Http\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
@@ -91,6 +91,7 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
         if ($this->isDispatchedModule($moduleName)) {
             return $this->dispatchModule($moduleName);
         } else {
+            // @deprecated: This else path is deprecated and throws deprecations logs at registration time. Can be removed with TYPO3 CMS 8.
             $isDispatched = $this->callTraditionalModule($moduleName);
             if (!$isDispatched) {
                 throw new Exception('No module "' . $moduleName . '" could be found.', 1294585070);
@@ -257,7 +258,6 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
         }
         return $this->moduleRegistry['_configuration'][$moduleName];
     }
-
 
     /**
      * Returns the priority - how eager the handler is to actually handle the request.

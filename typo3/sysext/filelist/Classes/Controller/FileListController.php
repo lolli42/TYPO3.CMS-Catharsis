@@ -42,7 +42,6 @@ use TYPO3\CMS\Filelist\FileList;
  */
 class FileListController extends ActionController
 {
-
     /**
      * Module configuration
      *
@@ -353,7 +352,7 @@ class FileListController extends ActionController
         if ($this->folderObject) {
             // Create fileListing object
             $this->filelist = GeneralUtility::makeInstance(FileList::class, $this);
-            $this->filelist->thumbs = $this->MOD_SETTINGS['displayThumbs'];
+            $this->filelist->thumbs = $GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails'] && $this->MOD_SETTINGS['displayThumbs'];
             // Create clipboard object and initialize that
             $this->filelist->clipObj = GeneralUtility::makeInstance(Clipboard::class);
             $this->filelist->clipObj->fileMode = 1;
@@ -429,6 +428,7 @@ class FileListController extends ActionController
 
             $this->view->assign('headline', $this->getModuleHeadline());
             $this->view->assign('listHtml', $this->filelist->HTMLcode);
+
             $this->view->assign('checkboxes', [
                 'bigControlPanel' => [
                     'enabled' => $this->getBackendUser()->getTSConfigVal('options.file_list.enableDisplayBigControlPanel') === 'selectable',
@@ -437,7 +437,7 @@ class FileListController extends ActionController
                         $this->MOD_SETTINGS['bigControlPanel'], '', '', 'id="bigControlPanel"'),
                 ],
                 'displayThumbs' => [
-                    'enabled' => $this->getBackendUser()->getTSConfigVal('options.file_list.enableDisplayThumbnails') === 'selectable',
+                    'enabled' => $GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails'] && $this->getBackendUser()->getTSConfigVal('options.file_list.enableDisplayThumbnails') === 'selectable',
                     'label' => $this->getLanguageService()->getLL('displayThumbs', true),
                     'html' => BackendUtility::getFuncCheck($this->id, 'SET[displayThumbs]',
                         $this->MOD_SETTINGS['displayThumbs'], '', '', 'id="checkDisplayThumbs"'),
@@ -494,6 +494,9 @@ class FileListController extends ActionController
                 $fileFacades[] = new \TYPO3\CMS\Filelist\FileFacade($file);
             }
         }
+
+        $pageRenderer = $this->view->getModuleTemplate()->getPageRenderer();
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileList');
 
         $this->view->assign('searchWord', $searchWord);
         $this->view->assign('files', $fileFacades);
@@ -558,14 +561,18 @@ class FileListController extends ActionController
         /** @var $resourceFactory ResourceFactory */
         $resourceFactory = GeneralUtility::makeInstance(ResourceFactory::class);
 
+        $lang = $this->getLanguageService();
+
         // Refresh page
-        $refreshButton = $buttonBar->makeLinkButton()
-            ->setHref(GeneralUtility::linkThisScript(array(
+        $refreshLink = GeneralUtility::linkThisScript(
+            array(
                 'target' => rawurlencode($this->folderObject->getCombinedIdentifier()),
                 'imagemode' => $this->filelist->thumbs
-            )))
-            ->setTitle($this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload',
-                true)))
+            )
+        );
+        $refreshButton = $buttonBar->makeLinkButton()
+            ->setHref($refreshLink)
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload'))
             ->setIcon($iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL));
         $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT);
 
@@ -573,13 +580,15 @@ class FileListController extends ActionController
         try {
             $currentStorage = $this->folderObject->getStorage();
             $parentFolder = $this->folderObject->getParentFolder();
-            if ($parentFolder->getIdentifier() !== $this->folderObject->getIdentifier() && $currentStorage->isWithinFileMountBoundaries($parentFolder)) {
+            if ($parentFolder->getIdentifier() !== $this->folderObject->getIdentifier()
+                && $currentStorage->isWithinFileMountBoundaries($parentFolder)
+            ) {
+                $levelUpClick = 'top.document.getElementsByName("navigation")[0].contentWindow.Tree.highlightActiveItem("file","folder'
+                    . GeneralUtility::md5int($parentFolder->getCombinedIdentifier()) . '_"+top.fsMod.currentBank)';
                 $levelUpButton = $buttonBar->makeLinkButton()
-                    ->setHref(BackendUtility::getModuleUrl('file_FilelistList',
-                        ['id' => $parentFolder->getCombinedIdentifier()]))
-                    ->setOnClick('top.document.getElementsByName("navigation")[0].contentWindow.Tree.highlightActiveItem("file","folder' . GeneralUtility::md5int($parentFolder->getCombinedIdentifier()) . '_"+top.fsMod.currentBank)')
-                    ->setTitle($this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.upOneLevel',
-                        true)))
+                    ->setHref(BackendUtility::getModuleUrl('file_FilelistList', ['id' => $parentFolder->getCombinedIdentifier()]))
+                    ->setOnClick($levelUpClick)
+                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.upOneLevel'))
                     ->setIcon($iconFactory->getIcon('actions-view-go-up', Icon::SIZE_SMALL));
                 $buttonBar->addButton($levelUpButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
             }
@@ -605,8 +614,7 @@ class FileListController extends ActionController
                     )
                 ))
                 ->setClasses('t3js-drag-uploader-trigger')
-                ->setTitle($this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload',
-                    true)))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload'))
                 ->setIcon($iconFactory->getIcon('actions-edit-upload', Icon::SIZE_SMALL));
             $buttonBar->addButton($uploadButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
         }
@@ -624,8 +632,7 @@ class FileListController extends ActionController
                         'returnUrl' => $this->filelist->listURL(),
                     )
                 ))
-                ->setTitle($this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.new',
-                    true)))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:cm.new'))
                 ->setIcon($iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL));
             $buttonBar->addButton($newButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
         }
@@ -649,9 +656,9 @@ class FileListController extends ActionController
                     $pasteButton = $buttonBar->makeLinkButton()
                         ->setHref($this->filelist->clipObj->pasteUrl('_FILE',
                             $this->folderObject->getCombinedIdentifier()))
-                        ->setOnClick('return ' . htmlspecialchars($this->filelist->clipObj->confirmMsg('_FILE',
-                                $this->folderObject->getReadablePath(), 'into', $elToConfirm)))
-                        ->setTitle($this->getLanguageService()->getLL('clip_paste', true))
+                        ->setOnClick('return ' . $this->filelist->clipObj->confirmMsg('_FILE',
+                                $this->folderObject->getReadablePath(), 'into', $elToConfirm))
+                        ->setTitle($lang->getLL('clip_paste'))
                         ->setIcon($iconFactory->getIcon('actions-document-paste-after', Icon::SIZE_SMALL));
                     $buttonBar->addButton($pasteButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
                 }

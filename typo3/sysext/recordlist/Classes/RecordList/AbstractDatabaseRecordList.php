@@ -15,6 +15,8 @@ namespace TYPO3\CMS\Recordlist\RecordList;
  */
 
 use TYPO3\CMS\Backend\RecordList\AbstractRecordList;
+use TYPO3\CMS\Backend\Routing\Router;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -35,7 +37,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  */
 class AbstractDatabaseRecordList extends AbstractRecordList
 {
-
     /**
      * Specify a list of tables which are the only ones allowed to be displayed.
      *
@@ -544,7 +545,7 @@ class AbstractDatabaseRecordList extends AbstractRecordList
         // Setting form-elements, if applicable:
         $formElements = array('', '');
         if ($formFields) {
-            $formElements = array('<form action="' . htmlspecialchars($this->listURL('', -1, 'firstElementNumber,search_field')) . '" method="post">', '</form>');
+            $formElements = array('<form action="' . htmlspecialchars($this->listURL('', '-1', 'firstElementNumber,search_field')) . '" method="post">', '</form>');
         }
         // Make level selector:
         $opt = array();
@@ -588,7 +589,7 @@ class AbstractDatabaseRecordList extends AbstractRecordList
      *
      * Various helper functions
      *
-	 ******************************/
+     ******************************/
     /**
      * Setting the field names to display in extended list.
      * Sets the internal variable $this->setFields
@@ -732,8 +733,8 @@ class AbstractDatabaseRecordList extends AbstractRecordList
                             } elseif ($fieldConfig['type'] == 'text' ||
                                 $fieldConfig['type'] == 'flex' ||
                                 ($fieldConfig['type'] == 'input' && (!$fieldConfig['eval'] || !preg_match('/date|time|int/', $fieldConfig['eval'])))) {
-                                    $condition = $fieldName . ' LIKE \'%' . $this->searchString . '%\'';
-                                    $whereParts[] = $condition;
+                                $condition = $fieldName . ' LIKE \'%' . $this->searchString . '%\'';
+                                $whereParts[] = $condition;
                             }
                         }
                     }
@@ -952,7 +953,17 @@ class AbstractDatabaseRecordList extends AbstractRecordList
 
         $urlParameters = array_merge_recursive($urlParameters, $this->overrideUrlParameters);
 
-        return BackendUtility::getModuleUrl(GeneralUtility::_GP('M'), $urlParameters);
+        if ($routePath = GeneralUtility::_GP('route')) {
+            $router = GeneralUtility::makeInstance(Router::class);
+            $route = $router->match($routePath);
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+            $url = (string)$uriBuilder->buildUriFromRoute($route->getOption('_identifier'), $urlParameters);
+        } elseif ($moduleName = GeneralUtility::_GP('M')) {
+            $url = BackendUtility::getModuleUrl($moduleName, $urlParameters);
+        } else {
+            $url = GeneralUtility::getIndpEnv('SCRIPT_NAME') . '?' . ltrim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&');
+        }
+        return $url;
     }
 
     /**

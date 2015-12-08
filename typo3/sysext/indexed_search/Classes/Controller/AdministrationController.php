@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,18 +13,17 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Extbase\Mvc\Web\Request as WebRequest;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 use TYPO3\CMS\IndexedSearch\Domain\Repository\AdministrationRepository;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\IndexedSearch\Indexer;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -86,12 +85,15 @@ class AdministrationController extends ActionController
      */
     protected function initializeView(ViewInterface $view)
     {
-        /** @var BackendTemplateView $view */
-        parent::initializeView($view);
-        $permissionClause = $this->getBackendUserAuthentication()->getPagePermsClause(1);
-        $pageRecord = BackendUtility::readPageAccess($this->pageUid, $permissionClause);
-        $view->getModuleTemplate()->getDocHeaderComponent()->setMetaInformation($pageRecord);
-        $this->generateMenu();
+        if ($view instanceof BackendTemplateView) {
+            /** @var BackendTemplateView $view */
+            parent::initializeView($view);
+            $permissionClause = $this->getBackendUserAuthentication()->getPagePermsClause(1);
+            $pageRecord = BackendUtility::readPageAccess($this->pageUid, $permissionClause);
+            $view->getModuleTemplate()->getDocHeaderComponent()->setMetaInformation($pageRecord);
+            $this->generateMenu();
+            $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
+        }
     }
 
     /**
@@ -423,7 +425,6 @@ class AdministrationController extends ActionController
             'depth' => $depth
         ));
     }
-
 
     /**
      * Remove item from index

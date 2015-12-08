@@ -101,7 +101,8 @@
  * General Styles
  **/
 
-*:before, *:after {
+#TSFE_ADMIN_PANEL_FORM *:before,
+#TSFE_ADMIN_PANEL_FORM *:after {
 	-webkit-box-sizing: border-box;
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
@@ -202,36 +203,21 @@
 	cursor: move;
 }
 
-#TSFE_ADMIN_PANEL_FORM #typo3-adminPanel-header,
-#TSFE_ADMIN_PANEL_FORM #typo3-adminPanel-footer {
+#TSFE_ADMIN_PANEL_FORM #typo3-adminPanel-header {
 	display: inline-block;
 	width: 100%;
 	background-color: #222;
 	color: white;
 }
 
-#TSFE_ADMIN_PANEL_FORM #typo3-adminPanel-footer {
-	padding-right: 5px;
-}
-
-#TSFE_ADMIN_PANEL_FORM .typo3-adminPanel-header a,
-#TSFE_ADMIN_PANEL_FORM .typo3-adminPanel-footer a {
+#TSFE_ADMIN_PANEL_FORM .typo3-adminPanel-header a {
 	color: #fff;
-}
-
-#TSFE_ADMIN_PANEL_FORM .btn {
-	margin-top: 6px;
-	margin-bottom: 6px;
 }
 
 #TSFE_ADMIN_PANEL_FORM .typo3-adminPanel-header-title {
 	float: left;
 	padding-top: 11px;
 	padding-left: 15px;
-}
-
-#TSFE_ADMIN_PANEL_FORM input.typo3-adminPanel-update {
-	float: right;
 }
 
 #TSFE_ADMIN_PANEL_FORM .typo3-adminPanel-header-buttonWrapper {
@@ -251,6 +237,12 @@
 
 #TSFE_ADMIN_PANEL_FORM .typo3-adminPanel-panel-closed .typo3-adminPanel-header-button:before {
 	content: "\f107";
+}
+
+#TSFE_ADMIN_PANEL_FORM .updatebutton {
+    text-align: right;
+    background-color: #222;
+    width: 100%;
 }
 
 #TSFE_ADMIN_PANEL_FORM .typo3-adminPanel-section-title .wrapper {
@@ -468,10 +460,6 @@
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
-}
-
-#TSFE_ADMIN_PANEL_FORM #typo3-adminPanel-footer .btn {
-	margin-bottom: 5px;
 }
 
 #TSFE_ADMIN_PANEL_FORM .btn:hover {

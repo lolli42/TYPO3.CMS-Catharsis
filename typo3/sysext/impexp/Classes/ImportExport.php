@@ -387,7 +387,6 @@ class ImportExport
         )
     );
 
-
     /**
      * Records to be migrated after all
      * Multidimensional array [table][uid][field] = array([related sys_file_reference uids])
@@ -701,9 +700,9 @@ class ImportExport
     public function export_addRecord($table, $row, $relationLevel = 0)
     {
         BackendUtility::workspaceOL($table, $row);
-        if ((string)$table !== '' && is_array($row) && $row['uid'] > 0 && !$this->excludeMap[($table . ':' . $row['uid'])]) {
+        if ((string)$table !== '' && is_array($row) && $row['uid'] > 0 && !$this->excludeMap[$table . ':' . $row['uid']]) {
             if ($this->checkPID($table === 'pages' ? $row['uid'] : $row['pid'])) {
-                if (!isset($this->dat['records'][($table . ':' . $row['uid'])])) {
+                if (!isset($this->dat['records'][$table . ':' . $row['uid']])) {
                     // Prepare header info:
                     $row = $this->filterRecordFields($table, $row);
                     $headerInfo = array();
@@ -824,7 +823,6 @@ class ImportExport
         }
         return $fixedRelations;
     }
-
 
     /**
      * This analyses the existing added records, finds all database relations to records and adds these records to the export file.
@@ -1117,7 +1115,6 @@ class ImportExport
         $this->dat['files_fal'][$fileId] = $fileRec;
     }
 
-
     /**
      * Adds a files content to the export memory
      *
@@ -1379,7 +1376,6 @@ class ImportExport
         }
         return $newRow;
     }
-
 
     /**************************
      * File Output
@@ -3731,7 +3727,7 @@ class ImportExport
                 }
             }
             $pInfo['preCode'] = $preCode . '<span title="' . htmlspecialchars($table . ':' . $uid) . '">'
-                . $this->iconFactory->getIconForRecord($table, (array)$this->dat['records'][($table . ':' . $uid)]['data'], Icon::SIZE_SMALL)->render()
+                . $this->iconFactory->getIconForRecord($table, (array)$this->dat['records'][$table . ':' . $uid]['data'], Icon::SIZE_SMALL)->render()
                 . '</span>';
             $pInfo['title'] = htmlspecialchars($record['title']);
             // View page:

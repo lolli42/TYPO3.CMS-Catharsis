@@ -294,7 +294,7 @@ class NewRecordController extends AbstractModule
                 $this->pagesOnly();
             }
             // Add all the content to an output section
-            $this->content .= $this->moduleTemplate->section('', $this->code);
+            $this->content .= '<div>' . $this->code . '</div>';
             // Setting up the buttons and markers for docheader
             $this->getButtons();
             // Build the <body> for the module
@@ -315,10 +315,7 @@ class NewRecordController extends AbstractModule
             if ($this->showNewRecLink('pages')) {
                 $newPageButton = $buttonBar->makeLinkButton()
                     ->setHref(GeneralUtility::linkThisScript(array('pagesOnly' => '1')))
-                    ->setTitle($lang->sL(
-                        'LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage',
-                        true
-                    ))
+                    ->setTitle($lang->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-page-new', Icon::SIZE_SMALL));
                 $buttonBar->addButton($newPageButton, ButtonBar::BUTTON_POSITION_LEFT, 20);
             }
@@ -336,11 +333,10 @@ class NewRecordController extends AbstractModule
         if ($this->returnUrl) {
             $returnButton = $buttonBar->makeLinkButton()
                 ->setHref($this->returnUrl)
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', true))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($returnButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
         }
-
 
         if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
             // View
@@ -367,7 +363,7 @@ class NewRecordController extends AbstractModule
                         '',
                         BackendUtility::BEgetRootLine($this->pageinfo['uid'])
                     ))
-                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true))
+                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                         'actions-document-view',
                         Icon::SIZE_SMALL
@@ -503,11 +499,11 @@ class NewRecordController extends AbstractModule
                         if ($table == 'tt_content') {
                             $groupName = $lang->getLL('createNewContent');
                             $rowContent = $newContentIcon . '<strong>' . $lang->getLL('createNewContent') . '</strong><ul>';
-                            // If mod.web_list.newContentWiz.overrideWithExtension is set, use that extension's wizard instead:
-                            $overrideExt = $this->web_list_modTSconfig['properties']['newContentWiz.']['overrideWithExtension'];
-                            $pathToWizard = ExtensionManagementUtility::isLoaded($overrideExt) ? ExtensionManagementUtility::extRelPath($overrideExt) . 'mod1/db_new_content_el.php?' : BackendUtility::getModuleUrl('new_content_element') . '&';
-                            $href = $pathToWizard . 'id=' . $this->id . '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'));
-                            $rowContent .= '<li>' . $newLink . ' ' . BackendUtility::wrapInHelp($table, '') . '</li><li><a href="' . htmlspecialchars($href) . '">' . $newContentIcon . htmlspecialchars($lang->getLL('clickForWizard')) . '</a></li></ul>';
+                            // If mod.newContentElementWizard.override is set, use that extension's wizard instead:
+                            $tsConfig = BackendUtility::getModTSconfig($this->id, 'mod');
+                            $moduleName = $tsConfig['properties']['newContentElementWizard.']['override'] ?: 'new_content_element';
+                            $url = BackendUtility::getModuleUrl($moduleName, ['id' => $this->id, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')]);
+                            $rowContent .= '<li>' . $newLink . ' ' . BackendUtility::wrapInHelp($table, '') . '</li><li><a href="' . htmlspecialchars($url) . '">' . $newContentIcon . htmlspecialchars($lang->getLL('clickForWizard')) . '</a></li></ul>';
                         } else {
                             // Get the title
                             if ($v['ctrl']['readOnly'] || $v['ctrl']['hideTable'] || $v['ctrl']['is_static']) {
@@ -585,6 +581,8 @@ class NewRecordController extends AbstractModule
             $row .= '</ul></li>';
             $finalRows[] = $row;
         }
+
+        $finalRows[] = '</ul>';
         // Make table:
         $this->code .= implode('', $finalRows);
     }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Feedit;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,9 +13,8 @@ namespace TYPO3\CMS\Feedit;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;

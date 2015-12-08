@@ -250,7 +250,7 @@ abstract class AbstractMenuContentObject
         $this->mconf = $conf[$this->menuNumber . $objSuffix . '.'];
         $this->debug = $tsfe->debug;
         $this->WMcObj = GeneralUtility::makeInstance(ContentObjectRenderer::class);
-        // In XHTML there is no "name" attribute anymore
+        // In XHTML and HTML5 there is no "name" attribute anymore
         switch ($tsfe->xhtmlDoctype) {
             case 'xhtml_strict':
                 // intended fall-through
@@ -259,6 +259,9 @@ abstract class AbstractMenuContentObject
             case 'xhtml_2':
                 // intended fall-through
             case 'html5':
+                // intended fall-through
+            case '':
+                // empty means that it's HTML5 by default
                 $this->nameAttribute = 'id';
                 break;
             default:
@@ -717,9 +720,9 @@ abstract class AbstractMenuContentObject
                 $id = $mount_info['mount_pid'];
             }
             // Get sub-pages:
-            $res = $databaseConnection->exec_SELECTquery('uid', 'pages', 'pid=' . intval($id) . $this->sys_page->where_hid_del, '', $sortingField);
+            $res = $this->parent_cObj->exec_getQuery('pages', array('pidInList' => $id, 'orderBy' => $sortingField));
             while ($row = $databaseConnection->sql_fetch_assoc($res)) {
-                $row = $this->sys_page->getPage($row['uid']);
+                $tsfe->sys_page->versionOL('pages', $row, true);
                 if (!empty($row)) {
                     // Keep mount point?
                     $mount_info = $this->sys_page->getMountPointInfo($row['uid'], $row);
@@ -742,7 +745,7 @@ abstract class AbstractMenuContentObject
                         if ($MP) {
                             $row['_MP_PARAM'] = $MP . ($row['_MP_PARAM'] ? ',' . $row['_MP_PARAM'] : '');
                         }
-                        $menuItems[$row['uid']] = $row;
+                        $menuItems[$row['uid']] = $this->sys_page->getPageOverlay($row);
                     }
                 }
             }

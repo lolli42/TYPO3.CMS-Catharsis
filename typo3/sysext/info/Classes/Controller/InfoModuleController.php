@@ -119,7 +119,7 @@ class InfoModuleController extends BaseScriptClass
                 '" method="post" id="InfoModuleController" name="webinfoForm" class="form-inline form-inline-spaced">';
             $vContent = $this->moduleTemplate->getVersionSelector($this->id, 1);
             if ($vContent) {
-                $this->content .= $this->moduleTemplate->section('', $vContent);
+                $this->content .= '<div>' . $vContent . '</div>';
             }
             $this->extObjContent();
             // Setting up the buttons and markers for docheader
@@ -189,7 +189,7 @@ class InfoModuleController extends BaseScriptClass
                 '',
                 BackendUtility::BEgetRootLine($this->pageinfo['uid'])
             ))
-            ->setTitle($this->languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true))
+            ->setTitle($this->languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-view', Icon::SIZE_SMALL));
         $buttonBar->addButton($viewButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
         // Shortcut

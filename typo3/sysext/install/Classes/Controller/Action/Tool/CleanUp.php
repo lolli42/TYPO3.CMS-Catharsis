@@ -15,9 +15,9 @@ namespace TYPO3\CMS\Install\Controller\Action\Tool;
  */
 
 use TYPO3\CMS\Core\Resource\ProcessedFileRepository;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\Status\ErrorStatus;
 use TYPO3\CMS\Install\Status\InfoStatus;
 use TYPO3\CMS\Install\Status\OkStatus;
@@ -43,12 +43,18 @@ class CleanUp extends Action\AbstractAction
     {
         if (isset($this->postValues['set']['clearTables'])) {
             $this->actionMessages[] = $this->clearSelectedTables();
+            $this->view->assign('postAction', 'clearTables');
         }
         if (isset($this->postValues['set']['resetBackendUserUc'])) {
             $this->actionMessages[] = $this->resetBackendUserUc();
+            $this->view->assign('postAction', 'resetBackendUserUc');
         }
         if (isset($this->postValues['set']['clearProcessedFiles'])) {
             $this->actionMessages[] = $this->clearProcessedFiles();
+            $this->view->assign('postAction', 'clearProcessedFiles');
+        }
+        if (isset($this->postValues['set']['deleteTypo3TempFiles'])) {
+            $this->view->assign('postAction', 'deleteTypo3TempFiles');
         }
 
         $this->view->assign('cleanableTables', $this->getCleanableTableList());

@@ -1788,7 +1788,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                         }
                         if ($where_clause[$k]['func']['field'] !== '') {
                             if ($this->dbmsSpecifics->getSpecific(Specifics\AbstractSpecifics::CAST_FIND_IN_SET)) {
-                                if($where_clause[$k]['func']['table'] !== '') {
+                                if ($where_clause[$k]['func']['table'] !== '') {
                                     $where_clause[$k]['func']['field'] = $this->quoteName($v['func']['field']) . ' AS CHAR)';
                                 } else {
                                     $where_clause[$k]['func']['field'] = 'CAST(' . $this->quoteName($v['func']['field']) . ' AS CHAR)';
@@ -1798,6 +1798,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                             }
                         }
                         break;
+                    case 'CAST':
+                        // Intentional fallthrough
                     case 'IFNULL':
                         // Intentional fallthrough
                     case 'LOCATE':
@@ -2272,7 +2274,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
      * MySQLi fetch_assoc() wrapper function
      *
      * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
-     * @return array|boolean Associative array of result row.
+     * @return array|bool Associative array of result row.
      */
     public function sql_fetch_assoc($res)
     {
@@ -2342,7 +2344,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
      * MySQLi fetch_row() wrapper function
      *
      * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
-     * @return array|boolean Array with result rows.
+     * @return array|bool Array with result rows.
      */
     public function sql_fetch_row($res)
     {
@@ -2690,7 +2692,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
         switch ($this->handlerCfg['_DEFAULT']['type']) {
             case 'native':
                 /** @var \mysqli_result $db_list */
-                $db_list = $this->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA");
+                $db_list = $this->query('SELECT SCHEMA_NAME FROM information_schema.SCHEMATA');
                 $oldDb = $this->handlerCfg[$this->lastHandlerKey]['config']['database'];
                 while ($row = $db_list->fetch_object()) {
                     $this->handlerCfg[$this->lastHandlerKey]['config']['database'] = $row->SCHEMA_NAME;
@@ -3038,6 +3040,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                         $result = $this->exec_TRUNCATEquery($this->lastParsedAndMappedQueryArray['TABLE']);
                         break;
                     default:
+                        if (!is_array($compiledQuery)) {
+                            $compiledQuery = array($compiledQuery);
+                        }
                         $result = $this->handlerInstance[$this->lastHandlerKey]->DataDictionary->ExecuteSQLArray($compiledQuery);
                 }
                 break;
@@ -3889,10 +3894,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                 }
             }
             if ($this->conf['debugOptions']['backtrace']) {
-                $backtrace = debug_backtrace();
-                unset($backtrace[0]);
-                // skip this very method :)
-                $data['backtrace'] = array_slice($backtrace, 0, $this->conf['debugOptions']['backtrace']);
+                $backtrace = debug_backtrace(0);
+                $data['backtrace'] = array_slice($backtrace, 1, $this->conf['debugOptions']['backtrace']);
             }
             switch ($function) {
                 case 'exec_INSERTquery':

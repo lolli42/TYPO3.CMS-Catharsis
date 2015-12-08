@@ -34,9 +34,7 @@ define(['jquery', 'TYPO3/CMS/Recordlist/LinkBrowser', 'TYPO3/CMS/Backend/LegacyT
 	FileLinkHandler.linkFile = function(event) {
 		event.preventDefault();
 
-		LinkBrowser.updateValueInMainForm($(this).data('file'));
-
-		close();
+		LinkBrowser.finalizeFunction($(this).data('file'));
 	};
 
 	/**
@@ -46,10 +44,7 @@ define(['jquery', 'TYPO3/CMS/Recordlist/LinkBrowser', 'TYPO3/CMS/Backend/LegacyT
 	FileLinkHandler.linkCurrent = function(event) {
 		event.preventDefault();
 
-		LinkBrowser.updateValueInMainForm(FileLinkHandler.currentLink);
-
-		close();
-
+		LinkBrowser.finalizeFunction(FileLinkHandler.currentLink);
 	};
 
 	Tree.ajaxID = 'sc_alt_file_navframe_expandtoggle';
@@ -57,8 +52,8 @@ define(['jquery', 'TYPO3/CMS/Recordlist/LinkBrowser', 'TYPO3/CMS/Backend/LegacyT
 	$(function() {
 		FileLinkHandler.currentLink = $('body').data('currentLink');
 
-		$('a.t3-js-fileLink').on('click', FileLinkHandler.linkFile);
-		$('input.t3-js-linkCurrent').on('click', FileLinkHandler.linkCurrent);
+		$('a.t3js-fileLink').on('click', FileLinkHandler.linkFile);
+		$('input.t3js-linkCurrent').on('click', FileLinkHandler.linkCurrent);
 	});
 
 	return FileLinkHandler;

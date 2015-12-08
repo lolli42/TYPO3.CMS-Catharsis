@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Core\Tests\Unit\Resource\Driver;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\FileStreamWrapper;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamWrapper;
+use TYPO3\CMS\Core\Tests\FileStreamWrapper;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Testcase for the local storage driver class of the TYPO3 VFS
@@ -1525,7 +1525,6 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase
             $this->createDriver()->sanitizeFileName($fileName)
         );
     }
-
 
     /**
      * Data provider for sanitizeFileNameNonUTF8Filesystem

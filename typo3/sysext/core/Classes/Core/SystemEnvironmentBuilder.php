@@ -85,7 +85,7 @@ class SystemEnvironmentBuilder
     protected static function defineBaseConstants()
     {
         // This version, branch and copyright
-        define('TYPO3_version', '7.6.0-dev');
+        define('TYPO3_version', '7.6.1-dev');
         define('TYPO3_branch', '7.6');
         define('TYPO3_copyright_year', '1998-2015');
 
@@ -114,9 +114,9 @@ class SystemEnvironmentBuilder
         define('CRLF', CR . LF);
 
         // Security related constant: Default value of fileDenyPattern
-        define('FILE_DENY_PATTERN_DEFAULT', '\\.(php[3-6]?|phpsh|phtml)(\\..*)?$|^\\.htaccess$');
+        define('FILE_DENY_PATTERN_DEFAULT', '\\.(php[3-7]?|phpsh|phtml)(\\..*)?$|^\\.htaccess$');
         // Security related constant: List of file extensions that should be registered as php script file extensions
-        define('PHP_EXTENSIONS_DEFAULT', 'php,php3,php4,php5,php6,phpsh,inc,phtml');
+        define('PHP_EXTENSIONS_DEFAULT', 'php,php3,php4,php5,php6,php7,phpsh,inc,phtml');
 
         // Operating system identifier
         // Either "WIN" or empty string

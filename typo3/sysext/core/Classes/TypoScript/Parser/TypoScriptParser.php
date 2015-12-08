@@ -14,13 +14,13 @@ namespace TYPO3\CMS\Core\TypoScript\Parser;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
+use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
-use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
-use TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
 
 /**
  * The TypoScript parser
@@ -242,7 +242,7 @@ class TypoScriptParser
         $pre = '[GLOBAL]';
         while ($pre) {
             if ($this->breakPointLN && $pre === '[_BREAK]') {
-                $this->error('Breakpoint at ' . ($this->lineNumberOffset + $this->rawP - 2) . ': Line content was "' . $this->raw[($this->rawP - 2)] . '"', 1);
+                $this->error('Breakpoint at ' . ($this->lineNumberOffset + $this->rawP - 2) . ': Line content was "' . $this->raw[$this->rawP - 2] . '"', 1);
                 break;
             }
             $preUppercase = strtoupper($pre);
@@ -437,7 +437,7 @@ class TypoScriptParser
                                                     return $exitSig;
                                                 }
                                             } else {
-                                                if (!isset($setup[($objStrName . '.')])) {
+                                                if (!isset($setup[$objStrName . '.'])) {
                                                     $setup[$objStrName . '.'] = array();
                                                 }
                                                 $exitSig = $this->parseSub($setup[$objStrName . '.']);
@@ -877,9 +877,8 @@ class TypoScriptParser
                 // load default TypoScript for content rendering templates like
                 // css_styled_content if those have been included through f.e.
                 // <INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/static/setup.txt">
-                $filePointer = strtolower($filename);
-                if (StringUtility::beginsWith($filePointer, 'ext:')) {
-                    $filePointerPathParts = explode('/', substr($filePointer, 4));
+                if (StringUtility::beginsWith(strtolower($filename), 'ext:')) {
+                    $filePointerPathParts = explode('/', substr($filename, 4));
 
                     // remove file part, determine whether to load setup or constants
                     list($includeType, ) = explode('.', array_pop($filePointerPathParts));
@@ -1315,7 +1314,6 @@ class TypoScriptParser
     {
         return isset($GLOBALS['TT']) ? $GLOBALS['TT'] : null;
     }
-
 
     /**
      * Modifies a HTML Hex color by adding/subtracting $R,$G and $B integers

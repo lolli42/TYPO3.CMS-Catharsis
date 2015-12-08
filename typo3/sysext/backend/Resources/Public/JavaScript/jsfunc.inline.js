@@ -758,13 +758,14 @@ var inline = {
 			}
 		}
 
-		// if we reached the maximum off possible records after this action, hide the new buttons
+		// if we reached the maximum of possible records after this action, hide the new buttons
 		if (!this.isBelowMax(objectPrefix)) {
 			var objectParent = this.parseObjectId('full', objectPrefix, 0, 1);
 			var md5 = this.getObjectMD5(objectParent);
 			this.hideElementsWithClassName('.inlineNewButton' + (md5 ? '.' + md5 : ''), objectParent);
 			this.hideElementsWithClassName('.inlineNewRelationButton' + (md5 ? '.' + md5 : ''), objectParent);
 			this.hideElementsWithClassName('.inlineNewFileUploadButton' + (md5 ? '.' + md5 : ''), objectParent);
+			this.hideElementsWithClassName('.t3js-online-media-add-btn' + (md5 ? '.' + md5 : ''), objectParent);
 			this.hideElementsWithClassName('.inlineForeignSelector' + (md5 ? '.' + md5 : ''), 't3-form-field-item');
 		}
 
@@ -952,7 +953,9 @@ var inline = {
 		}
 
 		// Mark this container as deleted
-		TYPO3.jQuery('#' + this.escapeObjectId(objectId) + '_div').addClass('inlineIsDeletedRecord');
+		TYPO3.jQuery('#' + this.escapeObjectId(objectId) + '_div')
+			.addClass('inlineIsDeletedRecord')
+			.addClass('t3js-inline-record-deleted');
 
 		// If the record is new and was never saved before, just remove it from DOM:
 		if (this.isNewRecord(objectId) || options && options.forceDirectRemoval) {
@@ -980,6 +983,7 @@ var inline = {
 			this.showElementsWithClassName('.inlineNewButton' + (md5 ? '.' + md5 : ''), objectParent);
 			this.showElementsWithClassName('.inlineNewRelationButton' + (md5 ? '.' + md5 : ''), objectParent);
 			this.showElementsWithClassName('.inlineNewFileUploadButton' + (md5 ? '.' + md5 : ''), objectParent);
+			this.hideElementsWithClassName('.t3js-online-media-add-btn' + (md5 ? '.' + md5 : ''), objectParent);
 			this.showElementsWithClassName('.inlineForeignSelector' + (md5 ? '.' + md5 : ''), 't3-form-field-item');
 		}
 		TYPO3.FormEngine.Validation.validate();
@@ -1257,6 +1261,7 @@ var inline = {
 	fadeAndRemove: function (element) {
 		TYPO3.jQuery('#' + this.escapeObjectId(element)).fadeOut(200, function () {
 			TYPO3.jQuery(this).remove();
+			TYPO3.FormEngine.Validation.validate();
 		});
 	},
 

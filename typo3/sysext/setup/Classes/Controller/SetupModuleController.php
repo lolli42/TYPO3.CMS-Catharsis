@@ -19,13 +19,12 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Backend\Avatar\DefaultAvatarProvider;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
+use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -132,11 +131,6 @@ class SetupModuleController extends AbstractModule
     /**
      * @var bool
      */
-    protected $tempDataIsCleared = false;
-
-    /**
-     * @var bool
-     */
     protected $settingsAreResetToDefault = false;
 
     /**
@@ -219,13 +213,6 @@ class SetupModuleController extends AbstractModule
                 // If every value should be default
                 $beUser->resetUC();
                 $this->settingsAreResetToDefault = true;
-            } elseif ($d['clearSessionVars']) {
-                foreach ($beUser->uc as $key => $value) {
-                    if (!isset($columns[$key])) {
-                        unset($beUser->uc[$key]);
-                    }
-                }
-                $this->tempDataIsCleared = true;
             } elseif ($d['save']) {
                 // Save all submitted values if they are no array (arrays are with table=be_users) and exists in $GLOBALS['TYPO3_USER_SETTINGS'][columns]
                 foreach ($columns as $field => $config) {
@@ -297,10 +284,6 @@ class SetupModuleController extends AbstractModule
                 $beUser->writeUC($beUser->uc);
                 $beUser->writelog(254, 1, 0, 1, 'Personal settings changed', array());
                 $this->setupIsUpdated = true;
-            }
-            // If the temporary data has been cleared, lets make a log note about it
-            if ($this->tempDataIsCleared) {
-                $beUser->writelog(254, 1, 0, 1, $this->getLanguageService()->getLL('tempDataClearedLog'), array());
             }
             // Persist data if something has changed:
             if (!empty($storeRec) && $this->saveData) {
@@ -383,10 +366,8 @@ class SetupModuleController extends AbstractModule
         $this->content .= '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" id="SetupModuleController" name="usersetup" enctype="multipart/form-data">';
         if ($this->languageUpdate) {
             $this->moduleTemplate->addJavaScriptCode('languageUpdate', '
-                if (top.refreshMenu) {
-                    top.refreshMenu();
-                } else {
-                    top.TYPO3ModuleMenu.refreshMenu();
+                if (top && top.TYPO3.ModuleMenu.App) {
+                    top.TYPO3.ModuleMenu.App.refreshMenu();
                 }
             ');
         }
@@ -403,14 +384,8 @@ class SetupModuleController extends AbstractModule
         $this->loadModules->load($GLOBALS['TBE_MODULES']);
         $this->content .= $this->doc->header($this->getLanguageService()->getLL('UserSettings'));
         // Show if setup was saved
-        if ($this->setupIsUpdated && !$this->tempDataIsCleared && !$this->settingsAreResetToDefault) {
+        if ($this->setupIsUpdated && !$this->settingsAreResetToDefault) {
             $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('setupWasUpdated'), $this->getLanguageService()->getLL('UserSettings'));
-            $this->content .= $flashMessage->render();
-        }
-
-        // Show if temporary data was cleared
-        if ($this->tempDataIsCleared) {
-            $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('tempDataClearedFlashMessage'), $this->getLanguageService()->getLL('tempDataCleared'));
             $this->content .= $flashMessage->render();
         }
 
@@ -456,8 +431,7 @@ class SetupModuleController extends AbstractModule
         $this->content .= '<input type="hidden" name="simUser" value="' . $this->simUser . '" />
             <input type="hidden" name="formToken" value="' . $formToken . '" />
             <input type="hidden" value="1" name="data[save]" />
-            <input type="hidden" name="data[setValuesToDefault]" value="0" id="setValuesToDefault" />
-            <input type="hidden" name="data[clearSessionVars]" value="0" id="clearSessionVars" />';
+            <input type="hidden" name="data[setValuesToDefault]" value="0" id="setValuesToDefault" />';
         $this->content .= '</div>';
         // End of wrapper div
         $this->content .= '</div>';
@@ -468,7 +442,6 @@ class SetupModuleController extends AbstractModule
         $this->moduleTemplate->setContent($this->content);
         $this->content .= '</form>';
     }
-
 
     /**
      * Injects the request object for the current request or subrequest
@@ -515,7 +488,7 @@ class SetupModuleController extends AbstractModule
 
         $saveButton = $buttonBar->makeInputButton()
             ->setName('data[save]')
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'))
             ->setValue('1')
             ->setForm('SetupModuleController')
             ->setShowLabelText(true)
@@ -1025,15 +998,15 @@ class SetupModuleController extends AbstractModule
             }
 
             function clearExistingImage() {
-                TYPO3.jQuery(\'#image_' . htmlspecialchars($fieldName) . '\').hide();
-                TYPO3.jQuery(\'#clear_button_' . htmlspecialchars($fieldName) . '\').hide();
-                TYPO3.jQuery(\'#field_' . htmlspecialchars($fieldName) . '\').val(\'\');
+                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#image_' . htmlspecialchars($fieldName)) . ').hide();
+                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#clear_button_' . htmlspecialchars($fieldName)) . ').hide();
+                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(\'\');
             }
 
             function setFileUid(field, value, fileUid) {
                 clearExistingImage();
-                TYPO3.jQuery(\'#field_' . htmlspecialchars($fieldName) . '\').val(fileUid);
-                TYPO3.jQuery(\'#add_button_' . htmlspecialchars($fieldName) . '\').removeClass(\'btn-default\').addClass(\'btn-info\');
+                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(fileUid);
+                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#add_button_' . htmlspecialchars($fieldName)) . ').removeClass(\'btn-default\').addClass(\'btn-info\');
 
                 browserWin.close();
             }

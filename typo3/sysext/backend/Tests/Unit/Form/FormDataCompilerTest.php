@@ -16,14 +16,14 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form;
 
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroupInterface;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class FormDataComplierTest extends UnitTestCase
+class FormDataCompilerTest extends UnitTestCase
 {
     /**
      * @var FormDataCompiler
@@ -131,6 +131,16 @@ class FormDataComplierTest extends UnitTestCase
         });
         $result = $this->subject->compile([]);
         $this->assertEquals('newData', $result['databaseRow']);
+    }
+
+    /**
+     * @test
+     */
+    public function compileThrowsExceptionIfFormDataGroupDoesNotReturnArray()
+    {
+        $this->formDataGroupProphecy->compile(Argument::cetera())->willReturn(null);
+        $this->setExpectedException(\UnexpectedValueException::class, $this->anything(), 1446664764);
+        $this->subject->compile([]);
     }
 
     /**

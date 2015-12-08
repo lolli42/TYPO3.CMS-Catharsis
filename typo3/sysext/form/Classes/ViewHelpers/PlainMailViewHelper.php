@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Form\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-
 /**
  * A viewhelper for the plain mail view
  */
@@ -25,8 +24,8 @@ class PlainMailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewH
      *
      * @param mixed $labelContent
      * @param mixed $content
-     * @param boolean $newLineAfterLabel
-     * @param integer $indent
+     * @param bool $newLineAfterLabel
+     * @param int $indent
      * @return string
      */
     public function render($labelContent = null, $content = null, $newLineAfterLabel = false, $indent = 0)
@@ -126,7 +125,7 @@ class PlainMailViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewH
     /**
      * Set the current indent level
      *
-     * @param integer $indent
+     * @param int $indent
      * @return void
      */
     public function setIndent($indent = 0)

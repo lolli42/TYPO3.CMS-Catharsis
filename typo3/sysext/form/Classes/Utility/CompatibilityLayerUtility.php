@@ -246,6 +246,13 @@ class CompatibilityLayerUtility
                         $layout = '<td style="width: 200px;"><label /></td><td><inputvalue /></td>';
                     }
                     break;
+                case 'TEXTBLOCK':
+                    if ($action === 'show') {
+                        $layout = '<textblock />';
+                    } else {
+                        $layout = '';
+                    }
+                    break;
             }
         }
         return $layout;
@@ -651,7 +658,7 @@ class CompatibilityLayerUtility
         $libxmlUseInternalErrors = libxml_use_internal_errors(true);
         $dom = new \DOMDocument('1.0', 'utf-8');
         $dom->preserveWhiteSpace = false;
-        if (!$dom->loadHTML($html)) {
+        if (!$dom->loadHTML('<?xml encoding="utf-8">' . $html)) {
             libxml_use_internal_errors($libxmlUseInternalErrors);
             return array(
                 'html' => '',

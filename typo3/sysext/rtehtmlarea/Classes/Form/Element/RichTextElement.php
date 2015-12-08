@@ -15,18 +15,18 @@ namespace TYPO3\CMS\Rtehtmlarea\Form\Element;
  */
 
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
+use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Localization\LocalizationFactory;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\FrontendEditing\FrontendEditingController;
 use TYPO3\CMS\Core\Html\RteHtmlParser;
 use TYPO3\CMS\Core\Localization\Locales;
+use TYPO3\CMS\Core\Localization\LocalizationFactory;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ClientUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Backend\Form\InlineStackProcessor;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
@@ -344,7 +344,7 @@ class RichTextElement extends AbstractFormElement
         $result[] =    $this->getLanguageService()->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang.xlf:Please wait');
         $result[] = '</div>';
         $result[] = '<div id="editorWrap' . $this->domIdentifier . '" class="editorWrap" style="visibility: hidden; width:' . $editorWrapWidth . '; height:100%;">';
-        $result[] =    '<textarea id="RTEarea' . $this->domIdentifier . '" name="' . htmlspecialchars($itemFormElementName) . '" rows="0" cols="0" style="' . htmlspecialchars($rteDivStyle) . '">';
+        $result[] =    '<textarea ' . $this->getValidationDataAsDataAttribute($this->data['parameterArray']['fieldConf']['config']) . ' id="RTEarea' . $this->domIdentifier . '" name="' . htmlspecialchars($itemFormElementName) . '" rows="0" cols="0" style="' . htmlspecialchars($rteDivStyle) . '">';
         $result[] =        htmlspecialchars($value);
         $result[] =    '</textarea>';
         $result[] = '</div>';
@@ -655,7 +655,7 @@ class RichTextElement extends AbstractFormElement
         $jsArray[] = '}';
         $jsArray[] = 'configureEditorInstance["' . $this->domIdentifier . '"] = function() {';
         $jsArray[] = 'if (typeof RTEarea === "undefined" || typeof HTMLArea === "undefined") {';
-        $jsArray[] = '	window.setTimeout("configureEditorInstance[\'' . $this->domIdentifier . '\']();", 40);';
+        $jsArray[] = '	window.setTimeout("configureEditorInstance[' . GeneralUtility::quoteJSvalue($this->domIdentifier) . ']();", 40);';
         $jsArray[] = '} else {';
         $jsArray[] = 'editornumber = "' . $this->domIdentifier . '";';
         $jsArray[] = 'RTEarea[editornumber] = new Object();';

@@ -16,8 +16,8 @@ namespace TYPO3\CMS\Backend\Console;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
-use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Console\RequestHandlerInterface;
+use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 
@@ -66,9 +66,6 @@ class CliRequestHandler implements RequestHandlerInterface
             $this->boot($commandLineName);
 
             if (is_callable($commandLineScript)) {
-                if ($commandLineScript instanceof \Closure) {
-                    $commandLineScript->bindTo($this);
-                }
                 call_user_func($commandLineScript);
             } else {
                 // include the CLI script

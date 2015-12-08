@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
@@ -75,15 +75,8 @@ class TcaInlineExpandCollapseStateTest extends UnitTestCase
             'databaseRow' => [
                 'uid' => 13,
             ],
-            'inlineStructure' =>  [
-                'stable' => [
-                    [
-                        'table' => 'aParentTable',
-                        'uid' => 5,
-                        'field' => 'inline_2',
-                    ],
-                ],
-            ],
+            'inlineTopMostParentTableName' => 'aParentTable',
+            'inlineTopMostParentUid' => 5,
         ];
         $inlineState = [
             'aParentTable' => [

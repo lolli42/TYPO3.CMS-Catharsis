@@ -18,12 +18,12 @@ use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroup\OnTheFly;
 use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
 use TYPO3\CMS\Backend\Form\FormDataProviderInterface;
+use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
-use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 
 /**
  * Resolve and prepare inline data.
@@ -164,7 +164,6 @@ class TcaInline extends AbstractDatabaseRecordProvider implements FormDataProvid
                 );
 
                 $showPossible = $result['processedTca']['columns'][$fieldName]['config']['appearance']['showPossibleLocalizationRecords'];
-                $showRemoved = $result['processedTca']['columns'][$fieldName]['config']['appearance']['showRemovedLocalizationRecords'];
 
                 // Find which records are localized, which records are not localized and which are
                 // localized but miss default language record
@@ -175,10 +174,10 @@ class TcaInline extends AbstractDatabaseRecordProvider implements FormDataProvid
                     if (in_array($uidOfDefaultLanguageRecord, $connectedUidsOfDefaultLanguageRecord)) {
                         // This localized child has a default language record. Remove this record from list of default language records
                         $connectedUidsOfDefaultLanguageRecord = array_diff($connectedUidsOfDefaultLanguageRecord, array($uidOfDefaultLanguageRecord));
-                        // Compile localized record
-                        $compiledChild = $this->compileChild($result, $fieldName, $localizedUid);
-                        $result['processedTca']['columns'][$fieldName]['children'][] = $compiledChild;
                     }
+                    // Compile localized record
+                    $compiledChild = $this->compileChild($result, $fieldName, $localizedUid);
+                    $result['processedTca']['columns'][$fieldName]['children'][] = $compiledChild;
                 }
                 if ($showPossible) {
                     foreach ($connectedUidsOfDefaultLanguageRecord as $defaultLanguageUid) {

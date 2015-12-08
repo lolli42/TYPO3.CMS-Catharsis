@@ -15,8 +15,8 @@ namespace TYPO3\CMS\Core\Utility;
  */
 
 use TYPO3\CMS\Core\Category\CategoryRegistry;
-use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Migrations\TcaMigration;
+use TYPO3\CMS\Core\Package\PackageManager;
 
 /**
  * Extension Management functions
@@ -901,7 +901,7 @@ class ExtensionManagementUtility
      * @param string $main The main module key, $sub is the submodule key. So $main would be an index in the $TBE_MODULES array and $sub could be an element in the lists there.
      * @param string $sub The submodule key. If $sub is not set a blank $main module is created.
      * @param string $position Can be used to set the position of the $sub module within the list of existing submodules for the main module. $position has this syntax: [cmd]:[submodule-key]. cmd can be "after", "before" or "top" (or blank which is default). If "after"/"before" then submodule will be inserted after/before the existing submodule with [submodule-key] if found. If not found, the bottom of list. If "top" the module is inserted in the top of the submodule list.
-     * @param string $path The absolute path to the module. If this value is defined the path is added as an entry in $TBE_MODULES['_PATHS'][  main_sub  ] = $path; and thereby tells the backend where the newly added modules is found in the system.
+     * @param string $path The absolute path to the module. If this value is defined the path is added as an entry in $TBE_MODULES['_PATHS'][  main_sub  ] = $path; and thereby tells the backend where the newly added modules is found in the system. This option is deprecated as of TYPO3 CMS 7, and will have no effect in TYPO3 CMS 8 anymore.
      * @param array $moduleConfiguration additional configuration, previously put in "conf.php" of the module directory
      * @return void
      */
@@ -941,6 +941,7 @@ class ExtensionManagementUtility
         $fullModuleSignature = $main . ($sub ? '_' . $sub : '');
         // Adding path:
         if ($path) {
+            GeneralUtility::deprecationLog('Registered "' . $fullModuleSignature . '" as a script-based module. Script-based modules are deprecated since TYPO3 CMS 7. Support will be removed with TYPO3 CMS 8, use the "routeTarget" option or dispatched modules instead.');
             self::addModulePath($fullModuleSignature, $path);
         }
 
@@ -993,9 +994,11 @@ class ExtensionManagementUtility
      * @param string $name The name of the module, refer to conf.php of the module.
      * @param string $path The absolute path to the module directory inside of which "index.php" and "conf.php" is found.
      * @return void
+     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use routeTarget or dispatched modules instead.
      */
     public static function addModulePath($name, $path)
     {
+        GeneralUtility::logDeprecatedFunction();
         if (StringUtility::beginsWith($path, 'EXT:')) {
             list($extensionKey, $relativePath) = explode('/', substr($path, 4), 2);
             $path = ExtensionManagementUtility::extPath($extensionKey) . $relativePath;
@@ -1473,20 +1476,28 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Call this method to add an entry in the pageTSconfig list found in pages
-     * FOR USE in ext_tables.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
+     * FOR USE in files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
      *
      * @param string $extKey The extension key
-     * @param string $file The path and title where the TSconfig file is located
+     * @param string $filePath The path where the TSconfig file is located
      * @param string $title The title in the selector box
      * @return void
      */
-    public static function registerPageTSConfigFile($extKey, $file, $title)
+    public static function registerPageTSConfigFile($extKey, $filePath, $title)
     {
-        if ($extKey && $file && is_array($GLOBALS['TCA']['pages']['columns'])) {
-            $value = str_replace(',',  '', 'EXT:' . $extKey . '/' . $file);
-            $itemArray = array(trim($title . ' (' . $extKey . ')'), $value);
-            $GLOBALS['TCA']['pages']['columns']['tsconfig_includes']['config']['items'][] = $itemArray;
+        if (!$extKey) {
+            throw new \InvalidArgumentException('No extension key given.', 1447789490);
         }
+        if (!$filePath) {
+            throw new \InvalidArgumentException('No file path given.', 1447789491);
+        }
+        if (!isset($GLOBALS['TCA']['pages']['columns']) || !is_array($GLOBALS['TCA']['pages']['columns'])) {
+            throw new \InvalidArgumentException('No TCA definition for table "pages".', 1447789492);
+        }
+
+        $value = str_replace(',',  '', 'EXT:' . $extKey . '/' . $filePath);
+        $itemArray = array(trim($title . ' (' . $extKey . ')'), $value);
+        $GLOBALS['TCA']['pages']['columns']['tsconfig_includes']['config']['items'][] = $itemArray;
     }
 
     /**

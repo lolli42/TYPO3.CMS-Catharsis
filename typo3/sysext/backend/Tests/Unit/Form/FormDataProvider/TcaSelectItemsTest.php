@@ -16,19 +16,18 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
 
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
-use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
+use TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\RelationHandler;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
-use TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
-use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Test case
@@ -156,6 +155,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
 
         $languageService->sL('aLabel')->shouldBeCalled()->willReturn('translated');
 
@@ -242,7 +242,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'databaseRow' => [
-                'aField' => 'aValue',
+                'aField' => '',
             ],
             'tableName' => 'aTable',
             'processedTca' => [
@@ -275,12 +275,14 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
+        $languageService->sL(Argument::containingString('INVALID VALUE'))->willReturnArgument(0);
 
         $languageService->sL('aTitle')->shouldBeCalled()->willReturnArgument(0);
         $languageService->loadSingleTableDescription('aTable')->shouldBeCalled();
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = ['aValue'];
+        $expected['databaseRow']['aField'] = [];
         $expected['processedTca']['columns']['aField']['config']['items'] = [
             0 => [
                 0 => 'aTitle',
@@ -339,6 +341,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
 
         $languageService->sL('aLabel')->shouldBeCalled()->willReturnArgument(0);
 
@@ -482,6 +485,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -514,6 +518,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -578,13 +583,13 @@ class TcaSelectItemsTest extends UnitTestCase
 
         $expectedItems = [
             0 => [
-                0 => 'fooTableTitle',
+                0 => 'fooTableTitle aFlexFieldTitle dummy',
                 1 => '--div--',
                 2 => 'default-not-found',
                 3 => null,
             ],
             1 => [
-                0 => ' (input1)',
+                0 => 'flexInputLabel (input1)',
                 1 => 'fooTable:aFlexField;dummy;sDEF;input1',
                 2 => 'empty-empty',
                 3 => null,
@@ -603,6 +608,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -673,6 +679,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -743,6 +750,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -834,6 +842,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -925,6 +934,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -971,6 +981,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -1027,6 +1038,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -1092,6 +1104,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $directory = $this->getUniqueId('typo3temp/test-') . '/';
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -1137,6 +1150,124 @@ class TcaSelectItemsTest extends UnitTestCase
         $result = $this->subject->addData($input);
 
         $this->assertSame($expectedItems, $result['processedTca']['columns']['aField']['config']['items']);
+    }
+
+    /**
+     * @test
+     */
+    public function addDataAddsItemsByAddItemsFromPageTsConfig()
+    {
+        $input = [
+            'databaseRow' => [
+                'aField' => '',
+            ],
+            'tableName' => 'aTable',
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'items' => [
+                                0 => [
+                                    0 => 'keepMe',
+                                    1 => 'keep',
+                                    null,
+                                    null,
+                                ],
+                            ],
+                            'maxitems' => 1,
+                        ],
+                    ],
+                ]
+            ],
+            'pageTsConfig' => [
+                'TCEFORM.' => [
+                    'aTable.' => [
+                        'aField.' => [
+                            'addItems.' => [
+                                '1' => 'addMe'
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var LanguageService|ObjectProphecy $languageService */
+        $languageService = $this->prophesize(LanguageService::class);
+        $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL(Argument::cetera())->willReturnArgument(0);
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = [];
+        $expected['processedTca']['columns']['aField']['config']['items'][1] = [
+            0 => 'addMe',
+            1 => '1',
+            null,
+            null,
+        ];
+
+        $this->assertEquals($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataAddsItemsByAddItemsWithDuplicateValuesFromPageTsConfig()
+    {
+        $input = [
+            'databaseRow' => [
+                'aField' => '',
+            ],
+            'tableName' => 'aTable',
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'items' => [
+                                0 => [
+                                    0 => 'keepMe',
+                                    1 => 'keep',
+                                    null,
+                                    null,
+                                ],
+                            ],
+                            'maxitems' => 1,
+                        ],
+                    ],
+                ]
+            ],
+            'pageTsConfig' => [
+                'TCEFORM.' => [
+                    'aTable.' => [
+                        'aField.' => [
+                            'addItems.' => [
+                                'keep' => 'addMe'
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var LanguageService|ObjectProphecy $languageService */
+        $languageService = $this->prophesize(LanguageService::class);
+        $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL(Argument::cetera())->willReturnArgument(0);
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = [];
+        $expected['processedTca']['columns']['aField']['config']['items'][1] = [
+            0 => 'addMe',
+            1 => 'keep',
+            null,
+            null,
+        ];
+
+        $this->assertEquals($expected, $this->subject->addData($input));
     }
 
     /**
@@ -1379,6 +1510,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'tableName' => 'aTable',
+            'databaseRow' => [],
             'processedTca' => [
                 'columns' => [
                     'aField' => [
@@ -1433,7 +1565,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'databaseRow' => [
-                'aField' => 'aValue',
+                'aField' => '',
             ],
             'tableName' => 'aTable',
             'processedTca' => [
@@ -1492,7 +1624,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $flashMessageQueue->enqueue($flashMessage)->shouldBeCalled();
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = ['aValue'];
+        $expected['databaseRow']['aField'] = [];
 
         $this->assertEquals($expected, $this->subject->addData($input));
     }
@@ -1500,11 +1632,11 @@ class TcaSelectItemsTest extends UnitTestCase
     /**
      * @test
      */
-    public function addDataForeignTableHandlesForegnTableRows()
+    public function addDataForeignTableHandlesForeignTableRows()
     {
         $input = [
             'databaseRow' => [
-                'aField' => 'aValue',
+                'aField' => '',
             ],
             'tableName' => 'aTable',
             'processedTca' => [
@@ -1571,7 +1703,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
         ];
 
-        $expected['databaseRow']['aField'] = ['aValue'];
+        $expected['databaseRow']['aField'] = [];
 
         $this->assertEquals($expected, $this->subject->addData($input));
     }
@@ -1583,7 +1715,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'databaseRow' => [
-                'aField' => 'aValue',
+                'aField' => '',
             ],
             'tableName' => 'aTable',
             'processedTca' => [
@@ -1626,8 +1758,143 @@ class TcaSelectItemsTest extends UnitTestCase
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = ['aValue'];
+        $expected['databaseRow']['aField'] = [];
         unset($expected['processedTca']['columns']['aField']['config']['items'][1]);
+
+        $this->assertEquals($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataRemovesAllItemsByEmptyKeepItemsPageTsConfig()
+    {
+        $input = [
+            'databaseRow' => [
+                'aField' => '',
+            ],
+            'tableName' => 'aTable',
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'items' => [
+                                0 => [
+                                    0 => 'keepMe',
+                                    1 => 'keep',
+                                    null,
+                                    null,
+                                ],
+                                1 => [
+                                    0 => 'removeMe',
+                                    1 => 'remove',
+                                ],
+                            ],
+                            'maxitems' => 1,
+                        ],
+                    ],
+                ]
+            ],
+            'pageTsConfig' => [
+                'TCEFORM.' => [
+                    'aTable.' => [
+                        'aField.' => [
+                            'keepItems' => '',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var LanguageService|ObjectProphecy $languageService */
+        $languageService = $this->prophesize(LanguageService::class);
+        $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL(Argument::cetera())->willReturnArgument(0);
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = [];
+        $expected['processedTca']['columns']['aField']['config']['items'] = [];
+
+        $this->assertEquals($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataEvaluatesKeepItemsBeforeAddItemsFromPageTsConfig()
+    {
+        $input = [
+            'databaseRow' => [
+                'aField' => '',
+            ],
+            'tableName' => 'aTable',
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'items' => [
+                                0 => [
+                                    0 => 'keepMe',
+                                    1 => '1',
+                                    null,
+                                    null,
+                                ],
+                                1 => [
+                                    0 => 'removeMe',
+                                    1 => 'remove',
+                                ],
+                            ],
+                            'maxitems' => 1,
+                        ],
+                    ],
+                ]
+            ],
+            'pageTsConfig' => [
+                'TCEFORM.' => [
+                    'aTable.' => [
+                        'aField.' => [
+                            'keepItems' => '1',
+                            'addItems.' => [
+                                '1' => 'addItem #1',
+                                '12' => 'addItem #12',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var LanguageService|ObjectProphecy $languageService */
+        $languageService = $this->prophesize(LanguageService::class);
+        $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL(Argument::cetera())->willReturnArgument(0);
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = [];
+        $expected['processedTca']['columns']['aField']['config']['items'] = [
+            0 => [
+                0 => 'keepMe',
+                1 => '1',
+                null,
+                null,
+            ],
+            1 => [
+                0 => 'addItem #1',
+                1 => '1',
+                null,
+                null,
+            ],
+            2 => [
+                0 => 'addItem #12',
+                1 => '12',
+                null,
+                null,
+            ],
+        ];
 
         $this->assertEquals($expected, $this->subject->addData($input));
     }
@@ -1639,7 +1906,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'databaseRow' => [
-                'aField' => 'aValue'
+                'aField' => ''
             ],
             'tableName' => 'aTable',
             'processedTca' => [
@@ -1682,7 +1949,66 @@ class TcaSelectItemsTest extends UnitTestCase
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = ['aValue'];
+        $expected['databaseRow']['aField'] = [];
+        unset($expected['processedTca']['columns']['aField']['config']['items'][1]);
+
+        $this->assertEquals($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataRemovesItemsAddedByAddItemsFromPageTsConfigByRemoveItemsPageTsConfig()
+    {
+        $input = [
+            'databaseRow' => [
+                'aField' => ''
+            ],
+            'tableName' => 'aTable',
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'items' => [
+                                0 => [
+                                    0 => 'keepMe',
+                                    1 => 'keep',
+                                    null,
+                                    null,
+                                ],
+                                1 => [
+                                    0 => 'removeMe',
+                                    1 => 'remove',
+                                ],
+                            ],
+                            'maxitems' => 1,
+                        ],
+                    ],
+                ]
+            ],
+            'pageTsConfig' => [
+                'TCEFORM.' => [
+                    'aTable.' => [
+                        'aField.' => [
+                            'removeItems' => 'remove,add',
+                            'addItems.' => [
+                                'add' => 'addMe'
+                            ]
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var LanguageService|ObjectProphecy $languageService */
+        $languageService = $this->prophesize(LanguageService::class);
+        $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL(Argument::cetera())->willReturnArgument(0);
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = [];
         unset($expected['processedTca']['columns']['aField']['config']['items'][1]);
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -1695,7 +2021,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'databaseRow' => [
-                'aField' => 'aValue'
+                'aField' => 'aValue,remove'
             ],
             'tableName' => 'aTable',
             'processedTca' => [
@@ -1729,6 +2055,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
@@ -1738,8 +2065,11 @@ class TcaSelectItemsTest extends UnitTestCase
         $backendUserProphecy->checkLanguageAccess('remove')->shouldBeCalled()->willReturn(false);
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = ['aValue'];
-        unset($expected['processedTca']['columns']['aField']['config']['items'][1]);
+        $expected['databaseRow']['aField'] = [];
+        $expected['processedTca']['columns']['aField']['config']['items'] = [
+            [ '[ INVALID VALUE "aValue" ]', 'aValue', null, null ],
+            [ 'keepMe', 'keep', null, null ],
+        ];
 
         $this->assertEquals($expected, $this->subject->addData($input));
     }
@@ -1751,7 +2081,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $input = [
             'databaseRow' => [
-                'aField' => 'aValue'
+                'aField' => 'keep,remove'
             ],
             'tableName' => 'aTable',
             'processedTca' => [
@@ -1792,7 +2122,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $backendUserProphecy->checkAuthMode('aTable', 'aField', 'remove', 'explicitAllow')->shouldBeCalled()->willReturn(false);
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = ['aValue'];
+        $expected['databaseRow']['aField'] = ['keep'];
         unset($expected['processedTca']['columns']['aField']['config']['items'][1]);
 
         $this->assertEquals($expected, $this->subject->addData($input));
@@ -2133,8 +2463,8 @@ class TcaSelectItemsTest extends UnitTestCase
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
         $languageService->sL('aLabel')->willReturnArgument(0);
-
         $languageService->sL('labelOverride')->shouldBeCalled()->willReturnArgument(0);
+        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
 
         $expected = $input;
         $expected['databaseRow']['aField'] = ['aValue'];
@@ -2289,7 +2619,7 @@ class TcaSelectItemsTest extends UnitTestCase
                     'aField' => [
                         'config' => [
                             'type' => 'select',
-                            'renderType' => 'selectSingle',
+                            'renderType' => 'selectSingleBox',
                             'foreign_table' => 'foreignTable',
                             'maxitems' => 999,
                             'items' => [
@@ -2376,9 +2706,7 @@ class TcaSelectItemsTest extends UnitTestCase
         ];
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = [
-            '',
-        ];
+        $expected['databaseRow']['aField'] = [];
 
         $this->assertEquals($expected, $this->subject->addData($input));
     }
@@ -2441,7 +2769,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $input = [
             'tableName' => 'aTable',
             'databaseRow' => [
-                'aField' => '1,2,bar,foo',
+                'aField' => 'foo',
             ],
             'processedTca' => [
                 'columns' => [
@@ -2468,10 +2796,11 @@ class TcaSelectItemsTest extends UnitTestCase
     /**
      * @test
      */
-    public function processSelectFieldValueDoesNotTouchValueForSingleSelects()
+    public function processSelectFieldValueAddsInvalidValuesToItemsForSingleSelects()
     {
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $relationHandlerProphecy = $this->prophesize(RelationHandler::class);
@@ -2501,11 +2830,15 @@ class TcaSelectItemsTest extends UnitTestCase
         ];
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = ['1,2,bar,foo'];
-
+        $expected['databaseRow']['aField'] = ['foo'];
+        $expected['processedTca']['columns']['aField']['config']['items'] = [
+            ['[ INVALID VALUE "bar" ]', 'bar', null, null],
+            ['[ INVALID VALUE "2" ]', '2', null, null],
+            ['[ INVALID VALUE "1" ]', '1', null, null],
+            ['foo', 'foo', null, null],
+        ];
         $this->assertEquals($expected, $this->subject->addData($input));
     }
-
 
     /**
      * Data Provider

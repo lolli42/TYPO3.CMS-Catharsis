@@ -14,13 +14,13 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
+use TYPO3\CMS\Backend\Form\FormEngine;
 use TYPO3\CMS\Backend\Form\FormResultCompiler;
 use TYPO3\CMS\Backend\Form\NodeFactory;
-use TYPO3\CMS\Backend\Form\FormEngine;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -216,18 +216,16 @@ class RteController extends AbstractWizardController
                 . $formResultCompiler->printNeededJSFunctions();
         } else {
             // ERROR:
-            $this->content .= $this->moduleTemplate->section(
-                $this->getLanguageService()->getLL('forms_title'),
-                '<span class="text-danger">'
+            $this->content .= '<h2>' . $this->getLanguageService()->getLL('forms_title', true) . '</h2>'
+                . '<div><span class="text-danger">'
                 . $this->getLanguageService()->getLL('table_noData', true)
-                . '</span>',
-                0,
-                1
-            );
+                . '</span></div>';
         }
         // Setting up the buttons and markers for docHeader
         $this->getButtons();
         // Build the <body> for the module
+
+        $this->content .= '</form>';
         $this->moduleTemplate->setContent($this->content);
     }
 
@@ -277,7 +275,7 @@ class RteController extends AbstractWizardController
             // Close
             $closeButton = $buttonBar->makeLinkButton()
                 ->setHref($closeUrl)
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
             $buttonBar->addButton($closeButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
 
@@ -287,7 +285,7 @@ class RteController extends AbstractWizardController
                 ->setValue('1')
                 ->setForm('RteController')
                 ->setOnClick('TBE_EDITOR.checkAndDoSubmit(1); return false;')
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL));
             // Save & View
             $saveAndViewButton = $buttonBar->makeInputButton()
@@ -296,7 +294,7 @@ class RteController extends AbstractWizardController
                 ->setForm('RteController')
                 ->setOnClick('document.editform.redirect.value+= '  . GeneralUtility::quoteJSvalue('&popView=1') . '; '
                     . ' TBE_EDITOR.checkAndDoSubmit(1); return false;')
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow'))
                 ->setIcon(
                     $this->moduleTemplate->getIconFactory()->getIcon('actions-document-save-view', Icon::SIZE_SMALL)
                 );
@@ -308,7 +306,7 @@ class RteController extends AbstractWizardController
                 ->setForm('RteController')
                 ->setOnClick('document.editform.redirect.value=' . GeneralUtility::quoteJSvalue($closeUrl)
                     . '; TBE_EDITOR.checkAndDoSubmit(1); return false;')
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', true))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                     'actions-document-save-close',
                     Icon::SIZE_SMALL

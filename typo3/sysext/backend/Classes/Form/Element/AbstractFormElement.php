@@ -14,25 +14,25 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Clipboard\Clipboard;
+use TYPO3\CMS\Backend\Form\AbstractNode;
+use TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface;
 use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroup\OnTheFly;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems;
-use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Form\Wizard\SuggestWizard;
-use TYPO3\CMS\Backend\Form\Wizard\ValueSliderWizard;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
-use TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface;
-use TYPO3\CMS\Backend\Clipboard\Clipboard;
-use TYPO3\CMS\Backend\Form\AbstractNode;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\NodeFactory;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
+use TYPO3\CMS\Backend\Form\Wizard\SuggestWizard;
+use TYPO3\CMS\Backend\Form\Wizard\ValueSliderWizard;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Base class for form elements of FormEngine. Contains several helper methods used by single elements.
@@ -135,7 +135,6 @@ abstract class AbstractFormElement extends AbstractNode
         $fieldChangeFunc = $PA['fieldChangeFunc'];
         $item = $itemKinds[0];
         $md5ID = 'ID' . GeneralUtility::shortmd5($itemName);
-        $fieldConfig = $PA['fieldConf']['config'];
         $prefixOfFormElName = 'data[' . $table . '][' . $row['uid'] . '][' . $field . ']';
         $flexFormPath = '';
         if (GeneralUtility::isFirstPartOfStr($PA['itemFormElName'], $prefixOfFormElName)) {
@@ -204,7 +203,6 @@ abstract class AbstractFormElement extends AbstractNode
             switch ($wizardConfiguration['type']) {
                 case 'userFunc':
                     $params = array();
-                    $params['fieldConfig'] = $fieldConfig;
                     $params['params'] = $wizardConfiguration['params'];
                     $params['exampleImg'] = $wizardConfiguration['exampleImg'];
                     $params['table'] = $table;
@@ -231,10 +229,6 @@ abstract class AbstractFormElement extends AbstractNode
 
                 case 'script':
                     $params = array();
-                    // Including the full fieldConfig from TCA may produce too long an URL
-                    if ($wizardIdentifier != 'RTE') {
-                        $params['fieldConfig'] = $fieldConfig;
-                    }
                     $params['params'] = $wizardConfiguration['params'];
                     $params['exampleImg'] = $wizardConfiguration['exampleImg'];
                     $params['table'] = $table;
@@ -260,7 +254,6 @@ abstract class AbstractFormElement extends AbstractNode
 
                 case 'popup':
                     $params = array();
-                    $params['fieldConfig'] = $fieldConfig;
                     $params['params'] = $wizardConfiguration['params'];
                     $params['exampleImg'] = $wizardConfiguration['exampleImg'];
                     $params['table'] = $table;
@@ -315,7 +308,6 @@ abstract class AbstractFormElement extends AbstractNode
 
                 case 'colorbox':
                     $params = array();
-                    $params['fieldConfig'] = $fieldConfig;
                     $params['params'] = $wizardConfiguration['params'];
                     $params['exampleImg'] = $wizardConfiguration['exampleImg'];
                     $params['table'] = $table;
@@ -356,7 +348,7 @@ abstract class AbstractFormElement extends AbstractNode
                     break;
                 case 'slider':
                     $params = array();
-                    $params['fieldConfig'] = $fieldConfig;
+                    $params['fieldConfig'] = $PA['fieldConf']['config'];
                     $params['field'] = $field;
                     $params['table'] = $table;
                     $params['flexFormPath'] = $flexFormPath;
@@ -391,6 +383,7 @@ abstract class AbstractFormElement extends AbstractNode
                             'columns' => [
                                 $wizardIdentifier => [
                                     'type' => 'select',
+                                    'renderType' => 'selectSingle',
                                     'config' => $wizardConfiguration,
                                 ],
                             ],

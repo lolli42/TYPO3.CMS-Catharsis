@@ -14,6 +14,10 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use org\bovigo\vfs\vfsStream;
+use org\bovigo\vfs\vfsStreamDirectory;
+use org\bovigo\vfs\vfsStreamWrapper;
+use TYPO3\CMS\Core\Tests\FileStreamWrapper;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFilesystemFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityMinifyJavaScriptFixture;
@@ -22,10 +26,6 @@ use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\OtherReplacementClassFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\ReplacementClassFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\TwoParametersConstructorFixture;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use org\bovigo\vfs\vfsStream;
-use org\bovigo\vfs\vfsStreamDirectory;
-use org\bovigo\vfs\vfsStreamWrapper;
-use TYPO3\CMS\Core\Tests\FileStreamWrapper;
 
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\GeneralUtility
@@ -4331,7 +4331,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertFalse(GeneralUtility::verifyFilenameAgainstDenyPattern($deniedFile));
     }
 
-
     /////////////////////////////////////////////////////////////////////////////////////
     // Tests concerning copyDirectory
     /////////////////////////////////////////////////////////////////////////////////////
@@ -4486,7 +4485,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function callUserFunctionCanCallFunction()
     {
         $inputData = array('foo' => 'bar');
-        $result = GeneralUtility::callUserFunction(function () { return "Worked fine"; }, $inputData, $this, '');
+        $result = GeneralUtility::callUserFunction(function () { return 'Worked fine'; }, $inputData, $this, '');
         $this->assertEquals('Worked fine', $result);
     }
 
@@ -4718,5 +4717,24 @@ text with a ' . $urlMatch . '$|s'),
         }
         GeneralUtility::rmdir($directory);
         $this->assertTrue($check);
+    }
+
+    /**
+     * If the element is not empty, its contents might be treated as "something" (instead of "nothing") e.g. by Fluid
+     * view helpers, which is why we want to avoid that.
+     *
+     * @test
+     */
+    public function xml2ArrayConvertsEmptyArraysToElementWithoutContent()
+    {
+        $input = [
+            'el' => []
+        ];
+
+        $output = GeneralUtility::array2xml($input);
+
+        $this->assertEquals('<phparray>
+	<el type="array"></el>
+</phparray>', $output);
     }
 }

@@ -46,7 +46,7 @@ class ImageManipulationElement extends AbstractFormElement
     );
 
     /**
-     * Handler for unknown types.
+     * This will render an imageManipulation field
      *
      * @return array As defined in initializeResultArray() of AbstractNode
      */
@@ -174,6 +174,7 @@ class ImageManipulationElement extends AbstractFormElement
             try {
                 $file = ResourceFactory::getInstance()->getFileObject($fileUid);
             } catch (FileDoesNotExistException $e) {
+            } catch (\InvalidArgumentException $e) {
             }
         }
         return $file;

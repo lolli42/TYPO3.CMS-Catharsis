@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Core\Core;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Composer\Autoload\ClassMapGenerator;
 use Composer\Autoload\ClassLoader;
+use Composer\Autoload\ClassMapGenerator;
 use TYPO3\CMS\Core\Package\PackageInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -122,9 +122,11 @@ class ClassLoadingInformationGenerator
             $finalAutoloadSection = $autoloadDefinition[$section];
         }
         if ($this->isDevMode) {
-            $autoloadDefinitionDev = json_decode(json_encode($manifest->{'autoload-dev'}), true);
-            if (!empty($autoloadDefinitionDev[$section]) && is_array($autoloadDefinitionDev[$section])) {
-                $finalAutoloadSection = array_merge($finalAutoloadSection, $autoloadDefinitionDev[$section]);
+            if (isset($manifest->{'autoload-dev'})) {
+                $autoloadDefinitionDev = json_decode(json_encode($manifest->{'autoload-dev'}), true);
+                if (!empty($autoloadDefinitionDev[$section]) && is_array($autoloadDefinitionDev[$section])) {
+                    $finalAutoloadSection = array_merge($finalAutoloadSection, $autoloadDefinitionDev[$section]);
+                }
             }
         }
 

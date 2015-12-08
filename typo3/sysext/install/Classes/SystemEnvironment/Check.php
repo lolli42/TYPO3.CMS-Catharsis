@@ -79,7 +79,6 @@ class Check
         $statusArray[] = $this->checkCurrentDirectoryIsInIncludePath();
         $statusArray[] = $this->checkTrustedHostPattern();
         $statusArray[] = $this->checkFileUploadEnabled();
-        $statusArray[] = $this->checkMaximumFileUploadSize();
         $statusArray[] = $this->checkPostUploadSizeIsHigherOrEqualMaximumFileUploadSize();
         $statusArray[] = $this->checkMemorySettings();
         $statusArray[] = $this->checkPhpVersion();
@@ -100,8 +99,8 @@ class Check
             $statusArray[] = $this->checkSuhosinPostMaxVars();
             $statusArray[] = $this->checkSuhosinGetMaxNameLength();
             $statusArray[] = $this->checkSuhosinGetMaxValueLength();
-            $statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
-            $statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
+            $statusArray[] = $this->checkSuhosinExecutorIncludeWhiteListContainsPhar();
+            $statusArray[] = $this->checkSuhosinExecutorIncludeWhiteListContainsVfs();
         }
         $statusArray[] = $this->checkMaxInputVars();
         $statusArray[] = $this->checkSomePhpOpcodeCacheIsLoaded();
@@ -202,32 +201,6 @@ class Check
     }
 
     /**
-     * Check maximum file upload size against default value of 10MB
-     *
-     * @return Status\StatusInterface
-     */
-    protected function checkMaximumFileUploadSize()
-    {
-        $maximumUploadFilesize = $this->getBytesFromSizeMeasurement(ini_get('upload_max_filesize'));
-        $configuredMaximumUploadFilesize = 1024 * (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['maxFileSize'];
-        if ($maximumUploadFilesize < $configuredMaximumUploadFilesize) {
-            $status = new Status\ErrorStatus();
-            $status->setTitle('PHP Maximum upload filesize too small');
-            $status->setMessage(
-                'PHP upload_max_filesize = ' . (int)($maximumUploadFilesize / 1024) . ' KB' . LF .
-                'TYPO3_CONF_VARS[BE][maxFileSize] = ' . (int)($configuredMaximumUploadFilesize / 1024) . ' KB' . LF . LF .
-                'Currently PHP determines the limits for uploaded file\'s sizes and not TYPO3.' .
-                ' It is recommended that the value of upload_max_filesize is at least equal to the value' .
-                ' of TYPO3_CONF_VARS[BE][maxFileSize].'
-            );
-        } else {
-            $status = new Status\OkStatus();
-            $status->setTitle('PHP Maximum file upload size is higher than or equal to [BE][maxFileSize]');
-        }
-        return $status;
-    }
-
-    /**
      * Check maximum post upload size correlates with maximum file upload
      *
      * @return Status\StatusInterface
@@ -249,6 +222,7 @@ class Check
         } else {
             $status = new Status\OkStatus();
             $status->setTitle('Maximum post upload size correlates with maximum upload file size in PHP');
+            $status->setMessage('The maximum size for file uploads is actually set to ' . ini_get('post_max_size'));
         }
         return $status;
     }
@@ -1154,7 +1128,6 @@ class Check
     protected function checkLocaleWithUTF8filesystem()
     {
         if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['UTF8filesystem']) {
-
             // On Windows an empty local value uses the regional settings from the Control Panel
             if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLocale'] === '' && TYPO3_OS !== 'WIN') {
                 $status = new Status\ErrorStatus();
@@ -1198,8 +1171,7 @@ class Check
      */
     protected function checkWindowsApacheThreadStackSize()
     {
-        if (
-            $this->isWindowsOs()
+        if ($this->isWindowsOs()
             && substr($_SERVER['SERVER_SOFTWARE'], 0, 6) === 'Apache'
         ) {
             $status = new Status\WarningStatus();
@@ -1282,8 +1254,7 @@ class Check
      */
     protected function checkGdLibGifSupport()
     {
-        if (
-            function_exists('imagecreatefromgif')
+        if (function_exists('imagecreatefromgif')
             && function_exists('imagegif')
             && (imagetypes() & IMG_GIF)
         ) {
@@ -1318,8 +1289,7 @@ class Check
      */
     protected function checkGdLibJpgSupport()
     {
-        if (
-            function_exists('imagecreatefromjpeg')
+        if (function_exists('imagecreatefromjpeg')
             && function_exists('imagejpeg')
             && (imagetypes() & IMG_JPG)
         ) {
@@ -1343,8 +1313,7 @@ class Check
      */
     protected function checkGdLibPngSupport()
     {
-        if (
-            function_exists('imagecreatefrompng')
+        if (function_exists('imagecreatefrompng')
             && function_exists('imagepng')
             && (imagetypes() & IMG_PNG)
         ) {
@@ -1422,15 +1391,13 @@ class Check
                 $status->setTitle('FreeType True Type Font DPI');
                 $status->setMessage('Fonts are rendered by FreeType library. ' .
                     'We need to ensure that the final dimensions are as expected. ' .
-                    'This server renderes fonts based on 96 DPI correctly'
-                );
+                    'This server renderes fonts based on 96 DPI correctly');
             } else {
                 $status = new Status\NoticeStatus();
                 $status->setTitle('FreeType True Type Font DPI');
                 $status->setMessage('Fonts are rendered by FreeType library. ' .
                     'This server does not render fonts as expected. ' .
-                    'Please check your FreeType 2 module.'
-                );
+                    'Please check your FreeType 2 module.');
             }
         } else {
             $status = new Status\ErrorStatus();

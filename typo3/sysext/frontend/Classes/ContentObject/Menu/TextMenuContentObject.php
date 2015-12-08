@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  * The TYPO3 project - inspiring people to share!
  */
 
-
 /**
  * Extension class creating text based menus
  */
@@ -181,7 +180,7 @@ class TextMenuContentObject extends AbstractMenuContentObject
             $theName = $this->imgNamePrefix . $this->I['uid'] . $this->I['INPfix'] . $pref;
             $name = ' ' . $this->nameAttribute . '="' . $theName . '"';
             $GLOBALS['TSFE']->imagesOnPage[] = $imgInfo[3];
-            $res = '<img' . ' src="' . $GLOBALS['TSFE']->absRefPrefix . $imgInfo[3] . '"' . ' width="' . $imgInfo[0] . '"' . ' height="' . $imgInfo[1] . '"' . $name . ($this->I['val'][$pref . 'ImgTagParams'] ? ' ' . $this->I['val'][($pref . 'ImgTagParams')] : '') . $this->parent_cObj->getBorderAttr(' border="0"');
+            $res = '<img' . ' src="' . $GLOBALS['TSFE']->absRefPrefix . $imgInfo[3] . '"' . ' width="' . $imgInfo[0] . '"' . ' height="' . $imgInfo[1] . '"' . $name . ($this->I['val'][$pref . 'ImgTagParams'] ? ' ' . $this->I['val'][$pref . 'ImgTagParams'] : '') . $this->parent_cObj->getBorderAttr(' border="0"');
             if (!strstr($res, 'alt="')) {
                 // Adding alt attribute if not set.
                 $res .= ' alt=""';

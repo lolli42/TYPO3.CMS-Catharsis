@@ -14,14 +14,14 @@ namespace TYPO3\CMS\Frontend\Imaging;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
+use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
-use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
-use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 
 /**
  * GIFBUILDER
@@ -656,7 +656,7 @@ class GifBuilder extends GraphicalFunctions
                         $travKeys = array('xSpaceBefore', 'xSpaceAfter', 'ySpaceBefore', 'ySpaceAfter');
                         foreach ($travKeys as $pxKey) {
                             if (isset($conf['splitRendering.'][$cfgK . '.'][$pxKey])) {
-                                $conf['splitRendering.'][$cfgK . '.'][$pxKey] = round($conf['splitRendering.'][($cfgK . '.')][$pxKey] * ($conf['fontSize'] / $this->charRangeMap[$fontBaseName]['pixelSpace']));
+                                $conf['splitRendering.'][$cfgK . '.'][$pxKey] = round($conf['splitRendering.'][$cfgK . '.'][$pxKey] * ($conf['fontSize'] / $this->charRangeMap[$fontBaseName]['pixelSpace']));
                             }
                         }
                     }

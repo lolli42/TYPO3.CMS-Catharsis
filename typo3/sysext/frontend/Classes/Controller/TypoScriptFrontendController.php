@@ -24,6 +24,8 @@ use TYPO3\CMS\Core\Localization\Locales;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
 use TYPO3\CMS\Core\Locking\Exception\LockAcquireWouldBlockException;
 use TYPO3\CMS\Core\Locking\Locker;
+use TYPO3\CMS\Core\Locking\LockFactory;
+use TYPO3\CMS\Core\Locking\LockingStrategyInterface;
 use TYPO3\CMS\Core\Messaging\ErrorpageMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\StorageRepository;
@@ -32,8 +34,6 @@ use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Core\Locking\LockingStrategyInterface;
-use TYPO3\CMS\Core\Locking\LockFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -2774,7 +2774,6 @@ class TypoScriptFrontendController
             }
         }
 
-
         // Setting softMergeIfNotBlank:
         $table_fields = GeneralUtility::trimExplode(',', $this->config['config']['sys_language_softMergeIfNotBlank'], true);
         foreach ($table_fields as $TF) {
@@ -4377,7 +4376,7 @@ class TypoScriptFrontendController
         if ($reason !== '') {
             $warning = '$TSFE->set_no_cache() was triggered. Reason: ' . $reason . '.';
         } else {
-            $trace = debug_backtrace();
+            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
             // This is a hack to work around ___FILE___ resolving symbolic links
             $PATH_site_real = dirname(realpath(PATH_site . 'typo3')) . '/';
             $file = $trace[0]['file'];
@@ -4776,7 +4775,6 @@ class TypoScriptFrontendController
 
         return $result;
     }
-
 
     /**
      * Fetches/returns the cached contents of the sys_domain database table.

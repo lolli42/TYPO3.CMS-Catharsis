@@ -15,8 +15,6 @@ namespace TYPO3\CMS\Core\Utility\File;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\DuplicationBehavior;
@@ -26,9 +24,9 @@ use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
+use TYPO3\CMS\Core\Type\Exception\InvalidEnumerationValueException;
 use TYPO3\CMS\Core\Utility\CommandUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Type\Exception\InvalidEnumerationValueException;
 
 /**
  * Contains functions for performing file operations like copying, pasting, uploading, moving,
@@ -233,9 +231,9 @@ class ExtendedFileUtility extends BasicFileUtility
             if ($this->fileCmdMap['upload']) {
                 $uploads = $this->fileCmdMap['upload'];
                 foreach ($uploads as $upload) {
-                    if (empty($_FILES[('upload_' . $upload['data'])]['name'])
-                        || (is_array($_FILES[('upload_' . $upload['data'])]['name'])
-                            && empty($_FILES[('upload_' . $upload['data'])]['name'][0])
+                    if (empty($_FILES['upload_' . $upload['data']]['name'])
+                        || (is_array($_FILES['upload_' . $upload['data']]['name'])
+                            && empty($_FILES['upload_' . $upload['data']]['name'][0])
                         )
                     ) {
                         unset($this->fileCmdMap['upload'][$upload['data']]);
@@ -418,23 +416,13 @@ class ExtendedFileUtility extends BasicFileUtility
                 $shortcutContent = array();
                 $brokenReferences = array();
 
-                $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
                 foreach ($refIndexRecords as $fileReferenceRow) {
                     if ($fileReferenceRow['tablename'] === 'sys_file_reference') {
                         $row = $this->transformFileReferenceToRecordReference($fileReferenceRow);
                         $shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
 
                         if ($shortcutRecord) {
-                            $icon = $iconFactory->getIconForRecord($row['tablename'], $shortcutRecord, Icon::SIZE_SMALL)->render();
-                            $tagParameters = array(
-                                'class'           => 't3-js-clickmenutrigger',
-                                'data-table'      => $row['tablename'],
-                                'data-uid'        => $row['recuid'],
-                                'data-listframe'  => 1,
-                                'data-iteminfo'   => '%2Binfo,history,edit'
-                            );
-                            $icon = '<a href="#" ' . GeneralUtility::implodeAttributes($tagParameters, true) . '>' . $icon . '</a>';
-                            $shortcutContent[] = $icon . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
+                            $shortcutContent[] = '[record:' . $row['tablename'] . ':' .  $row['recuid'] . ']';
                         } else {
                             $brokenReferences[] = $fileReferenceRow['ref_uid'];
                         }
@@ -455,7 +443,7 @@ class ExtendedFileUtility extends BasicFileUtility
                     // render a message that the file could not be deleted
                     $flashMessage = GeneralUtility::makeInstance(
                         FlashMessage::class,
-                        sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileNotDeletedHasReferences'), $fileObject->getName()) . '<br />' . implode('<br />', $shortcutContent),
+                        sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileNotDeletedHasReferences'), $fileObject->getName()) . ' ' . implode(', ', $shortcutContent),
                         $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileNotDeletedHasReferences'),
                         FlashMessage::WARNING,
                         true
@@ -846,6 +834,8 @@ class ExtendedFileUtility extends BasicFileUtility
             $folderName = $cmds['data'];
             $resultObject = $targetFolderObject->createFolder($folderName);
             $this->writelog(6, 0, 1, 'Directory "%s" created in "%s"', array($folderName, $targetFolderObject->getIdentifier() . '/'));
+        } catch (\TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException $e) {
+            $this->writelog(6, 1, 104, 'Invalid folder name "%s"!', [$folderName]);
         } catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFolderWritePermissionsException $e) {
             $this->writelog(6, 1, 103, 'You are not allowed to create directories!', '');
         } catch (\TYPO3\CMS\Core\Resource\Exception\NotInMountPointException $e) {

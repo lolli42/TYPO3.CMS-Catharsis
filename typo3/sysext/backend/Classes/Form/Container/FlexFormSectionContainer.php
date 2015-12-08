@@ -14,11 +14,11 @@ namespace TYPO3\CMS\Backend\Form\Container;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -67,8 +67,8 @@ class FlexFormSectionContainer extends AbstractContainer
                 // There may be cases where a field is still in DB but does not exist in definition
                 if (is_array($containerDataStructure)) {
                     $sectionTitle = '';
-                    if (!empty($containerDataStructure['title'])) {
-                        $sectionTitle = $languageService->sL($containerDataStructure['title']);
+                    if (!empty(trim($containerDataStructure['title']))) {
+                        $sectionTitle = $languageService->sL(trim($containerDataStructure['title']));
                     }
 
                     $options = $this->data;
@@ -94,8 +94,8 @@ class FlexFormSectionContainer extends AbstractContainer
         foreach ($flexFormFieldsArray as $flexFormContainerName => $flexFormFieldDefinition) {
             $containerTemplateHtml = array();
             $sectionTitle = '';
-            if (!empty($flexFormFieldDefinition['title'])) {
-                $sectionTitle = $languageService->sL($flexFormFieldDefinition['title']);
+            if (!empty(trim($flexFormFieldDefinition['title']))) {
+                $sectionTitle = $languageService->sL(trim($flexFormFieldDefinition['title']));
             }
 
             $options = $this->data;
@@ -113,8 +113,8 @@ class FlexFormSectionContainer extends AbstractContainer
 
             // Extract the random identifier used by the ExtJS tree. This is used later on in the onClick handler
             // to dynamically modify the javascript code and instanciate a unique ExtJS tree instance per section.
+            $treeElementIdentifier = '';
             if (!empty($flexFormContainerContainerTemplateResult['extJSCODE'])) {
-                $treeElementIdentifier = '';
                 if (preg_match('/StandardTreeItemData\["([a-f0-9]{32})"\]/', $flexFormContainerContainerTemplateResult['extJSCODE'], $matches)) {
                     $treeElementIdentifier = $matches[1];
                 }
@@ -123,7 +123,10 @@ class FlexFormSectionContainer extends AbstractContainer
             $uniqueId = StringUtility::getUniqueId('idvar');
             $identifierPrefixJs = 'replace(/' . $flexFormFieldIdentifierPrefix . '-/g,"' . $flexFormFieldIdentifierPrefix . '-"+' . $uniqueId . '+"-")';
             $identifierPrefixJs .= '.replace(/(tceforms-(datetime|date)field-)/g,"$1" + (new Date()).getTime())';
-            $identifierPrefixJs .= '.replace(/(tree_?)?' . $treeElementIdentifier . '/g,"$1" + (' . $uniqueId . '))';
+
+            if (!empty($treeElementIdentifier)) {
+                $identifierPrefixJs .= '.replace(/(tree_?)?' . $treeElementIdentifier . '/g,"$1" + (' . $uniqueId . '))';
+            }
 
             $onClickInsert = array();
             $onClickInsert[] = 'var ' . $uniqueId . ' = "' . 'idx"+(new Date()).getTime();';
@@ -135,6 +138,8 @@ class FlexFormSectionContainer extends AbstractContainer
             }
             $onClickInsert[] = 'TBE_EDITOR.addActionChecks("submit", unescape("' . rawurlencode(implode(';', $flexFormContainerContainerTemplateResult['additionalJavaScriptSubmit'])) . '").' . $identifierPrefixJs . ');';
             $onClickInsert[] = 'TYPO3.FormEngine.reinitialize();';
+            $onClickInsert[] = 'TYPO3.FormEngine.Validation.initializeInputFields();';
+            $onClickInsert[] = 'TYPO3.FormEngine.Validation.validate();';
             $onClickInsert[] = 'return false;';
 
             $containerTemplateHtml[] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars(implode(LF, $onClickInsert)) . '">';

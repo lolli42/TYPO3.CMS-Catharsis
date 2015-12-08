@@ -14,16 +14,16 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script Class for grid wizard
@@ -94,8 +94,8 @@ class BackendLayoutWizardController extends AbstractModule
             'moduleUrl',
             BackendUtility::getModuleUrl(
                 'help_CshmanualCshmanual',
-                array (
-                    'tx_cshmanual_help_cshmanualcshmanual' => array (
+                array(
+                    'tx_cshmanual_help_cshmanualcshmanual' => array(
                         'controller' => 'Help',
                         'action' => 'detail'
                     )
@@ -227,12 +227,10 @@ class BackendLayoutWizardController extends AbstractModule
 
         $this->setPagePath($this->P['table'], $this->P['uid']);
 
-
         $this->moduleTemplate->setContent($this->content);
         $response->getBody()->write($this->moduleTemplate->renderContent());
         return $response;
     }
-
 
     /**
      * Creates the correct path to the current record
@@ -273,14 +271,14 @@ class BackendLayoutWizardController extends AbstractModule
         $saveButton = $buttonBar->makeInputButton()
             ->setName('_savedok')
             ->setValue('1')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', true))
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'))
             ->setOnClick('storeData(t3Grid.export2LayoutRecord());return true;')
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL));
 
         $saveAndCloseButton = $buttonBar->makeInputButton()
             ->setName('_savedokandclose')
             ->setValue('1')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', true))
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc'))
             ->setOnClick('storeData(t3Grid.export2LayoutRecord());window.close();return true;')
             ->setIcon(
                 $this->moduleTemplate->getIconFactory()->getIcon('actions-document-save-close', Icon::SIZE_SMALL)
@@ -293,11 +291,10 @@ class BackendLayoutWizardController extends AbstractModule
 
         $closeButton = $buttonBar->makeLinkButton()
             ->setHref('#')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', true))
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc'))
             ->setOnClick('window.close();return true;')
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
         $buttonBar->addButton($closeButton, ButtonBar::BUTTON_POSITION_LEFT, 30);
-
 
         $this->content .= '
 		<table border="0" width="90%" height="90%" id="outer_container">

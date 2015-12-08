@@ -36,16 +36,9 @@ class ElementBrowserPageTreeView extends BrowseTreeView
     /**
      * @var bool
      */
-    public $ext_showNavTitle = false;
-
-    /**
-     * @var bool
-     */
     public $ext_pArrPages = true;
 
     /**
-     * Back-reference to ElementBrowser class
-     *
      * @var LinkParameterProviderInterface
      */
     protected $linkParameterProvider;
@@ -82,7 +75,7 @@ class ElementBrowserPageTreeView extends BrowseTreeView
     public function wrapTitle($title, $v, $ext_pArrPages = false)
     {
         if ($this->ext_isLinkable($v['doktype'], $v['uid'])) {
-            return '<span class="list-tree-title"><a href="#" class="t3-js-pageLink" data-id="' . (int)$v['uid'] . '">' . $title . '</a></span>';
+            return '<span class="list-tree-title"><a href="#" class="t3js-pageLink" data-id="' . (int)$v['uid'] . '">' . $title . '</a></span>';
         } else {
             return '<span class="list-tree-title text-muted">' . $title . '</span>';
         }
@@ -122,7 +115,9 @@ class ElementBrowserPageTreeView extends BrowseTreeView
             }
             $urlParameters = $this->linkParameterProvider->getUrlParameters(['pid' => (int)$treeItem['row']['uid']]);
             $aOnClick = 'return jumpToUrl(' . GeneralUtility::quoteJSvalue($this->getThisScript() . ltrim(GeneralUtility::implodeArrayForUrl('', $urlParameters), '&')) . ');';
-            $cEbullet = $this->ext_isLinkable($treeItem['row']['doktype'], $treeItem['row']['uid']) ? '<a href="#" class="list-tree-show" onclick="' . htmlspecialchars($aOnClick) . '"><i class="fa fa-caret-square-o-right"></i></a>' : '';
+            $cEbullet = $this->ext_isLinkable($treeItem['row']['doktype'], $treeItem['row']['uid'])
+                ? '<a href="#" class="list-tree-show" onclick="' . htmlspecialchars($aOnClick) . '"><i class="fa fa-caret-square-o-right"></i></a>'
+                : '';
             $out .= '
 				<li' . ($classAttr ? ' class="' . trim($classAttr) . '"' : '') . '>
 					<span class="list-tree-group' . $selected . '">
@@ -147,8 +142,7 @@ class ElementBrowserPageTreeView extends BrowseTreeView
                 }
             }
         }
-        $out = '<ul class="list-tree list-tree-root">' . $out . '</ul>';
-        return $out;
+        return '<ul class="list-tree list-tree-root">' . $out . '</ul>';
     }
 
     /**

@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaColumnsProcessRecordTitle;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
@@ -70,6 +70,42 @@ class TcaColumnsProcessRecordTitleTest extends UnitTestCase
 
         $expected = $input;
         $expected['columnsToProcess'] = ['uid','aField','anotherField'];
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataRegistersForeignLabelInInlineContext()
+    {
+        $input = [
+            'columnsToProcess' => [],
+            'inlineParentConfig' => [
+                'foreign_label' => 'aForeignLabelField',
+            ],
+            'isInlineChild' => true,
+        ];
+
+        $expected = $input;
+        $expected['columnsToProcess'] = [ 'aForeignLabelField' ];
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataRegistersSymmetricLabelInInlineContext()
+    {
+        $input = [
+            'columnsToProcess' => [],
+            'inlineParentConfig' => [
+                'symmetric_label' => 'aSymmetricLabelField',
+            ],
+            'isInlineChild' => true,
+        ];
+
+        $expected = $input;
+        $expected['columnsToProcess'] = [ 'aSymmetricLabelField' ];
         $this->assertSame($expected, $this->subject->addData($input));
     }
 }

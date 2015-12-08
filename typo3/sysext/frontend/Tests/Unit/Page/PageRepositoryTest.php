@@ -213,7 +213,7 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->pageSelectObject->init(false);
 
         // check SQL created by \TYPO3\CMS\Frontend\Page\PageRepository->getPage()
-        $GLOBALS['TYPO3_DB']->expects($this->at(2))
+        $GLOBALS['TYPO3_DB']->expects($this->once())
             ->method('exec_SELECTgetSingleRow')
             ->with(
             '*',
@@ -246,7 +246,7 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->pageSelectObject->init(false);
 
         // check SQL created by \TYPO3\CMS\Frontend\Page\PageRepository->getPage()
-        $GLOBALS['TYPO3_DB']->expects($this->at(2))
+        $GLOBALS['TYPO3_DB']->expects($this->once())
             ->method('exec_SELECTgetSingleRow')
             ->with(
             '*',

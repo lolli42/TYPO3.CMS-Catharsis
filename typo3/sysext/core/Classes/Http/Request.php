@@ -15,8 +15,8 @@ namespace TYPO3\CMS\Core\Http;
  */
 
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\UriInterface;
 
 /**
  * Default implementation for the RequestInterface of the PSR-7 standard
@@ -108,7 +108,7 @@ class Request extends Message implements RequestInterface
         $this->method = $method;
         $this->uri    = $uri;
         $this->body   = $body;
-        list($this->headerNames, $headers) = $this->filterHeaders($headers);
+        list($this->lowercasedHeaderNames, $headers) = $this->filterHeaders($headers);
         $this->assertHeaders($headers);
         $this->headers = $headers;
     }
@@ -341,7 +341,7 @@ class Request extends Message implements RequestInterface
             $host .= ':' . $uri->getPort();
         }
 
-        $clonedObject->headerNames['host'] = 'Host';
+        $clonedObject->lowercasedHeaderNames['host'] = 'Host';
         $clonedObject->headers['Host'] = array($host);
         return $clonedObject;
     }

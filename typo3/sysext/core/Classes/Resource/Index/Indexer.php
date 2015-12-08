@@ -14,8 +14,8 @@ namespace TYPO3\CMS\Core\Resource\Index;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -121,12 +121,18 @@ class Indexer
         $newMetaData = array(
             0 => $fileObject->_getMetaData()
         );
+
+        // Loop through available extractors and fetch metadata for the given file.
         foreach ($this->getExtractionServices() as $service) {
-            if ($service->canProcess($fileObject)) {
+            if ($this->isFileTypeSupportedByExtractor($fileObject, $service) && $service->canProcess($fileObject)) {
                 $newMetaData[$service->getPriority()] = $service->extractMetaData($fileObject, $newMetaData);
             }
         }
+
+        // Sort metadata by priority so that merging happens in order of precedence.
         ksort($newMetaData);
+
+        // Merge the collected metadata.
         $metaData = array();
         foreach ($newMetaData as $data) {
             $metaData = array_merge($metaData, $data);
@@ -165,6 +171,23 @@ class Indexer
                 $this->getFileIndexRepository()->markFileAsMissing($record['uid']);
             }
         }
+    }
+
+    /**
+     * Check whether the extractor service supports this file according to file type restrictions.
+     *
+     * @param File $file
+     * @param ExtractorInterface $extractor
+     * @return bool
+     */
+    protected function isFileTypeSupportedByExtractor(File $file, ExtractorInterface $extractor)
+    {
+        $isSupported = true;
+        $fileTypeRestrictions = $extractor->getFileTypeRestrictions();
+        if (!empty($fileTypeRestrictions) && !in_array($file->getType(), $fileTypeRestrictions)) {
+            $isSupported = false;
+        }
+        return $isSupported;
     }
 
     /**
@@ -348,7 +371,6 @@ class Indexer
         }
         return $mappedFileInfo;
     }
-
 
     /**
      * Returns an instance of the FileIndexRepository

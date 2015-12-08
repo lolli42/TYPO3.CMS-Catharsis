@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
@@ -23,8 +25,6 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Script Class for rendering the file editing screen
@@ -187,7 +187,6 @@ class EditFileController extends AbstractModule
 					<input type="hidden" name="redirect" value="' . htmlspecialchars($hValue) . '" />
 				</div>
 				<br />';
-
         } catch (\Exception $e) {
             $code .= sprintf(
                 $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.coundNot'),
@@ -253,7 +252,7 @@ class EditFileController extends AbstractModule
             ->setName('_save')
             ->setValue('1')
             ->setOnClick('document.editform.submit();')
-            ->setTitle($lang->makeEntities($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.submit', true)))
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.submit'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL));
 
         // Save and Close button
@@ -265,7 +264,7 @@ class EditFileController extends AbstractModule
                 . GeneralUtility::quoteJSvalue($this->returnUrl)
                 . '; document.editform.submit();'
             )
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.saveAndClose', true))
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.saveAndClose'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                 'actions-document-save-close',
                 Icon::SIZE_SMALL
@@ -280,7 +279,7 @@ class EditFileController extends AbstractModule
         $closeButton = $buttonBar->makeLinkButton()
             ->setHref('#')
             ->setOnClick('backToList(); return false;')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.cancel', true))
+            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.cancel'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
         $buttonBar->addButton($closeButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
 
@@ -289,7 +288,6 @@ class EditFileController extends AbstractModule
             ->setModuleName('file_edit')
             ->setGetVariables(['target']);
         $buttonBar->addButton($shortButton);
-
     }
 
     /**

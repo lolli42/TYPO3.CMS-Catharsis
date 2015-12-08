@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -23,15 +25,12 @@ use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Script Class for the rename-file form
  */
 class ReplaceFileController extends AbstractModule
 {
-
     /**
      * Document template object
      *
@@ -208,14 +207,14 @@ class ReplaceFileController extends AbstractModule
         if ($this->returnUrl) {
             $returnButton = $buttonBar->makeLinkButton()
                 ->setHref(GeneralUtility::linkThisUrl($this->returnUrl))
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', true))
+                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($returnButton);
         }
 
         $this->content .= '<h1>' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:file_replace.php.pagetitle') . '</h1>';
         // Add the HTML as a section:
-        $this->content .= $this->moduleTemplate->section('', $code);
+        $this->content .= '<div>' . $code . '</div>';
 
         $this->moduleTemplate->setContent($this->content);
     }
