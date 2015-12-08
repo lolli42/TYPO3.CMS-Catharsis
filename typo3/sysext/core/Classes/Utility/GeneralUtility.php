@@ -1522,21 +1522,23 @@ class GeneralUtility {
 	}
 
 	/**
-	 * Explodes a string and trims all values for whitespace in the ends.
+	 * Explodes a string and trims all values for whitespace in the end.
 	 * If $onlyNonEmptyValues is set, then all blank ('') values are removed.
 	 *
 	 * @param string $delim Delimiter string to explode with
 	 * @param string $string The string to explode
-	 * @param boolean $removeEmptyValues If set, all empty values will be removed in output
-	 * @param integer $limit If positive, the result will contain a maximum of
+	 * @param bool $removeEmptyValues If set, all empty values will be removed in output
+	 * @param int $limit If limit is set and positive, the returned array will contain a maximum of limit elements with
+	 *                   the last element containing the rest of string. If the limit parameter is negative, all components
+	 *                   except the last -limit are returned.
 	 * @return array Exploded values
 	 */
 	static public function trimExplode($delim, $string, $removeEmptyValues = FALSE, $limit = 0) {
-		$result = array_map('trim', explode($delim, $string));
+		$result = explode($delim, $string);
 		if ($removeEmptyValues) {
 			$temp = array();
 			foreach ($result as $value) {
-				if ($value !== '') {
+				if (trim($value) !== '') {
 					$temp[] = $value;
 				}
 			}
@@ -1549,6 +1551,7 @@ class GeneralUtility {
 		} elseif ($limit < 0) {
 			$result = array_slice($result, 0, $limit);
 		}
+		$result = array_map('trim', $result);
 		return $result;
 	}
 
@@ -2163,11 +2166,15 @@ class GeneralUtility {
 					$subOptions = $options;
 					$clearStackPath = FALSE;
 				}
-				$content = $nl . self::array2xml($v, $NSprefix, ($level + 1), '', $spaceInd, $subOptions, array(
-					'parentTagName' => $tagName,
-					'grandParentTagName' => $stackData['parentTagName'],
-					'path' => ($clearStackPath ? '' : $stackData['path'] . '/' . $tagName)
-				)) . ($spaceInd >= 0 ? str_pad('', ($level + 1) * $indentN, $indentChar) : '');
+				if (empty($v)) {
+					$content = '';
+				} else {
+					$content = $nl . self::array2xml($v, $NSprefix, ($level + 1), '', $spaceInd, $subOptions, array(
+						'parentTagName' => $tagName,
+						'grandParentTagName' => $stackData['parentTagName'],
+						'path' => ($clearStackPath ? '' : $stackData['path'] . '/' . $tagName)
+					)) . ($spaceInd >= 0 ? str_pad('', ($level + 1) * $indentN, $indentChar) : '');
+				}
 				// Do not set "type = array". Makes prettier XML but means that empty arrays are not restored with xml2array
 				if ((int)$options['disableTypeAttrib'] != 2) {
 					$attr .= ' type="array"';
@@ -3134,6 +3141,7 @@ Connection: close
 	 *
 	 * @param string $path URL / path to prepend full URL addressing to.
 	 * @return string
+	 * @throws \InvalidArgumentException
 	 */
 	static public function locationHeaderUrl($path) {
 		$uI = parse_url($path);
@@ -3143,6 +3151,9 @@ Connection: close
 		} elseif (!$uI['scheme']) {
 			// No scheme either
 			$path = self::getIndpEnv('TYPO3_REQUEST_DIR') . $path;
+		}
+		if (strpbrk($path, "\r\n") !== false) {
+			throw new \InvalidArgumentException('HTTP header injection attempt in "' . $path . '"', 1448194036);
 		}
 		return $path;
 	}

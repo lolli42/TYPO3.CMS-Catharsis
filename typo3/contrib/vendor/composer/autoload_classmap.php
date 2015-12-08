@@ -6,6 +6,11 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname(dirname(dirname($vendorDir)));
 
 return array(
+    'doctrine\\instantiator\\exception\\exceptioninterface' => $vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator/Exception/ExceptionInterface.php',
+    'doctrine\\instantiator\\exception\\invalidargumentexception' => $vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator/Exception/InvalidArgumentException.php',
+    'doctrine\\instantiator\\exception\\unexpectedvalueexception' => $vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator/Exception/UnexpectedValueException.php',
+    'doctrine\\instantiator\\instantiator' => $vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator/Instantiator.php',
+    'doctrine\\instantiator\\instantiatorinterface' => $vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator/InstantiatorInterface.php',
     'helhum\\classaliasloader\\composer\\classaliasgenerator' => $vendorDir . '/helhum/class-alias-loader/Classes/Composer/ClassAliasGenerator.php',
     'helhum\\classaliasloader\\composer\\classaliasloader' => $vendorDir . '/helhum/class-alias-loader/Classes/Composer/ClassAliasLoader.php',
     'helhum\\classaliasloader\\composer\\plugin' => $vendorDir . '/helhum/class-alias-loader/Classes/Composer/Plugin.php',
@@ -217,6 +222,7 @@ return array(
     'typo3\\cms\\core\\datahandling\\datahandler' => $baseDir . '/typo3/sysext/core/Classes/DataHandling/DataHandler.php',
     'typo3\\cms\\core\\datahandling\\datahandlercheckmodifyaccesslisthookinterface' => $baseDir . '/typo3/sysext/core/Classes/DataHandling/DataHandlerCheckModifyAccessListHookInterface.php',
     'typo3\\cms\\core\\datahandling\\datahandlerprocessuploadhookinterface' => $baseDir . '/typo3/sysext/core/Classes/DataHandling/DataHandlerProcessUploadHookInterface.php',
+    'typo3\\cms\\core\\datahandling\\plaindataresolver' => $baseDir . '/typo3/sysext/core/Classes/DataHandling/PlainDataResolver.php',
     'typo3\\cms\\core\\datahandling\\tablecolumnsubtype' => $baseDir . '/typo3/sysext/core/Classes/DataHandling/TableColumnSubType.php',
     'typo3\\cms\\core\\datahandling\\tablecolumntype' => $baseDir . '/typo3/sysext/core/Classes/DataHandling/TableColumnType.php',
     'typo3\\cms\\core\\database\\databaseconnection' => $baseDir . '/typo3/sysext/core/Classes/Database/DatabaseConnection.php',

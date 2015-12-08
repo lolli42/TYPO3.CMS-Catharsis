@@ -1082,7 +1082,8 @@ class ResourceStorage implements ResourceStorageInterface {
 	 */
 	public function addFile($localFilePath, Folder $targetFolder, $targetFileName = '', $conflictMode = 'changeName') {
 		$localFilePath = PathUtility::getCanonicalPath($localFilePath);
-		if (!file_exists($localFilePath)) {
+		// File is not available locally NOR is it an uploaded file
+		if (!is_uploaded_file($localFilePath) && !file_exists($localFilePath)) {
 			throw new \InvalidArgumentException('File "' . $localFilePath . '" does not exist.', 1319552745);
 		}
 		$targetFolder = $targetFolder ?: $this->getDefaultFolder();
@@ -2654,7 +2655,13 @@ class ResourceStorage implements ResourceStorageInterface {
 			}
 			try {
 				if (strpos($processingFolder, ':') !== FALSE) {
-					$this->processingFolder = ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier($processingFolder);
+					list ($storageUid, $processingFolderIdentifier) = explode(':', $processingFolder, 2);
+					$storage = ResourceFactory::getInstance()->getStorageObject($storageUid);
+					if ($storage->hasFolder($processingFolderIdentifier)) {
+						$this->processingFolder = $storage->getFolder($processingFolderIdentifier);
+					} else {
+						$this->processingFolder = $storage->createFolder(ltrim($processingFolderIdentifier, '/'));
+					}
 				} else {
 					if ($this->driver->folderExists($processingFolder) === FALSE) {
 						$this->processingFolder = $this->createFolder($processingFolder);

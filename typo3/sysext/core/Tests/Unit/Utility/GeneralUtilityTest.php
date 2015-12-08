@@ -1389,7 +1389,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function checkTrimExplodeKeepsRemainingResultsWithEmptyItemsAfterReachingLimitWithPositiveParameter() {
 		$testString = ' a , b , c , , d,, ,e ';
-		$expectedArray = array('a', 'b', 'c,,d,,,e');
+		$expectedArray = array('a', 'b', 'c , , d,, ,e');
 		// Limiting returns the rest of the string as the last element
 		$actualArray = Utility\GeneralUtility::trimExplode(',', $testString, FALSE, 3);
 		$this->assertEquals($expectedArray, $actualArray);
@@ -1400,7 +1400,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function checkTrimExplodeKeepsRemainingResultsWithoutEmptyItemsAfterReachingLimitWithPositiveParameter() {
 		$testString = ' a , b , c , , d,, ,e ';
-		$expectedArray = array('a', 'b', 'c,d,e');
+		$expectedArray = array('a', 'b', 'c , d,e');
 		// Limiting returns the rest of the string as the last element
 		$actualArray = Utility\GeneralUtility::trimExplode(',', $testString, TRUE, 3);
 		$this->assertEquals($expectedArray, $actualArray);
@@ -4673,4 +4673,23 @@ text with a ' . $urlMatch . '$|s'),
 	public function stripHttpHeadersStripsHeadersFromHttpResponse($httpResponse, $expected) {
 		$this->assertEquals($expected, GeneralUtilityFixture::stripHttpHeaders($httpResponse));
 	}
+
+	/**
+	* If the element is not empty, its contents might be treated as "something" (instead of "nothing") e.g. by Fluid
+	* view helpers, which is why we want to avoid that.
+	*
+	* @test
+	*/
+	public function xml2ArrayConvertsEmptyArraysToElementWithoutContent()
+	{
+	$input = array(
+		'el' => array()
+	);
+
+	$output = Utility\GeneralUtility::array2xml($input);
+
+	$this->assertEquals('<phparray>
+	<el type="array"></el>
+</phparray>', $output);
+    }
 }

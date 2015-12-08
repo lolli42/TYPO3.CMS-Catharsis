@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Uri;
  * Public License for more details.                                       *
  *                                                                        */
 
+use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Extbase\Domain\Model\AbstractFileFolder;
 
@@ -82,16 +83,27 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 		if (is_null($src) && is_null($image) || !is_null($src) && !is_null($image)) {
 			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('You must either specify a string src or a File object.', 1382284105);
 		}
-		$image = $this->imageService->getImage($src, $image, $treatIdAsReference);
-		$processingInstructions = array(
-			'width' => $width,
-			'height' => $height,
-			'minWidth' => $minWidth,
-			'minHeight' => $minHeight,
-			'maxWidth' => $maxWidth,
-			'maxHeight' => $maxHeight,
-		);
-		$processedImage = $this->imageService->applyProcessingInstructions($image, $processingInstructions);
-		return $this->imageService->getImageUri($processedImage);
+		try {
+			$image = $this->imageService->getImage($src, $image, $treatIdAsReference);
+			$processingInstructions = array(
+				'width' => $width,
+				'height' => $height,
+				'minWidth' => $minWidth,
+				'minHeight' => $minHeight,
+				'maxWidth' => $maxWidth,
+				'maxHeight' => $maxHeight,
+			);
+			$processedImage = $this->imageService->applyProcessingInstructions($image, $processingInstructions);
+			return $this->imageService->getImageUri($processedImage);
+		} catch (ResourceDoesNotExistException $e) {
+			// thrown if file does not exist
+		} catch (\UnexpectedValueException $e) {
+			// thrown if a file has been replaced with a folder
+		} catch (\RuntimeException $e) {
+			// RuntimeException thrown if a file is outside of a storage
+		} catch (\InvalidArgumentException $e) {
+			// thrown if file storage does not exist
+		}
+		return '';
 	}
 }

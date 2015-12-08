@@ -1417,7 +1417,11 @@ class ContentObjectRenderer {
 				if ($sourceInfo) {
 					$sourceConfiguration['width'] = $sourceInfo[0];
 					$sourceConfiguration['height'] = $sourceInfo[1];
-					$sourceConfiguration['src'] = htmlspecialchars($GLOBALS['TSFE']->absRefPrefix . $sourceInfo[3]);
+					$urlPrefix = '';
+					if (parse_url($sourceInfo[3], PHP_URL_HOST) === NULL) {
+						$urlPrefix = $GLOBALS['TSFE']->absRefPrefix;
+					}
+					$sourceConfiguration['src'] = htmlspecialchars($urlPrefix . $sourceInfo[3]);
 					$sourceConfiguration['selfClosingTagSlash'] = (!empty($GLOBALS['TSFE']->xhtmlDoctype) ? ' /' : '');
 
 					$oneSourceCollection = $this->substituteMarkerArray($sourceLayout, $sourceConfiguration, '###|###', TRUE, TRUE);
@@ -1628,6 +1632,7 @@ class ContentObjectRenderer {
 		} else {
 			$longDesc = trim($conf['longdescURL']);
 		}
+		$longDescUrl = strip_tags($longDescUrl);
 		// "alt":
 		$altParam = ' alt="' . htmlspecialchars($altText) . '"';
 		// "title":
@@ -1640,8 +1645,8 @@ class ContentObjectRenderer {
 			$altParam .= ' title="' . htmlspecialchars($altText) . '"';
 		}
 		// "longDesc" URL
-		if ($longDesc) {
-			$altParam .= ' longdesc="' . htmlspecialchars(strip_tags($longDesc)) . '"';
+		if ($longDesc && !empty($longDescUrl)) {
+			$altParam .= ' longdesc="' . htmlspecialchars($longDescUrl) . '"';
 		}
 		return $altParam;
 	}
@@ -1860,8 +1865,6 @@ class ContentObjectRenderer {
 				$this->substMarkerCache[$storeKey] = $storeArr;
 				$GLOBALS['TT']->setTSlogMessage('Cached from DB', 0);
 			} else {
-				// Initialize storeArr
-				$storeArr = array();
 				// Finding subparts and substituting them with the subpart as a marker
 				foreach ($sPkeys as $sPK) {
 					$content = $this->substituteSubpart($content, $sPK, $sPK);
@@ -1873,15 +1876,29 @@ class ContentObjectRenderer {
 						$wPK
 					));
 				}
-				// Traverse keys and quote them for reg ex.
-				foreach ($aKeys as $tK => $tV) {
-					$aKeys[$tK] = preg_quote($tV, '/');
+
+				$storeArr = array();
+				$result = preg_match_all('/###([\w:-]+)###/', $content, $usedMarkers);
+				if ($result !== FALSE && !empty($usedMarkers[1])) {
+					$tagArray = array_flip($usedMarkers[1]);
+
+					$aKeys = array_flip($aKeys);
+					$bKeys = array();
+					// Traverse keys and quote them for reg ex.
+					foreach ($tagArray as $tV => $tK) {
+						$tV = '###' . $tV . '###';
+						if (isset($aKeys[$tV])) {
+							$bKeys[$tK] = preg_quote($tV, '/');
+						}
+					}
+					$regex = '/' . implode('|', $bKeys) . '/';
+					// Doing regex's
+					if (preg_match_all($regex, $content, $keyList) !== FALSE) {
+						$storeArr['c'] = preg_split($regex, $content);
+						$storeArr['k'] = $keyList[0];
+					}
 				}
-				$regex = '/' . implode('|', $aKeys) . '/';
-				// Doing regex's
-				$storeArr['c'] = preg_split($regex, $content);
-				preg_match_all($regex, $content, $keyList);
-				$storeArr['k'] = $keyList[0];
+
 				// Setting cache:
 				$this->substMarkerCache[$storeKey] = $storeArr;
 				// Storing the cached data:
@@ -3898,12 +3915,19 @@ class ContentObjectRenderer {
 		$replacementForEllipsis = trim($options[1]);
 		$crop2space = trim($options[2]) === '1' ? TRUE : FALSE;
 		// Split $content into an array(even items in the array are outside the tags, odd numbers are tag-blocks).
-		$tags = 'a|b|blockquote|body|div|em|font|form|h1|h2|h3|h4|h5|h6|i|li|map|ol|option|p|pre|sub|sup|select|span|strong|table|thead|tbody|tfoot|td|textarea|tr|u|ul|br|hr|img|input|area|link';
-		// TODO We should not crop inside <script> tags.
+		$tags = 'a|abbr|address|area|article|aside|audio|b|bdi|bdo|blockquote|body|br|button|caption|cite|code|col|colgroup|data|datalist|dd|del|dfn|div|dl|dt|em|embed|fieldset|figcaption|figure|font|footer|form|h1|h2|h3|h4|h5|h6|header|hr|i|iframe|img|input|ins|kbd|keygen|label|legend|li|link|main|map|mark|meter|nav|object|ol|optgroup|option|output|p|param|pre|progress|q|rb|rp|rt|rtc|ruby|s|samp|section|select|small|source|span|strong|sub|sup|table|tbody|td|textarea|tfoot|th|thead|time|tr|track|u|ul|ut|var|video|wbr';
 		$tagsRegEx = '
 			(
 				(?:
 					<!--.*?-->					# a comment
+					|
+					<canvas[^>]*>.*?</canvas>   # a canvas tag
+					|
+					<script[^>]*>.*?</script>   # a script tag
+					|
+					<noscript[^>]*>.*?</noscript> # a noscript tag
+					|
+					<template[^>]*>.*?</template> # a template tag
 				)
 				|
 				</?(?:' . $tags . ')+			# opening tag (\'<tag\') or closing tag (\'</tag\')

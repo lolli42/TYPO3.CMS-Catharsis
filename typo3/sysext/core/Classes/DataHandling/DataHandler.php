@@ -1313,10 +1313,15 @@ class DataHandler {
 	 * Create a placeholder title for the label field that does match the field requirements
 	 *
 	 * @param string $table The table name
+	 * @param string $placeholderContent Placeholder content to be used
 	 * @return string placeholder value
 	 */
-	protected function getPlaceholderTitleForTableLabel($table) {
-		$labelPlaceholder = '[PLACEHOLDER, WS#' . $this->BE_USER->workspace . ']';
+	public function getPlaceholderTitleForTableLabel($table, $placeholderContent = NULL) {
+		if ($placeholderContent === NULL) {
+			$placeholderContent = 'PLACEHOLDER';
+		}
+
+		$labelPlaceholder = '[' . $placeholderContent . ', WS#' . $this->BE_USER->workspace . ']';
 		$labelField = $GLOBALS['TCA'][$table]['ctrl']['label'];
 		if (!isset($GLOBALS['TCA'][$table]['columns'][$labelField]['config']['eval'])) {
 			return $labelPlaceholder;
@@ -2978,13 +2983,11 @@ class DataHandler {
 			if (isset($GLOBALS['TCA'][$table]) && !$this->tableReadOnly($table) && is_array($this->cmdmap[$table]) && $modifyAccessList) {
 				// Traverse the command map:
 				foreach ($this->cmdmap[$table] as $id => $incomingCmdArray) {
-					$pasteUpdate = FALSE;
-					if (is_array($incomingCmdArray)) {
-						// have found a command.
-						// Get command and value (notice, only one command is observed at a time!):
-						reset($incomingCmdArray);
-						$command = key($incomingCmdArray);
-						$value = current($incomingCmdArray);
+					if (!is_array($incomingCmdArray)) {
+						continue;
+					}
+					foreach ($incomingCmdArray as $command => $value) {
+						$pasteUpdate = FALSE;
 						if (is_array($value) && isset($value['action']) && $value['action'] === 'paste') {
 							// Extended paste command: $command is set to "move" or "copy"
 							// $value['update'] holds field/value pairs which should be updated after copy/move operation
@@ -3282,15 +3285,35 @@ class DataHandler {
 						$transOrigPointerField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
 						$fields .= ',' . $languageField . ',' . $transOrigPointerField;
 					}
+					if (!BackendUtility::isTableWorkspaceEnabled($table)) {
+						$workspaceStatement = '';
+					} elseif ((int)$this->BE_USER->workspace === 0) {
+						$workspaceStatement = ' AND t3ver_wsid=0';
+					} else {
+						$workspaceStatement = ' AND t3ver_wsid IN (0,' . (int)$this->BE_USER->workspace . ')';
+					}
 					$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 						$fields,
 						$table,
-						'pid=' . (int)$uid . $this->deleteClause($table),
+						'pid=' . (int)$uid . $this->deleteClause($table) . $workspaceStatement,
 						'',
 						(!empty($GLOBALS['TCA'][$table]['ctrl']['sortby']) ? $GLOBALS['TCA'][$table]['ctrl']['sortby'] . ' DESC' : ''),
 						'',
 						'uid'
 					);
+					// Resolve placeholders of workspace versions
+					if (!empty($rows) && (int)$this->BE_USER->workspace !== 0 && BackendUtility::isTableWorkspaceEnabled($table)) {
+						$rows = array_reverse(
+							$this->resolveVersionedRecords(
+								$table,
+								$fields,
+								$GLOBALS['TCA'][$table]['ctrl']['sortby'],
+								array_keys($rows)
+							),
+							TRUE
+						);
+					}
+
 					foreach ($rows as $row) {
 						// Skip localized records that will be processed in
 						// copyL10nOverlayRecords() on copying the default language record
@@ -6767,18 +6790,44 @@ class DataHandler {
 	 */
 	public function int_pageTreeInfo($CPtable, $pid, $counter, $rootID) {
 		if ($counter) {
+			if ((int)$this->BE_USER->workspace === 0) {
+				$workspaceStatement = ' AND t3ver_wsid=0';
+			} else {
+				$workspaceStatement = ' AND t3ver_wsid IN (0,' . (int)$this->BE_USER->workspace . ')';
+			}
 			$addW = !$this->admin ? ' AND ' . $this->BE_USER->getPagePermsClause($this->pMap['show']) : '';
-			$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', 'pages', 'pid=' . (int)$pid . $this->deleteClause('pages') . $addW, '', 'sorting DESC');
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($mres)) {
-				if ($row['uid'] != $rootID) {
-					$CPtable[$row['uid']] = $pid;
+			$pages = $this->databaseConnection->exec_SELECTgetRows(
+				'uid',
+				'pages',
+				'pid=' . (int)$pid . $this->deleteClause('pages') . $workspaceStatement . $addW,
+				'',
+				'sorting DESC',
+				'',
+				'uid'
+			);
+
+			// Resolve placeholders of workspace versions
+			if (!empty($pages) && (int)$this->BE_USER->workspace !== 0) {
+				$pages = array_reverse(
+					$this->resolveVersionedRecords(
+						'pages',
+						'uid',
+						'sorting',
+						array_keys($pages)
+					),
+					TRUE
+				);
+			}
+
+			foreach ($pages as $page) {
+				if ($page['uid'] != $rootID) {
+					$CPtable[$page['uid']] = $pid;
 					// If the uid is NOT the rootID of the copyaction and if we are supposed to walk further down
 					if ($counter - 1) {
-						$CPtable = $this->int_pageTreeInfo($CPtable, $row['uid'], $counter - 1, $rootID);
+						$CPtable = $this->int_pageTreeInfo($CPtable, $page['uid'], $counter - 1, $rootID);
 					}
 				}
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($mres);
 		}
 		return $CPtable;
 	}
@@ -7540,6 +7589,39 @@ class DataHandler {
 				$this->remapStackChildIds[$idValue] = TRUE;
 			}
 		}
+	}
+
+	/**
+	 * Resolves versioned records for the current workspace scope.
+	 * Delete placeholders and move placeholders are substituted and removed.
+	 *
+	 * @param string $tableName Name of the table to be processed
+	 * @param string $fieldNames List of the field names to be fetched
+	 * @param string $sortingField Name of the sorting field to be used
+	 * @param array $liveIds Flat array of (live) record ids
+	 * @return array
+	 */
+	protected function resolveVersionedRecords($tableName, $fieldNames, $sortingField, array $liveIds) {
+		/** @var PlainDataResolver $resolver */
+		$resolver = GeneralUtility::makeInstance(
+			'TYPO3\\CMS\\Core\\DataHandling\\PlainDataResolver',
+			$tableName,
+			$liveIds,
+			$sortingField
+		);
+
+		$resolver->setWorkspaceId($this->BE_USER->workspace);
+		$resolver->setKeepDeletePlaceholder(FALSE);
+		$resolver->setKeepMovePlaceholder(FALSE);
+		$resolver->setKeepLiveIds(TRUE);
+		$recordIds = $resolver->get();
+
+		$records = array();
+		foreach ($recordIds as $recordId) {
+			$records[$recordId] = BackendUtility::getRecord($tableName, $recordId, $fieldNames);
+		}
+
+		return $records;
 	}
 
 	/**
