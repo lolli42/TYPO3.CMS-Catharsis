@@ -326,9 +326,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         }
         // Add operators for various languages
         // Converts the operators to UTF-8 and lowercase
-        $this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->utf8_encode($this->pi_getLL('local_operator_AND'), $this->frontendController->renderCharset), 'toLower'), 'AND');
-        $this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->utf8_encode($this->pi_getLL('local_operator_OR'), $this->frontendController->renderCharset), 'toLower'), 'OR');
-        $this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->utf8_encode($this->pi_getLL('local_operator_NOT'), $this->frontendController->renderCharset), 'toLower'), 'AND NOT');
+        $this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->conv($this->pi_getLL('local_operator_AND'), $this->frontendController->renderCharset, 'utf-8'), 'toLower'), 'AND');
+        $this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->conv($this->pi_getLL('local_operator_OR'), $this->frontendController->renderCharset, 'utf-8'), 'toLower'), 'OR');
+        $this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->conv($this->pi_getLL('local_operator_NOT'), $this->frontendController->renderCharset, 'utf-8'), 'toLower'), 'AND NOT');
         // This is the id of the site root. This value may be a commalist of integer (prepared for this)
         $this->wholeSiteIdList = (int)$this->frontendController->config['rootLine'][0]['uid'];
         // Creating levels for section menu:
@@ -419,7 +419,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         // Shorten search-word string to max 200 bytes (does NOT take multibyte charsets into account - but never mind, shortening the string here is only a run-away feature!)
         $inSW = substr($this->piVars['sword'], 0, 200);
         // Convert to UTF-8 + conv. entities (was also converted during indexing!)
-        $inSW = $this->frontendController->csConvObj->utf8_encode($inSW, $this->frontendController->metaCharset);
+        $inSW = $this->frontendController->csConvObj->conv($inSW, $this->frontendController->metaCharset, 'utf-8');
         $inSW = $this->frontendController->csConvObj->entities_to_utf8($inSW, true);
         $sWordArray = false;
         if ($hookObj = $this->hookRequest('getSearchWords')) {
@@ -566,13 +566,6 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
             // Now, traverse result and put the rows to be displayed into an array
             // Each row should contain the fields from 'ISEC.*, IP.*' combined + artificial fields "show_resume" (bool) and "result_number" (counter)
             while (false !== ($row = $this->databaseConnection->sql_fetch_assoc($res))) {
-                if (!$this->checkExistence($row)) {
-                    // Check if the record is still available or if it has been deleted meanwhile.
-                    // Currently this works for files only, since extending it to content elements would cause a lot of overhead...
-                    // Otherwise, skip the row.
-                    $totalSearchResultCount--;
-                    continue;
-                }
                 // Set first row:
                 if ($positionInSearchResults === 0) {
                     $firstRow = $row;
@@ -1257,40 +1250,6 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
     }
 
     /**
-     * Check if the record is still available or if it has been deleted meanwhile.
-     * Currently this works for files only, since extending it to page content would cause a lot of overhead.
-     *
-     * @param array $row Result row array
-     * @return bool Returns TRUE if record is still available
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function checkExistance($row)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->checkExistence($row);
-    }
-
-    /**
-     * Check if the record is still available or if it has been deleted meanwhile.
-     * Currently this works for files only, since extending it to page content would cause a lot of overhead.
-     *
-     * @param array $row Result row array
-     * @return bool Returns TRUE if record is still available
-     */
-    protected function checkExistence($row)
-    {
-        $recordExists = true;
-        // Always expect that page content exists
-        if ($row['item_type']) {
-            // External media:
-            if (!is_file($row['data_filename']) || !file_exists($row['data_filename'])) {
-                $recordExists = false;
-            }
-        }
-        return $recordExists;
-    }
-
-    /**
      * Returns "DESC" or "" depending on the settings of the incoming highest/lowest result order (piVars['desc']
      *
      * @param bool $inverse If TRUE, inverse the order which is defined by piVars['desc']
@@ -1365,7 +1324,18 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         }
         $markerArray['###FORM_SUBMIT###'] = $this->pi_getLL('submit_button_label', '', true);
         // Adding search field value
-        $markerArray['###SWORD_VALUE###'] = htmlspecialchars($this->piVars['sword']);
+        $markerArray['###SWORD_VALUE###'] = '';
+        $markerArray['###PLACEHOLDER###'] = '';
+        if (!empty($this->piVars['sword'])) {
+            $markerArray['###SWORD_VALUE###'] = htmlspecialchars($this->piVars['sword']);
+        } else {
+            // Add a HTML5 placeholder attribute if the configured doctype allows it
+            if ($GLOBALS['TSFE']->config['config']['doctype'] === 'html5') {
+                $markerArray['###PLACEHOLDER###'] = 'placeholder="' . $this->pi_getLL('default_search_word_entry') . '"';
+            } else {
+                $markerArray['###SWORD_VALUE###'] = $this->pi_getLL('default_search_word_entry');
+            }
+        }
         // Additonal keyword => "Add to current search words"
         if ($this->conf['show.']['clearSearchBox'] && $this->conf['show.']['clearSearchBox.']['enableSubSearchCheckBox']) {
             $markerArray['###SWORD_PREV_VALUE###'] = htmlspecialchars($this->conf['show.']['clearSearchBox'] ? '' : $this->piVars['sword']);

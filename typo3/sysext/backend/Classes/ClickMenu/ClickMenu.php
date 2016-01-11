@@ -593,7 +593,7 @@ class ClickMenu
     {
         $url = BackendUtility::getModuleUrl('record_history', array('element' => $table . ':' . $uid));
         return $this->linkItem(
-            $this->languageService->makeEntities($this->languageService->getLL('CM_history')),
+            htmlspecialchars($this->languageService->getLL('CM_history')),
             $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL)->render(),
             $this->urlRefForCM($url, 'returnUrl')
         );
@@ -625,7 +625,7 @@ class ClickMenu
 
         $url = BackendUtility::getModuleUrl('system_BeuserTxPermission', $parameters);
         return $this->linkItem(
-            $this->languageService->makeEntities($this->languageService->getLL('CM_perms')),
+            htmlspecialchars($this->languageService->getLL('CM_perms')),
             $this->iconFactory->getIcon('status-status-locked', Icon::SIZE_SMALL)->render(),
             $this->urlRefForCM($url)
         );
@@ -647,7 +647,7 @@ class ClickMenu
         $urlParams['table'] = $table === 'pages' ? '' : $table;
         $url = BackendUtility::getModuleUrl('web_list', $urlParams, '', true);
         return $this->linkItem(
-            $this->languageService->makeEntities($this->languageService->getLL('CM_db_list')),
+            htmlspecialchars($this->languageService->getLL('CM_db_list')),
             $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render(),
             'top.nextLoadModuleUrl=' . GeneralUtility::quoteJSvalue($url) . ';top.goToModule(\'web_list\', 1);'
         );
@@ -668,7 +668,7 @@ class ClickMenu
         $url = BackendUtility::getModuleUrl('move_element') . '&table=' . $table . '&uid=' . $uid;
         $url .= ($table === 'tt_content' ? '&sys_language_uid=' . (int)$rec['sys_language_uid'] : '');
         return $this->linkItem(
-            $this->languageService->makeEntities($this->languageService->getLL('CM_moveWizard' . ($table === 'pages' ? '_page' : ''))),
+            htmlspecialchars($this->languageService->getLL('CM_moveWizard' . ($table === 'pages' ? '_page' : ''))),
             $this->iconFactory->getIcon('actions-' . ($table === 'pages' ? 'page' : 'document') . '-move', Icon::SIZE_SMALL)->render(),
             $this->urlRefForCM($url, 'returnUrl')
         );
@@ -694,7 +694,7 @@ class ClickMenu
             $url = BackendUtility::getModuleUrl($newContentWizardModuleName, ['id' => $rec['pid'], 'sys_language_uid' => (int)$rec['sys_language_uid']]);
         }
         return $this->linkItem(
-            $this->languageService->makeEntities($this->languageService->getLL('CM_newWizard')),
+            htmlspecialchars($this->languageService->getLL('CM_newWizard')),
             $this->iconFactory->getIcon(($table === 'pages' ? 'actions-page-new' : 'actions-document-new'), Icon::SIZE_SMALL)->render(),
             $this->urlRefForCM($url, 'returnUrl')
         );
@@ -715,7 +715,7 @@ class ClickMenu
             'edit[' . $table . '][' . $uid . ']' => 'edit'
         ));
         return $this->linkItem(
-            $this->languageService->makeEntities($this->languageService->getLL('CM_editAccess')),
+            htmlspecialchars($this->languageService->getLL('CM_editAccess')),
             $this->iconFactory->getIcon('actions-document-edit-access', Icon::SIZE_SMALL)->render(),
             $this->urlRefForCM($url, 'returnUrl'),
             1
@@ -735,7 +735,7 @@ class ClickMenu
             'edit[pages][' . $uid . ']' => 'edit'
         ));
         return $this->linkItem(
-            $this->languageService->makeEntities($this->languageService->getLL('CM_editPageProperties')),
+            htmlspecialchars($this->languageService->getLL('CM_editPageProperties')),
             $this->iconFactory->getIcon('actions-page-open', Icon::SIZE_SMALL)->render(),
             $this->urlRefForCM($url, 'returnUrl'),
             1
@@ -1063,17 +1063,7 @@ class ClickMenu
     public function FILE_launch($path, $moduleName, $type, $iconName, $noReturnUrl = false)
     {
         $loc = 'top.content.list_frame';
-
-        if (strpos($moduleName, '.php') !== false) {
-            GeneralUtility::deprecationLog(
-                'Using a php file directly in ClickMenu is deprecated since TYPO3 CMS 7, and will be removed in CMS 8.'
-                . ' Register the class as module and use BackendUtility::getModuleUrl() to get the right link.'
-                . ' For examples how to do this see ext_tables.php of EXT:backend.'
-            );
-            $scriptUrl = $moduleName;
-        } else {
-            $scriptUrl = BackendUtility::getModuleUrl($moduleName);
-        }
+        $scriptUrl = BackendUtility::getModuleUrl($moduleName);
 
         $editOnClick = 'if(' . $loc . '){' . $loc . '.location.href=' . GeneralUtility::quoteJSvalue($scriptUrl . '&target=' . rawurlencode($path)) . ($noReturnUrl ? '' : '+\'&returnUrl=\'+top.rawurlencode(' . $this->frameLocation($loc . '.document') . '.pathname+' . $this->frameLocation($loc . '.document') . '.search)') . ';}';
         return $this->linkItem(
@@ -1326,22 +1316,6 @@ class ClickMenu
     }
 
     /**
-     * Wrapping the input string in a table with background color 4 and a black border style.
-     * For the pop-up menu
-     *
-     * @param string $str HTML content to wrap in table.
-     * @return string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function wrapColorTableCM($str)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return '<div class="typo3-CSM-wrapperCM">
-			' . $str . '
-			</div>';
-    }
-
-    /**
      * Traverses the menuItems and generates an output array for implosion in the CM div-layers table.
      *
      * @param array $menuItems Array
@@ -1464,7 +1438,6 @@ class ClickMenu
      */
     public function linkItem($str, $icon, $onClick, $onlyCM = 0, $dontHide = 0)
     {
-        $onClick = str_replace('top.loadTopMenu', 'showClickmenu_raw', $onClick);
         return array(
             '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $str . $icon . '</a>',
             $str,
@@ -1473,19 +1446,6 @@ class ClickMenu
             $onlyCM,
             $dontHide
         );
-    }
-
-    /**
-     * Returns the input string IF not a user setting has disabled display of icons.
-     *
-     * @param string $iconCode The icon-image tag
-     * @return string The icon-image tag prefixed with space char IF the icon should be printed at all due to user settings
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function excludeIcon($iconCode)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->backendUser->uc['noMenuMode'] && $this->backendUser->uc['noMenuMode'] !== 'icons' ? '' : ' ' . $iconCode;
     }
 
     /**
@@ -1572,7 +1532,7 @@ class ClickMenu
      */
     public function label($label)
     {
-        return $this->languageService->makeEntities($this->languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.' . $label, true));
+        return htmlspecialchars($this->languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.' . $label));
     }
 
     /**

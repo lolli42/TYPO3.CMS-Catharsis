@@ -93,16 +93,6 @@ class BackendController
     protected $pageRenderer;
 
     /**
-     * @return PageRenderer
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function getPageRenderer()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->pageRenderer;
-    }
-
-    /**
      * Constructor
      */
     public function __construct()
@@ -122,17 +112,18 @@ class BackendController
         $this->pageRenderer->addJsInlineCode('consoleOverrideWithDebugPanel', '//already done', false);
         $this->pageRenderer->addExtDirectCode();
         // Add default BE javascript
+        $backendRelPath = ExtensionManagementUtility::extRelPath('backend');
         $this->jsFiles = array(
             'locallang' => $this->getLocalLangFileName(),
-            'md5' => 'sysext/backend/Resources/Public/JavaScript/md5.js',
-            'modulemenu' => 'sysext/backend/Resources/Public/JavaScript/modulemenu.js',
-            'evalfield' => 'sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js',
-            'notifications' => 'sysext/backend/Resources/Public/JavaScript/notifications.js',
-            'backend' => 'sysext/backend/Resources/Public/JavaScript/backend.js',
-            'viewport' => 'sysext/backend/Resources/Public/JavaScript/extjs/viewport.js',
-            'iframepanel' => 'sysext/backend/Resources/Public/JavaScript/iframepanel.js',
-            'backendcontentiframe' => 'sysext/backend/Resources/Public/JavaScript/extjs/backendcontentiframe.js',
-            'viewportConfiguration' => 'sysext/backend/Resources/Public/JavaScript/extjs/viewportConfiguration.js',
+            'md5' => $backendRelPath . 'Resources/Public/JavaScript/md5.js',
+            'modulemenu' => $backendRelPath . 'Resources/Public/JavaScript/modulemenu.js',
+            'evalfield' => $backendRelPath . 'Resources/Public/JavaScript/jsfunc.evalfield.js',
+            'notifications' => $backendRelPath . 'Resources/Public/JavaScript/notifications.js',
+            'backend' => $backendRelPath . 'Resources/Public/JavaScript/backend.js',
+            'viewport' => $backendRelPath . 'Resources/Public/JavaScript/extjs/viewport.js',
+            'iframepanel' => $backendRelPath . 'Resources/Public/JavaScript/iframepanel.js',
+            'backendcontentiframe' => $backendRelPath . 'Resources/Public/JavaScript/extjs/backendcontentiframe.js',
+            'viewportConfiguration' => $backendRelPath . 'Resources/Public/JavaScript/extjs/viewportConfiguration.js',
         );
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LoginRefresh', 'function(LoginRefresh) {
 			LoginRefresh.setLoginFramesetUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('login_frameset')) . ');
@@ -274,7 +265,7 @@ class BackendController
         $view = $this->getFluidTemplateObject($this->templatePath . 'Backend/Main.html');
 
         // Render the TYPO3 logo in the left corner
-        $logoUrl = $GLOBALS['TBE_STYLES']['logo'] ?: 'sysext/backend/Resources/Public/Images/typo3-topbar@2x.png';
+        $logoUrl = $GLOBALS['TBE_STYLES']['logo'] ?: ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/Images/typo3-topbar@2x.png';
         $logoPath = GeneralUtility::resolveBackPath(PATH_typo3 . $logoUrl);
         list($logoWidth, $logoHeight) = @getimagesize($logoPath);
 
@@ -358,12 +349,11 @@ class BackendController
             $component = strtolower(substr($info['componentId'], strrpos($info['componentId'], '-') + 1));
             $componentDirectory = 'components/' . $component . '/';
             if ($info['isCoreComponent']) {
-                $absoluteComponentPath = PATH_site . 'typo3/sysext/backend/Resources/Public/JavaScript/extjs/' . $componentDirectory;
-                $relativeComponentPath = '../' . str_replace(PATH_site, '', $absoluteComponentPath);
-            } else {
-                $absoluteComponentPath = ExtensionManagementUtility::extPath($info['extKey']) . $componentDirectory;
-                $relativeComponentPath = ExtensionManagementUtility::extRelPath($info['extKey']) . $componentDirectory;
+                $componentDirectory = 'Resources/Public/JavaScript/extjs/' . $componentDirectory;
+                $info['extKey'] = 'backend';
             }
+            $absoluteComponentPath = ExtensionManagementUtility::extPath($info['extKey']) . $componentDirectory;
+            $relativeComponentPath = ExtensionManagementUtility::extRelPath($info['extKey']) . $componentDirectory;
             $cssFiles = GeneralUtility::getFilesInDir($absoluteComponentPath . 'css/', 'css');
             if (file_exists($absoluteComponentPath . 'css/loadorder.txt')) {
                 // Don't allow inclusion outside directory
@@ -457,7 +447,7 @@ class BackendController
     protected function getLocalLangFileName()
     {
         $code = $this->generateLocalLang();
-        $filePath = 'typo3temp/Language/Backend-' . sha1($code) . '.js';
+        $filePath = 'typo3temp/assets/js/backend-' . sha1($code) . '.js';
         if (!file_exists(PATH_site . $filePath)) {
             // writeFileToTypo3tempDir() returns NULL on success (please double-read!)
             $error = GeneralUtility::writeFileToTypo3tempDir(PATH_site . $filePath, $code);
@@ -619,7 +609,6 @@ class BackendController
             'moduleMenuWidth' => $this->menuWidth - 1,
             'topBarHeight' => isset($GLOBALS['TBE_STYLES']['dims']['topFrameH']) ? (int)$GLOBALS['TBE_STYLES']['dims']['topFrameH'] : 45,
             'showRefreshLoginPopup' => isset($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) ? (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup'] : false,
-            'listModulePath' => ExtensionManagementUtility::extRelPath('recordlist') . 'mod1/',
             'debugInWindow' => $beUser->uc['debugInWindow'] ? 1 : 0,
             'ContextHelpWindows' => array(
                 'width' => 600,
@@ -828,20 +817,6 @@ class BackendController
             $cssFileAdded = true;
         }
         return $cssFileAdded;
-    }
-
-    /**
-     * Adds an item to the toolbar, the class file for the toolbar item must be loaded at this point
-     *
-     * @param string $toolbarItemName Toolbar item name, f.e. tx_toolbarExtension_coolItem
-     * @param string $toolbarItemClassName Toolbar item class name, f.e. tx_toolbarExtension_coolItem
-     * @return void
-     * @throws \UnexpectedValueException
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Toolbar items are registered in $GLOBALS['TYPO3_CONF_VARS']['BE']['toolbarItems'] now.
-     */
-    public function addToolbarItem($toolbarItemName, $toolbarItemClassName)
-    {
-        GeneralUtility::logDeprecatedFunction();
     }
 
     /**

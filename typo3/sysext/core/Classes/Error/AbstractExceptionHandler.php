@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Core\Error;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -30,29 +29,36 @@ abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, \T
     /**
      * Displays the given exception
      *
-     * @param \Exception $exception The exception object
-     * @return void
+     * @param \Exception|\Throwable $exception The exception(PHP 5.x) or throwable(PHP >= 7.0) object.
+     * @TODO #72293 This will change to \Throwable only if we are >= PHP7.0 only
+     *
+     * @throws \Exception
      */
-    public function handleException(\Exception $exception)
+    public function handleException($exception)
     {
-        switch (PHP_SAPI) {
-            case 'cli':
-                $this->echoExceptionCLI($exception);
-                break;
-            default:
-                $this->echoExceptionWeb($exception);
+        if ($exception instanceof \Throwable || $exception instanceof \Exception) {
+            switch (PHP_SAPI) {
+                case 'cli':
+                    $this->echoExceptionCLI($exception);
+                    break;
+                default:
+                    $this->echoExceptionWeb($exception);
+            }
+        } else {
+            throw new \Exception('handleException was called the wrong way.', 1450714322);
         }
     }
 
     /**
      * Writes exception to different logs
      *
-     * @param \Exception $exception The exception
+     * @param \Exception|\Throwable $exception The exception(PHP 5.x) or throwable(PHP >= 7.0) object.
      * @param string $context The context where the exception was thrown, WEB or CLI
      * @return void
      * @see \TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(), \TYPO3\CMS\Core\Utility\GeneralUtility::devLog()
+     * @TODO #72293 This will change to \Throwable only if we are >= PHP7.0 only
      */
-    protected function writeLogEntries(\Exception $exception, $context)
+    protected function writeLogEntries($exception, $context)
     {
         // Do not write any logs for this message to avoid filling up tables or files with illegal requests
         if ($exception->getCode() === 1396795884) {
@@ -101,12 +107,13 @@ abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, \T
         }
         $userId = 0;
         $workspace = 0;
-        if (is_object($GLOBALS['BE_USER'])) {
-            if (isset($GLOBALS['BE_USER']->user['uid'])) {
-                $userId = $GLOBALS['BE_USER']->user['uid'];
+        $backendUser = $this->getBackendUser();
+        if (is_object($backendUser)) {
+            if (isset($backendUser->user['uid'])) {
+                $userId = $backendUser->user['uid'];
             }
-            if (isset($GLOBALS['BE_USER']->workspace)) {
-                $workspace = $GLOBALS['BE_USER']->workspace;
+            if (isset($backendUser->workspace)) {
+                $workspace = $backendUser->workspace;
             }
         }
         $fields_values = array(
@@ -127,10 +134,11 @@ abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, \T
      * Sends the HTTP Status 500 code, if $exception is *not* a
      * TYPO3\CMS\Core\Error\Http\StatusException and headers are not sent, yet.
      *
-     * @param \Exception $exception
+     * @param \Exception|\Throwable $exception The exception(PHP 5.x) or throwable(PHP >= 7.0) object.
      * @return void
+     * @TODO #72293 This will change to \Throwable only if we are >= PHP7.0 only
      */
-    protected function sendStatusHeaders(\Exception $exception)
+    protected function sendStatusHeaders($exception)
     {
         if (method_exists($exception, 'getStatusHeaders')) {
             $headers = $exception->getStatusHeaders();
@@ -145,8 +153,16 @@ abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, \T
     }
 
     /**
+     * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+     */
+    protected function getBackendUser()
+    {
+        return $GLOBALS['BE_USER'];
+    }
+
+    /**
      * Gets the Database Object
-     * @return DatabaseConnection
+     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
      */
     protected function getDatabaseConnection()
     {

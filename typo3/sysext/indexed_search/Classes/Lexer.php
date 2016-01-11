@@ -136,11 +136,11 @@ class Lexer
          */
         if ($cType == 'cjk') {
             // Find total string length:
-            $strlen = $this->csObj->utf8_strlen($theWord);
+            $strlen = $this->csObj->strlen('utf-8', $theWord);
             // Traverse string length and add words as pairs of two chars:
             for ($a = 0; $a < $strlen; $a++) {
                 if ($strlen == 1 || $a < $strlen - 1) {
-                    $words[] = $this->csObj->utf8_substr($theWord, $a, 2);
+                    $words[] = $this->csObj->substr('utf-8', $theWord, $a, 2);
                 }
             }
         } else {
@@ -205,7 +205,11 @@ class Lexer
             if ($len) {
                 if ($letter) {
                     // We are in a sequence of words
-                    if (!$cType || $cType_prev == 'cjk' && \TYPO3\CMS\Core\Utility\GeneralUtility::inList('num,alpha', $cType) || $cType == 'cjk' && \TYPO3\CMS\Core\Utility\GeneralUtility::inList('num,alpha', $cType_prev)) {
+                    if (
+                        !$cType
+                        || $cType_prev == 'cjk' && ($cType === 'num' || $cType === 'alpha')
+                        || $cType == 'cjk' && ($cType_prev === 'num' || $cType_prev === 'alpha')
+                    ) {
                         // Check if the non-letter char is NOT a print-join char because then it signifies the end of the word.
                         if (!in_array($cp, $this->lexerConf['printjoins'])) {
                             // If a printjoin start length has been recorded, set that back now so the length is right (filtering out multiple end chars)

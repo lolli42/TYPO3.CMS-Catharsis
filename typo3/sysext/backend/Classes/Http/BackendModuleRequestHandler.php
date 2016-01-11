@@ -82,22 +82,10 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
             throw new Exception('The CSRF protection token for the requested module is missing or invalid', 1417988921);
         }
 
-        // Set to empty as it is not needed / always coming from typo3/index.php
-        $GLOBALS['BACK_PATH'] = '';
-
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
 
         $moduleName = (string)$this->request->getQueryParams()['M'];
-        if ($this->isDispatchedModule($moduleName)) {
-            return $this->dispatchModule($moduleName);
-        } else {
-            // @deprecated: This else path is deprecated and throws deprecations logs at registration time. Can be removed with TYPO3 CMS 8.
-            $isDispatched = $this->callTraditionalModule($moduleName);
-            if (!$isDispatched) {
-                throw new Exception('No module "' . $moduleName . '" could be found.', 1294585070);
-            }
-        }
-        return null;
+        return $this->dispatchModule($moduleName);
     }
 
     /**
@@ -107,21 +95,13 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
      */
     protected function boot()
     {
-        // Evaluate the constant for skipping the BE user check for the bootstrap, will be done without the constant at a later point
-        if (defined('TYPO3_PROCEED_IF_NO_USER') && TYPO3_PROCEED_IF_NO_USER) {
-            $proceedIfNoUserIsLoggedIn = true;
-        } else {
-            $proceedIfNoUserIsLoggedIn = false;
-        }
-
         $this->bootstrap->checkLockedBackendAndRedirectOrDie()
             ->checkBackendIpOrDie()
             ->checkSslBackendAndRedirectIfNeeded()
             ->initializeBackendRouter()
-            ->loadExtensionTables(true)
-            ->initializeSpriteManager()
+            ->loadExtensionTables()
             ->initializeBackendUser()
-            ->initializeBackendAuthentication($proceedIfNoUserIsLoggedIn)
+            ->initializeBackendAuthentication()
             ->initializeLanguageObject()
             ->initializeBackendTemplate()
             ->endOutputBufferingAndCleanPreviousOutput()
@@ -149,18 +129,6 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
     {
         return $this->getFormProtection() instanceof BackendFormProtection
             && $this->getFormProtection()->validateToken((string)$this->request->getQueryParams()['moduleToken'], 'moduleCall', (string)$this->request->getQueryParams()['M']);
-    }
-
-    /**
-     * A dispatched module is used, when no PATH is given.
-     * Traditional modules have a module path set.
-     *
-     * @param string $moduleName
-     * @return bool
-     */
-    protected function isDispatchedModule($moduleName)
-    {
-        return empty($this->moduleRegistry['_PATHS'][$moduleName]);
     }
 
     /**
@@ -212,36 +180,6 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
         }
 
         return $response;
-    }
-
-    /**
-     * Calls traditional modules which are identified by having an index.php in their directory
-     * and were previously located within the global scope.
-     *
-     * @param string $moduleName
-     * @return bool Returns TRUE if the module was executed
-     */
-    protected function callTraditionalModule($moduleName)
-    {
-        $moduleBasePath = $this->moduleRegistry['_PATHS'][$moduleName];
-        // Some modules still rely on this global configuration array in a conf.php file
-        // load configuration from an existing conf.php file inside the same directory
-        if (file_exists($moduleBasePath . 'conf.php')) {
-            require $moduleBasePath . 'conf.php';
-            $moduleConfiguration = $MCONF;
-        } else {
-            $moduleConfiguration = $this->getModuleConfiguration($moduleName);
-        }
-        $GLOBALS['MCONF'] = $moduleConfiguration;
-        if (!empty($moduleConfiguration['access'])) {
-            $this->backendUserAuthentication->modAccess($moduleConfiguration, true);
-        }
-        if (file_exists($moduleBasePath . 'index.php')) {
-            global $SOBE;
-            require $moduleBasePath . 'index.php';
-            return true;
-        }
-        return false;
     }
 
     /**

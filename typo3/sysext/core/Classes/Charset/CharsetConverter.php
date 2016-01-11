@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Core\Charset;
  */
 
 use TYPO3\CMS\Core\Localization\Locales;
+use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -50,8 +51,24 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Class for conversion between charsets
  */
-class CharsetConverter
+class CharsetConverter implements SingletonInterface
 {
+
+    /**
+     * Possible strategies for handling multi-byte data
+     * Only used for internal purpose
+     * @internal
+     */
+    const STRATEGY_MBSTRING = 'mbstring';
+    const STRATEGY_ICONV = 'iconv';
+    const STRATEGY_FALLBACK = 'fallback';
+
+    /**
+     * Set to one of the strategies above, based on the availability of the environment.
+     *
+     * @var string
+     */
+    protected $conversionStrategy = null;
 
     /**
      * ASCII Value for chars with no equivalent.
@@ -596,22 +613,16 @@ class CharsetConverter
         }
         // PHP-libs don't support fallback to SGML entities, but UTF-8 handles everything
         if ($toCharset === 'utf-8' || !$useEntityForNoChar) {
-            switch ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_convMethod']) {
-                case 'mbstring':
+            switch ($this->getConversionStrategy()) {
+                case self::STRATEGY_MBSTRING:
                     $convertedString = mb_convert_encoding($inputString, $toCharset, $fromCharset);
                     if (false !== $convertedString) {
                         return $convertedString;
                     }
                     // Returns FALSE for unsupported charsets
                     break;
-                case 'iconv':
+                case self::STRATEGY_ICONV:
                     $convertedString = iconv($fromCharset, $toCharset . '//TRANSLIT', $inputString);
-                    if (false !== $convertedString) {
-                        return $convertedString;
-                    }
-                    break;
-                case 'recode':
-                    $convertedString = recode_string($fromCharset . '..' . $toCharset, $inputString);
                     if (false !== $convertedString) {
                         return $convertedString;
                     }
@@ -1439,7 +1450,7 @@ class CharsetConverter
         if ($len === 0 || $string === '') {
             return '';
         }
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'mbstring') {
+        if ($this->getConversionStrategy() === self::STRATEGY_MBSTRING) {
             // Cannot omit $len, when specifying charset
             if ($len === null) {
                 // Save internal encoding
@@ -1452,7 +1463,7 @@ class CharsetConverter
             } else {
                 return mb_substr($string, $start, $len, $charset);
             }
-        } elseif ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'iconv') {
+        } elseif ($this->getConversionStrategy() === self::STRATEGY_ICONV) {
             // Cannot omit $len, when specifying charset
             if ($len === null) {
                 // Save internal encoding
@@ -1489,9 +1500,9 @@ class CharsetConverter
      */
     public function strlen($charset, $string)
     {
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'mbstring') {
+        if ($this->getConversionStrategy() === self::STRATEGY_MBSTRING) {
             return mb_strlen($string, $charset);
-        } elseif ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'iconv') {
+        } elseif ($this->getConversionStrategy() === self::STRATEGY_ICONV) {
             return iconv_strlen($string, $charset);
         } elseif ($charset === 'utf-8') {
             return $this->utf8_strlen($string);
@@ -1542,7 +1553,7 @@ class CharsetConverter
      */
     public function crop($charset, $string, $len, $crop = '')
     {
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'mbstring') {
+        if ($this->getConversionStrategy() === self::STRATEGY_MBSTRING) {
             return $this->cropMbstring($charset, $string, $len, $crop);
         }
         if ((int)$len === 0) {
@@ -1593,7 +1604,7 @@ class CharsetConverter
         if ($len <= 0) {
             return '';
         }
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'mbstring') {
+        if ($this->getConversionStrategy() === self::STRATEGY_MBSTRING) {
             return mb_strcut($string, 0, $len, $charset);
         } elseif ($charset === 'utf-8') {
             return $this->utf8_strtrunc($string, $len);
@@ -1628,7 +1639,7 @@ class CharsetConverter
      */
     public function conv_case($charset, $string, $case)
     {
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'mbstring') {
+        if ($this->getConversionStrategy() === self::STRATEGY_MBSTRING) {
             if ($case === 'toLower') {
                 $string = mb_strtolower($string, $charset);
             } else {
@@ -1728,7 +1739,8 @@ class CharsetConverter
      *
      * @return array
      */
-    protected function getAllLanguageCodes() {
+    protected function getAllLanguageCodes()
+    {
         // Get all languages where TYPO3 code is the same as the ISO code
         $typo3LanguageCodes = array_keys($this->charSetArray);
         $allLanguageCodes = array_combine($typo3LanguageCodes, $typo3LanguageCodes);
@@ -1898,9 +1910,9 @@ class CharsetConverter
      */
     public function utf8_strpos($haystack, $needle, $offset = 0)
     {
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'mbstring') {
+        if ($this->getConversionStrategy() === self::STRATEGY_MBSTRING) {
             return mb_strpos($haystack, $needle, $offset, 'utf-8');
-        } elseif ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'iconv') {
+        } elseif ($this->getConversionStrategy() === self::STRATEGY_ICONV) {
             return iconv_strpos($haystack, $needle, $offset, 'utf-8');
         }
         $byte_offset = $this->utf8_char2byte_pos($haystack, $offset);
@@ -1926,9 +1938,9 @@ class CharsetConverter
      */
     public function utf8_strrpos($haystack, $needle)
     {
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'mbstring') {
+        if ($this->getConversionStrategy() === self::STRATEGY_MBSTRING) {
             return mb_strrpos($haystack, $needle, 'utf-8');
-        } elseif ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] === 'iconv') {
+        } elseif ($this->getConversionStrategy() === self::STRATEGY_ICONV) {
             return iconv_strrpos($haystack, $needle, 'utf-8');
         }
         $byte_pos = strrpos($haystack, $needle);
@@ -2268,5 +2280,26 @@ class CharsetConverter
             }
         }
         return $out;
+    }
+
+    /**
+     * Checks the selected strategy based on which method is available in the system.
+     * "mbstring" takes precedence over "iconv".
+     * See http://stackoverflow.com/questions/8233517/what-is-the-difference-between-iconv-and-mb-convert-encoding-in-php
+     *
+     * @return string could be "mbstring", "iconv" or "fallback"
+     */
+    protected function getConversionStrategy()
+    {
+        if ($this->conversionStrategy === null) {
+            if (extension_loaded('mbstring')) {
+                $this->conversionStrategy = self::STRATEGY_MBSTRING;
+            } elseif (extension_loaded('iconv')) {
+                $this->conversionStrategy = self::STRATEGY_ICONV;
+            } else {
+                $this->conversionStrategy = self::STRATEGY_FALLBACK;
+            }
+        }
+        return $this->conversionStrategy;
     }
 }

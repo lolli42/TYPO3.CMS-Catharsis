@@ -206,8 +206,6 @@ class SpellCheckingController
         }
         // Setting the pspell suggestion mode
         $this->pspellMode = GeneralUtility::_POST('pspell_mode') ? GeneralUtility::_POST('pspell_mode') : $this->pspellMode;
-        // Now sanitize $this->pspellMode
-        $this->pspellMode = GeneralUtility::inList('ultra,fast,normal,bad-spellers', $this->pspellMode) ? $this->pspellMode : 'normal';
         switch ($this->pspellMode) {
             case 'ultra':
 
@@ -221,6 +219,8 @@ class SpellCheckingController
 
             default:
                 $pspellModeFlag = PSPELL_NORMAL;
+                // sanitize $this->pspellMode
+                $this->pspellMode = 'normal';
         }
         // Setting the charset
         if (GeneralUtility::_POST('pspell_charset')) {
@@ -350,7 +350,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 </script>
 </head>
 ';
-            $this->result .= '<body onload="window.parent.RTEarea[\'' . GeneralUtility::_POST('editorId') . '\'].editor.getPlugin(\'SpellChecker\').spellCheckComplete();">';
+            $this->result .= '<body onload="window.parent.RTEarea[' . GeneralUtility::quoteJSvalue(GeneralUtility::_POST('editorId')) . '].editor.getPlugin(\'SpellChecker\').spellCheckComplete();">';
             $this->result .= preg_replace('/' . preg_quote('<?xml') . '.*' . preg_quote('?>') . '[' . preg_quote((LF . CR . chr(32))) . ']*/' . ($this->parserCharset == 'utf-8' ? 'u' : ''), '', $this->text);
             $this->result .= '<div style="display: none;">' . $dictionaries . '</div>';
             // Closing

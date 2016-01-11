@@ -116,6 +116,7 @@ class Bootstrap
         if (is_null(static::$instance)) {
             $applicationContext = getenv('TYPO3_CONTEXT') ?: (getenv('REDIRECT_TYPO3_CONTEXT') ?: 'Production');
             self::$instance = new static($applicationContext);
+            self::$instance->defineTypo3RequestTypes();
         }
         return static::$instance;
     }
@@ -185,10 +186,14 @@ class Bootstrap
      *
      * @param string $relativePathPart Relative path of entry script back to document root
      * @return Bootstrap
+     * @throws \RuntimeException when TYPO3_REQUESTTYPE was not set before, setRequestType() needs to be called before
      * @internal This is not a public API method, do not use in own extensions
      */
     public function baseSetup($relativePathPart = '')
     {
+        if (!defined('TYPO3_REQUESTTYPE')) {
+            throw new \RuntimeException('No Request Type was set, TYPO3 does not know in which context it is run.', 1450561838);
+        }
         SystemEnvironmentBuilder::run($relativePathPart);
         if (!self::$usesComposerClassLoading && ClassLoadingInformation::isClassLoadingInformationAvailable()) {
             ClassLoadingInformation::registerClassLoadingInformation();
@@ -396,8 +401,7 @@ class Bootstrap
             ->setDefaultTimezone()
             ->initializeL10nLocales()
             ->convertPageNotFoundHandlingToBoolean()
-            ->setMemoryLimit()
-            ->defineTypo3RequestTypes();
+            ->setMemoryLimit();
         if ($allowCaching) {
             $this->ensureClassLoadingInformationExists();
         }
@@ -517,11 +521,6 @@ class Bootstrap
         define('TYPO3_db_username', $GLOBALS['TYPO3_CONF_VARS']['DB']['username']);
         define('TYPO3_db_password', $GLOBALS['TYPO3_CONF_VARS']['DB']['password']);
         define('TYPO3_db_host', $GLOBALS['TYPO3_CONF_VARS']['DB']['host']);
-        // Constant TYPO3_extTableDef_script is deprecated since TYPO3 CMS 7 and will be dropped with TYPO3 CMS 8
-        define('TYPO3_extTableDef_script',
-            isset($GLOBALS['TYPO3_CONF_VARS']['DB']['extTablesDefinitionScript'])
-            ? $GLOBALS['TYPO3_CONF_VARS']['DB']['extTablesDefinitionScript']
-            : 'extTables.php');
         return $this;
     }
 
@@ -559,10 +558,6 @@ class Bootstrap
             ExtensionManagementUtility::registerExtDirectComponent(
                 'TYPO3.ExtDirectStateProvider.ExtDirect',
                 \TYPO3\CMS\Backend\InterfaceState\ExtDirect\DataProvider::class
-            );
-            ExtensionManagementUtility::registerExtDirectComponent(
-                'TYPO3.Components.DragAndDrop.CommandController',
-                ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class
             );
         }
         return $this;
@@ -673,9 +668,6 @@ class Bootstrap
 
         $displayErrorsSetting = (int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['displayErrors'];
         switch ($displayErrorsSetting) {
-            case 2:
-                GeneralUtility::deprecationLog('The option "$TYPO3_CONF_VARS[SYS][displayErrors]" is set to "2" which is deprecated as of TYPO3 CMS 7, and will be removed with TYPO3 CMS 8. Please change the value to "-1"');
-                // intentionally fall through
             case -1:
                 $ipMatchesDevelopmentSystem = GeneralUtility::cmpIP(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask']);
                 $exceptionHandlerClassName = $ipMatchesDevelopmentSystem ? $debugExceptionHandlerClassName : $productionExceptionHandlerClassName;
@@ -726,8 +718,8 @@ class Bootstrap
     }
 
     /**
-     * Define TYPO3_REQUESTTYPE* constants
-     * so devs exactly know what type of request it is
+     * Define TYPO3_REQUESTTYPE* constants that can be used for developers to see if any context has been hit
+     * also see setRequestType(). Is done at the very beginning so these parameters are always available.
      *
      * @return Bootstrap
      */
@@ -738,7 +730,20 @@ class Bootstrap
         define('TYPO3_REQUESTTYPE_CLI', 4);
         define('TYPO3_REQUESTTYPE_AJAX', 8);
         define('TYPO3_REQUESTTYPE_INSTALL', 16);
-        define('TYPO3_REQUESTTYPE', (TYPO3_MODE == 'FE' ? TYPO3_REQUESTTYPE_FE : 0) | (TYPO3_MODE == 'BE' ? TYPO3_REQUESTTYPE_BE : 0) | (defined('TYPO3_cliMode') && TYPO3_cliMode ? TYPO3_REQUESTTYPE_CLI : 0) | (defined('TYPO3_enterInstallScript') && TYPO3_enterInstallScript ? TYPO3_REQUESTTYPE_INSTALL : 0) | ($GLOBALS['TYPO3_AJAX'] ? TYPO3_REQUESTTYPE_AJAX : 0));
+    }
+
+    /**
+     * Defines the TYPO3_REQUESTTYPE constant so the environment knows which context the request is running.
+     *
+     * @throws \RuntimeException if the method was already called during a request
+     * @return Bootstrap
+     */
+    public function setRequestType($requestType)
+    {
+        if (defined('TYPO3_REQUESTTYPE')) {
+            throw new \RuntimeException('TYPO3_REQUESTTYPE has already been set, cannot be called multiple times', 1450561878);
+        }
+        define('TYPO3_REQUESTTYPE', $requestType);
         return $this;
     }
 
@@ -787,7 +792,6 @@ class Bootstrap
         unset($GLOBALS['TBE_MODULES_EXT']);
         unset($GLOBALS['TCA_DESCR']);
         unset($GLOBALS['LOCAL_LANG']);
-        unset($GLOBALS['TYPO3_AJAX']);
         return $this;
     }
 
@@ -948,7 +952,7 @@ class Bootstrap
             // substr is necessary, because the php frontend wraps php code around the cache value
             $GLOBALS['TCA'] = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
         } else {
-            $this->loadExtensionTables(true);
+            $this->loadExtensionTables();
             $codeCache->set($cacheIdentifier, serialize($GLOBALS['TCA']));
         }
         return $this;
@@ -970,40 +974,8 @@ class Bootstrap
     {
         ExtensionManagementUtility::loadBaseTca($allowCaching);
         ExtensionManagementUtility::loadExtTables($allowCaching);
-        $this->executeExtTablesAdditionalFile();
         $this->runExtTablesPostProcessingHooks();
         return $this;
-    }
-
-    /**
-     * Execute TYPO3_extTableDef_script if defined and exists
-     *
-     * Note: For backwards compatibility some global variables are
-     * explicitly set as global to be used without $GLOBALS[] in
-     * the extension table script. It is discouraged to access variables like
-     * $TBE_MODULES directly, but we can not prohibit
-     * this without heavily breaking backwards compatibility.
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     * @return void
-     */
-    protected function executeExtTablesAdditionalFile()
-    {
-        // It is discouraged to use those global variables directly, but we
-        // can not prohibit this without breaking backwards compatibility
-        global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;
-        global $TBE_MODULES, $TBE_MODULES_EXT, $TCA;
-        global $PAGES_TYPES, $TBE_STYLES;
-        global $_EXTKEY;
-        // Load additional ext tables script if the file exists
-        $extTablesFile = PATH_typo3conf . TYPO3_extTableDef_script;
-        if (file_exists($extTablesFile) && is_file($extTablesFile)) {
-            GeneralUtility::deprecationLog(
-                'Using typo3conf/' . TYPO3_extTableDef_script . ' is deprecated and will be removed with TYPO3 CMS 8. Please move your TCA overrides'
-                . ' to Configuration/TCA/Overrides of your project specific extension, or slot the signal "tcaIsBeingBuilt" for further processing.'
-            );
-            include $extTablesFile;
-        }
     }
 
     /**
@@ -1027,22 +999,6 @@ class Bootstrap
                 $hookObject->processData();
             }
         }
-    }
-
-    /**
-     * Initialize sprite manager
-     *
-     * @return Bootstrap
-     * @internal This is not a public API method, do not use in own extensions
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
-     */
-    public function initializeSpriteManager()
-    {
-        // This method is deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
-        // This method does not log a deprecation message, because it is used only in the request handlers
-        // and would break icons from IconUtility::getSpriteIcon() if we remove it yet.
-        \TYPO3\CMS\Backend\Sprite\SpriteManager::initialize();
-        return $this;
     }
 
     /**

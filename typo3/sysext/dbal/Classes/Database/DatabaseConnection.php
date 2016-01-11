@@ -1835,7 +1835,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                     }
                 } else {
                     // Detecting value type; list or plain:
-                    if (GeneralUtility::inList('NOTIN,IN', strtoupper(str_replace(array(' ', LF, CR, TAB), '', $where_clause[$k]['comparator'])))) {
+                    $comparator = $this->SQLparser->normalizeKeyword($where_clause[$k]['comparator']);
+                    if ($comparator === 'NOTIN' || $comparator === 'IN') {
                         if (isset($v['subquery'])) {
                             $where_clause[$k]['subquery'] = $this->quoteSELECTsubquery($v['subquery']);
                         }
@@ -2022,22 +2023,6 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
     }
 
     /**
-     * Return MetaType for native field type (ADOdb only!)
-     *
-     * @param string $type Native type as reported by admin_get_fields()
-     * @param string $table Table name for which query type string. Important for detection of DBMS handler of the query!
-     * @param int $maxLength
-     * @throws \RuntimeException
-     * @return string Meta type (currently ADOdb syntax only, http://phplens.com/lens/adodb/docs-adodb.htm#metatype)
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use getMetadata() instead
-     */
-    public function MetaType($type, $table, $maxLength = -1)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->getMetadata($type, $table, 'dummyFieldToBypassCache', $maxLength);
-    }
-
-    /**
      * Return Metadata for native field type (ADOdb only!)
      *
      * @param string $type  Native type as reported by admin_get_fields()
@@ -2070,32 +2055,6 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                 throw new \RuntimeException('No handler found!!!', 1310027685);
         }
         return $str;
-    }
-
-    /**
-     * Return MetaType for native MySQL field type
-     *
-     * @param string $t native type as reported as in mysqldump files
-     * @return string Meta type (currently ADOdb syntax only, http://phplens.com/lens/adodb/docs-adodb.htm#metatype)
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function MySQLMetaType($t)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->dbmsSpecifics->getMetaFieldType($t);
-    }
-
-    /**
-     * Return actual MySQL type for meta field type
-     *
-     * @param string $meta Meta type (currenly ADOdb syntax only, http://phplens.com/lens/adodb/docs-adodb.htm#metatype)
-     * @return string Native type as reported as in mysqldump files, uppercase
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function MySQLActualType($meta)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->dbmsSpecifics->getNativeFieldType($meta);
     }
 
     /**
@@ -2611,8 +2570,11 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
         }
         // This method is heavily used by Extbase, try to handle it with DBAL-native methods
         $queryParts = $this->SQLparser->parseSQL($query);
-        if (is_array($queryParts) && GeneralUtility::inList('SELECT,UPDATE,INSERT,DELETE', $queryParts['type'])) {
-            return $this->exec_query($queryParts);
+        if (is_array($queryParts)) {
+            $operation = $queryParts['type'];
+            if ($operation === 'SELECT' || $operation === 'UPDATE' || $operation === 'INSERT' || $operation === 'DELETE') {
+                return $this->exec_query($queryParts);
+            }
         }
         $sqlResult = null;
         switch ($this->handlerCfg['_DEFAULT']['type']) {
@@ -3141,7 +3103,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                     $cfgArray['config']['username'],
                     $cfgArray['config']['password'],
                     $cfgArray['config']['database'],
-                    isset($cfgArray['config']['port']) ? $cfgArray['config']['port'] : ''
+                    isset($cfgArray['config']['port']) ? $cfgArray['config']['port'] : null
                 );
                 if ($connected) {
                     // Set handler instance:
@@ -3218,17 +3180,6 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                 }
                 break;
             case 'userdefined':
-                // if not set class may also be loaded by autoload on demand
-                if (isset($cfgArray['config']['classFile'])) {
-                    GeneralUtility::deprecationLog('The DBAL handler option "config.classFile" is deprecated since TYPO3 CMS 7, and will be removed with CMS 8. Make use of autoloading instead.');
-                    // Find class file:
-                    $fileName = GeneralUtility::getFileAbsFileName($cfgArray['config']['classFile']);
-                    if (@is_file($fileName)) {
-                        require_once $fileName;
-                    } else {
-                        throw new \RuntimeException('DBAL error: "' . $fileName . '" was not a file to include.', 1310027975);
-                    }
-                }
                 // Initialize:
                 $this->handlerInstance[$handlerKey] = GeneralUtility::makeInstance($cfgArray['config']['class']);
                 $this->handlerInstance[$handlerKey]->init($cfgArray, $this);
@@ -3907,7 +3858,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection
                     break;
                 case 'exec_SELECTquery':
                     // Get explain data:
-                    if ($this->conf['debugOptions']['EXPLAIN'] && GeneralUtility::inList('adodb,native', $inData['handlerType'])) {
+                    if ($this->conf['debugOptions']['EXPLAIN'] && ($inData['handlerType'] === 'adodb' || $inData['handlerType'] === 'native')) {
                         $data['EXPLAIN'] = $this->debug_explain($this->lastQuery);
                     }
                     // Check parsing of Query:

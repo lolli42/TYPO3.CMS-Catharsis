@@ -977,50 +977,6 @@ class DatabaseConnection
     }
 
     /**
-     * Takes the last part of a query, eg. "... uid=123 GROUP BY title ORDER BY title LIMIT 5,2" and splits each part into a table (WHERE, GROUPBY, ORDERBY, LIMIT)
-     * Work-around function for use where you know some userdefined end to an SQL clause is supplied and you need to separate these factors.
-     *
-     * @param string $str Input string
-     * @return array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function splitGroupOrderLimit($str)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        // Prepending a space to make sure "[[:space:]]+" will find a space there
-        // for the first element.
-        $str = ' ' . $str;
-        // Init output array:
-        $wgolParts = array(
-            'WHERE' => '',
-            'GROUPBY' => '',
-            'ORDERBY' => '',
-            'LIMIT' => ''
-        );
-        // Find LIMIT
-        $reg = array();
-        if (preg_match('/^(.*)[[:space:]]+LIMIT[[:space:]]+([[:alnum:][:space:],._]+)$/i', $str, $reg)) {
-            $wgolParts['LIMIT'] = trim($reg[2]);
-            $str = $reg[1];
-        }
-        // Find ORDER BY
-        $reg = array();
-        if (preg_match('/^(.*)[[:space:]]+ORDER[[:space:]]+BY[[:space:]]+([[:alnum:][:space:],._]+)$/i', $str, $reg)) {
-            $wgolParts['ORDERBY'] = trim($reg[2]);
-            $str = $reg[1];
-        }
-        // Find GROUP BY
-        $reg = array();
-        if (preg_match('/^(.*)[[:space:]]+GROUP[[:space:]]+BY[[:space:]]+([[:alnum:][:space:],._]+)$/i', $str, $reg)) {
-            $wgolParts['GROUPBY'] = trim($reg[2]);
-            $str = $reg[1];
-        }
-        // Rest is assumed to be "WHERE" clause
-        $wgolParts['WHERE'] = $str;
-        return $wgolParts;
-    }
-
-    /**
      * Returns the date and time formats compatible with the given database table.
      *
      * @param string $table Table name for which to return an empty date. Just enter the table that the field-value is selected from (and any DBAL will look up which handler to use and then how date and time should be formatted).
@@ -1927,10 +1883,7 @@ class DatabaseConnection
         }
         $indices_output = array();
         // Notice: Rows are skipped if there is only one result, or if no conditions are set
-        if (
-            $explain_output[0]['rows'] > 1
-            || GeneralUtility::inList('ALL', $explain_output[0]['type'])
-        ) {
+        if ($explain_output[0]['rows'] > 1 || $explain_output[0]['type'] === 'ALL') {
             // Only enable output if it's really useful
             $debug = true;
             foreach ($explain_tables as $table) {

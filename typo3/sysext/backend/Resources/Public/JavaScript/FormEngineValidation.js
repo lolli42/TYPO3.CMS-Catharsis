@@ -152,10 +152,11 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 		var theString = '';
 		switch (type) {
 			case 'date':
-				if (!parseInt(value)) {
+				var parsedInt = parseInt(value);
+				if (!parsedInt) {
 					return '';
 				}
-				theTime = new Date(parseInt(value) * 1000);
+				theTime = new Date(parsedInt * 1000);
 				if (FormEngineValidation.USmode) {
 					theString = (theTime.getUTCMonth() + 1) + '-' + theTime.getUTCDate() + '-' + this.getYear(theTime);
 				} else {
@@ -170,10 +171,11 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 				break;
 			case 'time':
 			case 'timesec':
-				if (!parseInt(value) && value.toString() !== '0') {
+				var parsedInt = parseInt(value);
+				if (!parsedInt && value.toString() !== '0') {
 					return '';
 				}
-				var theTime = new Date(parseInt(value) * 1000);
+				var theTime = new Date(parsedInt * 1000);
 				var h = theTime.getUTCHours();
 				var m = theTime.getUTCMinutes();
 				var s = theTime.getUTCSeconds();
@@ -235,7 +237,10 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 	 * @returns {String}
 	 */
 	FormEngineValidation.validateField = function($field, value) {
-		value = value || FormEngineValidation.ltrim($field.val());
+		value = value || $field.val();
+		if (!$.isArray(value)) {
+			value = FormEngineValidation.ltrim(value);
+		}
 
 		var rules = $field.data('formengine-validation-rules');
 		var markParent = false;
@@ -258,13 +263,11 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 								selected = FormEngineValidation.trimExplode(',', $relatedField.val()).length;
 								if (selected < rule.minItems || selected > rule.maxItems) {
 									markParent = true;
-									$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 								}
 							} else {
 								selected = $field.val();
 								if (selected < rule.minItems || selected > rule.maxItems) {
 									markParent = true;
-									$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 								}
 							}
 						}
@@ -273,7 +276,6 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 							var maxValue = rule.config.upper || Number.MAX_VALUE;
 							if (value < minValue || value > maxValue) {
 								markParent = true;
-								$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 							}
 						}
 					}
@@ -285,13 +287,11 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 							selected = FormEngineValidation.trimExplode(',', $relatedField.val()).length;
 							if (selected < rule.minItems || selected > rule.maxItems) {
 								markParent = true;
-								$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 							}
 						} else {
 							selected = $field.find('option:selected').length;
 							if (selected < rule.minItems || selected > rule.maxItems) {
 								markParent = true;
-								$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 							}
 						}
 					}
@@ -301,7 +301,6 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 						selected = $field.find('option').length;
 						if (selected < rule.minItems || selected > rule.maxItems) {
 							markParent = true;
-							$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 						}
 					}
 					break;
@@ -310,17 +309,18 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 						selected = FormEngineValidation.trimExplode(',', $field.val()).length;
 						if (selected < rule.minItems || selected > rule.maxItems) {
 							markParent = true;
-							$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
 						}
 					}
 					break;
 				case 'null':
 					// unknown type null, we ignore it
 					break;
-				default:
 			}
 		});
 		if (markParent) {
+			// mark field
+			$field.closest(FormEngineValidation.markerSelector).addClass(FormEngineValidation.errorClass);
+
 			// check tabs
 			FormEngineValidation.markParentTab($field);
 		}
@@ -377,7 +377,7 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 				if (config.is_in) {
 					theValue = '' + value;
 					for (a = 0; a < theValue.length; a++) {
-						theChar = theValue.substr(a, 1);
+						var theChar = theValue.substr(a, 1);
 						if (config.is_in.indexOf(theChar) != -1) {
 							newString += theChar;
 						}
@@ -388,15 +388,7 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 				returnValue = newString;
 				break;
 			case 'nospace':
-				theValue = '' + value;
-				newString = '';
-				for (a = 0; a < theValue.length; a++) {
-					var theChar = theValue.substr(a, 1);
-					if (theChar != ' ') {
-						newString += theChar;
-					}
-				}
-				returnValue = newString;
+				returnValue = '' + value.replace(/ /g, '');
 				break;
 			case 'md5':
 				if (value !== '') {
@@ -420,7 +412,7 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 				}
 				break;
 			case 'trim':
-				returnValue = FormEngineValidation.ltrim(FormEngineValidation.btrim(value));
+				returnValue = String(value).trim();
 				break;
 			case 'datetime':
 				if (value !== '') {
@@ -473,8 +465,25 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 		$(FormEngineValidation.rulesSelector).each(function() {
 			var $field = $(this);
 			if (!$field.closest('.t3js-flex-section-deleted, .t3js-inline-record-deleted').length) {
-				var newValue = FormEngineValidation.validateField($field);
-				if (newValue.length && $field.val() !== newValue) {
+				var modified = false;
+				var currentValue = $field.val();
+				var newValue = FormEngineValidation.validateField($field, currentValue);
+				if ($.isArray(newValue) && $.isArray(currentValue)) {
+					// handling for multi-selects
+					if (newValue.length !== currentValue.length) {
+						modified = true;
+					} else {
+						for (var i = 0; i < newValue.length; i++) {
+							if (newValue[i] !== currentValue[i]) {
+								modified = true;
+								break;
+							}
+						}
+					}
+				} else if (newValue.length && currentValue !== newValue) {
+					modified = true;
+				}
+				if (modified) {
 					$field.attr('value', newValue);
 					FormEngineValidation.setCaretPosition($field, 0);
 				}
@@ -531,16 +540,18 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 	 * @returns {Number}
 	 */
 	FormEngineValidation.parseInt = function(value) {
-		var theVal = '' + value;
+		var theVal = '' + value,
+			returnValue;
+
 		if (!value) {
 			return 0;
 		}
-		for (var a = 0; a < theVal.length; a++) {
-			if (theVal.substr(a,1)!='0') {
-				return parseInt(theVal.substr(a,theVal.length)) || 0;
-			}
+
+		returnValue = parseInt(theVal, 10);
+		if (isNaN(returnValue)) {
+			return 0;
 		}
-		return 0;
+		return returnValue;
 	};
 
 	/**
@@ -579,12 +590,7 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 		if (!value) {
 			return '';
 		}
-		for (var a = 0; a < theVal.length; a++) {
-			if (theVal.substr(a, 1) != ' ') {
-				return theVal.substr(a, theVal.length);
-			}
-		}
-		return '';
+		return theVal.replace(/^\s+/, '');
 	};
 
 	/**
@@ -597,12 +603,7 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 		if (!value) {
 			return '';
 		}
-		for (var a = theVal.length; a > 0; a--) {
-			if (theVal.substr(a-1, 1) != ' ') {
-				return theVal.substr(0, a);
-			}
-		}
-		return '';
+		return theVal.replace(/\s+$/, '');
 	};
 
 	/**

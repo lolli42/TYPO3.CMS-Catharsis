@@ -10,6 +10,7 @@ return array(
         'adminOnly' => 1,
         'rootLevel' => 1,
         'delete' => 'deleted',
+        'iconfile' => 'apps-filetree-mount',
         'enablecolumns' => array(
             'disabled' => 'hidden'
         ),
@@ -64,7 +65,7 @@ return array(
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'items' => array(),
-                'itemsProcFunc' => 'typo3/sysext/core/Classes/Resource/Service/UserFileMountService.php:TYPO3\CMS\Core\Resource\Service\UserFileMountService->renderTceformsSelectDropdown',
+                'itemsProcFunc' => 'TYPO3\\CMS\\Core\\Resource\\Service\\UserFileMountService->renderTceformsSelectDropdown',
             )
         ),
         'read_only' => array(

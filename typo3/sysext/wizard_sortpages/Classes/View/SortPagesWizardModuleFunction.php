@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -45,7 +46,7 @@ class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFu
             $sortByField = GeneralUtility::_GP('sortByField');
             if ($sortByField) {
                 $menuItems = array();
-                if (GeneralUtility::inList('title,subtitle,crdate,tstamp', $sortByField)) {
+                if ($sortByField === 'title' || $sortByField === 'subtitle' || $sortByField === 'crdate' || $sortByField === 'tstamp') {
                     $menuItems = $sys_pages->getMenu($this->pObj->id, 'uid,pid,title', $sortByField, '', false);
                 } elseif ($sortByField === 'REV') {
                     $menuItems = $sys_pages->getMenu($this->pObj->id, 'uid,pid,title', 'sorting', '', false);
@@ -53,7 +54,6 @@ class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFu
                 }
                 if (!empty($menuItems)) {
                     $tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
-                    $tce->stripslashes_values = 0;
                     $menuItems = array_reverse($menuItems);
                     $cmd = array();
                     foreach ($menuItems as $r) {
@@ -100,10 +100,14 @@ class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFu
                 $theCode .= '<h4>' . $lang->getLL('wiz_changeOrder') . '</h4><p>' . implode(' ', $lines) . '</p>';
             } else {
                 $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $lang->getLL('no_subpages'), '', FlashMessage::NOTICE);
-                $theCode .= $flashMessage->render();
+                /** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+                $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+                /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
+                $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+                $defaultFlashMessageQueue->enqueue($flashMessage);
             }
             // CSH:
-            $theCode .= BackendUtility::cshItem('_MOD_web_func', 'tx_wizardsortpages', null, '<br />|');
+            $theCode .= BackendUtility::cshItem('_MOD_web_func', 'tx_wizardsortpages', null, '<span class="btn btn-default btn-sm">|</span>');
             $out .= '<div>' . $theCode . '</div>';
         } else {
             $out .= '<div>Sorry, this function is not available in the current draft workspace!</div>';

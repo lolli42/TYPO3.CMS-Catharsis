@@ -176,15 +176,6 @@ class EditDocumentController extends AbstractModule
     public $viewUrl;
 
     /**
-     * If this is pointing to a page id it will automatically load all content elements
-     * (NORMAL column/default language) from that page into the form!
-     *
-     * @var int
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
-     */
-    public $editRegularContentFromId;
-
-    /**
      * Alternative title for the document handler.
      *
      * @var string
@@ -532,7 +523,6 @@ class EditDocumentController extends AbstractModule
         // Only options related to $this->data submission are included here.
         /** @var $tce \TYPO3\CMS\Core\DataHandling\DataHandler */
         $tce = GeneralUtility::makeInstance(DataHandler::class);
-        $tce->stripslashes_values = false;
 
         if (!empty($control)) {
             $tce->setControl($control);
@@ -694,7 +684,6 @@ class EditDocumentController extends AbstractModule
         $this->popViewId = GeneralUtility::_GP('popViewId');
         $this->popViewId_addParams = GeneralUtility::_GP('popViewId_addParams');
         $this->viewUrl = GeneralUtility::_GP('viewUrl');
-        $this->editRegularContentFromId = GeneralUtility::_GP('editRegularContentFromId');
         $this->recTitle = GeneralUtility::_GP('recTitle');
         $this->noView = GeneralUtility::_GP('noView');
         $this->perms_clause = $beUser->getPagePermsClause(1);
@@ -749,7 +738,7 @@ class EditDocumentController extends AbstractModule
             $generatedLabels = array();
             $generatedLabels['core'] = $coreLabels;
             $code = 'TYPO3.LLL = ' . json_encode($generatedLabels) . ';';
-            $filePath = 'typo3temp/Language/Backend-' . sha1($code) . '.js';
+            $filePath = 'typo3temp/assets/js/backend-' . sha1($code) . '.js';
             if (!file_exists(PATH_site . $filePath)) {
                 // writeFileToTypo3tempDir() returns NULL on success (please double-read!)
                 $error = GeneralUtility::writeFileToTypo3tempDir(PATH_site . $filePath, $code);
@@ -786,10 +775,9 @@ class EditDocumentController extends AbstractModule
 			var TS = new typoSetup();
 
 				// Info view:
-			function launchView(table,uid,bP) {	//
-				var backPath= bP ? bP : "";
+			function launchView(table,uid) {	//
 				var thePreviewWindow = window.open(
-					backPath+' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('show_item') . '&table=') . ' + encodeURIComponent(table) + "&uid=" + encodeURIComponent(uid),
+					' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('show_item') . '&table=') . ' + encodeURIComponent(table) + "&uid=" + encodeURIComponent(uid),
 					"ShowItem" + TS.uniqueID,
 					"height=300,width=410,status=0,menubar=0,resizable=0,location=0,directories=0,scrollbars=1,toolbar=0"
 				);
@@ -965,9 +953,6 @@ class EditDocumentController extends AbstractModule
             /** @var FormResultCompiler formResultCompiler */
             $this->formResultCompiler = GeneralUtility::makeInstance(FormResultCompiler::class);
 
-            if ($this->editRegularContentFromId) {
-                $this->editRegularContentFromId();
-            }
             // Creating the editing form, wrap it with buttons, document selector etc.
             $editForm = $this->makeEditForm();
             if ($editForm) {
@@ -1007,18 +992,6 @@ class EditDocumentController extends AbstractModule
         $this->getButtons();
         $this->languageSwitch($this->firstEl['table'], $this->firstEl['uid'], $this->firstEl['pid']);
         $this->moduleTemplate->setContent($body);
-    }
-
-    /**
-     * Outputting the accumulated content to screen
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function printContent()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        echo $this->content;
     }
 
     /***************************
@@ -1178,8 +1151,8 @@ class EditDocumentController extends AbstractModule
                                     // @todo: looks ugly
                                     $html .= LF
                                         . '<input type="hidden"'
-                                        . ' name="data[' . $table . '][' . $formData['databaseRow']['uid'] . '][pid]"'
-                                        . ' value="' . $formData['databaseRow']['pid'] . '" />';
+                                        . ' name="data[' . htmlspecialchars($table) . '][' . htmlspecialchars($formData['databaseRow']['uid']) . '][pid]"'
+                                        . ' value="' . (int)$formData['databaseRow']['pid'] . '" />';
                                     $this->newC++;
                                 }
 
@@ -1331,6 +1304,18 @@ class EditDocumentController extends AbstractModule
                     && !$GLOBALS['TCA'][$this->firstEl['table']]['ctrl']['readOnly']
                     && !$this->getNewIconMode($this->firstEl['table'], 'disableDelete')
                 ) {
+                    $returnUrl = $this->retUrl;
+                    if ($this->firstEl['table'] === 'pages') {
+                        parse_str((string)parse_url($returnUrl, PHP_URL_QUERY), $queryParams);
+                        if (isset($queryParams['M'])
+                            && isset($queryParams['id'])
+                            && (string)$this->firstEl['uid'] === (string)$queryParams['id']
+                        ) {
+                            // TODO: Use the page's pid instead of 0, this requires a clean API to manipulate the page
+                            // tree from the outside to be able to mark the pid as active
+                            $returnUrl = BackendUtility::getModuleUrl($queryParams['M'], ['id' => 0]);
+                        }
+                    }
                     $deleteButton = $buttonBar->makeLinkButton()
                         ->setHref('#')
                         ->setClasses('t3js-editform-delete-record')
@@ -1340,7 +1325,7 @@ class EditDocumentController extends AbstractModule
                             Icon::SIZE_SMALL
                         ))
                         ->setDataAttributes([
-                            'return-url' => BackendUtility::getModuleUrl('web_layout', array('id' => $this->pageinfo['pid'])),
+                            'return-url' => $returnUrl,
                             'uid' => $this->firstEl['uid'],
                             'table' => $this->firstEl['table']
                         ]);
@@ -1472,7 +1457,7 @@ class EditDocumentController extends AbstractModule
      */
     public function shortCutLink()
     {
-        if ($this->returnUrl !== 'sysext/backend/Resources/Private/Templates/Close.html') {
+        if ($this->returnUrl !== ExtensionManagementUtility::extRelPath('backend') . 'Resources/Private/Templates/Close.html') {
             $shortCutButton = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->makeShortcutButton();
             $shortCutButton->setModuleName($this->MCONF['name'])
                 ->setGetVariables([
@@ -1482,7 +1467,6 @@ class EditDocumentController extends AbstractModule
                     'overrideVals',
                     'columnsOnly',
                     'returnNewPageId',
-                    'editRegularContentFromId',
                     'noView']);
             $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->addButton($shortCutButton);
         }
@@ -1493,9 +1477,10 @@ class EditDocumentController extends AbstractModule
      */
     public function openInNewWindowLink()
     {
-        if ($this->returnUrl !== 'sysext/backend/Resources/Private/Templates/Close.html') {
+        $backendRelPath = ExtensionManagementUtility::extRelPath('backend');
+        if ($this->returnUrl !== $backendRelPath . 'Resources/Private/Templates/Close.html') {
             $aOnClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue(GeneralUtility::linkThisScript(
-                array('returnUrl' => 'sysext/backend/Resources/Private/Templates/Close.html')
+                array('returnUrl' => $backendRelPath . 'Resources/Private/Templates/Close.html')
             ))
                 . ','
                 . GeneralUtility::quoteJSvalue(md5($this->R_URI))
@@ -1819,35 +1804,6 @@ class EditDocumentController extends AbstractModule
     }
 
     /**
-     * Function, which populates the internal editconf array with editing commands for all tt_content elements from
-     * the normal column in normal language from the page pointed to by $this->editRegularContentFromId
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
-     */
-    public function editRegularContentFromId()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $dbConnection = $this->getDatabaseConnection();
-        $res = $dbConnection->exec_SELECTquery(
-            'uid',
-            'tt_content',
-            'pid=' . (int)$this->editRegularContentFromId . BackendUtility::deleteClause('tt_content')
-            . BackendUtility::versioningPlaceholderClause('tt_content') . ' AND colPos=0 AND sys_language_uid=0',
-            '',
-            'sorting'
-        );
-        if ($dbConnection->sql_num_rows($res)) {
-            $ecUids = array();
-            while ($ecRec = $dbConnection->sql_fetch_assoc($res)) {
-                $ecUids[] = $ecRec['uid'];
-            }
-            $this->editconf['tt_content'][implode(',', $ecUids)] = 'edit';
-        }
-        $dbConnection->sql_free_result($res);
-    }
-
-    /**
      * Populates the variables $this->storeArray, $this->storeUrl, $this->storeUrlMd5
      *
      * @return void
@@ -1856,7 +1812,7 @@ class EditDocumentController extends AbstractModule
     public function compileStoreDat()
     {
         $this->storeArray = GeneralUtility::compileSelectedGetVarsFromArray(
-            'edit,defVals,overrideVals,columnsOnly,noView,editRegularContentFromId,workspace',
+            'edit,defVals,overrideVals,columnsOnly,noView,workspace',
             $this->R_URL_getvars
         );
         $this->storeUrl = GeneralUtility::implodeArrayForUrl('', $this->storeArray);

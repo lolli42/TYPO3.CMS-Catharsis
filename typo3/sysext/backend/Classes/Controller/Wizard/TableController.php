@@ -175,18 +175,6 @@ class TableController extends AbstractWizardController
     }
 
     /**
-     * Outputting the accumulated content to screen
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
-     */
-    public function printContent()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        echo $this->content;
-    }
-
-    /**
      * Create the panel of buttons for submitting the form or otherwise perform operations.
      */
     protected function getButtons()
@@ -306,7 +294,6 @@ class TableController extends AbstractWizardController
                 // Get DataHandler object:
                 /** @var DataHandler $dataHandler */
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $dataHandler->stripslashes_values = false;
                 // Put content into the data array:
                 $data = array();
                 if ($this->P['flexFormPath']) {

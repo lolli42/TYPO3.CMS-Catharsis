@@ -190,8 +190,6 @@ class ContentObjectRenderer
         'fontTag' => 'wrap',
         'fontTag.' => 'array',
         'addParams.' => 'array',
-        'textStyle.' => 'array',
-        'tableStyle.' => 'array',
         'filelink.' => 'array',
         'preCObject' => 'cObject',
         'preCObject.' => 'array',
@@ -227,8 +225,6 @@ class ContentObjectRenderer
         'outerWrap.' => 'array',
         'insertData' => 'boolean',
         'insertData.' => 'array',
-        'offsetWrap' => 'space',
-        'offsetWrap.' => 'array',
         'postUserFunc' => 'functionName',
         'postUserFuncInt' => 'functionName',
         'prefixComment' => 'string',
@@ -1040,80 +1036,6 @@ class ContentObjectRenderer
 
         return $exceptionHandlerConfiguration;
     }
-    /**
-     * Rendering the cObject, FLOWPLAYER
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('FLOWPLAYER', $conf) instead
-     */
-    public function FLOWPLAYER($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('FLOWPLAYER'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, TEXT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('TEXT', $conf) instead
-     */
-    public function TEXT($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('TEXT'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, CLEARGIF
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('CLEARGIF', $conf) instead
-     */
-    public function CLEARGIF($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('CLEARGIF'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, COBJ_ARRAY / COA and COBJ_ARRAY_INT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @param string $ext If "INT" then the cObject is a "COBJ_ARRAY_INT" (non-cached), otherwise just "COBJ_ARRAY" (cached)
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('COA', $conf) or $cObj->cObjGetSingle('COA_INT', $conf) instead
-     */
-    public function COBJ_ARRAY($conf, $ext = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if ($ext === 'INT') {
-            return $this->render($this->getContentObject('COA_INT'), $conf);
-        } else {
-            return $this->render($this->getContentObject('COA'), $conf);
-        }
-    }
-
-    /**
-     * Rendering the cObject, USER and USER_INT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @param string $ext If "INT" then the cObject is a "USER_INT" (non-cached), otherwise just "USER" (cached)
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('USER', $conf) or $cObj->cObjGetSingle('USER_INT', $conf) instead
-     */
-    public function USER($conf, $ext = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if ($ext === 'INT') {
-            return $this->render($this->getContentObject('USER_INT'), $conf);
-        } else {
-            return $this->render($this->getContentObject('USER'), $conf);
-        }
-    }
 
     /**
      * Retrieves a type of object called as USER or USER_INT. Object can detect their
@@ -1151,317 +1073,6 @@ class ContentObjectRenderer
         } else {
             $this->doConvertToUserIntObject = true;
         }
-    }
-
-    /**
-     * Rendering the cObject, FILE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('FILE', $conf) instead
-     */
-    public function FILE($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('FILE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, FILES
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('FILES', $conf) instead
-     */
-    public function FILES($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('FILES'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, IMAGE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @see cImage()
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('IMAGE', $conf) instead
-     */
-    public function IMAGE($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('IMAGE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, IMG_RESOURCE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @see getImgResource()
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('IMG_RESOURCE', $conf) instead
-     */
-    public function IMG_RESOURCE($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('IMG_RESOURCE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, IMGTEXT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('IMGTEXT', $conf) instead
-     */
-    public function IMGTEXT($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('IMGTEXT'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, CONTENT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('CONTENT', $conf) instead
-     */
-    public function CONTENT($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('CONTENT'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, RECORDS
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('RECORDS', $conf) instead
-     */
-    public function RECORDS($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('RECORDS'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, HMENU
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('HMENU', $conf) instead
-     */
-    public function HMENU($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('HMENU'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, CTABLE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('CTABLE', $conf) instead
-     */
-    public function CTABLE($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('CTABLE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, OTABLE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('OTABLE', $conf) instead
-     */
-    public function OTABLE($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('OTABLE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, COLUMNS
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('COLUMNS', $conf) instead
-     */
-    public function COLUMNS($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('COLUMNS'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, HRULER
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('HRULER', $conf) instead
-     */
-    public function HRULER($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('HRULER'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, CASE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('CASE', $conf) instead
-     */
-    public function CASEFUNC($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('CASE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, LOAD_REGISTER and RESTORE_REGISTER
-     * NOTICE: This cObject does NOT return any content since it just sets internal data based on the TypoScript properties.
-     *
-     * @param array $conf Array of TypoScript properties
-     * @param string $name If "RESTORE_REGISTER" then the cObject rendered is "RESTORE_REGISTER", otherwise "LOAD_REGISTER"
-     * @return string Empty string (the cObject only sets internal data!)
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('LOAD_REGISTER', $conf) and $cObj->cObjGetSingle('RESTORE_REGISTER', $conf) instead
-     */
-    public function LOAD_REGISTER($conf, $name)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if ($name === 'RESTORE_REGISTER') {
-            return $this->render($this->getContentObject('RESTORE_REGISTER'), $conf);
-        } else {
-            return $this->render($this->getContentObject('LOAD_REGISTER'), $conf);
-        }
-    }
-
-    /**
-     * Rendering the cObject, FORM
-     *
-     * @param array $conf Array of TypoScript properties
-     * @param array|string $formData Alternative formdata overriding whatever comes from TypoScript
-     * @return string Output
-     * @throws ContentRenderingException
-     * @throws \Exception
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('FORM', $conf) instead
-     */
-    public function FORM($conf, $formData = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('FORM'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, SEARCHRESULT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('SEARCHRESULT', $conf) instead
-     */
-    public function SEARCHRESULT($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('SEARCHRESULT'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, TEMPLATE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @see substituteMarkerArrayCached()
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('TEMPLATE', $conf) instead
-     */
-    public function TEMPLATE($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('TEMPLATE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, FLUIDTEMPLATE
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string the HTML output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('FLUIDTEMPLATE', $conf) instead
-     */
-    protected function FLUIDTEMPLATE(array $conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('FLUIDTEMPLATE'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, MULTIMEDIA
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('MULTIMEDIA', $conf) instead
-     */
-    public function MULTIMEDIA($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('MULTIMEDIA'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, MEDIA
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('MEDIA', $conf) instead
-     */
-    public function MEDIA($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('MEDIA'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, SWFOBJECT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('SWFOBJECT', $conf) instead
-     */
-    public function SWFOBJECT($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('SWFOBJECT'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, QTOBJECT
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('QTOBJECT', $conf) instead
-     */
-    public function QTOBJECT($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('QTOBJECT'), $conf);
-    }
-
-    /**
-     * Rendering the cObject, SVG
-     *
-     * @param array $conf Array of TypoScript properties
-     * @return string Output
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('SVG', $conf) instead
-     */
-    public function SVG($conf)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->render($this->getContentObject('SVG'), $conf);
     }
 
     /************************************
@@ -1612,7 +1223,7 @@ class ContentObjectRenderer
     }
 
     /**
-     * Returns the 'border' attribute for an <img> tag only if the doctype is not xhtml_strict, xhtml_11, xhtml_2 or html5
+     * Returns the 'border' attribute for an <img> tag only if the doctype is not xhtml_strict, xhtml_11 or html5
      * or if the config parameter 'disableImgBorderAttr' is not set.
      *
      * @param string $borderAttr The border attribute
@@ -1621,7 +1232,12 @@ class ContentObjectRenderer
     public function getBorderAttr($borderAttr)
     {
         $tsfe = $this->getTypoScriptFrontendController();
-        if (!GeneralUtility::inList('xhtml_strict,xhtml_11,xhtml_2', $tsfe->xhtmlDoctype) && $tsfe->config['config']['doctype'] != 'html5' && !$tsfe->config['config']['disableImgBorderAttr']) {
+        $docType = $tsfe->xhtmlDoctype;
+        if (
+            $docType !== 'xhtml_strict' && $docType !== 'xhtml_11'
+            && $tsfe->config['config']['doctype'] !== 'html5'
+            && !$tsfe->config['config']['disableImgBorderAttr']
+        ) {
             return $borderAttr;
         }
         return '';
@@ -1821,7 +1437,8 @@ class ContentObjectRenderer
             }
             // Create TARGET-attribute only if the right doctype is used
             $target = '';
-            if (!GeneralUtility::inList('xhtml_strict,xhtml_11,xhtml_2', $this->getTypoScriptFrontendController()->xhtmlDoctype)) {
+            $xhtmlDocType = $this->getTypoScriptFrontendController()->xhtmlDoctype;
+            if ($xhtmlDocType !== 'xhtml_strict' && $xhtmlDocType !== 'xhtml_11') {
                 $target = isset($conf['target.'])
                     ? (string)$this->stdWrap($conf['target'], $conf['target.'])
                     : (string)$conf['target'];
@@ -1881,8 +1498,9 @@ class ContentObjectRenderer
         $tsfe = $this->getTypoScriptFrontendController();
         $incFile = $tsfe->tmpl->getFileName($fName);
         if ($incFile && file_exists($incFile)) {
-            $fileinfo = GeneralUtility::split_fileref($incFile);
-            if (GeneralUtility::inList('jpg,gif,jpeg,png', $fileinfo['fileext'])) {
+            $fileInfo = GeneralUtility::split_fileref($incFile);
+            $extension = $fileInfo['fileext'];
+            if ($extension === 'jpg' || $extension === 'jpeg' || $extension === 'gif' || $extension === 'png') {
                 $imgFile = $incFile;
                 $imgInfo = @getImageSize($imgFile);
                 return '<img src="' . $tsfe->absRefPrefix . $imgFile . '" width="' . (int)$imgInfo[0] . '" height="' . (int)$imgInfo[1] . '"' . $this->getBorderAttr(' border="0"') . ' ' . $addParams . ' />';
@@ -1966,23 +1584,6 @@ class ContentObjectRenderer
             $altParam .= ' longdesc="' . htmlspecialchars($longDescUrl) . '"';
         }
         return $altParam;
-    }
-
-    /**
-     * Removes forbidden characters and spaces from name/id attributes in the form tag and formfields
-     *
-     * @param string $name Input string
-     * @return string the cleaned string
-     * @see FORM()
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, the method is moved to FormContentObject
-     */
-    public function cleanFormName($name)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        // Turn data[x][y] into data:x:y:
-        $name = preg_replace('/\\[|\\]\\[?/', ':', trim($name));
-        // Remove illegal chars like _
-        return preg_replace('#[^:a-zA-Z0-9]#', '', $name);
     }
 
     /**
@@ -2129,7 +1730,7 @@ class ContentObjectRenderer
      * but only the splitting of the template in various parts. So if you
      * want only one cache-entry per template, make sure you always pass the
      * exact same set of marker/subpart keys. Else you will be flooding the
-     * users cache table.
+     * user's cache table.
      *
      * This function takes three kinds of substitutions in one:
      * $markContentArray is a regular marker-array where the 'keys' are
@@ -2169,16 +1770,13 @@ class ContentObjectRenderer
         // Finding keys and check hash:
         $sPkeys = array_keys($subpartContentArray);
         $wPkeys = array_keys($wrappedSubpartContentArray);
-        $aKeys = array_merge(array_keys($markContentArray), $sPkeys, $wPkeys);
-        if (empty($aKeys)) {
+        $keysToReplace = array_merge(array_keys($markContentArray), $sPkeys, $wPkeys);
+        if (empty($keysToReplace)) {
             $timeTracker->pull();
             return $content;
         }
-        asort($aKeys);
-        $storeKey = md5('substituteMarkerArrayCached_storeKey:' . serialize(array(
-            $content,
-            $aKeys
-        )));
+        asort($keysToReplace);
+        $storeKey = md5('substituteMarkerArrayCached_storeKey:' . serialize(array($content, $keysToReplace)));
         if ($this->substMarkerCache[$storeKey]) {
             $storeArr = $this->substMarkerCache[$storeKey];
             $timeTracker->setTSlogMessage('Cached', 0);
@@ -2203,50 +1801,55 @@ class ContentObjectRenderer
                 }
 
                 $storeArr = array();
-                $result = preg_match_all('/###([\w:-]+)###/', $content, $usedMarkers);
-                if ($result !== false && !empty($usedMarkers[1])) {
-                    $tagArray = array_flip($usedMarkers[1]);
-
-                    $aKeys = array_flip($aKeys);
-                    $bKeys = array();
+                // search all markers in the content
+                $result = preg_match_all('/###([^#](?:[^#]*+|#{1,2}[^#])+)###/', $content, $markersInContent);
+                if ($result !== false && !empty($markersInContent[1])) {
+                    $keysToReplaceFlipped = array_flip($keysToReplace);
+                    $regexKeys = array();
+                    $wrappedKeys = array();
                     // Traverse keys and quote them for reg ex.
-                    foreach ($tagArray as $tV => $tK) {
-                        $tV = '###' . $tV . '###';
-                        if (isset($aKeys[$tV])) {
-                            $bKeys[$tK] = preg_quote($tV, '/');
+                    foreach ($markersInContent[1] as $key) {
+                        if (isset($keysToReplaceFlipped['###' . $key . '###'])) {
+                            $regexKeys[] = preg_quote($key, '/');
+                            $wrappedKeys[] = '###' . $key . '###';
                         }
                     }
-                    $regex = '/' . implode('|', $bKeys) . '/';
-                    // Doing regex's
-                    if (preg_match_all($regex, $content, $keyList) !== false) {
-                        $storeArr['c'] = preg_split($regex, $content);
-                        $storeArr['k'] = $keyList[0];
-                    }
+                    $regex = '/###(?:' . implode('|', $regexKeys) . ')###/';
+                    $storeArr['c'] = preg_split($regex, $content); // contains all content parts around markers
+                    $storeArr['k'] = $wrappedKeys; // contains all markers incl. ###
+                    // Setting cache:
+                    $this->substMarkerCache[$storeKey] = $storeArr;
+                    // Storing the cached data:
+                    $this->getTypoScriptFrontendController()->sys_page->storeHash($storeKey, $storeArr, 'substMarkArrayCached');
                 }
-
-                // Setting cache:
-                $this->substMarkerCache[$storeKey] = $storeArr;
-                // Storing the cached data:
-                $this->getTypoScriptFrontendController()->sys_page->storeHash($storeKey, $storeArr, 'substMarkArrayCached');
                 $timeTracker->setTSlogMessage('Parsing', 0);
             }
         }
-        // Substitution/Merging:
-        // Merging content types together, resetting
-        $valueArr = array_merge($markContentArray, $subpartContentArray, $wrappedSubpartContentArray);
-        $wSCA_reg = array();
-        $content = '';
-        // Traversing the keyList array and merging the static and dynamic content
-        foreach ($storeArr['k'] as $n => $keyN) {
-            $content .= $storeArr['c'][$n];
-            if (!is_array($valueArr[$keyN])) {
-                $content .= $valueArr[$keyN];
-            } else {
-                $content .= $valueArr[$keyN][(int)$wSCA_reg[$keyN] % 2];
-                $wSCA_reg[$keyN]++;
+        if (!empty($storeArr['k']) && is_array($storeArr['k'])) {
+            // Substitution/Merging:
+            // Merging content types together, resetting
+            $valueArr = array_merge($markContentArray, $subpartContentArray, $wrappedSubpartContentArray);
+            $wSCA_reg = array();
+            $content = '';
+            // Traversing the keyList array and merging the static and dynamic content
+            foreach ($storeArr['k'] as $n => $keyN) {
+                // add content before marker
+                $content .= $storeArr['c'][$n];
+                if (!is_array($valueArr[$keyN])) {
+                    // fetch marker replacement from $markContentArray or $subpartContentArray
+                    $content .= $valueArr[$keyN];
+                } else {
+                    if (!isset($wSCA_reg[$keyN])) {
+                        $wSCA_reg[$keyN] = 0;
+                    }
+                    // fetch marker replacement from $wrappedSubpartContentArray
+                    $content .= $valueArr[$keyN][$wSCA_reg[$keyN] % 2];
+                    $wSCA_reg[$keyN]++;
+                }
             }
+            // add remaining content
+            $content .= $storeArr['c'][count($storeArr['k'])];
         }
-        $content .= $storeArr['c'][count($storeArr['k'])];
         $timeTracker->pull();
         return $content;
     }
@@ -2383,6 +1986,7 @@ class ContentObjectRenderer
      */
     public function stdWrap($content = '', $conf = array())
     {
+        $content = (string)$content;
         // If there is any hook object, activate all of the process and override functions.
         // The hook interface ContentObjectStdWrapHookInterface takes care that all 4 methods exist.
         if ($this->stdWrapHookObjects) {
@@ -3422,34 +3026,6 @@ class ContentObjectRenderer
     }
 
     /**
-     * textStyle
-     * Wraps content in font tags
-     * See wrap
-     *
-     * @param string $content Input value undergoing processing in this function.
-     * @param array $conf stdWrap properties for textStyle.
-     * @return string The processed input value
-     */
-    public function stdWrap_textStyle($content = '', $conf = array())
-    {
-        return $this->textStyle($content, $conf['textStyle.']);
-    }
-
-    /**
-     * tableStyle
-     * Wraps content with table tags
-     * See wrap
-     *
-     * @param string $content Input value undergoing processing in this function.
-     * @param array $conf stdWrap properties for tableStyle.
-     * @return string The processed input value
-     */
-    public function stdWrap_tableStyle($content = '', $conf = array())
-    {
-        return $this->tableStyle($content, $conf['tableStyle.']);
-    }
-
-    /**
      * filelink
      * Used to make lists of links to files
      * See wrap
@@ -3731,41 +3307,6 @@ class ContentObjectRenderer
     public function stdWrap_insertData($content = '')
     {
         return $this->insertData($content);
-    }
-
-    /**
-     * offsetWrap
-     * Creates a so called offset table around the content
-     * Still here for historical reasons even not used too much nowadays
-     *
-     * @param string $content Input value undergoing processing in this function.
-     * @param array $conf stdWrap properties for offsetWrap.
-     * @return string The processed input value
-     * @deprecated since CMS 7, will be removed with CMS 8 without replacement
-     */
-    public function stdWrap_offsetWrap($content = '', $conf = array())
-    {
-        GeneralUtility::logDeprecatedFunction();
-
-        if (ExtensionManagementUtility::isLoaded('compatibility6')) {
-            $controlTable = GeneralUtility::makeInstance(TYPO3\CMS\Compatibility6\ContentObject\OffsetTableContentObject::class);
-            if ($conf['offsetWrap.']['tableParams'] || $conf['offsetWrap.']['tableParams.']) {
-                $controlTable->tableParams = isset($conf['offsetWrap.']['tableParams.'])
-                    ? $this->stdWrap($conf['offsetWrap.']['tableParams'], $conf['offsetWrap.']['tableParams.'])
-                    : $conf['offsetWrap.']['tableParams'];
-            }
-            if ($conf['offsetWrap.']['tdParams'] || $conf['offsetWrap.']['tdParams.']) {
-                $controlTable->tdParams = ' ' . (isset($conf['offsetWrap.']['tdParams.'])
-                        ? $this->stdWrap($conf['offsetWrap.']['tdParams'], $conf['offsetWrap.']['tdParams.'])
-                        : $conf['offsetWrap.']['tdParams']);
-            }
-            $content = $controlTable->start($content, $conf['offsetWrap']);
-            if ($conf['offsetWrap.']['stdWrap.']) {
-                $content = $this->stdWrap($content, $conf['offsetWrap.']['stdWrap.']);
-            }
-        }
-
-        return $content;
     }
 
     /**
@@ -4404,7 +3945,7 @@ class ContentObjectRenderer
         $countSplittedContent = count($splittedContent);
         for ($offset = 0; $offset < $countSplittedContent; $offset++) {
             if ($offset % 2 === 0) {
-                $tempContent = $tsfe->csConvObj->utf8_encode($splittedContent[$offset], $tsfe->renderCharset);
+                $tempContent = $tsfe->csConvObj->conv($splittedContent[$offset], $tsfe->renderCharset, 'utf-8');
                 $thisStrLen = $tsfe->csConvObj->strlen('utf-8', html_entity_decode($tempContent, ENT_COMPAT, 'UTF-8'));
                 if ($strLen + $thisStrLen > $absChars) {
                     $croppedOffset = $offset;
@@ -4427,7 +3968,7 @@ class ContentObjectRenderer
                             }
                         }
                     }
-                    $splittedContent[$offset] = $tsfe->csConvObj->utf8_decode($tempContent, $tsfe->renderCharset);
+                    $splittedContent[$offset] = $tsfe->csConvObj->conv($tempContent, 'utf-8', $tsfe->renderCharset);
                     break;
                 } else {
                     $strLen += $thisStrLen;
@@ -4513,134 +4054,6 @@ class ContentObjectRenderer
         $text = preg_replace('/<a[^>]*href[[:space:]]*=[[:space:]]*["\']?[[:space:]]*javascript[^>]*/i', '', $text);
         // Return clean content
         return $text;
-    }
-
-    /**
-     * Implements the stdWrap property "textStyle"; This generates a <font>-tag (and a <div>-tag for align-attributes) which is wrapped around the input value.
-     *
-     * @param string $theValue The input value
-     * @param array $conf TypoScript properties for the "TypoScript function" '->textStyle'
-     * @return string The processed output value
-     * @access private
-     * @see stdWrap()
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function textStyle($theValue, $conf)
-    {
-        $this->getTypoScriptFrontendController()->logDeprecatedTyposcript('textStyle', 'Deprecated since 7.1 and will be removed with CMS 8. Use CSS instead');
-        $conf['face.'][1] = 'Times New Roman';
-        $conf['face.'][2] = 'Verdana,Arial,Helvetica,Sans serif';
-        $conf['face.'][3] = 'Arial,Helvetica,Sans serif';
-        $conf['size.'][1] = 1;
-        $conf['size.'][2] = 2;
-        $conf['size.'][3] = 3;
-        $conf['size.'][4] = 4;
-        $conf['size.'][5] = 5;
-        $conf['size.'][10] = '+1';
-        $conf['size.'][11] = '-1';
-        $conf['color.'][240] = 'black';
-        $conf['color.'][241] = 'white';
-        $conf['color.'][242] = '#333333';
-        $conf['color.'][243] = 'gray';
-        $conf['color.'][244] = 'silver';
-        $conf['color.'][245] = 'red';
-        $conf['color.'][246] = 'navy';
-        $conf['color.'][247] = 'yellow';
-        $conf['color.'][248] = 'green';
-        $conf['color.'][249] = 'olive';
-        $conf['color.'][250] = 'maroon';
-        $face = $this->data[$conf['face.']['field']];
-        $size = $this->data[$conf['size.']['field']];
-        $color = $this->data[$conf['color.']['field']];
-        $align = $this->data[$conf['align.']['field']];
-        $properties = $this->data[$conf['properties.']['field']];
-        if (!$properties) {
-            $properties = isset($conf['properties.']['default.']) ? $this->stdWrap($conf['properties.']['default'], $conf['properties.']['default.']) : $conf['properties.']['default'];
-        }
-        // Properties
-        if ($properties & 8) {
-            $theValue = $this->HTMLcaseshift($theValue, 'upper');
-        }
-        if ($properties & 1) {
-            $theValue = '<strong>' . $theValue . '</strong>';
-        }
-        if ($properties & 2) {
-            $theValue = '<i>' . $theValue . '</i>';
-        }
-        if ($properties & 4) {
-            $theValue = '<u>' . $theValue . '</u>';
-        }
-        // Fonttag
-        $theFace = $conf['face.'][$face];
-        if (!$theFace) {
-            $theFace = isset($conf['face.']['default.']) ? $this->stdWrap($conf['face.']['default'], $conf['face.']['default.']) : $conf['face.']['default'];
-        }
-        $theSize = $conf['size.'][$size];
-        if (!$theSize) {
-            $theSize = isset($conf['size.']['default.']) ? $this->stdWrap($conf['size.']['default'], $conf['size.']['default.']) : $conf['size.']['default'];
-        }
-        $theColor = $conf['color.'][$color];
-        if (!$theColor) {
-            $theColor = isset($conf['color.']['default.']) ? $this->stdWrap($conf['color.']['default'], $conf['color.']['default.']) : $conf['color.']['default.'];
-        }
-        if ($conf['altWrap']) {
-            $theValue = $this->wrap($theValue, $conf['altWrap']);
-        } elseif ($theFace || $theSize || $theColor) {
-            $fontWrap = '<font' . ($theFace ? ' face="' . $theFace . '"' : '') . ($theSize ? ' size="' . $theSize . '"' : '') . ($theColor ? ' color="' . $theColor . '"' : '') . '>|</font>';
-            $theValue = $this->wrap($theValue, $fontWrap);
-        }
-        // Align
-        if ($align) {
-            $theValue = $this->wrap($theValue, '<div style="text-align:' . $align . ';">|</div>');
-        }
-        // Return
-        return $theValue;
-    }
-
-    /**
-     * Implements the stdWrap property "tableStyle"; Basically this generates a <table>-tag with properties which is wrapped around the input value.
-     *
-     * @param string $theValue The input value
-     * @param array $conf TypoScript properties for the "TypoScript function" '->textStyle'
-     * @return string The processed output value
-     * @access private
-     * @see stdWrap()
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function tableStyle($theValue, $conf)
-    {
-        $this->getTypoScriptFrontendController()->logDeprecatedTyposcript('tableStyle', 'Deprecated since 7.1 and will be removed with CMS 8. Use CSS instead');
-        $conf['color.'][240] = 'black';
-        $conf['color.'][241] = 'white';
-        $conf['color.'][242] = '#333333';
-        $conf['color.'][243] = 'gray';
-        $conf['color.'][244] = 'silver';
-        $align = isset($conf['align.']) ? $this->stdWrap($conf['align'], $conf['align.']) : $conf['align'];
-        $border = isset($conf['border.']) ? (int)$this->stdWrap($conf['border'], $conf['border.']) : (int)$conf['border'];
-        $cellspacing = isset($conf['cellspacing.']) ? (int)$this->stdWrap($conf['cellspacing'], $conf['cellspacing.']) : (int)$conf['cellspacing'];
-        $cellpadding = isset($conf['cellpadding.']) ? (int)$this->stdWrap($conf['cellpadding'], $conf['cellpadding.']) : (int)$conf['cellpadding'];
-        $color = $this->data[$conf['color.']['field']];
-        $theColor = $conf['color.'][$color] ? $conf['color.'][$color] : $conf['color.']['default'];
-        // Assembling the table tag
-        $tableTagArray = array(
-            '<table'
-        );
-        $tableTagArray[] = 'border="' . $border . '"';
-        $tableTagArray[] = 'cellspacing="' . $cellspacing . '"';
-        $tableTagArray[] = 'cellpadding="' . $cellpadding . '"';
-        if ($align) {
-            $tableTagArray[] = 'align="' . $align . '"';
-        }
-        if ($theColor) {
-            $tableTagArray[] = 'bgcolor="' . $theColor . '"';
-        }
-        if ($conf['params']) {
-            $tableTagArray[] = $conf['params'];
-        }
-        $tableWrap = implode(' ', $tableTagArray) . '> | </table>';
-        $theValue = $this->wrap($theValue, $tableWrap);
-        // return
-        return $theValue;
     }
 
     /**
@@ -4730,16 +4143,6 @@ class ContentObjectRenderer
             $typoLinkConf = $additionalTypoLinkConfiguration;
         }
 
-        if (isset($conf['jumpurl']) || isset($conf['jumpurl.'])) {
-            GeneralUtility::deprecationLog('The TypoScript jumpurl configuration is deprecated for file links since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8. Pass this configuration in the typolinkConfiguration property instead.');
-            if (isset($conf['jumpurl'])) {
-                $typoLinkConf['jumpurl'] = $conf['jumpurl'];
-            }
-            if (isset($conf['jumpurl.'])) {
-                $typoLinkConf['jumpurl.'] = $conf['jumpurl.'];
-            }
-        }
-
         $theLinkWrap = $this->typoLink('|', $typoLinkConf);
         $theSize = filesize($theFile);
         $fI = GeneralUtility::split_fileref($theFile);
@@ -4765,7 +4168,7 @@ class ContentObjectRenderer
                 if ($conf['iconCObject']) {
                     $icon = $this->cObjGetSingle($conf['iconCObject'], $conf['iconCObject.'], 'iconCObject');
                 } else {
-                    $notFoundThumb = TYPO3_mainDir . 'sysext/core/Resources/Public/Images/NotFound.gif';
+                    $notFoundThumb = ExtensionManagementUtility::extPath('core') . 'Resources/Public/Images/NotFound.gif';
                     $sizeParts = array(64, 64);
                     if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails']) {
                         // using the File Abstraction Layer to generate a preview image
@@ -6301,6 +5704,9 @@ class ContentObjectRenderer
                 // Resource was not found
                 return $linkText;
             }
+        // Disallow direct javascript: links
+        } elseif (strtolower(trim($linkHandlerKeyword)) === 'javascript') {
+            return $linkText;
         } else {
             $linkParameter = $linkParameterParts['url'];
         }
@@ -6337,10 +5743,10 @@ class ContentObjectRenderer
     protected function detectLinkTypeFromLinkParameter($linkParameter)
     {
         // Parse URL:
-        $linkParts = parse_url($linkParameter);
+        $scheme = parse_url($linkParameter, PHP_URL_SCHEME);
         // Detecting kind of link:
         // If it's a mail address:
-        if (strpos($linkParameter, '@') > 0 && (!$linkParts['scheme'] || $linkParts['scheme'] === 'mailto')) {
+        if (strpos($linkParameter, '@') > 0 && (!$scheme || $scheme === 'mailto')) {
             return 'mailto';
         }
 
@@ -6355,7 +5761,8 @@ class ContentObjectRenderer
             list($rootFileDat) = explode('?', rawurldecode($linkParameter));
             $containsSlash = strpos($rootFileDat, '/') !== false;
             $rFD_fI = pathinfo($rootFileDat);
-            if (trim($rootFileDat) && !$containsSlash && (@is_file((PATH_site . $rootFileDat)) || GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
+            $fileExtension = strtolower($rFD_fI['extension']);
+            if ($fileExtension === 'php' || $fileExtension === 'html' || $fileExtension === 'htm' || trim($rootFileDat) && !$containsSlash && (@is_file((PATH_site . $rootFileDat)))) {
                 $isLocalFile = 1;
             } elseif ($containsSlash) {
                 // Adding this so realurl directories are linked right (non-existing).
@@ -6364,7 +5771,7 @@ class ContentObjectRenderer
         }
 
         // url (external): If doubleSlash or if a '.' comes before a '/'.
-        if ($linkParts['scheme'] || $isLocalFile != 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar)) {
+        if ($scheme || $isLocalFile !== 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar)) {
             return 'url';
 
         // file (internal)
@@ -6393,6 +5800,7 @@ class ContentObjectRenderer
      */
     public function typoLink($linktxt, $conf)
     {
+        $linktxt = (string)$linktxt;
         $tsfe = $this->getTypoScriptFrontendController();
 
         $LD = array();
@@ -6778,7 +6186,8 @@ class ContentObjectRenderer
 
         if ($JSwindowParams) {
             // Create TARGET-attribute only if the right doctype is used
-            if (!GeneralUtility::inList('xhtml_strict,xhtml_11,xhtml_2', $tsfe->xhtmlDoctype)) {
+            $xhtmlDocType = $tsfe->xhtmlDoctype;
+            if ($xhtmlDocType !== 'xhtml_strict' && $xhtmlDocType !== 'xhtml_11') {
                 $target = ' target="FEopenLink"';
             } else {
                 $target = '';
@@ -7110,6 +6519,7 @@ class ContentObjectRenderer
      */
     public function getMailTo($mailAddress, $linktxt)
     {
+        $mailAddress = (string)$mailAddress;
         if ((string)$linktxt === '') {
             $linktxt = $mailAddress;
         }
@@ -7283,9 +6693,8 @@ class ContentObjectRenderer
         // Split parts
         $parts = explode('->', $funcName);
         if (count($parts) === 2) {
-            // Class
-            // Check whether class is available and try to reload includeLibs if possible:
-            if ($this->isClassAvailable($parts[0], $conf)) {
+            // Check whether PHP class is available
+            if (class_exists($parts[0])) {
                 $classObj = GeneralUtility::makeInstance($parts[0]);
                 if (is_object($classObj) && method_exists($classObj, $parts[1])) {
                     $classObj->cObj = $this;
@@ -7323,9 +6732,9 @@ class ContentObjectRenderer
         $lines = GeneralUtility::trimExplode(LF, $params, true);
         foreach ($lines as $val) {
             $pair = explode('=', $val, 2);
-            $pair[0] = trim($pair[0]);
-            if (!GeneralUtility::inList('#,/', $pair[0][0])) {
-                $paramArr[$pair[0]] = trim($pair[1]);
+            $key = trim($pair[0]);
+            if ($key[0] !== '#' && $key[0] !== '/') {
+                $paramArr[$key] = trim($pair[1]);
             }
         }
         return $paramArr;
@@ -7661,40 +7070,6 @@ class ContentObjectRenderer
             $librariesIncluded = true;
         }
         return $librariesIncluded;
-    }
-
-    /**
-     * Checks whether a PHP class is available. If the check fails, the method tries to
-     * determine the correct includeLibs to make the class available automatically.
-     *
-     * TypoScript example that can cause this:
-     * | plugin.tx_myext_pi1 = USER
-     * | plugin.tx_myext_pi1 {
-     * |   includeLibs = EXT:myext/pi1/class.tx_myext_pi1.php
-     * |   userFunc = tx_myext_pi1->main
-     * | }
-     * | 10 = USER
-     * | 10.userFunc = tx_myext_pi1->renderHeader
-     *
-     * @param string $className The name of the PHP class to be checked
-     * @param array $config TypoScript configuration (naturally of a USER or COA cObject)
-     * @return bool Whether the class is available
-     * @link http://forge.typo3.org/issues/19510
-     * @todo This method was introduced in TYPO3 4.3 and can be removed if the autoload was integrated
-     */
-    protected function isClassAvailable($className, array $config = null)
-    {
-        if (class_exists($className)) {
-            return true;
-        }
-        if ($config) {
-            $pluginConfiguration = &$this->getTypoScriptFrontendController()->tmpl->setup['plugin.'][$className . '.'];
-            if (isset($pluginConfiguration['includeLibs']) && $pluginConfiguration['includeLibs']) {
-                $config['includeLibs'] = $pluginConfiguration['includeLibs'];
-                return $this->includeLibs($config);
-            }
-        }
-        return false;
     }
 
     /***********************************************
@@ -8577,11 +7952,7 @@ class ContentObjectRenderer
             }
             $query .= ' AND (' . $languageQuery . ')';
         }
-        $andWhere = isset($conf['andWhere.']) ? trim($this->stdWrap($conf['andWhere'], $conf['andWhere.'])) : trim($conf['andWhere']);
-        if ($andWhere) {
-            GeneralUtility::deprecationLog('Usage of TypoScript property "andWhere" is deprecated since 7.1 in favor of "where". It has been used to query the table "' . $table . '".');
-            $query .= ' AND ' . $andWhere;
-        }
+
         // Enablefields
         if ($table === 'pages') {
             $query .= ' ' . $tsfe->sys_page->where_hid_del . $tsfe->sys_page->where_groupAccess;

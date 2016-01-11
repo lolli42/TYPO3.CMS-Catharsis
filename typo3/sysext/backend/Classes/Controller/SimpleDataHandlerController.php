@@ -143,7 +143,6 @@ class SimpleDataHandlerController
         $this->uPT = GeneralUtility::_GP('uPT');
         // Creating TCEmain object
         $this->tce = GeneralUtility::makeInstance(DataHandler::class);
-        $this->tce->stripslashes_values = 0;
         // Configuring based on user prefs.
         if ($beUser->uc['recursiveDelete']) {
             // TRUE if the delete Recursive flag is set.
@@ -222,25 +221,6 @@ class SimpleDataHandlerController
             if ($this->uPT && (isset($this->data['pages']) || isset($this->cmd['pages']))) {
                 BackendUtility::setUpdateSignal('updatePageTree');
             }
-        }
-    }
-
-    /**
-     * Redirecting the user after the processing has been done.
-     * Might also display error messages directly, if any.
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function finish()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        // Prints errors, if...
-        if ($this->prErr) {
-            $this->tce->printLogErrorMessages($this->redirect);
-        }
-        if ($this->redirect) {
-            HttpUtility::redirect($this->redirect);
         }
     }
 

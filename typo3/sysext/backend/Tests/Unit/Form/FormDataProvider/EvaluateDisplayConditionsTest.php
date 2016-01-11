@@ -324,56 +324,6 @@ class EvaluateDisplayConditionsTest extends UnitTestCase
     }
 
     /**
-     * The HIDE_L10N_SIBLINGS condition is deprecated, this test only ensures that it can be successfully parsed
-     *
-     * @test
-     */
-    public function matchHideL10NSiblingsReturnsTrue()
-    {
-        $input = [
-            'databaseRow' => [],
-            'processedTca' => [
-                'columns' => [
-                    'aField' => [
-                        'displayCond' => 'HIDE_L10N_SIBLINGS',
-                        'config' => [
-                            'type' => 'input',
-                        ]
-                    ],
-                ]
-            ]
-        ];
-
-        $expected = $input;
-
-        $this->assertSame($expected, $this->subject->addData($input));
-    }
-
-    /**
-     * @test
-     */
-    public function matchHideL10NSiblingsExceptAdminReturnsTrue()
-    {
-        $input = [
-            'databaseRow' => [],
-            'processedTca' => [
-                'columns' => [
-                    'aField' => [
-                        'displayCond' => 'HIDE_L10N_SIBLINGS:except_admin',
-                        'config' => [
-                            'type' => 'input',
-                        ]
-                    ],
-                ]
-            ]
-        ];
-
-        $expected = $input;
-
-        $this->assertSame($expected, $this->subject->addData($input));
-    }
-
-    /**
      * Returns data sets for the test matchConditionStrings
      * Each data set is an array with the following elements:
      * - the condition string
@@ -390,26 +340,6 @@ class EvaluateDisplayConditionsTest extends UnitTestCase
                 [],
                 false,
             ],
-            'Not loaded extension compares to loaded as FALSE' => [
-                'EXT:neverloadedext:LOADED:TRUE',
-                [],
-                false,
-            ],
-            'Not loaded extension compares to not loaded as TRUE' => [
-                'EXT:neverloadedext:LOADED:FALSE',
-                [],
-                true,
-            ],
-            'Loaded extension compares to TRUE' => [
-                'EXT:backend:LOADED:TRUE',
-                [],
-                true,
-            ],
-            'Loaded extension compares to FALSE' => [
-                'EXT:backend:LOADED:FALSE',
-                [],
-                false,
-            ],
             'Field is not greater zero if not given' => [
                 'FIELD:uid:>:0',
                 [],
@@ -418,6 +348,36 @@ class EvaluateDisplayConditionsTest extends UnitTestCase
             'Field is not equal 0 if not given' => [
                 'FIELD:uid:=:0',
                 [],
+                false,
+            ],
+            'Field is not present if empty array given' => [
+                'REQ:foo:TRUE',
+                ['foo' => []],
+                false,
+            ],
+            'Field is not greater zero if empty array given' => [
+                'FIELD:foo:>:0',
+                ['foo' => []],
+                false,
+            ],
+            'Field is not greater than or equal to zero if empty array given' => [
+                'FIELD:foo:>=:0',
+                ['foo' => []],
+                false,
+            ],
+            'Field is less than 1 if empty array given' => [
+                'FIELD:foo:<:1',
+                ['foo' => []],
+                true,
+            ],
+            'Field is less than or equal to 1 if empty array given' => [
+                'FIELD:foo:<=:1',
+                ['foo' => []],
+                true,
+            ],
+            'Field does not equal 0 if empty array given' => [
+                'FIELD:foo:=:0',
+                ['foo' => []],
                 false,
             ],
             'Field value string comparison' => [
@@ -469,11 +429,6 @@ class EvaluateDisplayConditionsTest extends UnitTestCase
                 'FIELD:uid:>=:42',
                 ['uid' => '23'],
                 false,
-            ],
-            'Field is value for default language without flexform' => [
-                'HIDE_L10N_SIBLINGS',
-                [],
-                true,
             ],
             'New is TRUE for new comparison with TRUE' => [
                 'REC:NEW:TRUE',
@@ -823,6 +778,73 @@ class EvaluateDisplayConditionsTest extends UnitTestCase
 
         $expected = $input;
         unset($expected['processedTca']['columns']['testField']['config']['ds']['sheets']['sTest']);
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function matchFlexformSheetConditionStringsWithLogicalOperatorForFieldsWithDotInName()
+    {
+        $input = [
+            'databaseRow' => [
+                'foo' => 'bar',
+                'testField' => [
+                    'data' => [
+                        'sDEF' => [
+                            'lDEF' => [
+                                'testField' => [
+                                    'vDEF' => [
+                                        0 => '',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'processedTca' => [
+                'columns' => [
+                    'testField' => [
+                        'config' => [
+                            'type' => 'flex',
+                            'ds' => [
+                                'meta' => [],
+                                'sheets' => [
+                                    'sDEF' => [
+                                        'ROOT' => [
+                                            'type' => 'array',
+                                            'el' => [
+                                                'testField' => [
+                                                    'config' => [
+                                                        'type' => 'input',
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'sTest' => [
+                                        'ROOT' => [
+                                            'type' => 'array',
+                                            'el' => [],
+                                            'sheetTitle' => 'sVideo',
+                                            'displayCond' => [
+                                                'OR' => [
+                                                    'FIELD:sDEF.testField:=:LIST',
+                                                    'FIELD:sDEF.testField:REQ:false',
+                                                ],
+                                            ] ,
+                                        ],
+                                    ],
+                                ]
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = $input;
         $this->assertSame($expected, $this->subject->addData($input));
     }
 }

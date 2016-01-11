@@ -378,7 +378,7 @@ class PageRepository
             $origPage = reset($pagesInput);
             if (is_array($origPage)) {
                 // Make sure that only fields which exist in the first incoming record are overlaid!
-                $fieldArr = array_intersect($fieldArr, array_keys($origPage));
+                $fieldArr = array_intersect($fieldArr, array_keys($this->purgeComputedProperties($origPage)));
             }
             foreach ($pagesInput as $origPage) {
                 if (is_array($origPage)) {
@@ -851,20 +851,14 @@ class PageRepository
     }
 
     /**
-     * Returns the URL type for the input page row IF the doktype is 3 and not
-     * disabled.
+     * Returns the URL type for the input page row IF the doktype is set to 3.
      *
      * @param array $pagerow The page row to return URL type for
-     * @param bool $disable A flag to simply disable any output from here. - deprecated - don't use anymore.
-     * @return string|bool The URL type from $this->urltypes array. False if not found or disabled.
-     * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::setExternalJumpUrl()
+     * @return string|bool The URL from based on the data from "urltype" and "url". False if not found.
+     * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::initializeRedirectUrlHandlers()
      */
-    public function getExtURL($pagerow, $disable = false)
+    public function getExtURL($pagerow)
     {
-        if ($disable !== false) {
-            GeneralUtility::deprecationLog('The disable option of PageRepository::getExtUrl() is deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8.');
-            return false;
-        }
         if ((int)$pagerow['doktype'] === self::DOKTYPE_LINK) {
             $redirectTo = $this->urltypes[$pagerow['urltype']] . $pagerow['url'];
             // If relative path, prefix Site URL:
@@ -1406,7 +1400,7 @@ class PageRepository
             }
             // Find pointed-to record.
             if ($moveID) {
-                $res = $this->getDatabaseConnection()->exec_SELECTquery(implode(',', array_keys($row)), $table, 'uid=' . (int)$moveID . $this->enableFields($table));
+                $res = $this->getDatabaseConnection()->exec_SELECTquery(implode(',', array_keys($this->purgeComputedProperties($row))), $table, 'uid=' . (int)$moveID . $this->enableFields($table));
                 $origRow = $this->getDatabaseConnection()->sql_fetch_assoc($res);
                 $this->getDatabaseConnection()->sql_free_result($res);
                 if ($origRow) {

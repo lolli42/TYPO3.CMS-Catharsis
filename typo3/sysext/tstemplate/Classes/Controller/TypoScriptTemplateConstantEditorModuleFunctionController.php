@@ -26,12 +26,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * TypoScript Constant editor
- *
- * Module Include-file
- *
- * $GLOBALS['TYPO3_CONF_VARS']['MODS']['web_ts']['onlineResourceDir'] = 'fileadmin/fonts/';
- * // This is the path (must be in "fileadmin/" !!) where the web_ts/constant-editor submodule fetches online resources.
- * Put fonts (ttf) and standard images here!
  */
 class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractFunctionModule
 {
@@ -141,7 +135,6 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
                     $recData['sys_template'][$saveId]['constants'] = implode($templateService->raw, LF);
                     // Create new  tce-object
                     $tce = GeneralUtility::makeInstance(DataHandler::class);
-                    $tce->stripslashes_values = false;
                     $tce->start($recData, array());
                     $tce->process_datamap();
                     // Clear the cache (note: currently only admin-users can clear the cache in tce_main.php)

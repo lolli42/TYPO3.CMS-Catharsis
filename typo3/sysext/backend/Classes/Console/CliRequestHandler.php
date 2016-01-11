@@ -88,6 +88,9 @@ class CliRequestHandler implements RequestHandlerInterface
         } catch (\Exception $e) {
             $output->writeln('<error>Oops, an error occurred: ' . $e->getMessage() . '</error>');
             $exitCode = $e->getCode();
+        } catch (\Throwable $e) {
+            $output->writeln('<error>Oops, an error occurred: ' . $e->getMessage() . '</error>');
+            $exitCode = $e->getCode();
         }
 
         exit($exitCode);
@@ -101,7 +104,7 @@ class CliRequestHandler implements RequestHandlerInterface
     protected function boot($commandLineName)
     {
         $this->bootstrap
-            ->loadExtensionTables(true)
+            ->loadExtensionTables()
             ->initializeBackendUser();
 
         // Checks for a user called starting with _CLI_ e.g. "_CLI_lowlevel"
@@ -137,10 +140,10 @@ class CliRequestHandler implements RequestHandlerInterface
 
     /**
      * Define cli-related parameters and return the include script as well as the command line name. Used for
-     * authentication against the backend user in the "laodCommandLineBackendUser()" action.
+     * authentication against the backend user in the "loadCommandLineBackendUser()" action.
      *
      * @param string $cliKey the CLI key
-     * @return string the absolute path to the include script
+     * @return array the absolute path to the include script and the command line name
      */
     protected function getIncludeScriptByCommandLineKey($cliKey)
     {

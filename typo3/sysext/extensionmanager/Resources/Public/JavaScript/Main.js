@@ -23,9 +23,10 @@ define([
 	'nprogress',
 	'TYPO3/CMS/Backend/Modal',
 	'TYPO3/CMS/Backend/SplitButtons',
+	'TYPO3/CMS/Backend/Tooltip',
 	'datatables',
 	'TYPO3/CMS/Backend/jquery.clearable'
-], function($, NProgress, Modal, SplitButtons) {
+], function($, NProgress, Modal, SplitButtons, Tooltip) {
 
 	/**
 	 *
@@ -56,7 +57,9 @@ define([
 				columns: [
 					null,
 					null,
-					null,
+					{
+						type: 'extension'
+					},
 					null,
 					{
 						type: 'version'
@@ -159,22 +162,32 @@ define([
 		return vars;
 	};
 
+	$.fn.dataTableExt.oSort['extension-asc'] = function(a, b) {
+		return ExtensionManager.extensionCompare(a, b);
+	};
+
+	$.fn.dataTableExt.oSort['extension-desc'] = function(a, b) {
+		var result = ExtensionManager.extensionCompare(a, b);
+		return result * -1;
+	};
+
 	$.fn.dataTableExt.oSort['version-asc'] = function(a, b) {
-		var result = ExtensionManager.compare(a, b);
+		var result = ExtensionManager.versionCompare(a, b);
 		return result * -1;
 	};
 
 	$.fn.dataTableExt.oSort['version-desc'] = function(a, b) {
-		return ExtensionManager.compare(a, b);
+		return ExtensionManager.versionCompare(a, b);
 	};
 
 	/**
+	 * Special sorting for the extension version column
 	 *
 	 * @param {String} a
 	 * @param {String} b
 	 * @returns {Number}
 	 */
-	ExtensionManager.compare = function(a, b) {
+	ExtensionManager.versionCompare = function(a, b) {
 		if (a === b) {
 			return 0;
 		}
@@ -208,6 +221,25 @@ define([
 		// Otherwise they are the same.
 		return 0;
 	};
+
+	/**
+	 * The extension name column can contain various forms of HTML that
+	 * break a direct comparision of values
+	 *
+	 * @param {String} a
+	 * @param {String} b
+	 * @returns {Number}
+	 */
+	ExtensionManager.extensionCompare = function(a, b) {
+		var div = document.createElement("div");
+		div.innerHTML = a;
+		var aStr = div.textContent || div.innerText || a;
+
+		div.innerHTML = b;
+		var bStr = div.textContent || div.innerText || b;
+
+		return aStr.trim().localeCompare(bStr.trim());
+	}
 
 	/**
 	 *
@@ -772,6 +804,15 @@ define([
 
 		ExtensionManager.Update.initializeEvents();
 		ExtensionManager.UploadForm.initializeEvents();
+
+		Tooltip.initialize('#typo3-extension-list [title]', {
+			delay: {
+				show: 500,
+				hide: 100
+			},
+			trigger: 'hover',
+			container: 'body'
+		});
 	});
 
 	if (typeof TYPO3.ExtensionManager === 'undefined') {

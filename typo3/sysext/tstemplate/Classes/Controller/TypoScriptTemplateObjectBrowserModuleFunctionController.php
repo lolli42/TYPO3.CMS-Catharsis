@@ -24,7 +24,6 @@ use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -101,77 +100,6 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
             }
         }
         return $modMenu;
-    }
-
-    /**
-     * Verify TS objects
-     *
-     * @param array $propertyArray
-     * @param string $parentType
-     * @param string $parentValue
-     * @return array|NULL
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function verify_TSobjects($propertyArray, $parentType, $parentValue)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $TSobjTable = array(
-            'PAGE' => array(
-                'prop' => array(
-                    'typeNum' => 'int',
-                    '1,2,3' => 'COBJ',
-                    'bodyTag' => 'string'
-                )
-            ),
-            'TEXT' => array(
-                'prop' => array(
-                    'value' => 'string'
-                )
-            ),
-            'HTML' => array(
-                'prop' => array(
-                    'value' => 'stdWrap'
-                )
-            ),
-            'stdWrap' => array(
-                'prop' => array(
-                    'field' => 'string',
-                    'current' => 'boolean'
-                )
-            )
-        );
-        $TSobjDataTypes = array(
-            'COBJ' => 'TEXT,CONTENT',
-            'PAGE' => 'PAGE',
-            'stdWrap' => ''
-        );
-        if ($parentType) {
-            if (isset($TSobjDataTypes[$parentType]) && (!$TSobjDataTypes[$parentType] || GeneralUtility::inlist($TSobjDataTypes[$parentType], $parentValue))) {
-                $ObjectKind = $parentValue;
-            } else {
-                // Object kind is "" if it should be known.
-                $ObjectKind = '';
-            }
-        } else {
-            // If parentType is not given, then it can be anything. Free.
-            $ObjectKind = $parentValue;
-        }
-        if ($ObjectKind && is_array($TSobjTable[$ObjectKind])) {
-            $result = array();
-            if (is_array($propertyArray)) {
-                foreach ($propertyArray as $key => $val) {
-                    if (MathUtility::canBeInterpretedAsInteger($key)) {
-                        // If num-arrays
-                        $result[$key] = $TSobjTable[$ObjectKind]['prop']['1,2,3'];
-                    } else {
-                        // standard
-                        $result[$key] = $TSobjTable[$ObjectKind]['prop'][$key];
-                    }
-                }
-            }
-            return $result;
-        }
-        return null;
     }
 
     /**
@@ -283,7 +211,6 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
                     $recData['sys_template'][$saveId][$field] = $tplRow[$field] . $line;
                     // Create new  tce-object
                     $tce = GeneralUtility::makeInstance(DataHandler::class);
-                    $tce->stripslashes_values = false;
                     // Initialize
                     $tce->start($recData, array());
                     // Saved the stuff

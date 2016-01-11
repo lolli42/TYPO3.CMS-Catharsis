@@ -316,18 +316,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
     }
 
     /**
-     * This method actually prints out the module's HTML content
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function render()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        echo $this->content;
-    }
-
-    /**
      * This method checks the status of the '_cli_scheduler' user
      * It will differentiate between a non-existing user and an existing,
      * but disabled user (as per enable fields)
@@ -377,7 +365,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             $data = array('be_users' => array('NEW' => array('username' => '_cli_scheduler', 'password' => $password, 'pid' => 0)));
             /** @var $tcemain \TYPO3\CMS\Core\DataHandling\DataHandler */
             $tcemain = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
-            $tcemain->stripslashes_values = 0;
             $tcemain->start($data, array());
             $tcemain->process_datamap();
             // Check if a new uid was indeed generated (i.e. a new record was created)
@@ -798,7 +785,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         $label = '<label for="tceforms-datetimefield-task_start">' . BackendUtility::wrapInHelp($this->cshKey, 'task_start', $this->getLanguageService()->getLL('label.start')) . '</label>';
         $value = ($taskInfo['start'] > 0 ? strftime($dateFormat, $taskInfo['start']) : '');
         $table[] =
-            '<div class="form-section"><div class="row"><div class="form-group col-sm-6">'
+            '<div class="form-section"><div class="row"><div class="form-group col-sm-6" id="task_start_col">'
                 . $label
                 . '<div class="form-control-wrap">'
                     . '<div class="input-group" id="tceforms-datetimefield-task_start_row-wrapper">'
@@ -814,7 +801,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         $value = ($taskInfo['end'] > 0 ? strftime($dateFormat, $taskInfo['end']) : '');
         $label = '<label for="tceforms-datetimefield-task_end">' . $this->getLanguageService()->getLL('label.end') . '</label>';
         $table[] =
-            '<div class="form-group col-sm-6">'
+            '<div class="form-group col-sm-6" id="task_end_col">'
                 . BackendUtility::wrapInHelp($this->cshKey, 'task_end', $label)
                 . '<div class="form-control-wrap">'
                     . '<div class="input-group" id="tceforms-datetimefield-task_end_row-wrapper">'
@@ -1429,44 +1416,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             }
         }
         return $result;
-    }
-
-    /**
-     * This method checks whether the given string can be considered a valid date or not
-     * Allowed values are anything that matches natural language (see PHP function strtotime())
-     * or TYPO3's date syntax: HH:ii yyyy-mm-dd
-     * If the string is a valid date, the corresponding timestamp is returned.
-     * Otherwise an exception is thrown
-     *
-     * @param string $string String to check
-     * @return int Unix timestamp
-     * @throws \InvalidArgumentException
-     * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, as the unified datetime picker with a separate timestamp field is used.
-     */
-    public function checkDate($string)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        // Try with strtotime
-        $timestamp = strtotime($string);
-        // That failed. Try TYPO3's standard date/time input format
-        if ($timestamp === false) {
-            // Split time and date
-            $dateParts = GeneralUtility::trimExplode(' ', $string, true);
-            // Proceed if there are indeed two parts
-            // Extract each component of date and time
-            if (count($dateParts) == 2) {
-                list($time, $date) = $dateParts;
-                list($hour, $minutes) = GeneralUtility::trimExplode(':', $time, true);
-                list($day, $month, $year) = GeneralUtility::trimExplode('-', $date, true);
-                // Get a timestamp from all these parts
-                $timestamp = @mktime($hour, $minutes, 0, $month, $day, $year);
-            }
-            // If the timestamp is still false, throw an exception
-            if ($timestamp === false) {
-                throw new \InvalidArgumentException('"' . $string . '" seems not to be a correct date.', 1294587694);
-            }
-        }
-        return $timestamp;
     }
 
     /*************************

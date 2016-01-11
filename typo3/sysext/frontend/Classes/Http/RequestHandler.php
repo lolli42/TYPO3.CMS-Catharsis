@@ -131,7 +131,7 @@ class RequestHandler implements RequestHandlerInterface
             $GLOBALS['BE_USER']->initializeAdminPanel();
             $this->bootstrap
                     ->initializeBackendRouter()
-                    ->loadExtensionTables(true);
+                    ->loadExtensionTables();
         } else {
             $this->bootstrap->loadCachedTca();
         }
@@ -162,9 +162,7 @@ class RequestHandler implements RequestHandlerInterface
         if ($this->controller->isBackendUserLoggedIn()) {
             $GLOBALS['BE_USER']->initializeFrontendEdit();
             if ($GLOBALS['BE_USER']->adminPanel instanceof AdminPanelView) {
-                $this->bootstrap
-                    ->initializeLanguageObject()
-                    ->initializeSpriteManager();
+                $this->bootstrap->initializeLanguageObject();
             }
             if ($GLOBALS['BE_USER']->frontendEdit instanceof FrontendEditingController) {
                 $GLOBALS['BE_USER']->frontendEdit->initConfigOptions();
@@ -367,7 +365,7 @@ class RequestHandler implements RequestHandlerInterface
             GeneralUtility::_GP('type'),
             GeneralUtility::_GP('no_cache'),
             GeneralUtility::_GP('cHash'),
-            GeneralUtility::_GP('jumpurl'),
+            null,
             GeneralUtility::_GP('MP'),
             GeneralUtility::_GP('RDCT')
         );

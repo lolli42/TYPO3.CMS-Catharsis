@@ -16,13 +16,15 @@ namespace TYPO3\CMS\Extensionmanager\ViewHelpers;
 
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
  * Display a deactivate / activate link
  * @internal
  */
-class ToggleExtensionInstallationStateViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Link\ActionViewHelper
+class ToggleExtensionInstallationStateViewHelper extends Link\ActionViewHelper
 {
     /**
      * @var string
@@ -32,14 +34,14 @@ class ToggleExtensionInstallationStateViewHelper extends \TYPO3\CMS\Fluid\ViewHe
     /**
      * Renders an install link
      *
-     * @param string $extension
+     * @param array $extension
      * @return string the rendered a tag
      */
     public function render($extension)
     {
         // Early return if package is protected or is a runtime actived package and can not be unloaded
         /** @var $packageManager \TYPO3\CMS\Core\Package\PackageManager */
-        $packageManager = $this->objectManager->get(\TYPO3\CMS\Core\Package\PackageManager::class);
+        $packageManager = $this->objectManager->get(PackageManager::class);
         $package = $packageManager->getPackage($extension['key']);
         if ($package->isProtected() || in_array($extension['key'], $GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'])) {
             return '';
@@ -52,7 +54,7 @@ class ToggleExtensionInstallationStateViewHelper extends \TYPO3\CMS\Fluid\ViewHe
         ), 'Action');
         $this->tag->addAttribute('href', $uri);
         $label = $extension['installed'] ? 'deactivate' : 'activate';
-        $this->tag->addAttribute('title', \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('extensionList.' . $label, 'extensionmanager'));
+        $this->tag->addAttribute('title', LocalizationUtility::translate('extensionList.' . $label, 'extensionmanager'));
         $icon = $extension['installed'] ? 'uninstall' : 'install';
         $this->tag->addAttribute('class', 'onClickMaskExtensionManager btn btn-default');
 

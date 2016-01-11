@@ -23,7 +23,6 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * TYPO3 Backend Template Class
@@ -48,15 +47,6 @@ class DocumentTemplate
      * @var string
      */
     public $form = '';
-
-    /**
-     * Similar to $JScode (see below) but used as an associative array to prevent double inclusion of JS code.
-     * This is used to include certain external Javascript libraries before the inline JS code.
-     * <script>-Tags are not wrapped around automatically
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use pageRenderer directly
-     */
-    public $JScodeLibArray = array();
 
     /**
      * Additional header code (eg. a JavaScript section) could be accommulated in this var. It will be directly outputted in the header.
@@ -90,12 +80,6 @@ function jumpToUrl(URL) {
      * @var string
      */
     public $postCode = '';
-
-    /**
-     * Doc-type used in the header. Default is xhtml_trans. You can also set it to 'html_3', 'xhtml_strict' or 'xhtml_frames'.
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, as it is HTML5
-     */
-    public $docType = '';
 
     /**
      * HTML template with markers for module
@@ -134,13 +118,6 @@ function jumpToUrl(URL) {
 
     /**
      * Additional CSS styles which will be added to the <style> section in the header
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the pageRenderer property for adding CSS styles
-     */
-    public $inDocStyles = '';
-
-    /**
-     * Additional CSS styles which will be added to the <style> section in the header
      * used as array with associative keys to prevent double inclusion of CSS code
      *
      * @var array
@@ -153,64 +130,6 @@ function jumpToUrl(URL) {
      * @var float
      */
     public $form_largeComp = 1.33;
-
-    /**
-     * If set, then a JavaScript section will be outputted in the bottom of page which will try and update the top.busy session expiry object.
-     *
-     * @var int
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $endJS = 1;
-
-    // TYPO3 Colorscheme.
-    // If you want to change this, please do so through a skin using the global var $GLOBALS['TBE_STYLES']
-
-    /**
-     * Light background color
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $bgColor = '#F7F3EF';
-
-    /**
-     * Steel-blue
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $bgColor2 = '#9BA1A8';
-
-    /**
-     * dok.color
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $bgColor3 = '#F6F2E6';
-
-    /**
-     * light tablerow background, brownish
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $bgColor4 = '#D9D5C9';
-
-    /**
-     * light tablerow background, greenish
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $bgColor5 = '#ABBBB4';
-
-    /**
-     * light tablerow background, yellowish, for section headers. Light.
-     *
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $bgColor6 = '#E7DBA8';
-
-    /**
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $hoverColor = '#254D7B';
 
     /**
      * Filename of stylesheet (relative to PATH_typo3)
@@ -234,22 +153,6 @@ function jumpToUrl(URL) {
     public $styleSheetFile_post = '';
 
     /**
-     * Background image of page (relative to PATH_typo3)
-     *
-     * @var string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use a stylesheet instead
-     */
-    public $backGroundImage = '';
-
-    /**
-     * Inline css styling set from TBE_STYLES array
-     *
-     * @var string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use inDocStylesArray['TBEstyle']
-     */
-    public $inDocStyles_TBEstyle = '';
-
-    /**
      * Whether to use the X-UA-Compatible meta tag
      *
      * @var bool
@@ -264,15 +167,6 @@ function jumpToUrl(URL) {
     protected $xUaCompatibilityVersion = 'IE=edge';
 
     // Skinning
-    /**
-     * stylesheets from core
-     *
-     * @var array
-     */
-    protected $stylesheetsCore = array(
-        'generatedSprites' => '../typo3temp/sprites/'
-    );
-
     /**
      * Include these CSS directories from skins by default
      *
@@ -296,23 +190,6 @@ function jumpToUrl(URL) {
      * @var array
      */
     protected $jsFilesNoConcatenation = array();
-
-    /**
-     * Will output the parsetime of the scripts in milliseconds (for admin-users).
-     * Set this to FALSE when releasing TYPO3. Only for dev.
-     *
-     * @var bool
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $parseTimeFlag = false;
-
-    /**
-     * internal character set, nowadays utf-8 for everything
-     *
-     * @var string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, as it is always utf-8
-     */
-    protected $charset = 'utf-8';
 
     /**
      * Indicates if a <div>-output section is open
@@ -399,15 +276,7 @@ function jumpToUrl(URL) {
         $this->templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
 
         // Setting default scriptID:
-        if (($temp_M = (string)GeneralUtility::_GET('M')) && $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M]) {
-            $this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M] . 'index.php');
-        } else {
-            $this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(PATH_thisScript));
-        }
-        if (TYPO3_mainDir != 'typo3/' && substr($this->scriptID, 0, strlen(TYPO3_mainDir)) == TYPO3_mainDir) {
-            // This fixes if TYPO3_mainDir has been changed so the script ids are STILL "typo3/..."
-            $this->scriptID = 'typo3/' . substr($this->scriptID, strlen(TYPO3_mainDir));
-        }
+        $this->scriptID = GeneralUtility::_GET('M') !== null ? GeneralUtility::_GET('M') : GeneralUtility::_GET('route');
         $this->bodyTagId = preg_replace('/[^A-Za-z0-9-]/', '-', $this->scriptID);
         // Individual configuration per script? If so, make a recursive merge of the arrays:
         if (is_array($GLOBALS['TBE_STYLES']['scriptIDindex'][$this->scriptID])) {
@@ -435,10 +304,6 @@ function jumpToUrl(URL) {
         foreach ($this->getSkinStylesheetDirectories() as $stylesheetDirectory) {
             $this->addStylesheetDirectory($stylesheetDirectory);
         }
-        // Background image
-        if ($GLOBALS['TBE_STYLES']['background']) {
-            GeneralUtility::deprecationLog('Usage of $TBE_STYLES["background"] is deprecated. Please use stylesheets directly.');
-        }
     }
 
     /**
@@ -457,7 +322,7 @@ function jumpToUrl(URL) {
         // Add all JavaScript files defined in $this->jsFiles to the PageRenderer
         foreach ($this->jsFilesNoConcatenation as $file) {
             $this->pageRenderer->addJsFile(
-                $GLOBALS['BACK_PATH'] . $file,
+                $file,
                 'text/javascript',
                 true,
                 false,
@@ -467,25 +332,11 @@ function jumpToUrl(URL) {
         }
         // Add all JavaScript files defined in $this->jsFiles to the PageRenderer
         foreach ($this->jsFiles as $file) {
-            $this->pageRenderer->addJsFile($GLOBALS['BACK_PATH'] . $file);
+            $this->pageRenderer->addJsFile($file);
         }
         if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['debug'] === 1) {
             $this->pageRenderer->enableDebugMode();
         }
-    }
-
-    /**
-     * Gets instance of PageRenderer configured with the current language, file references and debug settings
-     *
-     * @return PageRenderer
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8.
-     */
-    public function getPageRenderer()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $this->initPageRenderer();
-
-        return $this->pageRenderer;
     }
 
     /**
@@ -504,26 +355,6 @@ function jumpToUrl(URL) {
      * Various centralized processing
      *
      *****************************************/
-    /**
-     * Makes click menu link (context sensitive menu)
-     * Returns $str (possibly an <|img> tag/icon) wrapped in a link which will activate the context sensitive menu for the record ($table/$uid) or file ($table = file)
-     * The link will load the top frame with the parameter "&item" which is the table,uid and listFr arguments imploded by "|": rawurlencode($table.'|'.$uid.'|'.$listFr)
-     *
-     * @param string $str String to be wrapped in link, typ. image tag.
-     * @param string $table Table name/File path. If the icon is for a database record, enter the tablename from $GLOBALS['TCA']. If a file then enter the absolute filepath
-     * @param int $uid If icon is for database record this is the UID for the record from $table
-     * @param bool $listFr Tells the top frame script that the link is coming from a "list" frame which means a frame from within the backend content frame.
-     * @param string $addParams Additional GET parameters for the link to the ClickMenu AJAX request
-     * @param string $enDisItems Enable / Disable click menu items. Example: "+new,view" will display ONLY these two items (and any spacers in between), "new,view" will display all BUT these two items.
-     * @param bool $returnTagParameters If set, will return only the onclick JavaScript, not the whole link.
-     * @return string The link-wrapped input string.
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use BackendUtility::wrapClickMenuOnIcon() instead
-     */
-    public function wrapClickMenuOnIcon($content, $table, $uid = 0, $listFr = true, $addParams = '', $enDisItems = '', $returnTagParameters = false)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return BackendUtility::wrapClickMenuOnIcon($content, $table, $uid, $listFr, $addParams, $enDisItems, $returnTagParameters);
-    }
 
     /**
      * Makes link to page $id in frontend (view page)
@@ -532,10 +363,9 @@ function jumpToUrl(URL) {
      * If the BE_USER has access to Web>List then a link to that module is shown as well (with return-url)
      *
      * @param int $id The page id
-     * @param string $_ @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
      * @return string HTML string with linked icon(s)
      */
-    public function viewPageIcon($id, $_ = '')
+    public function viewPageIcon($id)
     {
         // If access to Web>List for user, then link to that module.
         $str = BackendUtility::getListViewLink(array(
@@ -545,22 +375,6 @@ function jumpToUrl(URL) {
         // Make link to view page
         $str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
         return $str;
-    }
-
-    /**
-     * Returns a URL with a command to TYPO3 Core Engine (tce_db.php)
-     * See description of the API elsewhere.
-     *
-     * @param string $params is a set of GET params to send to tce_db.php. Example: "&cmd[tt_content][123][move]=456" or "&data[tt_content][123][hidden]=1&data[tt_content][123][title]=Hello%20World
-     * @param string|int $redirectUrl Redirect URL, default is to use GeneralUtility::getIndpEnv('REQUEST_URI'), -1 means to generate an URL for JavaScript using T3_THIS_LOCATION
-     * @return string URL to BackendUtility::getModuleUrl('tce_db') + parameters
-     * @see \TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick()
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use BackendUtility::getLinkToDataHandlerAction() instead
-     */
-    public function issueCommand($params, $redirectUrl = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return BackendUtility::getLinkToDataHandlerAction($params, $redirectUrl);
     }
 
     /**
@@ -641,7 +455,7 @@ function jumpToUrl(URL) {
         // We still need to pass the xMOD name to createShortcut below, since this is used for icons.
         $moduleName = $modName === 'xMOD_alt_doc.php' ? 'record_edit' : $modName;
         // Add the module identifier automatically if typo3/index.php is used:
-        if (GeneralUtility::_GET('M') !== null && isset($GLOBALS['TBE_MODULES']['_PATHS'][$moduleName])) {
+        if (GeneralUtility::_GET('M') !== null) {
             $storeUrl = '&M=' . $moduleName . $storeUrl;
         }
         if ((int)$motherModName === 1) {
@@ -726,46 +540,6 @@ function jumpToUrl(URL) {
     }
 
     /**
-     * Returns a formatted string of $tstamp
-     * Uses $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'] and $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] to format date and time
-     *
-     * @param int $tstamp UNIX timestamp, seconds since 1970
-     * @param int $type How much data to show: $type = 1: hhmm, $type = 10:	ddmmmyy
-     * @return string Formatted timestamp
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the corresponding methods in BackendUtility
-     */
-    public function formatTime($tstamp, $type)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $dateStr = '';
-        switch ($type) {
-            case 1:
-                $dateStr = date($GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'], $tstamp);
-                break;
-            case 10:
-                $dateStr = date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'], $tstamp);
-                break;
-        }
-        return $dateStr;
-    }
-
-    /**
-     * Returns script parsetime IF ->parseTimeFlag is set and user is "admin"
-     * Automatically outputted in page end
-     *
-     * @return string HTML formated with <p>-tags
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function parseTime()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if ($this->parseTimeFlag && $GLOBALS['BE_USER']->isAdmin()) {
-            return '<p>(ParseTime: ' . (GeneralUtility::milliseconds() - $GLOBALS['PARSETIME_START']) . ' ms</p>
-					<p>REQUEST_URI-length: ' . strlen(GeneralUtility::getIndpEnv('REQUEST_URI')) . ')</p>';
-        }
-    }
-
-    /**
      * Defines whether to use the X-UA-Compatible meta tag.
      *
      * @param bool $useCompatibilityTag Whether to use the tag
@@ -835,18 +609,13 @@ function jumpToUrl(URL) {
         // add docstyles
         $this->docStyle();
         if ($this->extDirectStateProvider) {
-            $this->pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/ExtDirect.StateProvider.js');
+            $this->pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/JavaScript/ExtDirect.StateProvider.js');
         }
         $this->pageRenderer->addHeaderData($this->JScode);
         foreach ($this->JScodeArray as $name => $code) {
             $this->pageRenderer->addJsInlineCode($name, $code, false);
         }
-        if (!empty($this->JScodeLibArray)) {
-            GeneralUtility::deprecationLog('DocumentTemplate->JScodeLibArray is deprecated since TYPO3 CMS 7. Use the functionality within pageRenderer directly');
-            foreach ($this->JScodeLibArray as $library) {
-                $this->pageRenderer->addHeaderData($library);
-            }
-        }
+
         if ($this->extJScode) {
             $this->pageRenderer->addExtOnReadyCode($this->extJScode);
         }
@@ -856,7 +625,7 @@ function jumpToUrl(URL) {
         // Note: please do not reference "bootstrap" outside of the TYPO3 Core (not in your own extensions)
         // as this is preliminary as long as Twitter bootstrap does not support AMD modules
         // this logic will be changed once Twitter bootstrap 4 is included
-        $this->pageRenderer->addJsFile('sysext/core/Resources/Public/JavaScript/Contrib/bootstrap/bootstrap.js');
+        $this->pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('core') . 'Resources/Public/JavaScript/Contrib/bootstrap/bootstrap.js');
 
         // hook for additional headerData
         if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preHeaderRenderHook'])) {
@@ -955,9 +724,11 @@ function jumpToUrl(URL) {
      * @param bool $allowHTMLinHeader If set, HTML tags are allowed in $label (otherwise this value is by default htmlspecialchars()'ed)
      * @return string HTML content
      * @see icons(), sectionHeader()
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public function section($label, $text, $nostrtoupper = false, $sH = false, $type = 0, $allowHTMLinHeader = false)
     {
+        GeneralUtility::logDeprecatedFunction();
         $str = '';
         // Setting header
         if ($label) {
@@ -980,9 +751,11 @@ function jumpToUrl(URL) {
      *
      * @param int $dist The margin-top/-bottom of the <hr> ruler.
      * @return string HTML content
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public function divider($dist)
     {
+        GeneralUtility::logDeprecatedFunction();
         $dist = (int)$dist;
         $str = '
 
@@ -993,25 +766,6 @@ function jumpToUrl(URL) {
     }
 
     /**
-     * Returns a blank <div>-section with a height
-     *
-     * @param int $dist Padding-top for the div-section (should be margin-top but konqueror (3.1) doesn't like it :-(
-     * @return string HTML content
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function spacer($dist)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if ($dist > 0) {
-            return '
-
-	<!-- Spacer element -->
-	<div style="padding-top: ' . (int)$dist . 'px;"></div>
-';
-        }
-    }
-
-    /**
      * Make a section header.
      * Begins a section if not already open.
      *
@@ -1019,9 +773,11 @@ function jumpToUrl(URL) {
      * @param bool $sH If set, <h3> is used, otherwise <h4>
      * @param string $addAttrib Additional attributes to h-tag, eg. ' class=""'
      * @return string HTML content
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public function sectionHeader($label, $sH = false, $addAttrib = '')
     {
+        GeneralUtility::logDeprecatedFunction();
         $tag = $sH ? 'h2' : 'h3';
         if ($addAttrib && $addAttrib[0] !== ' ') {
             $addAttrib = ' ' . $addAttrib;
@@ -1040,9 +796,11 @@ function jumpToUrl(URL) {
      * You can call this function even if a section is already begun since the function will only return something if the sectionFlag is not already set!
      *
      * @return string HTML content
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public function sectionBegin()
     {
+        GeneralUtility::logDeprecatedFunction();
         if (!$this->sectionFlag) {
             $this->sectionFlag = 1;
             $str = '
@@ -1064,9 +822,11 @@ function jumpToUrl(URL) {
      * See sectionBegin() also.
      *
      * @return string HTML content
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public function sectionEnd()
     {
+        GeneralUtility::logDeprecatedFunction();
         if ($this->sectionFlag) {
             $this->sectionFlag = 0;
             return '
@@ -1078,19 +838,6 @@ function jumpToUrl(URL) {
         } else {
             return '';
         }
-    }
-
-    /**
-     * If a form-tag is defined in ->form then and end-tag for that <form> element is outputted
-     * Further a JavaScript section is outputted which will update the top.busy session-expiry object (unless $this->endJS is set to FALSE)
-     *
-     * @return string HTML content (<script> tag section)
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, nothing there to output anymore
-     */
-    public function endPageJS()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return '';
     }
 
     /**
@@ -1157,13 +904,13 @@ function jumpToUrl(URL) {
     {
         // Calculation needed, when TYPO3 source is used via a symlink
         // absolute path to the stylesheets
-        $filePath = dirname(GeneralUtility::getIndpEnv('SCRIPT_FILENAME')) . '/' . $GLOBALS['BACK_PATH'] . $path;
+        $filePath = GeneralUtility::getFileAbsFileName($path, false, true);
         // Clean the path
         $resolvedPath = GeneralUtility::resolveBackPath($filePath);
         // Read all files in directory and sort them alphabetically
         $files = GeneralUtility::getFilesInDir($resolvedPath, 'css', false, 1);
         foreach ($files as $file) {
-            $this->pageRenderer->addCssFile($GLOBALS['BACK_PATH'] . $path . $file, 'stylesheet', 'all');
+            $this->pageRenderer->addCssFile($path . $file, 'stylesheet', 'all');
         }
     }
 
@@ -1193,10 +940,6 @@ function jumpToUrl(URL) {
     public function getSkinStylesheetDirectories()
     {
         $stylesheetDirectories = array();
-        // Add default core stylesheets
-        foreach ($this->stylesheetsCore as $stylesheetDir) {
-            $stylesheetDirectories[] = $stylesheetDir;
-        }
         // Stylesheets from skins
         // merge default css directories ($this->stylesheetsSkin) with additional ones and include them
         if (is_array($GLOBALS['TBE_STYLES']['skins'])) {
@@ -1304,32 +1047,6 @@ function jumpToUrl(URL) {
     }
 
     /**
-     * Dimmed-fontwrap. Returns the string wrapped in a <span>-tag defining the color to be gray/dimmed
-     *
-     * @param string $string Input string
-     * @return string Output string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use proper HTML directly
-     */
-    public function dfw($string)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return '<span class="text-muted">' . $string . '</span>';
-    }
-
-    /**
-     * red-fontwrap. Returns the string wrapped in a <span>-tag defining the color to be red
-     *
-     * @param string $string Input string
-     * @return string Output string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use proper HTML directly
-     */
-    public function rfw($string)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return '<span class="text-danger">' . $string . '</span>';
-    }
-
-    /**
      * Returns string wrapped in CDATA "tags" for XML / XHTML (wrap content of <script> and <style> sections in those!)
      *
      * @param string $string Input string
@@ -1381,86 +1098,6 @@ function jumpToUrl(URL) {
     public $table_TR = '<tr>';
 
     public $table_TABLE = '<table border="0" cellspacing="0" cellpadding="0" class="typo3-dblist" id="typo3-tmpltable">';
-
-    /**
-     * Returns a table based on the input $data
-     *
-     * @param array $data Multidim array with first levels = rows, second levels = cells
-     * @param array $layout If set, then this provides an alternative layout array instead of $this->tableLayout
-     * @return string The HTML table.
-     * @internal
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function table($data, $layout = null)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $result = '';
-        if (is_array($data)) {
-            $tableLayout = is_array($layout) ? $layout : $this->tableLayout;
-            $rowCount = 0;
-            foreach ($data as $tableRow) {
-                if ($rowCount % 2) {
-                    $layout = is_array($tableLayout['defRowOdd']) ? $tableLayout['defRowOdd'] : $tableLayout['defRow'];
-                } else {
-                    $layout = is_array($tableLayout['defRowEven']) ? $tableLayout['defRowEven'] : $tableLayout['defRow'];
-                }
-                $rowLayout = is_array($tableLayout[$rowCount]) ? $tableLayout[$rowCount] : $layout;
-                $rowResult = '';
-                if (is_array($tableRow)) {
-                    $cellCount = 0;
-                    foreach ($tableRow as $tableCell) {
-                        $cellWrap = is_array($layout[$cellCount]) ? $layout[$cellCount] : $layout['defCol'];
-                        $cellWrap = is_array($rowLayout['defCol']) ? $rowLayout['defCol'] : $cellWrap;
-                        $cellWrap = is_array($rowLayout[$cellCount]) ? $rowLayout[$cellCount] : $cellWrap;
-                        $rowResult .= $cellWrap[0] . $tableCell . $cellWrap[1];
-                        $cellCount++;
-                    }
-                }
-                $rowWrap = is_array($layout['tr']) ? $layout['tr'] : array($this->table_TR, '</tr>');
-                $rowWrap = is_array($rowLayout['tr']) ? $rowLayout['tr'] : $rowWrap;
-                $result .= $rowWrap[0] . $rowResult . $rowWrap[1];
-                $rowCount++;
-            }
-            $tableWrap = is_array($tableLayout['table']) ? $tableLayout['table'] : array($this->table_TABLE, '</table>');
-            $result = $tableWrap[0] . $result . $tableWrap[1];
-        }
-        return $result;
-    }
-
-    /**
-     * Constructs a table with content from the $arr1, $arr2 and $arr3.
-     *
-     * @param array $arr1 Menu elements on first level
-     * @param array $arr2 Secondary items
-     * @param array $arr3 Third-level items
-     * @return string HTML content, <table>...</table>
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function menuTable($arr1, $arr2 = array(), $arr3 = array())
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $rows = max(array(count($arr1), count($arr2), count($arr3)));
-        $menu = '
-		<table border="0" cellpadding="0" cellspacing="0" id="typo3-tablemenu">';
-        for ($a = 0; $a < $rows; $a++) {
-            $menu .= '<tr>';
-            $cls = array();
-            $valign = 'middle';
-            $cls[] = '<td valign="' . $valign . '">' . $arr1[$a][0] . '</td><td>' . $arr1[$a][1] . '</td>';
-            if (!empty($arr2)) {
-                $cls[] = '<td valign="' . $valign . '">' . $arr2[$a][0] . '</td><td>' . $arr2[$a][1] . '</td>';
-                if (!empty($arr3)) {
-                    $cls[] = '<td valign="' . $valign . '">' . $arr3[$a][0] . '</td><td>' . $arr3[$a][1] . '</td>';
-                }
-            }
-            $menu .= implode($cls, '<td>&nbsp;&nbsp;</td>');
-            $menu .= '</tr>';
-        }
-        $menu .= '
-		</table>
-		';
-        return $menu;
-    }
 
     /**
      * Returns a one-row/two-celled table with $content and $menu side by side.
@@ -1584,71 +1221,6 @@ function jumpToUrl(URL) {
         return '<ul class="nav nav-tabs" role="tablist">' .
                 $options .
             '</ul>';
-    }
-
-    /**
-     * Creates a DYNAMIC tab-menu where the tabs or collapseable are rendered with bootstrap markup
-     *
-     * @param array $menuItems Numeric array where each entry is an array in itself with associative keys: "label" contains the label for the TAB, "content" contains the HTML content that goes into the div-layer of the tabs content. "description" contains description text to be shown in the layer. "linkTitle" is short text for the title attribute of the tab-menu link (mouse-over text of tab). "stateIcon" indicates a standard status icon (see ->icon(), values: -1, 1, 2, 3). "icon" is an image tag placed before the text.
-     * @param string $identString Identification string. This should be unique for every instance of a dynamic menu!
-     * @param int $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
-     * @param bool $collapseable If set, the tabs are rendered as headers instead over each sheet. Effectively this means there is no tab menu, but rather a foldout/foldin menu.
-     * @param bool $wrapContent If set, the content is wrapped in div structure which provides a padding and border style. Set this FALSE to get unstyled content pane with fullsize content area.
-     * @param bool $storeLastActiveTab If set, the last open tab is stored in local storage and will be re-open again. If you don't need this feature, e.g. for wizards like import/export you can disable this behaviour.
-     * @return string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use getDynamicTabMenu() from ModuleTemplate instead.
-     */
-    public function getDynamicTabMenu(array $menuItems, $identString, $defaultTabIndex = 1, $collapseable = false, $wrapContent = true, $storeLastActiveTab = true)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Tabs');
-        $templatePathAndFileName = 'EXT:backend/Resources/Private/Templates/DocumentTemplate/' . ($collapseable ? 'Collapse.html' : 'Tabs.html');
-        $view = GeneralUtility::makeInstance(StandaloneView::class);
-        $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName($templatePathAndFileName));
-        $view->assignMultiple(array(
-            'id' => 'DTM-' . GeneralUtility::shortMD5($identString),
-            'items' => $menuItems,
-            'defaultTabIndex' => $defaultTabIndex,
-            'wrapContent' => $wrapContent,
-            'storeLastActiveTab' => $storeLastActiveTab,
-            'BACK_PATH' => $GLOBALS['BACK_PATH']
-        ));
-        return $view->render();
-    }
-
-    /**
-     * Creates a DYNAMIC tab-menu where the tabs are switched between with DHTML.
-     * Should work in MSIE, Mozilla, Opera and Konqueror. On Konqueror I did find a serious problem: <textarea> fields loose their content when you switch tabs!
-     *
-     * @param array $menuItems Numeric array where each entry is an array in itself with associative keys: "label" contains the label for the TAB, "content" contains the HTML content that goes into the div-layer of the tabs content. "description" contains description text to be shown in the layer. "linkTitle" is short text for the title attribute of the tab-menu link (mouse-over text of tab). "stateIcon" indicates a standard status icon (see ->icon(), values: -1, 1, 2, 3). "icon" is an image tag placed before the text.
-     * @param string $identString Identification string. This should be unique for every instance of a dynamic menu!
-     * @param int $toggle If "1", then enabling one tab does not hide the others - they simply toggles each sheet on/off. This makes most sense together with the $foldout option. If "-1" then it acts normally where only one tab can be active at a time BUT you can click a tab and it will close so you have no active tabs.
-     * @param bool $foldout If set, the tabs are rendered as headers instead over each sheet. Effectively this means there is no tab menu, but rather a foldout/foldin menu. Make sure to set $toggle as well for this option.
-     * @param bool $noWrap Deprecated - delivered by CSS
-     * @param bool $fullWidth If set, the tabs will span the full width of their position
-     * @param int $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
-     * @param int $tabBehaviour If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled. setting this option to '2' is deprecated since TYPO3 CMS 7, and will be removed iwth CMS 8
-     * @return string JavaScript section for the HTML header.
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function getDynTabMenu($menuItems, $identString, $toggle = 0, $foldout = false, $noWrap = true, $fullWidth = false, $defaultTabIndex = 1, $tabBehaviour = 1)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->getDynamicTabMenu($menuItems, $identString, $defaultTabIndex, $foldout, $noWrap);
-    }
-
-    /**
-     * Creates the id for dynTabMenus.
-     *
-     * @param string $identString Identification string. This should be unique for every instance of a dynamic menu!
-     * @return string The id with a short MD5 of $identString and prefixed "DTM-", like "DTM-2e8791854a
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function getDynTabMenuId($identString)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $id = 'DTM-' . GeneralUtility::shortMD5($identString);
-        return $id;
     }
 
     /**
@@ -1922,77 +1494,12 @@ function jumpToUrl(URL) {
     }
 
     /**
-     * Makes a collapseable section. See reports module for an example
-     *
-     * @param string $title
-     * @param string $html
-     * @param string $id
-     * @param string $saveStatePointer
-     * @return string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use HTML bootstrap classes, localStorage etc.
-     */
-    public function collapseableSection($title, $html, $id, $saveStatePointer = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $hasSave = (bool)$saveStatePointer;
-        $collapsedStyle = ($collapsedClass = '');
-        if ($hasSave) {
-            /** @var $userSettingsController \TYPO3\CMS\Backend\Controller\UserSettingsController */
-            $userSettingsController = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\UserSettingsController::class);
-            $value = $userSettingsController->process('get', $saveStatePointer . '.' . $id);
-            if ($value) {
-                $collapsedStyle = ' style="display: none"';
-                $collapsedClass = ' collapsed';
-            } else {
-                $collapsedStyle = '';
-                $collapsedClass = ' expanded';
-            }
-        }
-        $this->pageRenderer->loadExtJS();
-        $this->pageRenderer->addExtOnReadyCode('
-			Ext.select("h2.section-header").each(function(element){
-				element.on("click", function(event, tag) {
-					var state = 0,
-						el = Ext.fly(tag),
-						div = el.next("div"),
-						saveKey = el.getAttribute("rel");
-					if (el.hasClass("collapsed")) {
-						el.removeClass("collapsed").addClass("expanded");
-						div.slideIn("t", {
-							easing: "easeIn",
-							duration: .5
-						});
-					} else {
-						el.removeClass("expanded").addClass("collapsed");
-						div.slideOut("t", {
-							easing: "easeOut",
-							duration: .5,
-							remove: false,
-							useDisplay: true
-						});
-						state = 1;
-					}
-					if (saveKey) {
-						try {
-							top.TYPO3.Storage.Persistent.set(saveKey + "." + tag.id, state);
-						} catch(e) {}
-					}
-				});
-			});
-		');
-        return '
-		  <h2 id="' . $id . '" class="section-header' . $collapsedClass . '" rel="' . $saveStatePointer . '"> ' . $title . '</h2>
-		  <div' . $collapsedStyle . '>' . $html . '</div>
-		';
-    }
-
-    /**
     * Retrieves configured favicon for backend (with fallback)
     *
     * @return string
     */
     protected function getBackendFavicon()
     {
-        return $GLOBALS['TBE_STYLES']['favicon'] ?: 'sysext/backend/Resources/Public/Icons/favicon.ico';
+        return $GLOBALS['TBE_STYLES']['favicon'] ?: ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/Icons/favicon.ico';
     }
 }

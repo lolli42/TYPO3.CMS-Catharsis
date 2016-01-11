@@ -259,19 +259,13 @@ class ExtensionManagementUtility
      *
      * @param string $table The table name of a table already present in $GLOBALS['TCA'] with a columns section
      * @param array $columnArray The array with the additional columns (typical some fields an extension wants to add)
-     * @param bool $addTofeInterface DEPRECATED: Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:statictemplates.
      * @return void
      */
-    public static function addTCAcolumns($table, $columnArray, $addTofeInterface = false)
+    public static function addTCAcolumns($table, $columnArray)
     {
         if (is_array($columnArray) && is_array($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]['columns'])) {
             // Candidate for array_merge() if integer-keys will some day make trouble...
             $GLOBALS['TCA'][$table]['columns'] = array_merge($GLOBALS['TCA'][$table]['columns'], $columnArray);
-            if ($addTofeInterface) {
-                GeneralUtility::deprecationLog(
-                    'Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:' . $GLOBALS['_EXTKEY'] . '.'
-                );
-            }
         }
     }
 
@@ -314,8 +308,8 @@ class ExtensionManagementUtility
                 // Get the palette names used in current showitem
                 $paletteCount = preg_match_all('/(?:^|,)                    # Line start or a comma
 					(?:
-					    \\s*\\-\\-palette\\-\\-;[^;]*;([^,$]*)|              # --palette--;label;paletteName
-					    \\s*\\b[^;,]+\\b(?:;[^;]*;([^;,]+);?[^;,]*;?)?[^,]*  # @deprecated since TYPO3 CMS 7: field;label;paletteName[;options[;colors]]
+					    \\s*\\-\\-palette\\-\\-;[^;]*;([^,$]*)|             # --palette--;label;paletteName
+					    \\s*\\b[^;,]+\\b(?:;[^;]*;([^;,]+))?[^,]*           # field;label;paletteName
 					)/x', $typeDetails['showitem'], $paletteMatches);
                 if ($paletteCount > 0) {
                     $paletteNames = array_filter(array_merge($paletteMatches[1], $paletteMatches[2]));
@@ -838,7 +832,7 @@ class ExtensionManagementUtility
         $extensionName = str_replace(' ', '', ucwords(str_replace('_', ' ', $extensionName)));
         $defaultModuleConfiguration = array(
             'access' => 'admin',
-            'icon' => 'sysext/backend/Resources/Public/Images/Logo.png',
+            'icon' => self::extRelPath('backend') . 'Resources/Public/Images/Logo.png',
             'labels' => '',
             'extRelPath' => self::extRelPath($extensionKey) . 'Classes/'
         );
@@ -866,10 +860,9 @@ class ExtensionManagementUtility
      * and it replaces old conf.php.
      *
      * @param string $moduleSignature The module name
-     * @param string $modulePath Absolute path to module (not used by Extbase currently)
      * @return array Configuration of the module
      */
-    public static function configureModule($moduleSignature, $modulePath)
+    public static function configureModule($moduleSignature)
     {
         $moduleConfiguration = $GLOBALS['TBE_MODULES']['_configuration'][$moduleSignature];
         $iconPathAndFilename = $moduleConfiguration['icon'];
@@ -877,7 +870,6 @@ class ExtensionManagementUtility
             list($extensionKey, $relativePath) = explode('/', substr($iconPathAndFilename, 4), 2);
             $iconPathAndFilename = self::extPath($extensionKey) . $relativePath;
         }
-        // @todo skin support
         $moduleLabels = array(
             'tabs_images' => array(
                 'tab' => $iconPathAndFilename
@@ -901,11 +893,11 @@ class ExtensionManagementUtility
      * @param string $main The main module key, $sub is the submodule key. So $main would be an index in the $TBE_MODULES array and $sub could be an element in the lists there.
      * @param string $sub The submodule key. If $sub is not set a blank $main module is created.
      * @param string $position Can be used to set the position of the $sub module within the list of existing submodules for the main module. $position has this syntax: [cmd]:[submodule-key]. cmd can be "after", "before" or "top" (or blank which is default). If "after"/"before" then submodule will be inserted after/before the existing submodule with [submodule-key] if found. If not found, the bottom of list. If "top" the module is inserted in the top of the submodule list.
-     * @param string $path The absolute path to the module. If this value is defined the path is added as an entry in $TBE_MODULES['_PATHS'][  main_sub  ] = $path; and thereby tells the backend where the newly added modules is found in the system. This option is deprecated as of TYPO3 CMS 7, and will have no effect in TYPO3 CMS 8 anymore.
+     * @param string $path The absolute path to the module. Was used prior to TYPO3 v8, use $moduleConfiguration[routeTarget] now
      * @param array $moduleConfiguration additional configuration, previously put in "conf.php" of the module directory
      * @return void
      */
-    public static function addModule($main, $sub = '', $position = '', $path = '', $moduleConfiguration = array())
+    public static function addModule($main, $sub = '', $position = '', $path = null, $moduleConfiguration = array())
     {
         // If there is already a main module by this name:
         // Adding the submodule to the correct position:
@@ -938,15 +930,10 @@ class ExtensionManagementUtility
             // Create new main modules with only one submodule, $sub (or none if $sub is blank)
             $GLOBALS['TBE_MODULES'][$main] = $sub;
         }
-        $fullModuleSignature = $main . ($sub ? '_' . $sub : '');
-        // Adding path:
-        if ($path) {
-            GeneralUtility::deprecationLog('Registered "' . $fullModuleSignature . '" as a script-based module. Script-based modules are deprecated since TYPO3 CMS 7. Support will be removed with TYPO3 CMS 8, use the "routeTarget" option or dispatched modules instead.');
-            self::addModulePath($fullModuleSignature, $path);
-        }
 
         // add additional configuration
         if (is_array($moduleConfiguration) && !empty($moduleConfiguration)) {
+            $fullModuleSignature = $main . ($sub ? '_' . $sub : '');
             $GLOBALS['TBE_MODULES']['_configuration'][$fullModuleSignature] = $moduleConfiguration;
         }
     }
@@ -985,28 +972,6 @@ class ExtensionManagementUtility
     }
 
     /**
-     * Adds a module path to $GLOBALS['TBE_MODULES'] for used with the module dispatcher, index.php
-     * Used only for modules that are not placed in the main/sub menu hierarchy by the traditional mechanism of addModule()
-     * Examples for this is context menu functionality (like import/export) which runs as an independent module through index.php
-     * FOR USE IN ext_tables.php FILES
-     * Example:  \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath('xMOD_tximpexp', \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY).'app/');
-     *
-     * @param string $name The name of the module, refer to conf.php of the module.
-     * @param string $path The absolute path to the module directory inside of which "index.php" and "conf.php" is found.
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use routeTarget or dispatched modules instead.
-     */
-    public static function addModulePath($name, $path)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if (StringUtility::beginsWith($path, 'EXT:')) {
-            list($extensionKey, $relativePath) = explode('/', substr($path, 4), 2);
-            $path = ExtensionManagementUtility::extPath($extensionKey) . $relativePath;
-        }
-        $GLOBALS['TBE_MODULES']['_PATHS'][$name] = $path;
-    }
-
-    /**
      * Adds a "Function menu module" ('third level module') to an existing function menu for some other backend module
      * The arguments values are generally determined by which function menu this is supposed to interact with
      * See Inside TYPO3 for information on how to use this function.
@@ -1025,7 +990,6 @@ class ExtensionManagementUtility
     {
         $GLOBALS['TBE_MODULES_EXT'][$modname]['MOD_MENU'][$MM_key][$className] = array(
             'name' => $className,
-            'path' => null,
             'title' => $title,
             'ws' => $WS
         );
@@ -1898,7 +1862,6 @@ tt_content.' . $key . $suffix . ' {
                 // and are explicitly set in cached file as well
                 $_EXTCONF = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$_EXTKEY];
                 require $extensionInformation['ext_tables.php'];
-                static::loadNewTcaColumnsConfigFiles();
             }
         }
     }
@@ -1938,57 +1901,12 @@ tt_content.' . $key . $suffix . ' {
                 // Add ext_tables.php content of extension
                 $phpCodeToCache[] = trim(GeneralUtility::getUrl($extensionDetails['ext_tables.php']));
                 $phpCodeToCache[] = '';
-                $phpCodeToCache[] = ExtensionManagementUtility::class . '::loadNewTcaColumnsConfigFiles();';
-                $phpCodeToCache[] = '';
             }
         }
         $phpCodeToCache = implode(LF, $phpCodeToCache);
         // Remove all start and ending php tags from content
         $phpCodeToCache = preg_replace('/<\\?php|\\?>/is', '', $phpCodeToCache);
         self::getCacheManager()->getCache('cache_core')->set(self::getExtTablesCacheIdentifier(), $phpCodeToCache);
-    }
-
-    /**
-     * Loads "columns" of a $TCA table definition if extracted
-     * to a "dynamicConfigFile". This method is called after each
-     * single ext_tables.php files was included to immediately have
-     * the full $TCA ready for the next extension.
-     *
-     * $TCA[$tableName]['ctrl']['dynamicConfigFile'] must be the
-     * absolute path to a file.
-     *
-     * Be aware that 'dynamicConfigFile' is obsolete, and all TCA
-     * table definitions should be moved to Configuration/TCA/tablename.php
-     * to be fully loaded automatically.
-     *
-     * Example:
-     * dynamicConfigFile = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'SysNote.php',
-     *
-     * @return void
-     * @throws \RuntimeException
-     * @internal Internal use ONLY. It is called by cache files and can not be protected. Do not call yourself!
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Table definition should be moved to <your_extension>/Configuration/TCA/<table_name>
-     */
-    public static function loadNewTcaColumnsConfigFiles()
-    {
-        global $TCA;
-
-        foreach ($TCA as $tableName => $_) {
-            if (!isset($TCA[$tableName]['columns'])) {
-                $columnsConfigFile = $TCA[$tableName]['ctrl']['dynamicConfigFile'];
-                if ($columnsConfigFile) {
-                    GeneralUtility::logDeprecatedFunction();
-                    if (GeneralUtility::isAbsPath($columnsConfigFile)) {
-                        include($columnsConfigFile);
-                    } else {
-                        throw new \RuntimeException(
-                            'Columns configuration file not found',
-                            1341151261
-                        );
-                    }
-                }
-            }
-        }
     }
 
     /**

@@ -54,8 +54,8 @@ class ExtensionCompatibilityTester extends AbstractAjaxAction
      */
     public function __construct()
     {
-        $this->protocolFile = PATH_site . 'typo3temp/ExtensionCompatibilityTester.txt';
-        $this->errorProtocolFile = PATH_site . 'typo3temp/ExtensionCompatibilityTesterErrors.json';
+        $this->protocolFile = PATH_site . 'typo3temp/assets/ExtensionCompatibilityTester.txt';
+        $this->errorProtocolFile = PATH_site . 'typo3temp/assets/ExtensionCompatibilityTesterErrors.json';
     }
 
     /**
@@ -169,7 +169,6 @@ class ExtensionCompatibilityTester extends AbstractAjaxAction
             // and are explicitly set in cached file as well
             $_EXTCONF = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$_EXTKEY];
             require $extension['ext_tables.php'];
-            ExtensionManagementUtility::loadNewTcaColumnsConfigFiles();
         }
     }
 

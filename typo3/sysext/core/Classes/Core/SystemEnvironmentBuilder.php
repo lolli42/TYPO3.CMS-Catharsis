@@ -85,9 +85,9 @@ class SystemEnvironmentBuilder
     protected static function defineBaseConstants()
     {
         // This version, branch and copyright
-        define('TYPO3_version', '7.6.1-dev');
-        define('TYPO3_branch', '7.6');
-        define('TYPO3_copyright_year', '1998-2015');
+        define('TYPO3_version', '8.0.0-dev');
+        define('TYPO3_branch', '8.0');
+        define('TYPO3_copyright_year', '1998-2016');
 
         // TYPO3 external links
         define('TYPO3_URL_GENERAL', 'https://typo3.org/');
@@ -276,7 +276,7 @@ class SystemEnvironmentBuilder
      */
     protected static function getPathThisScript()
     {
-        if (defined('TYPO3_cliMode') && TYPO3_cliMode === true) {
+        if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) {
             return self::getPathThisScriptCli();
         } else {
             return self::getPathThisScriptNonCli();

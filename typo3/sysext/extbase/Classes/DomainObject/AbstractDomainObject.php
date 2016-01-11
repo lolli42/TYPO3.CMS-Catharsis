@@ -14,8 +14,6 @@ namespace TYPO3\CMS\Extbase\DomainObject;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
 /**
  * A generic Domain Object.
  *
@@ -59,19 +57,6 @@ abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS
      * @var array An array holding the clean property values. Set right after reconstitution of the object
      */
     private $_cleanProperties = array();
-
-    /**
-     * This is the magic __wakeup() method. It's invoked by the unserialize statement in the reconstitution process
-     * of the object. If you want to implement your own __wakeup() method in your Domain Object you have to call
-     * parent::__wakeup() first!
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Objects are instantiated differently calling parent::__wakeup() is no longer necessary.
-     */
-    public function __wakeup()
-    {
-        GeneralUtility::logDeprecatedFunction();
-    }
 
     /**
      * Getter for uid.

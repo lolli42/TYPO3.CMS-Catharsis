@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\Http;
  */
 use TYPO3\CMS\Core\Core\ApplicationInterface;
 use TYPO3\CMS\Core\Core\Bootstrap;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Entry point for the TYPO3 Backend (HTTP requests)
@@ -58,10 +57,8 @@ class Application implements ApplicationInterface
 
         $this->bootstrap = Bootstrap::getInstance()
             ->initializeClassLoader($classLoader)
+            ->setRequestType(TYPO3_REQUESTTYPE_BE | (!empty($_GET['ajaxID']) ? TYPO3_REQUESTTYPE_AJAX : 0))
             ->baseSetup($this->entryPointPath);
-
-        // can be done here after the base setup is done
-        $this->defineAdditionalEntryPointRelatedConstants();
 
         // Redirect to install tool if base configuration is not found
         if (!$this->bootstrap->checkIfEssentialConfigurationExists()) {
@@ -106,22 +103,5 @@ class Application implements ApplicationInterface
     protected function defineLegacyConstants()
     {
         define('TYPO3_MODE', 'BE');
-    }
-
-    /**
-     * Define values that are based on the current script
-     */
-    protected function defineAdditionalEntryPointRelatedConstants()
-    {
-        $currentScript = GeneralUtility::getIndpEnv('SCRIPT_NAME');
-
-        // Activate "AJAX" handler when called with the GET variable ajaxID
-        if (!empty(GeneralUtility::_GET('ajaxID'))) {
-            $GLOBALS['TYPO3_AJAX'] = true;
-        // The following check is security relevant! DO NOT REMOVE!
-        } elseif (empty(GeneralUtility::_GET('M')) && substr($currentScript, -16) === '/typo3/index.php') {
-            // Allow backend login to work, disallow module access without authenticated backend user
-            define('TYPO3_PROCEED_IF_NO_USER', 1);
-        }
     }
 }

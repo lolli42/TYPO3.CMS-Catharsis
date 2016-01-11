@@ -32,8 +32,6 @@ use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 
 /**
  * Module: TypoScript Tools
- *
- * $TYPO3_CONF_VARS["MODS"]["web_ts"]["onlineResourceDir"]  = Directory of default resources. Eg. "fileadmin/res/" or so.
  */
 class TypoScriptTemplateModuleController extends BaseScriptClass
 {
@@ -148,7 +146,6 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
         if (GeneralUtility::_GP('clear_all_cache')) {
             /** @var DataHandler $tce */
             $tce = GeneralUtility::makeInstance(DataHandler::class);
-            $tce->stripslashes_values = false;
             $tce->start(array(), array());
             $tce->clear_cacheCmd('all');
         }
@@ -311,18 +308,6 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
         $this->moduleTemplate->setContent($this->content);
         $response->getBody()->write($this->moduleTemplate->renderContent());
         return $response;
-    }
-
-    /**
-     * Print content
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function printContent()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        echo $this->content;
     }
 
     /**
@@ -554,7 +539,6 @@ class TypoScriptTemplateModuleController extends BaseScriptClass
         $recData = array();
         /** @var DataHandler $tce */
         $tce = GeneralUtility::makeInstance(DataHandler::class);
-        $tce->stripslashes_values = false;
 
         if (GeneralUtility::_GP('createExtension')) {
             $recData['sys_template']['NEW'] = array(

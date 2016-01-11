@@ -85,15 +85,6 @@ class DataHandler
     public $checkSimilar = true;
 
     /**
-     * If TRUE, incoming values in the data-array have their slashes stripped. ALWAYS SET THIS TO ZERO and supply an
-     * unescaped data array instead. This switch may totally disappear in future versions of this class!
-     *
-     * @var bool
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public $stripslashes_values = true;
-
-    /**
      * This will read the record after having updated or inserted it. If anything is not properly submitted an error
      * is written to the log. This feature consumes extra time by selecting records
      *
@@ -136,14 +127,6 @@ class DataHandler
      * @var bool
      */
     public $dontProcessTransformations = false;
-
-    /**
-     * If set, .vDEFbase values are unset in flexforms.
-     *
-     * @var bool
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
-     */
-    public $clear_flexFormData_vDEFbase = false;
 
     /**
      * TRUE: (traditional) Updates when record is saved. For flexforms, updates if change is made to the localized value.
@@ -390,12 +373,6 @@ class DataHandler
      * @var array
      */
     protected $excludedTablesAndFields = array();
-
-    /**
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     * @var int
-     */
-    public $include_filefunctions;
 
     /**
      * Data submitted from the form view, used to control behaviours,
@@ -668,6 +645,14 @@ class DataHandler
      * @var array
      */
     protected static $recordsToClearCacheFor = array();
+
+    /**
+     * Internal cache for pids of records which were deleted. It's not possible
+     * to retrieve the parent folder/page at a later stage
+     *
+     * @var array
+     */
+    protected static $recordPidsForDeletedRecords = array();
 
     /**
      * Database layer. Identical to $GLOBALS['TYPO3_DB']
@@ -1166,7 +1151,6 @@ class DataHandler
 
                                 /** @var $tce DataHandler */
                                 $tce = GeneralUtility::makeInstance(__CLASS__);
-                                $tce->stripslashes_values = false;
                                 // Setting up command for creating a new version of the record:
                                 $cmd = array();
                                 $cmd[$table][$id]['version'] = array(
@@ -1463,18 +1447,6 @@ class DataHandler
                 continue;
             }
 
-            // Stripping slashes - will probably be removed the day $this->stripslashes_values is removed as an option...
-            // @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-            if ($this->stripslashes_values) {
-                GeneralUtility::deprecationLog(
-                    'The option stripslash_values is typically set to FALSE as data should be properly prepared before sending to DataHandler. Do not rely on DataHandler removing extra slashes. The option will be removed in TYPO3 CMS 8.'
-                );
-                if (is_array($fieldValue)) {
-                    GeneralUtility::stripSlashesOnArray($fieldValue);
-                } else {
-                    $fieldValue = stripslashes($fieldValue);
-                }
-            }
             switch ($field) {
                 case 'uid':
                 case 'pid':
@@ -1746,23 +1718,6 @@ class DataHandler
     /**
      * Evaluate "text" type values.
      *
-     * @param array $res The result array. The processed value (if any!) is set in the "value" key.
-     * @param string $value The value to set.
-     * @param array $tcaFieldConf Field configuration from TCA
-     * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
-     * @param string $field Field name
-     * @return array Modified $res array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function checkValue_text($res, $value, $tcaFieldConf, $PP, $field = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->checkValueForText($value, $tcaFieldConf);
-    }
-
-    /**
-     * Evaluate "text" type values.
-     *
      * @param string $value The value to set.
      * @param array $tcaFieldConf Field configuration from TCA
      * @return array $res The result array. The processed value (if any!) is set in the "value" key.
@@ -1780,24 +1735,6 @@ class DataHandler
             $this->runtimeCache->set($cacheId, $evalCodesArray);
         }
         return $this->checkValue_text_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
-    }
-
-    /**
-     * Evaluate "input" type values.
-     *
-     * @param array $res The result array. The processed value (if any!) is set in the "value" key.
-     * @param string $value The value to set.
-     * @param array $tcaFieldConf Field configuration from TCA
-     * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
-     * @param string $field Field name
-     * @return array Modified $res array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function checkValue_input($res, $value, $tcaFieldConf, $PP, $field = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        list($table, $id, , , $realPid) = $PP;
-        return $this->checkValueForInput($value, $tcaFieldConf, $table, $id, $realPid, $field);
     }
 
     /**
@@ -1883,24 +1820,6 @@ class DataHandler
      * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
      * @param string $value The value to set.
      * @param array $tcaFieldConf Field configuration from TCA
-     * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
-     * @param string $field Field name
-     * @return array Modified $res array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function checkValue_check($res, $value, $tcaFieldConf, $PP, $field = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        list($table, $id, , , $realPid) = $PP;
-        return $this->checkValueForCheck($res, $value, $tcaFieldConf, $table, $id, $realPid, $field);
-    }
-
-    /**
-     * Evaluates 'check' type values.
-     *
-     * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
-     * @param string $value The value to set.
-     * @param array $tcaFieldConf Field configuration from TCA
      * @param string $table Table name
      * @param int $id UID of record
      * @param int $realPid The real PID value of the record. For updates, this is just the pid of the record. For new records this is the PID of the page where it is inserted. If $realPid is -1 it means that a new version of the record is being inserted.
@@ -1952,23 +1871,6 @@ class DataHandler
      * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
      * @param string $value The value to set.
      * @param array $tcaFieldConf Field configuration from TCA
-     * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
-     * @return array Modified $res array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function checkValue_radio($res, $value, $tcaFieldConf, $PP)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        // TODO find a way to get the field name; it should not be set in $recFID as this is only created for some record types, see checkValue()
-        return $this->checkValueForRadio($res, $value, $tcaFieldConf, $PP[0], $PP[1], $PP[4], '');
-    }
-
-    /**
-     * Evaluates 'radio' type values.
-     *
-     * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
-     * @param string $value The value to set.
-     * @param array $tcaFieldConf Field configuration from TCA
      * @param array $table The table of the record
      * @param int $id The id of the record
      * @param int $pid The pid of the record
@@ -2001,25 +1903,6 @@ class DataHandler
         }
 
         return $res;
-    }
-
-    /**
-     * Evaluates 'group' or 'select' type values.
-     *
-     * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
-     * @param string $value The value to set.
-     * @param array $tcaFieldConf Field configuration from TCA
-     * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
-     * @param array $uploadedFiles
-     * @param string $field Field name
-     * @return array Modified $res array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function checkValue_group_select($res, $value, $tcaFieldConf, $PP, $uploadedFiles, $field)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        list($table, $id, $curValue, $status, , $recFID) = $PP;
-        return $this->checkValueForGroupSelect($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $recFID, $uploadedFiles, $field);
     }
 
     /**
@@ -2160,7 +2043,6 @@ class DataHandler
      * @return array Modified value array
      *
      * @throws \RuntimeException
-     * @see checkValue_group_select()
      */
     public function checkValue_group_select_file($valueArray, $tcaFieldConf, $curValue, $uploadedFileArray, $status, $table, $id, $recFID)
     {
@@ -2183,7 +2065,6 @@ class DataHandler
             // Creating fileFunc object.
             if (!$this->fileFunc) {
                 $this->fileFunc = GeneralUtility::makeInstance(BasicFileUtility::class);
-                $this->include_filefunctions = 1;
             }
             // Setting permitted extensions.
             $all_files = array();
@@ -2437,25 +2318,6 @@ class DataHandler
      * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
      * @param string|array $value The value to set.
      * @param array $tcaFieldConf Field configuration from TCA
-     * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
-     * @param array $uploadedFiles Uploaded files for the field
-     * @param string $field Field name
-     * @return array Modified $res array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function checkValue_flex($res, $value, $tcaFieldConf, $PP, $uploadedFiles, $field)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        list($table, $id, $curValue, $status, $realPid, $recFID, $tscPID) = $PP;
-        $this->checkValueForFlex($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $realPid, $recFID, $tscPID, $uploadedFiles, $field);
-    }
-
-    /**
-     * Evaluates 'flex' type values.
-     *
-     * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
-     * @param string|array $value The value to set.
-     * @param array $tcaFieldConf Field configuration from TCA
      * @param string $table Table name
      * @param int $id UID of record
      * @param mixed $curValue Current value of the field
@@ -2480,10 +2342,6 @@ class DataHandler
             $currentValueArray = (string)$curValue !== '' ? GeneralUtility::xml2array($curValue) : array();
             if (!is_array($currentValueArray)) {
                 $currentValueArray = array();
-            }
-            if (isset($currentValueArray['meta']['currentLangId'])) {
-                // @deprecated call since TYPO3 7, will be removed with TYPO3 8
-                unset($currentValueArray['meta']['currentLangId']);
             }
             // Remove all old meta for languages...
             // Evaluation of input values:
@@ -3126,10 +2984,7 @@ class DataHandler
                     // Finally, check if new and old values are different (or no .vDEFbase value is found) and if so, we record the vDEF value for diff'ing.
                     // We do this after $dataValues has been updated since I expect that $dataValues_current holds evaluated values from database (so this must be the right value to compare with).
                     if (substr($vKey, -9) != '.vDEFbase') {
-                        // @deprecated: flexFormXMLincludeDiffBase is only enabled by ext:compatibility6 since TYPO3 CMS 7, vDEFbase can be unset / ignored with TYPO3 CMS 8
-                        if ($this->clear_flexFormData_vDEFbase) {
-                            $dataValues[$key][$vKey . '.vDEFbase'] = '';
-                        } elseif ($this->updateModeL10NdiffData && $GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && $vKey !== 'vDEF' && ((string)$dataValues[$key][$vKey] !== (string)$dataValues_current[$key][$vKey] || !isset($dataValues_current[$key][$vKey . '.vDEFbase']) || $this->updateModeL10NdiffData === 'FORCE_FFUPD')) {
+                        if ($this->updateModeL10NdiffData && $GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && $vKey !== 'vDEF' && ((string)$dataValues[$key][$vKey] !== (string)$dataValues_current[$key][$vKey] || !isset($dataValues_current[$key][$vKey . '.vDEFbase']) || $this->updateModeL10NdiffData === 'FORCE_FFUPD')) {
                             // Now, check if a vDEF value is submitted in the input data, if so we expect this has been processed prior to this operation (normally the case since those fields are higher in the form) and we can use that:
                             if (isset($dataValues[$key]['vDEF'])) {
                                 $diffValue = $dataValues[$key]['vDEF'];
@@ -4042,7 +3897,6 @@ class DataHandler
         // Creating fileFunc object.
         if (!$this->fileFunc) {
             $this->fileFunc = GeneralUtility::makeInstance(BasicFileUtility::class);
-            $this->include_filefunctions = 1;
         }
         // Select all RTEmagic files in the reference table from the table/ID
         $where = join(' AND ', array(
@@ -4291,7 +4145,8 @@ class DataHandler
         if ($destPid >= 0) {
             if ($table != 'pages' || $this->destNotInsideSelf($destPid, $uid)) {
                 // Clear cache before moving
-                $this->registerRecordIdForPageCacheClearing($table, $uid);
+                list($parentUid) = BackendUtility::getTSCpid($table, $uid, '');
+                $this->registerRecordIdForPageCacheClearing($table, $uid, $parentUid);
                 // Setting PID
                 $updateFields['pid'] = $destPid;
                 // Table is sorted by 'sortby'
@@ -4703,7 +4558,7 @@ class DataHandler
         $action = $command['action'];
         $ids = $command['ids'];
 
-        if (!$field || !GeneralUtility::inList('localize,synchronize', $action) && empty($ids) || !isset($GLOBALS['TCA'][$table]['columns'][$field]['config'])) {
+        if (!$field || !($action === 'localize' || $action === 'synchronize') && empty($ids) || !isset($GLOBALS['TCA'][$table]['columns'][$field]['config'])) {
             return;
         }
 
@@ -4783,7 +4638,6 @@ class DataHandler
         if (is_array($removeArray) && !empty($removeArray)) {
             /** @var DataHandler $tce */
             $tce = GeneralUtility::makeInstance(__CLASS__);
-            $tce->stripslashes_values = false;
             $tce->start(array(), $removeArray);
             $tce->process_cmdmap();
             unset($tce);
@@ -4881,7 +4735,9 @@ class DataHandler
                     $versionState = VersionState::cast($verRec['t3ver_state']);
                     if ($versionState->equals(VersionState::MOVE_POINTER)) {
                         $versionMovePlaceholder = BackendUtility::getMovePlaceholder($table, $uid, 'uid', $verRec['t3ver_wsid']);
-                        $this->deleteEl($table, $versionMovePlaceholder['uid'], true, $forceHardDelete);
+                        if (!empty($versionMovePlaceholder)) {
+                            $this->deleteEl($table, $versionMovePlaceholder['uid'], true, $forceHardDelete);
+                        }
                     }
                 }
             }
@@ -4939,7 +4795,8 @@ class DataHandler
         }
 
         // Clear cache before deleting the record, else the correct page cannot be identified by clear_cache
-        $this->registerRecordIdForPageCacheClearing($table, $uid);
+        list($parentUid) = BackendUtility::getTSCpid($table, $uid, '');
+        $this->registerRecordIdForPageCacheClearing($table, $uid, $parentUid);
         $deleteField = $GLOBALS['TCA'][$table]['ctrl']['delete'];
         if ($deleteField && !$forceHardDelete) {
             $updateFields = array(
@@ -5063,6 +4920,11 @@ class DataHandler
      */
     public function deletePages($uid, $force = false, $forceHardDelete = false)
     {
+        $uid = (int)$uid;
+        if ($uid === 0) {
+            $this->newlog2('Deleting all pages starting from the root-page is disabled.', 'pages', 0, 0, 2);
+            return;
+        }
         // Getting list of pages to delete:
         if ($force) {
             // Returns the branch WITHOUT permission checks (0 secures that)
@@ -5136,9 +4998,11 @@ class DataHandler
     protected function copyMovedRecordToNewLocation($table, $uid)
     {
         if ($this->BE_USER->workspace > 0) {
-            // Check move placeholder at workspace
+            $originalRecord = BackendUtility::getRecord($table, $uid);
             $movePlaceholder = BackendUtility::getMovePlaceholder($table, $uid);
-            if ($movePlaceholder !== false) {
+            // Check whether target page to copied to is different to current page
+            // Cloning on the same page is superfluous and does not help at all
+            if (!empty($originalRecord) && !empty($movePlaceholder) && (int)$originalRecord['pid'] !== (int)$movePlaceholder['pid']) {
                 // If move placeholder exists, copy to new location
                 // This will create a New placeholder on the new location
                 // and a version for this new placeholder
@@ -5151,7 +5015,6 @@ class DataHandler
                 );
                 /** @var DataHandler $dataHandler */
                 $dataHandler = GeneralUtility::makeInstance(__CLASS__);
-                $dataHandler->stripslashes_values = false;
                 $dataHandler->neverHideAtCopy = true;
                 $dataHandler->start(array(), $command);
                 $dataHandler->process_cmdmap();
@@ -5272,6 +5135,9 @@ class DataHandler
     {
         $conf = $GLOBALS['TCA'][$table]['columns'];
         $row = BackendUtility::getRecord($table, $uid, '*', '', false);
+        if (empty($row)) {
+            return;
+        }
         foreach ($row as $field => $value) {
             $this->deleteRecord_procBasedOnFieldType($table, $uid, $field, $value, $conf[$field]['config'], $undeleteRecord);
         }
@@ -5598,19 +5464,16 @@ class DataHandler
     /**
      * Returns an instance of DataHandler for handling local datamaps/cmdmaps
      *
-     * @param bool $stripslashesValues If TRUE, incoming values in the data-array have their slashes stripped.
-     * @param bool $dontProcessTransformations If set, then transformations are NOT performed on the input.
      * @return DataHandler
      */
-    protected function getLocalTCE($stripslashesValues = false, $dontProcessTransformations = true)
+    protected function getLocalTCE()
     {
         $copyTCE = GeneralUtility::makeInstance(__CLASS__);
-        $copyTCE->stripslashes_values = $stripslashesValues;
         $copyTCE->copyTree = $this->copyTree;
         // Copy forth the cached TSconfig
         $copyTCE->cachedTSconfig = $this->cachedTSconfig;
         // Transformations should NOT be carried out during copy
-        $copyTCE->dontProcessTransformations = $dontProcessTransformations;
+        $copyTCE->dontProcessTransformations = true;
         return $copyTCE;
     }
 
@@ -7246,6 +7109,23 @@ class DataHandler
     }
 
     /**
+     * Gets UID of parent record. If record is deleted it will be looked up in
+     * an array built before the record was deleted
+     *
+     * @param string $table Table where record lives/lived
+     * @param int $uid Record UID
+     * @return int[] Parent UIDs
+     */
+    protected function getOriginalParentOfRecord($table, $uid)
+    {
+        if (isset(self::$recordPidsForDeletedRecords[$table][$uid])) {
+            return self::$recordPidsForDeletedRecords[$table][$uid];
+        }
+        list($parentUid) = BackendUtility::getTSCpid($table, $uid, '');
+        return array($parentUid);
+    }
+
+    /**
      * Return TSconfig for a page id
      *
      * @param int $tscPID Page id (PID) from which to get configuration.
@@ -7702,15 +7582,22 @@ class DataHandler
      *
      * @param string $table Table name of record that was just updated.
      * @param int $uid UID of updated / inserted record
+     * @param int $pid REAL PID of page of a deleted/moved record to get TSconfig in ClearCache.
      * @return void
      * @internal This method is not meant to be called directly but only from the core itself or from hooks
      */
-    public function registerRecordIdForPageCacheClearing($table, $uid)
+    public function registerRecordIdForPageCacheClearing($table, $uid, $pid = null)
     {
         if (!is_array(static::$recordsToClearCacheFor[$table])) {
             static::$recordsToClearCacheFor[$table] = array();
         }
         static::$recordsToClearCacheFor[$table][] = (int)$uid;
+        if ($pid !== null) {
+            if (!is_array(static::$recordPidsForDeletedRecords[$table])) {
+                static::$recordPidsForDeletedRecords[$table] = array();
+            }
+            static::$recordPidsForDeletedRecords[$table][$uid][] = (int)$pid;
+        }
     }
 
     /**
@@ -7721,87 +7608,19 @@ class DataHandler
     {
         $tagsToClear = array();
         $clearCacheCommands = array();
+
         foreach (static::$recordsToClearCacheFor as $table => $uids) {
             foreach (array_unique($uids) as $uid) {
-                $pageUid = 0;
                 if (!isset($GLOBALS['TCA'][$table]) || $uid <= 0) {
                     return;
                 }
-                // Get Page TSconfig relevant:
-                list($tscPID) = BackendUtility::getTSCpid($table, $uid, '');
-                $TSConfig = $this->getTCEMAIN_TSconfig($tscPID);
-                if (empty($TSConfig['clearCache_disable'])) {
-                    // If table is "pages":
-                    $pageIdsThatNeedCacheFlush = array();
-                    if ($table === 'pages' || $table === 'pages_language_overlay') {
-                        if ($table === 'pages_language_overlay') {
-                            $pageUid = $this->getPID($table, $uid);
-                        } else {
-                            $pageUid = $uid;
-                        }
-                        // Builds list of pages on the SAME level as this page (siblings)
-                        $res_tmp = $this->databaseConnection->exec_SELECTquery('A.pid AS pid, B.uid AS uid', 'pages A, pages B', 'A.uid=' . (int)$pageUid . ' AND B.pid=A.pid AND B.deleted=0');
-                        $pid_tmp = 0;
-                        while ($row_tmp = $this->databaseConnection->sql_fetch_assoc($res_tmp)) {
-                            $pageIdsThatNeedCacheFlush[] = (int)$row_tmp['uid'];
-                            $pid_tmp = $row_tmp['pid'];
-                            // Add children as well:
-                            if ($TSConfig['clearCache_pageSiblingChildren']) {
-                                $res_tmp2 = $this->databaseConnection->exec_SELECTquery('uid', 'pages', 'pid=' . (int)$row_tmp['uid'] . ' AND deleted=0');
-                                while ($row_tmp2 = $this->databaseConnection->sql_fetch_assoc($res_tmp2)) {
-                                    $pageIdsThatNeedCacheFlush[] = (int)$row_tmp2['uid'];
-                                }
-                                $this->databaseConnection->sql_free_result($res_tmp2);
-                            }
-                        }
-                        $this->databaseConnection->sql_free_result($res_tmp);
-                        // Finally, add the parent page as well:
-                        $pageIdsThatNeedCacheFlush[] = (int)$pid_tmp;
-                        // Add grand-parent as well:
-                        if ($TSConfig['clearCache_pageGrandParent']) {
-                            $res_tmp = $this->databaseConnection->exec_SELECTquery('pid', 'pages', 'uid=' . (int)$pid_tmp);
-                            if ($row_tmp = $this->databaseConnection->sql_fetch_assoc($res_tmp)) {
-                                $pageIdsThatNeedCacheFlush[] = (int)$row_tmp['pid'];
-                            }
-                            $this->databaseConnection->sql_free_result($res_tmp);
-                        }
-                    } else {
-                        // For other tables than "pages", delete cache for the records "parent page".
-                        $pageIdsThatNeedCacheFlush[] = $pageUid = (int)$this->getPID($table, $uid);
-                    }
-                    // Call pre-processing function for clearing of cache for page ids:
-                    if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearPageCacheEval'])) {
-                        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearPageCacheEval'] as $funcName) {
-                            $_params = array('pageIdArray' => &$pageIdsThatNeedCacheFlush, 'table' => $table, 'uid' => $uid, 'functionID' => 'clear_cache()');
-                            // Returns the array of ids to clear, FALSE if nothing should be cleared! Never an empty array!
-                            GeneralUtility::callUserFunction($funcName, $_params, $this);
-                        }
-                    }
-                    // Delete cache for selected pages:
-                    foreach ($pageIdsThatNeedCacheFlush as $pageId) {
-                        // Workspaces always use "-1" as the page id which do not
-                        // point to real pages and caches at all. Flushing caches for
-                        // those records does not make sense and decreases performance
-                        if ($pageId >= 0) {
-                            $tagsToClear['pageId_' . $pageId] = true;
-                        }
-                    }
-                    // Queue delete cache for current table and record
-                    $tagsToClear[$table] = true;
-                    $tagsToClear[$table . '_' . $uid] = true;
-                }
-                // Clear cache for pages entered in TSconfig:
-                if (!empty($TSConfig['clearCacheCmd'])) {
-                    $commands = GeneralUtility::trimExplode(',', $TSConfig['clearCacheCmd'], true);
-                    $clearCacheCommands = array_unique($commands);
-                    unset($commands);
-                }
-                // Call post processing function for clear-cache:
-                if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearCachePostProc'])) {
-                    $_params = array('table' => $table, 'uid' => $uid, 'uid_page' => $pageUid, 'TSConfig' => $TSConfig);
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearCachePostProc'] as $_funcRef) {
-                        GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-                    }
+                // For move commands we may get more then 1 parent.
+                $pageUids = $this->getOriginalParentOfRecord($table, $uid);
+                foreach ($pageUids as $originalParent) {
+                    list($tagsToClearFromPrepare, $clearCacheCommandsFromPrepare)
+                        = $this->prepareCacheFlush($table, $uid, $originalParent);
+                    $tagsToClear = array_merge($tagsToClear, $tagsToClearFromPrepare);
+                    $clearCacheCommands = array_merge($clearCacheCommands, $clearCacheCommandsFromPrepare);
                 }
             }
         }
@@ -7819,6 +7638,103 @@ class DataHandler
 
         // Reset the cache clearing array
         static::$recordsToClearCacheFor = array();
+
+        // Reset the original pid array
+        static::$recordPidsForDeletedRecords = array();
+    }
+
+    /**
+     * Prepare the cache clearing
+     *
+     * @param string $table Table name of record that needs to be cleared
+     * @param int $uid UID of record for which the cache needs to be cleared
+     * @param int $pid Original pid of the page of the record which the cache needs to be cleared
+     * @return array Array with tagsToClear and clearCacheCommands
+     * @internal This function is internal only it may be changed/removed also in minor version numbers.
+     */
+    protected function prepareCacheFlush($table, $uid, $pid)
+    {
+        $tagsToClear = array();
+        $clearCacheCommands = array();
+        $pageUid = 0;
+        // Get Page TSconfig relevant:
+        $TSConfig = $this->getTCEMAIN_TSconfig($pid);
+        if (empty($TSConfig['clearCache_disable'])) {
+            // If table is "pages":
+            $pageIdsThatNeedCacheFlush = array();
+            if ($table === 'pages' || $table === 'pages_language_overlay') {
+                if ($table === 'pages_language_overlay') {
+                    $pageUid = $this->getPID($table, $uid);
+                } else {
+                    $pageUid = $uid;
+                }
+                // Builds list of pages on the SAME level as this page (siblings)
+                $res_tmp = $this->databaseConnection->exec_SELECTquery('A.pid AS pid, B.uid AS uid', 'pages A, pages B', 'A.uid=' . (int)$pageUid . ' AND B.pid=A.pid AND B.deleted=0');
+                $pid_tmp = 0;
+                while ($row_tmp = $this->databaseConnection->sql_fetch_assoc($res_tmp)) {
+                    $pageIdsThatNeedCacheFlush[] = (int)$row_tmp['uid'];
+                    $pid_tmp = $row_tmp['pid'];
+                    // Add children as well:
+                    if ($TSConfig['clearCache_pageSiblingChildren']) {
+                        $res_tmp2 = $this->databaseConnection->exec_SELECTquery('uid', 'pages', 'pid=' . (int)$row_tmp['uid'] . ' AND deleted=0');
+                        while ($row_tmp2 = $this->databaseConnection->sql_fetch_assoc($res_tmp2)) {
+                            $pageIdsThatNeedCacheFlush[] = (int)$row_tmp2['uid'];
+                        }
+                        $this->databaseConnection->sql_free_result($res_tmp2);
+                    }
+                }
+                $this->databaseConnection->sql_free_result($res_tmp);
+                // Finally, add the parent page as well:
+                $pageIdsThatNeedCacheFlush[] = (int)$pid_tmp;
+                // Add grand-parent as well:
+                if ($TSConfig['clearCache_pageGrandParent']) {
+                    $res_tmp = $this->databaseConnection->exec_SELECTquery('pid', 'pages', 'uid=' . (int)$pid_tmp);
+                    if ($row_tmp = $this->databaseConnection->sql_fetch_assoc($res_tmp)) {
+                        $pageIdsThatNeedCacheFlush[] = (int)$row_tmp['pid'];
+                    }
+                    $this->databaseConnection->sql_free_result($res_tmp);
+                }
+            } else {
+                // For other tables than "pages", delete cache for the records "parent page".
+                $pageIdsThatNeedCacheFlush[] = $pageUid = (int)$this->getPID($table, $uid);
+            }
+            // Call pre-processing function for clearing of cache for page ids:
+            if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearPageCacheEval'])) {
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearPageCacheEval'] as $funcName) {
+                    $_params = array('pageIdArray' => &$pageIdsThatNeedCacheFlush, 'table' => $table, 'uid' => $uid, 'functionID' => 'clear_cache()');
+                    // Returns the array of ids to clear, FALSE if nothing should be cleared! Never an empty array!
+                    GeneralUtility::callUserFunction($funcName, $_params, $this);
+                }
+            }
+            // Delete cache for selected pages:
+            foreach ($pageIdsThatNeedCacheFlush as $pageId) {
+                // Workspaces always use "-1" as the page id which do not
+                // point to real pages and caches at all. Flushing caches for
+                // those records does not make sense and decreases performance
+                if ($pageId >= 0) {
+                    $tagsToClear['pageId_' . $pageId] = true;
+                }
+            }
+            // Queue delete cache for current table and record
+            $tagsToClear[$table] = true;
+            $tagsToClear[$table . '_' . $uid] = true;
+        }
+        // Clear cache for pages entered in TSconfig:
+        if (!empty($TSConfig['clearCacheCmd'])) {
+            $commands = GeneralUtility::trimExplode(',', $TSConfig['clearCacheCmd'], true);
+            $clearCacheCommands = array_unique($commands);
+        }
+        // Call post processing function for clear-cache:
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearCachePostProc'])) {
+            $_params = array('table' => $table, 'uid' => $uid, 'uid_page' => $pageUid, 'TSConfig' => $TSConfig);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['clearCachePostProc'] as $_funcRef) {
+                GeneralUtility::callUserFunction($_funcRef, $_params, $this);
+            }
+        }
+        return array(
+            $tagsToClear,
+            $clearCacheCommands
+        );
     }
 
     /**
@@ -7995,10 +7911,6 @@ class DataHandler
      */
     public function newlog2($message, $table, $uid, $pid = null, $error = 0)
     {
-        if ($pid === false) {
-            GeneralUtility::deprecationLog('Setting the $pid parameter of DataHandler::newlog2 to FALSE is deprecated since TYPO3 CMS 7. Either provide an integer or NULL. FALSE will not be supported any more in TYPO3 CMS 8');
-            $pid = null;
-        }
         if (is_null($pid)) {
             $propArr = $this->getRecordProperties($table, $uid);
             $pid = $propArr['pid'];

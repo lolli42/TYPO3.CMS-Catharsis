@@ -64,6 +64,30 @@ class FunctionalTestCaseBootstrapUtility
     );
 
     /**
+     * Calculate a "unique" identifier for the test database and the
+     * instance patch based on the given test case class name.
+     *
+     * @param string $testCaseClassName Name of test case class
+     * @return string
+     */
+    public static function getInstanceIdentifier($testCaseClassName)
+    {
+        // 7 characters of sha1 should be enough for a unique identification
+        return substr(sha1($testCaseClassName), 0, 7);
+    }
+
+    /**
+     * Calculates path to TYPO3 CMS test installation for this test case.
+     *
+     * @param string $testCaseClassName Name of test case class
+     * @return string
+     */
+    public static function getInstancePath($testCaseClassName)
+    {
+        return ORIGINAL_ROOT . 'typo3temp/functional-' . static::getInstanceIdentifier($testCaseClassName);
+    }
+
+    /**
      * Set up creates a test instance and database.
      *
      * @param string $testCaseClassName Name of test case class
@@ -83,11 +107,11 @@ class FunctionalTestCaseBootstrapUtility
         array $additionalFoldersToCreate
     ) {
         $this->setUpIdentifier($testCaseClassName);
-        $this->setUpInstancePath();
+        $this->setUpInstancePath($testCaseClassName);
         if ($this->recentTestInstanceExists()) {
             $this->setUpBasicTypo3Bootstrap();
             $this->initializeTestDatabase();
-            \TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables(true);
+            \TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables();
         } else {
             $this->removeOldInstanceIfExists();
             $this->setUpInstanceDirectories($additionalFoldersToCreate);
@@ -98,7 +122,7 @@ class FunctionalTestCaseBootstrapUtility
             $this->setUpPackageStates($coreExtensionsToLoad, $testExtensionsToLoad);
             $this->setUpBasicTypo3Bootstrap();
             $this->setUpTestDatabase();
-            \TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables(true);
+            \TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables();
             $this->createDatabaseStructure();
         }
 
@@ -127,21 +151,24 @@ class FunctionalTestCaseBootstrapUtility
      *
      * As a result, the database name will be identical between different
      * test runs, but different between each test case.
+     *
+     * @param string $testCaseClassName Name of test case class
+     * @return void
      */
     protected function setUpIdentifier($testCaseClassName)
     {
-        // 7 characters of sha1 should be enough for a unique identification
-        $this->identifier = substr(sha1($testCaseClassName), 0, 7);
+        $this->identifier = static::getInstanceIdentifier($testCaseClassName);
     }
 
     /**
      * Calculates path to TYPO3 CMS test installation for this test case.
      *
+     * @param string $testCaseClassName Name of test case class
      * @return void
      */
-    protected function setUpInstancePath()
+    protected function setUpInstancePath($testCaseClassName)
     {
-        $this->instancePath = ORIGINAL_ROOT . 'typo3temp/functional-' . $this->identifier;
+        $this->instancePath = static::getInstancePath($testCaseClassName);
     }
 
     /**
@@ -433,11 +460,11 @@ class FunctionalTestCaseBootstrapUtility
         $_SERVER['argv'][0] = 'index.php';
 
         define('TYPO3_MODE', 'BE');
-        define('TYPO3_cliMode', true);
 
         $classLoader = require rtrim(realpath($this->instancePath . '/typo3'), '\\/') . '/../vendor/autoload.php';
         \TYPO3\CMS\Core\Core\Bootstrap::getInstance()
             ->initializeClassLoader($classLoader)
+            ->setRequestType(TYPO3_REQUESTTYPE_BE | TYPO3_REQUESTTYPE_CLI)
             ->baseSetup('')
             ->loadConfigurationAndInitialize(true)
             ->loadTypo3LoadedExtAndExtLocalconf(true)

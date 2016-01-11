@@ -136,27 +136,12 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser
         if ($path) {
             $this->relPath = $path;
             $this->relBackPath = '';
-            $partsC = count(explode('/', $this->relPath));
+            $partsC = count(explode('/', $path));
             for ($a = 0; $a < $partsC; $a++) {
                 $this->relBackPath .= '../';
             }
             $this->relPath .= '/';
         }
-    }
-
-    /**
-     * Evaluate the environment for editing a staticFileEdit file.
-     * Called for almost all fields being saved in the database. Is called without
-     * an instance of \TYPO3\CMS\Core\Html\RteHtmlParser::evalWriteFile()
-     *
-     * @param array $pArr Parameters for the current field as found in types-config
-     * @param array $currentRecord Current record we are editing.
-     * @return mixed On success an array with various information is returned, otherwise a string with an error message
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public static function evalWriteFile($pArr, $currentRecord)
-    {
-        GeneralUtility::logDeprecatedFunction();
     }
 
     /**********************************************
@@ -168,10 +153,10 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser
      * Transform value for RTE based on specConf in the direction specified by $direction (rte/db)
      * This is the main function called from tcemain and transfer data classes
      *
-     * @param string Input value
-     * @param array Special configuration for a field; This is coming from the types-configuration of the field in the TCA. In the types-configuration you can setup features for the field rendering and in particular the RTE takes al its major configuration options from there!
-     * @param string Direction of the transformation. Two keywords are allowed; "db" or "rte". If "db" it means the transformation will clean up content coming from the Rich Text Editor and goes into the database. The other direction, "rte", is of course when content is coming from database and must be transformed to fit the RTE.
-     * @param array Parsed TypoScript content configuring the RTE, probably coming from Page TSconfig.
+     * @param string $value Input value
+     * @param array $specConf Special configuration for a field; This is coming from the types-configuration of the field in the TCA. In the types-configuration you can setup features for the field rendering and in particular the RTE takes al its major configuration options from there!
+     * @param string $direction Direction of the transformation. Two keywords are allowed; "db" or "rte". If "db" it means the transformation will clean up content coming from the Rich Text Editor and goes into the database. The other direction, "rte", is of course when content is coming from database and must be transformed to fit the RTE.
+     * @param array $thisConfig Parsed TypoScript content configuring the RTE, probably coming from Page TSconfig.
      * @return string Output value
      */
     public function RTE_transform($value, $specConf, $direction = 'rte', $thisConfig = array())
@@ -410,7 +395,8 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser
                         if ($externalFile) {
                             $pU = parse_url($absoluteUrl);
                             $pI = pathinfo($pU['path']);
-                            if (GeneralUtility::inList('gif,png,jpeg,jpg', strtolower($pI['extension']))) {
+                            $extension = strtolower($pI['extension']);
+                            if ($extension === 'jpg' || $extension === 'jpeg' || $extension === 'gif' || $extension === 'png') {
                                 $fileName = GeneralUtility::shortMD5($absoluteUrl) . '.' . $pI['extension'];
                                 // We insert this image into the user default upload folder
                                 list($table, $field) = explode(':', $this->elRef);
@@ -699,7 +685,8 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser
                         // Detects if a file is found in site-root.
                         list($rootFileDat) = explode('?', $link_param);
                         $rFD_fI = pathinfo($rootFileDat);
-                        if (trim($rootFileDat) && !strstr($link_param, '/') && (@is_file((PATH_site . $rootFileDat)) || GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
+                        $fileExtension = strtolower($rFD_fI['extension']);
+                        if ($fileExtension === 'php' || $fileExtension === 'html' || $fileExtension === 'htm' || trim($rootFileDat) && !strstr($link_param, '/') && (@is_file((PATH_site . $rootFileDat)))) {
                             $href = $siteUrl . $link_param;
                         } elseif (
                             (
@@ -1107,12 +1094,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser
         $kUknown = $this->procOptions['dontRemoveUnknownTags_db'] ? 1 : 0;
         // Default: re-convert literals to characters (that is &lt; to <)
         $hSC = $this->procOptions['dontUndoHSC_db'] ? 0 : -1;
-        // Create additional configuration in order to honor the setting RTE.default.proc.HTMLparser_db.xhtml_cleaning=1
-        $addConfig = array();
-        if (is_array($this->procOptions['HTMLparser_db.']) && $this->procOptions['HTMLparser_db.']['xhtml_cleaning'] || is_array($this->procOptions['entryHTMLparser_db.']) && $this->procOptions['entryHTMLparser_db.']['xhtml_cleaning'] || is_array($this->procOptions['exitHTMLparser_db.']) && $this->procOptions['exitHTMLparser_db.']['xhtml_cleaning']) {
-            $addConfig['xhtml'] = 1;
-        }
-        return $this->HTMLcleaner($content, $keepTags, $kUknown, $hSC, $addConfig);
+        return $this->HTMLcleaner($content, $keepTags, $kUknown, $hSC);
     }
 
     /**

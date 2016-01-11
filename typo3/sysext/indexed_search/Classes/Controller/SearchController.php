@@ -429,7 +429,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                 // Suspicious, so linking to page instead...
                 $copiedRow = $row;
                 unset($copiedRow['cHashParams']);
-                $title = $this->linkPage($row['page_id'], $title, $copiedRow);
+                $title = $this->linkPage($row['page_id'], htmlspecialchars($title), $copiedRow);
             }
         } else {
             // Else the page:
@@ -443,7 +443,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                     $markUpSwParams['sword_list'][] = $d['sword'];
                 }
             }
-            $title = $this->linkPage($row['data_page_id'], $title, $row, $markUpSwParams);
+            $title = $this->linkPage($row['data_page_id'], htmlspecialchars($title), $row, $markUpSwParams);
         }
         $resultData['title'] = $title;
         $resultData['icon'] = $this->makeItemTypeIcon($row['item_type'], '', $specRowConf);
@@ -805,7 +805,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         // shortening the string here is only a run-away feature!)
         $searchWords = substr($this->sword, 0, 200);
         // Convert to UTF-8 + conv. entities (was also converted during indexing!)
-        $searchWords = $GLOBALS['TSFE']->csConvObj->utf8_encode($searchWords, $GLOBALS['TSFE']->metaCharset);
+        $searchWords = $GLOBALS['TSFE']->csConvObj->conv($searchWords, $GLOBALS['TSFE']->metaCharset, 'utf-8');
         $searchWords = $GLOBALS['TSFE']->csConvObj->entities_to_utf8($searchWords, true);
         $sWordArray = false;
         if ($hookObj = $this->hookRequest('getSearchWords')) {
@@ -828,9 +828,9 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                     array('-', 'AND NOT'),
                     // Add operators for various languages
                     // Converts the operators to UTF-8 and lowercase
-                    array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->utf8_encode(LocalizationUtility::translate('localizedOperandAnd', 'IndexedSearch'), $GLOBALS['TSFE']->renderCharset), 'toLower'), 'AND'),
-                    array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->utf8_encode(LocalizationUtility::translate('localizedOperandOr', 'IndexedSearch'), $GLOBALS['TSFE']->renderCharset), 'toLower'), 'OR'),
-                    array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->utf8_encode(LocalizationUtility::translate('localizedOperandNot', 'IndexedSearch'), $GLOBALS['TSFE']->renderCharset), 'toLower'), 'AND NOT')
+                    array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->conv(LocalizationUtility::translate('localizedOperandAnd', 'IndexedSearch'), $GLOBALS['TSFE']->renderCharset, 'utf-8'), 'toLower'), 'AND'),
+                    array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->conv(LocalizationUtility::translate('localizedOperandOr', 'IndexedSearch'), $GLOBALS['TSFE']->renderCharset, 'utf-8'), 'toLower'), 'OR'),
+                    array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->conv(LocalizationUtility::translate('localizedOperandNot', 'IndexedSearch'), $GLOBALS['TSFE']->renderCharset, 'utf-8'), 'toLower'), 'AND NOT')
                 );
                 $swordArray = \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::getExplodedSearchString($searchWords, $defaultOperator == 1 ? 'OR' : 'AND', $operatorTranslateTable);
                 if (is_array($swordArray)) {
@@ -1233,7 +1233,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * Links the $linkText to page $pageUid
      *
      * @param int $pageUid Page id
-     * @param string $linkText Title String to link
+     * @param string $linkText Title to link (must already be escaped for HTML output)
      * @param array $row Result row
      * @param array $markUpSwParams Additional parameters for marking up seach words
      * @return string <A> tag wrapped title string.
@@ -1274,7 +1274,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             $uriBuilder = $this->controllerContext->getUriBuilder();
             $uri = $uriBuilder->setTargetPageUid($pageUid)->setTargetPageType($row['data_page_type'])->setUseCacheHash(true)->setArguments($urlParameters)->build();
         }
-        return '<a href="' . htmlspecialchars($uri) . '"' . $target . '>' . htmlspecialchars($linkText) . '</a>';
+        return '<a href="' . htmlspecialchars($uri) . '"' . $target . '>' . $linkText . '</a>';
     }
 
     /**

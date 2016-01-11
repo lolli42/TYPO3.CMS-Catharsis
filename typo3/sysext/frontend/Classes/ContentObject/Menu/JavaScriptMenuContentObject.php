@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  */
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -61,7 +62,7 @@ var ' . $this->JSMenuName . ' = new JSmenu(' . $levels . ', ' . GeneralUtility::
 var ' . $this->JSVarName . $a . '=0;';
         }
         $JScode .= $this->generate_level($levels, 1, $this->id, $this->menuArr, $this->MP_array) . LF;
-        $GLOBALS['TSFE']->additionalHeaderData['JSMenuCode'] = '<script type="text/javascript" src="' . $GLOBALS['TSFE']->absRefPrefix . 'typo3/sysext/frontend/Resources/Public/JavaScript/jsfunc.menu.js"></script>';
+        $GLOBALS['TSFE']->additionalHeaderData['JSMenuCode'] = '<script type="text/javascript" src="' . $GLOBALS['TSFE']->absRefPrefix . ExtensionManagementUtility::siteRelPath('frontend') . 'Resources/Public/JavaScript/jsfunc.menu.js"></script>';
         $GLOBALS['TSFE']->additionalJavaScript['JSCode'] .= $JScode;
         // Printing:
         $allFormCode = '';
@@ -134,7 +135,7 @@ var ' . $this->JSVarName . $a . '=0;';
             $MP_var = implode(',', $MP_array_sub);
             $MP_params = $MP_var ? '&MP=' . rawurlencode($MP_var) : '';
             // If item is a spacer, $spacer is set
-            $spacer = GeneralUtility::inList($this->spacerIDList, $data['doktype']) ? 1 : 0;
+            $spacer = GeneralUtility::inList($this->spacerIDList, $data['doktype']);
             // If the spacer-function is not enabled, spacers will not enter the $menuArr
             if ($this->mconf['SPC'] || !$spacer) {
                 // Page may not be 'not_in_menu' or 'Backend User Section' + not in banned uid's

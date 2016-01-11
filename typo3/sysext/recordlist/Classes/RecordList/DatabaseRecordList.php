@@ -811,14 +811,16 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
 			<!--
 				DB listing of elements:	"' . htmlspecialchars($table) . '"
 			-->
-				<div class="panel panel-space panel-default">
+				<div class="panel panel-space panel-default recordlist">
 					<div class="panel-heading">
 					' . $tableHeader . '
 					</div>
-					<div class="table-fit ' . $collapseClass . '" id="recordlist-' . htmlspecialchars($table) . '" data-state="' . $dataState . '">
-						<table data-table="' . htmlspecialchars($table) . '" class="table table-striped table-hover' . ($listOnlyInSingleTableMode ? ' typo3-dblist-overview' : '') . '">
-							' . $out . '
-						</table>
+					<div class="' . $collapseClass . '" data-state="' . $dataState . '" id="recordlist-' . htmlspecialchars($table) . '">
+						<div class="table-fit">
+							<table data-table="' . htmlspecialchars($table) . '" class="table table-striped table-hover' . ($listOnlyInSingleTableMode ? ' typo3-dblist-overview' : '') . '">
+								' . $out . '
+							</table>
+						</div>
 					</div>
 				</div>
 			';
@@ -1465,8 +1467,12 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                     if ($this->showNewRecLink($table)) {
                         $params = '&edit[' . $table . '][' . -($row['_MOVE_PLH'] ? $row['_MOVE_PLH_uid'] : $row['uid']) . ']=new';
                         $icon = ($table == 'pages' ? $this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL) : $this->iconFactory->getIcon('actions-add', Icon::SIZE_SMALL));
+                        $titleLabel = 'new';
+                        if ($GLOBALS['TCA'][$table]['ctrl']['sortby']) {
+                            $titleLabel .= ($table === 'pages' ? 'Page' : 'Record');
+                        }
                         $newAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1))
-                            . '" title="' . $this->getLanguageService()->getLL('new' . ($table == 'pages ' ? 'Page' : 'Record'), true) . '">'
+                            . '" title="' . htmlspecialchars($this->getLanguageService()->getLL($titleLabel)) . '">'
                             . $icon->render() . '</a>';
                         $this->addActionToCellGroup($cells, $newAction, 'new');
                     }

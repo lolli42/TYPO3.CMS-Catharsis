@@ -77,7 +77,7 @@ class T3editorElement extends AbstractFormElement
     /**
      * @var string
      */
-    protected $codemirrorPath = 'sysext/t3editor/Resources/Public/JavaScript/Contrib/codemirror/js/';
+    protected $codemirrorPath = 'Resources/Public/JavaScript/Contrib/codemirror/js/';
 
     /**
      * RequireJS modules loaded for code completion
@@ -95,6 +95,7 @@ class T3editorElement extends AbstractFormElement
     {
         $this->getLanguageService()->includeLLFile('EXT:t3editor/Resources/Private/Language/locallang.xlf');
         $this->relExtPath = ExtensionManagementUtility::extRelPath('t3editor');
+        $this->codemirrorPath = $this->relExtPath . $this->codemirrorPath;
 
         $this->resultArray = $this->initializeResultArray();
 
@@ -229,7 +230,7 @@ class T3editorElement extends AbstractFormElement
                 $parserfile = array($relPath . 'tokenizetyposcript.js', $relPath . 'parsetyposcript.js');
                 break;
             case self::MODE_JAVASCRIPT:
-                $parserfile = array('tokenizetyposcript.js', 'parsejavascript.js');
+                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js');
                 break;
             case self::MODE_CSS:
                 $parserfile = array('parsecss.js');

@@ -24,25 +24,24 @@
   "private": true,
   "devDependencies": {
     "fontawesome": "4.4.0",
-    "bootstrap": "3.3.5"
+    "bootstrap": "3.3.6"
   },
   "dependencies": {
-    "requirejs": "2.1.20",
+    "requirejs": "2.1.22",
     "jquery": "2.1.4",
     "jquery-ui": "1.11.4",
     "eonasdan-bootstrap-datetimepicker": "4.17.37",
     "moment": "2.10.6",
-    "moment-timezone": "0.4.1",
+    "moment-timezone": "0.5.0",
     "nprogress": "0.2.0",
-    "datatables": "1.10.9",
-    "autosize": "3.0.13",
+    "datatables": "1.10.10",
+    "autosize": "3.0.14",
     "cropper": "0.9.3",
     "imagesloaded": "3.1.8",
-    "Placeholders.js": "4.0.1",
-    "taboverride": "4.0.2",
+    "taboverride": "4.0.3",
     "seiyria-bootstrap-slider": "5.2.4",
     "devbridge-autocomplete": "1.2.24",
     "region-flags": "*",
-    "wmdbsystems-typo3-icons": "0.0.8"
+    "wmdbsystems-typo3-icons": "0.0.9"
   }
 }

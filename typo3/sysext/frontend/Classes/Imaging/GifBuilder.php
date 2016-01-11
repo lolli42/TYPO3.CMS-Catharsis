@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -47,46 +48,6 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  */
 class GifBuilder extends GraphicalFunctions
 {
-    /**
-     * the main image
-     *
-     * @var string
-     */
-    public $im = '';
-
-    /**
-     * the image-width
-     *
-     * @var int
-     */
-    public $w = 0;
-
-    /**
-     * the image-height
-     *
-     * @var int
-     */
-    public $h = 0;
-
-    /**
-     * map-data
-     *
-     * @var string
-     */
-    public $map;
-
-    /**
-     * @var array
-     */
-    public $workArea;
-
-    /**
-     * This holds the operational setup for gifbuilder. Basically this is a TypoScript array with properties.
-     *
-     * @var array
-     */
-    public $setup = array();
-
     /**
      * Contains all text strings used on this image
      *
@@ -127,11 +88,6 @@ class GifBuilder extends GraphicalFunctions
      * @var int[]
      */
     public $XY = array();
-
-    /**
-     * @var array
-     */
-    public $OFFSET = array();
 
     /**
      * @var ContentObjectRenderer
@@ -378,7 +334,7 @@ class GifBuilder extends GraphicalFunctions
 
     /**
      * Initiates the image file generation if ->setup is TRUE and if the file did not exist already.
-     * Gets filename from fileName() and if file exists in typo3temp/ dir it will - of course - not be rendered again.
+     * Gets filename from fileName() and if file exists in typo3temp/assets/images/ dir it will - of course - not be rendered again.
      * Otherwise rendering means calling ->make(), then ->output(), then ->destroy()
      *
      * @return string The filename for the created GIF/PNG file. The filename will be prefixed "GB_
@@ -388,11 +344,11 @@ class GifBuilder extends GraphicalFunctions
     {
         if ($this->setup) {
             // Relative to PATH_site
-            $gifFileName = $this->fileName('GB/');
+            $gifFileName = $this->fileName('images/');
             // File exists
             if (!file_exists($gifFileName)) {
                 // Create temporary directory if not done:
-                $this->createTempSubDir('GB/');
+                $this->createTempSubDir('images/');
                 // Create file:
                 $this->make();
                 $this->output($gifFileName);
@@ -603,7 +559,7 @@ class GifBuilder extends GraphicalFunctions
         }
         $conf['fontFile'] = $this->checkFile($conf['fontFile']);
         if (!$conf['fontFile']) {
-            $conf['fontFile'] = 'typo3/sysext/core/Resources/Private/Font/nimbus.ttf';
+            $conf['fontFile'] = ExtensionManagementUtility::siteRelPath('core') . 'Resources/Private/Font/nimbus.ttf';
         }
         if (!$conf['iterations']) {
             $conf['iterations'] = 1;
@@ -627,11 +583,7 @@ class GifBuilder extends GraphicalFunctions
         // Max length = 100 if automatic line braks are not defined:
         if (!isset($conf['breakWidth']) || !$conf['breakWidth']) {
             $tlen = (int)$conf['textMaxLength'] ?: 100;
-            if ($this->nativeCharset) {
-                $conf['text'] = $this->csConvObj->substr($this->nativeCharset, $conf['text'], 0, $tlen);
-            } else {
-                $conf['text'] = substr($conf['text'], 0, $tlen);
-            }
+            $conf['text'] = $this->csConvObj->substr('utf-8', $conf['text'], 0, $tlen);
         }
         if ((string)$conf['text'] != '') {
             // Char range map thingie:

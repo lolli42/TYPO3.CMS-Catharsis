@@ -168,13 +168,6 @@ class ExtendedTemplateService extends TemplateService
     public $ext_noPMicons = 0;
 
     /**
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     *
-     * @var int
-     */
-    public $ext_noSpecialCharsOnLabels = 0;
-
-    /**
      * @var array
      */
     public $ext_listOfTemplatesArr = array();
@@ -460,7 +453,7 @@ class ExtendedTemplateService extends TemplateService
                 }
                 $label = $key;
                 // Read only...
-                if (GeneralUtility::inList('types,resources,sitetitle', $depth) && $this->bType == 'setup') {
+                if (($depth === 'types' || $depth === 'resources' || $depth === 'sitetitle') && $this->bType === 'setup') {
                     $label = '<span style="color: #666666;">' . $label . '</span>';
                 } else {
                     if ($this->linkObjects) {
@@ -567,17 +560,6 @@ class ExtendedTemplateService extends TemplateService
         }
 
         return implode('; ', $lnArr);
-    }
-
-    /**
-     * @param array $theValue
-     * @return array
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use htmlspecialchars() directly
-     */
-    public function makeHtmlspecialchars($theValue)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->ext_noSpecialCharsOnLabels ? $theValue : htmlspecialchars($theValue);
     }
 
     /**
@@ -1050,7 +1032,8 @@ class ExtendedTemplateService extends TemplateService
         } else {
             $m = strcspn($type, ' [');
             $retArr['type'] = strtolower(substr($type, 0, $m));
-            if (GeneralUtility::inList('int,options,file,boolean,offset,user', $retArr['type'])) {
+            $types = ['int' => 1, 'options' => 1, 'file' => 1, 'boolean' => 1, 'offset' => 1, 'user' => 1];
+            if (isset($types[$retArr['type']])) {
                 $p = trim(substr($type, $m));
                 $reg = array();
                 preg_match('/\\[(.*)\\]/', $p, $reg);
@@ -1113,17 +1096,6 @@ class ExtendedTemplateService extends TemplateService
     }
 
     /**
-     * @param string $key
-     * @return string
-     * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
-     */
-    public function ext_getKeyImage($key)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return '<span class="label label-danger">' . $key . '</span>';
-    }
-
-    /**
      * @param string $imgConf
      * @return string
      */
@@ -1137,8 +1109,7 @@ class ExtendedTemplateService extends TemplateService
         } elseif (substr($imgConf, 0, 4) == 'EXT:') {
             $iFile = GeneralUtility::getFileAbsFileName($imgConf);
             if ($iFile) {
-                $f = PathUtility::stripPathSitePrefix($iFile);
-                $tFile = $GLOBALS['BACK_PATH'] . '../' . $f;
+                $tFile = '../' . PathUtility::stripPathSitePrefix($iFile);
             }
         }
         if ($iFile !== null) {

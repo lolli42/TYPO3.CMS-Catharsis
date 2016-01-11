@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Core\Resource\Driver;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Resource\Exception;
 use TYPO3\CMS\Core\Resource\FolderInterface;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
@@ -55,7 +56,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
     protected $baseUri = null;
 
     /**
-     * @var \TYPO3\CMS\Core\Charset\CharsetConverter
+     * @var CharsetConverter
      */
     protected $charsetConversion;
 
@@ -287,9 +288,12 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
                 1314516810
             );
         }
+        $absolutePath = $this->getAbsolutePath($folderIdentifier);
         return array(
             'identifier' => $folderIdentifier,
             'name' => PathUtility::basename($folderIdentifier),
+            'mtime' => filemtime($absolutePath),
+            'ctime' => filectime($absolutePath),
             'storage' => $this->storageUid
         );
     }
@@ -1356,20 +1360,12 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
     /**
      * Gets the charset conversion object.
      *
-     * @return \TYPO3\CMS\Core\Charset\CharsetConverter
+     * @return CharsetConverter
      */
     protected function getCharsetConversion()
     {
         if (!isset($this->charsetConversion)) {
-            if (TYPO3_MODE === 'FE') {
-                $this->charsetConversion = $GLOBALS['TSFE']->csConvObj;
-            } elseif (is_object($GLOBALS['LANG'])) {
-                // BE assumed:
-                $this->charsetConversion = $GLOBALS['LANG']->csConvObj;
-            } else {
-                // The object may not exist yet, so we need to create it now. Happens in the Install Tool for example.
-                $this->charsetConversion = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
-            }
+            $this->charsetConversion = GeneralUtility::makeInstance(CharsetConverter::class);
         }
         return $this->charsetConversion;
     }

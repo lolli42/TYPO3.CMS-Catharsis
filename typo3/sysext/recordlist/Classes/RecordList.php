@@ -31,7 +31,6 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -144,14 +143,6 @@ class RecordList extends AbstractModule
      * @var DocumentTemplate
      */
     public $doc;
-
-    /**
-     * Module configuration
-     *
-     * @var array
-     * @deprecated since TYPO3 CMS 7, will be removed in CMS 8.
-     */
-    public $MCONF = array();
 
     /**
      * Menu configuration
@@ -269,7 +260,6 @@ class RecordList extends AbstractModule
     {
         if ($this->clear_cache) {
             $tce = GeneralUtility::makeInstance(DataHandler::class);
-            $tce->stripslashes_values = 0;
             $tce->start(array(), array());
             $tce->clear_cacheCmd($this->id);
         }
@@ -393,7 +383,6 @@ class RecordList extends AbstractModule
                         $cmd[$iKParts[0]][$iKParts[1]]['delete'] = 1;
                     }
                     $tce = GeneralUtility::makeInstance(DataHandler::class);
-                    $tce->stripslashes_values = 0;
                     $tce->start(array(), $cmd);
                     $tce->process_cmdmap();
                     if (isset($cmd['pages'])) {
@@ -600,18 +589,6 @@ class RecordList extends AbstractModule
         $this->moduleTemplate->setContent($this->content);
         $response->getBody()->write($this->moduleTemplate->renderContent());
         return $response;
-    }
-
-    /**
-     * Outputting the accumulated content to screen
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function printContent()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        echo $this->content;
     }
 
     /**

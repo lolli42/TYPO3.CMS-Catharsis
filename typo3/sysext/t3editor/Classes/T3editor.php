@@ -62,7 +62,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface
      *
      * @var string
      */
-    protected $codemirrorPath = 'sysext/t3editor/Resources/Public/JavaScript/Contrib/codemirror/js/';
+    protected $codemirrorPath = 'Resources/Public/JavaScript/Contrib/codemirror/js/';
 
     /**
      * RequireJS modules loaded for code completion
@@ -160,16 +160,6 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface
     }
 
     /**
-     * @return bool TRUE if the t3editor is enabled
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function isEnabled()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return true;
-    }
-
-    /**
      * Creates a new instance of the class
      */
     public function __construct()
@@ -179,6 +169,8 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface
         $GLOBALS['BE_USER']->uc['disablePMKTextarea'] = 1;
 
         $this->relExtPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3editor');
+        $this->codemirrorPath = $this->relExtPath . $this->codemirrorPath;
+
     }
 
     /**
@@ -229,7 +221,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface
                 $parserfile = array($relPath . 'tokenizetyposcript.js', $relPath . 'parsetyposcript.js');
                 break;
             case self::MODE_JAVASCRIPT:
-                $parserfile = array('tokenizetyposcript.js', 'parsejavascript.js');
+                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js');
                 break;
             case self::MODE_CSS:
                 $parserfile = array('parsecss.js');

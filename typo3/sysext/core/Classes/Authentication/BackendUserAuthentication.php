@@ -118,13 +118,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
     public $includeGroupArray = array();
 
     /**
-     * Set to 'WIN', if windows
-     * @var string
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the constant TYPO3_OS directly
-     */
-    public $OS = '';
-
-    /**
      * Used to accumulate the TSconfig data of the user
      * @var array
      */
@@ -307,7 +300,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
         parent::__construct();
         $this->name = self::getCookieName();
         $this->loginType = 'BE';
-        $this->OS = TYPO3_OS;
     }
 
     /**
@@ -1700,7 +1692,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * copyFile = 1
      * moveFile = 1
      * renameFile = 1
-     * unzipFile = 1
      * deleteFile = 1
      *
      * addFolder = 1
@@ -1736,7 +1727,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
                 'copyFile' => false,
                 'moveFile' => false,
                 'renameFile' => false,
-                'unzipFile' => false,
                 'deleteFile' => false,
                 // Folder permissions
                 'addFolder' => false,
@@ -2310,9 +2300,8 @@ This is a dump of the failures:
     /**
      * Check if user is logged in and if so, call ->fetchGroupData() to load group information and
      * access lists of all kind, further check IP, set the ->uc array and send login-notification email if required.
-     * If no user is logged in the default behaviour is to exit with an error message,
-     * but this will happen ONLY if the constant TYPO3_PROCEED_IF_NO_USER is set TRUE.
-     * This function is called right after ->start() in fx. the TYPO3 CMS bootsrap
+     * If no user is logged in the default behaviour is to exit with an error message.
+     * This function is called right after ->start() in fx. the TYPO3 Bootstrap.
      *
      * @param bool $proceedIfNoUserIsLoggedIn if this option is set, then there won't be a redirect to the login screen of the Backend - used for areas in the backend which do not need user rights like the login page.
      * @throws \RuntimeException
@@ -2343,44 +2332,6 @@ This is a dump of the failures:
                 throw new \RuntimeException('Login Error: IP locking prevented you from being authorized. Can\'t proceed, sorry.', 1294585861);
             }
         }
-    }
-
-    /**
-     * If the backend script is in CLI mode, it will try to load a backend user named by the CLI module name (in lowercase)
-     *
-     * @return bool Returns TRUE if a CLI user was loaded, otherwise FALSE!
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Please implement this functionality in your own application directly from the outside
-     */
-    public function checkCLIuser()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        // First, check if cliMode is enabled:
-        if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) {
-            if (!$this->user['uid']) {
-                if (substr($GLOBALS['MCONF']['name'], 0, 5) == '_CLI_') {
-                    $userName = strtolower($GLOBALS['MCONF']['name']);
-                    $this->setBeUserByName($userName);
-                    if ($this->user['uid']) {
-                        if (!$this->isAdmin()) {
-                            return true;
-                        } else {
-                            fwrite(STDERR, 'ERROR: CLI backend user "' . $userName . '" was ADMIN which is not allowed!' . LF . LF);
-                            die(3);
-                        }
-                    } else {
-                        fwrite(STDERR, 'ERROR: No backend user named "' . $userName . '" was found!' . LF . LF);
-                        die(3);
-                    }
-                } else {
-                    fwrite(STDERR, 'ERROR: Module name, "' . $GLOBALS['MCONF']['name'] . '", was not prefixed with "_CLI_"' . LF . LF);
-                    die(3);
-                }
-            } else {
-                fwrite(STDERR, 'ERROR: Another user was already loaded which is impossible in CLI mode!' . LF . LF);
-                die(3);
-            }
-        }
-        return false;
     }
 
     /**

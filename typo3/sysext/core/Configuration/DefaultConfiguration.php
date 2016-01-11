@@ -92,8 +92,6 @@ return array(
         'mediafile_ext' => 'gif,jpg,jpeg,bmp,png,pdf,svg,ai,mp3,wav,mp4,webm,youtube,vimeo',    // Commalist of file extensions perceived as media files by TYPO3. Lowercase and no spaces between!
         'binPath' => '',                        // String: List of absolute paths where external programs should be searched for. Eg. <code>/usr/local/webbin/,/home/xyz/bin/</code>. (ImageMagick path have to be configured separately)
         'binSetup' => '',                        // String (textarea): List of programs (separated by newline or comma). By default programs will be searched in default paths and the special paths defined by 'binPath'. When PHP has openbasedir enabled the programs can not be found and have to be configured here. Example: <code>perl=/usr/bin/perl,unzip=/usr/local/bin/unzip</code>
-        't3lib_cs_convMethod' => '',            // String (values: "iconv", "recode", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset conversion functions in \TYPO3\CMS\Core\Charset\CharsetConverter. Will speed up charset conversion radically.
-        't3lib_cs_utils' => '',                    // String (values: "iconv", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset processing functions in \TYPO3\CMS\Core\Charset\CharsetConverter. Will speed up charset functions radically.
         'no_pconnect' => true,                    // Boolean: If TRUE, "connect" is used to connect to the database. If FALSE, a persistent connection using "pconnect" will be established!
         'dbClientCompress' => false,            // Boolean: if TRUE, data exchange between TYPO3 and database server will be compressed. This may improve performance if (1) database serever is on the different server and (2) network connection speed to database server is 100mbps or less. CPU usage will be higher if this option is used but database operations will be executed faster due to much less (up to 3 times) database network traffic. This option has no effect if MySQL server is localhost.
         'setDBinit' => '',                        // String (textarea): These commands are executed after the database connection was established. Hint: The previous default "SET NAMES utf8;" is not required any more and will be removed automatically if set!
@@ -102,10 +100,8 @@ return array(
         'systemLog' => '',                        // <p>String: semi-colon separated list. Defines one or more logging methods. Possible methods:</p><dl><dt>file,&lt;abs-path-to-file&gt;[,&lt;level&gt;]</dt><dd>logs to a file</dd><dt>mail,&lt;to&gt;[/&lt;from&gt;][,&lt;level&gt;]</dt><dd>sends the log entries via mail</dd><dt>syslog,&lt;facility&gt;,[,&lt;level&gt;]</dt><dd>uses the operating system's log. Facility may be one of LOCAL0..LOCAL7, USER (on Windows USER is the only valid type).</dd><dt>error_log[,,&lt;level&gt;]</dt><dd>uses the PHP error log</dd></dl><p>The &lt;level&gt; is the individual logging level (see <a href="#SYS-systemLogLevel">[SYS][systemLogLevel]</a>).</p>
         'systemLogLevel' => 0,                    // <p>Integer (0, 1, 2, 3, 4): Only messages with same or higher severity are logged.</p><ul><li>0: info</li><li>1: notice</li><li>2: warning</li><li>3: error</li><li>4: fatal error</li></ul>
         'enableDeprecationLog' => '',                // If set, this configuration enables the logging of deprecated methods and functions. The following options are allowed: <dl><dt>String: &quot;file&quot; (or integer &quot;1&quot;)</dt><dd>The log file will be written to typo3conf/deprecation_[hash-value].log</dd><dt>String: &quot;devlog&quot;</dt><dd>The log will be written to the development log</dd><dt>String: &quot;console&quot;<dt><dd>The log will be displayed in the Backend's Debug Console.</dd></dl>Logging options &quot;file&quot;, &quot;devlog&quot; and &quot;console&quot; can be combined by comma-separating them.
-        'maxFileNameLength' => 60,                // Integer: This is the maximum file name length. The value will be taken into account by basic file operations like renaming or creation of files and folders.
         'UTF8filesystem' => false,                // Boolean: If TRUE then TYPO3 uses utf-8 to store file names. This allows for accented Latin letters as well as any other non-latin characters like Cyrillic and Chinese.
         'systemLocale' => '',                    // String: locale used for certain system related functions, e.g. escaping shell commands. If problems with filenames containing special characters occur, the value of this option is probably wrong. See <a href="http://php.net/manual/en/function.setlocale.php" target="_blank">setlocale()</a>.
-        'lockingMode' => 'simple',                // String: *deprecated* Define which locking mode is used to control requests to pages being generated. Can be one of either "disable" (no locking), "simple" (checks for file existence), "flock" (using PHPs <a href="http://php.net/flock" target="_blank">flock()</a> function), "semaphore" (using PHPs <a href="http://php.net/sem-acquire" target="_blank">sem_acquire()</a> function). Default is "simple". (This option is deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8. The option is only used by extensions using the old Locker.)
         'reverseProxyIP' => '',                    // String: list of IP addresses. If TYPO3 is behind one or more (intransparent) reverse proxies the IP addresses must be added here.
         'reverseProxyHeaderMultiValue' => 'none',    // String: "none","first","last": defines which values of a proxy header (eg HTTP_X_FORWARDED_FOR) to use, if more than one is found. "none" discards the value, "first" and "last" use the first/last of the values in the list.
         'reverseProxyPrefix' => '',                // String: optional prefix to be added to the internal URL (SCRIPT_NAME and REQUEST_URI).
@@ -264,6 +260,28 @@ return array(
                 'youtube' => \TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\YouTubeHelper::class,
                 'vimeo' => \TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\VimeoHelper::class,
             ),
+        ),
+        'IconFactory' => array(
+            'recordStatusMapping' => array(
+                'hidden' => 'overlay-hidden',
+                'fe_group' => 'overlay-restricted',
+                'starttime' => 'overlay-scheduled',
+                'endtime' => 'overlay-scheduled',
+                'futureendtime' => 'overlay-scheduled',
+                'readonly' => 'overlay-readonly',
+                'deleted' => 'overlay-deleted',
+                'missing' => 'overlay-missing',
+                'translated' => 'overlay-translated',
+                'protectedSection' => 'overlay-includes-subpages'
+            ),
+            'overlayPriorities' => array(
+                'hidden',
+                'starttime',
+                'endtime',
+                'futureendtime',
+                'protectedSection',
+                'fe_group'
+            )
         ),
         'FileInfo' => array(
             // Static mapping for file extensions to mime types.
@@ -718,7 +736,6 @@ return array(
         'lang' => array(
             'debug' => false
         ),
-        'unzip_path' => '',                                // Path to "unzip". Only specify the path here, do not include the program name, it is expected to be called "unzip".
         'fileadminDir' => 'fileadmin/',                    // Path to the fileadmin dir. This is relative to PATH_site, DefaultStorage will be created with that configuration, do not access manually but ResourceFactory::getDefaultStorage()
         'RTE_imageStorageDir' => 'uploads/',            // Default storage directory for Rich Text Editor files
         'lockRootPath' => '',                            // This path is used to evaluate if paths outside of PATH_site should be allowed. Ending slash required!
@@ -1038,17 +1055,12 @@ return array(
         'customPermOptions' => array(),                        // Array with sets of custom permission options. Syntax is; 'key' => array('header' => 'header string, language splitted', 'items' => array('key' => array('label, language splitted', 'icon reference', 'Description text, language splitted'))). Keys cannot contain ":|," characters.
         'fileDenyPattern' => FILE_DENY_PATTERN_DEFAULT,        // A perl-compatible regular expression (without delimiters!) that - if it matches a filename - will deny the file upload/rename or whatever in the webspace. For security reasons, files with multiple extensions have to be denied on an Apache environment with mod_alias, if the filename contains a valid php handler in an arbitrary position. Also, ".htaccess" files have to be denied. Matching is done case-insensitive. Default value is stored in constant FILE_DENY_PATTERN_DEFAULT
         'interfaces' => 'backend',                            // This determines which interface options is available in the login prompt and in which order (All options: ",backend,frontend")
-        'notificationPrefix' => '[TYPO3 Note]',                // String: Used to prefix the subject of mails sent in the taskcenter
         'explicitADmode' => 'explicitDeny',                    // Sets the general allow/deny mode for selector box values. Value can be either "explicitAllow" or "explicitDeny", nothing else!
         'niceFlexFormXMLtags' => true,                        // If set, the flexform XML will be stored with meaningful tags which can be validated with DTD schema. If you rely on custom reading of the XML from pre-4.0 versions you should set this to FALSE if you don't like to change your reader code (internally it is insignificant since \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array() doesn't care for the tags if the index-attribute value is set)
         'compactFlexFormXML' => 0,                            // If set, the flexform XML will not contain indentation spaces making XML more compact
         'flexformForceCDATA' => 0,                            // Boolean:  If set, will add CDATA to Flexform XML. Some versions of libxml have a bug that causes HTML entities to be stripped from any XML content and this setting will avoid the bug by adding CDATA.
         'explicitConfirmationOfTranslation' => false,        // If set, then the diff-data of localized records is not saved automatically when updated but requires that a translator clicks the special finish_translation/save/close button that becomes available.
         'versionNumberInFilename' => false,                    // <p>Boolean: If TRUE, included CSS and JS files will have the timestamp embedded in the filename, ie. filename.1269312081.js. This will make browsers and proxies reload the files if they change (thus avoiding caching issues). IMPORTANT: this feature requires extra .htaccess rules to work (please refer to _.htaccess or the _.htaccess file from the dummy package)</p><p>If FALSE the filemtime will be appended as a query-string.</p>
-        /**
-         * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
-         */
-        'spriteIconGenerator_handler' => \TYPO3\CMS\Backend\Sprite\SimpleSpriteHandler::class,        // String: Used to register own/other spriteGenerating Handler, they have to implement the interface \TYPO3\CMS\Backend\Sprite\SpriteIconGeneratorInterface. If set to "\TYPO3\CMS\Backend\Sprite\SpriteBuildingHandler" icons from extensions will automatically merged into sprites.
         'debug' => false,                                    // Boolean: If set, the loginrefresh is disabled and pageRenderer is set to debug mode. Use this to debug the backend only!
         'AJAX' => array(),                                    // array of key-value pairs for a unified use of AJAX calls in the TYPO3 backend. Keys are the unique ajaxIDs where the value will be resolved to call a method in an object. See the AjaxRequestHandler class for more information.
         'toolbarItems' => array(), // Array: Registered toolbar items classes
@@ -1057,15 +1069,11 @@ return array(
                 'Headers' => array('clickJackingProtection' => 'X-Frame-Options: SAMEORIGIN')
             )
         ),
-        'XCLASS' => array()
     ),
     'FE' => array( // Configuration for the TypoScript frontend (FE). Nothing here relates to the administration backend!
         'addAllowedPaths' => '',        // Additional relative paths (comma-list) to allow TypoScript resources be in. Should be prepended with '/'. If not, then any path where the first part is like this path will match. That is: 'myfolder/ , myarchive' will match eg. 'myfolder/', 'myarchive/', 'myarchive_one/', 'myarchive_2/' ... No check is done to see if this directory actually exists in the root of the site. Paths are matched by simply checking if these strings equals the first part of any TypoScript resource filepath. (See class template, function init() in \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser)
         'debug' => false,        // Boolean: If set, some debug HTML-comments may be output somewhere. Can also be set by TypoScript.
         'noPHPscriptInclude' => false,        // Boolean: If set, PHP-scripts are not included by TypoScript configurations, unless they reside in the folders typo3/ext/, typo3/sysext/ or typo3conf/ext. This is a security option to ensure that users with template-access do not terrorize
-        'strictFormmail' => true,        // Boolean: If set, the internal "formmail" feature in TYPO3 will send mail ONLY to recipients which has been encoded by the system itself. This protects against spammers misusing the formmailer. This option has been marked as deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8.
-        'secureFormmail' => true,        // Boolean: If set, the internal "formmail" feature in TYPO3 will send mail ONLY to the recipients that are defined in the form CE record. This protects against spammers misusing the formmailer. This option has been marked as deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8.
-        'formmailMaxAttachmentSize' => 250000,        // Integer: Sets the maximum allowed size (in bytes) of attachments for the internal "formmail" feature.This option has been marked as deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8.
         'compressionLevel' => 0,        // Integer: Determines output compression of FE output. Makes output smaller but slows down the page generation depending on the compression level. Requires zlib in your PHP installation. Range 1-9, where 1 is least compression and 9 is greatest compression. 'true' as value will set the compression based on the PHP default settings (usually 5). Suggested and most optimal value is 5.
         'pageNotFound_handling' => '',        // <p>How TYPO3 should handle requests for non-existing/accessible pages.</p> <dl><dt>empty (default)</dt><dd>The next visible page upwards in the page tree is shown.</dd> <dt>'true' or '1'</dt><dd>An error message is shown.</dd><dt>String</dt><dd>Static HTML file to show (reads content and outputs with correct headers), e.g. 'notfound.html' or 'http://www.example.org/errors/notfound.html'.</dd> <dt>Prefix "REDIRECT:"</dt><dd> If prefixed with "REDIRECT:" it will redirect to the URL/script after the prefix.</dd><dt>Prefix "READFILE:"</dt><dd>If prefixed with "READFILE" then it will expect the remaining string to be a HTML file which will be read and outputted directly after having the marker "###CURRENT_URL###" substituted with REQUEST_URI and ###REASON### with reason text, for example: "READFILE:fileadmin/notfound.html".</dd> <dt>Prefix "USER_FUNCTION:"</dt><dd> If prefixed with "USER_FUNCTION:" a user function is called, e.g. "USER_FUNCTION:fileadmin/class.user_notfound.php:user_notFound->pageNotFound" where the file must contain a class "user_notFound" with a method "pageNotFound" inside with two parameters $param and $ref.</dd></dl>
         'pageNotFound_handling_statheader' => 'HTTP/1.0 404 Not Found',        // If 'pageNotFound_handling' is enabled, this string will always be sent as header before the actual handling.
@@ -1109,7 +1117,6 @@ return array(
         'versionNumberInFilename' => 'querystring',        // String: embed,querystring,''. Allows to automatically include a version number (timestamp of the file) to referred CSS and JS filenames on the rendered page. This will make browsers and proxies reload the files if they change (thus avoiding caching issues). Set to 'embed' will have the timestamp embedded in the filename, ie. filename.1269312081.js. IMPORTANT: 'embed' requires extra .htaccess rules to work (please refer to _.htaccess or the _.htaccess file from the dummy package)<p>Set to 'querystring' (default setting) to append the version number as a query parameter (doesn't require mod_rewrite). Set to '' will turn this functionality off (behaves like TYPO3 &lt; v4.4).</p>
         'contentRenderingTemplates' => array(),    // Array to define the TypoScript parts that define the main content rendering. Extensions like "css_styled_content" provide content rendering templates. Other extensions like "felogin" or "indexed search" extend these templates and their TypoScript parts are added directly after the content templates. See EXT:css_styled_content/ext_localconf.php and EXT:frontend/Classes/TypoScript/TemplateService.php
         'ContentObjects' => array(),    // Array to register ContentObject (cObjects) like TEXT or HMENU within ext_localconf.php, see EXT:frontend/ext_localconf.php
-        'XCLASS' => array(),        // See 'Inside TYPO3' document for more information.
     ),
     'MAIL' => array( // Mail configurations to tune how \TYPO3\CMS\Core\Mail\ classes will send their mails.
         'transport' => 'mail',        // <p>String:</p><dl><dt>mail</dt><dd>Sends messages by delegating to PHP's internal mail() function. No further settings required. This is the most unreliable option. If you are serious about sending mails, consider using "smtp" or "sendmail".</dd><dt>smtp</dt><dd>Sends messages over the (standardized) Simple Message Transfer Protocol. It can deal with encryption and authentication. Most flexible option, requires a mail server and configurations in transport_smtp_* settings below. Works the same on Windows, Unix and MacOS.</dd><dt>sendmail</dt><dd>Sends messages by communicating with a locally installed MTA - such as sendmail. See setting transport_sendmail_command bellow.<dd><dt>mbox</dt><dd>This doesn't send any mail out, but instead will write every outgoing mail to a file adhering to the RFC 4155 mbox format, which is a simple text file where the mails are concatenated. Useful for debugging the mail sending process and on development machines which cannot send mails to the outside. Configure the file to write to in the 'transport_mbox_file' setting below</dd><dt>&lt;classname&gt;</dt><dd>Custom class which implements Swift_Transport. The constructor receives all settings from the MAIL section to make it possible to add custom settings.</dd></dl>
@@ -1150,7 +1157,6 @@ return array(
             )
         )
     ),
-    'MODS' => array(),
     'USER' => array(),
     'SC_OPTIONS' => array(
         // Here you can more or less freely define additional configuration for scripts in TYPO3. Of course the features supported depends on the script. See documentation "Inside TYPO3" for examples. Keys in the array are the relative path of a script (for output scripts it should be the "script ID" as found in a comment in the HTML header ) and values can then be anything that scripts wants to define for itself. The key "GLOBAL" is reserved.
@@ -1167,8 +1173,6 @@ return array(
                 'email' => \TYPO3\CMS\Core\Database\SoftReferenceIndex::class,
                 'url' => \TYPO3\CMS\Core\Database\SoftReferenceIndex::class,
             ),
-            // @deprecated global soft reference parsers are deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8
-            'softRefParser_GL' => array(),
             'cliKeys' => array()
         ),
     ),

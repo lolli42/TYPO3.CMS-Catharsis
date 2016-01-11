@@ -210,8 +210,16 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
         if (!empty($actionList)) {
             $content .= $this->taskObject->renderListMenu($actionList);
         } else {
-            $flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $this->getLanguageService()->getLL('action_not-found-description', true), $this->getLanguageService()->getLL('action_not-found'), \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
-            $content .= $flashMessage->render();
+            $flashMessage = GeneralUtility::makeInstance(
+                \TYPO3\CMS\Core\Messaging\FlashMessage::class,
+                $this->getLanguageService()->getLL('action_not-found-description', true),
+                $this->getLanguageService()->getLL('action_not-found'),
+                \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
+            /** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+            $flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
+            /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
+            $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+            $defaultFlashMessageQueue->enqueue($flashMessage);
         }
         // Admin users can create a new action
         if ($this->getBackendUser()->isAdmin()) {
@@ -489,7 +497,6 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
         // Save/update user by using TCEmain
         if (is_array($data)) {
             $tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
-            $tce->stripslashes_values = 0;
             $tce->start($data, array(), $this->getBackendUser());
             $tce->admin = 1;
             $tce->process_datamap();
@@ -809,7 +816,6 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
             // Initialize the dblist object:
             $dblist = GeneralUtility::makeInstance(\TYPO3\CMS\SysAction\ActionList::class);
             $dblist->script = GeneralUtility::getIndpEnv('REQUEST_URI');
-            $dblist->backPath = $GLOBALS['BACK_PATH'];
             $dblist->calcPerms = $this->getBackendUser()->calcPerms($this->pageinfo);
             $dblist->thumbs = $this->getBackendUser()->uc['thumbnailsByDefault'];
             $dblist->returnUrl = $this->taskObject->returnUrl;
@@ -886,14 +892,9 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
             $content .= '<form action="' . htmlspecialchars($dblist->listURL()) . '" method="post" name="dblistForm">' . $dblist->HTMLcode . '<input type="hidden" name="cmd_table" /><input type="hidden" name="cmd" />
 						</form>';
             // If a listing was produced, create the page footer with search form etc:
-            if ($dblist->HTMLcode) {
-                // Making field select box (when extended view for a single table is enabled):
-                if ($dblist->table) {
-                    $tmpBackpath = $GLOBALS['BACK_PATH'];
-                    $GLOBALS['BACK_PATH'] = '';
-                    $content .= $dblist->fieldSelectBox($dblist->table);
-                    $GLOBALS['BACK_PATH'] = $tmpBackpath;
-                }
+            // Making field select box (when extended view for a single table is enabled):
+            if ($dblist->HTMLcode && $dblist->table) {
+                $content .= $dblist->fieldSelectBox($dblist->table);
             }
         } else {
             // Not enough rights to access the list view or the page

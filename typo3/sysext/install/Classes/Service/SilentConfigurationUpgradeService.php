@@ -50,58 +50,44 @@ class SilentConfigurationUpgradeService
      * @var array
      */
     protected $obsoleteLocalConfigurationSettings = array(
-        // #62402
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\ExtensionManagerTables',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\FileIdentifierHashUpdate',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\FilemountUpdateWizard',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\FilePermissionUpdate',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\FileTableSplittingUpdate',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\InitUpdateWizard',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\MediaFlexformUpdate',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\ReferenceIntegrityUpdateWizard',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\RteFileLinksUpdateWizard',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\RteMagicImagesUpdateWizard',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TceformsUpdateWizard',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TtContentUploadsUpdateWizard',
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TruncateSysFileProcessedFileTable',
-        // #68183
-        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\MigrateShortcutUrlsUpdate',
-        // #63818
-        'BE/staticFileEditPath',
-        // #64226
-        'BE/accessListRenderMode',
-        // #66431
-        'BE/loginNewsTitle',
-        // #24900
-        'SYS/compat_version',
-        // #64643
-        'GFX/enable_typo3temp_db_tracking',
-        // #48542
-        'GFX/TTFdpi',
-        // #64872
-        'SYS/useCachingFramework',
-        // #65912
-        'FE/allowedTempPaths',
-        // #66034
-        'FE/activateContentAdapter',
-        // #66902
-        'SYS/loginCopyrightShowVersion',
-        // #66903
-        'BE/RTEenabled',
-        // #66906
-        'GFX/png_to_gif',
-        // #67411
-        'SYS/caching/cacheConfigurations/cache_classes',
-        // #68178
-        'SYS/form_enctype',
-        // #69904
-        'BE/diff_path',
-        // #69930
-        'SYS/serverTimeZone',
-        // #70138
-        'BE/flexFormXMLincludeDiffBase',
-        // #71110
-        'BE/maxFileSize',
+        // #72367
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\AccessRightParametersUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\BackendUserStartModuleUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\Compatibility6ExtractionUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\ContentTypesToTextMediaUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\FileListIsStartModuleUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\FilesReplacePermissionUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\LanguageIsoCodeUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\MediaceExtractionUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\MigrateMediaToAssetsForTextMediaCe',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\MigrateShortcutUrlsAgainUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\OpenidExtractionUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\PageShortcutParentUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\ProcessedFileChecksumUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TableFlexFormToTtContentFieldsUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\WorkspacesNotificationSettingsUpdate',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Rtehtmlarea\\Hook\\Install\\DeprecatedRteProperties',
+        'INSTALL/wizardDone/TYPO3\\CMS\\Rtehtmlarea\\Hook\\Install\\RteAcronymButtonRenamedToAbbreviation',
+        // #72400
+        'BE/spriteIconGenerator_handler',
+        // #72417
+        'SYS/lockingMode',
+        // #72473
+        'FE/secureFormmail',
+        'FE/strictFormmail',
+        'FE/formmailMaxAttachmentSize',
+        // #72337
+        'SYS/t3lib_cs_utils',
+        'SYS/t3lib_cs_convMethod',
+        // #72604
+        'SYS/maxFileNameLength',
+        // #72602
+        'BE/unzip_path',
+        // #72615
+        'BE/notificationPrefix',
+        // #72616
+        'BE/XCLASS',
+        'FE/XCLASS',
     );
 
     /**

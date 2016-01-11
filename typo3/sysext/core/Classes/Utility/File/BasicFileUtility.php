@@ -58,13 +58,6 @@ class BasicFileUtility
     public $uniquePrecision = 6;
 
     /**
-     * This is the maximum length of names treated by cleanFileName()
-     *
-     * @var int
-     */
-    public $maxInputNameLen = 60;
-
-    /**
      * Temp-foldername. A folder in the root of one of the mounts with this name is regarded a TEMP-folder (used for upload from clipboard)
      *
      * @var string
@@ -146,7 +139,6 @@ class BasicFileUtility
         $this->mounts = (!empty($mounts) ? $mounts : array());
         $this->webPath = GeneralUtility::getIndpEnv('TYPO3_DOCUMENT_ROOT');
         $this->isInit = 1;
-        $this->maxInputNameLen = $GLOBALS['TYPO3_CONF_VARS']['SYS']['maxFileNameLength'] ?: $this->maxInputNameLen;
     }
 
     /**
@@ -401,15 +393,7 @@ class BasicFileUtility
         } else {
             // Get conversion object or initialize if needed
             if (!is_object($this->csConvObj)) {
-                if (TYPO3_MODE == 'FE') {
-                    $this->csConvObj = $GLOBALS['TSFE']->csConvObj;
-                } elseif (is_object($GLOBALS['LANG'])) {
-                    // BE assumed:
-                    $this->csConvObj = $GLOBALS['LANG']->csConvObj;
-                } else {
-                    // The object may not exist yet, so we need to create it now. Happens in the Install Tool for example.
-                    $this->csConvObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
-                }
+                $this->csConvObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
             }
             // Define character set
             if (!$charset) {

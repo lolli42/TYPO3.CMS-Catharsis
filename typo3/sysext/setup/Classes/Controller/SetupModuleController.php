@@ -28,6 +28,7 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -290,7 +291,6 @@ class SetupModuleController extends AbstractModule
                 // Make instance of TCE for storing the changes.
                 /** @var DataHandler $dataHandler */
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $dataHandler->stripslashes_values = false;
                 // This is so the user can actually update his user record.
                 $isAdmin = $beUser->user['admin'];
                 $beUser->user['admin'] = 1;
@@ -375,7 +375,7 @@ class SetupModuleController extends AbstractModule
             BackendUtility::setUpdateSignal('updatePageTree');
         }
         // Start page:
-        $this->moduleTemplate->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/md5.js');
+        $this->moduleTemplate->loadJavascriptLib(ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/JavaScript/md5.js');
         // Use a wrapper div
         $this->content .= '<div id="user-setup-wrapper">';
         // Load available backend modules
@@ -461,18 +461,6 @@ class SetupModuleController extends AbstractModule
 
         $response->getBody()->write($this->moduleTemplate->renderContent());
         return $response;
-    }
-
-    /**
-     * Prints the content / ends page
-     *
-     * @return void
-     * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-     */
-    public function printContent()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        echo $this->content;
     }
 
     /**
@@ -893,7 +881,7 @@ class SetupModuleController extends AbstractModule
             // Setting comes from another extension
             $context = $strParts[0];
             $field = $strParts[1];
-        } elseif (!GeneralUtility::inList('language,simuser,reset', $str)) {
+        } elseif ($str !== 'language' && $str !== 'simuser' && $str !== 'reset') {
             $field = 'option_' . $str;
         }
         return BackendUtility::wrapInHelp($context, $field, $label);
