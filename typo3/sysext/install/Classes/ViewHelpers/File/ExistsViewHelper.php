@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Install\ViewHelpers\File;
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Simple view helper to check if given file is a regular file
@@ -32,7 +33,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class ExistsViewHelper extends AbstractViewHelper
+class ExistsViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Check if given file is a regular file

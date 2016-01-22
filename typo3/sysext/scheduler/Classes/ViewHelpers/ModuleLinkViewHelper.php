@@ -17,12 +17,13 @@ namespace TYPO3\CMS\Scheduler\ViewHelpers;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Create internal link within backend app
  * @internal
  */
-class ModuleLinkViewHelper extends AbstractViewHelper
+class ModuleLinkViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Render module link with command and arguments

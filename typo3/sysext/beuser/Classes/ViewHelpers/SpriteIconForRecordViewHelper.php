@@ -19,13 +19,14 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Domain\Model\BackendUser;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper;
 
 /**
  * Views sprite icon for a record (object)
  * @internal
  */
-class SpriteIconForRecordViewHelper extends AbstractBackendViewHelper
+class SpriteIconForRecordViewHelper extends AbstractBackendViewHelper implements CompilableInterface
 {
     /**
      * Displays spriteIcon for database table and object

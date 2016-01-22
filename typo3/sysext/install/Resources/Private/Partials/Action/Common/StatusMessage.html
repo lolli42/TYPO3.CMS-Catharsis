@@ -14,12 +14,9 @@
 	<f:case value="loading">
 		<div class="t3js-message typo3-message alert alert-loading" role="alert">
 	</f:case>
-	<f:case value="">
+	<f:case default="TRUE">
 		<div class="t3js-message typo3-message alert alert-notice" role="alert">
 	</f:case>
-	<f:defaultCase>
-		<div class="t3js-message typo3-message alert alert-notice" role="alert">
-	</f:defaultCase>
 </f:switch>
 	<h4>{message.title}</h4>
 	<f:if condition="{message.message}">

@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Install\Controller\Action;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
-use TYPO3\CMS\Fluid\View\StandaloneView;
+use TYPO3\CMS\Install\View\StandaloneView;
 
 /**
  * General purpose controller action helper methods and bootstrap
@@ -107,7 +107,6 @@ abstract class AbstractAction implements ActionInterface
         $viewRootPath = GeneralUtility::getFileAbsFileName('EXT:install/Resources/Private/');
         $controllerActionDirectoryName = ucfirst($this->controller);
         $mainTemplate = ucfirst($this->action);
-        $this->view->getRenderingContext()->getTemplateCompiler()->disable();
         $this->view->setTemplatePathAndFilename($viewRootPath . 'Templates/Action/' . $controllerActionDirectoryName . '/' . $mainTemplate . '.html');
         $this->view->setLayoutRootPaths(array($viewRootPath . 'Layouts/'));
         $this->view->setPartialRootPaths(array($viewRootPath . 'Partials/'));

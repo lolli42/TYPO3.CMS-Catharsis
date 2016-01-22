@@ -19,11 +19,12 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Class EditSysFileMetadataRecordViewHelper
  */
-class EditSysFileMetadataRecordViewHelper extends AbstractViewHelper
+class EditSysFileMetadataRecordViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Renders a link to edit sys_file_metadata

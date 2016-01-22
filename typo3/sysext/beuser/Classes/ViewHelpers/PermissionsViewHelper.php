@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Beuser\ViewHelpers;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Render permission icon group (user / group / others) of the "Access" module.
@@ -24,7 +25,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  * Most of that could be done in fluid directly, but this view helper
  * is much better performance wise.
  */
-class PermissionsViewHelper extends AbstractViewHelper
+class PermissionsViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * @var array Cached labels for a single permission mask like "Delete page"
@@ -45,7 +46,7 @@ class PermissionsViewHelper extends AbstractViewHelper
     }
 
     /**
-     * Static rendering method
+     * Implementing CompilableInterface suppresses object instantiation of this view helper
      *
      * @param array $arguments
      * @param \Closure $renderChildrenClosure

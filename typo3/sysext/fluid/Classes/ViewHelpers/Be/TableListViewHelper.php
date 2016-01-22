@@ -1,22 +1,25 @@
 <?php
 namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
-
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
+/*                                                                        *
+ * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU Lesser General Public License, either version 3   *
+ *  of the License, or (at your option) any later version.                *
+ *                                                                        *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
+ *                                                                        *
+ * The TYPO3 project - inspiring people to share!                         *
+ *                                                                        */
 /**
  * View helper which renders a record list as known from the TYPO3 list module
  * Note: This feature is experimental!
@@ -71,14 +74,14 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
     public function render($tableName, array $fieldList = array(), $storagePid = null, $levels = 0, $filter = '', $recordsPerPage = 0, $sortField = '', $sortDescending = false, $readOnly = false, $enableClickMenu = true, $clickTitleMode = null, $alternateBackgroundColors = false)
     {
         if ($alternateBackgroundColors) {
-            GeneralUtility::deprecationLog(
+            \TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
                 'The option alternateBackgroundColors has no effect anymore and can be removed without problems. The parameter will be removed in TYPO3 CMS 8.'
             );
         }
 
-        $pageinfo = BackendUtility::readPageAccess(GeneralUtility::_GP('id'), $GLOBALS['BE_USER']->getPagePermsClause(1));
+        $pageinfo = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id'), $GLOBALS['BE_USER']->getPagePermsClause(1));
         /** @var $dblist \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList */
-        $dblist = GeneralUtility::makeInstance(\TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList::class);
+        $dblist = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList::class);
         $dblist->pageRow = $pageinfo;
         if ($readOnly === false) {
             $dblist->calcPerms = $GLOBALS['BE_USER']->calcPerms($pageinfo);
@@ -91,7 +94,7 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
             $frameworkConfiguration = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
             $storagePid = $frameworkConfiguration['persistence']['storagePid'];
         }
-        $dblist->start($storagePid, $tableName, (int)GeneralUtility::_GP('pointer'), $filter, $levels, $recordsPerPage);
+        $dblist->start($storagePid, $tableName, (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pointer'), $filter, $levels, $recordsPerPage);
         $dblist->allFields = true;
         $dblist->dontShowClipControlPanels = true;
         $dblist->displayFields = false;

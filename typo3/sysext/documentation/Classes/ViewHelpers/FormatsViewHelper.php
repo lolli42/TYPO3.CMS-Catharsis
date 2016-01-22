@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * ViewHelper to display all download links for a document
@@ -27,7 +28,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class FormatsViewHelper extends AbstractViewHelper
+class FormatsViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Renders all format download links.

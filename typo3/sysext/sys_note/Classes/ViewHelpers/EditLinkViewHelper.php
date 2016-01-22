@@ -18,12 +18,13 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * ViewHelper to create a link to edit a note
  * @internal
  */
-class EditLinkViewHelper extends AbstractViewHelper
+class EditLinkViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * @param int $id

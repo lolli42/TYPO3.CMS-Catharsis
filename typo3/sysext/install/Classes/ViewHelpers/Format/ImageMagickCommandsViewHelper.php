@@ -16,13 +16,14 @@ namespace TYPO3\CMS\Install\ViewHelpers\Format;
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Display image magick commands
  *
  * @internal
  */
-class ImageMagickCommandsViewHelper extends AbstractViewHelper
+class ImageMagickCommandsViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Display image magick commands
