@@ -16,57 +16,83 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
 
 /**
  * Controller for actions relating to update of full extension list from TER
- *
- * @author Susanne Moog <typo3@susannemoog.de>
  */
-class UpdateFromTerController extends AbstractController {
+class UpdateFromTerController extends AbstractController
+{
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Utility\Repository\Helper
+     */
+    protected $repositoryHelper;
 
-	/**
-	 * @var \TYPO3\CMS\Extensionmanager\Utility\Repository\Helper
-	 * @inject
-	 */
-	protected $repositoryHelper;
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\RepositoryRepository
+     */
+    protected $repositoryRepository;
 
-	/**
-	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\RepositoryRepository
-	 * @inject
-	 */
-	protected $repositoryRepository;
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
+     */
+    protected $listUtility;
 
-	/**
-	 * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
-	 * @inject
-	 */
-	protected $listUtility;
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
+     */
+    protected $extensionRepository;
 
-	/**
-	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
-	 * @inject
-	 */
-	protected $extensionRepository;
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Utility\Repository\Helper $repositoryHelper
+     */
+    public function injectRepositoryHelper(\TYPO3\CMS\Extensionmanager\Utility\Repository\Helper $repositoryHelper)
+    {
+        $this->repositoryHelper = $repositoryHelper;
+    }
 
-	/**
-	 * Update extension list from TER
-	 *
-	 * @param bool $forceUpdateCheck
-	 * @return void
-	 */
-	public function updateExtensionListFromTerAction($forceUpdateCheck = FALSE) {
-		$updated = FALSE;
-		$errorMessage = '';
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\RepositoryRepository $repositoryRepository
+     */
+    public function injectRepositoryRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\RepositoryRepository $repositoryRepository)
+    {
+        $this->repositoryRepository = $repositoryRepository;
+    }
 
-		if ($this->extensionRepository->countAll() === 0 || $forceUpdateCheck) {
-			try {
-				$updated = $this->repositoryHelper->updateExtList();
-			} catch (\TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException $e) {
-				$errorMessage = $e->getMessage();
-			}
-		}
-		/** @var $repository \TYPO3\CMS\Extensionmanager\Domain\Model\Repository */
-		$repository = $this->repositoryRepository->findByUid((int)$this->settings['repositoryUid']);
-		$this->view->assign('updated', $updated)
-				->assign('repository', $repository)
-				->assign('errorMessage', $errorMessage);
-	}
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility
+     */
+    public function injectListUtility(\TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility)
+    {
+        $this->listUtility = $listUtility;
+    }
 
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository
+     */
+    public function injectExtensionRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository)
+    {
+        $this->extensionRepository = $extensionRepository;
+    }
+
+    /**
+     * Update extension list from TER
+     *
+     * @param bool $forceUpdateCheck
+     * @return void
+     */
+    public function updateExtensionListFromTerAction($forceUpdateCheck = false)
+    {
+        $updated = false;
+        $errorMessage = '';
+
+        if ($this->extensionRepository->countAll() === 0 || $forceUpdateCheck) {
+            try {
+                $updated = $this->repositoryHelper->updateExtList();
+            } catch (\TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException $e) {
+                $errorMessage = $e->getMessage();
+            }
+        }
+        /** @var $repository \TYPO3\CMS\Extensionmanager\Domain\Model\Repository */
+        $repository = $this->repositoryRepository->findByUid((int)$this->settings['repositoryUid']);
+        $this->view->assign('updated', $updated)
+                ->assign('repository', $repository)
+                ->assign('errorMessage', $errorMessage);
+    }
 }

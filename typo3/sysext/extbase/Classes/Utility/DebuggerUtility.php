@@ -30,423 +30,438 @@ namespace TYPO3\CMS\Extbase\Utility;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class DebuggerUtility {
+class DebuggerUtility
+{
+    const PLAINTEXT_INDENT = '   ';
+    const HTML_INDENT = '&nbsp;&nbsp;&nbsp;';
 
-	const PLAINTEXT_INDENT = '   ';
-	const HTML_INDENT = '&nbsp;&nbsp;&nbsp;';
+    /**
+     * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage
+     */
+    protected static $renderedObjects;
 
-	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage
-	 */
-	static protected $renderedObjects;
+    /**
+     * Hardcoded list of Extbase class names (regex) which should not be displayed during debugging
+     *
+     * @var array
+     */
+    protected static $blacklistedClassNames = array(
+        'PHPUnit_Framework_MockObject_InvocationMocker',
+        \TYPO3\CMS\Extbase\Reflection\ReflectionService::class,
+        \TYPO3\CMS\Extbase\Object\ObjectManager::class,
+        \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper::class,
+        \TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager::class,
+        \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory::class,
+        \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class
+    );
 
-	/**
-	 * Hardcoded list of Extbase class names (regex) which should not be displayed during debugging
-	 *
-	 * @var array
-	 */
-	static protected $blacklistedClassNames = array(
-		'PHPUnit_Framework_MockObject_InvocationMocker',
-		\TYPO3\CMS\Extbase\Reflection\ReflectionService::class,
-		\TYPO3\CMS\Extbase\Object\ObjectManager::class,
-		\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper::class,
-		\TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager::class,
-		\TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory::class,
-		\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class
-	);
+    /**
+     * Hardcoded list of property names (regex) which should not be displayed during debugging
+     *
+     * @var array
+     */
+    protected static $blacklistedPropertyNames = array('warning');
 
-	/**
-	 * Hardcoded list of property names (regex) which should not be displayed during debugging
-	 *
-	 * @var array
-	 */
-	static protected $blacklistedPropertyNames = array('warning');
+    /**
+     * Is set to TRUE once the CSS file is included in the current page to prevent double inclusions of the CSS file.
+     *
+     * @var bool
+     */
+    protected static $stylesheetEchoed = false;
 
-	/**
-	 * Is set to TRUE once the CSS file is included in the current page to prevent double inclusions of the CSS file.
-	 *
-	 * @var bool
-	 */
-	static protected $stylesheetEchoed = FALSE;
+    /**
+     * Defines the max recursion depth of the dump, set to 8 due to common memory limits
+     *
+     * @var int
+     */
+    protected static $maxDepth = 8;
 
-	/**
-	 * Defines the max recursion depth of the dump, set to 8 due to common memory limits
-	 *
-	 * @var int
-	 */
-	static protected $maxDepth = 8;
+    /**
+     * Clear the state of the debugger
+     *
+     * @return void
+     */
+    protected static function clearState()
+    {
+        self::$renderedObjects = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
+    }
 
-	/**
-	 * Clear the state of the debugger
-	 *
-	 * @return void
-	 */
-	static protected function clearState() {
-		self::$renderedObjects = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
-	}
+    /**
+     * Renders a dump of the given value
+     *
+     * @param mixed $value
+     * @param int $level
+     * @param bool $plainText
+     * @param bool $ansiColors
+     * @return string
+     */
+    protected static function renderDump($value, $level, $plainText, $ansiColors)
+    {
+        $dump = '';
+        if (is_string($value)) {
+            $croppedValue = strlen($value) > 2000 ? substr($value, 0, 2000) . '...' : $value;
+            if ($plainText) {
+                $dump = self::ansiEscapeWrap(('"' . implode((PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, ($level + 1))), str_split($croppedValue, 76)) . '"'), '33', $ansiColors) . ' (' . strlen($value) . ' chars)';
+            } else {
+                $dump = sprintf('\'<span class="extbase-debug-string">%s</span>\' (%s chars)', implode('<br />' . str_repeat(self::HTML_INDENT, ($level + 1)), str_split(htmlspecialchars($croppedValue), 76)), strlen($value));
+            }
+        } elseif (is_numeric($value)) {
+            $dump = sprintf('%s (%s)', self::ansiEscapeWrap($value, '35', $ansiColors), gettype($value));
+        } elseif (is_bool($value)) {
+            $dump = $value ? self::ansiEscapeWrap('TRUE', '32', $ansiColors) : self::ansiEscapeWrap('FALSE', '32', $ansiColors);
+        } elseif (is_null($value) || is_resource($value)) {
+            $dump = gettype($value);
+        } elseif (is_array($value)) {
+            $dump = self::renderArray($value, $level + 1, $plainText, $ansiColors);
+        } elseif (is_object($value)) {
+            $dump = self::renderObject($value, $level + 1, $plainText, $ansiColors);
+        }
+        return $dump;
+    }
 
-	/**
-	 * Renders a dump of the given value
-	 *
-	 * @param mixed $value
-	 * @param int $level
-	 * @param bool $plainText
-	 * @param bool $ansiColors
-	 * @return string
-	 */
-	static protected function renderDump($value, $level, $plainText, $ansiColors) {
-		$dump = '';
-		if (is_string($value)) {
-			$croppedValue = strlen($value) > 2000 ? substr($value, 0, 2000) . '...' : $value;
-			if ($plainText) {
-				$dump = self::ansiEscapeWrap(('"' . implode((PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, ($level + 1))), str_split($croppedValue, 76)) . '"'), '33', $ansiColors) . ' (' . strlen($value) . ' chars)';
-			} else {
-				$dump = sprintf('\'<span class="debug-string">%s</span>\' (%s chars)', implode('<br />' . str_repeat(self::HTML_INDENT, ($level + 1)), str_split(htmlspecialchars($croppedValue), 76)), strlen($value));
-			}
-		} elseif (is_numeric($value)) {
-			$dump = sprintf('%s (%s)', self::ansiEscapeWrap($value, '35', $ansiColors), gettype($value));
-		} elseif (is_bool($value)) {
-			$dump = $value ? self::ansiEscapeWrap('TRUE', '32', $ansiColors) : self::ansiEscapeWrap('FALSE', '32', $ansiColors);
-		} elseif (is_null($value) || is_resource($value)) {
-			$dump = gettype($value);
-		} elseif (is_array($value)) {
-			$dump = self::renderArray($value, $level + 1, $plainText, $ansiColors);
-		} elseif (is_object($value)) {
-			$dump = self::renderObject($value, $level + 1, $plainText, $ansiColors);
-		}
-		return $dump;
-	}
+    /**
+     * Renders a dump of the given array
+     *
+     * @param array|\Traversable $array
+     * @param int $level
+     * @param bool $plainText
+     * @param bool $ansiColors
+     * @return string
+     */
+    protected static function renderArray($array, $level, $plainText = false, $ansiColors = false)
+    {
+        $content = '';
+        $count = count($array);
 
-	/**
-	 * Renders a dump of the given array
-	 *
-	 * @param array|\Traversable $array
-	 * @param int $level
-	 * @param bool $plainText
-	 * @param bool $ansiColors
-	 * @return string
-	 */
-	static protected function renderArray($array, $level, $plainText = FALSE, $ansiColors = FALSE) {
-		$content = '';
-		$count = count($array);
+        if ($plainText) {
+            $header = self::ansiEscapeWrap('array', '36', $ansiColors);
+        } else {
+            $header = '<span class="extbase-debug-type">array</span>';
+        }
+        $header .= $count > 0 ? '(' . $count . ' item' . ($count > 1 ? 's' : '') . ')' : '(empty)';
+        if ($level >= self::$maxDepth) {
+            if ($plainText) {
+                $header .= ' ' . self::ansiEscapeWrap('max depth', '47;30', $ansiColors);
+            } else {
+                $header .= '<span class="extbase-debug-filtered">max depth</span>';
+            }
+        } else {
+            $content = self::renderCollection($array, $level, $plainText, $ansiColors);
+            if (!$plainText) {
+                $header = ($level > 1 && $count > 0 ? '<input type="checkbox" /><span class="extbase-debug-header" >' : '<span>') . $header . '</span >';
+            }
+        }
+        if ($level > 1 && $count > 0 && !$plainText) {
+            $dump = '<span class="extbase-debugger-tree">' . $header . '<span class="extbase-debug-content">' . $content . '</span></span>';
+        } else {
+            $dump = $header . $content;
+        }
+        return $dump;
+    }
 
-		if ($plainText) {
-			$header = self::ansiEscapeWrap('array', '36', $ansiColors);
-		} else {
-			$header = '<span class="debug-type">array</span>';
-		}
-		$header .= $count > 0 ? '(' . $count . ' item' . ($count > 1 ? 's' : '') . ')' : '(empty)';
-		if ($level >= self::$maxDepth) {
-			if ($plainText) {
-				$header .= ' ' . self::ansiEscapeWrap('max depth', '47;30', $ansiColors);
-			} else {
-				$header .= '<span class="debug-filtered">max depth</span>';
-			}
-		} else {
-			$content = self::renderCollection($array, $level, $plainText, $ansiColors);
-			if (!$plainText) {
-				$header = ($level > 1 && $count > 0 ? '<input type="checkbox" /><span class="debug-header" >' : '<span>') . $header . '</span >';
-			}
-		}
-		if ($level > 1 && $count > 0 && !$plainText) {
-			$dump = '<span class="debug-tree">' . $header . '<span class="debug-content">' . $content . '</span></span>';
-		} else {
-			$dump = $header . $content;
-		}
-		return $dump;
-	}
+    /**
+     * Renders a dump of the given object
+     *
+     * @param object $object
+     * @param int $level
+     * @param bool $plainText
+     * @param bool $ansiColors
+     * @return string
+     */
+    protected static function renderObject($object, $level, $plainText = false, $ansiColors = false)
+    {
+        if ($object instanceof \TYPO3\CMS\Extbase\Persistence\Generic\LazyLoadingProxy) {
+            $object = $object->_loadRealInstance();
+            if (!$object) {
+                return gettype($object);
+            }
+        }
+        $header = self::renderHeader($object, $level, $plainText, $ansiColors);
+        if ($level < self::$maxDepth && !self::isBlacklisted($object) && !(self::isAlreadyRendered($object) && $plainText !== true)) {
+            $content = self::renderContent($object, $level, $plainText, $ansiColors);
+        } else {
+            $content = '';
+        }
+        if ($plainText) {
+            return $header . $content;
+        } else {
+            return '<span class="extbase-debugger-tree">' . $header . '<span class="extbase-debug-content">' . $content . '</span></span>';
+        }
+    }
 
-	/**
-	 * Renders a dump of the given object
-	 *
-	 * @param object $object
-	 * @param int $level
-	 * @param bool $plainText
-	 * @param bool $ansiColors
-	 * @return string
-	 */
-	static protected function renderObject($object, $level, $plainText = FALSE, $ansiColors = FALSE) {
-		if ($object instanceof \TYPO3\CMS\Extbase\Persistence\Generic\LazyLoadingProxy) {
-			$object = $object->_loadRealInstance();
-		}
-		$header = self::renderHeader($object, $level, $plainText, $ansiColors);
-		if ($level < self::$maxDepth && !self::isBlacklisted($object) && !(self::isAlreadyRendered($object) && $plainText !== TRUE)) {
-			$content = self::renderContent($object, $level, $plainText, $ansiColors);
-		} else {
-			$content = '';
-		}
-		if ($plainText) {
-			return $header . $content;
-		} else {
-			return '<span class="debug-tree">' . $header . '<span class="debug-content">' . $content . '</span></span>';
-		}
-	}
+    /**
+     * Checks if a given object or property should be excluded/filtered
+     *
+     * @param object $value An ReflectionProperty or other Object
+     * @return bool TRUE if the given object should be filtered
+     */
+    protected static function isBlacklisted($value)
+    {
+        $result = false;
+        if ($value instanceof \ReflectionProperty) {
+            $result = (strpos(implode('|', self::$blacklistedPropertyNames), $value->getName()) > 0);
+        } elseif (is_object($value)) {
+            $result = (strpos(implode('|', self::$blacklistedClassNames), get_class($value)) > 0);
+        }
+        return $result;
+    }
 
-	/**
-	 * Checks if a given object or property should be excluded/filtered
-	 *
-	 * @param object $value An ReflectionProperty or other Object
-	 * @return bool TRUE if the given object should be filtered
-	 */
-	static protected function isBlacklisted($value) {
-		$result = FALSE;
-		if ($value instanceof \ReflectionProperty) {
-			$result = (strpos(implode('|', self::$blacklistedPropertyNames), $value->getName()) > 0);
-		} elseif (is_object($value)) {
-			$result = (strpos(implode('|', self::$blacklistedClassNames), get_class($value)) > 0);
-		}
-		return $result;
-	}
+    /**
+     * Checks if a given object was already rendered.
+     *
+     * @param object $object
+     * @return bool TRUE if the given object was already rendered
+     */
+    protected static function isAlreadyRendered($object)
+    {
+        return self::$renderedObjects->contains($object);
+    }
 
-	/**
-	 * Checks if a given object was already rendered.
-	 *
-	 * @param object $object
-	 * @return bool TRUE if the given object was already rendered
-	 */
-	static protected function isAlreadyRendered($object) {
-		return self::$renderedObjects->contains($object);
-	}
+    /**
+     * Renders the header of a given object/collection. It is usually the class name along with some flags.
+     *
+     * @param object $object
+     * @param int $level
+     * @param bool $plainText
+     * @param bool $ansiColors
+     * @return string The rendered header with tags
+     */
+    protected static function renderHeader($object, $level, $plainText, $ansiColors)
+    {
+        $dump = '';
+        $persistenceType = '';
+        $className = get_class($object);
+        $classReflection = new \ReflectionClass($className);
+        if ($plainText) {
+            $dump .= self::ansiEscapeWrap($className, '36', $ansiColors);
+        } else {
+            $dump .= '<span class="extbase-debug-type">' . $className . '</span>';
+        }
+        if ($object instanceof \TYPO3\CMS\Core\SingletonInterface) {
+            $scope = 'singleton';
+        } else {
+            $scope = 'prototype';
+        }
+        if ($plainText) {
+            $dump .= ' ' . self::ansiEscapeWrap($scope, '44;37', $ansiColors);
+        } else {
+            $dump .= $scope ? '<span class="extbase-debug-scope">' . $scope . '</span>' : '';
+        }
+        if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractDomainObject) {
+            if ($object->_isDirty()) {
+                $persistenceType = 'modified';
+            } elseif ($object->_isNew()) {
+                $persistenceType = 'transient';
+            } else {
+                $persistenceType = 'persistent';
+            }
+        }
+        if ($object instanceof \TYPO3\CMS\Extbase\Persistence\ObjectStorage && $object->_isDirty()) {
+            $persistenceType = 'modified';
+        }
+        if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractEntity) {
+            $domainObjectType = 'entity';
+        } elseif ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractValueObject) {
+            $domainObjectType = 'valueobject';
+        } else {
+            $domainObjectType = 'object';
+        }
+        if ($plainText) {
+            $dump .= ' ' . self::ansiEscapeWrap(($persistenceType . ' ' . $domainObjectType), '42;30', $ansiColors);
+        } else {
+            $dump .= '<span class="extbase-debug-ptype">' . ($persistenceType ? $persistenceType . ' ' : '') . $domainObjectType . '</span>';
+        }
+        if (strpos(implode('|', self::$blacklistedClassNames), get_class($object)) > 0) {
+            if ($plainText) {
+                $dump .= ' ' . self::ansiEscapeWrap('filtered', '47;30', $ansiColors);
+            } else {
+                $dump .= '<span class="extbase-debug-filtered">filtered</span>';
+            }
+        } elseif (self::$renderedObjects->contains($object) && !$plainText) {
+            $dump = '<a href="javascript:;" onclick="document.location.hash=\'#' . spl_object_hash($object) . '\';" class="extbase-debug-seeabove">' . $dump . '<span class="extbase-debug-filtered">see above</span></a>';
+        } elseif ($level >= self::$maxDepth && !$object instanceof \DateTime) {
+            if ($plainText) {
+                $dump .= ' ' . self::ansiEscapeWrap('max depth', '47;30', $ansiColors);
+            } else {
+                $dump .= '<span class="extbase-debug-filtered">max depth</span>';
+            }
+        } elseif ($level > 1 && !$object instanceof \DateTime && !$plainText) {
+            if (($object instanceof \Countable && empty($object)) || empty($classReflection->getProperties())) {
+                $dump = '<span>' . $dump . '</span>';
+            } else {
+                $dump = '<input type="checkbox" id="' . spl_object_hash($object) . '" /><span class="extbase-debug-header">' . $dump . '</span>';
+            }
+        }
+        if ($object instanceof \Countable) {
+            $objectCount = count($object);
+            $dump .= $objectCount > 0 ? ' (' . $objectCount . ' items)' : ' (empty)';
+        }
+        if ($object instanceof \DateTime) {
+            $dump .= ' (' . $object->format(\DateTime::RFC3339) . ', ' . $object->getTimestamp() . ')';
+        }
+        if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface && !$object->_isNew()) {
+            $dump .= ' (uid=' . $object->getUid() . ', pid=' . $object->getPid() . ')';
+        }
+        return $dump;
+    }
 
-	/**
-	 * Renders the header of a given object/collection. It is usually the class name along with some flags.
-	 *
-	 * @param object $object
-	 * @param int $level
-	 * @param bool $plainText
-	 * @param bool $ansiColors
-	 * @return string The rendered header with tags
-	 */
-	static protected function renderHeader($object, $level, $plainText, $ansiColors) {
-		$dump = '';
-		$persistenceType = '';
-		$className = get_class($object);
-		$classReflection = new \ReflectionClass($className);
-		if ($plainText) {
-			$dump .= self::ansiEscapeWrap($className, '36', $ansiColors);
-		} else {
-			$dump .= '<span class="debug-type">' . $className . '</span>';
-		}
-		if ($object instanceof \TYPO3\CMS\Core\SingletonInterface) {
-			$scope = 'singleton';
-		} else {
-			$scope = 'prototype';
-		}
-		if ($plainText) {
-			$dump .= ' ' . self::ansiEscapeWrap($scope, '44;37', $ansiColors);
-		} else {
-			$dump .= $scope ? '<span class="debug-scope">' . $scope . '</span>' : '';
-		}
-		if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractDomainObject) {
-			if ($object->_isDirty()) {
-				$persistenceType = 'modified';
-			} elseif ($object->_isNew()) {
-				$persistenceType = 'transient';
-			} else {
-				$persistenceType = 'persistent';
-			}
-		}
-		if ($object instanceof \TYPO3\CMS\Extbase\Persistence\ObjectStorage && $object->_isDirty()) {
-			$persistenceType = 'modified';
-		}
-		if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractEntity) {
-			$domainObjectType = 'entity';
-		} elseif ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractValueObject) {
-			$domainObjectType = 'valueobject';
-		} else {
-			$domainObjectType = 'object';
-		}
-		if ($plainText) {
-			$dump .= ' ' . self::ansiEscapeWrap(($persistenceType . ' ' . $domainObjectType), '42;30', $ansiColors);
-		} else {
-			$dump .= '<span class="debug-ptype">' . ($persistenceType ? $persistenceType . ' ' : '') . $domainObjectType . '</span>';
-		}
-		if (strpos(implode('|', self::$blacklistedClassNames), get_class($object)) > 0) {
-			if ($plainText) {
-				$dump .= ' ' . self::ansiEscapeWrap('filtered', '47;30', $ansiColors);
-			} else {
-				$dump .= '<span class="debug-filtered">filtered</span>';
-			}
-		} elseif (self::$renderedObjects->contains($object) && !$plainText) {
-			$dump = '<a href="javascript:;" onclick="document.location.hash=\'#' . spl_object_hash($object) . '\';" class="debug-seeabove">' . $dump . '<span class="debug-filtered">see above</span></a>';
-		} elseif ($level >= self::$maxDepth && !$object instanceof \DateTime) {
-			if ($plainText) {
-				$dump .= ' ' . self::ansiEscapeWrap('max depth', '47;30', $ansiColors);
-			} else {
-				$dump .= '<span class="debug-filtered">max depth</span>';
-			}
-		} elseif ($level > 1 && !$object instanceof \DateTime && !$plainText) {
-			if (($object instanceof \Countable && count($object) === 0) || (count($classReflection->getProperties()) === 0)) {
-				$dump = '<span>' . $dump . '</span>';
-			} else {
-				$dump = '<input type="checkbox" id="' . spl_object_hash($object) . '" /><span class="debug-header">' . $dump . '</span>';
-			}
-		}
-		if ($object instanceof \Countable) {
-			$dump .= count($object) > 0 ? ' (' . count($object) . ' items)' : ' (empty)';
-		}
-		if ($object instanceof \DateTime) {
-			$dump .= ' (' . $object->format(\DateTime::RFC3339) . ', ' . $object->getTimestamp() . ')';
-		}
-		if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface && !$object->_isNew()) {
-			$dump .= ' (uid=' . $object->getUid() . ', pid=' . $object->getPid() . ')';
-		}
-		return $dump;
-	}
+    /**
+     * @param object $object
+     * @param int $level
+     * @param bool $plainText
+     * @param bool $ansiColors
+     * @return string The rendered body content of the Object(Storage)
+     */
+    protected static function renderContent($object, $level, $plainText, $ansiColors)
+    {
+        $dump = '';
+        if ($object instanceof \TYPO3\CMS\Extbase\Persistence\ObjectStorage || $object instanceof \Iterator || $object instanceof \ArrayObject) {
+            $dump .= self::renderCollection($object, $level, $plainText, $ansiColors);
+        } else {
+            self::$renderedObjects->attach($object);
+            if (!$plainText) {
+                $dump .= '<a name="' . spl_object_hash($object) . '" id="' . spl_object_hash($object) . '"></a>';
+            }
+            if (get_class($object) === 'stdClass') {
+                $objReflection = new \ReflectionObject($object);
+                $properties = $objReflection->getProperties();
+            } else {
+                $classReflection = new \ReflectionClass(get_class($object));
+                $properties = $classReflection->getProperties();
+            }
+            foreach ($properties as $property) {
+                if (self::isBlacklisted($property)) {
+                    continue;
+                }
+                $dump .= PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, $level) . ($plainText ? '' : '<span class="extbase-debug-property">') . self::ansiEscapeWrap($property->getName(), '37', $ansiColors) . ($plainText ? '' : '</span>') . ' => ';
+                $property->setAccessible(true);
+                $dump .= self::renderDump($property->getValue($object), $level, $plainText, $ansiColors);
+                if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractDomainObject && !$object->_isNew() && $object->_isDirty($property->getName())) {
+                    if ($plainText) {
+                        $dump .= ' ' . self::ansiEscapeWrap('modified', '43;30', $ansiColors);
+                    } else {
+                        $dump .= '<span class="extbase-debug-dirty">modified</span>';
+                    }
+                }
+            }
+        }
+        return $dump;
+    }
 
-	/**
-	 * @param object $object
-	 * @param int $level
-	 * @param bool $plainText
-	 * @param bool $ansiColors
-	 * @return string The rendered body content of the Object(Storage)
-	 */
-	static protected function renderContent($object, $level, $plainText, $ansiColors) {
-		$dump = '';
-		if ($object instanceof \TYPO3\CMS\Extbase\Persistence\ObjectStorage || $object instanceof \Iterator || $object instanceof \ArrayObject) {
-			$dump .= self::renderCollection($object, $level, $plainText, $ansiColors);
-		} else {
-			self::$renderedObjects->attach($object);
-			if (!$plainText) {
-				$dump .= '<a name="' . spl_object_hash($object) . '" id="' . spl_object_hash($object) . '"></a>';
-			}
-			if (get_class($object) === 'stdClass') {
-				$objReflection = new \ReflectionObject($object);
-				$properties = $objReflection->getProperties();
-			} else {
-				$classReflection = new \ReflectionClass(get_class($object));
-				$properties = $classReflection->getProperties();
-			}
-			foreach ($properties as $property) {
-				if (self::isBlacklisted($property)) {
-					continue;
-				}
-				$dump .= PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, $level) . ($plainText ? '' : '<span class="debug-property">') . self::ansiEscapeWrap($property->getName(), '37', $ansiColors) . ($plainText ? '' : '</span>') . ' => ';
-				$property->setAccessible(TRUE);
-				$dump .= self::renderDump($property->getValue($object), $level, $plainText, $ansiColors);
-				if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractDomainObject && !$object->_isNew() && $object->_isDirty($property->getName())) {
-					if ($plainText) {
-						$dump .= ' ' . self::ansiEscapeWrap('modified', '43;30', $ansiColors);
-					} else {
-						$dump .= '<span class="debug-dirty">modified</span>';
-					}
-				}
-			}
-		}
-		return $dump;
-	}
+    /**
+     * @param mixed $collection
+     * @param int $level
+     * @param bool $plainText
+     * @param bool $ansiColors
+     * @return string
+     */
+    protected static function renderCollection($collection, $level, $plainText, $ansiColors)
+    {
+        $dump = '';
+        foreach ($collection as $key => $value) {
+            $dump .= PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, $level) . ($plainText ? '' : '<span class="extbase-debug-property">') . self::ansiEscapeWrap($key, '37', $ansiColors) . ($plainText ? '' : '</span>') . ' => ';
+            $dump .= self::renderDump($value, $level, $plainText, $ansiColors);
+        }
+        if ($collection instanceof \Iterator) {
+            $collection->rewind();
+        }
+        return $dump;
+    }
 
-	/**
-	 * @param mixed $collection
-	 * @param int $level
-	 * @param bool $plainText
-	 * @param bool $ansiColors
-	 * @return string
-	 */
-	static protected function renderCollection($collection, $level, $plainText, $ansiColors) {
-		$dump = '';
-		foreach ($collection as $key => $value) {
-			$dump .= PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, $level) . ($plainText ? '' : '<span class="debug-property">') . self::ansiEscapeWrap($key, '37', $ansiColors) . ($plainText ? '' : '</span>') . ' => ';
-			$dump .= self::renderDump($value, $level, $plainText, $ansiColors);
-		}
-		if ($collection instanceof \Iterator) {
-			$collection->rewind();
-		}
-		return $dump;
-	}
+    /**
+     * Wrap a string with the ANSI escape sequence for colorful output
+     *
+     * @param string $string The string to wrap
+     * @param string $ansiColors The ansi color sequence (e.g. "1;37")
+     * @param bool $enable If FALSE, the raw string will be returned
+     * @return string The wrapped or raw string
+     */
+    protected static function ansiEscapeWrap($string, $ansiColors, $enable = true)
+    {
+        if ($enable) {
+            return '[' . $ansiColors . 'm' . $string . '[0m';
+        } else {
+            return $string;
+        }
+    }
 
-	/**
-	 * Wrap a string with the ANSI escape sequence for colorful output
-	 *
-	 * @param string $string The string to wrap
-	 * @param string $ansiColors The ansi color sequence (e.g. "1;37")
-	 * @param bool $enable If FALSE, the raw string will be returned
-	 * @return string The wrapped or raw string
-	 */
-	static protected function ansiEscapeWrap($string, $ansiColors, $enable = TRUE) {
-		if ($enable) {
-			return '[' . $ansiColors . 'm' . $string . '[0m';
-		} else {
-			return $string;
-		}
-	}
-
-	/**
-	 * A var_dump function optimized for Extbase's object structures
-	 *
-	 * @param mixed $variable The value to dump
-	 * @param string $title optional custom title for the debug output
-	 * @param int $maxDepth Sets the max recursion depth of the dump. De- or increase the number according to your needs and memory limit.
-	 * @param bool $plainText If TRUE, the dump is in plain text, if FALSE the debug output is in HTML format.
-	 * @param bool $ansiColors If TRUE (default), ANSI color codes is added to the output, if FALSE the debug output not colored.
-	 * @param bool $return if TRUE, the dump is returned for custom post-processing (e.g. embed in custom HTML). If FALSE (default), the dump is directly displayed.
-	 * @param array $blacklistedClassNames An array of class names (RegEx) to be filtered. Default is an array of some common class names.
-	 * @param array $blacklistedPropertyNames An array of property names and/or array keys (RegEx) to be filtered. Default is an array of some common property names.
-	 * @return string if $return is TRUE, the dump is returned. By default, the dump is directly displayed, and nothing is returned.
-	 * @api
-	 */
-	static public function var_dump($variable, $title = NULL, $maxDepth = 8, $plainText = FALSE, $ansiColors = TRUE, $return = FALSE, $blacklistedClassNames = NULL, $blacklistedPropertyNames = NULL) {
-		self::$maxDepth = $maxDepth;
-		if ($title === NULL) {
-			$title = 'Extbase Variable Dump';
-		}
-		$ansiColors = $plainText && $ansiColors;
-		if ($ansiColors === TRUE) {
-			$title = '[1m' . $title . '[0m';
-		}
-		if (is_array($blacklistedClassNames)) {
-			self::$blacklistedClassNames = $blacklistedClassNames;
-		}
-		if (is_array($blacklistedPropertyNames)) {
-			self::$blacklistedPropertyNames = $blacklistedPropertyNames;
-		}
-		self::clearState();
-		if (!$plainText && self::$stylesheetEchoed === FALSE) {
-			echo '
+    /**
+     * A var_dump function optimized for Extbase's object structures
+     *
+     * @param mixed $variable The value to dump
+     * @param string $title optional custom title for the debug output
+     * @param int $maxDepth Sets the max recursion depth of the dump. De- or increase the number according to your needs and memory limit.
+     * @param bool $plainText If TRUE, the dump is in plain text, if FALSE the debug output is in HTML format.
+     * @param bool $ansiColors If TRUE (default), ANSI color codes is added to the output, if FALSE the debug output not colored.
+     * @param bool $return if TRUE, the dump is returned for custom post-processing (e.g. embed in custom HTML). If FALSE (default), the dump is directly displayed.
+     * @param array $blacklistedClassNames An array of class names (RegEx) to be filtered. Default is an array of some common class names.
+     * @param array $blacklistedPropertyNames An array of property names and/or array keys (RegEx) to be filtered. Default is an array of some common property names.
+     * @return string if $return is TRUE, the dump is returned. By default, the dump is directly displayed, and nothing is returned.
+     * @api
+     */
+    public static function var_dump($variable, $title = null, $maxDepth = 8, $plainText = false, $ansiColors = true, $return = false, $blacklistedClassNames = null, $blacklistedPropertyNames = null)
+    {
+        self::$maxDepth = $maxDepth;
+        if ($title === null) {
+            $title = 'Extbase Variable Dump';
+        }
+        $ansiColors = $plainText && $ansiColors;
+        if ($ansiColors === true) {
+            $title = '[1m' . $title . '[0m';
+        }
+        if (is_array($blacklistedClassNames)) {
+            self::$blacklistedClassNames = $blacklistedClassNames;
+        }
+        if (is_array($blacklistedPropertyNames)) {
+            self::$blacklistedPropertyNames = $blacklistedPropertyNames;
+        }
+        self::clearState();
+        $css = '';
+        if (!$plainText && self::$stylesheetEchoed === false) {
+            $css = '
 				<style type=\'text/css\'>
-					.debug-tree{position:relative;}
-					.debug-tree input{position:absolute;top:0;left:0;cursor:pointer;opacity:0;z-index:2;}
-					.debug-tree input ~ .debug-content{display:none;}
-					.debug-tree .debug-header:before{content:"+";padding:0 2px 0 2px;margin:0 3px 0 3px;font-size:1em;font-weight:bold;color:#004fb0;border:1px #004fb0 solid;}
-					.debug-tree input:checked ~ .debug-content{display:inline;}
-					.debug-tree input:checked ~ .debug-header:before{content:"-";}
-					.Extbase-Utility-Debugger-VarDump{display:block;text-align:left;background:#b9b9b9;border:10px solid #b9b9b9;-moz-border-radius:10px;-webkit-border-radius:10px;border-radius:10px;-moz-box-shadow:0 0 20px #333;-webkit-box-shadow:0 0 20px #333;box-shadow:0 0 20px #333;z-index:999;color:#000;margin:20px 0 0;}
-					.Extbase-Utility-Debugger-VarDump-Floating{position:relative;width:96%;margin:40px auto;}
-					.Extbase-Utility-Debugger-VarDump-Top{background:#eee;font:normal bold 12px \'Lucida Grande\',sans-serif;padding:5px;}
-					.Extbase-Utility-Debugger-VarDump-Center{background:#b9b9b9 url(data:image/gif;base64,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) 0 18px repeat;font:normal normal 11px/18px Monospaced,\'Lucida Console\',monospace;padding:18px 10px;}
-					.Extbase-Utility-Debugger-VarDump-Center pre{background-color:transparent;margin:0;padding:0;}
-					.Extbase-Utility-Debugger-VarDump-Center,.Extbase-Utility-Debugger-VarDump-Center pre,.Extbase-Utility-Debugger-VarDump-Center p,.Extbase-Utility-Debugger-VarDump-Center a,.Extbase-Utility-Debugger-VarDump-Center strong,.Extbase-Utility-Debugger-VarDump-Center .debug-string{font:normal normal 11px/18px Monospaced,\'Lucida Console\',monospace;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-string{color:#000;white-space:normal;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-type{color:#004fb0;padding-right:4px;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-unregistered{background-color:#dce1e8;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-scope,.Extbase-Utility-Debugger-VarDump-Center .debug-ptype,.Extbase-Utility-Debugger-VarDump-Center .debug-proxy,.Extbase-Utility-Debugger-VarDump-Center .debug-filtered{color:#FFF;font-size:10px;line-height:16px;padding:1px 4px;margin-right:2px;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-scope{background-color:#3e7fe1;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-ptype{background-color:#6FBC16;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-dirty{background-color:#FFFF00;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-filtered{background-color:#8c8c8c;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-seeabove{text-decoration:none;font-style:italic;font-weight:400;}
-					.Extbase-Utility-Debugger-VarDump-Center .debug-property{color:#555;line-height:16px;padding:1px 2px;}
+					.extbase-debugger-tree{position:relative}
+					.extbase-debugger-tree input{position:absolute;top:0;left:0;height:14px;width:14px;margin:0;cursor:pointer;opacity:0;z-index:2}
+					.extbase-debugger-tree input~.extbase-debug-content{display:none}
+					.extbase-debugger-tree .extbase-debug-header:before{position:relative;top:3px;content:"";padding:0;line-height:10px;height:12px;width:12px;text-align:center;margin:0 3px 0 0;background-image:url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkViZW5lXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMTIgMTIiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDEyIDEyOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHN0eWxlIHR5cGU9InRleHQvY3NzIj4uc3Qwe2ZpbGw6Izg4ODg4ODt9PC9zdHlsZT48cGF0aCBpZD0iQm9yZGVyIiBjbGFzcz0ic3QwIiBkPSJNMTEsMTFIMFYwaDExVjExeiBNMTAsMUgxdjloOVYxeiIvPjxnIGlkPSJJbm5lciI+PHJlY3QgeD0iMiIgeT0iNSIgY2xhc3M9InN0MCIgd2lkdGg9IjciIGhlaWdodD0iMSIvPjxyZWN0IHg9IjUiIHk9IjIiIGNsYXNzPSJzdDAiIHdpZHRoPSIxIiBoZWlnaHQ9IjciLz48L2c+PC9zdmc+);display:inline-block}
+					.extbase-debugger-tree input:checked~.extbase-debug-content{display:inline}
+					.extbase-debugger-tree input:checked~.extbase-debug-header:before{background-image:url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkViZW5lXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMTIgMTIiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDEyIDEyOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHN0eWxlIHR5cGU9InRleHQvY3NzIj4uc3Qwe2ZpbGw6Izg4ODg4ODt9PC9zdHlsZT48cGF0aCBpZD0iQm9yZGVyIiBjbGFzcz0ic3QwIiBkPSJNMTEsMTFIMFYwaDExVjExeiBNMTAsMUgxdjloOVYxeiIvPjxnIGlkPSJJbm5lciI+PHJlY3QgeD0iMiIgeT0iNSIgY2xhc3M9InN0MCIgd2lkdGg9IjciIGhlaWdodD0iMSIvPjwvZz48L3N2Zz4=)}
+					.extbase-debugger{display:block;text-align:left;background:#2a2a2a;border:1px solid #2a2a2a;box-shadow:0 3px 0 rgba(0,0,0,.5);color:#000;margin:20px;overflow:hidden;border-radius:4px}
+					.extbase-debugger-floating{position:relative;z-index:999}
+					.extbase-debugger-top{background:#444;font-size:12px;font-family:monospace;color:#f1f1f1;padding:6px 15px}
+					.extbase-debugger-center{padding:0 15px;margin:15px 0;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 20px,#252525 20px,#252525 40px)}
+					.extbase-debugger-center,.extbase-debugger-center .extbase-debug-string,.extbase-debugger-center a,.extbase-debugger-center p,.extbase-debugger-center pre,.extbase-debugger-center strong{font-size:12px;font-weight:400;font-family:monospace;line-height:20px;color:#f1f1f1}
+					.extbase-debugger-center pre{background-color:transparent;margin:0;padding:0;border:0;word-wrap:break-word;color:#999}
+					.extbase-debugger-center .extbase-debug-string{color:#ce9178;white-space:normal}
+					.extbase-debugger-center .extbase-debug-type{color:#569CD6;padding-right:4px}
+					.extbase-debugger-center .extbase-debug-unregistered{background-color:#dce1e8}
+					.extbase-debugger-center .extbase-debug-filtered,.extbase-debugger-center .extbase-debug-proxy,.extbase-debugger-center .extbase-debug-ptype,.extbase-debugger-center .extbase-debug-scope{color:#fff;font-size:10px;line-height:12px;padding:2px 4px;margin-right:2px;position:relative;top:-1px}
+					.extbase-debugger-center .extbase-debug-scope{background-color:#497AA2}
+					.extbase-debugger-center .extbase-debug-ptype{background-color:#698747}
+					.extbase-debugger-center .extbase-debug-dirty{background-color:#FFFFB6}
+					.extbase-debugger-center .extbase-debug-filtered{background-color:#4F4F4F}
+					.extbase-debugger-center .extbase-debug-seeabove{text-decoration:none;font-style:italic}
+					.extbase-debugger-center .extbase-debug-property{color:#f1f1f1}
 				</style>';
-			self::$stylesheetEchoed = TRUE;
-		}
-		if ($plainText) {
-			$output = $title . PHP_EOL . self::renderDump($variable, 0, TRUE, $ansiColors) . PHP_EOL . PHP_EOL;
-		} else {
-			$output = '
-				<div class="Extbase-Utility-Debugger-VarDump ' . ($return ? 'Extbase-Utility-Debugger-VarDump-Inline' : 'Extbase-Utility-Debugger-VarDump-Floating') . '">
-				<div class="Extbase-Utility-Debugger-VarDump-Top">' . htmlspecialchars($title) . '</div>
-				<div class="Extbase-Utility-Debugger-VarDump-Center">
-					<pre dir="ltr">' . self::renderDump($variable, 0, FALSE, FALSE) . '</pre>
+            self::$stylesheetEchoed = true;
+        }
+        if ($plainText) {
+            $output = $title . PHP_EOL . self::renderDump($variable, 0, true, $ansiColors) . PHP_EOL . PHP_EOL;
+        } else {
+            $output = '
+				<div class="extbase-debugger ' . ($return ? 'extbase-debugger-inline' : 'extbase-debugger-floating') . '">
+				<div class="extbase-debugger-top">' . htmlspecialchars($title) . '</div>
+				<div class="extbase-debugger-center">
+					<pre dir="ltr">' . self::renderDump($variable, 0, false, false) . '</pre>
 				</div>
 			</div>
 			';
-		}
-		if ($return === TRUE) {
-			return $output;
-		} else {
-			echo $output;
-		}
-		return '';
-	}
-
+        }
+        if ($return === true) {
+            return $css . $output;
+        } else {
+            echo $css . $output;
+        }
+        return '';
+    }
 }

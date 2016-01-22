@@ -1,21 +1,21 @@
 {namespace em=TYPO3\CMS\Extensionmanager\ViewHelpers}
+{namespace core=TYPO3\CMS\Core\ViewHelpers}
+
 <f:layout name="main" />
 
-<f:section name="docheader-buttons">
-	<f:be.buttons.icon uri="{f:uri.action(controller: 'List',action: 'distributions')}" icon="actions-view-go-back" title="{f:translate(key:'extConfTemplate.backToList')}" />
+<f:section name="headline">
 </f:section>
 
-<f:section name="module-headline">
-</f:section>
-
-<f:section name="Content">
-	<f:flashMessages class="distribution-detail-flashmessage" renderMode="div" />
+<f:section name="content">
 	<div class="distribution-detail">
 		<div class="distribution-detail-previewpane">
 			<em:image
-				src="EXT:{extension.extensionKey}/Resources/Public/Images/DistributionWelcome.png" alt="{distribution.title}"
+				src="EXT:{extension.extensionKey}/Resources/Public/Images/DistributionWelcome.png"
+				fallbackImage="EXT:extensionmanager/Resources/Public/Images/Distribution.png"
+				alt="{distribution.title}"
 				class="distribution-detail-preview"
-				/>
+				width="300"
+			/>
 		</div>
 		<div class="distribution-detail-body">
 			<div class="distribution-detail-header">
@@ -27,7 +27,7 @@
 					<f:else>
 						<li>
 							<f:link.action action="installDistribution" controller="Download" arguments="{extension:extension}" class="btn btn-default t3-button-action-installdistribution">
-								<f:be.buttons.icon icon="actions-system-extension-import" /> <f:translate key="extensionList.installDistribution">Install</f:translate>
+								<core:icon identifier="actions-system-extension-import" /><f:translate key="extensionList.installDistribution">Install</f:translate>
 							</f:link.action>
 						</li>
 					</f:else>
@@ -35,18 +35,18 @@
 						<f:if condition="{configurationLink}">
 							<li>
 								<a href="{configurationLink}" class="btn btn-default distribution-openViewModule " onclick="top.goToModule('web_ViewpageView');">
-									<f:be.buttons.icon icon="actions-system-extension-configure" /><f:translate key="extensionList.configure" />
+									<core:icon identifier="actions-system-extension-configure" /><f:translate key="extensionList.configure" />
 								</a>
 							</li>
 						</f:if>
 						<li>
 							<button class="btn btn-default distribution-openViewModule" onclick="top.goToModule('web_ViewpageView');">
-								<f:be.buttons.icon icon="actions-document-view"	/><f:translate key="distribution.welcome.openViewModule" />
+								<core:icon identifier="actions-document-view" /><f:translate key="distribution.welcome.openViewModule" />
 							</button>
 						</li>
 						<li>
 							<button class="btn btn-default distribution-openPageModule" onclick="top.goToModule('web_page');">
-								<f:be.buttons.icon icon="actions-document-open"	/><f:translate key="distribution.welcome.openPageModule" />
+								<core:icon identifier="actions-document-open" /><f:translate key="distribution.welcome.openPageModule" />
 							</button>
 						</li>
 					</f:then>

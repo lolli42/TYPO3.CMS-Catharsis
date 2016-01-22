@@ -12,10 +12,16 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/LoginRefresh
  * Task that periodically checks if a blocking event in the backend occurred and
  * displays a proper dialog to the user.
  */
-define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Typo3Notification) {
+	/**
+	 *
+	 * @type {{identifier: {loginrefresh: string, lockedModal: string, loginFormModal: string}, options: {modalConfig: {backdrop: string}}, webNotification: null, intervalId: null, backendIsLocked: boolean, isTimingOut: boolean, $timeoutModal: string, $backendLockedModal: string, $loginForm: string, loginFramesetUrl: string, logoutUrl: string}}
+	 * @exports TYPO3/CMS/Backend/LoginRefresh
+	 */
 	var LoginRefresh = {
 		identifier: {
 			loginrefresh: 't3-modal-loginrefresh',
@@ -61,6 +67,9 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 
 	/**
 	 * Generates a modal dialog as template.
+	 *
+	 * @param {String} identifier
+	 * @returns {Object}
 	 */
 	LoginRefresh.generateModal = function(identifier) {
 		return TYPO3.jQuery('<div />', {id: identifier, class: 't3-modal t3-blr-modal ' + identifier + ' modal fade'}).append(
@@ -78,6 +87,8 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 
 	/**
 	 * Set logout url
+	 *
+	 * @param {String} logoutUrl
 	 */
 	LoginRefresh.setLogoutUrl = function(logoutUrl) {
 		LoginRefresh.logoutUrl = logoutUrl;
@@ -88,6 +99,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	 */
 	LoginRefresh.initializeTimeoutModal = function() {
 		LoginRefresh.$timeoutModal = LoginRefresh.generateModal(LoginRefresh.identifier.loginrefresh);
+		LoginRefresh.$timeoutModal.addClass('t3-modal-notice');
 		LoginRefresh.$timeoutModal.find('.modal-header h4').text(TYPO3.LLL.core.login_about_to_expire_title);
 		LoginRefresh.$timeoutModal.find('.modal-body').append(
 			$('<p />').text(TYPO3.LLL.core.login_about_to_expire),
@@ -103,20 +115,19 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 			)
 		);
 		LoginRefresh.$timeoutModal.find('.modal-footer').append(
-			$('<button />', {class: 'btn btn-default', 'data-action': 'refreshSession'}).text(TYPO3.LLL.core.refresh_login_refresh_button).on('click', function() {
+			$('<button />', {class: 'btn btn-default', 'data-action': 'logout'}).text(TYPO3.LLL.core.refresh_login_logout_button).on('click', function() {
+				top.location.href = LoginRefresh.logoutUrl;
+			}),
+			$('<button />', {class: 'btn btn-primary t3js-active', 'data-action': 'refreshSession'}).text(TYPO3.LLL.core.refresh_login_refresh_button).on('click', function() {
 				$.ajax({
-					url: TYPO3.settings.ajaxUrls['BackendLogin::isTimedOut'],
+					url: TYPO3.settings.ajaxUrls['login_timedout'],
 					method: 'GET',
 					success: function() {
 						LoginRefresh.hideTimeoutModal();
 					}
 				});
-			}),
-			$('<button />', {class: 'btn btn-default', 'data-action': 'logout'}).text(TYPO3.LLL.core.refresh_direct_logout_button).on('click', function() {
-				top.location.href = TYPO3.configuration.siteUrl + LoginRefresh.logoutUrl;
 			})
 		);
-
 		LoginRefresh.registerDefaultModalEvents(LoginRefresh.$timeoutModal);
 
 		$('body').append(LoginRefresh.$timeoutModal);
@@ -136,6 +147,9 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 				body: TYPO3.LLL.core.login_about_to_expire,
 				icon: '/typo3/sysext/backend/Resources/Public/Images/Logo.png'
 			});
+			LoginRefresh.webNotification.onclick = function() {
+				window.focus();
+			};
 		}
 	};
 
@@ -189,26 +203,24 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 		}
 
 		LoginRefresh.$loginForm = LoginRefresh.generateModal(LoginRefresh.identifier.loginFormModal);
+		LoginRefresh.$loginForm.addClass('t3-modal-notice');
 		LoginRefresh.$loginForm.find('.modal-header h4').text(TYPO3.LLL.core.refresh_login_title);
 		LoginRefresh.$loginForm.find('.modal-body').append(
 			$('<p />').text(TYPO3.LLL.core.login_expired),
-			$('<form />', {id: 'beLoginRefresh', method: 'POST', action: TYPO3.settings.ajaxUrls['BackendLogin::login']}).append(
+			$('<form />', {id: 'beLoginRefresh', method: 'POST', action: TYPO3.settings.ajaxUrls['login']}).append(
 				$('<div />', {class: 'form-group'}).append(
-					$('<input />', {type: 'password', name: 'p_field', autofocus: 'autofocus', class: 'form-control', placeholder: TYPO3.LLL.core.refresh_login_password})
+					$('<input />', {type: 'password', name: 'p_field', autofocus: 'autofocus', class: 'form-control', placeholder: TYPO3.LLL.core.refresh_login_password, 'data-rsa-encryption': 't3-loginrefres-userident'})
 				),
 				$('<input />', {type: 'hidden', name: 'username', value: TYPO3.configuration.username}),
-				$('<input />', {type: 'hidden', name: 'userident'}),
-				$('<input />', {type: 'hidden', name: 'challenge'})
+				$('<input />', {type: 'hidden', name: 'userident', id: 't3-loginrefres-userident'})
 			)
 		);
 		LoginRefresh.$loginForm.find('.modal-footer').append(
-			$('<button />', {type: 'submit', form: 'beLoginRefresh', class: 'btn btn-default', 'data-action': 'refreshSession'}).text(TYPO3.LLL.core.refresh_login_button),
-			$('<button />', {class: 'btn btn-default', 'data-action': 'logout'}).text(TYPO3.LLL.core.refresh_direct_logout_button).on('click', function() {
-				top.location.href = TYPO3.configuration.siteUrl + LoginRefresh.logoutUrl;
-			})
+			$('<a />', {href: LoginRefresh.logoutUrl, class: 'btn btn-default'}).text(TYPO3.LLL.core.refresh_exit_button),
+			$('<button />', {type: 'submit', form: 'beLoginRefresh', class: 'btn btn-primary', 'data-action': 'refreshSession'}).text(TYPO3.LLL.core.refresh_login_button)
 		);
 
-		LoginRefresh.registerDefaultModalEvents(LoginRefresh.$loginForm).on('submit', LoginRefresh.triggerSubmitForm);
+		LoginRefresh.registerDefaultModalEvents(LoginRefresh.$loginForm).on('submit', LoginRefresh.submitForm);
 
 		$('body').append(LoginRefresh.$loginForm);
 	};
@@ -219,7 +231,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	LoginRefresh.showLoginForm = function() {
 		// log off for sure
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['BackendLogin::logout'],
+			url: TYPO3.settings.ajaxUrls['logout'],
 			method: 'GET',
 			success: function() {
 				if (TYPO3.configuration.showRefreshLoginPopup) {
@@ -246,7 +258,9 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	 */
 	LoginRefresh.showLoginPopup = function() {
 		var vHWin = window.open(LoginRefresh.loginFramesetUrl, 'relogin_' + TYPO3.configuration.uniqueID, 'height=450,width=700,status=0,menubar=0,location=1');
-		vHWin.focus();
+		if (vHWin) {
+			vHWin.focus();
+		}
 	};
 
 	/**
@@ -294,81 +308,29 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	};
 
 	/**
-	 * Triggers the form submit based on the security level.
-	 */
-	LoginRefresh.triggerSubmitForm = function(e) {
-		e.preventDefault();
-
-		switch (TYPO3.configuration.securityLevel) {
-			case 'superchallenged':
-			case 'challenged':
-				$.ajax({
-					url: TYPO3.settings.ajaxUrls['BackendLogin::getChallenge'],
-					method: 'GET',
-					data: {
-						skipSessionUpdate: 1
-					},
-					success: function(response) {
-						if (response.challenge) {
-							LoginRefresh.$loginForm.find('input[name=challenge]').val(response.challenge);
-							LoginRefresh.submitForm();
-						}
-					}
-				});
-				break;
-			case 'rsa':
-				$.ajax({
-					url: TYPO3.settings.ajaxUrls['BackendLogin::getRsaPublicKey'],
-					method: 'GET',
-					data: {
-						skipSessionUpdate: 1
-					},
-					success: function(response) {
-						if (response.publicKeyModulus && response.exponent) {
-							LoginRefresh.submitForm(response);
-						}
-					}
-				});
-				break;
-			default:
-				LoginRefresh.submitForm();
-		}
-	};
-
-	/**
 	 * Creates additional data based on the security level and "submits" the form
 	 * via an AJAX request.
+	 *
+	 * @param {Event} event
 	 */
-	LoginRefresh.submitForm = function(parameters) {
+	LoginRefresh.submitForm = function(event) {
+		event.preventDefault();
+
 		var $form = LoginRefresh.$loginForm.find('form'),
-			$usernameField = $form.find('input[name=username]'),
 			$passwordField = $form.find('input[name=p_field]'),
-			$challengeField = $form.find('input[name=challenge]'),
 			$useridentField = $form.find('input[name=userident]'),
 			passwordFieldValue = $passwordField.val();
 
-		if (passwordFieldValue === '') {
-			top.TYPO3.Notification.error(TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_emptyPassword);
+		if (passwordFieldValue === '' && $useridentField.val() === '') {
+			Typo3Notification.error(TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_emptyPassword);
 			$passwordField.focus();
 			return;
 		}
 
-		if (TYPO3.configuration.securityLevel === 'superchallenged') {
-			$passwordField.val(MD5(passwordFieldValue));
-		}
-
-		if (TYPO3.configuration.securityLevel === 'superchallenged' || TYPO3.configuration.securityLevel === 'challenged') {
-			$challengeField.val(parameters.challenge);
-			$useridentField.val(MD5($usernameField.val() + ':' + passwordFieldValue + ':' + parameters.challenge));
-		} else if (TYPO3.configuration.securityLevel === 'rsa') {
-			var rsa = new RSAKey();
-			rsa.setPublic(parameters.publicKeyModulus, parameters.exponent);
-			var encryptedPassword = rsa.encrypt(passwordFieldValue);
-			$useridentField.val('rsa:' + hex2b64(encryptedPassword));
-		} else {
+		if (passwordFieldValue) {
 			$useridentField.val(passwordFieldValue);
+			$passwordField.val('');
 		}
-		$passwordField.val('');
 
 		var postData = {
 			login_status: 'login'
@@ -386,7 +348,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 					// User is logged in
 					LoginRefresh.hideLoginForm();
 				} else {
-					top.TYPO3.Notification.error(TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_failed_message);
+					Typo3Notification.error(TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_failed_message);
 					$passwordField.focus();
 				}
 			}
@@ -399,12 +361,17 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	 * the interval check starts again.
 	 * This method is not invoked for the backend locked modal, because we still
 	 * need to check if the backend gets unlocked again.
+	 *
+	 * @param {Object} $modal
+	 * @returns {Object}
 	 */
 	LoginRefresh.registerDefaultModalEvents = function($modal) {
 		$modal.on('hidden.bs.modal', function() {
 			LoginRefresh.startTask();
 		}).on('shown.bs.modal', function() {
 			LoginRefresh.stopTask();
+			// focus the button which was configured as active button
+			LoginRefresh.$timeoutModal.find('.modal-footer .t3js-active').first().focus();
 		});
 
 		return $modal;
@@ -447,7 +414,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	 */
 	LoginRefresh.checkActiveSession = function() {
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['BackendLogin::isTimedOut'],
+			url: TYPO3.settings.ajaxUrls['login_timedout'],
 			data: {
 				skipSessionUpdate: 1
 			},
@@ -478,20 +445,20 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	};
 
 	// initialize and return the LoginRefresh object
-	return function() {
-		$(document).ready(function() {
-			LoginRefresh.initializeTimeoutModal();
-			LoginRefresh.initializeBackendLockedModal();
-			LoginRefresh.initializeLoginForm();
+	$(function() {
+		LoginRefresh.initializeTimeoutModal();
+		LoginRefresh.initializeBackendLockedModal();
+		LoginRefresh.initializeLoginForm();
 
-			LoginRefresh.startTask();
+		LoginRefresh.startTask();
 
-			if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
-				Notification.requestPermission();
-			}
-		});
+		if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+			Notification.requestPermission();
+		}
+	});
 
-		TYPO3.LoginRefresh = LoginRefresh;
-		return LoginRefresh;
-	}();
+	// expose to global
+	TYPO3.LoginRefresh = LoginRefresh;
+
+	return LoginRefresh;
 });

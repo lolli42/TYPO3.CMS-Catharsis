@@ -16,19 +16,17 @@ namespace TYPO3\CMS\Core\Log\Processor;
 
 /**
  * A log processor that does nothing. Used in unit tests.
- *
- * @author Steffen Gebert <steffen.gebert@typo3.org>
  */
-class NullProcessor extends AbstractProcessor {
-
-	/**
-	 * Processes a log record and returns the same.
-	 *
-	 * @param \TYPO3\CMS\Core\Log\LogRecord $logRecord The log record to process
-	 * @return \TYPO3\CMS\Core\Log\LogRecord The processed log record with additional data
-	 */
-	public function processLogRecord(\TYPO3\CMS\Core\Log\LogRecord $logRecord) {
-		return $logRecord;
-	}
-
+class NullProcessor extends AbstractProcessor
+{
+    /**
+     * Processes a log record and returns the same.
+     *
+     * @param \TYPO3\CMS\Core\Log\LogRecord $logRecord The log record to process
+     * @return \TYPO3\CMS\Core\Log\LogRecord The processed log record with additional data
+     */
+    public function processLogRecord(\TYPO3\CMS\Core\Log\LogRecord $logRecord)
+    {
+        return $logRecord;
+    }
 }

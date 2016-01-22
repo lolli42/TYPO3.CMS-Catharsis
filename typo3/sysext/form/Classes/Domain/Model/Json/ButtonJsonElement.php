@@ -16,54 +16,59 @@ namespace TYPO3\CMS\Form\Domain\Model\Json;
 
 /**
  * JSON button
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
-class ButtonJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement {
+class ButtonJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement
+{
+    /**
+     * The ExtJS xtype of the element
+     *
+     * @var string
+     */
+    public $xtype = 'typo3-form-wizard-elements-basic-button';
 
-	/**
-	 * The ExtJS xtype of the element
-	 *
-	 * @var string
-	 */
-	public $xtype = 'typo3-form-wizard-elements-basic-button';
+    /**
+     * The configuration array for the xtype
+     *
+     * @var array
+     */
+    public $configuration = array(
+        'attributes' => array(
+            'type' => 'button'
+        ),
+        'filters' => array(),
+        'label' => array(
+            'value' => ''
+        ),
+        'layout' => 'front',
+        'validation' => array()
+    );
 
-	/**
-	 * The configuration array for the xtype
-	 *
-	 * @var array
-	 */
-	public $configuration = array(
-		'attributes' => array(
-			'type' => 'button'
-		),
-		'filters' => array(),
-		'label' => array(
-			'value' => ''
-		),
-		'layout' => 'front',
-		'validation' => array()
-	);
-
-	/**
-	 * Allowed attributes for this object
-	 *
-	 * @var array
-	 */
-	protected $allowedAttributes = array(
-		'accesskey',
-		'alt',
-		'class',
-		'dir',
-		'disabled',
-		'id',
-		'lang',
-		'name',
-		'style',
-		'tabindex',
-		'title',
-		'type',
-		'value'
-	);
-
+    /**
+     * Allowed attributes for this object
+     *
+     * @var array
+     */
+    protected $allowedAttributes = array(
+        'accesskey',
+        'class',
+        'contenteditable',
+        'contextmenu',
+        'dir',
+        'draggable',
+        'dropzone',
+        'hidden',
+        'id',
+        'lang',
+        'spellcheck',
+        'style',
+        'tabindex',
+        'title',
+        'translate',
+        /* element specific attributes */
+        'autofocus',
+        'disabled',
+        'name',
+        'type',
+        'value'
+    );
 }

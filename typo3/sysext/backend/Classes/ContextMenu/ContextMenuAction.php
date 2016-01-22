@@ -16,247 +16,234 @@ namespace TYPO3\CMS\Backend\ContextMenu;
 
 /**
  * Context Menu Action
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
-class ContextMenuAction {
+class ContextMenuAction
+{
+    /**
+     * Label
+     *
+     * @var string
+     */
+    protected $label = '';
 
-	/**
-	 * Label
-	 *
-	 * @var string
-	 */
-	protected $label = '';
+    /**
+     * Identifier
+     *
+     * @var string
+     */
+    protected $id = '';
 
-	/**
-	 * Identifier
-	 *
-	 * @var string
-	 */
-	protected $id = '';
+    /**
+     * Icon
+     *
+     * @var string
+     */
+    protected $icon = '';
 
-	/**
-	 * Icon
-	 *
-	 * @var string
-	 */
-	protected $icon = '';
+    /**
+     * Callback Action
+     *
+     * @var string
+     */
+    protected $callbackAction = '';
 
-	/**
-	 * Class
-	 *
-	 * @var string
-	 */
-	protected $class = '';
+    /**
+     * Type
+     *
+     * @var string
+     */
+    protected $type = '';
 
-	/**
-	 * Callback Action
-	 *
-	 * @var string
-	 */
-	protected $callbackAction = '';
+    /**
+     * Child Action Collection
+     *
+     * @var \TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection
+     */
+    protected $childActions = null;
 
-	/**
-	 * Type
-	 *
-	 * @var string
-	 */
-	protected $type = '';
+    /**
+     * Custom Action Attributes
+     *
+     * @var array
+     */
+    protected $customAttributes = array();
 
-	/**
-	 * Child Action Collection
-	 *
-	 * @var \TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection
-	 */
-	protected $childActions = NULL;
+    /**
+     * Returns the label
+     *
+     * @return string
+     */
+    public function getLabel()
+    {
+        return $this->label;
+    }
 
-	/**
-	 * Custom Action Attributes
-	 *
-	 * @var array
-	 */
-	protected $customAttributes = array();
+    /**
+     * Sets the label
+     *
+     * @param string $label
+     */
+    public function setLabel($label)
+    {
+        $this->label = $label;
+    }
 
-	/**
-	 * Returns the label
-	 *
-	 * @return string
-	 */
-	public function getLabel() {
-		return $this->label;
-	}
+    /**
+     * Returns the identifier
+     *
+     * @return string
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
 
-	/**
-	 * Sets the label
-	 *
-	 * @param string $label
-	 */
-	public function setLabel($label) {
-		$this->label = $label;
-	}
+    /**
+     * Sets the identifier
+     *
+     * @param string $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
 
-	/**
-	 * Returns the identifier
-	 *
-	 * @return string
-	 */
-	public function getId() {
-		return $this->id;
-	}
+    /**
+     * Returns the icon
+     *
+     * @return string
+     */
+    public function getIcon()
+    {
+        return $this->icon;
+    }
 
-	/**
-	 * Sets the identifier
-	 *
-	 * @param string $id
-	 */
-	public function setId($id) {
-		$this->id = $id;
-	}
+    /**
+     * Sets the icon
+     *
+     * @param string $icon
+     * @return void
+     */
+    public function setIcon($icon)
+    {
+        $this->icon = $icon;
+    }
 
-	/**
-	 * Returns the icon
-	 *
-	 * @return string
-	 */
-	public function getIcon() {
-		return $this->icon;
-	}
+    /**
+     * Returns the callback action
+     *
+     * @return string
+     */
+    public function getCallbackAction()
+    {
+        return $this->callbackAction;
+    }
 
-	/**
-	 * Sets the icon
-	 *
-	 * @param string $icon
-	 * @return void
-	 */
-	public function setIcon($icon) {
-		$this->icon = $icon;
-	}
+    /**
+     * Sets the callback action
+     *
+     * @param string $callbackAction
+     */
+    public function setCallbackAction($callbackAction)
+    {
+        $this->callbackAction = $callbackAction;
+    }
 
-	/**
-	 * Returns the class
-	 *
-	 * @return string
-	 */
-	public function getClass() {
-		return $this->class;
-	}
+    /**
+     * Returns the type
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
 
-	/**
-	 * Sets the class
-	 *
-	 * @param string $class
-	 */
-	public function setClass($class) {
-		$this->class = $class;
-	}
+    /**
+     * Sets the type
+     *
+     * @param string $type
+     * @return void
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+    }
 
-	/**
-	 * Returns the callback action
-	 *
-	 * @return string
-	 */
-	public function getCallbackAction() {
-		return $this->callbackAction;
-	}
+    /**
+     * Returns the child actions
+     *
+     * @return \TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection
+     */
+    public function getChildActions()
+    {
+        return $this->childActions;
+    }
 
-	/**
-	 * Sets the callback action
-	 *
-	 * @param string $callbackAction
-	 */
-	public function setCallbackAction($callbackAction) {
-		$this->callbackAction = $callbackAction;
-	}
+    /**
+     * Sets the child actions
+     *
+     * @param \TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection $actions
+     * @return void
+     */
+    public function setChildActions(\TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection $actions)
+    {
+        $this->childActions = $actions;
+    }
 
-	/**
-	 * Returns the type
-	 *
-	 * @return string
-	 */
-	public function getType() {
-		return $this->type;
-	}
+    /**
+     * Returns TRUE if the action has child actions
+     *
+     * @return bool
+     */
+    public function hasChildActions()
+    {
+        if ($this->childActions !== null) {
+            return true;
+        }
+        return false;
+    }
 
-	/**
-	 * Sets the type
-	 *
-	 * @param string $type
-	 * @return void
-	 */
-	public function setType($type) {
-		$this->type = $type;
-	}
+    /**
+     * Sets the custom attributes
+     *
+     * @param array $customAttributes
+     * @return void
+     */
+    public function setCustomAttributes(array $customAttributes)
+    {
+        $this->customAttributes = $customAttributes;
+    }
 
-	/**
-	 * Returns the child actions
-	 *
-	 * @return \TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection
-	 */
-	public function getChildActions() {
-		return $this->childActions;
-	}
+    /**
+     * Returns the custom attributes
+     *
+     * @return array
+     */
+    public function getCustomAttributes()
+    {
+        return $this->customAttributes;
+    }
 
-	/**
-	 * Sets the child actions
-	 *
-	 * @param \TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection $actions
-	 * @return void
-	 */
-	public function setChildActions(\TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection $actions) {
-		$this->childActions = $actions;
-	}
-
-	/**
-	 * Returns TRUE if the action has child actions
-	 *
-	 * @return bool
-	 */
-	public function hasChildActions() {
-		if ($this->childActions !== NULL) {
-			return TRUE;
-		}
-		return FALSE;
-	}
-
-	/**
-	 * Sets the custom attributes
-	 *
-	 * @param array $customAttributes
-	 * @return void
-	 */
-	public function setCustomAttributes(array $customAttributes) {
-		$this->customAttributes = $customAttributes;
-	}
-
-	/**
-	 * Returns the custom attributes
-	 *
-	 * @return array
-	 */
-	public function getCustomAttributes() {
-		return $this->customAttributes;
-	}
-
-	/**
-	 * Returns the action as an array
-	 *
-	 * @return array
-	 */
-	public function toArray() {
-		$arrayRepresentation = array(
-			'label' => $this->getLabel(),
-			'id' => $this->getId(),
-			'icon' => $this->getIcon(),
-			'class' => $this->getClass(),
-			'callbackAction' => $this->getCallbackAction(),
-			'type' => $this->getType(),
-			'customAttributes' => $this->getCustomAttributes()
-		);
-		$arrayRepresentation['childActions'] = '';
-		if ($this->hasChildActions()) {
-			$arrayRepresentation['childActions'] = $this->childActions->toArray();
-		}
-		return $arrayRepresentation;
-	}
-
+    /**
+     * Returns the action as an array
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $arrayRepresentation = array(
+            'label' => $this->getLabel(),
+            'id' => $this->getId(),
+            'icon' => $this->getIcon(),
+            'callbackAction' => $this->getCallbackAction(),
+            'type' => $this->getType(),
+            'customAttributes' => $this->getCustomAttributes()
+        );
+        $arrayRepresentation['childActions'] = '';
+        if ($this->hasChildActions()) {
+            $arrayRepresentation['childActions'] = $this->childActions->toArray();
+        }
+        return $arrayRepresentation;
+    }
 }

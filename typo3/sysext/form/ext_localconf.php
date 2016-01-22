@@ -1,21 +1,43 @@
 <?php
 defined('TYPO3_MODE') or die();
 
-\TYPO3\CMS\Form\Utility\FormUtility::getInstance()->initializeFormObjects()->initializePageTsConfig();
+if (TYPO3_MODE === 'BE') {
+    // Apply PageTSconfig
+    \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig(
+        '<INCLUDE_TYPOSCRIPT: source="FILE:EXT:form/Configuration/PageTS/modWizards.ts">'
+    );
 
-// Add a for previewing tt_content elements of CType="mailform"
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php']['tt_content_drawItem']['mailform'] = \TYPO3\CMS\Form\Hooks\PageLayoutView\MailformPreviewRenderer::class;
+    // Backend view
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php']['tt_content_drawItem']['mailform'] =
+        \TYPO3\CMS\Form\Hooks\PageLayoutView\MailformPreviewRenderer::class;
+} else {
+    // Handling of cObjects "FORM" and "FORM_INT"
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClass'][] = array(
+        'FORM',
+        \TYPO3\CMS\Form\Hooks\ContentObjectHook::class
+    );
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClass'][] = array(
+        'FORM_INT',
+        \TYPO3\CMS\Form\Hooks\ContentObjectHook::class
+    );
 
+    // Extbase handling
+    \TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerTypeConverter(
+        \TYPO3\CMS\Form\Domain\Property\TypeConverter\ArrayToValidationElementConverter::class
+    );
 
-// Add the form CType to the "New Content Element" wizard
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
-	mod.wizards.newContentElement.wizardItems.forms {
-		elements.mailform {
-			icon = gfx/c_wiz/mailform.gif
-			title = LLL:EXT:cms/layout/locallang_db_new_content_el.xlf:forms_mail_title
-			description = LLL:EXT:cms/layout/locallang_db_new_content_el.xlf:forms_mail_description
-			tt_content_defValues.CType = mailform
-		}
-		show :=addToList(mailform)
-	}
-');
+    \TYPO3\CMS\Extbase\Utility\ExtensionUtility::configurePlugin(
+        'TYPO3.CMS.Form',
+        'Form',
+        array('Frontend' => 'show, confirmation, dispatchConfirmationButtonClick, process, afterProcess'),
+        array('Frontend' => 'show, confirmation, dispatchConfirmationButtonClick, process, afterProcess')
+    );
+
+    $signalSlotDispatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
+    $signalSlotDispatcher->connect(
+        \TYPO3\CMS\Form\Domain\Builder\FormBuilder::class,
+        'txFormHandleIncomingValues',
+        \TYPO3\CMS\Form\Hooks\HandleIncomingFormValues::class,
+        'handleIncomingFormValues'
+    );
+}

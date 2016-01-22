@@ -23,69 +23,54 @@ use TYPO3\CMS\Lang\LanguageService;
  * The container operates on $this->globalOptions['singleFieldToRender'] to render
  * this field. It initializes language stuff and prepares data in globalOptions for
  * processing of the single field in SingleFieldContainer.
+ *
+ * @todo: It should be possible to merge this container to ListOfFieldsContainer
  */
-class SoloFieldContainer extends AbstractContainer {
+class SoloFieldContainer extends AbstractContainer
+{
+    /**
+     * Entry method
+     *
+     * @return array As defined in initializeResultArray() of AbstractNode
+     */
+    public function render()
+    {
+        $table = $this->data['tableName'];
+        $fieldToRender = $this->data['singleFieldToRender'];
+        $recordTypeValue = $this->data['recordTypeValue'];
+        $resultArray = $this->initializeResultArray();
 
-	/**
-	 * Entry method
-	 *
-	 * @return array As defined in initializeResultArray() of AbstractNode
-	 */
-	public function render() {
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$fieldToRender = $this->globalOptions['singleFieldToRender'];
+        // Load the description content for the table if requested
+        if ($GLOBALS['TCA'][$table]['interface']['always_description']) {
+            $languageService = $this->getLanguageService();
+            $languageService->loadSingleTableDescription($table);
+        }
 
-		if (!$GLOBALS['TCA'][$table]) {
-			return $this->initializeResultArray();
-		}
+        $itemList = $this->data['processedTca']['types'][$recordTypeValue]['showitem'];
+        $fields = GeneralUtility::trimExplode(',', $itemList, true);
+        foreach ($fields as $fieldString) {
+            $fieldConfiguration = $this->explodeSingleFieldShowItemConfiguration($fieldString);
+            $fieldName = $fieldConfiguration['fieldName'];
+            if ((string)$fieldName === (string)$fieldToRender) {
+                // Field is in showitem configuration
+                // @todo: This field is not rendered if it is "hidden" in a palette!
+                if ($GLOBALS['TCA'][$table]['columns'][$fieldName]) {
+                    $options = $this->data;
+                    $options['fieldName'] = $fieldName;
+                    $options['renderType'] = 'singleFieldContainer';
+                    $resultArray = $this->nodeFactory->create($options)->render();
+                }
+            }
+        }
 
-		$languageService = $this->getLanguageService();
+        return $resultArray;
+    }
 
-		// Load the description content for the table if requested
-		if ($GLOBALS['TCA'][$table]['interface']['always_description']) {
-			$languageService->loadSingleTableDescription($table);
-		}
-
-		// If this is a localized record, stuff data from original record to local registry, will then be given to child elements
-		$this->registerDefaultLanguageData($table, $row);
-
-		// Current type value of the record.
-		$recordTypeValue = $this->getRecordTypeValue($table, $row);
-
-		$excludeElements = $this->getExcludeElements($table, $row, $recordTypeValue);
-
-		$resultArray = $this->initializeResultArray();
-		if (isset($GLOBALS['TCA'][$table]['types'][$recordTypeValue])) {
-			$itemList = $GLOBALS['TCA'][$table]['types'][$recordTypeValue]['showitem'];
-			if ($itemList) {
-				$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-				foreach ($fields as $fieldString) {
-					$fieldConfiguration = $this->explodeSingleFieldShowItemConfiguration($fieldString);
-					$fieldName = $fieldConfiguration['fieldName'];
-					if (!in_array($fieldName, $excludeElements, TRUE) && (string)$fieldName === (string)$fieldToRender) {
-						if ($GLOBALS['TCA'][$table]['columns'][$fieldName]) {
-							$options = $this->globalOptions;
-							$options['fieldName'] = $fieldName;
-							$options['fieldExtra'] = $fieldConfiguration['fieldExtra'];
-
-							/** @var SingleFieldContainer $singleFieldContainer */
-							$singleFieldContainer = GeneralUtility::makeInstance(SingleFieldContainer::class);
-							$singleFieldContainer->setGlobalOptions($options);
-							$resultArray = $singleFieldContainer->render();
-						}
-					}
-				}
-			}
-		}
-		return $resultArray;
-	}
-
-	/**
-	 * @return LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
-
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

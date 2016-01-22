@@ -13,7 +13,10 @@ namespace TYPO3\CMS\Beuser\ViewHelpers;
  *
  * The TYPO3 project - inspiring people to share!
  */
-use TYPO3\CMS\Backend\Utility\IconUtility;
+
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Domain\Model\BackendUser;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
@@ -21,70 +24,68 @@ use TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper;
 
 /**
  * Views sprite icon for a record (object)
- *
- * @author Felix Kopp <felix-source@phorax.com>
  * @internal
  */
-class SpriteIconForRecordViewHelper extends AbstractBackendViewHelper implements CompilableInterface {
+class SpriteIconForRecordViewHelper extends AbstractBackendViewHelper implements CompilableInterface
+{
+    /**
+     * Displays spriteIcon for database table and object
+     *
+     * @param string $table
+     * @param object $object
+     * @return string
+     * @see IconFactory::getIconForRecord()
+     */
+    public function render($table, $object)
+    {
+        return static::renderStatic(
+            array(
+                'table' => $table,
+                'object' => $object
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Displays spriteIcon for database table and object
-	 *
-	 * @param string $table
-	 * @param object $object
-	 * @param array $row
-	 * @return string
-	 * @see \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, $row)
-	 */
-	public function render($table, $object = NULL, array $row = NULL) {
-		return self::renderStatic(
-			array(
-				'table' => $table,
-				'object' => $object,
-				'row' => $row,
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     * @throws Exception
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $object = $arguments['object'];
+        $table = $arguments['table'];
 
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 * @throws Exception
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$object = $arguments['object'];
-		$table = $arguments['table'];
-		$row = $arguments['row'];
-
-		if ($row === NULL && (!is_object($object) || !method_exists($object, 'getUid'))) {
-			return '';
-		}
-		$row = $row ?: array(
-			'uid' => $object->getUid(),
-			'startTime' => FALSE,
-			'endTime' => FALSE
-		);
-		if (method_exists($object, 'getIsDisabled')) {
-			$row['disable'] = $object->getIsDisabled();
-		}
-		if (method_exists($object, 'getHidden')) {
-			$row['hidden'] = $object->getHidden();
-		}
-		if ($table === 'be_users' && $object instanceof BackendUser) {
-			$row['admin'] = $object->getIsAdministrator();
-		}
-		if (method_exists($object, 'getStartDateAndTime')) {
-			$row['startTime'] = $object->getStartDateAndTime();
-		}
-		if (method_exists($object, 'getEndDateAndTime')) {
-			$row['endTime'] = $object->getEndDateAndTime();
-		}
-		return IconUtility::getSpriteIconForRecord($table, $row);
-	}
-
+        if (!is_object($object) || !method_exists($object, 'getUid')) {
+            return '';
+        }
+        $row = array(
+            'uid' => $object->getUid(),
+            'startTime' => false,
+            'endTime' => false
+        );
+        if (method_exists($object, 'getIsDisabled')) {
+            $row['disable'] = $object->getIsDisabled();
+        }
+        if (method_exists($object, 'getHidden')) {
+            $row['hidden'] = $object->getHidden();
+        }
+        if ($table === 'be_users' && $object instanceof BackendUser) {
+            $row['admin'] = $object->getIsAdministrator();
+        }
+        if (method_exists($object, 'getStartDateAndTime')) {
+            $row['startTime'] = $object->getStartDateAndTime();
+        }
+        if (method_exists($object, 'getEndDateAndTime')) {
+            $row['endTime'] = $object->getEndDateAndTime();
+        }
+        /** @var IconFactory $iconFactory */
+        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        return $iconFactory->getIconForRecord($table, $row, Icon::SIZE_SMALL)->render();
+    }
 }

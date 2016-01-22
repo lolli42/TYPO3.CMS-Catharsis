@@ -14,72 +14,83 @@ namespace TYPO3\CMS\Core\Resource\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Utility class to render capabilities of the storage.
  */
-class UserStorageCapabilityService {
+class UserStorageCapabilityService
+{
+    /**
+     * UserFunc function for rendering field "is_public".
+     * There are some edge cases where "is_public" can never be marked as true in the BE,
+     * for instance for storage located outside the document root or
+     * for storages driven by special driver such as Flickr, ...
+     *
+     * @param array $propertyArray the array with additional configuration options.
+     * @return string
+     */
+    public function renderIsPublic(array $propertyArray)
+    {
+        $isPublic = $GLOBALS['TCA']['sys_file_storage']['columns']['is_public']['config']['default'];
+        $fileRecord = $propertyArray['row'];
 
-	/**
-	 * UserFunc function for rendering field "is_public".
-	 * There are some edge cases where "is_public" can never be marked as true in the BE,
-	 * for instance for storage located outside the document root or
-	 * for storages driven by special driver such as Flickr, ...
-	 *
-	 * @param array $propertyArray the array with additional configuration options.
-	 * @param \TYPO3\CMS\Backend\Form\FormEngine $tceformsObj the TCEforms parent object
-	 * @return string
-	 */
-	public function renderIsPublic(array $propertyArray, \TYPO3\CMS\Backend\Form\FormEngine $tceformsObj) {
+        // Makes sure the storage object can be retrieved which is not the case when new storage.
+        if ((int)$propertyArray['row']['uid'] > 0) {
+            $storage = ResourceFactory::getInstance()->getStorageObject($fileRecord['uid']);
+            $storageRecord = $storage->getStorageRecord();
+            $isPublic = $storage->isPublic() && $storageRecord['is_public'];
 
-		$isPublic = $GLOBALS['TCA']['sys_file_storage']['columns']['is_public']['config']['default'];
-		$fileRecord = $propertyArray['row'];
+            // Display a warning to the BE User in case settings is not inline with storage capability.
+            if ($storageRecord['is_public'] && !$storage->isPublic()) {
+                /** @var LanguageService $lang */
+                $lang = $GLOBALS['LANG'];
+                $message = GeneralUtility::makeInstance(
+                    FlashMessage::class,
+                    $lang->sL('LLL:EXT:lang/locallang_core.xlf:warning.message.storage_is_no_public'),
+                    $lang->sL('LLL:EXT:lang/locallang_core.xlf:warning.header.storage_is_no_public'),
+                    FlashMessage::WARNING
+                );
 
-		// Makes sure the storage object can be retrieved which is not the case when new storage.
-		if ((int)$propertyArray['row']['uid'] > 0) {
-			$storage = ResourceFactory::getInstance()->getStorageObject($fileRecord['uid']);
-			$storageRecord = $storage->getStorageRecord();
-			$isPublic = $storage->isPublic();
+                /** @var $flashMessageService FlashMessageService */
+                $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+                /** @var $defaultFlashMessageQueue FlashMessageQueue */
+                $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+                $defaultFlashMessageQueue->enqueue($message);
+            }
+        }
 
-			// Display a warning to the BE User in case settings is not inline with storage capability.
-			if ($storageRecord['is_public'] != $storage->isPublic()) {
-				$message = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class,
-					$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:warning.message.storage_is_no_public'),
-					$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:warning.header.storage_is_no_public'),
-					\TYPO3\CMS\Core\Messaging\FlashMessage::WARNING
-				);
+        return $this->renderFileInformationContent($fileRecord, $isPublic);
+    }
 
-				/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-				$flashMessageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
-				/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
-				$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-				$defaultFlashMessageQueue->enqueue($message);
-			}
-		}
-
-		return $this->renderFileInformationContent($fileRecord, $isPublic);
-	}
-
-	/**
-	 * Renders a HTML block containing the checkbox for field "is_public".
-	 *
-	 * @param array $fileRecord
-	 * @param bool $isPublic
-	 * @return string
-	 */
-	protected function renderFileInformationContent(array $fileRecord, $isPublic) {
-		$template = '
+    /**
+     * Renders a HTML block containing the checkbox for field "is_public".
+     *
+     * @param array $fileRecord
+     * @param bool $isPublic
+     * @return string
+     */
+    protected function renderFileInformationContent(array $fileRecord, $isPublic)
+    {
+        $template = '
 		<div class="t3-form-field-item">
-			<input name="data[sys_file_storage][{uid}][is_public]" value="0" type="hidden">
-			<input class="checkbox" value="1" name="data[sys_file_storage][{uid}][is_public]_0" type="checkbox" %s>
+			<div class="checkbox">
+				<label>
+					<input name="data[sys_file_storage][{uid}][is_public]" value="0" type="hidden">
+					<input class="checkbox" value="1" name="data[sys_file_storage][{uid}][is_public]_0" type="checkbox" %s>
+				</label>
+			</div>
 		</div>';
 
-		$content = sprintf($template,
-			$isPublic ? 'checked="checked"' : ''
-		);
+        $content = sprintf($template,
+            $isPublic ? 'checked="checked"' : ''
+        );
 
-		return str_replace('{uid}', $fileRecord['uid'], $content);
-	}
-
+        return str_replace('{uid}', $fileRecord['uid'], $content);
+    }
 }

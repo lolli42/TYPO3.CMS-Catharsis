@@ -14,192 +14,209 @@ namespace TYPO3\CMS\Backend\Controller\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script Class for the rename-file form.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class RenameFileController {
+class RenameFileController extends AbstractModule
+{
+    /**
+     * Name of the filemount
+     *
+     * @var string
+     */
+    public $title;
 
-	// Internal, static:
-	/**
-	 * Document template object
-	 *
-	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 */
-	public $doc;
+    /**
+     * Target path
+     *
+     * @var string
+     * @internal
+     */
+    public $target;
 
-	// Name of the filemount
-	/**
-	 * @var string
-	 */
-	public $title;
+    /**
+     * The file or folder object that should be renamed
+     *
+     * @var \TYPO3\CMS\Core\Resource\File|\TYPO3\CMS\Core\Resource\Folder $fileOrFolderObject
+     */
+    protected $fileOrFolderObject;
 
-	// Internal, static (GPVar):
-	// Set with the target path inputted in &target
-	/**
-	 * @var string
-	 */
-	public $target;
+    /**
+     * Return URL of list module.
+     *
+     * @var string
+     */
+    public $returnUrl;
 
-	/**
-	 * The file or folder object that should be renamed
-	 *
-	 * @var \TYPO3\CMS\Core\Resource\File|\TYPO3\CMS\Core\Resource\Folder $fileOrFolderObject
-	 */
-	protected $fileOrFolderObject;
+    /**
+     * Accumulating content
+     *
+     * @var string
+     * @internal
+     */
+    public $content;
 
-	// Return URL of list module.
-	/**
-	 * @var string
-	 */
-	public $returnUrl;
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $GLOBALS['SOBE'] = $this;
+        $this->init();
+    }
 
-	// Internal, dynamic:
-	// Accumulating content
-	/**
-	 * @var string
-	 */
-	public $content;
+    /**
+     * Initialize
+     *
+     * @throws \TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException
+     */
+    protected function init()
+    {
+        // Initialize GPvars:
+        $this->target = GeneralUtility::_GP('target');
+        $this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
+        // Cleaning and checking target
+        if ($this->target) {
+            $this->fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->target);
+        }
+        if (!$this->fileOrFolderObject) {
+            $title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:paramError', true);
+            $message = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:targetNoDir', true);
+            throw new \RuntimeException($title . ': ' . $message, 1294586844);
+        }
+        if ($this->fileOrFolderObject->getStorage()->getUid() === 0) {
+            throw new \TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException('You are not allowed to access files outside your storages', 1375889840);
+        }
 
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$GLOBALS['SOBE'] = $this;
-		$GLOBALS['BACK_PATH'] = '';
+        // If a folder should be renamed, AND the returnURL should go to the old directory name, the redirect is forced
+        // so the redirect will NOT end in an error message
+        // this case only happens if you select the folder itself in the foldertree and then use the clickmenu to
+        // rename the folder
+        if ($this->fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+            $parsedUrl = parse_url($this->returnUrl);
+            $queryParts = GeneralUtility::explodeUrl2Array(urldecode($parsedUrl['query']));
+            if ($queryParts['id'] === $this->fileOrFolderObject->getCombinedIdentifier()) {
+                $this->returnUrl = str_replace(urlencode($queryParts['id']),
+                    urlencode($this->fileOrFolderObject->getStorage()->getRootLevelFolder()->getCombinedIdentifier()),
+                    $this->returnUrl);
+            }
+        }
 
-		$this->init();
-	}
+        // building pathInfo for metaInformation
+        $pathInfo = [
+            'combined_identifier' => $this->fileOrFolderObject->getCombinedIdentifier(),
+        ];
+        $this->moduleTemplate->getDocHeaderComponent()->setMetaInformation($pathInfo);
 
-	/**
-	 * Initialize
-	 *
-	 * @throws \TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException
-	 */
-	protected function init() {
-		// Initialize GPvars:
-		$this->target = GeneralUtility::_GP('target');
-		$this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
-		// Cleaning and checking target
-		if ($this->target) {
-			$this->fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->target);
-		}
-		if (!$this->fileOrFolderObject) {
-			$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:paramError', TRUE);
-			$message = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:targetNoDir', TRUE);
-			throw new \RuntimeException($title . ': ' . $message, 1294586844);
-		}
-		if ($this->fileOrFolderObject->getStorage()->getUid() === 0) {
-			throw new \TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException('You are not allowed to access files outside your storages', 1375889840);
-		}
+        // Setting up the context sensitive menu
+        $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
 
-		// If a folder should be renamed, AND the returnURL should go to the old directory name, the redirect is forced
-		// so the redirect will NOT end in a error message
-		// this case only happens if you select the folder itself in the foldertree and then use the clickmenu to
-		// rename the folder
-		if ($this->fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
-			$parsedUrl = parse_url($this->returnUrl);
-			$queryParts = GeneralUtility::explodeUrl2Array(urldecode($parsedUrl['query']));
-			if ($queryParts['id'] === $this->fileOrFolderObject->getCombinedIdentifier()) {
-				$this->returnUrl = str_replace(urlencode($queryParts['id']), urlencode($this->fileOrFolderObject->getStorage()->getRootLevelFolder()->getCombinedIdentifier()), $this->returnUrl);
-			}
-		}
-		// Setting icon and title
-		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-filetree-root');
-		$this->title = $icon . htmlspecialchars($this->fileOrFolderObject->getStorage()->getName()) . ': ' . htmlspecialchars($this->fileOrFolderObject->getIdentifier());
-		// Setting template object
-		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_rename.html');
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->JScode = $this->doc->wrapScriptTags('
-			function backToList() {	//
-				top.goToModule("file_list");
-			}
-		');
-	}
+        // Add javaScript
+        $this->moduleTemplate->addJavaScriptCode(
+            'RenameFileInlineJavaScript',
+            'function backToList() {top.goToModule("file_FilelistList");}'
+        );
+    }
 
-	/**
-	 * Main function, rendering the content of the rename form
-	 *
-	 * @return void
-	 */
-	public function main() {
-		// Make page header:
-		$this->content = $this->doc->startPage($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_rename.php.pagetitle'));
-		$pageContent = $this->doc->header($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_rename.php.pagetitle'));
-		if ($this->fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
-			$fileIdentifier = $this->fileOrFolderObject->getCombinedIdentifier();
-		} else {
-			$fileIdentifier = $this->fileOrFolderObject->getUid();
-		}
-		$pageContent .= '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform" role="form">';
-		// Making the formfields for renaming:
-		$pageContent .= '
+    /**
+     * Main function, rendering the content of the rename form
+     *
+     * @return void
+     */
+    public function main()
+    {
+        if ($this->fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+            $fileIdentifier = $this->fileOrFolderObject->getCombinedIdentifier();
+        } else {
+            $fileIdentifier = $this->fileOrFolderObject->getUid();
+        }
+        $pageContent = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform" role="form">';
+        // Making the formfields for renaming:
+        $pageContent .= '
 
 			<div class="form-group">
 				<input class="form-control" type="text" name="file[rename][0][target]" value="' . htmlspecialchars($this->fileOrFolderObject->getName()) . '" ' . $this->getDocumentTemplate()->formWidth(40) . ' />
 				<input type="hidden" name="file[rename][0][data]" value="' . htmlspecialchars($fileIdentifier) . '" />
 			</div>
 		';
-		// Making submit button:
-		$pageContent .= '
+        // Making submit button:
+        $pageContent .= '
 			<div class="form-group">
-				<input class="btn btn-primary" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_rename.php.submit', TRUE) . '" />
-				<input class="btn btn-danger" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.cancel', TRUE) . '" onclick="backToList(); return false;" />
+				<input class="btn btn-primary" type="submit" value="' .
+                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_rename.php.submit', true) . '" />
+				<input class="btn btn-danger" type="submit" value="' .
+                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.cancel', true) .
+                '" onclick="backToList(); return false;" />
 				<input type="hidden" name="redirect" value="' . htmlspecialchars($this->returnUrl) . '" />
-				' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction') . '
 			</div>
 		';
-		$pageContent .= '</form>';
-		$docHeaderButtons = array(
-			'back' => ''
-		);
-		$docHeaderButtons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_rename');
-		// Back
-		if ($this->returnUrl) {
-			$docHeaderButtons['back'] = '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisUrl($this->returnUrl)) . '" class="typo3-goBack" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';
-		}
-		// Add the HTML as a section:
-		$markerArray = array(
-			'CSH' => $docHeaderButtons['csh'],
-			'FUNC_MENU' => '',
-			'CONTENT' => $pageContent,
-			'PATH' => $this->title
-		);
-		$this->content .= $this->doc->moduleBody(array(), $docHeaderButtons, $markerArray);
-		$this->content .= $this->doc->endPage();
-		$this->content = $this->doc->insertStylesAndJS($this->content);
-	}
+        $pageContent .= '</form>';
 
-	/**
-	 * Outputting the accumulated content to screen
-	 *
-	 * @return void
-	 */
-	public function printContent() {
-		echo $this->content;
-	}
+        // Create buttons
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
 
-	/**
-	 * Returns LanguageService
-	 *
-	 * @return \TYPO3\CMS\Lang\LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
+        // csh button
+        $cshButton = $buttonBar->makeHelpButton()
+            ->setModuleName('xMOD_csh_corebe')
+            ->setFieldName('file_rename');
+        $buttonBar->addButton($cshButton);
 
-	/**
-	 * Returns an instance of DocumentTemplate
-	 *
-	 * @return \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 */
-	protected function getDocumentTemplate() {
-		return $GLOBALS['TBE_TEMPLATE'];
-	}
+        // back button
+        if ($this->returnUrl) {
+            $backButton = $buttonBar->makeLinkButton()
+                ->sethref(GeneralUtility::linkThisUrl($this->returnUrl))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
+                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
+            $buttonBar->addButton($backButton);
+        }
 
+        // set header
+        $this->content = '<h1>' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_rename.php.pagetitle') . '</h1>';
+
+        // add section
+        $this->content .= '<div>' . $pageContent . '</div>';
+        $this->moduleTemplate->setContent($this->content);
+    }
+
+    /**
+     * Processes the request, currently everything is handled and put together via "main()"
+     *
+     * @param ServerRequestInterface $request the current request
+     * @param ResponseInterface $response
+     * @return ResponseInterface the response with the content
+     */
+    public function mainAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $this->main();
+        $response->getBody()->write($this->moduleTemplate->renderContent());
+        return $response;
+    }
+
+    /**
+     * Returns LanguageService
+     *
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
+
+    /**
+     * Returns an instance of DocumentTemplate
+     *
+     * @return \TYPO3\CMS\Backend\Template\DocumentTemplate
+     */
+    protected function getDocumentTemplate()
+    {
+        return $GLOBALS['TBE_TEMPLATE'];
+    }
 }

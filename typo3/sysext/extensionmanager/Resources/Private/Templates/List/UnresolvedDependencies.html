@@ -2,15 +2,11 @@
 
 <f:layout name="main" />
 
-<f:section name="docheader-buttons">
-</f:section>
-
-<f:section name="module-headline">
+<f:section name="headline">
 	<h1><f:translate key="installExtension">Install extension</f:translate></h1>
 </f:section>
 
-<f:section name="Content">
-	<f:flashMessages renderMode="div" />
+<f:section name="content">
 	<f:render partial="List/UnresolvedDependencies" arguments="{_all}" />
 	<f:be.infobox title="{f:translate(key: 'dependencyCheck.unresolvedDependencies.title')}" state="1">
 		<f:render partial="List/UnresolvedDependenciesMessage" />
@@ -18,7 +14,7 @@
 	<f:link.action action="index" class="btn btn-default onClickMaskExtensionManager">
 		Go back
 	</f:link.action>
-	<f:link.action action="installExtensionWithoutSystemDependencyCheck" controller="Action" arguments="{extensionKey: extension.extensionKey}" class="btn btn-default t3js-dependencies disabled onClickMaskExtensionManager">
-		<span class="t3-icon t3-icon-actions t3-icon-dialog-error">&nbsp;</span> <f:translate key="dependencyCheck.unresolvedDependencies.proceed" />
+	<f:link.action action="installExtensionWithoutSystemDependencyCheck" controller="Action" arguments="{extensionKey: extension.extensionKey}" class="btn btn-primary t3js-dependencies disabled onClickMaskExtensionManager">
+		 <f:translate key="dependencyCheck.unresolvedDependencies.proceed" />
 	</f:link.action>
 </f:section>

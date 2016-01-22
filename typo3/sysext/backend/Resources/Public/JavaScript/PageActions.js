@@ -12,27 +12,46 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/PageActions
  * JavaScript implementations for page actions
  */
-define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Storage'], function($, Storage) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{settings: {pageId: number, language: {pageOverlayId: number}}, identifier: {pageTitle: string, hiddenElements: string}, elements: {$pageTitle: null, $showHiddenElementsCheckbox: null}, documentIsReady: boolean}}
+	 * @exports TYPO3/CMS/Backend/PageActions
+	 */
 	var PageActions = {
 		settings: {
 			pageId: 0,
-			canEditPage: false,
 			language: {
 				pageOverlayId: 0
 			}
 		},
 		identifier: {
-			$pageTitle: $('h1')
-		}
+			pageTitle: '.t3js-title-inlineedit',
+			hiddenElements: '.t3js-hidden-record'
+		},
+		elements: {
+			$pageTitle: null,
+			$showHiddenElementsCheckbox: null
+		},
+		documentIsReady: false
 	};
 
 	/**
 	 * Initialize page title renaming
 	 */
 	PageActions.initializePageTitleRenaming = function() {
-		if (!(PageActions.settings.pageId > 0 && PageActions.settings.canEditPage)) {
+		if (!PageActions.documentIsReady) {
+			$(function() {
+				PageActions.initializePageTitleRenaming();
+			});
+			return;
+		}
+		if (PageActions.settings.pageId <= 0) {
 			return;
 		}
 
@@ -41,7 +60,7 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 			e.preventDefault();
 			PageActions.editPageTitle();
 		});
-		PageActions.identifier.$pageTitle
+		PageActions.elements.$pageTitle
 			.on('dblclick', PageActions.editPageTitle)
 			.on('mouseover', function() { $editActionLink.removeClass('hidden'); })
 			.on('mouseout', function() { $editActionLink.addClass('hidden'); })
@@ -49,19 +68,57 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 	};
 
 	/**
+	 * Initialize elements
+	 */
+	PageActions.initializeElements = function() {
+		PageActions.elements.$pageTitle = $(PageActions.identifier.pageTitle + ':first');
+		PageActions.elements.$showHiddenElementsCheckbox = $('#checkTt_content_showHidden');
+	};
+
+	/**
+	 * Initialize events
+	 */
+	PageActions.initializeEvents = function() {
+		PageActions.elements.$showHiddenElementsCheckbox.on('change', PageActions.toggleContentElementVisibility);
+	};
+
+	/**
+	 * Toggles the "Show hidden content elements" checkbox
+	 */
+	PageActions.toggleContentElementVisibility = function() {
+		var $me = $(this),
+			$hiddenElements = $(PageActions.identifier.hiddenElements);
+
+		// show a spinner to show activity
+		var $spinner = $('<span />', {class: 'checkbox-spinner fa fa-circle-o-notch fa-spin'});
+		$me.hide().after($spinner);
+
+		if ($me.prop('checked')) {
+			$hiddenElements.slideDown();
+		} else {
+			$hiddenElements.slideUp();
+		}
+
+		Storage.Persistent.set('moduleData.web_layout.tt_content_showHidden', $me.prop('checked') ? 1 : 0).done(function() {
+			$spinner.remove();
+			$me.show();
+		});
+	};
+
+	/**
 	 * Changes the h1 to an edit form
 	 */
 	PageActions.editPageTitle = function() {
 		var $inputFieldWrap = $(
-				'<form class="row">' +
-					'<div class="col-lg-4 col-md-6 col-sm-12">' +
-						'<div class="input-group">' +
+				'<form>' +
+					'<div class="form-group">' +
+						'<div class="input-group input-group-lg">' +
 							'<input class="form-control">' +
 							'<span class="input-group-btn">' +
-								'<button class="btn btn-default" type="button" data-action="submit"><span class="t3-icon fa fa-floppy-o"></span></button>' +
+								'<button class="btn btn-default" type="button" data-action="submit"><span class="t3-icon fa fa-floppy-o"></span></button> ' +
 							'</span>' +
 							'<span class="input-group-btn">' +
-								'<button class="btn btn-danger" type="button" data-action="cancel"><span class="t3-icon fa fa-times"></span></button>' +
+								'<button class="btn btn-default" type="button" data-action="cancel"><span class="t3-icon fa fa-times"></span></button> ' +
 							'</span>' +
 						'</div>' +
 					'</div>' +
@@ -70,13 +127,13 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 			$inputField = $inputFieldWrap.find('input');
 
 		$inputFieldWrap.find('[data-action=cancel]').on('click', function() {
-			$inputFieldWrap.replaceWith(PageActions.identifier.$pageTitle);
+			$inputFieldWrap.replaceWith(PageActions.elements.$pageTitle);
 			PageActions.initializePageTitleRenaming();
 		});
 
 		$inputFieldWrap.find('[data-action=submit]').on('click', function() {
 			var newPageTitle = $.trim($inputField.val());
-			if (newPageTitle !== '' && PageActions.identifier.$pageTitle.text() !== newPageTitle) {
+			if (newPageTitle !== '' && PageActions.elements.$pageTitle.text() !== newPageTitle) {
 				PageActions.saveChanges($inputField);
 			} else {
 				$inputFieldWrap.find('[data-action=cancel]').trigger('click');
@@ -89,7 +146,7 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 			return false;
 		});
 
-		var $h1 = PageActions.identifier.$pageTitle;
+		var $h1 = PageActions.elements.$pageTitle;
 		$h1.children().last().remove();
 		$h1.replaceWith($inputFieldWrap);
 		$inputField.val($h1.text()).focus();
@@ -108,20 +165,17 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 
 	/**
 	 * Set the page id (used in the RequireJS callback)
+	 *
+	 * @param {Number} pageId
 	 */
 	PageActions.setPageId = function(pageId) {
 		PageActions.settings.pageId = pageId;
 	};
 
 	/**
-	 * Set if user can edit the page properties
-	 */
-	PageActions.setCanEditPage = function(allowed) {
-		PageActions.settings.canEditPage = allowed;
-	};
-
-	/**
 	 * Set the overlay id
+	 *
+	 * @param {Number} overlayId
 	 */
 	PageActions.setLanguageOverlayId = function(overlayId) {
 		PageActions.settings.language.pageOverlayId = overlayId;
@@ -129,6 +183,8 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 
 	/**
 	 * Save the changes and reload the page tree
+	 *
+	 * @param {Object} $field
 	 */
 	PageActions.saveChanges = function($field) {
 		var $inputFieldWrap = $field.parents('form');
@@ -147,13 +203,14 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 			recordUid = PageActions.settings.language.pageOverlayId;
 		}
 
-		parameters['data'] = {};
-		parameters['data'][pagesTable] = {};
-		parameters['data'][pagesTable][recordUid] = {title: $field.val()};
+		parameters.data = {};
+		parameters.data[pagesTable] = {};
+		parameters.data[pagesTable][recordUid] = {title: $field.val()};
+
 		require(['TYPO3/CMS/Backend/AjaxDataHandler'], function(DataHandler) {
-			DataHandler.process(parameters).done(function(result) {
+			DataHandler.process(parameters).done(function() {
 				$inputFieldWrap.find('[data-action=cancel]').trigger('click');
-				PageActions.identifier.$pageTitle.text($field.val());
+				PageActions.elements.$pageTitle.text($field.val());
 				PageActions.initializePageTitleRenaming();
 				top.TYPO3.Backend.NavigationContainer.PageTree.refreshTree();
 			}).fail(function() {
@@ -162,8 +219,11 @@ define('TYPO3/CMS/Backend/PageActions', ['jquery'], function($) {
 		});
 	};
 
-	return function() {
-		TYPO3.PageActions = PageActions;
-		return PageActions;
-	}();
+	$(function() {
+		PageActions.initializeElements();
+		PageActions.initializeEvents();
+		PageActions.documentIsReady = true;
+	});
+
+	return PageActions;
 });

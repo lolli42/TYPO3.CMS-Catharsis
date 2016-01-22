@@ -14,43 +14,61 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Contains an abstract class for all tslib content class implementations.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
-abstract class AbstractContentObject {
+abstract class AbstractContentObject
+{
+    /**
+     * @var ContentObjectRenderer
+     */
+    protected $cObj;
 
-	/**
-	 * @var ContentObjectRenderer
-	 */
-	protected $cObj;
+    /**
+     * @var PageRenderer
+     */
+    protected $pageRenderer = null;
 
-	/**
-	 * Default constructor.
-	 *
-	 * @param ContentObjectRenderer $cObj
-	 */
-	public function __construct(ContentObjectRenderer $cObj) {
-		$this->cObj = $cObj;
-	}
+    /**
+     * Default constructor.
+     *
+     * @param ContentObjectRenderer $cObj
+     */
+    public function __construct(ContentObjectRenderer $cObj)
+    {
+        $this->cObj = $cObj;
+    }
 
-	/**
-	 * Renders the content object.
-	 *
-	 * @param array $conf
-	 * @return string
-	 */
-	abstract public function render($conf = array());
+    /**
+     * Renders the content object.
+     *
+     * @param array $conf
+     * @return string
+     */
+    abstract public function render($conf = array());
 
-	/**
-	 * Getter for current cObj
-	 *
-	 * @return ContentObjectRenderer
-	 */
-	public function getContentObject() {
-		return $this->cObj;
-	}
+    /**
+     * Getter for current cObj
+     *
+     * @return ContentObjectRenderer
+     */
+    public function getContentObject()
+    {
+        return $this->cObj;
+    }
 
+    /**
+     * @return PageRenderer
+     */
+    protected function getPageRenderer()
+    {
+        if ($this->pageRenderer === null) {
+            $this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+        }
+
+        return $this->pageRenderer;
+    }
 }

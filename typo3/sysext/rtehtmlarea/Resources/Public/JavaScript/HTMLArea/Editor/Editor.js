@@ -12,10 +12,10 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor
  * Editor extends Ext.util.Observable
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Ajax/Ajax',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
@@ -28,13 +28,16 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Toolbar',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Iframe',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/TextAreaContainer',
-	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/StatusBar'],
-	function (UserAgent, Util, Ajax, Dom, Event, Selection, BookMark, Node, Typo3, Framework, Toolbar, Iframe, TextAreaContainer, StatusBar) {
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/StatusBar',
+	'TYPO3/CMS/Backend/FormEngine'],
+	function (UserAgent, Util, Ajax, Dom, Event, Selection, BookMark, Node, Typo3, Framework, Toolbar, Iframe, TextAreaContainer, StatusBar, FormEngine) {
 
 	/**
 	 * Editor constructor method
 	 *
-	 * @param object config: editor configuration object
+	 * @param {Object} config: editor configuration object
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor
 	 */
 	var Editor = function (config) {
 		// Save the config
@@ -282,6 +285,7 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor',
 		 */
 		Event.trigger(this, 'HtmlAreaEventEditorReady');
 		this.appendToLog('HTMLArea.Editor', 'onFrameworkReady', 'Editor ready.', 'info');
+		this.onDOMSubtreeModified();
 	};
 
 	/**
@@ -543,6 +547,7 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor',
 		// Add unload handler
 		var self = this;
 		Event.one(this.iframe.getIframeWindow(), 'unload', function (event) { return self.onUnload(event); });
+		Event.on(this.iframe.getIframeWindow(), 'DOMSubtreeModified', function (event) { return self.onDOMSubtreeModified(event); });
 	};
 
 	/**
@@ -564,6 +569,16 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Editor',
 	Editor.prototype.appendToLog = function (objectName, functionName, text, type) {
 		HTMLArea.appendToLog(this.editorId, objectName, functionName, text, type);
 	};
+
+	/**
+	 *
+	 * @param {Event} event
+	 */
+	Editor.prototype.onDOMSubtreeModified = function(event) {
+		this.textArea.value = this.getHTML().trim();
+		FormEngine.Validation.validate();
+	};
+
 
 	/**
 	 * Iframe unload handler: Update the textarea for submission and cleanup

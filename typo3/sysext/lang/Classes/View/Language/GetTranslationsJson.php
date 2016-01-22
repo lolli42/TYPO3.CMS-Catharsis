@@ -16,33 +16,33 @@ namespace TYPO3\CMS\Lang\View\Language;
 
 /**
  * JSON view for "getTranslations" action in "Language" controller
- *
- * @author Kai Vogel <k.vogel@reply.de>
  */
-class GetTranslationsJson extends \TYPO3\CMS\Lang\View\AbstractJsonView {
-
-	/**
-	 * Returns the response data
-	 *
-	 * @return array The response data
-	 */
-	protected function getReponseData() {
-		$data = array();
-		$languages = $this->variables['languages'];
-		foreach ($this->variables['extensions'] as $extension) {
-			$extensionArray = $extension->toArray();
-			$row = array(
-				$extensionArray,
-				$extensionArray,
-			);
-			foreach ($languages as $language) {
-				$row[] = $language->toArray();
-			}
-			$data[] = $row;
-		}
-		return array(
-			'data' => $data,
-		);
-	}
-
+class GetTranslationsJson extends \TYPO3\CMS\Lang\View\AbstractJsonView
+{
+    /**
+     * Returns the response data
+     *
+     * @return array The response data
+     */
+    protected function getReponseData()
+    {
+        $data = array();
+        $languages = $this->variables['languages'];
+        foreach ($this->variables['extensions'] as $extension) {
+            /** @var $extension \TYPO3\CMS\Lang\Domain\Model\Extension */
+            $extensionArray = $extension->toArray();
+            $row = array(
+                $extensionArray,
+                $extensionArray,
+            );
+            foreach ($languages as $language) {
+                /** @var $language \TYPO3\CMS\Lang\Domain\Model\Language */
+                $row[] = $language->toArray();
+            }
+            $data[] = $row;
+        }
+        return array(
+            'data' => $data,
+        );
+    }
 }

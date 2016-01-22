@@ -14,14 +14,11 @@ namespace TYPO3\CMS\Backend\Form\Container;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Form\ElementConditionMatcher;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
-use TYPO3\CMS\Backend\Form\NodeFactory;
-use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * The container handles single elements.
@@ -31,203 +28,149 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
  * element classes depending on specific type of an element. Additionally, it determines if a
  * section is handled and hands over to FlexFormSectionContainer in this case.
  */
-class FlexFormElementContainer extends AbstractContainer {
+class FlexFormElementContainer extends AbstractContainer
+{
+    /**
+     * Entry method
+     *
+     * @return array As defined in initializeResultArray() of AbstractNode
+     */
+    public function render()
+    {
+        $table = $this->data['tableName'];
+        $flexFormDataStructureArray = $this->data['flexFormDataStructureArray'];
+        $flexFormRowData = $this->data['flexFormRowData'];
+        $flexFormFormPrefix = $this->data['flexFormFormPrefix'];
+        $parameterArray = $this->data['parameterArray'];
 
-	/**
-	 * Entry method
-	 *
-	 * @return array As defined in initializeResultArray() of AbstractNode
-	 */
-	public function render() {
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$fieldName = $this->globalOptions['fieldName'];
-		$flexFormDataStructureArray = $this->globalOptions['flexFormDataStructureArray'];
-		$flexFormRowData = $this->globalOptions['flexFormRowData'];
-		$flexFormCurrentLanguage = $this->globalOptions['flexFormCurrentLanguage'];
-		$flexFormNoEditDefaultLanguage = $this->globalOptions['flexFormNoEditDefaultLanguage'];
-		$flexFormFormPrefix = $this->globalOptions['flexFormFormPrefix'];
-		$parameterArray = $this->globalOptions['parameterArray'];
+        $languageService = $this->getLanguageService();
+        $resultArray = $this->initializeResultArray();
+        foreach ($flexFormDataStructureArray as $flexFormFieldName => $flexFormFieldArray) {
+            if (
+                // No item array found at all
+                !is_array($flexFormFieldArray)
+                // Not a section or container and not a list of single items
+                || (!isset($flexFormFieldArray['type']) && !is_array($flexFormFieldArray['config']))
+            ) {
+                continue;
+            }
 
-		$languageService = $this->getLanguageService();
-		$resultArray = $this->initializeResultArray();
-		foreach ($flexFormDataStructureArray as $flexFormFieldName => $flexFormFieldArray) {
-			if (
-				// No item array found at all
-				!is_array($flexFormFieldArray)
-				// Not a section or container and not a list of single items
-				|| (!isset($flexFormFieldArray['type']) && !is_array($flexFormFieldArray['TCEforms']['config']))
-			) {
-				continue;
-			}
+            if ($flexFormFieldArray['type'] === 'array') {
+                // Section
+                if (empty($flexFormFieldArray['section'])) {
+                    $resultArray['html'] = LF . 'Section expected at ' . $flexFormFieldName . ' but not found';
+                    continue;
+                }
 
-			if ($flexFormFieldArray['type'] === 'array') {
-				// Section
-				if (empty($flexFormFieldArray['section'])) {
-					$resultArray['html'] = LF . 'Section expected at ' . $flexFormFieldName . ' but not found';
-					continue;
-				}
+                $sectionTitle = '';
+                if (!empty(trim($flexFormFieldArray['title']))) {
+                    $sectionTitle = $languageService->sL(trim($flexFormFieldArray['title']));
+                }
 
-				$sectionTitle = '';
-				if (!empty($flexFormFieldArray['title'])) {
-					$sectionTitle = $languageService->sL($flexFormFieldArray['title']);
-				}
+                $options = $this->data;
+                $options['flexFormDataStructureArray'] = $flexFormFieldArray['el'];
+                $options['flexFormRowData'] = isset($flexFormRowData[$flexFormFieldName]['el']) ? $flexFormRowData[$flexFormFieldName]['el'] : [];
+                $options['flexFormSectionType'] = $flexFormFieldName;
+                $options['flexFormSectionTitle'] = $sectionTitle;
+                $options['renderType'] = 'flexFormSectionContainer';
+                $sectionContainerResult = $this->nodeFactory->create($options)->render();
+                $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $sectionContainerResult);
+            } else {
+                // Set up options for single element
+                $fakeParameterArray = [
+                    'fieldConf' => [
+                        'label' => $languageService->sL(trim($flexFormFieldArray['label'])),
+                        'config' => $flexFormFieldArray['config'],
+                        'children' => $flexFormFieldArray['children'],
+                        'defaultExtras' => $flexFormFieldArray['defaultExtras'],
+                        'onChange' => $flexFormFieldArray['onChange'],
+                    ],
+                    'fieldChangeFunc' => $parameterArray['fieldChangeFunc'],
+                    'onFocus' => $parameterArray['onFocus'],
+                    'label' => $parameterArray['label'],
+                ];
 
-				$options = $this->globalOptions;
-				$options['flexFormDataStructureArray'] = $flexFormFieldArray['el'];
-				$options['flexFormRowData'] = is_array($flexFormRowData[$flexFormFieldName]['el']) ? $flexFormRowData[$flexFormFieldName]['el'] : array();
-				$options['flexFormSectionType'] = $flexFormFieldName;
-				$options['flexFormSectionTitle'] = $sectionTitle;
-				/** @var FlexFormSectionContainer $sectionContainer */
-				$sectionContainer = GeneralUtility::makeInstance(FlexFormSectionContainer::class);
-				$sectionContainerResult = $sectionContainer->setGlobalOptions($options)->render();
-				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $sectionContainerResult);
-			} else {
-				// Single element
-				$vDEFkey = 'vDEF';
+                $alertMsgOnChange = '';
+                if (
+                    $fakeParameterArray['fieldConf']['onChange'] === 'reload'
+                    || !empty($GLOBALS['TCA'][$table]['ctrl']['type']) && $GLOBALS['TCA'][$table]['ctrl']['type'] === $flexFormFieldName
+                    || !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate']) && GeneralUtility::inList($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'], $flexFormFieldName)
+                ) {
+                    if ($this->getBackendUserAuthentication()->jsConfirmation(JsConfirmation::TYPE_CHANGE)) {
+                        $alertMsgOnChange = 'top.TYPO3.Modal.confirm(TBE_EDITOR.labels.refreshRequired.title, TBE_EDITOR.labels.refreshRequired.content).on("button.clicked", function(e) { if (e.target.name == "ok" && TBE_EDITOR.checkSubmit(-1)) { TBE_EDITOR.submitForm() } top.TYPO3.Modal.dismiss(); });';
+                    } else {
+                        $alertMsgOnChange = 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm();}';
+                    }
+                }
+                if ($alertMsgOnChange) {
+                    $fakeParameterArray['fieldChangeFunc']['alert'] = $alertMsgOnChange;
+                }
 
-				$displayConditionResult = TRUE;
-				if (!empty($flexFormFieldArray['TCEforms']['displayCond'])) {
-					$conditionData = is_array($flexFormRowData) ? $flexFormRowData : array();
-					$conditionData['parentRec'] = $row;
-					/** @var $elementConditionMatcher ElementConditionMatcher */
-					$elementConditionMatcher = GeneralUtility::makeInstance(ElementConditionMatcher::class);
-					$displayConditionResult = $elementConditionMatcher->match($flexFormFieldArray['TCEforms']['displayCond'], $conditionData, $vDEFkey);
-				}
-				if (!$displayConditionResult) {
-					continue;
-				}
+                $originalFieldName = $parameterArray['itemFormElName'];
+                $fakeParameterArray['itemFormElName'] = $parameterArray['itemFormElName'] . $flexFormFormPrefix . '[' . $flexFormFieldName . '][vDEF]';
+                if ($fakeParameterArray['itemFormElName'] !== $originalFieldName) {
+                    // If calculated itemFormElName is different from originalFieldName
+                    // change the originalFieldName in TBE_EDITOR_fieldChanged. This is
+                    // especially relevant for wizards writing their content back to hidden fields
+                    if (!empty($fakeParameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'])) {
+                        $fakeParameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = str_replace($originalFieldName, $fakeParameterArray['itemFormElName'], $fakeParameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged']);
+                    }
+                }
+                $fakeParameterArray['itemFormElID'] = $fakeParameterArray['itemFormElName'];
+                if (isset($flexFormRowData[$flexFormFieldName]['vDEF'])) {
+                    $fakeParameterArray['itemFormElValue'] = $flexFormRowData[$flexFormFieldName]['vDEF'];
+                } else {
+                    $fakeParameterArray['itemFormElValue'] = $fakeParameterArray['fieldConf']['config']['default'];
+                }
 
-				// Set up options for single element
-				$fakeParameterArray = array(
-					'fieldConf' => array(
-						'label' => $languageService->sL(trim($flexFormFieldArray['TCEforms']['label'])),
-						'config' => $flexFormFieldArray['TCEforms']['config'],
-						'defaultExtras' => $flexFormFieldArray['TCEforms']['defaultExtras'],
-						'onChange' => $flexFormFieldArray['TCEforms']['onChange'],
-					),
-				);
+                $options = $this->data;
+                $options['parameterArray'] = $fakeParameterArray;
+                $options['elementBaseName'] = $this->data['elementBaseName'] . $flexFormFormPrefix . '[' . $flexFormFieldName . '][vDEF]';
 
-				// Force a none field if default language can not be edited
-				if ($flexFormNoEditDefaultLanguage && $flexFormCurrentLanguage === 'lDEF') {
-					$fakeParameterArray['fieldConf']['config'] = array(
-						'type' => 'none',
-						'rows' => 2
-					);
-				}
+                if (!empty($flexFormFieldArray['config']['renderType'])) {
+                    $options['renderType'] = $flexFormFieldArray['config']['renderType'];
+                } else {
+                    // Fallback to type if no renderType is given
+                    $options['renderType'] = $flexFormFieldArray['config']['type'];
+                }
+                $childResult = $this->nodeFactory->create($options)->render();
 
-				$alertMsgOnChange = '';
-				if (
-					$fakeParameterArray['fieldConf']['onChange'] === 'reload'
-					|| !empty($GLOBALS['TCA'][$table]['ctrl']['type']) && $GLOBALS['TCA'][$table]['ctrl']['type'] === $flexFormFieldName
-					|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate']) && GeneralUtility::inList($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'], $flexFormFieldName)
-				) {
-					if ($this->getBackendUserAuthentication()->jsConfirmation(JsConfirmation::TYPE_CHANGE)) {
-						$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
-					} else {
-						$alertMsgOnChange = 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm();}';
-					}
-				}
-				$fakeParameterArray['fieldChangeFunc'] = $parameterArray['fieldChangeFunc'];
-				if ($alertMsgOnChange) {
-					$fakeParameterArray['fieldChangeFunc']['alert'] = $alertMsgOnChange;
-				}
+                // Possible line breaks in the label through xml: \n => <br/>, usage of nl2br() not possible, so it's done through str_replace (?!)
+                $processedTitle = str_replace('\\n', '<br />', htmlspecialchars($fakeParameterArray['fieldConf']['label']));
+                $html = [];
+                $html[] = '<div class="form-section">';
+                $html[] =    '<div class="form-group t3js-formengine-palette-field t3js-formengine-validation-marker">';
+                $html[] =        '<label class="t3js-formengine-label">';
+                $html[] =            BackendUtility::wrapInHelp($parameterArray['_cshKey'], $flexFormFieldName, $processedTitle);
+                $html[] =        '</label>';
+                $html[] =        '<div class="t3js-formengine-field-item">';
+                $html[] =            $childResult['html'];
+                $html[] =        '</div>';
+                $html[] =    '</div>';
+                $html[] = '</div>';
 
-				$fakeParameterArray['onFocus'] = $parameterArray['onFocus'];
-				$fakeParameterArray['label'] = $parameterArray['label'];
-				$fakeParameterArray['itemFormElName'] = $parameterArray['itemFormElName'] . $flexFormFormPrefix . '[' . $flexFormFieldName . '][' . $vDEFkey . ']';
-				$fakeParameterArray['itemFormElID'] = $fakeParameterArray['itemFormElName'];
-				if (isset($flexFormRowData[$flexFormFieldName][$vDEFkey])) {
-					$fakeParameterArray['itemFormElValue'] = $flexFormRowData[$flexFormFieldName][$vDEFkey];
-				} else {
-					$fakeParameterArray['itemFormElValue'] = $fakeParameterArray['fieldConf']['config']['default'];
-				}
+                $resultArray['html'] .= implode(LF, $html);
+                $childResult['html'] = '';
+                $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childResult);
+            }
+        }
 
-				$options = $this->globalOptions;
-				$options['parameterArray'] = $fakeParameterArray;
-				$options['elementBaseName'] = $this->globalOptions['elementBaseName'] . $flexFormFormPrefix . '[' . $flexFormFieldName . '][' . $vDEFkey . ']';
-				/** @var NodeFactory $nodeFactory */
-				$nodeFactory = GeneralUtility::makeInstance(NodeFactory::class);
-				$child = $nodeFactory->create($flexFormFieldArray['TCEforms']['config']['type']);
-				$childResult = $child->setGlobalOptions($options)->render();
+        return $resultArray;
+    }
 
-				$theTitle = htmlspecialchars($fakeParameterArray['fieldConf']['label']);
-				$defInfo = array();
-				if (!$flexFormNoEditDefaultLanguage) {
-					$previewLanguages = $this->globalOptions['additionalPreviewLanguages'];
-					foreach ($previewLanguages as $previewLanguage) {
-						$defInfo[] = '<div class="t3-form-original-language">';
-						$defInfo[] = 	FormEngineUtility::getLanguageIcon($table, $row, ('v' . $previewLanguage['ISOcode']));
-						$defInfo[] = 	$this->previewFieldValue($flexFormRowData[$flexFormFieldName][('v' . $previewLanguage['ISOcode'])], $fakeParameterArray['fieldConf'], $fieldName);
-						$defInfo[] = '</div>';
-					}
-				}
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 
-				$languageIcon = '';
-				if ($vDEFkey !== 'vDEF') {
-					$languageIcon = FormEngineUtility::getLanguageIcon($table, $row, $vDEFkey);
-				}
-				// Possible line breaks in the label through xml: \n => <br/>, usage of nl2br() not possible, so it's done through str_replace (?!)
-				$processedTitle = str_replace('\\n', '<br />', $theTitle);
-				// @todo: Similar to the processing within SingleElementContainer ... use it from there?!
-				$html = array();
-				$html[] = '<div class="form-section">';
-				$html[] = 	'<div class="form-group t3js-formengine-palette-field">';
-				$html[] = 		'<label class="t3js-formengine-label">';
-				$html[] = 			$languageIcon;
-				$html[] = 			BackendUtility::wrapInHelp($parameterArray['_cshKey'], $flexFormFieldName, $processedTitle);
-				$html[] = 		'</label>';
-				$html[] = 		'<div class="t3js-formengine-field-item">';
-				$html[] = 			$childResult['html'];
-				$html[] = 			implode(LF, $defInfo);
-				$html[] = 			$this->renderVDEFDiff($flexFormRowData[$flexFormFieldName], $vDEFkey);
-				$html[]	= 		'</div>';
-				$html[] = 	'</div>';
-				$html[] = '</div>';
-
-				$resultArray['html'] .= implode(LF, $html);
-				$childResult['html'] = '';
-				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childResult);
-			}
-		}
-
-		return $resultArray;
-	}
-
-	/**
-	 * Renders the diff-view of vDEF fields in flex forms
-	 *
-	 * @param array $vArray Record array of the record being edited
-	 * @param string $vDEFkey HTML of the form field. This is what we add the content to.
-	 * @return string Item string returned again, possibly with the original value added to.
-	 */
-	protected function renderVDEFDiff($vArray, $vDEFkey) {
-		$item = NULL;
-		if (
-			$GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && isset($vArray[$vDEFkey . '.vDEFbase'])
-			&& (string)$vArray[$vDEFkey . '.vDEFbase'] !== (string)$vArray['vDEF']
-		) {
-			// Create diff-result:
-			$diffUtility = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
-			$diffres = $diffUtility->makeDiffDisplay($vArray[$vDEFkey . '.vDEFbase'], $vArray['vDEF']);
-			$item = '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
-				. htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . ':</div>' . $diffres . '</div>';
-		}
-		return $item;
-	}
-
-	/**
-	 * @return LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
-
-	/**
-	 * @return BackendUserAuthentication
-	 */
-	protected function getBackendUserAuthentication() {
-		return $GLOBALS['BE_USER'];
-	}
-
+    /**
+     * @return BackendUserAuthentication
+     */
+    protected function getBackendUserAuthentication()
+    {
+        return $GLOBALS['BE_USER'];
+    }
 }

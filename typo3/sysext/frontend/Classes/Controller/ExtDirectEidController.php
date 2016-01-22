@@ -14,58 +14,57 @@ namespace TYPO3\CMS\Frontend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Frontend\Utility\EidUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Http\AjaxRequestHandler;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Utility\EidUtility;
 
 /**
  * eID controller for ExtDirect
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
-class ExtDirectEidController {
+class ExtDirectEidController
+{
+    /**
+     * Ajax Instance
+     *
+     * @var AjaxRequestHandler
+     */
+    protected $ajaxObject = null;
 
-	/**
-	 * Ajax Instance
-	 *
-	 * @var AjaxRequestHandler
-	 */
-	protected $ajaxObject = NULL;
+    /**
+     * Routes the given eID action to the related ExtDirect method with the necessary
+     * ajax object.
+     *
+     * @param string $ajaxID
+     * @return void
+     */
+    protected function routeAction($ajaxID)
+    {
+        EidUtility::initLanguage();
+        $ajaxScript = $GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX']['ExtDirect::' . $ajaxID]['callbackMethod'];
+        $this->ajaxObject = GeneralUtility::makeInstance(AjaxRequestHandler::class, 'ExtDirect::' . $ajaxID);
+        $parameters = array();
+        GeneralUtility::callUserFunction($ajaxScript, $parameters, $this->ajaxObject, false, true);
+    }
 
-	/**
-	 * Routes the given eID action to the related ExtDirect method with the necessary
-	 * ajax object.
-	 *
-	 * @return void
-	 */
-	public function routeAction() {
-		EidUtility::initLanguage();
-		$ajaxID = GeneralUtility::_GP('action');
-		$ajaxScript = $GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX']['ExtDirect::' . $ajaxID]['callbackMethod'];
-		$this->ajaxObject = GeneralUtility::makeInstance(AjaxRequestHandler::class, 'ExtDirect::' . $ajaxID);
-		$parameters = array();
-		GeneralUtility::callUserFunction($ajaxScript, $parameters, $this->ajaxObject, FALSE, TRUE);
-	}
-
-	/**
-	 * Returns TRUE if the associated action in _GET is allowed.
-	 *
-	 * @return bool
-	 */
-	public function actionIsAllowed() {
-		if (!in_array(GeneralUtility::_GP('action'), array('route', 'getAPI'))) {
-			return FALSE;
-		}
-		return TRUE;
-	}
-
-	/**
-	 * Renders/Echoes the ajax output
-	 *
-	 * @return void
-	 */
-	public function render() {
-		$this->ajaxObject->render();
-	}
-
+    /**
+     * Renders/Echoes the ajax output
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface|NULL
+     * @throws \InvalidArgumentException
+     */
+    public function processRequest(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $action = isset($request->getParsedBody()['action'])
+            ? $request->getParsedBody()['action']
+            : (isset($request->getQueryParams()['action']) ? $request->getQueryParams()['action'] : '');
+        if (!in_array($action, array('route', 'getAPI'), true)) {
+            return null;
+        }
+        $this->routeAction($action);
+        return $this->ajaxObject->render();
+    }
 }

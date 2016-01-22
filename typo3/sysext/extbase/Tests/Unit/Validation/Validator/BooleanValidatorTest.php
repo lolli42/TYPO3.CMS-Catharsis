@@ -26,79 +26,87 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class BooleanValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
+class BooleanValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase
+{
+    protected $validatorClassName = \TYPO3\CMS\Extbase\Validation\Validator\BooleanValidator::class;
 
-	protected $validatorClassName = \TYPO3\CMS\Extbase\Validation\Validator\BooleanValidator::class;
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsNoErrorForAFalseStringExpectation()
+    {
+        $options = array('is' => 'false');
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertFalse($validator->validate(false)->hasErrors());
+    }
 
-	/**
-	 * @test
-	 * @author Pascal Dürsteler <pascal.duersteler@gmail.com>
-	 */
-	public function booleanValidatorReturnsNoErrorForAFalseStringExpectation() {
-		$this->validatorOptions(array('is' => 'false'));
-		$this->assertFalse($this->validator->validate(FALSE)->hasErrors());
-	}
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsNoErrorForATrueStringExpectation()
+    {
+        $options = array('is' => 'true');
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertFalse($validator->validate(true)->hasErrors());
+    }
 
-	/**
-	 * @test
-	 * @author Pascal Dürsteler <pascal.duersteler@gmail.com>
-	 */
-	public function booleanValidatorReturnsNoErrorForATrueStringExpectation() {
-		$this->validatorOptions(array('is' => 'true'));
-		$this->assertFalse($this->validator->validate(TRUE)->hasErrors());
-	}
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsNoErrorForATrueExpectation()
+    {
+        $options = array('is' => true);
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertFalse($validator->validate(true)->hasErrors());
+    }
 
-	/**
-	 * @test
-	 * @author Pascal Dürsteler <pascal.duersteler@gmail.com>
-	 */
-	public function booleanValidatorReturnsNoErrorForATrueExpectation() {
-		$this->validatorOptions(array('is' => TRUE));
-		$this->assertFalse($this->validator->validate(TRUE)->hasErrors());
-	}
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsNoErrorForAFalseExpectation()
+    {
+        $options = array('is' => false);
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertFalse($validator->validate(false)->hasErrors());
+    }
 
-	/**
-	 * @test
-	 * @author Pascal Dürsteler <pascal.duersteler@gmail.com>
-	 */
-	public function booleanValidatorReturnsNoErrorForAFalseExpectation() {
-		$this->validatorOptions(array('is' => FALSE));
-		$this->assertFalse($this->validator->validate(FALSE)->hasErrors());
-	}
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsErrorForTrueWhenFalseExpected()
+    {
+        $options = array('is' => false);
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertTrue($validator->validate(true)->hasErrors());
+    }
 
-	/**
-	 * @test
-	 * @author Pascal Dürsteler <pascal.duersteler@gmail.com>
-	 */
-	public function booleanValidatorReturnsErrorForTrueWhenFalseExpected() {
-		$this->validatorOptions(array('is' => FALSE));
-		$this->assertTrue($this->validator->validate(TRUE)->hasErrors());
-	}
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsErrorForFalseWhenTrueExpected()
+    {
+        $options = array('is' => true);
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertTrue($validator->validate(false)->hasErrors());
+    }
 
-	/**
-	 * @test
-	 * @author Pascal Dürsteler <pascal.duersteler@gmail.com>
-	 */
-	public function booleanValidatorReturnsErrorForFalseWhenTrueExpected() {
-		$this->validatorOptions(array('is' => TRUE));
-		$this->assertTrue($this->validator->validate(FALSE)->hasErrors());
-	}
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsErrorForAString()
+    {
+        $options = array('is' => true);
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertTrue($validator->validate('a string')->hasErrors());
+    }
 
-	/**
-	 * @test
-	 * @author Pascal Dürsteler <pascal.duersteler@gmail.com>
-	 */
-	public function booleanValidatorReturnsErrorForAString() {
-		$this->validatorOptions(array('is' => TRUE));
-		$this->assertTrue($this->validator->validate('a string')->hasErrors());
-	}
-
-	/**
-	 * @test
-	 */
-	public function booleanValidatorReturnsTrueIfNoParameterIsGiven() {
-		$this->validatorOptions(array());
-		$this->assertFalse($this->validator->validate(TRUE)->hasErrors());
-	}
-
+    /**
+     * @test
+     */
+    public function booleanValidatorReturnsTrueIfNoParameterIsGiven()
+    {
+        $options = array();
+        $validator = $this->getMock($this->validatorClassName, array('translateErrorMessage'), array($options));
+        $this->assertFalse($validator->validate(true)->hasErrors());
+    }
 }

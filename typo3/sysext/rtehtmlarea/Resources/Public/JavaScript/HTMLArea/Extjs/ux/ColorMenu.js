@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -12,10 +12,11 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ColorPalette/ColorMenu
  * Color menu
+ * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ColorPalette/ColorMenu
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ux/ColorMenu',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ColorPalette'],
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ColorPalette'],
 	function (ColorPalette) {
 		Ext.ux.menu.HTMLAreaColorMenu = Ext.extend(Ext.menu.Menu, {
 			enableScrolling: false,

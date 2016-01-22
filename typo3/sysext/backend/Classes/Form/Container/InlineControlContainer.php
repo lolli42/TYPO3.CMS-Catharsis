@@ -14,18 +14,17 @@ namespace TYPO3\CMS\Backend\Form\Container;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Resource\Folder;
-use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Backend\Form\DataPreprocessor;
-use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
-use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
-use TYPO3\CMS\Backend\Form\InlineRelatedRecordResolver;
+use TYPO3\CMS\Backend\Form\NodeFactory;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Inline element entry container.
@@ -38,620 +37,592 @@ use TYPO3\CMS\Backend\Form\InlineRelatedRecordResolver;
  *
  * For each existing inline relation an InlineRecordContainer is called for further processing.
  */
-class InlineControlContainer extends AbstractContainer {
+class InlineControlContainer extends AbstractContainer
+{
+    /**
+     * Inline data array used in JS, returned as JSON object to frontend
+     *
+     * @var array
+     */
+    protected $inlineData = array();
 
-	/**
-	 * Inline data array used in JS, returned as JSON object to frontend
-	 *
-	 * @var array
-	 */
-	protected $inlineData = array();
+    /**
+     * @var InlineStackProcessor
+     */
+    protected $inlineStackProcessor;
 
-	/**
-	 * @var InlineStackProcessor
-	 */
-	protected $inlineStackProcessor;
+    /**
+     * @var IconFactory
+     */
+    protected $iconFactory;
 
-	/**
-	 * Entry method
-	 *
-	 * @return array As defined in initializeResultArray() of AbstractNode
-	 */
-	public function render() {
-		$languageService = $this->getLanguageService();
+    /**
+     * @var string[]
+     */
+    protected $requireJsModules = [];
 
-		$this->inlineData = $this->globalOptions['inlineData'];
+    /**
+     * Container objects give $nodeFactory down to other containers.
+     *
+     * @param NodeFactory $nodeFactory
+     * @param array $data
+     */
+    public function __construct(NodeFactory $nodeFactory, array $data)
+    {
+        parent::__construct($nodeFactory, $data);
+        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+    }
 
-		/** @var InlineStackProcessor $inlineStackProcessor */
-		$inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
-		$this->inlineStackProcessor = $inlineStackProcessor;
-		$inlineStackProcessor->initializeByGivenStructure($this->globalOptions['inlineStructure']);
+    /**
+     * Entry method
+     *
+     * @return array As defined in initializeResultArray() of AbstractNode
+     */
+    public function render()
+    {
+        $languageService = $this->getLanguageService();
 
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$field = $this->globalOptions['fieldName'];
-		$parameterArray = $this->globalOptions['parameterArray'];
+        $this->inlineData = $this->data['inlineData'];
 
-		$resultArray = $this->initializeResultArray();
-		$html = '';
+        /** @var InlineStackProcessor $inlineStackProcessor */
+        $inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
+        $this->inlineStackProcessor = $inlineStackProcessor;
+        $inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
 
-		// An inline field must have a foreign_table, if not, stop all further inline actions for this field
-		if (
-			!$parameterArray['fieldConf']['config']['foreign_table']
-			|| !is_array($GLOBALS['TCA'][$parameterArray['fieldConf']['config']['foreign_table']])
-		) {
-			return $resultArray;
-		}
+        $table = $this->data['tableName'];
+        $row = $this->data['databaseRow'];
+        $field = $this->data['fieldName'];
+        $parameterArray = $this->data['parameterArray'];
 
-		$config = FormEngineUtility::mergeInlineConfiguration($parameterArray['fieldConf']['config']);
-		$foreign_table = $config['foreign_table'];
+        $resultArray = $this->initializeResultArray();
 
-		$language = 0;
-		if (BackendUtility::isTableLocalizable($table)) {
-			$language = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
-		}
-		$minItems = MathUtility::forceIntegerInRange($config['minitems'], 0);
-		$maxItems = MathUtility::forceIntegerInRange($config['maxitems'], 0);
-		if (!$maxItems) {
-			$maxItems = 100000;
-		}
-		$resultArray['requiredElements'][$parameterArray['itemFormElName']] = array(
-			$minItems,
-			$maxItems,
-			'imgName' => $table . '_' . $row['uid'] . '_' . $field
-		);
+        $config = $parameterArray['fieldConf']['config'];
+        $foreign_table = $config['foreign_table'];
 
-		// Add the current inline job to the structure stack
-		$newStructureItem = array(
-			'table' => $table,
-			'uid' => $row['uid'],
-			'field' => $field,
-			'config' => $config,
-			'localizationMode' => BackendUtility::getInlineLocalizationMode($table, $config),
-		);
-		// Extract FlexForm parts (if any) from element name, e.g. array('vDEF', 'lDEF', 'FlexField', 'vDEF')
-		if (!empty($parameterArray['itemFormElName'])) {
-			$flexFormParts = FormEngineUtility::extractFlexFormParts($parameterArray['itemFormElName']);
-			if ($flexFormParts !== NULL) {
-				$newStructureItem['flexform'] = $flexFormParts;
-			}
-		}
-		$inlineStackProcessor->pushStableStructureItem($newStructureItem);
+        $language = 0;
+        if (BackendUtility::isTableLocalizable($table)) {
+            $language = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
+        }
 
-		// e.g. data[<table>][<uid>][<field>]
-		$nameForm = $inlineStackProcessor->getCurrentStructureFormPrefix();
-		// e.g. data-<pid>-<table1>-<uid1>-<field1>-<table2>-<uid2>-<field2>
-		$nameObject = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
+        // Add the current inline job to the structure stack
+        $newStructureItem = array(
+            'table' => $table,
+            'uid' => $row['uid'],
+            'field' => $field,
+            'config' => $config,
+            'localizationMode' => BackendUtility::getInlineLocalizationMode($table, $config),
+        );
+        // Extract FlexForm parts (if any) from element name, e.g. array('vDEF', 'lDEF', 'FlexField', 'vDEF')
+        if (!empty($parameterArray['itemFormElName'])) {
+            $flexFormParts = $this->extractFlexFormParts($parameterArray['itemFormElName']);
+            if ($flexFormParts !== null) {
+                $newStructureItem['flexform'] = $flexFormParts;
+            }
+        }
+        $inlineStackProcessor->pushStableStructureItem($newStructureItem);
 
-		// Get the records related to this inline record
-		$inlineRelatedRecordResolver = GeneralUtility::makeInstance(InlineRelatedRecordResolver::class);
-		$relatedRecords = $inlineRelatedRecordResolver->getRelatedRecords($table, $field, $row, $parameterArray, $config, $this->globalOptions['inlineFirstPid']);
+        // Transport the flexform DS identifier fields to the FormAjaxInlineController
+        if (!empty($newStructureItem['flexform'])
+            && isset($this->data['processedTca']['columns'][$field]['config']['ds']['meta']['dataStructurePointers'])
+        ) {
+            $config['flexDataStructurePointers'] = $this->data['processedTca']['columns'][$field]['config']['ds']['meta']['dataStructurePointers'];
+        }
 
-		// Set the first and last record to the config array
-		$relatedRecordsUids = array_keys($relatedRecords['records']);
-		$config['inline']['first'] = reset($relatedRecordsUids);
-		$config['inline']['last'] = end($relatedRecordsUids);
+        // e.g. data[<table>][<uid>][<field>]
+        $nameForm = $inlineStackProcessor->getCurrentStructureFormPrefix();
+        // e.g. data-<pid>-<table1>-<uid1>-<field1>-<table2>-<uid2>-<field2>
+        $nameObject = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
 
-		$top = $inlineStackProcessor->getStructureLevel(0);
+        $config['inline']['first'] = false;
+        // @todo: This initialization shouldn't be required data provider should take care this is set?
+        if (!is_array($this->data['parameterArray']['fieldConf']['children'])) {
+            $this->data['parameterArray']['fieldConf']['children'] = array();
+        }
+        $firstChild = reset($this->data['parameterArray']['fieldConf']['children']);
+        if (isset($firstChild['databaseRow']['uid'])) {
+            $config['inline']['first'] = $firstChild['databaseRow']['uid'];
+        }
+        $config['inline']['last'] = false;
+        $lastChild = end($this->data['parameterArray']['fieldConf']['children']);
+        if (isset($lastChild['databaseRow']['uid'])) {
+            $config['inline']['last'] = $lastChild['databaseRow']['uid'];
+        }
 
-		$this->inlineData['config'][$nameObject] = array(
-			'table' => $foreign_table,
-			'md5' => md5($nameObject)
-		);
-		$this->inlineData['config'][$nameObject . '-' . $foreign_table] = array(
-			'min' => $minItems,
-			'max' => $maxItems,
-			'sortable' => $config['appearance']['useSortable'],
-			'top' => array(
-				'table' => $top['table'],
-				'uid' => $top['uid']
-			),
-			'context' => array(
-				'config' => $config,
-				'hmac' => GeneralUtility::hmac(serialize($config)),
-			),
-		);
-		$this->inlineData['nested'][$nameObject] = $this->globalOptions['tabAndInlineStack'];
+        $top = $inlineStackProcessor->getStructureLevel(0);
 
-		// If relations are required to be unique, get the uids that have already been used on the foreign side of the relation
-		if ($config['foreign_unique']) {
-			// If uniqueness *and* selector are set, they should point to the same field - so, get the configuration of one:
-			$selConfig = FormEngineUtility::getInlinePossibleRecordsSelectorConfig($config, $config['foreign_unique']);
-			// Get the used unique ids:
-			$uniqueIds = $this->getUniqueIds($relatedRecords['records'], $config, $selConfig['type'] == 'groupdb');
-			$possibleRecords = $this->getPossibleRecords($table, $field, $row, $config, 'foreign_unique');
-			$uniqueMax = $config['appearance']['useCombination'] || $possibleRecords === FALSE ? -1 : count($possibleRecords);
-			$this->inlineData['unique'][$nameObject . '-' . $foreign_table] = array(
-				'max' => $uniqueMax,
-				'used' => $uniqueIds,
-				'type' => $selConfig['type'],
-				'table' => $config['foreign_table'],
-				'elTable' => $selConfig['table'],
-				// element/record table (one step down in hierarchy)
-				'field' => $config['foreign_unique'],
-				'selector' => $selConfig['selector'],
-				'possible' => $this->getPossibleRecordsFlat($possibleRecords)
-			);
-		}
+        $this->inlineData['config'][$nameObject] = array(
+            'table' => $foreign_table,
+            'md5' => md5($nameObject)
+        );
+        $this->inlineData['config'][$nameObject . '-' . $foreign_table] = array(
+            'min' => $config['minitems'],
+            'max' => $config['maxitems'],
+            'sortable' => $config['appearance']['useSortable'],
+            'top' => array(
+                'table' => $top['table'],
+                'uid' => $top['uid']
+            ),
+            'context' => array(
+                'config' => $config,
+                'hmac' => GeneralUtility::hmac(serialize($config)),
+            ),
+        );
+        $this->inlineData['nested'][$nameObject] = $this->data['tabAndInlineStack'];
 
-		$resultArray['inlineData'] = $this->inlineData;
+        $uniqueMax = 0;
+        $uniqueIds = [];
 
-		// Render the localization links
-		$localizationLinks = '';
-		if ($language > 0 && $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] > 0 && MathUtility::canBeInterpretedAsInteger($row['uid'])) {
-			// Add the "Localize all records" link before all child records:
-			if (isset($config['appearance']['showAllLocalizationLink']) && $config['appearance']['showAllLocalizationLink']) {
-				$localizationLinks .= ' ' . $this->getLevelInteractionLink('localize', $nameObject . '-' . $foreign_table, $config);
-			}
-			// Add the "Synchronize with default language" link before all child records:
-			if (isset($config['appearance']['showSynchronizationLink']) && $config['appearance']['showSynchronizationLink']) {
-				$localizationLinks .= ' ' . $this->getLevelInteractionLink('synchronize', $nameObject . '-' . $foreign_table, $config);
-			}
-		}
-		// If it's required to select from possible child records (reusable children), add a selector box
-		if ($config['foreign_selector'] && $config['appearance']['showPossibleRecordsSelector'] !== FALSE) {
-			// If not already set by the foreign_unique, set the possibleRecords here and the uniqueIds to an empty array
-			if (!$config['foreign_unique']) {
-				$possibleRecords = $this->getPossibleRecords($table, $field, $row, $config);
-				$uniqueIds = array();
-			}
-			$selectorBox = $this->renderPossibleRecordsSelector($possibleRecords, $config, $uniqueIds);
-			$html .= $selectorBox . $localizationLinks;
-		}
-		// Render the level links (create new record):
-		$levelLinks = $this->getLevelInteractionLink('newRecord', $nameObject . '-' . $foreign_table, $config);
+        if ($config['foreign_unique']) {
+            // Add inlineData['unique'] with JS unique configuration
+            $type = $config['selectorOrUniqueConfiguration']['config']['type'] === 'select' ? 'select' : 'groupdb';
+            foreach ($parameterArray['fieldConf']['children'] as $child) {
+                // Determine used unique ids, skip not localized records
+                if (!$child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
+                    $value = $child['databaseRow'][$config['foreign_unique']];
+                    // We're assuming there is only one connected value here for both select and group
+                    if ($type === 'select') {
+                        // A resolved select field is an array - take first value
+                        $value = $value['0'];
+                    } else {
+                        // A group field is still a list with pipe separated uid|tableName
+                        $valueParts = GeneralUtility::trimExplode('|', $value);
+                        $itemParts = explode('_', $valueParts[0]);
+                        $value = array(
+                            'uid' => array_pop($itemParts),
+                            'table' => implode('_', $itemParts)
+                        );
+                    }
+                    // @todo: This is weird, $value has different structure for group and select fields?
+                    $uniqueIds[$child['databaseRow']['uid']] = $value;
+                }
+            }
+            $possibleRecords = $config['selectorOrUniquePossibleRecords'];
+            $possibleRecordsUidToTitle = [];
+            foreach ($possibleRecords as $possibleRecord) {
+                $possibleRecordsUidToTitle[$possibleRecord[1]] = $possibleRecord[0];
+            }
+            $uniqueMax = $config['appearance']['useCombination'] || empty($possibleRecords) ? -1 : count($possibleRecords);
+            $this->inlineData['unique'][$nameObject . '-' . $foreign_table] = array(
+                'max' => $uniqueMax,
+                'used' => $uniqueIds,
+                'type' => $type,
+                'table' => $foreign_table,
+                'elTable' => $config['selectorOrUniqueConfiguration']['foreignTable'],
+                'field' => $config['foreign_unique'],
+                'selector' => $config['selectorOrUniqueConfiguration']['isSelector'] ? $type : false,
+                'possible' => $possibleRecordsUidToTitle,
+            );
+        }
 
-		// Wrap all inline fields of a record with a <div> (like a container)
-		$html .= '<div class="form-group" id="' . $nameObject . '">';
-		// Define how to show the "Create new record" link - if there are more than maxitems, hide it
-		if ($relatedRecords['count'] >= $maxItems || $uniqueMax > 0 && $relatedRecords['count'] >= $uniqueMax) {
-			$config['inline']['inlineNewButtonStyle'] = 'display: none;';
-		}
-		// Add the level links before all child records:
-		if ($config['appearance']['levelLinksPosition'] === 'both' || $config['appearance']['levelLinksPosition'] === 'top') {
-			$html .= '<div class="form-group">' . $levelLinks . $localizationLinks . '</div>';
-		}
-		$title = $languageService->sL($parameterArray['fieldConf']['label']);
-		$html .= '<div class="panel-group panel-hover" data-title="' . htmlspecialchars($title) . '" id="' . $nameObject . '_records">';
+        $resultArray['inlineData'] = $this->inlineData;
 
-		$relationList = array();
-		if (!empty($relatedRecords['records'])) {
-			foreach ($relatedRecords['records'] as $rec) {
-				$options = $this->globalOptions;
-				$options['inlineRelatedRecordToRender'] = $rec;
-				$options['inlineRelatedRecordConfig'] = $config;
-				$options['inlineData'] = $this->inlineData;
-				$options['inlineStructure'] = $inlineStackProcessor->getStructure();
-				/** @var InlineRecordContainer $inlineRecordContainer */
-				$inlineRecordContainer = GeneralUtility::makeInstance(InlineRecordContainer::class);
-				$childArray = $inlineRecordContainer->setGlobalOptions($options)->render();
-				$html .= $childArray['html'];
-				$childArray['html'] = '';
-				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childArray);
-				if (!isset($rec['__virtual']) || !$rec['__virtual']) {
-					$relationList[] = $rec['uid'];
-				}
-			}
-		}
-		$html .= '</div>';
-		// Add the level links after all child records:
-		if ($config['appearance']['levelLinksPosition'] ===  'both' || $config['appearance']['levelLinksPosition'] === 'bottom') {
-			$html .= $levelLinks . $localizationLinks;
-		}
-		if (is_array($config['customControls'])) {
-			$html .= '<div id="' . $nameObject . '_customControls">';
-			foreach ($config['customControls'] as $customControlConfig) {
-				$parameters = array(
-					'table' => $table,
-					'field' => $field,
-					'row' => $row,
-					'nameObject' => $nameObject,
-					'nameForm' => $nameForm,
-					'config' => $config
-				);
-				$html .= GeneralUtility::callUserFunction($customControlConfig, $parameters, $this);
-			}
-			$html .= '</div>';
-		}
-		// Add Drag&Drop functions for sorting to FormEngine::$additionalJS_post
-		if (count($relationList) > 1 && $config['appearance']['useSortable']) {
-			$resultArray['additionalJavaScriptPost'][] = 'inline.createDragAndDropSorting("' . $nameObject . '_records' . '");';
-		}
-		// Publish the uids of the child records in the given order to the browser
-		$html .= '<input type="hidden" name="' . $nameForm . '" value="' . implode(',', $relationList) . '" class="inlineRecord" />';
-		// Close the wrap for all inline fields (container)
-		$html .= '</div>';
+        // @todo: It might be a good idea to have something like "isLocalizedRecord" or similar set by a data provider
+        $isLocalizedParent = $language > 0
+            && $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']][0] > 0
+            && MathUtility::canBeInterpretedAsInteger($row['uid']);
+        $numberOfFullLocalizedChildren = 0;
+        $numberOfNotYetLocalizedChildren = 0;
+        foreach ($this->data['parameterArray']['fieldConf']['children'] as $child) {
+            if (!$child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
+                $numberOfFullLocalizedChildren ++;
+            }
+            if ($isLocalizedParent && $child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
+                $numberOfNotYetLocalizedChildren ++;
+            }
+        }
 
-		$resultArray['html'] = $html;
-		return $resultArray;
-	}
+        // Render the localization links if needed
+        $localizationLinks = '';
+        if ($numberOfNotYetLocalizedChildren) {
+            // Add the "Localize all records" link before all child records:
+            if (isset($config['appearance']['showAllLocalizationLink']) && $config['appearance']['showAllLocalizationLink']) {
+                $localizationLinks = ' ' . $this->getLevelInteractionLink('localize', $nameObject . '-' . $foreign_table, $config);
+            }
+            // Add the "Synchronize with default language" link before all child records:
+            if (isset($config['appearance']['showSynchronizationLink']) && $config['appearance']['showSynchronizationLink']) {
+                $localizationLinks .= ' ' . $this->getLevelInteractionLink('synchronize', $nameObject . '-' . $foreign_table, $config);
+            }
+        }
 
-	/**
-	 * Gets the uids of a select/selector that should be unique and have already been used.
-	 *
-	 * @param array $records All inline records on this level
-	 * @param array $conf The TCA field configuration of the inline field to be rendered
-	 * @param bool $splitValue For usage with group/db, values come like "tx_table_123|Title%20abc", but we need "tx_table" and "123
-	 * @return array The uids, that have been used already and should be used unique
-	 */
-	protected function getUniqueIds($records, $conf = array(), $splitValue = FALSE) {
-		$uniqueIds = array();
-		if (isset($conf['foreign_unique']) && $conf['foreign_unique'] && count($records)) {
-			foreach ($records as $rec) {
-				// Skip virtual records (e.g. shown in localization mode):
-				if (!isset($rec['__virtual']) || !$rec['__virtual']) {
-					$value = $rec[$conf['foreign_unique']];
-					// Split the value and extract the table and uid:
-					if ($splitValue) {
-						$valueParts = GeneralUtility::trimExplode('|', $value);
-						$itemParts = explode('_', $valueParts[0]);
-						$value = array(
-							'uid' => array_pop($itemParts),
-							'table' => implode('_', $itemParts)
-						);
-					}
-					$uniqueIds[$rec['uid']] = $value;
-				}
-			}
-		}
-		return $uniqueIds;
-	}
+        // Define how to show the "Create new record" link - if there are more than maxitems, hide it
+        if ($numberOfFullLocalizedChildren >= $config['maxitems'] || $uniqueMax > 0 && $numberOfFullLocalizedChildren >= $uniqueMax) {
+            $config['inline']['inlineNewButtonStyle'] = 'display: none;';
+            $config['inline']['inlineNewRelationButtonStyle'] = 'display: none;';
+            $config['inline']['inlineOnlineMediaAddButtonStyle'] = 'display: none;';
+        }
 
-	/**
-	 * Get possible records.
-	 * Copied from FormEngine and modified.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $conf An array with additional configuration options.
-	 * @param string $checkForConfField For which field in the foreign_table the possible records should be fetched
-	 * @return mixed Array of possible record items; FALSE if type is "group/db", then everything could be "possible
-	 */
-	protected function getPossibleRecords($table, $field, $row, $conf, $checkForConfField = 'foreign_selector') {
-		$backendUser = $this->getBackendUserAuthentication();
-		$languageService = $this->getLanguageService();
+        // Render the level links (create new record):
+        $levelLinks = '';
+        if (!empty($config['appearance']['enabledControls']['new'])) {
+            $levelLinks = $this->getLevelInteractionLink('newRecord', $nameObject . '-' . $foreign_table, $config);
+        }
+        // Wrap all inline fields of a record with a <div> (like a container)
+        $html = '<div class="form-group" id="' . $nameObject . '">';
+        // Add the level links before all child records:
+        if ($config['appearance']['levelLinksPosition'] === 'both' || $config['appearance']['levelLinksPosition'] === 'top') {
+            $html .= '<div class="form-group t3js-formengine-validation-marker">' . $levelLinks . $localizationLinks . '</div>';
+        }
 
-		// ctrl configuration from TCA:
-		$tcaTableCtrl = $GLOBALS['TCA'][$table]['ctrl'];
-		// Field configuration from TCA:
-		$foreign_check = $conf[$checkForConfField];
-		$foreignConfig = FormEngineUtility::getInlinePossibleRecordsSelectorConfig($conf, $foreign_check);
-		$PA = $foreignConfig['PA'];
-		$config = $PA['fieldConf']['config'];
-		if ($foreignConfig['type'] == 'select') {
-			// Getting the selector box items from the system
-			$selItems = FormEngineUtility::addSelectOptionsToItemArray(
-				FormEngineUtility::initItemArray($PA['fieldConf']),
-				$PA['fieldConf'],
-				FormEngineUtility::getTSconfigForTableRow($table, $row),
-				$field
-			);
+        // If it's required to select from possible child records (reusable children), add a selector box
+        if ($config['foreign_selector'] && $config['appearance']['showPossibleRecordsSelector'] !== false) {
+            if ($config['selectorOrUniqueConfiguration']['config']['type'] === 'select') {
+                $selectorBox = $this->renderPossibleRecordsSelectorTypeSelect($config, $uniqueIds);
+            } else {
+                $selectorBox = $this->renderPossibleRecordsSelectorTypeGroupDB($config);
+            }
+            $html .= $selectorBox . $localizationLinks;
+        }
 
-			// Possibly filter some items:
-			$selItems = ArrayUtility::keepItemsInArray(
-				$selItems,
-				$PA['fieldTSConfig']['keepItems'],
-				function ($value) {
-					return $value[1];
-				}
-			);
+        $title = $languageService->sL(trim($parameterArray['fieldConf']['label']));
+        $html .= '<div class="panel-group panel-hover" data-title="' . htmlspecialchars($title) . '" id="' . $nameObject . '_records">';
 
-			// Possibly add some items:
-			$selItems = FormEngineUtility::addItems($selItems, $PA['fieldTSConfig']['addItems.']);
-			if (isset($config['itemsProcFunc']) && $config['itemsProcFunc']) {
-				$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
-				$selItems = $dataPreprocessor->procItems($selItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $field);
-			}
-			// Possibly remove some items:
-			$removeItems = GeneralUtility::trimExplode(',', $PA['fieldTSConfig']['removeItems'], TRUE);
-			foreach ($selItems as $tk => $p) {
-				// Checking languages and authMode:
-				$languageDeny = $tcaTableCtrl['languageField'] && (string)$tcaTableCtrl['languageField'] === $field && !$backendUser->checkLanguageAccess($p[1]);
-				$authModeDeny = $config['type'] == 'select' && $config['authMode'] && !$backendUser->checkAuthMode($table, $field, $p[1], $config['authMode']);
-				if (in_array($p[1], $removeItems) || $languageDeny || $authModeDeny) {
-					unset($selItems[$tk]);
-				} else {
-					if (isset($PA['fieldTSConfig']['altLabels.'][$p[1]])) {
-						$selItems[$tk][0] = htmlspecialchars($languageService->sL($PA['fieldTSConfig']['altLabels.'][$p[1]]));
-					}
-					if (isset($PA['fieldTSConfig']['altIcons.'][$p[1]])) {
-						$selItems[$tk][2] = $PA['fieldTSConfig']['altIcons.'][$p[1]];
-					}
-				}
-				// Removing doktypes with no access:
-				if (($table === 'pages' || $table === 'pages_language_overlay') && $field === 'doktype') {
-					if (!($backendUser->isAdmin() || GeneralUtility::inList($backendUser->groupData['pagetypes_select'], $p[1]))) {
-						unset($selItems[$tk]);
-					}
-				}
-			}
-		} else {
-			$selItems = FALSE;
-		}
-		return $selItems;
-	}
+        $sortableRecordUids = [];
+        foreach ($this->data['parameterArray']['fieldConf']['children'] as $options) {
+            $options['inlineParentUid'] = $row['uid'];
+            $options['inlineFirstPid'] = $this->data['inlineFirstPid'];
+            // @todo: this can be removed if this container no longer sets additional info to $config
+            $options['inlineParentConfig'] = $config;
+            $options['inlineData'] = $this->inlineData;
+            $options['inlineStructure'] = $inlineStackProcessor->getStructure();
+            $options['inlineExpandCollapseStateArray'] = $this->data['inlineExpandCollapseStateArray'];
+            $options['renderType'] = 'inlineRecordContainer';
+            $childResult = $this->nodeFactory->create($options)->render();
+            $html .= $childResult['html'];
+            $childArray['html'] = '';
+            $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childResult);
+            if (!$options['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
+                // Don't add record to list of "valid" uids if it is only the default
+                // language record of a not yet localized child
+                $sortableRecordUids[] = $options['databaseRow']['uid'];
+            }
+        }
 
-	/**
-	 * Makes a flat array from the $possibleRecords array.
-	 * The key of the flat array is the value of the record,
-	 * the value of the flat array is the label of the record.
-	 *
-	 * @param array $possibleRecords The possibleRecords array (for select fields)
-	 * @return mixed A flat array with key=uid, value=label; if $possibleRecords isn't an array, FALSE is returned.
-	 */
-	protected function getPossibleRecordsFlat($possibleRecords) {
-		$flat = FALSE;
-		if (is_array($possibleRecords)) {
-			$flat = array();
-			foreach ($possibleRecords as $record) {
-				$flat[$record[1]] = $record[0];
-			}
-		}
-		return $flat;
-	}
+        $html .= '</div>';
 
-	/**
-	 * Creates the HTML code of a general link to be used on a level of inline children.
-	 * The possible keys for the parameter $type are 'newRecord', 'localize' and 'synchronize'.
-	 *
-	 * @param string $type The link type, values are 'newRecord', 'localize' and 'synchronize'.
-	 * @param string $objectPrefix The "path" to the child record to create (e.g. 'data-parentPageId-partenTable-parentUid-parentField-childTable]')
-	 * @param array $conf TCA configuration of the parent(!) field
-	 * @return string The HTML code of the new link, wrapped in a div
-	 */
-	protected function getLevelInteractionLink($type, $objectPrefix, $conf = array()) {
-		$languageService = $this->getLanguageService();
-		$nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
-		$attributes = array();
-		switch ($type) {
-			case 'newRecord':
-				$title = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew', TRUE);
-				$icon = 'actions-document-new';
-				$className = 'typo3-newRecordLink';
-				$attributes['class'] = 'btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
-				$attributes['onclick'] = 'return inline.createNewRecord(' . GeneralUtility::quoteJSvalue($objectPrefix) . ')';
-				if (!empty($conf['inline']['inlineNewButtonStyle'])) {
-					$attributes['style'] = $conf['inline']['inlineNewButtonStyle'];
-				}
-				if (!empty($conf['appearance']['newRecordLinkAddTitle'])) {
-					$title = sprintf(
-						$languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew.link', TRUE),
-						$languageService->sL($GLOBALS['TCA'][$conf['foreign_table']]['ctrl']['title'], TRUE)
-					);
-				} elseif (isset($conf['appearance']['newRecordLinkTitle']) && $conf['appearance']['newRecordLinkTitle'] !== '') {
-					$title = $languageService->sL($conf['appearance']['newRecordLinkTitle'], TRUE);
-				}
-				break;
-			case 'localize':
-				$title = $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localizeAllRecords', 1);
-				$icon = 'actions-document-localize';
-				$className = 'typo3-localizationLink';
-				$attributes['class'] = 'btn btn-default';
-				$attributes['onclick'] = 'return inline.synchronizeLocalizeRecords(' . GeneralUtility::quoteJSvalue($objectPrefix) . ', \'localize\')';
-				break;
-			case 'synchronize':
-				$title = $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:synchronizeWithOriginalLanguage', TRUE);
-				$icon = 'actions-document-synchronize';
-				$className = 'typo3-synchronizationLink';
-				$attributes['class'] = 'btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
-				$attributes['onclick'] = 'return inline.synchronizeLocalizeRecords(' . GeneralUtility::quoteJSvalue($objectPrefix) . ', \'synchronize\')';
-				break;
-			default:
-				$title = '';
-				$icon = '';
-				$className = '';
-		}
-		// Create the link:
-		$icon = $icon ? IconUtility::getSpriteIcon($icon, array('title' => htmlspecialchars($title))) : '';
-		$link = $this->wrapWithAnchor($icon . $title, '#', $attributes);
-		return '<div' . ($className ? ' class="' . $className . '"' : '') . '>' . $link . '</div>';
-	}
+        // Add the level links after all child records:
+        if ($config['appearance']['levelLinksPosition'] ===  'both' || $config['appearance']['levelLinksPosition'] === 'bottom') {
+            $html .= $levelLinks . $localizationLinks;
+        }
+        if (is_array($config['customControls'])) {
+            $html .= '<div id="' . $nameObject . '_customControls">';
+            foreach ($config['customControls'] as $customControlConfig) {
+                $parameters = array(
+                    'table' => $table,
+                    'field' => $field,
+                    'row' => $row,
+                    'nameObject' => $nameObject,
+                    'nameForm' => $nameForm,
+                    'config' => $config
+                );
+                $html .= GeneralUtility::callUserFunction($customControlConfig, $parameters, $this);
+            }
+            $html .= '</div>';
+        }
+        // Add Drag&Drop functions for sorting to FormEngine::$additionalJS_post
+        if (count($sortableRecordUids) > 1 && $config['appearance']['useSortable']) {
+            $resultArray['additionalJavaScriptPost'][] = 'inline.createDragAndDropSorting("' . $nameObject . '_records' . '");';
+        }
+        $resultArray['requireJsModules'] = array_merge($resultArray['requireJsModules'], $this->requireJsModules);
 
-	/**
-	 * Wraps a text with an anchor and returns the HTML representation.
-	 *
-	 * @param string $text The text to be wrapped by an anchor
-	 * @param string $link  The link to be used in the anchor
-	 * @param array $attributes Array of attributes to be used in the anchor
-	 * @return string The wrapped text as HTML representation
-	 */
-	protected function wrapWithAnchor($text, $link, $attributes = array()) {
-		$link = trim($link);
-		$result = '<a href="' . ($link ?: '#') . '"';
-		foreach ($attributes as $key => $value) {
-			$result .= ' ' . $key . '="' . htmlspecialchars(trim($value)) . '"';
-		}
-		$result .= '>' . $text . '</a>';
-		return $result;
-	}
+        // Publish the uids of the child records in the given order to the browser
+        $html .= '<input type="hidden" name="' . $nameForm . '" value="' . implode(',', $sortableRecordUids) . '" '
+            . $this->getValidationDataAsDataAttribute(array('type' => 'inline', 'minitems' => $config['minitems'], 'maxitems' => $config['maxitems']))
+            . ' class="inlineRecord" />';
+        // Close the wrap for all inline fields (container)
+        $html .= '</div>';
 
-	/**
-	 * Get a selector as used for the select type, to select from all available
-	 * records and to create a relation to the embedding record (e.g. like MM).
-	 *
-	 * @param array $selItems Array of all possible records
-	 * @param array $conf TCA configuration of the parent(!) field
-	 * @param array $uniqueIds The uids that have already been used and should be unique
-	 * @return string A HTML <select> box with all possible records
-	 */
-	protected function renderPossibleRecordsSelector($selItems, $conf, $uniqueIds = array()) {
-		$foreign_selector = $conf['foreign_selector'];
-		$selConfig = FormEngineUtility::getInlinePossibleRecordsSelectorConfig($conf, $foreign_selector);
-		$item  = '';
-		if ($selConfig['type'] === 'select') {
-			$item = $this->renderPossibleRecordsSelectorTypeSelect($selItems, $conf, $selConfig['PA'], $uniqueIds);
-		} elseif ($selConfig['type'] === 'groupdb') {
-			$item = $this->renderPossibleRecordsSelectorTypeGroupDB($conf, $selConfig['PA']);
-		}
-		return $item;
-	}
+        $resultArray['html'] = $html;
+        return $resultArray;
+    }
 
-	/**
-	 * Generate a link that opens an element browser in a new window.
-	 * For group/db there is no way to use a "selector" like a <select>|</select>-box.
-	 *
-	 * @param array $conf TCA configuration of the parent(!) field
-	 * @param array $PA An array with additional configuration options
-	 * @return string A HTML link that opens an element browser in a new window
-	 */
-	protected function renderPossibleRecordsSelectorTypeGroupDB($conf, &$PA) {
-		$backendUser = $this->getBackendUserAuthentication();
+    /**
+     * Creates the HTML code of a general link to be used on a level of inline children.
+     * The possible keys for the parameter $type are 'newRecord', 'localize' and 'synchronize'.
+     *
+     * @param string $type The link type, values are 'newRecord', 'localize' and 'synchronize'.
+     * @param string $objectPrefix The "path" to the child record to create (e.g. 'data-parentPageId-partenTable-parentUid-parentField-childTable]')
+     * @param array $conf TCA configuration of the parent(!) field
+     * @return string The HTML code of the new link, wrapped in a div
+     */
+    protected function getLevelInteractionLink($type, $objectPrefix, $conf = array())
+    {
+        $languageService = $this->getLanguageService();
+        $nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
+        $attributes = array();
+        switch ($type) {
+            case 'newRecord':
+                $title = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew', true);
+                $icon = 'actions-document-new';
+                $className = 'typo3-newRecordLink';
+                $attributes['class'] = 'btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
+                $attributes['onclick'] = 'return inline.createNewRecord(' . GeneralUtility::quoteJSvalue($objectPrefix) . ')';
+                if (!empty($conf['inline']['inlineNewButtonStyle'])) {
+                    $attributes['style'] = $conf['inline']['inlineNewButtonStyle'];
+                }
+                if (!empty($conf['appearance']['newRecordLinkAddTitle'])) {
+                    $title = sprintf(
+                        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew.link', true),
+                        $languageService->sL($GLOBALS['TCA'][$conf['foreign_table']]['ctrl']['title'], true)
+                    );
+                } elseif (isset($conf['appearance']['newRecordLinkTitle']) && $conf['appearance']['newRecordLinkTitle'] !== '') {
+                    $title = $languageService->sL($conf['appearance']['newRecordLinkTitle'], true);
+                }
+                break;
+            case 'localize':
+                $title = $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localizeAllRecords', true);
+                $icon = 'actions-document-localize';
+                $className = 'typo3-localizationLink';
+                $attributes['class'] = 'btn btn-default';
+                $attributes['onclick'] = 'return inline.synchronizeLocalizeRecords(' . GeneralUtility::quoteJSvalue($objectPrefix) . ', \'localize\')';
+                break;
+            case 'synchronize':
+                $title = $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:synchronizeWithOriginalLanguage', true);
+                $icon = 'actions-document-synchronize';
+                $className = 'typo3-synchronizationLink';
+                $attributes['class'] = 'btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
+                $attributes['onclick'] = 'return inline.synchronizeLocalizeRecords(' . GeneralUtility::quoteJSvalue($objectPrefix) . ', \'synchronize\')';
+                break;
+            default:
+                $title = '';
+                $icon = '';
+                $className = '';
+        }
+        // Create the link:
+        $icon = $icon ? $this->iconFactory->getIcon($icon, Icon::SIZE_SMALL)->render() : '';
+        $link = $this->wrapWithAnchor($icon . $title, '#', $attributes);
+        return '<div' . ($className ? ' class="' . $className . '"' : '') . 'title="' . $title . '">' . $link . '</div>';
+    }
 
-		$config = $PA['fieldConf']['config'];
-		ArrayUtility::mergeRecursiveWithOverrule($config, $conf);
-		$foreign_table = $config['foreign_table'];
-		$allowed = $config['allowed'];
-		$objectPrefix = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']) . '-' . $foreign_table;
-		$mode = 'db';
-		$showUpload = FALSE;
-		if (!empty($config['appearance']['createNewRelationLinkTitle'])) {
-			$createNewRelationText = $this->getLanguageService()->sL($config['appearance']['createNewRelationLinkTitle'], TRUE);
-		} else {
-			$createNewRelationText = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.createNewRelation', TRUE);
-		}
-		if (is_array($config['appearance'])) {
-			if (isset($config['appearance']['elementBrowserType'])) {
-				$mode = $config['appearance']['elementBrowserType'];
-			}
-			if ($mode === 'file') {
-				$showUpload = TRUE;
-			}
-			if (isset($config['appearance']['fileUploadAllowed'])) {
-				$showUpload = (bool)$config['appearance']['fileUploadAllowed'];
-			}
-			if (isset($config['appearance']['elementBrowserAllowed'])) {
-				$allowed = $config['appearance']['elementBrowserAllowed'];
-			}
-		}
-		$browserParams = '|||' . $allowed . '|' . $objectPrefix . '|inline.checkUniqueElement||inline.importElement';
-		$onClick = 'setFormValueOpenBrowser(' . GeneralUtility::quoteJSvalue($mode) . ', ' . GeneralUtility::quoteJSvalue($browserParams) . '); return false;';
+    /**
+     * Wraps a text with an anchor and returns the HTML representation.
+     *
+     * @param string $text The text to be wrapped by an anchor
+     * @param string $link  The link to be used in the anchor
+     * @param array $attributes Array of attributes to be used in the anchor
+     * @return string The wrapped text as HTML representation
+     */
+    protected function wrapWithAnchor($text, $link, $attributes = array())
+    {
+        $link = trim($link);
+        $result = '<a href="' . ($link ?: '#') . '"';
+        foreach ($attributes as $key => $value) {
+            $result .= ' ' . $key . '="' . htmlspecialchars(trim($value)) . '"';
+        }
+        $result .= '>' . $text . '</a>';
+        return $result;
+    }
 
-		$item = '
-			<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($onClick) . '">
-				' . IconUtility::getSpriteIcon('actions-insert-record', array('title' => $createNewRelationText)) . '
+    /**
+     * Generate a link that opens an element browser in a new window.
+     * For group/db there is no way to use a "selector" like a <select>|</select>-box.
+     *
+     * @param array $inlineConfiguration TCA inline configuration of the parent(!) field
+     * @return string A HTML link that opens an element browser in a new window
+     */
+    protected function renderPossibleRecordsSelectorTypeGroupDB(array $inlineConfiguration)
+    {
+        $backendUser = $this->getBackendUserAuthentication();
+        $languageService = $this->getLanguageService();
+
+        $groupFieldConfiguration = $inlineConfiguration['selectorOrUniqueConfiguration']['config'];
+
+        $foreign_table = $inlineConfiguration['foreign_table'];
+        $allowed = $groupFieldConfiguration['allowed'];
+        $objectPrefix = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']) . '-' . $foreign_table;
+        $nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
+        $mode = 'db';
+        $showUpload = false;
+        if (!empty($inlineConfiguration['appearance']['createNewRelationLinkTitle'])) {
+            $createNewRelationText = $languageService->sL($inlineConfiguration['appearance']['createNewRelationLinkTitle'], true);
+        } else {
+            $createNewRelationText = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createNewRelation', true);
+        }
+        if (is_array($groupFieldConfiguration['appearance'])) {
+            if (isset($groupFieldConfiguration['appearance']['elementBrowserType'])) {
+                $mode = $groupFieldConfiguration['appearance']['elementBrowserType'];
+            }
+            if ($mode === 'file') {
+                $showUpload = true;
+            }
+            if (isset($inlineConfiguration['appearance']['fileUploadAllowed'])) {
+                $showUpload = (bool)$inlineConfiguration['appearance']['fileUploadAllowed'];
+            }
+            if (isset($groupFieldConfiguration['appearance']['elementBrowserAllowed'])) {
+                $allowed = $groupFieldConfiguration['appearance']['elementBrowserAllowed'];
+            }
+        }
+        $browserParams = '|||' . $allowed . '|' . $objectPrefix . '|inline.checkUniqueElement||inline.importElement';
+        $onClick = 'setFormValueOpenBrowser(' . GeneralUtility::quoteJSvalue($mode) . ', ' . GeneralUtility::quoteJSvalue($browserParams) . '); return false;';
+
+        $buttonStyle = '';
+        if (isset($inlineConfiguration['inline']['inlineNewRelationButtonStyle'])) {
+            $buttonStyle = ' style="' . $inlineConfiguration['inline']['inlineNewRelationButtonStyle'] . '"';
+        }
+
+        $item = '
+			<a href="#" class="btn btn-default inlineNewRelationButton ' . $this->inlineData['config'][$nameObject]['md5'] . '"
+				' . $buttonStyle . ' onclick="' . htmlspecialchars($onClick) . '" title="' . $createNewRelationText . '">
+				' . $this->iconFactory->getIcon('actions-insert-record', Icon::SIZE_SMALL)->render() . '
 				' . $createNewRelationText . '
 			</a>';
-
-		$isDirectFileUploadEnabled = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
-		if ($showUpload && $isDirectFileUploadEnabled) {
-			$folder = $backendUser->getDefaultUploadFolder();
-			if (
-				$folder instanceof Folder
-				&& $folder->checkActionPermission('add')
-			) {
-				$maxFileSize = GeneralUtility::getMaxUploadFileSize() * 1024;
-				$item .= ' <a href="#" class="btn btn-default t3-drag-uploader"
-					style="display:none"
-					data-dropzone-target="#' . htmlspecialchars($this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid'])) . '"
+        $isDirectFileUploadEnabled = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
+        $allowedArray = GeneralUtility::trimExplode(',', $allowed, true);
+        $onlineMediaAllowed = OnlineMediaHelperRegistry::getInstance()->getSupportedFileExtensions();
+        if (!empty($allowedArray)) {
+            $onlineMediaAllowed = array_intersect($allowedArray, $onlineMediaAllowed);
+        }
+        if ($showUpload && $isDirectFileUploadEnabled) {
+            $folder = $backendUser->getDefaultUploadFolder(
+                $this->data['parentPageRow']['uid'],
+                $this->data['tableName'],
+                $this->data['fieldName']
+            );
+            if (
+                $folder instanceof Folder
+                && $folder->checkActionPermission('add')
+            ) {
+                $maxFileSize = GeneralUtility::getMaxUploadFileSize() * 1024;
+                $item .= ' <a href="#" class="btn btn-default t3js-drag-uploader inlineNewFileUploadButton ' . $this->inlineData['config'][$nameObject]['md5'] . '"
+					' . $buttonStyle . '
+					data-dropzone-target="#' . htmlspecialchars($this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid'])) . '"
 					data-insert-dropzone-before="1"
 					data-file-irre-object="' . htmlspecialchars($objectPrefix) . '"
 					data-file-allowed="' . htmlspecialchars($allowed) . '"
 					data-target-folder="' . htmlspecialchars($folder->getCombinedIdentifier()) . '"
 					data-max-file-size="' . htmlspecialchars($maxFileSize) . '"
-					><span class="t3-icon t3-icon-actions t3-icon-actions-edit t3-icon-edit-upload">&nbsp;</span>';
-				$item .= $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.select-and-submit', TRUE);
-				$item .= '</a>';
-			}
-		}
+					>';
+                $item .= $this->iconFactory->getIcon('actions-upload', Icon::SIZE_SMALL)->render() . ' ';
+                $item .= $languageService->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.select-and-submit', true);
+                $item .= '</a>';
 
-		$item = '<div class="form-control-wrap">' . $item . '</div>';
-		$allowedList = '';
-		$allowedArray = GeneralUtility::trimExplode(',', $allowed, TRUE);
-		$allowedLabel = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.allowedFileExtensions', TRUE);
-		foreach ($allowedArray as $allowedItem) {
-			$allowedList .= '<span class="label label-success">' . strtoupper($allowedItem) . '</span> ';
-		}
-		if (!empty($allowedList)) {
-			$item .= '<div class="help-block">' . $allowedLabel . '<br>' . $allowedList . '</div>';
-		}
-		$item = '<div class="form-group">' . $item . '</div>';
-		return $item;
-	}
+                $this->requireJsModules[] = ['TYPO3/CMS/Backend/DragUploader' => 'function(dragUploader){dragUploader.initialize()}'];
+                if (!empty($onlineMediaAllowed)) {
+                    $buttonStyle = '';
+                    if (isset($inlineConfiguration['inline']['inlineOnlineMediaAddButtonStyle'])) {
+                        $buttonStyle = ' style="' . $inlineConfiguration['inline']['inlineOnlineMediaAddButtonStyle'] . '"';
+                    }
+                    $this->requireJsModules[] = 'TYPO3/CMS/Backend/OnlineMedia';
+                    $buttonText = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.button', true);
+                    $placeholder = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.placeholder', true);
+                    $buttonSubmit = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.submit', true);
+                    $item .= '
+						<span class="btn btn-default t3js-online-media-add-btn ' . $this->inlineData['config'][$nameObject]['md5'] . '"
+							' . $buttonStyle . '
+							data-file-irre-object="' . htmlspecialchars($objectPrefix) . '"
+							data-online-media-allowed="' . htmlspecialchars(implode(',', $onlineMediaAllowed)) . '"
+							data-target-folder="' . htmlspecialchars($folder->getCombinedIdentifier()) . '"
+							title="' . $buttonText . '"
+							data-btn-submit="' . $buttonSubmit . '"
+							data-placeholder="' . $placeholder . '"
+							>
+							' . $this->iconFactory->getIcon('actions-online-media-add', Icon::SIZE_SMALL)->render() . '
+							' . $buttonText . '</span>';
+                }
+            }
+        }
 
-	/**
-	 * Get a selector as used for the select type, to select from all available
-	 * records and to create a relation to the embedding record (e.g. like MM).
-	 *
-	 * @param array $selItems Array of all possible records
-	 * @param array $conf TCA configuration of the parent(!) field
-	 * @param array $PA An array with additional configuration options
-	 * @param array $uniqueIds The uids that have already been used and should be unique
-	 * @return string A HTML <select> box with all possible records
-	 */
-	protected function renderPossibleRecordsSelectorTypeSelect($selItems, $conf, &$PA, $uniqueIds = array()) {
-		$foreign_table = $conf['foreign_table'];
-		$foreign_selector = $conf['foreign_selector'];
-		$PA = array();
-		$PA['fieldConf'] = $GLOBALS['TCA'][$foreign_table]['columns'][$foreign_selector];
-		$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($foreign_table, array(), $foreign_selector);
-		$config = $PA['fieldConf']['config'];
-		$item = '';
-		// @todo $disabled is not present - should be read from config?
-		$disabled = FALSE;
-		if (!$disabled) {
-			$nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);;
-			// Create option tags:
-			$opt = array();
-			$styleAttrValue = '';
-			foreach ($selItems as $p) {
-				if ($config['iconsInOptionTags']) {
-					$styleAttrValue = FormEngineUtility::optionTagStyle($p[2]);
-				}
-				if (!in_array($p[1], $uniqueIds)) {
-					$opt[] = '<option value="' . htmlspecialchars($p[1]) . '"' . ($styleAttrValue ? ' style="' . htmlspecialchars($styleAttrValue) . '"' : '') . '>' . htmlspecialchars($p[0]) . '</option>';
-				}
-			}
-			// Put together the selector box:
-			$itemListStyle = isset($config['itemListStyle']) ? ' style="' . htmlspecialchars($config['itemListStyle']) . '"' : '';
-			$size = (int)$conf['size'];
-			$size = $conf['autoSizeMax'] ? MathUtility::forceIntegerInRange(count($selItems) + 1, MathUtility::forceIntegerInRange($size, 1), $conf['autoSizeMax']) : $size;
-			$onChange = 'return inline.importNewRecord(' . GeneralUtility::quoteJSvalue($nameObject . '-' . $conf['foreign_table']) . ')';
-			$item = '
-				<select id="' . $nameObject . '-' . $conf['foreign_table'] . '_selector" class="form-control"' . ($size ? ' size="' . $size . '"' : '') . ' onchange="' . htmlspecialchars($onChange) . '"' . $PA['onFocus'] . $itemListStyle . ($conf['foreign_unique'] ? ' isunique="isunique"' : '') . '>
-					' . implode('', $opt) . '
-				</select>';
+        $item = '<div class="form-control-wrap">' . $item . '</div>';
+        $allowedList = '';
+        $allowedLabel = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.allowedFileExtensions', true);
+        foreach ($allowedArray as $allowedItem) {
+            $allowedList .= '<span class="label label-success">' . strtoupper($allowedItem) . '</span> ';
+        }
+        if (!empty($allowedList)) {
+            $item .= '<div class="help-block">' . $allowedLabel . '<br>' . $allowedList . '</div>';
+        }
+        $item = '<div class="form-group t3js-formengine-validation-marker">' . $item . '</div>';
+        return $item;
+    }
 
-			if ($size <= 1) {
-				// Add a "Create new relation" link for adding new relations
-				// This is necessary, if the size of the selector is "1" or if
-				// there is only one record item in the select-box, that is selected by default
-				// The selector-box creates a new relation on using a onChange event (see some line above)
-				if (!empty($conf['appearance']['createNewRelationLinkTitle'])) {
-					$createNewRelationText = $this->getLanguageService()->sL($conf['appearance']['createNewRelationLinkTitle'], TRUE);
-				} else {
-					$createNewRelationText = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.createNewRelation', TRUE);
-				}
-				$item .= '
-				<span class="input-group-btn">
-					<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($onChange) . '">
-						' . IconUtility::getSpriteIcon('actions-document-new', array('title' => $createNewRelationText)) . $createNewRelationText . '
-					</a>
-				</span>';
-			} else {
-				$item .= '
-				<span class="input-group-btn btn"></span>';
-			}
+    /**
+     * Get a selector as used for the select type, to select from all available
+     * records and to create a relation to the embedding record (e.g. like MM).
+     *
+     * @param array $config TCA inline configuration of the parent(!) field
+     * @param array $uniqueIds The uids that have already been used and should be unique
+     * @return string A HTML <select> box with all possible records
+     */
+    protected function renderPossibleRecordsSelectorTypeSelect(array $config, array $uniqueIds)
+    {
+        $possibleRecords = $config['selectorOrUniquePossibleRecords'];
+        $nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
+        // Create option tags:
+        $opt = [];
+        foreach ($possibleRecords as $p) {
+            if (!in_array($p[1], $uniqueIds)) {
+                $opt[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
+            }
+        }
+        // Put together the selector box:
+        $size = (int)$config['size'];
+        $size = $config['autoSizeMax'] ? MathUtility::forceIntegerInRange(count($possibleRecords) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax']) : $size;
+        $onChange = 'return inline.importNewRecord(' . GeneralUtility::quoteJSvalue($nameObject . '-' . $config['foreign_table']) . ')';
+        $item = '
+            <select id="' . $nameObject . '-' . $config['foreign_table'] . '_selector" class="form-control"' . ($size ? ' size="' . $size . '"' : '')
+            . ' onchange="' . htmlspecialchars($onChange) . '"' . ($config['foreign_unique'] ? ' isunique="isunique"' : '') . '>
+                ' . implode('', $opt) . '
+            </select>';
 
-			// Wrap the selector and add a spacer to the bottom
+        if ($size <= 1) {
+            // Add a "Create new relation" link for adding new relations
+            // This is necessary, if the size of the selector is "1" or if
+            // there is only one record item in the select-box, that is selected by default
+            // The selector-box creates a new relation on using an onChange event (see some line above)
+            if (!empty($config['appearance']['createNewRelationLinkTitle'])) {
+                $createNewRelationText = $this->getLanguageService()->sL($config['appearance']['createNewRelationLinkTitle'], true);
+            } else {
+                $createNewRelationText = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.createNewRelation', true);
+            }
+            $item .= '
+            <span class="input-group-btn">
+                <a href="#" class="btn btn-default" onclick="' . htmlspecialchars($onChange) . '" title="' . $createNewRelationText . '">
+                    ' . $this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL)->render() . $createNewRelationText . '
+                </a>
+            </span>';
+        } else {
+            $item .= '
+            <span class="input-group-btn btn"></span>';
+        }
 
-			$item = '<div class="input-group form-group ' . $this->inlineData['config'][$nameObject]['md5'] . '">' . $item . '</div>';
-		}
-		return $item;
-	}
+        // Wrap the selector and add a spacer to the bottom
+        $item = '<div class="input-group form-group t3js-formengine-validation-marker ' . $this->inlineData['config'][$nameObject]['md5'] . '">' . $item . '</div>';
+        return $item;
+    }
 
-	/**
-	 * @return BackendUserAuthentication
-	 */
-	protected function getBackendUserAuthentication() {
-		return $GLOBALS['BE_USER'];
-	}
+    /**
+     * Extracts FlexForm parts of a form element name like
+     * data[table][uid][field][sDEF][lDEF][FlexForm][vDEF]
+     * Helper method used in inline
+     *
+     * @param string $formElementName The form element name
+     * @return array|NULL
+     */
+    protected function extractFlexFormParts($formElementName)
+    {
+        $flexFormParts = null;
+        $matches = array();
+        if (preg_match('#^data(?:\[[^]]+\]){3}(\[data\](?:\[[^]]+\]){4,})$#', $formElementName, $matches)) {
+            $flexFormParts = GeneralUtility::trimExplode(
+                '][',
+                trim($matches[1], '[]')
+            );
+        }
+        return $flexFormParts;
+    }
 
-	/**
-	 * @return LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
+    /**
+     * @return BackendUserAuthentication
+     */
+    protected function getBackendUserAuthentication()
+    {
+        return $GLOBALS['BE_USER'];
+    }
 
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

@@ -12,14 +12,16 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Popover
  * API for popover windows powered by Twitter Bootstrap.
  */
-define('TYPO3/CMS/Backend/Popover', ['jquery', 'bootstrap'], function($) {
+define(['jquery', 'bootstrap'], function($) {
 
 	/**
 	 * the main popover object
 	 *
 	 * @type {{}}
+	 * @exports TYPO3/CMS/Backend/Popover
 	 */
 	var Popover = {
 	};
@@ -33,9 +35,9 @@ define('TYPO3/CMS/Backend/Popover', ['jquery', 'bootstrap'], function($) {
 	};
 
 	/**
-	 * popover wrapper function
+	 * Popover wrapper function
 	 *
-	 * @param $element
+	 * @param {Object} $element
 	 */
 	Popover.popover = function($element) {
 		$element.popover();
@@ -44,8 +46,8 @@ define('TYPO3/CMS/Backend/Popover', ['jquery', 'bootstrap'], function($) {
 	/**
 	 * Set popover options on $element
 	 *
-	 * @param {object} $element
-	 * @param {object} options
+	 * @param {Object} $element
+	 * @param {Object} options
 	 */
 	Popover.setOptions = function($element, options) {
 		options = options || {};
@@ -59,9 +61,20 @@ define('TYPO3/CMS/Backend/Popover', ['jquery', 'bootstrap'], function($) {
 	};
 
 	/**
+	 * Set popover option on $element
+	 *
+	 * @param {Object} $element
+	 * @param {String} key
+	 * @param {String} value
+     */
+	Popover.setOption = function($element, key, value) {
+		$element.data('bs.popover').options[key] = value;
+	};
+
+	/**
 	 * Show popover with title and content on $element
 	 *
-	 * @param {object} $element
+	 * @param {Object} $element
 	 */
 	Popover.show = function($element) {
 		$element.popover('show');
@@ -70,7 +83,7 @@ define('TYPO3/CMS/Backend/Popover', ['jquery', 'bootstrap'], function($) {
 	/**
 	 * Hide popover on $element
 	 *
-	 * @param $element
+	 * @param {Object} $element
 	 */
 	Popover.hide = function($element) {
 		$element.popover('hide');
@@ -79,7 +92,7 @@ define('TYPO3/CMS/Backend/Popover', ['jquery', 'bootstrap'], function($) {
 	/**
 	 * Destroy popover on $element
 	 *
-	 * @param $element
+	 * @param {Object} $element
 	 */
 	Popover.destroy = function($element) {
 		$element.popover('destroy');
@@ -88,7 +101,7 @@ define('TYPO3/CMS/Backend/Popover', ['jquery', 'bootstrap'], function($) {
 	/**
 	 * Toggle popover on $element
 	 *
-	 * @param $element
+	 * @param {Object} $element
 	 */
 	Popover.toggle = function($element) {
 		$element.popover('toggle');

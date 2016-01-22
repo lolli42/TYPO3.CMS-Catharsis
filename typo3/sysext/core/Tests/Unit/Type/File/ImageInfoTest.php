@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Type\File;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,21 +13,20 @@ namespace TYPO3\CMS\Core\Tests\Unit\Type\File;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
 use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class ImageInfoTest extends UnitTestCase {
-
-	/**
-	 * @test
-	 */
-	public function classImageInfoCanBeInstantiated() {
-		$className = 'TYPO3\CMS\Core\Type\File\ImageInfo';
-		$classInstance = new \TYPO3\CMS\Core\Type\File\ImageInfo('FooFileName');
-		$this->assertInstanceOf($className, $classInstance);
-	}
-
+class ImageInfoTest extends UnitTestCase
+{
+    /**
+     * @test
+     */
+    public function classImageInfoCanBeInstantiated()
+    {
+        $className = 'TYPO3\CMS\Core\Type\File\ImageInfo';
+        $classInstance = new \TYPO3\CMS\Core\Type\File\ImageInfo('FooFileName');
+        $this->assertInstanceOf($className, $classInstance);
+    }
 }

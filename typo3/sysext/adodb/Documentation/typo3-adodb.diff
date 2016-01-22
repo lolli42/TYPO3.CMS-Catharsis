@@ -297,3 +297,125 @@ index b10d555..21cfc69 100644
  		//if ($this->debug) error_log("<hr>_connectionID before: ".serialize($this->_connectionID));
  		if(!($this->_connectionID = sqlsrv_connect($argHostname,$connectionInfo))) {
 
+diff --git a/adodb-datadict.inc.php b/adodb-datadict.inc.php
+index b8b881e..f2b17f3 100644
+--- a/adodb-datadict.inc.php
++++ b/adodb-datadict.inc.php
+@@ -178,6 +178,8 @@ class ADODB_DataDict {
+ 	var $autoIncrement = false;
+ 	var $dataProvider;
+ 	var $invalidResizeTypes4 = array('CLOB','BLOB','TEXT','DATE','TIME'); // for changetablesql
++	var $blobNotNull = false; // dbms supports NOT NULL for BLOB/TEXT columns
++	var $blobDefaults = false; // dbms supports defaults for BLOB/TEXT columns
+ 	var $blobSize = 100; 	/// any varchar/char field this size or greater is treated as a blob
+ 							/// in other words, we use a text area for editting.
+ 
+@@ -717,12 +719,12 @@ class ADODB_DataDict {
+ 
+ 			$ftype = $this->_GetSize($ftype, $ty, $fsize, $fprec);
+ 
+-			if ($ty == 'X' || $ty == 'X2' || $ty == 'B') $fnotnull = false; // some blob types do not accept nulls
++			if (($ty == 'X' || $ty == 'X2' || $ty == 'B') && $this->blobNotNull !== true) $fnotnull = false; // some blob types do not accept nulls
+ 
+ 			if ($fprimary) $pkey[] = $fname;
+ 
+ 			// some databases do not allow blobs to have defaults
+-			if ($ty == 'X') $fdefault = false;
++			if ($ty == 'X' && $this->blobDefaults !== true) $fdefault = false;
+ 
+ 			// build list of indexes
+ 			if ($findex != '') {
+diff --git a/datadict/datadict-mysql.inc.php b/datadict/datadict-mysql.inc.php
+index 773aa0c..701fa66 100644
+--- a/datadict/datadict-mysql.inc.php
++++ b/datadict/datadict-mysql.inc.php
+@@ -21,6 +21,7 @@ class ADODB2_mysql extends ADODB_DataDict {
+ 
+ 	var $dropIndex = 'DROP INDEX %s ON %s';
+ 	var $renameColumn = 'ALTER TABLE %s CHANGE COLUMN %s %s %s';	// needs column-definition!
++	var $blobNotNull = true;
+ 
+ 	function MetaType($t,$len=-1,$fieldobj=false)
+ 	{
+diff --git a/datadict/datadict-postgres.inc.php b/datadict/datadict-postgres.inc.php
+index 965314d..3556825 100644
+--- a/datadict/datadict-postgres.inc.php
++++ b/datadict/datadict-postgres.inc.php
+@@ -22,6 +22,8 @@ class ADODB2_postgres extends ADODB_DataDict {
+ 	var $quote = '"';
+ 	var $renameTable = 'ALTER TABLE %s RENAME TO %s'; // at least since 7.1
+ 	var $dropTable = 'DROP TABLE %s CASCADE';
++	var $blobNotNull = true;
++	var $blobDefaults = true;
+ 
+ 	function MetaType($t,$len=-1,$fieldobj=false)
+ 	{
+diff --git a/datadict/datadict-oci8.inc.php b/datadict/datadict-oci8.inc.php
+index e7b4c2b..3453d4c 100644
+--- a/datadict/datadict-oci8.inc.php
++++ b/datadict/datadict-oci8.inc.php
+@@ -196,23 +196,28 @@ end;
+ 	{
+ 		if (!$this->seqField) return array();
+
++		$sequenceTriggerTableName = trim($tabname, $this->connection->nameQuote);
+ 		if ($this->schema) {
+-			$t = strpos($tabname,'.');
+-			if ($t !== false) $tab = substr($tabname,$t+1);
+-			else $tab = $tabname;
+-			$seqname = $this->schema.'.'.$this->seqPrefix.$tab;
+-			$trigname = $this->schema.'.'.$this->trigPrefix.$this->seqPrefix.$tab;
++			$t = strpos($tabname, '.');
++			if ($t !== FALSE) {
++				$tab = substr($sequenceTriggerTableName, $t + 1);
++			} else {
++				$tab = $sequenceTriggerTableName;
++			}
++			$seqname = $this->schema . '.' . $this->seqPrefix . $tab;
++			$trigname = $this->schema . '.' . $this->trigPrefix . $tab;
+ 		} else {
+-			$seqname = $this->seqPrefix.$tabname;
+-			$trigname = $this->trigPrefix.$seqname;
++			$seqname = $this->seqPrefix . $sequenceTriggerTableName;
++			$trigname = $this->trigPrefix . $sequenceTriggerTableName;
+ 		}
+
+ 		if (strlen($seqname) > 30) {
+-			$seqname = $this->seqPrefix.uniqid('');
+-		} // end if
++			$seqname = $this->seqPrefix . uniqid('');
++		}
+ 		if (strlen($trigname) > 30) {
+-			$trigname = $this->trigPrefix.uniqid('');
+-		} // end if
++			$trigname = $this->trigPrefix . uniqid('');
++		}
+
+ 		if (isset($tableoptions['REPLACE'])) $sql[] = "DROP SEQUENCE $seqname";
+ 		$seqCache = '';
+diff --git a/drivers/adodb-sqlite.inc.php b/drivers/adodb-sqlite.inc.php
+index e7cf353..286f39c 100644
+--- a/drivers/adodb-sqlite.inc.php
++++ b/drivers/adodb-sqlite.inc.php
+@@ -262,7 +262,7 @@ class ADODB_sqlite extends ADOConnection {
+ 		return @sqlite_close($this->_connectionID);
+ 	}
+ 
+-	function MetaIndexes($table, $primary = FALSE, $owner=false, $owner = false)
++	function MetaIndexes($table, $primary = FALSE, $owner=false)
+ 	{
+ 		$false = false;
+ 		// save old fetch mode
+diff --git a/drivers/adodb-sqlite3.inc.php b/drivers/adodb-sqlite3.inc.php
+index af83517..f9f667c 100644
+--- a/drivers/adodb-sqlite3.inc.php
++++ b/drivers/adodb-sqlite3.inc.php
+@@ -282,7 +282,7 @@ class ADODB_sqlite3 extends ADOConnection {
+ 		return $this->_connectionID->close();
+ 	}
+ 
+-	function MetaIndexes($table, $primary = FALSE, $owner=false, $owner = false)
++	function MetaIndexes($table, $primary = FALSE, $owner=false)
+ 	{
+ 		$false = false;
+ 		// save old fetch mode

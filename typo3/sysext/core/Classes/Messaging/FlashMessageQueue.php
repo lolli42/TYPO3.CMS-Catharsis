@@ -18,184 +18,249 @@ use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 
 /**
  * A class which collects and renders flash messages.
- *
- * @author Rupert Germann <rupi@gmx.li>
- * @author Alexander Schnitzler <alex.schnitzler@typovision.de>
  */
-class FlashMessageQueue extends \SplQueue {
+class FlashMessageQueue extends \SplQueue
+{
+    /**
+     * A unique identifier for this queue
+     *
+     * @var string
+     */
+    protected $identifier;
 
-	/**
-	 * A unique identifier for this queue
-	 *
-	 * @var string
-	 */
-	protected $identifier;
+    /**
+     * @param string $identifier The unique identifier for this queue
+     */
+    public function __construct($identifier)
+    {
+        $this->identifier = $identifier;
+    }
 
-	/**
-	 * @param string $identifier The unique identifier for this queue
-	 */
-	public function __construct($identifier) {
-		$this->identifier = $identifier;
-	}
+    /**
+     * @return string
+     */
+    public function getIdentifier()
+    {
+        return $this->identifier;
+    }
 
-	/**
-	 * Adds a message either to the BE_USER session (if the $message has the storeInSession flag set)
-	 * or it enqueues the message.
-	 *
-	 * @param FlashMessage $message Instance of \TYPO3\CMS\Core\Messaging\FlashMessage, representing a message
-	 * @throws \TYPO3\CMS\Core\Exception
-	 * @return void
-	 */
-	public function enqueue($message) {
-		if (!($message instanceof FlashMessage)) {
-			throw new \TYPO3\CMS\Core\Exception(
-				'FlashMessageQueue::enqueue() expects an object of type \TYPO3\CMS\Core\Messaging\FlashMessage but got type "' . (is_object($message) ? get_class($message) : gettype($message)) . '"',
-				1376833554
-			);
-		}
-		if ($message->isSessionMessage()) {
-			$this->addFlashMessageToSession($message);
-		} else {
-			parent::enqueue($message);
-		}
-	}
+    /**
+     * Adds a message either to the BE_USER session (if the $message has the storeInSession flag set)
+     * or it enqueues the message.
+     *
+     * @param FlashMessage $message Instance of \TYPO3\CMS\Core\Messaging\FlashMessage, representing a message
+     * @throws \TYPO3\CMS\Core\Exception
+     * @return void
+     */
+    public function enqueue($message)
+    {
+        if (!($message instanceof FlashMessage)) {
+            throw new \TYPO3\CMS\Core\Exception(
+                'FlashMessageQueue::enqueue() expects an object of type \TYPO3\CMS\Core\Messaging\FlashMessage but got type "' . (is_object($message) ? get_class($message) : gettype($message)) . '"',
+                1376833554
+            );
+        }
+        if ($message->isSessionMessage()) {
+            $this->addFlashMessageToSession($message);
+        } else {
+            parent::enqueue($message);
+        }
+    }
 
-	/**
-	 * @param FlashMessage $message
-	 * @return void
-	 */
-	public function addMessage(FlashMessage $message) {
-		$this->enqueue($message);
-	}
+    /**
+     * @param FlashMessage $message
+     * @return void
+     */
+    public function addMessage(FlashMessage $message)
+    {
+        $this->enqueue($message);
+    }
 
-	/**
-	 * @return void
-	 */
-	public function dequeue() {
-		// deliberately empty
-	}
+    /**
+     * @return void
+     */
+    public function dequeue()
+    {
+        // deliberately empty
+    }
 
-	/**
-	 * Adds the given flash message to the array of
-	 * flash messages that will be stored in the session.
-	 *
-	 * @param FlashMessage $message
-	 * @return void
-	 */
-	protected function addFlashMessageToSession(FlashMessage $message) {
-		$queuedFlashMessages = $this->getFlashMessagesFromSession();
-		$queuedFlashMessages[] = $message;
-		$this->storeFlashMessagesInSession($queuedFlashMessages);
-	}
+    /**
+     * Adds the given flash message to the array of
+     * flash messages that will be stored in the session.
+     *
+     * @param FlashMessage $message
+     * @return void
+     */
+    protected function addFlashMessageToSession(FlashMessage $message)
+    {
+        $queuedFlashMessages = $this->getFlashMessagesFromSession();
+        $queuedFlashMessages[] = $message;
+        $this->storeFlashMessagesInSession($queuedFlashMessages);
+    }
 
-	/**
-	 * Returns all messages from the current PHP session and from the current request.
-	 *
-	 * @return FlashMessage[]
-	 */
-	public function getAllMessages() {
-		// Get messages from user session
-		$queuedFlashMessagesFromSession = $this->getFlashMessagesFromSession();
-		$queuedFlashMessages = array_merge($queuedFlashMessagesFromSession, $this->toArray());
-		return $queuedFlashMessages;
-	}
+    /**
+     * Returns all messages from the current PHP session and from the current request.
+     *
+     * @param int $severity Optional severity, must be one of \TYPO3\CMS\Core\Messaging\AbstractMessage constants
+     * @return FlashMessage[]
+     */
+    public function getAllMessages($severity = null)
+    {
+        // Get messages from user session
+        $queuedFlashMessagesFromSession = $this->getFlashMessagesFromSession();
+        $queuedFlashMessages = array_merge($queuedFlashMessagesFromSession, $this->toArray());
+        if ($severity !== null) {
+            $filteredFlashMessages = array();
+            foreach ($queuedFlashMessages as $message) {
+                if ($message->getSeverity() === $severity) {
+                    $filteredFlashMessages[] = $message;
+                }
+            }
+            return $filteredFlashMessages;
+        }
 
-	/**
-	 * Returns all messages from the current PHP session and from the current request.
-	 * After fetching the messages the internal queue and the message queue in the session
-	 * will be emptied.
-	 *
-	 * @return FlashMessage[]
-	 */
-	public function getAllMessagesAndFlush() {
-		$queuedFlashMessages = $this->getAllMessages();
-		// Reset messages in user session
-		$this->removeAllFlashMessagesFromSession();
-		// Reset internal messages
-		$this->clear();
-		return $queuedFlashMessages;
-	}
+        return $queuedFlashMessages;
+    }
 
-	/**
-	 * Stores given flash messages in the session
-	 *
-	 * @param FlashMessage[] $flashMessages
-	 * @return void
-	 */
-	protected function storeFlashMessagesInSession(array $flashMessages) {
-		$this->getUserByContext()->setAndSaveSessionData($this->identifier, $flashMessages);
-	}
+    /**
+     * Returns all messages from the current PHP session and from the current request.
+     * After fetching the messages the internal queue and the message queue in the session
+     * will be emptied.
+     *
+     * @param int $severity Optional severity, must be one of \TYPO3\CMS\Core\Messaging\AbstractMessage constants
+     * @return FlashMessage[]
+     */
+    public function getAllMessagesAndFlush($severity = null)
+    {
+        $queuedFlashMessages = $this->getAllMessages($severity);
+        // Reset messages in user session
+        $this->removeAllFlashMessagesFromSession($severity);
+        // Reset internal messages
+        $this->clear($severity);
+        return $queuedFlashMessages;
+    }
 
-	/**
-	 * Removes all flash messages from the session
-	 *
-	 * @return void
-	 */
-	protected function removeAllFlashMessagesFromSession() {
-		$this->getUserByContext()->setAndSaveSessionData($this->identifier, NULL);
-	}
+    /**
+     * Stores given flash messages in the session
+     *
+     * @param FlashMessage[] $flashMessages
+     * @return void
+     */
+    protected function storeFlashMessagesInSession(array $flashMessages = null)
+    {
+        $this->getUserByContext()->setAndSaveSessionData($this->identifier, $flashMessages);
+    }
 
-	/**
-	 * Returns current flash messages from the session, making sure to always
-	 * return an array.
-	 *
-	 * @return FlashMessage[]
-	 */
-	protected function getFlashMessagesFromSession() {
-		$flashMessages = $this->getUserByContext()->getSessionData($this->identifier);
-		return is_array($flashMessages) ? $flashMessages : array();
-	}
+    /**
+     * Removes all flash messages from the session
+     *
+     * @param int $severity Optional severity, must be one of \TYPO3\CMS\Core\Messaging\AbstractMessage constants
+     * @return void
+     */
+    protected function removeAllFlashMessagesFromSession($severity = null)
+    {
+        if ($severity === null) {
+            $this->storeFlashMessagesInSession(null);
+        } else {
+            $messages = $this->getFlashMessagesFromSession();
+            foreach ($messages as $index => $message) {
+                if ($message->getSeverity() === $severity) {
+                    unset($messages[$index]);
+                }
+            }
+            $this->storeFlashMessagesInSession($messages);
+        }
+    }
 
-	/**
-	 * Gets user object by context
-	 *
-	 * @return AbstractUserAuthentication
-	 */
-	protected function getUserByContext() {
-		return TYPO3_MODE === 'BE' ? $GLOBALS['BE_USER'] : $GLOBALS['TSFE']->fe_user;
-	}
+    /**
+     * Returns current flash messages from the session, making sure to always
+     * return an array.
+     *
+     * @return FlashMessage[]
+     */
+    protected function getFlashMessagesFromSession()
+    {
+        $flashMessages = $this->getUserByContext()->getSessionData($this->identifier);
+        return is_array($flashMessages) ? $flashMessages : array();
+    }
 
-	/**
-	 * Fetches and renders all available flash messages from the queue.
-	 *
-	 * @return string All flash messages in the queue rendered as HTML.
-	 */
-	public function renderFlashMessages() {
-		$content = '';
-		$flashMessages = $this->getAllMessagesAndFlush();
-		if (!empty($flashMessages)) {
-			foreach ($flashMessages as $flashMessage) {
-				$content .= $flashMessage->render();
-			}
-		}
-		return $content;
-	}
+    /**
+     * Gets user object by context
+     *
+     * @return AbstractUserAuthentication
+     */
+    protected function getUserByContext()
+    {
+        return TYPO3_MODE === 'BE' ? $GLOBALS['BE_USER'] : $GLOBALS['TSFE']->fe_user;
+    }
 
-	/**
-	 * Returns all items of the queue as array
-	 *
-	 * @return FlashMessage[]
-	 */
-	public function toArray() {
-		$array = array();
-		$this->rewind();
-		while ($this->valid()) {
-			$array[] = $this->current();
-			$this->next();
-		}
-		return $array;
-	}
+    /**
+     * Fetches and renders all available flash messages from the queue.
+     *
+     * @return string All flash messages in the queue rendered as HTML.
+     */
+    public function renderFlashMessages()
+    {
+        $content = '';
+        $flashMessages = $this->getAllMessagesAndFlush();
+        if (!empty($flashMessages)) {
+            $content = '<ul class="typo3-messages">';
+            foreach ($flashMessages as $flashMessage) {
+                $severityClass = sprintf('alert %s', $flashMessage->getClass());
+                $messageContent = htmlspecialchars($flashMessage->getMessage());
+                if ($flashMessage->getTitle() !== '') {
+                    $messageContent = sprintf('<h4>%s</h4>', htmlspecialchars($flashMessage->getTitle())) . $messageContent;
+                }
+                $content .= sprintf('<li class="%s">%s</li>', htmlspecialchars($severityClass), $messageContent);
+            }
+            $content .= '</ul>';
+        }
+        return $content;
+    }
 
-	/**
-	 * Removes all items from the queue
-	 *
-	 * @return void
-	 */
-	public function clear() {
-		$this->rewind();
-		while (!$this->isEmpty()) {
-			parent::dequeue();
-		}
-	}
+    /**
+     * Returns all items of the queue as array
+     *
+     * @return FlashMessage[]
+     */
+    public function toArray()
+    {
+        $array = array();
+        $this->rewind();
+        while ($this->valid()) {
+            $array[] = $this->current();
+            $this->next();
+        }
+        return $array;
+    }
 
+    /**
+     * Removes all items from the queue
+     *
+     * @param int $severity Optional severity, must be one of \TYPO3\CMS\Core\Messaging\AbstractMessage constants
+     * @return void
+     */
+    public function clear($severity = null)
+    {
+        $this->rewind();
+        if ($severity === null) {
+            while (!$this->isEmpty()) {
+                parent::dequeue();
+            }
+        } else {
+            $keysToRemove = array();
+            while ($cur = $this->current()) {
+                if ($cur->getSeverity() === $severity) {
+                    $keysToRemove[] = $this->key();
+                }
+                $this->next();
+            }
+            // keys are renumbered when unsetting elements
+            // so unset them from last to first
+            $keysToRemove = array_reverse($keysToRemove);
+            foreach ($keysToRemove as $key) {
+                $this->offsetUnset($key);
+            }
+        }
+    }
 }

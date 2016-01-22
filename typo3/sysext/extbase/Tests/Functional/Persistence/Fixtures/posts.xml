@@ -8,8 +8,11 @@
 		<tags>10</tags>
 		<categories>3</categories>
 		<title>Post1</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>1</sorting>
 		<deleted>0</deleted>
+		<related_posts>1</related_posts>
 	</tx_blogexample_domain_model_post>
 	<tx_blogexample_domain_model_post>
 		<uid>2</uid>
@@ -18,6 +21,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post2</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>2</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -28,6 +33,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post3</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>3</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -38,6 +45,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post4</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>4</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -48,6 +57,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post5</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>5</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -58,6 +69,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post6</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>6</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -68,6 +81,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post7</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>7</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -78,6 +93,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post8</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>8</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -87,6 +104,8 @@
 		<blog>1</blog>
 		<tags>1</tags>
 		<categories>0</categories>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<title>Post9</title>
 		<sorting>9</sorting>
 		<deleted>0</deleted>
@@ -98,6 +117,8 @@
 		<tags>1</tags>
 		<categories>0</categories>
 		<title>Post10</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>10</sorting>
 		<deleted>0</deleted>
 	</tx_blogexample_domain_model_post>
@@ -108,7 +129,77 @@
 		<tags>0</tags>
 		<categories>0</categories>
 		<title>post1</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
 		<sorting>11</sorting>
 		<deleted>0</deleted>
+	</tx_blogexample_domain_model_post>
+	<tx_blogexample_domain_model_post>
+		<uid>12</uid>
+		<pid>0</pid>
+		<blog>3</blog>
+		<author>0</author>
+		<tags>1</tags>
+		<categories>0</categories>
+		<title>post with tag</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
+		<sorting>1</sorting>
+		<deleted>0</deleted>
+		<hidden>0</hidden>
+	</tx_blogexample_domain_model_post>
+	<tx_blogexample_domain_model_post>
+		<uid>13</uid>
+		<pid>0</pid>
+		<blog>3</blog>
+		<author>1</author>
+		<tags>0</tags>
+		<categories>0</categories>
+		<title>post with tagged author</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
+		<sorting>2</sorting>
+		<deleted>0</deleted>
+		<hidden>0</hidden>
+	</tx_blogexample_domain_model_post>
+	<tx_blogexample_domain_model_post>
+		<uid>14</uid>
+		<pid>0</pid>
+		<blog>3</blog>
+		<author>1</author>
+		<tags>1</tags>
+		<categories>0</categories>
+		<title>post with tag and tagged author</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
+		<sorting>2</sorting>
+		<deleted>0</deleted>
+		<hidden>0</hidden>
+	</tx_blogexample_domain_model_post>
+	<tx_blogexample_domain_model_post>
+		<uid>20</uid>
+		<pid>0</pid>
+		<blog>3</blog>
+		<tags>0</tags>
+		<categories>0</categories>
+		<title>post20 hidden</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
+		<sorting>11</sorting>
+		<deleted>0</deleted>
+		<hidden>1</hidden>
+	</tx_blogexample_domain_model_post>
+	<tx_blogexample_domain_model_post>
+		<uid>30</uid>
+		<pid>0</pid>
+		<blog>3</blog>
+		<tags>0</tags>
+		<categories>0</categories>
+		<title>post30 deleted</title>
+		<content>Lorem ipsum...</content>
+		<l18n_diffsource></l18n_diffsource>
+		<sorting>11</sorting>
+		<deleted>1</deleted>
+		<hidden>0</hidden>
 	</tx_blogexample_domain_model_post>
 </dataset>

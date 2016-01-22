@@ -14,49 +14,59 @@ namespace TYPO3\CMS\Lang\View;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Extbase\Mvc\View\AbstractView;
+use TYPO3\CMS\Extbase\Mvc\Web\Response;
+use TYPO3\CMS\Extbase\Object\ObjectManagerInterface;
+
 /**
  * Base class for JSON views
- *
- * @author Kai Vogel <k.vogel@reply.de>
  */
-abstract class AbstractJsonView extends \TYPO3\CMS\Extbase\Mvc\View\AbstractView {
+abstract class AbstractJsonView extends AbstractView
+{
+    /**
+     * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+     */
+    protected $objectManager;
 
-	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
-	 * @inject
-	 */
-	protected $objectManager;
+    /**
+     * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+     */
+    public function injectObjectManager(ObjectManagerInterface $objectManager)
+    {
+        $this->objectManager = $objectManager;
+    }
 
-	/**
-	 * Render template content
-	 *
-	 * @return void
-	 */
-	public function render() {
-		$result = $this->getReponseData();
-		$this->sendResponse($result);
-	}
+    /**
+     * Render template content
+     *
+     * @return void
+     */
+    public function render()
+    {
+        $result = $this->getReponseData();
+        $this->sendResponse($result);
+    }
 
-	/**
-	 * Returns the response data
-	 *
-	 * @return array The response data
-	 */
-	abstract protected function getReponseData();
+    /**
+     * Returns the response data
+     *
+     * @return array The response data
+     */
+    abstract protected function getReponseData();
 
-	/**
-	 * Send response to browser
-	 *
-	 * @param array $data The response data
-	 * @return void
-	 */
-	protected function sendResponse(array $data) {
-		$response = $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\Web\Response::class);
-		$response->setHeader('Content-Type', 'application/json; charset=utf-8');
-		$response->setContent(json_encode($data));
-		$response->sendHeaders();
-		$response->send();
-		exit;
-	}
-
+    /**
+     * Send response to browser
+     *
+     * @param array $data The response data
+     * @return void
+     */
+    protected function sendResponse(array $data)
+    {
+        $response = $this->objectManager->get(Response::class);
+        $response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $response->setContent(json_encode($data));
+        $response->sendHeaders();
+        $response->send();
+        exit;
+    }
 }

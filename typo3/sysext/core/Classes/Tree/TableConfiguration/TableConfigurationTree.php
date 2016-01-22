@@ -16,27 +16,26 @@ namespace TYPO3\CMS\Core\Tree\TableConfiguration;
 
 /**
  * Class for tca tree
- *
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
-class TableConfigurationTree extends \TYPO3\CMS\Backend\Tree\AbstractTree {
+class TableConfigurationTree extends \TYPO3\CMS\Backend\Tree\AbstractTree
+{
+    /**
+     * Returns the root node
+     *
+     * @return \TYPO3\CMS\Backend\Tree\TreeNode
+     */
+    public function getRoot()
+    {
+        return $this->dataProvider->getRoot();
+    }
 
-	/**
-	 * Returns the root node
-	 *
-	 * @return \TYPO3\CMS\Backend\Tree\TreeNode
-	 */
-	public function getRoot() {
-		return $this->dataProvider->getRoot();
-	}
-
-	/**
-	 * Renders a tree
-	 *
-	 * @return mixed
-	 */
-	public function render() {
-		return $this->nodeRenderer->renderTree($this);
-	}
-
+    /**
+     * Renders a tree
+     *
+     * @return mixed
+     */
+    public function render()
+    {
+        return $this->nodeRenderer->renderTree($this);
+    }
 }

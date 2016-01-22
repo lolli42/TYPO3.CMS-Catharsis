@@ -11,10 +11,22 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-define('TYPO3/CMS/Taskcenter/Taskcenter', ['jquery', 'jquery-ui/sortable'], function($) {
+/**
+ * Module: TYPO3/CMS/Taskcenter/Taskcenter
+ */
+define(['jquery', 'jquery-ui/sortable'], function($) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{}}
+	 * @exports  TYPO3/CMS/Taskcenter/Taskcenter
+	 */
 	var Taskcenter = {};
 
+	/**
+	 *
+	 */
 	Taskcenter.resizeIframe = function() {
 		var $listFrame = $('#list_frame');
 		if ($listFrame.length > 0) {
@@ -31,6 +43,10 @@ define('TYPO3/CMS/Taskcenter/Taskcenter', ['jquery', 'jquery-ui/sortable'], func
 		}
 	};
 
+	/**
+	 *
+	 * @param {Object} element
+	 */
 	Taskcenter.doCollapseOrExpand = function(element) {
 		var itemParent = element.parent();
 		var item = element.next('div').next('div').next('div').next('div');
@@ -38,9 +54,14 @@ define('TYPO3/CMS/Taskcenter/Taskcenter', ['jquery', 'jquery-ui/sortable'], func
 		itemParent.toggleClass('expanded', state);
 		itemParent.toggleClass('collapsed', !state);
 		item.toggle(state);
+		if (state) {
+			element.find('i.fa').removeClass('fa-caret-down').addClass('fa-caret-up');
+		} else {
+			element.find('i.fa').removeClass('fa-caret-up').addClass('fa-caret-down');
+		}
 
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['Taskcenter::saveCollapseState'],
+			url: TYPO3.settings.ajaxUrls['taskcenter_collapse'],
 			type: 'post',
 			cache: false,
 			data: {
@@ -50,11 +71,14 @@ define('TYPO3/CMS/Taskcenter/Taskcenter', ['jquery', 'jquery-ui/sortable'], func
 		});
 	};
 
+	/**
+	 *
+	 */
 	Taskcenter.initializeSorting = function() {
 		$('#task-list').sortable({
 			update: function(event, ui) {
 				$.ajax({
-					url: TYPO3.settings.ajaxUrls['Taskcenter::saveSortingState'],
+					url: TYPO3.settings.ajaxUrls['taskcenter_sort'],
 					type: 'post',
 					cache: false,
 					data: {
@@ -80,12 +104,7 @@ define('TYPO3/CMS/Taskcenter/Taskcenter', ['jquery', 'jquery-ui/sortable'], func
 		Taskcenter.initializeSorting();
 	};
 
-	return function() {
-		$(document).ready(function() {
-			Taskcenter.initializeEvents();
-		});
+	$(Taskcenter.initializeEvents);
 
-		TYPO3.Taskcenter = Taskcenter;
-		return Taskcenter;
-	}();
+	return Taskcenter;
 });

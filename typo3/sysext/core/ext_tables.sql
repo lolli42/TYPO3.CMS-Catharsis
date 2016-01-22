@@ -20,14 +20,14 @@ CREATE TABLE be_groups (
 	file_mountpoints text,
 	file_permissions text,
 	hidden tinyint(1) unsigned DEFAULT '0' NOT NULL,
-	description text,
+	description varchar(2000) DEFAULT '' NOT NULL,
 	lockToDomain varchar(50) DEFAULT '' NOT NULL,
 	deleted tinyint(1) unsigned DEFAULT '0' NOT NULL,
 	TSconfig text,
 	subgroup text,
 	hide_in_lists tinyint(4) DEFAULT '0' NOT NULL,
 	workspace_perms tinyint(3) DEFAULT '1' NOT NULL,
-	category_perms varchar(255) DEFAULT '' NOT NULL,
+	category_perms text,
 	PRIMARY KEY (uid),
 	KEY parent (pid)
 );
@@ -56,6 +56,8 @@ CREATE TABLE be_users (
 	pid int(11) unsigned DEFAULT '0' NOT NULL,
 	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	username varchar(50) DEFAULT '' NOT NULL,
+	description varchar(2000) DEFAULT '' NOT NULL,
+	avatar int(11) unsigned NOT NULL default '0',
 	password varchar(100) DEFAULT '' NOT NULL,
 	admin tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	usergroup varchar(255) DEFAULT '' NOT NULL,
@@ -84,7 +86,7 @@ CREATE TABLE be_users (
 	usergroup_cached_list text,
 	workspace_id int(11) DEFAULT '0' NOT NULL,
 	workspace_preview tinyint(3) DEFAULT '1' NOT NULL,
-	category_perms varchar(255) DEFAULT '' NOT NULL,
+	category_perms text,
 	PRIMARY KEY (uid),
 	KEY parent (pid),
 	KEY username (username)
@@ -121,7 +123,6 @@ CREATE TABLE pages (
 	title varchar(255) DEFAULT '' NOT NULL,
 	doktype int(11) unsigned DEFAULT '0' NOT NULL,
 	TSconfig text,
-	storage_pid int(11) DEFAULT '0' NOT NULL,
 	is_siteroot tinyint(4) DEFAULT '0' NOT NULL,
 	php_tree_stop tinyint(4) DEFAULT '0' NOT NULL,
 	tx_impexp_origuid int(11) DEFAULT '0' NOT NULL,
@@ -137,7 +138,7 @@ CREATE TABLE pages (
 	layout int(11) unsigned DEFAULT '0' NOT NULL,
 	url_scheme tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	target varchar(80) DEFAULT '' NOT NULL,
-	media text,
+	media int(11) unsigned DEFAULT '0' NOT NULL,
 	lastUpdated int(10) unsigned DEFAULT '0' NOT NULL,
 	keywords text,
 	cache_timeout int(10) unsigned DEFAULT '0' NOT NULL,
@@ -161,6 +162,7 @@ CREATE TABLE pages (
 	fe_login_mode tinyint(4) DEFAULT '0' NOT NULL,
 	backend_layout varchar(64) DEFAULT '' NOT NULL,
 	backend_layout_next_level varchar(64) DEFAULT '' NOT NULL,
+	tsconfig_includes text,
 	PRIMARY KEY (uid),
 	KEY t3ver_oid (t3ver_oid,t3ver_wsid),
 	KEY parent (pid,deleted,sorting),
@@ -239,6 +241,7 @@ CREATE TABLE sys_filemounts (
 	pid int(11) unsigned DEFAULT '0' NOT NULL,
 	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	title varchar(30) DEFAULT '' NOT NULL,
+	description varchar(2000) DEFAULT '' NOT NULL,
 	path varchar(120) DEFAULT '' NOT NULL,
 	base int(11) unsigned DEFAULT '0' NOT NULL,
 	hidden tinyint(3) unsigned DEFAULT '0' NOT NULL,
@@ -270,6 +273,7 @@ CREATE TABLE sys_file_storage (
 	is_public tinyint(4) DEFAULT '0' NOT NULL,
 	is_writable tinyint(4) DEFAULT '0' NOT NULL,
 	is_online tinyint(4) DEFAULT '1' NOT NULL,
+	auto_extract_metadata tinyint(4) DEFAULT '1' NOT NULL,
 	processingfolder tinytext,
 
 	PRIMARY KEY (uid),
@@ -427,6 +431,7 @@ CREATE TABLE sys_file_reference (
 	link varchar(1024) DEFAULT '' NOT NULL,
 	downloadname tinytext,
 	crop varchar(4000) DEFAULT '' NOT NULL,
+	autoplay tinyint(4) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid,deleted),
@@ -473,7 +478,8 @@ CREATE TABLE sys_file_collection (
 
 	# for type=folder:
 	storage int(11) DEFAULT '0' NOT NULL,
-	folder text NOT NULL,
+	folder text,
+	recursive tinyint(4) DEFAULT '0' NOT NULL,
 
 	# for type=category:
 	category int(11) DEFAULT '0' NOT NULL,
@@ -613,12 +619,12 @@ CREATE TABLE sys_log (
 	details text NOT NULL,
 	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	type tinyint(3) unsigned DEFAULT '0' NOT NULL,
-	details_nr tinyint(3) unsigned DEFAULT '0' NOT NULL,
+	details_nr tinyint(3) DEFAULT '0' NOT NULL,
 	IP varchar(39) DEFAULT '' NOT NULL,
 	log_data text,
 	event_pid int(11) DEFAULT '-1' NOT NULL,
 	workspace int(11) DEFAULT '0' NOT NULL,
-	NEWid varchar(20) DEFAULT '' NOT NULL,
+	NEWid varchar(30) DEFAULT '' NOT NULL,
 	request_id varchar(13) DEFAULT '' NOT NULL,
 	time_micro float DEFAULT '0' NOT NULL,
 	component varchar(255) DEFAULT '' NOT NULL,
@@ -680,7 +686,7 @@ CREATE TABLE sys_category (
 	l10n_diffsource mediumblob NOT NULL,
 
 	title tinytext NOT NULL,
-	description text NOT NULL,
+	description text,
 	parent int(11) DEFAULT '0' NOT NULL,
 	items int(11) DEFAULT '0' NOT NULL,
 

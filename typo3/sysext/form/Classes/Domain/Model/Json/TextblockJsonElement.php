@@ -16,68 +16,67 @@ namespace TYPO3\CMS\Form\Domain\Model\Json;
 
 /**
  * JSON textblock
- *
- * @author Oliver Hader <oliver.hader@typo3.org>
  */
-class TextblockJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement {
+class TextblockJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement
+{
+    /**
+     * The ExtJS xtype of the element
+     *
+     * @var string
+     */
+    public $xtype = 'typo3-form-wizard-elements-content-textblock';
 
-	/**
-	 * The ExtJS xtype of the element
-	 *
-	 * @var string
-	 */
-	public $xtype = 'typo3-form-wizard-elements-content-textblock';
+    /**
+     * The configuration array for the xtype
+     *
+     * @var array
+     */
+    public $configuration = array(
+        'attributes' => array(),
+        'various' => array(
+            'text' => ''
+        )
+    );
 
-	/**
-	 * The configuration array for the xtype
-	 *
-	 * @var array
-	 */
-	public $configuration = array(
-		'attributes' => array(),
-		'various' => array(
-			'content' => ''
-		)
-	);
+    /**
+     * Allowed attributes for this object
+     *
+     * @var array
+     */
+    protected $allowedAttributes = array(
+        'class',
+        'dir',
+        'id',
+        'lang',
+        'style',
+        'title'
+    );
 
-	/**
-	 * Allowed attributes for this object
-	 *
-	 * @var array
-	 */
-	protected $allowedAttributes = array(
-		'class',
-		'dir',
-		'id',
-		'lang',
-		'style',
-		'title'
-	);
+    /**
+     * Set all the parameters for this object
+     *
+     * @param array $parameters Configuration array
+     * @return void
+     * @see \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement::setParameters()
+     */
+    public function setParameters(array $parameters)
+    {
+        parent::setParameters($parameters);
+        $this->setVarious($parameters);
+    }
 
-	/**
-	 * Set all the parameters for this object
-	 *
-	 * @param array $parameters Configuration array
-	 * @return void
-	 * @see \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement::setParameters()
-	 */
-	public function setParameters(array $parameters) {
-		parent::setParameters($parameters);
-		$this->setVarious($parameters);
-	}
-
-	/**
-	 * Set the various properties for the element
-	 *
-	 * For this element this is the headingsize and the value
-	 *
-	 * @param array $parameters Configuration array
-	 * @return void
-	 */
-	protected function setVarious(array $parameters) {
-		if (isset($parameters['content'])) {
-			$this->configuration['various']['content'] = $parameters['content'];
-		}
-	}
-
+    /**
+     * Set the various properties for the element
+     *
+     * For this element this is the headingsize and the value
+     *
+     * @param array $parameters Configuration array
+     * @return void
+     */
+    protected function setVarious(array $parameters)
+    {
+        if (isset($parameters['text'])) {
+            $this->configuration['various']['text'] = $parameters['text'];
+        }
+    }
 }

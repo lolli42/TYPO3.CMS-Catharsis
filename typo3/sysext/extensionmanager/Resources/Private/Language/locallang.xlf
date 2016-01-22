@@ -12,6 +12,12 @@
 			<trans-unit id="installExtension">
 				<source>Install Extension</source>
 			</trans-unit>
+			<trans-unit id="composerMode.title">
+				<source>Composer mode</source>
+			</trans-unit>
+			<trans-unit id="composerMode.message">
+				<source>The system is set to composer mode. Please notice that it is not possible to add an extension with the Extension Manager. You have to use composer to add further extensions to your system.</source>
+			</trans-unit>
 			<trans-unit id="installedExtensions">
 				<source>Installed Extensions</source>
 			</trans-unit>
@@ -216,10 +222,6 @@
 			<trans-unit id="extensionList.updateFlashMessage.title">
 				<source>Extension Update</source>
 			</trans-unit>
-			<trans-unit id="extensionList.updateFlashMessage.message" deprecated="Unused since CMS 6.2">
-				<source>{0} updated!</source>
-				<note from="developer">This label is deprecated (not used anymore) since CMS 6.2</note>
-			</trans-unit>
 			<trans-unit id="extensionList.updateFlashMessage.body">
 				<source>%s was updated!</source>
 			</trans-unit>
@@ -327,6 +329,9 @@
 			<trans-unit id="extensionList.downloadViewHelper.submit">
 				<source>Import and Install</source>
 			</trans-unit>
+			<trans-unit id="extensionList.downloadViewHelper.submit.downloadOnly">
+				<source>Import</source>
+			</trans-unit>
 			<trans-unit id="extensionList.showAllVersions.label">
 				<source>Show all versions</source>
 			</trans-unit>
@@ -375,6 +380,9 @@
 			<trans-unit id="extensionList.distribution.lastUpdated">
 				<source>Last Update:</source>
 			</trans-unit>
+			<trans-unit id="extensionList.showUnsuitableDistributions">
+				<source>Show also distributions that are not suitable for this TYPO3 version</source>
+			</trans-unit>
 			<trans-unit id="extensionList.officialDistribution">
 				<source>Official distribution</source>
 			</trans-unit>
@@ -391,7 +399,7 @@
 				<source>Install impexp</source>
 			</trans-unit>
 			<trans-unit id="extensionList.updateFromTer.label">
-				<source>Retrieving Extension-List from TYPO3 Extension Repository (TER)</source>
+				<source>Retrieving extension list from TYPO3 Extension Repository (TER)...</source>
 			</trans-unit>
 			<trans-unit id="extensionList.updateFromTer.buttonLabel">
 				<source>Update now</source>
@@ -545,6 +553,9 @@
 			</trans-unit>
 			<trans-unit id="config.automaticInstallation">
 				<source>Install extensions automatically after download from TER or file upload</source>
+			</trans-unit>
+			<trans-unit id="config.offlineMode">
+				<source>Disable TER connection and hide menu items</source>
 			</trans-unit>
 		</body>
 	</file>

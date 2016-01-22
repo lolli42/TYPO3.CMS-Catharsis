@@ -12,11 +12,18 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu
  * toolbar menu for the workspaces functionality to switch between the workspaces
  * and jump to the workspaces module
  */
-define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
+define(['jquery'], function($) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{options: {containerSelector: string, menuItemSelector: string, activeMenuItemSelector: string, toolbarItemSelector: string, workspaceBodyClass: string, workspacesTitleInToolbarClass: string, workspaceModuleLinkSelector: string}}}
+	 * @exports TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu
+	 */
 	var WorkspacesMenu = {
 		options: {
 			containerSelector: '#typo3-cms-workspaces-backend-toolbaritems-workspaceselectortoolbaritem',
@@ -50,10 +57,12 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 	/**
 	 * switches the workspace via AJAX (which returns the new data, as JSON),
 	 * then reloads the module menu, and the content frame
+	 *
+	 * @param {String} workspaceId
 	 */
 	WorkspacesMenu.switchWorkspace = function(workspaceId) {
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['Workspaces::setWorkspace'],
+			url: TYPO3.settings.ajaxUrls['workspace_switch'],
 			type: 'post',
 			data: {
 				workspaceId: workspaceId,
@@ -95,8 +104,8 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 	/**
 	 * changes the data in the module menu and the updates the backend context
 	 *
-	 * @param id the workspace ID
-	 * @param title the workspace title
+	 * @param {String} id the workspace ID
+	 * @param {String} title the workspace title
 	 */
 	WorkspacesMenu.performWorkspaceSwitch = function(id, title) {
 		top.TYPO3.Workspaces.workspaceTitle = title;
@@ -105,22 +114,24 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 		WorkspacesMenu.updateBackendContext(title);
 
 		// first remove all checks, then set the check in front of the selected workspace
-		var stateActiveClass = 't3-icon fa fa-check';
-		var stateInactiveClass = 't3-icon t3-icon-empty t3-icon-empty-empty t3-icon-empty';
+		var stateActiveClass = 'fa fa-check';
+		var stateInactiveClass = 'fa fa-empty-empty';
 
 		// remove "selected" class and checkmark
-		$(WorkspacesMenu.options.activeMenuItemSelector + ' span', WorkspacesMenu.options.containerSelector).removeClass(stateActiveClass).addClass(stateInactiveClass);
+		$(WorkspacesMenu.options.activeMenuItemSelector + ' i', WorkspacesMenu.options.containerSelector).removeClass(stateActiveClass).addClass(stateInactiveClass);
 		$(WorkspacesMenu.options.activeMenuItemSelector, WorkspacesMenu.options.containerSelector).removeClass('selected');
 
 		// add "selected" class and checkmark
 		var $activeElement = $(WorkspacesMenu.options.menuItemSelector + '[data-workspaceid=' + id + ']', WorkspacesMenu.options.containerSelector);
-		$activeElement.find('span').removeClass(stateInactiveClass).addClass(stateActiveClass);
+		$activeElement.find('i').removeClass(stateInactiveClass).addClass(stateActiveClass);
 		$activeElement.parent().addClass('selected');
 	};
 
 	/**
 	 * checks if the TYPO3 backend is within a backend context and adds a class
 	 * also updates the workspaces title
+	 *
+	 * @param {String} title
 	 */
 	WorkspacesMenu.updateBackendContext = function(title) {
 
@@ -136,7 +147,7 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 	/**
 	 * adds the workspace title to the toolbar next to the username
 	 *
-	 * @param workspaceTitle
+	 * @param {String} workspaceTitle
 	 */
 	WorkspacesMenu.updateTopBar = function(workspaceTitle) {
 		$('.' + WorkspacesMenu.options.workspacesTitleInToolbarClass, WorkspacesMenu.options.containerSelector).remove();
@@ -149,16 +160,13 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 		}
 	};
 
-	/**
-	 * initialize and return the WorkspacesMenu object
-	 */
-	return function() {
-		$(document).ready(function() {
-			WorkspacesMenu.initializeEvents();
-			WorkspacesMenu.updateBackendContext();
-		});
+	$(function() {
+		WorkspacesMenu.initializeEvents();
+		WorkspacesMenu.updateBackendContext();
+	});
 
-		TYPO3.WorkspacesMenu = WorkspacesMenu;
-		return WorkspacesMenu;
-	}();
+	// expose the module in a global object
+	TYPO3.WorkspacesMenu = WorkspacesMenu;
+
+	return WorkspacesMenu;
 });

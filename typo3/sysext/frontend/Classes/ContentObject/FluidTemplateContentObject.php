@@ -14,279 +14,328 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Extbase\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Contains FLUIDTEMPLATE class object
  */
-class FluidTemplateContentObject extends AbstractContentObject {
+class FluidTemplateContentObject extends AbstractContentObject
+{
+    /**
+     * @var StandaloneView
+     */
+    protected $view = null;
 
-	/**
-	 * @var StandaloneView
-	 */
-	protected $view = NULL;
+    /**
+     * @var ContentDataProcessor
+     */
+    protected $contentDataProcessor;
 
-	/**
-	 * Rendering the cObject, FLUIDTEMPLATE
-	 *
-	 * Configuration properties:
-	 * - file string+stdWrap The FLUID template file
-	 * - layoutRootPaths array of filepath+stdWrap Root paths to layouts (fallback)
-	 * - partialRootPaths array of filepath+stdWrap Root paths to partials (fallback)
-	 * - variable array of cObjects, the keys are the variable names in fluid
-	 * - extbase.pluginName
-	 * - extbase.controllerExtensionName
-	 * - extbase.controllerName
-	 * - extbase.controllerActionName
-	 *
-	 * Example:
-	 * 10 = FLUIDTEMPLATE
-	 * 10.templateName = MyTemplate
-	 * 10.templateRootPaths.10 = EXT:site_configuration/Resources/Private/Templates/
-	 * 10.partialRootPaths.10 = EXT:site_configuration/Resources/Private/Patials/
-	 * 10.layoutRootPaths.10 = EXT:site_configuration/Resources/Private/Layouts/
-	 * 10.variables {
-	 *   mylabel = TEXT
-	 *   mylabel.value = Label from TypoScript coming
-	 * }
-	 *
-	 * @param array $conf Array of TypoScript properties
-	 * @return string The HTML output
-	 */
-	public function render($conf = array()) {
-		$parentView = $this->view;
-		$this->initializeStandaloneViewInstance();
+    /**
+     * @param ContentObjectRenderer $cObj
+     */
+    public function __construct(ContentObjectRenderer $cObj)
+    {
+        parent::__construct($cObj);
+        $this->contentDataProcessor = GeneralUtility::makeInstance(ContentDataProcessor::class);
+    }
 
-		if (!is_array($conf)) {
-			$conf = array();
-		}
+    /**
+     * @param ContentDataProcessor $contentDataProcessor
+     */
+    public function setContentDataProcessor($contentDataProcessor)
+    {
+        $this->contentDataProcessor = $contentDataProcessor;
+    }
 
-		$this->setFormat($conf);
-		$this->setTemplate($conf);
-		$this->setLayoutRootPath($conf);
-		$this->setPartialRootPath($conf);
-		$this->setExtbaseVariables($conf);
-		$this->assignSettings($conf);
-		$this->assignContentObjectVariables($conf);
-		$this->assignContentObjectDataAndCurrent();
+    /**
+     * Rendering the cObject, FLUIDTEMPLATE
+     *
+     * Configuration properties:
+     * - file string+stdWrap The FLUID template file
+     * - layoutRootPaths array of filepath+stdWrap Root paths to layouts (fallback)
+     * - partialRootPaths array of filepath+stdWrap Root paths to partials (fallback)
+     * - variable array of cObjects, the keys are the variable names in fluid
+     * - dataProcessing array of data processors which are classes to manipulate $data
+     * - extbase.pluginName
+     * - extbase.controllerExtensionName
+     * - extbase.controllerName
+     * - extbase.controllerActionName
+     *
+     * Example:
+     * 10 = FLUIDTEMPLATE
+     * 10.templateName = MyTemplate
+     * 10.templateRootPaths.10 = EXT:site_configuration/Resources/Private/Templates/
+     * 10.partialRootPaths.10 = EXT:site_configuration/Resources/Private/Patials/
+     * 10.layoutRootPaths.10 = EXT:site_configuration/Resources/Private/Layouts/
+     * 10.variables {
+     *   mylabel = TEXT
+     *   mylabel.value = Label from TypoScript coming
+     * }
+     *
+     * @param array $conf Array of TypoScript properties
+     * @return string The HTML output
+     */
+    public function render($conf = array())
+    {
+        $parentView = $this->view;
+        $this->initializeStandaloneViewInstance();
 
-		$content = $this->renderFluidView();
-		$content = $this->applyStandardWrapToRenderedContent($content, $conf);
+        if (!is_array($conf)) {
+            $conf = array();
+        }
 
-		$this->view = $parentView;
-		return $content;
-	}
+        $this->setFormat($conf);
+        $this->setTemplate($conf);
+        $this->setLayoutRootPath($conf);
+        $this->setPartialRootPath($conf);
+        $this->setExtbaseVariables($conf);
+        $this->assignSettings($conf);
+        $variables = $this->getContentObjectVariables($conf);
+        $variables = $this->contentDataProcessor->process($this->cObj, $conf, $variables);
 
-	/**
-	 * Creating standalone view instance must not be done in construct() as
-	 * it can lead to a nasty cache issue since content object instances
-	 * are not always re-created by the content object rendered for every
-	 * usage, but can be re-used. Thus, we need a fresh instance of
-	 * StandaloneView every time render() is called.
-	 *
-	 * @return void
-	 */
-	protected function initializeStandaloneViewInstance() {
-		$this->view = GeneralUtility::makeInstance(StandaloneView::class);
-	}
+        $this->view->assignMultiple($variables);
 
-	/**
-	 * Set template
-	 *
-	 * @param array $conf With possibly set file resource
-	 * @return void
-	 * @throws \InvalidArgumentException
-	 */
-	protected function setTemplate(array $conf) {
-		// Fetch the Fluid template by templateName
-		if (!empty($conf['templateName']) && !empty($conf['templateRootPaths.']) && is_array($conf['templateRootPaths.'])) {
-			$templateRootPaths = array();
-			foreach ($conf['templateRootPaths.'] as $key => $path) {
-				$templateRootPaths[$key] = GeneralUtility::getFileAbsFileName($path);
-			}
-			$this->view->setTemplateRootPaths($templateRootPaths);
-			$templateName = isset($conf['templateName.']) ? $this->cObj->stdWrap($conf['templateName'], $conf['templateName.']) : $conf['templateName'];
-			$this->view->setTemplate($templateName);
-		// Fetch the Fluid template by template cObject
-		} elseif (!empty($conf['template']) && !empty($conf['template.'])) {
-			$templateSource = $this->cObj->cObjGetSingle($conf['template'], $conf['template.']);
-			$this->view->setTemplateSource($templateSource);
-		// Fetch the Fluid template by file stdWrap
-		} else {
-			$file = isset($conf['file.']) ? $this->cObj->stdWrap($conf['file'], $conf['file.']) : $conf['file'];
-			/** @var $templateService \TYPO3\CMS\Core\TypoScript\TemplateService */
-			$templateService = $GLOBALS['TSFE']->tmpl;
-			$templatePathAndFilename = $templateService->getFileName($file);
-			$this->view->setTemplatePathAndFilename(PATH_site . $templatePathAndFilename);
-		}
-	}
+        $content = $this->renderFluidView();
+        $content = $this->applyStandardWrapToRenderedContent($content, $conf);
 
-	/**
-	 * Set layout root path if given in configuration
-	 *
-	 * @param array $conf Configuration array
-	 * @return void
-	 */
-	protected function setLayoutRootPath(array $conf) {
-		// Override the default layout path via typoscript
-		$layoutPaths = array();
-		if (isset($conf['layoutRootPath']) || isset($conf['layoutRootPath.'])) {
-			$layoutRootPath = isset($conf['layoutRootPath.'])
-				? $this->cObj->stdWrap($conf['layoutRootPath'], $conf['layoutRootPath.'])
-				: $conf['layoutRootPath'];
-			$layoutPaths[] = GeneralUtility::getFileAbsFileName($layoutRootPath);
-		}
-		if (isset($conf['layoutRootPaths.'])) {
-			foreach ($conf['layoutRootPaths.'] as $key => $path) {
-				$layoutPaths[$key] = GeneralUtility::getFileAbsFileName($path);
-			}
-		}
-		if (!empty($layoutPaths)) {
-			$this->view->setLayoutRootPaths($layoutPaths);
-		}
-	}
+        $this->view = $parentView;
+        return $content;
+    }
 
-	/**
-	 * Set partial root path if given in configuration
-	 *
-	 * @param array $conf Configuration array
-	 * @return void
-	 */
-	protected function setPartialRootPath(array $conf) {
-		$partialPaths = array();
-		if (isset($conf['partialRootPath']) || isset($conf['partialRootPath.'])) {
-			$partialRootPath = isset($conf['partialRootPath.'])
-				? $this->cObj->stdWrap($conf['partialRootPath'], $conf['partialRootPath.'])
-				: $conf['partialRootPath'];
-			$partialPaths[] = GeneralUtility::getFileAbsFileName($partialRootPath);
-		}
-		if (isset($conf['partialRootPaths.'])) {
-			foreach ($conf['partialRootPaths.'] as $key => $path) {
-				$partialPaths[$key] = GeneralUtility::getFileAbsFileName($path);
-			}
-		}
-		if (!empty($partialPaths)) {
-			$this->view->setPartialRootPaths($partialPaths);
-		}
-	}
+    /**
+     * Creating standalone view instance must not be done in construct() as
+     * it can lead to a nasty cache issue since content object instances
+     * are not always re-created by the content object rendered for every
+     * usage, but can be re-used. Thus, we need a fresh instance of
+     * StandaloneView every time render() is called.
+     *
+     * @return void
+     */
+    protected function initializeStandaloneViewInstance()
+    {
+        $this->view = GeneralUtility::makeInstance(StandaloneView::class);
+    }
 
-	/**
-	 * Set different format if given in configuration
-	 *
-	 * @param array $conf Configuration array
-	 * @return void
-	 */
-	protected function setFormat(array $conf) {
-		$format = isset($conf['format.']) ? $this->cObj->stdWrap($conf['format'], $conf['format.']) : $conf['format'];
-		if ($format) {
-			$this->view->setFormat($format);
-		}
-	}
+    /**
+     * Set template
+     *
+     * @param array $conf With possibly set file resource
+     * @return void
+     * @throws \InvalidArgumentException
+     */
+    protected function setTemplate(array $conf)
+    {
+        // Fetch the Fluid template by templateName
+        if (
+            (!empty($conf['templateName']) || !empty($conf['templateName.']))
+            && !empty($conf['templateRootPaths.']) && is_array($conf['templateRootPaths.'])
+        ) {
+            $templateRootPaths = $this->applyStandardWrapToFluidPaths($conf['templateRootPaths.']);
+            $this->view->setTemplateRootPaths($templateRootPaths);
+            $templateName = isset($conf['templateName.'])
+                ? $this->cObj->stdWrap(isset($conf['templateName']) ? $conf['templateName'] : '', $conf['templateName.'])
+                : $conf['templateName'];
+            $this->view->setTemplate($templateName);
+        // Fetch the Fluid template by template cObject
+        } elseif (!empty($conf['template']) && !empty($conf['template.'])) {
+            $templateSource = $this->cObj->cObjGetSingle($conf['template'], $conf['template.']);
+            $this->view->setTemplateSource($templateSource);
+        // Fetch the Fluid template by file stdWrap
+        } else {
+            $file = isset($conf['file.']) ? $this->cObj->stdWrap($conf['file'], $conf['file.']) : $conf['file'];
+            /** @var $templateService \TYPO3\CMS\Core\TypoScript\TemplateService */
+            $templateService = $GLOBALS['TSFE']->tmpl;
+            $templatePathAndFilename = $templateService->getFileName($file);
+            $this->view->setTemplatePathAndFilename(PATH_site . $templatePathAndFilename);
+        }
+    }
 
-	/**
-	 * Set some extbase variables if given
-	 *
-	 * @param array $conf Configuration array
-	 * @return void
-	 */
-	protected function setExtbaseVariables(array $conf) {
-		/** @var $request \TYPO3\CMS\Extbase\Mvc\Request */
-		$requestPluginName = isset($conf['extbase.']['pluginName.']) ? $this->cObj->stdWrap($conf['extbase.']['pluginName'], $conf['extbase.']['pluginName.']) : $conf['extbase.']['pluginName'];
-		if ($requestPluginName) {
-			$this->view->getRequest()->setPluginName($requestPluginName);
-		}
-		$requestControllerExtensionName = isset($conf['extbase.']['controllerExtensionName.']) ? $this->cObj->stdWrap($conf['extbase.']['controllerExtensionName'], $conf['extbase.']['controllerExtensionName.']) : $conf['extbase.']['controllerExtensionName'];
-		if ($requestControllerExtensionName) {
-			$this->view->getRequest()->setControllerExtensionName($requestControllerExtensionName);
-		}
-		$requestControllerName = isset($conf['extbase.']['controllerName.']) ? $this->cObj->stdWrap($conf['extbase.']['controllerName'], $conf['extbase.']['controllerName.']) : $conf['extbase.']['controllerName'];
-		if ($requestControllerName) {
-			$this->view->getRequest()->setControllerName($requestControllerName);
-		}
-		$requestControllerActionName = isset($conf['extbase.']['controllerActionName.']) ? $this->cObj->stdWrap($conf['extbase.']['controllerActionName'], $conf['extbase.']['controllerActionName.']) : $conf['extbase.']['controllerActionName'];
-		if ($requestControllerActionName) {
-			$this->view->getRequest()->setControllerActionName($requestControllerActionName);
-		}
-	}
+    /**
+     * Set layout root path if given in configuration
+     *
+     * @param array $conf Configuration array
+     * @return void
+     */
+    protected function setLayoutRootPath(array $conf)
+    {
+        // Override the default layout path via typoscript
+        $layoutPaths = array();
+        if (isset($conf['layoutRootPath']) || isset($conf['layoutRootPath.'])) {
+            $layoutRootPath = isset($conf['layoutRootPath.'])
+                ? $this->cObj->stdWrap($conf['layoutRootPath'], $conf['layoutRootPath.'])
+                : $conf['layoutRootPath'];
+            $layoutPaths[] = GeneralUtility::getFileAbsFileName($layoutRootPath);
+        }
+        if (isset($conf['layoutRootPaths.'])) {
+            $layoutPaths = array_replace($layoutPaths, $this->applyStandardWrapToFluidPaths($conf['layoutRootPaths.']));
+        }
+        if (!empty($layoutPaths)) {
+            $this->view->setLayoutRootPaths($layoutPaths);
+        }
+    }
 
-	/**
-	 * Assign rendered content objects in variables array to view
-	 *
-	 * @param array $conf Configuration array
-	 * @return void
-	 * @throws \InvalidArgumentException
-	 */
-	protected function assignContentObjectVariables(array $conf) {
-		$reservedVariables = array('data', 'current');
-		// Accumulate the variables to be replaced and loop them through cObjGetSingle
-		$variables = (array)$conf['variables.'];
-		foreach ($variables as $variableName => $cObjType) {
-			if (is_array($cObjType)) {
-				continue;
-			}
-			if (!in_array($variableName, $reservedVariables)) {
-				$this->view->assign(
-					$variableName,
-					$this->cObj->cObjGetSingle($cObjType, $variables[$variableName . '.'])
-				);
-			} else {
-				throw new \InvalidArgumentException(
-					'Cannot use reserved name "' . $variableName . '" as variable name in FLUIDTEMPLATE.',
-					1288095720
-				);
-			}
-		}
-	}
+    /**
+     * Set partial root path if given in configuration
+     *
+     * @param array $conf Configuration array
+     * @return void
+     */
+    protected function setPartialRootPath(array $conf)
+    {
+        $partialPaths = array();
+        if (isset($conf['partialRootPath']) || isset($conf['partialRootPath.'])) {
+            $partialRootPath = isset($conf['partialRootPath.'])
+                ? $this->cObj->stdWrap($conf['partialRootPath'], $conf['partialRootPath.'])
+                : $conf['partialRootPath'];
+            $partialPaths[] = GeneralUtility::getFileAbsFileName($partialRootPath);
+        }
+        if (isset($conf['partialRootPaths.'])) {
+            $partialPaths = array_replace($partialPaths, $this->applyStandardWrapToFluidPaths($conf['partialRootPaths.']));
+        }
+        if (!empty($partialPaths)) {
+            $this->view->setPartialRootPaths($partialPaths);
+        }
+    }
 
-	/**
-	 * Set any TypoScript settings to the view. This is similar to a
-	 * default MVC action controller in extbase.
-	 *
-	 * @param array $conf Configuration
-	 * @return void
-	 */
-	protected function assignSettings(array $conf) {
-		if (isset($conf['settings.'])) {
-			/** @var $typoScriptService TypoScriptService */
-			$typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
-			$settings = $typoScriptService->convertTypoScriptArrayToPlainArray($conf['settings.']);
-			$this->view->assign('settings', $settings);
-		}
-	}
+    /**
+     * Set different format if given in configuration
+     *
+     * @param array $conf Configuration array
+     * @return void
+     */
+    protected function setFormat(array $conf)
+    {
+        $format = isset($conf['format.']) ? $this->cObj->stdWrap($conf['format'], $conf['format.']) : $conf['format'];
+        if ($format) {
+            $this->view->setFormat($format);
+        }
+    }
 
-	/**
-	 * Assign content object renderer data and current to view
-	 *
-	 * @return void
-	 */
-	protected function assignContentObjectDataAndCurrent() {
-		$this->view->assign('data', $this->cObj->data);
-		$this->view->assign('current', $this->cObj->data[$this->cObj->currentValKey]);
-	}
+    /**
+     * Set some extbase variables if given
+     *
+     * @param array $conf Configuration array
+     * @return void
+     */
+    protected function setExtbaseVariables(array $conf)
+    {
+        /** @var $request \TYPO3\CMS\Extbase\Mvc\Request */
+        $requestPluginName = isset($conf['extbase.']['pluginName.']) ? $this->cObj->stdWrap($conf['extbase.']['pluginName'], $conf['extbase.']['pluginName.']) : $conf['extbase.']['pluginName'];
+        if ($requestPluginName) {
+            $this->view->getRequest()->setPluginName($requestPluginName);
+        }
+        $requestControllerExtensionName = isset($conf['extbase.']['controllerExtensionName.']) ? $this->cObj->stdWrap($conf['extbase.']['controllerExtensionName'], $conf['extbase.']['controllerExtensionName.']) : $conf['extbase.']['controllerExtensionName'];
+        if ($requestControllerExtensionName) {
+            $this->view->getRequest()->setControllerExtensionName($requestControllerExtensionName);
+        }
+        $requestControllerName = isset($conf['extbase.']['controllerName.']) ? $this->cObj->stdWrap($conf['extbase.']['controllerName'], $conf['extbase.']['controllerName.']) : $conf['extbase.']['controllerName'];
+        if ($requestControllerName) {
+            $this->view->getRequest()->setControllerName($requestControllerName);
+        }
+        $requestControllerActionName = isset($conf['extbase.']['controllerActionName.']) ? $this->cObj->stdWrap($conf['extbase.']['controllerActionName'], $conf['extbase.']['controllerActionName.']) : $conf['extbase.']['controllerActionName'];
+        if ($requestControllerActionName) {
+            $this->view->getRequest()->setControllerActionName($requestControllerActionName);
+        }
+    }
 
-	/**
-	 * Render fluid standalone view
-	 *
-	 * @return string
-	 */
-	protected function renderFluidView() {
-		return $this->view->render();
-	}
+    /**
+     * Compile rendered content objects in variables array ready to assign to the view
+     *
+     * @param array $conf Configuration array
+     * @return array the variables to be assigned
+     * @throws \InvalidArgumentException
+     */
+    protected function getContentObjectVariables(array $conf)
+    {
+        $variables = array();
+        $reservedVariables = array('data', 'current');
+        // Accumulate the variables to be process and loop them through cObjGetSingle
+        $variablesToProcess = (array)$conf['variables.'];
+        foreach ($variablesToProcess as $variableName => $cObjType) {
+            if (is_array($cObjType)) {
+                continue;
+            }
+            if (!in_array($variableName, $reservedVariables)) {
+                $variables[$variableName] = $this->cObj->cObjGetSingle($cObjType, $variablesToProcess[$variableName . '.']);
+            } else {
+                throw new \InvalidArgumentException(
+                    'Cannot use reserved name "' . $variableName . '" as variable name in FLUIDTEMPLATE.',
+                    1288095720
+                );
+            }
+        }
+        $variables['data'] = $this->cObj->data;
+        $variables['current'] = $this->cObj->data[$this->cObj->currentValKey];
+        return $variables;
+    }
 
-	/**
-	 * Apply standard wrap to content
-	 *
-	 * @param string $content Rendered HTML content
-	 * @param array $conf Configuration array
-	 * @return string Standard wrapped content
-	 */
-	protected function applyStandardWrapToRenderedContent($content, array $conf) {
-		if (isset($conf['stdWrap.'])) {
-			$content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
-		}
-		return $content;
-	}
+    /**
+     * Set any TypoScript settings to the view. This is similar to a
+     * default MVC action controller in extbase.
+     *
+     * @param array $conf Configuration
+     * @return void
+     */
+    protected function assignSettings(array $conf)
+    {
+        if (isset($conf['settings.'])) {
+            /** @var $typoScriptService TypoScriptService */
+            $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+            $settings = $typoScriptService->convertTypoScriptArrayToPlainArray($conf['settings.']);
+            $this->view->assign('settings', $settings);
+        }
+    }
+
+    /**
+     * Render fluid standalone view
+     *
+     * @return string
+     */
+    protected function renderFluidView()
+    {
+        return $this->view->render();
+    }
+
+    /**
+     * Apply standard wrap to content
+     *
+     * @param string $content Rendered HTML content
+     * @param array $conf Configuration array
+     * @return string Standard wrapped content
+     */
+    protected function applyStandardWrapToRenderedContent($content, array $conf)
+    {
+        if (isset($conf['stdWrap.'])) {
+            $content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
+        }
+        return $content;
+    }
+
+    /**
+     * Applies stdWrap on Fluid path definitions
+     *
+     * @param array $paths
+     *
+     * @return array
+     */
+    protected function applyStandardWrapToFluidPaths(array $paths)
+    {
+        $finalPaths = [];
+        foreach ($paths as $key => $path) {
+            if (StringUtility::endsWith($key, '.')) {
+                if (isset($paths[substr($key, 0, -1)])) {
+                    continue;
+                }
+                $path = $this->cObj->stdWrap('', $path);
+            } elseif (isset($paths[$key . '.'])) {
+                $path = $this->cObj->stdWrap($path, $paths[$key . '.']);
+            }
+            $finalPaths[$key] = GeneralUtility::getFileAbsFileName($path);
+        }
+        return $finalPaths;
+    }
 }

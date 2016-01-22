@@ -14,120 +14,79 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
+
 /**
  * TYPO3 Color plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
-class Typo3Color extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
+class Typo3Color extends RteHtmlAreaApi
+{
+    /**
+     * The name of the plugin registered by the extension
+     *
+     * @var string
+     */
+    protected $pluginName = 'TYPO3Color';
 
-	/**
-	 * The key of the extension that is extending htmlArea RTE
-	 *
-	 * @var string
-	 */
-	protected $extensionKey = 'rtehtmlarea';
+    /**
+     * The comma-separated list of button names that the registered plugin is adding to the htmlArea RTE toolbar
+     *
+     * @var string
+     */
+    protected $pluginButtons = 'textcolor,bgcolor';
 
-	/**
-	 * The name of the plugin registered by the extension
-	 *
-	 * @var string
-	 */
-	protected $pluginName = 'TYPO3Color';
+    /**
+     * The name-converting array, converting the button names used in the RTE PageTSConfing to the button id's used by the JS scripts
+     *
+     * @var array
+     */
+    protected $convertToolbarForHtmlAreaArray = array(
+        'textcolor' => 'ForeColor',
+        'bgcolor' => 'HiliteColor'
+    );
 
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = 'extensions/TYPO3Color/locallang.xlf';
+    /**
+     * Returns TRUE if the plugin is available and correctly initialized
+     *
+     * @param array $configuration Configuration array given from calling object down to the single plugins
+     * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
+     */
+    public function main(array $configuration)
+    {
+        return parent::main($configuration)
+            && $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['rtehtmlarea']['allowStyleAttribute'];
+    }
 
-	/**
-	 * Path to the skin file relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/typo3-color.css';
-
-	/**
-	 * Reference to the invoking object
-	 *
-	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
-	 */
-	protected $htmlAreaRTE;
-
-	protected $thisConfig;
-
-	// Reference to RTE PageTSConfig
-	protected $toolbar;
-
-	// Reference to RTE toolbar array
-	protected $LOCAL_LANG;
-
-	// Frontend language array
-	protected $pluginButtons = 'textcolor,bgcolor';
-
-	protected $convertToolbarForHtmlAreaArray = array(
-		'textcolor' => 'ForeColor',
-		'bgcolor' => 'HiliteColor'
-	);
-
-	public function main($parentObject) {
-		return parent::main($parentObject) && $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['rtehtmlarea']['allowStyleAttribute'];
-	}
-
-	/**
-	 * Return JS configuration of the htmlArea plugins registered by the extension
-	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
-	 * @return string JS configuration for registered plugins
-	 */
-	public function buildJavascriptConfiguration($rteNumberPlaceholder) {
-		// Process colors configuration
-		$registerRTEinJavascriptString = $this->buildJSColorsConfig($rteNumberPlaceholder);
-		return $registerRTEinJavascriptString;
-	}
-
-	/**
-	 * Return Javascript configuration of colors
-	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
-	 * @return string Javascript configuration of colors
-	 */
-	public function buildJSColorsConfig($rteNumberPlaceholder) {
-		if ($this->htmlAreaRTE->is_FE()) {
-			$RTEProperties = $this->htmlAreaRTE->RTEsetup;
-		} else {
-			$RTEProperties = $this->htmlAreaRTE->RTEsetup['properties'];
-		}
-		$configureRTEInJavascriptString = '';
-		$configureRTEInJavascriptString .= '
-			RTEarea[' . $rteNumberPlaceholder . '].disableColorPicker = ' . (trim($this->thisConfig['disableColorPicker']) ? 'true' : 'false') . ';';
-		// Building the array of configured colors
-		if (is_array($RTEProperties['colors.'])) {
-			$HTMLAreaColorname = array();
-			foreach ($RTEProperties['colors.'] as $colorName => $conf) {
-				$colorName = substr($colorName, 0, -1);
-				$colorLabel = $this->htmlAreaRTE->getPageConfigLabel($conf['name'], 0);
-				$HTMLAreaColorname[$colorName] = array($colorLabel, strtoupper(substr($conf['value'], 1, 6)));
-			}
-		}
-		// Setting the list of colors if specified in the RTE config
-		if ($this->thisConfig['colors']) {
-			$HTMLAreaColors = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList($this->thisConfig['colors']));
-			$HTMLAreaJSColors = array();
-			foreach ($HTMLAreaColors as $colorName) {
-				if ($HTMLAreaColorname[$colorName]) {
-					$HTMLAreaJSColors[] = $HTMLAreaColorname[$colorName];
-				}
-			}
-			if ($this->htmlAreaRTE->is_FE()) {
-				$GLOBALS['TSFE']->csConvObj->convArray($HTMLAreaJSColors, $this->htmlAreaRTE->OutputCharset, 'utf-8');
-			}
-			$configureRTEInJavascriptString .= '
-			RTEarea[' . $rteNumberPlaceholder . '].colors = ' . json_encode($HTMLAreaJSColors) . ';';
-		}
-		return $configureRTEInJavascriptString;
-	}
-
+    /**
+     * Return Javascript configuration of colors
+     *
+     * @return string Javascript configuration of colors
+     */
+    public function buildJavascriptConfiguration()
+    {
+        $jsArray = array();
+        $jsArray[] = 'RTEarea[editornumber].disableColorPicker = ' . (trim($this->configuration['thisConfig']['disableColorPicker']) ? 'true' : 'false') . ';';
+        // Building the array of configured colors
+        $HTMLAreaColorName = array();
+        if (is_array($this->configuration['RTEsetup']['properties']['colors.'])) {
+            foreach ($this->configuration['RTEsetup']['properties']['colors.'] as $colorName => $conf) {
+                $colorName = substr($colorName, 0, -1);
+                $colorLabel = $this->getPageConfigLabel($conf['name']);
+                $HTMLAreaColorName[$colorName] = array($colorLabel, strtoupper(substr($conf['value'], 1, 6)));
+            }
+        }
+        // Setting the list of colors if specified in the RTE config
+        if ($this->configuration['thisConfig']['colors']) {
+            $HTMLAreaColors = GeneralUtility::trimExplode(',', $this->cleanList($this->configuration['thisConfig']['colors']));
+            $HTMLAreaJSColors = array();
+            foreach ($HTMLAreaColors as $colorName) {
+                if ($HTMLAreaColorName[$colorName]) {
+                    $HTMLAreaJSColors[] = $HTMLAreaColorName[$colorName];
+                }
+            }
+            $jsArray[] = 'RTEarea[editornumber].colors = ' . json_encode($HTMLAreaJSColors) . ';';
+        }
+        return implode(LF, $jsArray);
+    }
 }

@@ -14,26 +14,24 @@ namespace TYPO3\CMS\Impexp\Tests\Functional\ImportFromVersionFourDotFive\PagesAn
  * The TYPO3 project - inspiring people to share!
  */
 
-require_once __DIR__ . '/../../Import/AbstractImportTestCase.php';
-
 /**
- * Functional test for the ImportExport
+ * Functional test for the Import
  */
-class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase {
+class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase
+{
+    protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/ImportFromVersionFourDotFive/PagesAndTtContentUploads/DataSet/Assertion/';
 
-	protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/ImportFromVersionFourDotFive/PagesAndTtContentUploads/DataSet/Assertion/';
+    /**
+     * @test
+     */
+    public function importPagesAndTtContentUploads()
+    {
+        $this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-uploads.xml', 1);
+        $this->import->importData(0);
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndTtContentUploads() {
-		$this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-uploads.xml', 1);
-		$this->import->importData(0);
+        $this->assertAssertionDataSet('importPagesAndTtContentUploads');
 
-		$this->assertAssertionDataSet('importPagesAndTtContentUploads');
-
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/_imported/typo3_image2.jpg');
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image3.jpg', PATH_site . 'fileadmin/user_upload/_imported/typo3_image3.jpg');
-	}
-
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/_imported/typo3_image2.jpg');
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image3.jpg', PATH_site . 'fileadmin/user_upload/_imported/typo3_image3.jpg');
+    }
 }

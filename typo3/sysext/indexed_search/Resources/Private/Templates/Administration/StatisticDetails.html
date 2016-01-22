@@ -1,10 +1,10 @@
 {namespace is=TYPO3\CMS\IndexedSearch\ViewHelpers}
+{namespace core=TYPO3\CMS\Core\ViewHelpers}
 
 <f:layout name="Administration"/>
 
 <f:section name="Content">
 	<p class="lead"><f:translate key="administration.document.description"/></p>
-	<f:flashMessages renderMode="div"/>
 	<f:if condition="{phashRow}">
 		<f:then>
 			<table class="table table-striped table-hover">
@@ -191,8 +191,4 @@
 
 		</f:form>
 	</f:if>
-</f:section>
-
-<f:section name="Buttons">
-	<f:be.buttons.icon title="{f:translate(key:'administration.back')}" icon="actions-view-go-back" uri="{f:uri.action(action:'statistic')}"/>
 </f:section>

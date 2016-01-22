@@ -20,14 +20,8 @@
  * the call to a registered script with that key.
  * Valid cliKeys must be registered in
  * $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['cliKeys'].
- *
- * @author Kasper Skaarhoj <kasperYYYY@typo3.com>
  */
-define('TYPO3_MODE', 'BE');
-define('TYPO3_cliMode', TRUE);
-
-require __DIR__ . '/sysext/core/Classes/Core/CliBootstrap.php';
-\TYPO3\CMS\Core\Core\CliBootstrap::checkEnvironmentOrDie();
-
-require __DIR__ . '/sysext/core/Classes/Core/Bootstrap.php';
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->run('typo3/')->shutdown();
+call_user_func(function() {
+	$classLoader = require __DIR__ . '/../vendor/autoload.php';
+	(new \TYPO3\CMS\Backend\Console\Application($classLoader))->run();
+});

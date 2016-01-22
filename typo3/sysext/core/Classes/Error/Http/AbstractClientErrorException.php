@@ -16,9 +16,7 @@ namespace TYPO3\CMS\Core\Error\Http;
 
 /**
  * HTTP Client Error Exception (Error 4xx)
- *
- * @author Steffen Gebert <steffen.gebert@typo3.org>
  */
-abstract class AbstractClientErrorException extends StatusException {
-
+abstract class AbstractClientErrorException extends StatusException
+{
 }

@@ -33,6 +33,9 @@
 			<trans-unit id="c_file">
 				<source>File Name</source>
 			</trans-unit>
+			<trans-unit id="c_filepath">
+				<source>File Path</source>
+			</trans-unit>
 			<trans-unit id="c_size">
 				<source>Size</source>
 			</trans-unit>
@@ -107,6 +110,12 @@
 			</trans-unit>
 			<trans-unit id="storageNotBrowsableMessage">
 				<source>You are trying to access a folder in a storage that is not browsable.</source>
+			</trans-unit>
+			<trans-unit id="missingFolderPermissionsTitle">
+				<source>Missing folder permissions</source>
+			</trans-unit>
+			<trans-unit id="missingFolderPermissionsMessage">
+				<source>You have no access to the folder "%s".</source>
 			</trans-unit>
 			<trans-unit id="folderNotFoundTitle">
 				<source>Folder not found.</source>

@@ -14,78 +14,60 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
+
 /**
  * Image plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
-class DefaultImage extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
+class DefaultImage extends RteHtmlAreaApi
+{
+    /**
+     * The name of the plugin registered by the extension
+     *
+     * @var string
+     */
+    protected $pluginName = 'DefaultImage';
 
-	/**
-	 * The key of the extension that is extending htmlArea RTE
-	 *
-	 * @var string
-	 */
-	protected $extensionKey = 'rtehtmlarea';
+    /**
+     * The comma-separated list of button names that the registered plugin is adding to the htmlArea RTE toolbar
+     *
+     * @var string
+     */
+    protected $pluginButtons = 'image';
 
-	/**
-	 * The name of the plugin registered by the extension
-	 *
-	 * @var string
-	 */
-	protected $pluginName = 'DefaultImage';
+    /**
+     * The name-converting array, converting the button names used in the RTE PageTSConfing to the button id's used by the JS scripts
+     *
+     * @var array
+     */
+    protected $convertToolbarForHtmlAreaArray = array(
+        'image' => 'InsertImage'
+    );
 
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = '';
+    /**
+     * Returns TRUE if the plugin is available and correctly initialized
+     *
+     * @param array $configuration Configuration array given from calling object down to the single plugins
+     * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
+     */
+    public function main(array $configuration)
+    {
+        // Check if this should be enabled based on extension configuration and Page TSConfig
+        // The 'Minimal' and 'Typical' default configurations include Page TSConfig that removes images on the way to the database
+        return parent::main($configuration)
+            && !(
+                $this->configuration['thisConfig']['proc.']['entryHTMLparser_db.']['tags.']['img.']['allowedAttribs'] == '0'
+                && $this->configuration['thisConfig']['proc.']['entryHTMLparser_db.']['tags.']['img.']['rmTagIfNoAttrib'] == '1'
+            );
+    }
 
-	/**
-	 * Path to the skin file relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/default-image.css';
-
-	/**
-	 * Reference to the invoking object
-	 *
-	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
-	 */
-	protected $htmlAreaRTE;
-
-	protected $thisConfig;
-
-	// Reference to RTE PageTSConfig
-	protected $toolbar;
-
-	// Reference to RTE toolbar array
-	protected $LOCAL_LANG;
-
-	// Frontend language array
-	protected $pluginButtons = 'image';
-
-	protected $convertToolbarForHtmlAreaArray = array(
-		'image' => 'InsertImage'
-	);
-
-	public function main($parentObject) {
-		// Check if this should be enabled based on extension configuration and Page TSConfig
-		// The 'Minimal' and 'Typical' default configurations include Page TSConfig that removes images on the way to the database
-		return parent::main($parentObject) && !($this->thisConfig['proc.']['entryHTMLparser_db.']['tags.']['img.']['allowedAttribs'] == '0' && $this->thisConfig['proc.']['entryHTMLparser_db.']['tags.']['img.']['rmTagIfNoAttrib'] == '1');
-	}
-
-	/**
-	 * Return JS configuration of the htmlArea plugins registered by the extension
-	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
-	 * @return string JS configuration for registered plugins
-	 */
-	public function buildJavascriptConfiguration($rteNumberPlaceholder) {
-		$registerRTEinJavascriptString = '';
-		return $registerRTEinJavascriptString;
-	}
-
+    /**
+     * Return JS configuration of the htmlArea plugins registered by the extension
+     *
+     * @return string JS configuration for registered plugins
+     */
+    public function buildJavascriptConfiguration()
+    {
+        return '';
+    }
 }

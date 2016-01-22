@@ -12,17 +12,19 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/ContextHelp
  * API for context help.
  */
-define('TYPO3/CMS/Backend/ContextHelp', ['jquery', 'TYPO3/CMS/Backend/Popover', 'bootstrap'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Popover', 'bootstrap'], function($) {
 
 	/**
 	 * The main ContextHelp object
 	 *
-	 * @type {{ajaxUrl: *, localCache: {}, openContext: null}}
+	 * @type {{ajaxUrl: *, localCache: {}, helpModuleUrl: string, trigger: string, placement: string, selector: string}}
+	 * @exports TYPO3/CMS/Backend/ContextHelp
 	 */
 	var ContextHelp = {
-		ajaxUrl: TYPO3.settings.ajaxUrls['ContextHelpAjaxController::dispatch'],
+		ajaxUrl: TYPO3.settings.ajaxUrls['context_help'],
 		localCache: {},
 		helpModuleUrl: '',
 		trigger: 'click',
@@ -34,11 +36,16 @@ define('TYPO3/CMS/Backend/ContextHelp', ['jquery', 'TYPO3/CMS/Backend/Popover', 
 	 * Initialize context help trigger
 	 */
 	ContextHelp.initialize = function() {
-		ContextHelp.helpModuleUrl = top.TYPO3.settings.ContextHelp.moduleUrl;
+		ContextHelp.helpModuleUrl = (typeof top.TYPO3.settings.ContextHelp !== 'undefined') ? top.TYPO3.settings.ContextHelp.moduleUrl : null;
+		if (ContextHelp.helpModuleUrl === null) {
+			// @FIXME: if we are in the popup... remove the bookmark / shortcut button
+			// @TODO: make it possible to use the bookmark button also in popup mode
+			$('.icon-actions-system-shortcut-new').closest('.btn').hide();
+		}
 		var title = '&nbsp;';
-		if (typeof(top.TYPO3.LLL) !== 'undefined') {
+		if (typeof top.TYPO3.LLL !== 'undefined') {
 			title = top.TYPO3.LLL.core.csh_tooltip_loading;
-		} else if (opener && typeof(opener.top.TYPO3.LLL) !== 'undefined') {
+		} else if (opener && typeof opener.top.TYPO3.LLL !== 'undefined') {
 			title = opener.top.TYPO3.LLL.core.csh_tooltip_loading;
 		}
 		var $element = $(this.selector);
@@ -60,6 +67,11 @@ define('TYPO3/CMS/Backend/ContextHelp', ['jquery', 'TYPO3/CMS/Backend/Popover', 
 				});
 			} else if ($me.attr('data-loaded') === 'false' && $me.data('table')) {
 				ContextHelp.loadHelp($me);
+			}
+
+			// if help icon is in DocHeader, force open to bottom
+			if ($me.closest('.t3js-module-docheader').length) {
+				TYPO3.Popover.setOption($me, 'placement', 'bottom');
 			}
 		});
 		$(document).on('shown.bs.popover', ContextHelp.selector, function(evt) {
@@ -91,14 +103,15 @@ define('TYPO3/CMS/Backend/ContextHelp', ['jquery', 'TYPO3/CMS/Backend/Popover', 
 	/**
 	 * Open the help popup
 	 *
-	 * @param {object} $trigger
+	 * @param {Object} $trigger
 	 */
 	ContextHelp.showHelpPopup = function($trigger) {
-		var identifier = $trigger.data('table') + '.' + $trigger.data('field'),
-			configuration = top.TYPO3.configuration.ContextHelpWindows || top.TYPO3.configuration.PopupWindow;
+		var configuration = top.TYPO3.configuration.ContextHelpWindows || top.TYPO3.configuration.PopupWindow;
 		try {
 			var cshWindow = window.open(
-				ContextHelp.helpModuleUrl + '&tfID=' + identifier,
+				ContextHelp.helpModuleUrl +
+					'&tx_cshmanual_help_cshmanualcshmanual[table]=' + $trigger.data('table') +
+					'&tx_cshmanual_help_cshmanualcshmanual[field]=' + $trigger.data('field'),
 				'ContextHelpWindow',
 				'height=' + configuration.height + ',width=' + configuration.width + ',status=0,menubar=0,scrollbars=1'
 			);
@@ -113,7 +126,7 @@ define('TYPO3/CMS/Backend/ContextHelp', ['jquery', 'TYPO3/CMS/Backend/Popover', 
 	/**
 	 * Load help data
 	 *
-	 * @param {object} $trigger
+	 * @param {Object} $trigger
 	 */
 	ContextHelp.loadHelp = function($trigger) {
 		var table = $trigger.data('table');

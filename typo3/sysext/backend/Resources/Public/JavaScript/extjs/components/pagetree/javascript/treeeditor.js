@@ -20,7 +20,6 @@ Ext.namespace('TYPO3.Components.PageTree');
  *
  * @namespace TYPO3.Components.PageTree
  * @extends Ext.tree.TreeEditor
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 TYPO3.Components.PageTree.TreeEditor = Ext.extend(Ext.tree.TreeEditor, {
 	/**
@@ -35,7 +34,7 @@ TYPO3.Components.PageTree.TreeEditor = Ext.extend(Ext.tree.TreeEditor, {
 	 *
 	 * @type {int}
 	 */
-	editDelay: 0,
+	editDelay: 250,
 
 	/**
 	 * Indicates if an underlying shadow should be shown
@@ -50,7 +49,7 @@ TYPO3.Components.PageTree.TreeEditor = Ext.extend(Ext.tree.TreeEditor, {
 	 * Handles the synchronization between the edited label and the shown label.
 	 */
 	listeners: {
-		beforecomplete: function(node) {
+		beforecomplete: function(treeEditor) {
 			this.updatedValue = this.getValue();
 			if (this.updatedValue === '') {
 				this.cancelEdit();
@@ -60,13 +59,13 @@ TYPO3.Components.PageTree.TreeEditor = Ext.extend(Ext.tree.TreeEditor, {
 		},
 
 		complete: {
-			fn: function(node, newValue, oldValue) {
+			fn: function(treeEditor, newValue, oldValue) {
 				if (newValue === oldValue) {
 					this.fireEvent('canceledit', this);
 					return false;
 				}
 
-				this.editNode.getOwnerTree().commandProvider.saveTitle(node, this.updatedValue, oldValue, this);
+				this.editNode.getOwnerTree().commandProvider.saveTitle(this.updatedValue, oldValue, this);
 			}
 		},
 
@@ -93,8 +92,8 @@ TYPO3.Components.PageTree.TreeEditor = Ext.extend(Ext.tree.TreeEditor, {
 	 * @return {void}
 	 */
 	updateNodeText: function(node, editableText, updatedNode) {
-		this.editNode.setText(this.editNode.attributes.prefix + updatedNode + this.editNode.attributes.suffix);
-		this.editNode.attributes.editableText = editableText;
+		node.setText(node.attributes.prefix + updatedNode + node.attributes.suffix);
+		node.attributes.editableText = editableText;
 	},
 
 	/**

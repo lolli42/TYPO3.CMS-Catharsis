@@ -14,69 +14,41 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
+
 /**
  * Block Style extension for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
-class BlockStyle extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
+class BlockStyle extends RteHtmlAreaApi
+{
+    /**
+     * The name of the plugin registered by the extension
+     *
+     * @var string
+     */
+    protected $pluginName = 'BlockStyle';
 
-	/**
-	 * The key of the extension that is extending htmlArea RTE
-	 *
-	 * @var string
-	 */
-	protected $extensionKey = 'rtehtmlarea';
+    /**
+     * The comma-separated list of button names that the extension id adding to the htmlArea RTE toolbar
+     *
+     * @var string
+     */
+    protected $pluginButtons = 'blockstyle';
 
-	/**
-	 * The name of the plugin registered by the extension
-	 *
-	 * @var string
-	 */
-	protected $pluginName = 'BlockStyle';
+    /**
+     * The comma-separated list of label names that the extension id adding to the htmlArea RTE toolbar
+     *
+     * @var string
+     */
+    protected $pluginLabels = 'blockstylelabel';
 
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = 'extensions/BlockStyle/locallang.xlf';
-
-	/**
-	 * Path to the skin file relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToSkin = '';
-
-	/**
-	 * Reference to the invoking object
-	 *
-	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
-	 */
-	protected $htmlAreaRTE;
-
-	protected $thisConfig;
-
-	// Reference to RTE PageTSConfig
-	protected $toolbar;
-
-	// Reference to RTE toolbar array
-	protected $LOCAL_LANG;
-
-	// Frontend language array
-	protected $pluginButtons = 'blockstyle';
-
-	// The comma-separated list of button names that the extension id adding to the htmlArea RTE tollbar
-	protected $pluginLabels = 'blockstylelabel';
-
-	// The comma-separated list of label names that the extension id adding to the htmlArea RTE tollbar
-	// The name-converting array, converting the button names used in the RTE PageTSConfing to the button id's used by the JS scripts
-	protected $convertToolbarForHtmlAreaArray = array(
-		'blockstylelabel' => 'I[Block style label]',
-		'blockstyle' => 'BlockStyle'
-	);
-
-	protected $requiresClassesConfiguration = TRUE;
-
+    /**
+     * The name-converting array, converting the button names used in the RTE PageTSConfing to the button id's used by the JS scripts
+     *
+     * @var array
+     */
+    protected $convertToolbarForHtmlAreaArray = array(
+        'blockstylelabel' => 'I[Block style label]',
+        'blockstyle' => 'BlockStyle'
+    );
 }

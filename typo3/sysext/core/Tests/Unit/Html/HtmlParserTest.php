@@ -14,304 +14,535 @@ namespace TYPO3\CMS\Core\Tests\Unit\Html;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Html\HtmlParser;
+
 /**
  * Testcase for \TYPO3\CMS\Core\Html\HtmlParser
- *
- * @author Nicole Cordes <typo3@cordes.co>
  */
-class HtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+class HtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+{
+    /**
+     * @var \TYPO3\CMS\Core\Html\HtmlParser
+     */
+    protected $subject = null;
 
-	/**
-	 * @var \TYPO3\CMS\Core\Html\HtmlParser
-	 */
-	protected $subject = NULL;
+    protected function setUp()
+    {
+        $this->subject = new HtmlParser();
+    }
 
-	protected function setUp() {
-		$this->subject = new \TYPO3\CMS\Core\Html\HtmlParser();
-	}
+    /**
+     * @return array
+     */
+    public function cDataWillRemainUnmodifiedDataProvider()
+    {
+        return array(
+            'single-line CDATA' => array(
+                '/*<![CDATA[*/ <hello world> /*]]>*/',
+                '/*<![CDATA[*/ <hello world> /*]]>*/',
+            ),
+            'multi-line CDATA #1' => array(
+                '/*<![CDATA[*/' . LF . '<hello world> /*]]>*/',
+                '/*<![CDATA[*/' . LF . '<hello world> /*]]>*/',
+            ),
+            'multi-line CDATA #2' => array(
+                '/*<![CDATA[*/ <hello world>' . LF . '/*]]>*/',
+                '/*<![CDATA[*/ <hello world>' . LF . '/*]]>*/',
+            ),
+            'multi-line CDATA #3' => array(
+                '/*<![CDATA[*/' . LF . '<hello world>' . LF . '/*]]>*/',
+                '/*<![CDATA[*/' . LF . '<hello world>' . LF . '/*]]>*/',
+            ),
+        );
+    }
 
-	/**
-	 * Data provider for substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArray
-	 */
-	public function substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArrayDataProvider() {
-		$template = '###SINGLEMARKER1###
-<!-- ###FOO### begin -->
-<!-- ###BAR### begin -->
-###SINGLEMARKER2###
-<!-- ###BAR### end -->
-<!-- ###FOOTER### begin -->
-###SINGLEMARKER3###
-<!-- ###FOOTER### end -->
-<!-- ###FOO### end -->';
+    /**
+     * Data provider for splitIntoBlock
+     *
+     * @return array
+     */
+    public function splitIntoBlockDataProvider()
+    {
+        return array(
+            'splitBlock' => array(
+                'h1,span',
+                '<body><h1>Title</h1><span>Note</span></body>',
+                false,
+                array('<body>',
+                    '<h1>Title</h1>',
+                    '',
+                    '<span>Note</span>',
+                    '</body>')
+            ),
+            'splitBlock br' => array(
+                'h1,span',
+                '<body><h1>Title</h1><br /><span>Note</span><br /></body>',
+                false,
+                array('<body>',
+                    '<h1>Title</h1>',
+                    '<br />',
+                    '<span>Note</span>',
+                    '<br /></body>')
+            ),
+            'splitBlock with attribute' => array(
+                'h1,span',
+                '<body><h1 class="title">Title</h1><span>Note</span></body>',
+                false,
+                array('<body>',
+                    '<h1 class="title">Title</h1>',
+                    '',
+                    '<span>Note</span>',
+                    '</body>')
+            ),
+            'splitBlock span with attribute' => array(
+                'span',
+                '<body><h1>Title</h1><span class="title">Note</span></body>',
+                false,
+                array('<body><h1>Title</h1>',
+                    '<span class="title">Note</span>',
+                    '</body>')
+            ),
+            'splitBlock without extra end tags' => array(
+                'h1,span,div',
+                '<body><h1>Title</h1><span>Note</span></body></div>',
+                true,
+                array('<body>',
+                    '<h1>Title</h1>',
+                    '',
+                    '<span>Note</span>',
+                    '</body>')
+            ),
+        );
+    }
 
-		$expected ='Value 1
+    /**
+     * @test
+     * @param string $tag List of tags, comma separated.
+     * @param string $content HTML-content
+     * @param bool $eliminateExtraEndTags If set, excessive end tags are ignored - you should probably set this in most cases.
+     * @param array $expected The expected result
+     * @dataProvider splitIntoBlockDataProvider
+     */
+    public function splitIntoBlock($tag, $content, $eliminateExtraEndTags, $expected)
+    {
+        $this->assertSame($expected, $this->subject->splitIntoBlock($tag, $content, $eliminateExtraEndTags));
+    }
 
+    /**
+     * @test
+     * @param string $source
+     * @param string $expected
+     * @dataProvider cDataWillRemainUnmodifiedDataProvider
+     */
+    public function xHtmlCleaningDoesNotModifyCDATA($source, $expected)
+    {
+        $result = $this->subject->HTMLcleaner($source, array(), 1);
+        $this->assertSame($expected, $result);
+    }
 
-Value 2.1
+    /**
+     * Data provider for spanTagCorrectlyRemovedWhenRmTagIfNoAttribIsConfigured
+     */
+    public static function spanTagCorrectlyRemovedWhenRmTagIfNoAttribIsConfiguredDataProvider()
+    {
+        return array(
+            'Span tag with no attrib' => array(
+                '<span>text</span>',
+                'text'
+            ),
+            'Span tag with allowed id attrib' => array(
+                '<span id="id">text</span>',
+                '<span id="id">text</span>'
+            ),
+            'Span tag with disallowed style attrib' => array(
+                '<span style="line-height: 12px;">text</span>',
+                'text'
+            )
+        );
+    }
 
-Value 2.2
+    /**
+     * @test
+     * @param string $content
+     * @param string $expectedResult
+     * @dataProvider spanTagCorrectlyRemovedWhenRmTagIfNoAttribIsConfiguredDataProvider
+     */
+    public function tagCorrectlyRemovedWhenRmTagIfNoAttribIsConfigured($content, $expectedResult)
+    {
+        $tsConfig = array(
+            'allowTags' => 'span',
+            'tags.' => array(
+                'span.' => array(
+                    'allowedAttribs' => 'id',
+                    'rmTagIfNoAttrib' => 1
+                )
+            )
+        );
+        $this->assertEquals($expectedResult, $this->parseConfigAndCleanHtml($tsConfig, $content));
+    }
 
+    /**
+     * @test
+     */
+    public function rmTagIfNoAttribIsConfiguredDoesNotChangeNestingType()
+    {
+        $tsConfig = array(
+            'allowTags' => 'div,span',
+            'rmTagIfNoAttrib' => 'span',
+            'globalNesting' => 'div,span'
+        );
+        $content = '<span></span><span id="test"><div></span></div>';
+        $expectedResult = '<span id="test"></span>';
+        $this->assertEquals($expectedResult, $this->parseConfigAndCleanHtml($tsConfig, $content));
+    }
 
-Value 3.1
+    /**
+     * Data provider for localNestingCorrectlyRemovesInvalidTags
+     *
+     * @return array
+     */
+    public static function localNestingCorrectlyRemovesInvalidTagsDataProvider()
+    {
+        return array(
+            'Valid nesting is untouched' => array(
+                '<B><I></B></I>',
+                '<B><I></B></I>'
+            ),
+            'Valid nesting with content is untouched' => array(
+                'testa<B>test1<I>test2</B>test3</I>testb',
+                'testa<B>test1<I>test2</B>test3</I>testb'
+            ),
+            'Superflous tags are removed' => array(
+                '</B><B><I></B></I></B>',
+                '<B><I></B></I>'
+            ),
+            'Superflous tags with content are removed' => array(
+                'test1</B>test2<B>test3<I>test4</B>test5</I>test6</B>test7',
+                'test1test2<B>test3<I>test4</B>test5</I>test6test7'
+            ),
+            'Another valid nesting test' => array(
+                '<span><div></span></div>',
+                '<span><div></span></div>',
+            ),
+        );
+    }
 
-Value 3.2
+    /**
+     * @test
+     * @dataProvider localNestingCorrectlyRemovesInvalidTagsDataProvider
+     * @param string $content
+     * @param string $expectedResult
+     */
+    public function localNestingCorrectlyRemovesInvalidTags($content, $expectedResult)
+    {
+        $tsConfig = array(
+            'allowTags' => 'div,span,b,i',
+            'localNesting' => 'div,span,b,i',
+        );
+        $this->assertEquals($expectedResult, $this->parseConfigAndCleanHtml($tsConfig, $content));
+    }
 
-';
+    /**
+     * Data provider for globalNestingCorrectlyRemovesInvalidTags
+     *
+     * @return array
+     */
+    public static function globalNestingCorrectlyRemovesInvalidTagsDataProvider()
+    {
+        return array(
+            'Valid nesting is untouched' => array(
+                '<B><I></I></B>',
+                '<B><I></I></B>'
+            ),
+            'Valid nesting with content is untouched' => array(
+                'testa<B>test1<I>test2</I>test3</B>testb',
+                'testa<B>test1<I>test2</I>test3</B>testb'
+            ),
+            'Invalid nesting is cleaned' => array(
+                '</B><B><I></B></I></B>',
+                '<B></B>'
+            ),
+            'Invalid nesting with content is cleaned' => array(
+                'test1</B>test2<B>test3<I>test4</B>test5</I>test6</B>test7',
+                'test1test2<B>test3test4</B>test5test6test7'
+            ),
+            'Another invalid nesting test' => array(
+                '<span><div></span></div>',
+                '<span></span>',
+            ),
+        );
+    }
 
-		return array(
-			'Single marker' => array(
-				'###SINGLEMARKER###',
-				array(
-					'###SINGLEMARKER###' => 'Value 1'
-				),
-				'',
-				FALSE,
-				FALSE,
-				'Value 1'
-			),
-			'Subpart marker' => array(
-				$template,
-				array(
-					'###SINGLEMARKER1###' => 'Value 1',
-					'###FOO###' => array(
-						array(
-							'###BAR###' => array(
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.1'
-								),
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.2'
-								)
-							),
-							'###FOOTER###' => array(
-								array(
-									'###SINGLEMARKER3###' => 'Value 3.1'
-								),
-								array(
-									'###SINGLEMARKER3###' => 'Value 3.2'
-								)
-							)
-						)
-					)
-				),
-				'',
-				FALSE,
-				FALSE,
-				$expected
-			),
-			'Subpart marker with wrap' => array(
-				$template,
-				array(
-					'SINGLEMARKER1' => 'Value 1',
-					'FOO' => array(
-						array(
-							'BAR' => array(
-								array(
-									'SINGLEMARKER2' => 'Value 2.1'
-								),
-								array(
-									'SINGLEMARKER2' => 'Value 2.2'
-								)
-							),
-							'FOOTER' => array(
-								array(
-									'SINGLEMARKER3' => 'Value 3.1'
-								),
-								array(
-									'SINGLEMARKER3' => 'Value 3.2'
-								)
-							)
-						)
-					)
-				),
-				'###|###',
-				FALSE,
-				FALSE,
-				$expected
-			),
-			'Subpart marker with lower marker array keys' => array(
-				$template,
-				array(
-					'###singlemarker1###' => 'Value 1',
-					'###foo###' => array(
-						array(
-							'###bar###' => array(
-								array(
-									'###singlemarker2###' => 'Value 2.1'
-								),
-								array(
-									'###singlemarker2###' => 'Value 2.2'
-								)
-							),
-							'###footer###' => array(
-								array(
-									'###singlemarker3###' => 'Value 3.1'
-								),
-								array(
-									'###singlemarker3###' => 'Value 3.2'
-								)
-							)
-						)
-					)
-				),
-				'',
-				TRUE,
-				FALSE,
-				$expected
-			),
-			'Subpart marker with unused markers' => array(
-				$template,
-				array(
-					'###FOO###' => array(
-						array(
-							'###BAR###' => array(
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.1'
-								)
-							),
-							'###FOOTER###' => array(
-								array(
-									'###SINGLEMARKER3###' => 'Value 3.1'
-								)
-							)
-						)
-					)
-				),
-				'',
-				FALSE,
-				TRUE,
-				'
+    /**
+     * @test
+     * @dataProvider globalNestingCorrectlyRemovesInvalidTagsDataProvider
+     * @param string $content
+     * @param string $expectedResult
+     */
+    public function globalNestingCorrectlyRemovesInvalidTags($content, $expectedResult)
+    {
+        $tsConfig = array(
+            'allowTags' => 'span,div,b,i',
+            'globalNesting' => 'span,div,b,i',
+        );
+        $this->assertEquals($expectedResult, $this->parseConfigAndCleanHtml($tsConfig, $content));
+    }
 
+    /**
+     * @return array
+     */
+    public function emptyTagsDataProvider()
+    {
+        return array(
+            array(0 , null, false, '<h1></h1>', '<h1></h1>'),
+            array(1 , null, false, '<h1></h1>', ''),
+            array(1 , null, false, '<h1>hallo</h1>', '<h1>hallo</h1>'),
+            array(1 , null, false, '<h1 class="something"></h1>', ''),
+            array(1 , null, false, '<h1 class="something"></h1><h2></h2>', ''),
+            array(1 , 'h2', false, '<h1 class="something"></h1><h2></h2>', '<h1 class="something"></h1>'),
+            array(1 , 'h2, h1', false, '<h1 class="something"></h1><h2></h2>', ''),
+            array(1 , null, false, '<div><p></p></div>', ''),
+            array(1 , null, false, '<div><p>&nbsp;</p></div>', '<div><p>&nbsp;</p></div>'),
+            array(1 , null, true, '<div><p>&nbsp;&nbsp;</p></div>', ''),
+            array(1 , null, true, '<div>&nbsp;&nbsp;<p></p></div>', ''),
+            array(1 , null, false, '<div>Some content<p></p></div>', '<div>Some content</div>'),
+            array(1 , null, true, '<div>Some content<p></p></div>', '<div>Some content</div>'),
+            array(1 , null, false, '<div>Some content</div>', '<div>Some content</div>'),
+            array(1 , null, true, '<div>Some content</div>', '<div>Some content</div>'),
+            array(1 , null, false, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
+            array(1 , null, true, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
+        );
+    }
 
-Value 2.1
+    /**
+     * @test
+     * @dataProvider emptyTagsDataProvider
+     * @param bool $stripOn TRUE if stripping should be activated.
+     * @param string $tagList Comma seperated list of tags that should be stripped.
+     * @param bool $treatNonBreakingSpaceAsEmpty If TRUE &nbsp; will be considered empty.
+     * @param string $content The HTML code that should be modified.
+     * @param string $expectedResult The expected HTML code result.
+     */
+    public function stripEmptyTags($stripOn, $tagList, $treatNonBreakingSpaceAsEmpty, $content, $expectedResult)
+    {
+        $tsConfig = array(
+            'keepNonMatchedTags' => 1,
+            'stripEmptyTags' => $stripOn,
+            'stripEmptyTags.' => array(
+                'tags' => $tagList,
+                'treatNonBreakingSpaceAsEmpty' => $treatNonBreakingSpaceAsEmpty
+            ),
+        );
 
+        $result = $this->parseConfigAndCleanHtml($tsConfig, $content);
+        $this->assertEquals($expectedResult, $result);
+    }
 
-Value 3.1
+    /**
+     * Calls HTMLparserConfig() and passes the generated config to the HTMLcleaner() method on the current subject.
+     *
+     * @param array $tsConfig The TypoScript that should be used to generate the HTML parser config.
+     * @param string $content The content that should be parsed by the HTMLcleaner.
+     * @return string The parsed content.
+     */
+    protected function parseConfigAndCleanHtml(array $tsConfig, $content)
+    {
+        $config = $this->subject->HTMLparserConfig($tsConfig);
+        return $this->subject->HTMLcleaner($content, $config[0], $config[1], $config[2], $config[3]);
+    }
 
-'
-			),
-			'Subpart marker with empty subpart' => array(
-				$template,
-				array(
-					'###SINGLEMARKER1###' => 'Value 1',
-					'###FOO###' => array(
-						array(
-							'###BAR###' => array(
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.1'
-								),
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.2'
-								)
-							),
-							'###FOOTER###' => array()
-						)
-					)
-				),
-				'',
-				FALSE,
-				FALSE,
-				'Value 1
+    /**
+     * Data provider for getFirstTag
+     *
+     * @return array
+     */
+    public function getFirstTagDataProvider()
+    {
+        return array(
+            array('<body><span></span></body>', '<body>'),
+            array('<span>Wrapper<div>Some content</div></span>', '<span>'),
+            array('Something before<span>Wrapper<div>Some content</div></span>Something after', 'Something before<span>'),
+            array('Something without tag', '')
+        );
+    }
 
+    /**
+     * Returns the first tag in $str
+     * Actually everything from the beginning of the $str is returned, so you better make sure the tag is the first thing...
+     *
+     * @test
+     * @dataProvider getFirstTagDataProvider
+     *
+     * @param string $str HTML string with tags
+     * @param string $expected The expected result.
+     */
+    public function getFirstTag($str, $expected)
+    {
+        $this->assertEquals($expected, $this->subject->getFirstTag($str));
+    }
 
-Value 2.1
+    /**
+     * Data provider for getFirstTagName
+     *
+     * @return array
+     */
+    public function getFirstTagNameDataProvider()
+    {
+        return array(
+            array('<body><span></span></body>',
+                false,
+                'BODY'),
+            array('<body><span></span></body>',
+                true,
+                'body'),
+            array('<div class="test"><span></span></div>',
+                false,
+                'DIV'),
+            array('<div><span class="test"></span></div>',
+                false,
+                'DIV'),
+            array('<br /><span class="test"></span>',
+                false,
+                'BR'),
+            array('<img src="test.jpg" />',
+                false,
+                'IMG'),
+        );
+    }
 
-Value 2.2
+    /**
+     * Returns the NAME of the first tag in $str
+     *
+     * @test
+     * @dataProvider getFirstTagNameDataProvider
+     *
+     * @param string $str HTML tag (The element name MUST be separated from the attributes by a space character! Just *whitespace* will not do)
+     * @param bool $preserveCase If set, then the tag is NOT converted to uppercase by case is preserved.
+     * @param string $expected The expected result.
+     */
+    public function getFirstTagName($str, $preserveCase, $expected)
+    {
+        $this->assertEquals($expected, $this->subject->getFirstTagName($str, $preserveCase));
+    }
 
+    /**
+     * @return array
+     */
+    public function removeFirstAndLastTagDataProvider()
+    {
+        return array(
+            array('<span>Wrapper<div>Some content</div></span>', 'Wrapper<div>Some content</div>'),
+            array('<td><tr>Some content</tr></td>', '<tr>Some content</tr>'),
+            array('Something before<span>Wrapper<div>Some content</div></span>Something after', 'Wrapper<div>Some content</div>'),
+            array('<span class="hidden">Wrapper<div>Some content</div></span>', 'Wrapper<div>Some content</div>'),
+            array('<span>Wrapper<div class="hidden">Some content</div></span>', 'Wrapper<div class="hidden">Some content</div>'),
+            array('Some stuff before <span>Wrapper<div class="hidden">Some content</div></span> and after', 'Wrapper<div class="hidden">Some content</div>'),
+        );
+    }
 
-'
-			)
-		);
-	}
+    /**
+     * Removes the first and last tag in the string
+     * Anything before the first and after the last tags respectively is also removed
+     *
+     * @test
+     * @dataProvider removeFirstAndLastTagDataProvider
+     * @param string $str String to process
+     * @param string $expectedResult
+     */
+    public function removeFirstAndLastTag($str, $expectedResult)
+    {
+        $this->assertEquals($expectedResult, $this->subject->removeFirstAndLastTag($str));
+    }
 
-	/**
-	 * @test
-	 * @dataProvider substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArrayDataProvider
-	 */
-	public function substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArray($template, $markersAndSubparts, $wrap, $uppercase, $deleteUnused, $expected) {
-		$this->assertSame($expected, $this->subject->substituteMarkerAndSubpartArrayRecursive($template, $markersAndSubparts, $wrap, $uppercase, $deleteUnused));
-	}
+    /**
+     * @return array
+     */
+    public function getTagAttributesDataProvider()
+    {
+        return [
+            [
+                '<a href="" data-shortCut="DXB" required>',
+                [
+                    ['href' => '', 'data-shortcut' => 'DXB', 'required' => ''],
+                    ['href' => ['origTag' => 'href', 'dashType' => '"'], 'data-shortcut' => ['origTag' => 'data-shortCut', 'dashType' => '"'], 'required' => ['origTag' => 'required']]
+                ]
+            ],
+            [
+                '<ul STYLE=\'background-image: (url: "fra.png")\' data-shortcut=FRA>',
+                [
+                    ['style' => 'background-image: (url: "fra.png")', 'data-shortcut' => 'FRA'],
+                    ['style' => ['origTag' => 'STYLE', 'dashType' => '\''], 'data-shortcut' => ['origTag' => 'data-shortcut', 'dashType' => '']]
+                ]
+            ]
 
-	/**
-	 * @return array
-	 */
-	public function cDataWillRemainUnmodifiedDataProvider() {
-		return array(
-			'single-line CDATA' => array(
-				'/*<![CDATA[*/ <hello world> /*]]>*/',
-				'/*<![CDATA[*/ <hello world> /*]]>*/',
-			),
-			'multi-line CDATA #1' => array(
-				'/*<![CDATA[*/' . LF . '<hello world> /*]]>*/',
-				'/*<![CDATA[*/' . LF . '<hello world> /*]]>*/',
-			),
-			'multi-line CDATA #2' => array(
-				'/*<![CDATA[*/ <hello world>' . LF . '/*]]>*/',
-				'/*<![CDATA[*/ <hello world>' . LF . '/*]]>*/',
-			),
-			'multi-line CDATA #3' => array(
-				'/*<![CDATA[*/' . LF . '<hello world>' . LF . '/*]]>*/',
-				'/*<![CDATA[*/' . LF . '<hello world>' . LF . '/*]]>*/',
-			),
-		);
-	}
+        ];
+    }
 
-	/**
-	 * @test
-	 * @param string $source
-	 * @param string $expected
-	 * @dataProvider cDataWillRemainUnmodifiedDataProvider
-	 */
-	public function xHtmlCleaningDoesNotModifyCDATA($source, $expected) {
-		$result = $this->subject->XHTML_clean($source);
-		$this->assertSame($expected, $result);
-	}
+    /**
+     * Returns an array with all attributes and its meta information from a tag.
+     * Removes tag-name if found
+     *
+     * @test
+     * @dataProvider getTagAttributesDataProvider
+     * @param string $tag String to process
+     * @param array $expectedResult
+     */
+    public function getTagAttributes($tag, $expectedResult)
+    {
+        $this->assertEquals($expectedResult, $this->subject->get_tag_attributes($tag));
+    }
 
-	/**
-	 * @return array
-	 */
-	public function emptyTagsDataProvider() {
-		return array(
-			array(0 , NULL, FALSE, '<h1></h1>', '<h1></h1>'),
-			array(1 , NULL, FALSE, '<h1></h1>', ''),
-			array(1 , NULL, FALSE, '<h1>hallo</h1>', '<h1>hallo</h1>'),
-			array(1 , NULL, FALSE, '<h1 class="something"></h1>', ''),
-			array(1 , NULL, FALSE, '<h1 class="something"></h1><h2></h2>', ''),
-			array(1 , 'h2', FALSE, '<h1 class="something"></h1><h2></h2>', '<h1 class="something"></h1>'),
-			array(1 , 'h2, h1', FALSE, '<h1 class="something"></h1><h2></h2>', ''),
-			array(1 , NULL, FALSE, '<div><p></p></div>', ''),
-			array(1 , NULL, FALSE, '<div><p>&nbsp;</p></div>', '<div><p>&nbsp;</p></div>'),
-			array(1 , NULL, TRUE, '<div><p>&nbsp;&nbsp;</p></div>', ''),
-			array(1 , NULL, TRUE, '<div>&nbsp;&nbsp;<p></p></div>', ''),
-			array(1 , NULL, FALSE, '<div>Some content<p></p></div>', '<div>Some content</div>'),
-			array(1 , NULL, TRUE, '<div>Some content<p></p></div>', '<div>Some content</div>'),
-			array(1 , NULL, FALSE, '<div>Some content</div>', '<div>Some content</div>'),
-			array(1 , NULL, TRUE, '<div>Some content</div>', '<div>Some content</div>'),
-			array(1 , NULL, FALSE, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
-			array(1 , NULL, TRUE, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
-		);
-	}
+    /**
+     * @return array
+     */
+    public function stripEmptyTagsDataProvider()
+    {
+        return [
+            // Testing wrongly encapsulated and upper/lowercase tags
+            [
+                '<div>Denpassar</div><p> Bali</P><p></p><P></p><ul><li></li></ul>',
+                '',
+                false,
+                '<div>Denpassar</div><p> Bali</P>'
+            ],
+            // Testing incomplete tags
+            [
+                '<p><div>Klungklung</div></p><p> Semarapura<p></p><p></p><ul><li></li></ul>',
+                '',
+                false,
+                '<p><div>Klungklung</div></p><p> Semarapura'
+            ],
+            // Testing third parameter (break spaces
+            [
+                '<p><div>Badung</div></p><ul> Mangupura<p></p><p></p><ul><li>&nbsp;</li><li>Uluwatu</li></ul>',
+                '',
+                true,
+                '<p><div>Badung</div></p><ul> Mangupura<ul><li>Uluwatu</li></ul>'
+            ],
+            // Testing fourth parameter (keeping empty other tags, keeping defined used tags)
+            [
+                '<p><div>Badung</div></p><ul> Mangupura<p></p><p></p><ul><li></li></ul>',
+                'p,div',
+                true,
+                '<p><div>Badung</div></p><ul> Mangupura<ul><li></li></ul>'
+            ],
 
-	/**
-	 * @test
-	 * @dataProvider emptyTagsDataProvider
-	 * @param bool $stripOn TRUE if stripping should be activated.
-	 * @param string $tagList Comma seperated list of tags that should be stripped.
-	 * @param bool $treatNonBreakingSpaceAsEmpty If TRUE &nbsp; will be considered empty.
-	 * @param string $content The HTML code that should be modified.
-	 * @param string $expectedResult The expected HTML code result.
-	 */
-	public function stripEmptyTags($stripOn, $tagList, $treatNonBreakingSpaceAsEmpty, $content, $expectedResult) {
-		$tsConfig = array(
-			'keepNonMatchedTags' => 1,
-			'stripEmptyTags' => $stripOn,
-			'stripEmptyTags.' => array(
-				'tags' => $tagList,
-				'treatNonBreakingSpaceAsEmpty' => $treatNonBreakingSpaceAsEmpty
-			),
-		);
-		$config = $this->subject->HTMLparserConfig($tsConfig);
-		$result = $this->subject->HTMLcleaner($content, $config[0], $config[1], $config[2], $config[3]);
-		$this->assertEquals($expectedResult, $result);
-	}
+        ];
+    }
+
+    /**
+     * Strips empty tags from HTML.
+     *
+     * @test
+     * @dataProvider stripEmptyTagsDataProvider
+     * @param string $content The content to be stripped of empty tags
+     * @param string $tagList The comma separated list of tags to be stripped.
+     *                        If empty, all empty tags will be stripped
+     * @param bool $treatNonBreakingSpaceAsEmpty If TRUE tags containing only &nbsp; entities will be treated as empty.
+     * @param string $expectedResult
+     */
+    public function rawStripEmptyTagsTest($content, $tagList, $treatNonBreakingSpaceAsEmpty, $expectedResult)
+    {
+        $this->assertEquals($expectedResult, $this->subject->stripEmptyTags($content, $tagList, $treatNonBreakingSpaceAsEmpty));
+    }
 }

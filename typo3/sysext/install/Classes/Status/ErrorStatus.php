@@ -16,14 +16,11 @@ namespace TYPO3\CMS\Install\Status;
 
 /**
  * Error level status
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
-class ErrorStatus extends AbstractStatus implements StatusInterface {
-
-	/**
-	 * @var string The severity
-	 */
-	protected $severity = 'error';
-
+class ErrorStatus extends AbstractStatus implements StatusInterface
+{
+    /**
+     * @var string The severity
+     */
+    protected $severity = 'error';
 }

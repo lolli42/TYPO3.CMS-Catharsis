@@ -16,55 +16,82 @@ namespace TYPO3\CMS\Form\Domain\Model\Json;
 
 /**
  * JSON textarea
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
-class TextareaJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement {
+class TextareaJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement
+{
+    /**
+     * The ExtJS xtype of the element
+     *
+     * @var string
+     */
+    public $xtype = 'typo3-form-wizard-elements-basic-textarea';
 
-	/**
-	 * The ExtJS xtype of the element
-	 *
-	 * @var string
-	 */
-	public $xtype = 'typo3-form-wizard-elements-basic-textarea';
+    /**
+     * The configuration array for the xtype
+     *
+     * @var array
+     */
+    public $configuration = array(
+        'attributes' => array(
+            'cols' => 40,
+            'rows' => 5
+        ),
+        'filters' => array(),
+        'label' => array(
+            'value' => ''
+        ),
+        'layout' => 'front',
+        'validation' => array()
+    );
 
-	/**
-	 * The configuration array for the xtype
-	 *
-	 * @var array
-	 */
-	public $configuration = array(
-		'attributes' => array(
-			'cols' => 40,
-			'rows' => 5
-		),
-		'filters' => array(),
-		'label' => array(
-			'value' => ''
-		),
-		'layout' => 'front',
-		'validation' => array()
-	);
+    /**
+     * Allowed attributes for this object
+     *
+     * @var array
+     */
+    protected $allowedAttributes = array(
+        'accesskey',
+        'class',
+        'contenteditable',
+        'contextmenu',
+        'dir',
+        'draggable',
+        'dropzone',
+        'hidden',
+        'id',
+        'lang',
+        'spellcheck',
+        'style',
+        'tabindex',
+        'title',
+        'translate',
+        /* element specific attributes */
+        'autofocus',
+        'cols',
+        'disabled',
+        'inputmode',
+        'maxlength',
+        'minlength',
+        'name',
+        'placeholder',
+        'readonly',
+        'required',
+        'rows',
+        'selectionDirection',
+        'selectionEnd',
+        'selectionStart',
+        'text',
+        'wrap'
+    );
 
-	/**
-	 * Allowed attributes for this object
-	 *
-	 * @var array
-	 */
-	protected $allowedAttributes = array(
-		'accesskey',
-		'class',
-		'cols',
-		'dir',
-		'disabled',
-		'id',
-		'lang',
-		'name',
-		'readonly',
-		'rows',
-		'style',
-		'tabindex',
-		'title'
-	);
-
+    /**
+     * Set the attributes according to the allowed attributes of this element
+     *
+     * @param array $parameters Configuration array
+     * @return void
+     */
+    protected function setAttributes(array $parameters)
+    {
+        parent::setAttributes($parameters);
+    }
 }

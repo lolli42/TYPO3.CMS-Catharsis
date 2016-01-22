@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Backend\Form\Container;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Render a given list of field of a TCA table.
@@ -25,63 +24,58 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
  * list of specific fields. Access rights are checked here and globalOption array
  * is prepared for further processing of single fields by PaletteAndSingleContainer.
  */
-class ListOfFieldsContainer extends AbstractContainer {
+class ListOfFieldsContainer extends AbstractContainer
+{
+    /**
+     * Entry method
+     *
+     * @return array As defined in initializeResultArray() of AbstractNode
+     */
+    public function render()
+    {
+        $table = $this->data['tableName'];
+        $fieldListToRender = $this->data['fieldListToRender'];
+        $recordTypeValue = $this->data['recordTypeValue'];
 
-	/**
-	 * Entry method
-	 *
-	 * @return array As defined in initializeResultArray() of AbstractNode
-	 */
-	public function render() {
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$list = $this->globalOptions['fieldListToRender'];
+        // Load the description content for the table if requested
+        if ($GLOBALS['TCA'][$table]['interface']['always_description']) {
+            $languageService = $this->getLanguageService();
+            $languageService->loadSingleTableDescription($table);
+        }
 
-		if (!$GLOBALS['TCA'][$table]) {
-			return $this->initializeResultArray();
-		}
+        $fieldListToRender = array_unique(GeneralUtility::trimExplode(',', $fieldListToRender, true));
 
-		$languageService = $this->getLanguageService();
-		// Load the description content for the table if requested
-		if ($GLOBALS['TCA'][$table]['interface']['always_description']) {
-			$languageService->loadSingleTableDescription($table);
-		}
+        $fieldsByShowitem = $this->data['processedTca']['types'][$recordTypeValue]['showitem'];
+        $fieldsByShowitem = GeneralUtility::trimExplode(',', $fieldsByShowitem, true);
 
-		// If this is a localized record, stuff data from original record to local registry, will then be given to child elements
-		$this->registerDefaultLanguageData($table, $row);
+        $finalFieldsList = array();
+        foreach ($fieldListToRender as $fieldName) {
+            $found = false;
+            foreach ($fieldsByShowitem as $fieldByShowitem) {
+                $fieldByShowitemArray = $this->explodeSingleFieldShowItemConfiguration($fieldByShowitem);
+                if ($fieldByShowitemArray['fieldName'] === $fieldName) {
+                    $found = true;
+                    $finalFieldsList[] = implode(';', $fieldByShowitemArray);
+                    break;
+                }
+            }
+            if (!$found) {
+                // @todo: Field is shown even if it is not in type showitem list? Will be shown if field is in a palette.
+                $finalFieldsList[] = $fieldName;
+            }
+        }
 
-		$list = array_unique(GeneralUtility::trimExplode(',', $list, TRUE));
-		$typesFieldConfig = BackendUtility::getTCAtypes($table, $row, 1);
-		$finalFieldsConfiguration = array();
-		foreach ($list as $singleField) {
-			if (!is_array($GLOBALS['TCA'][$table]['columns'][$singleField])) {
-				continue;
-			}
-			if (isset($typesFieldConfig[$singleField]['origString'])) {
-				$fieldConfiguration = $this->explodeSingleFieldShowItemConfiguration($typesFieldConfig[$singleField]['origString']);
-				// Fields of sub palettes should not be rendered
-				$fieldConfiguration['paletteName'] = '';
-			} else {
-				$fieldConfiguration = array(
-					'fieldName' => $singleField,
-				);
-			}
-			$finalFieldsConfiguration[] = implode(';', $fieldConfiguration);
-		}
+        $options = $this->data;
+        $options['fieldsArray'] = $finalFieldsList;
+        $options['renderType'] = 'paletteAndSingleContainer';
+        return $this->nodeFactory->create($options)->render();
+    }
 
-		$options = $this->globalOptions;
-		$options['fieldsArray'] = $finalFieldsConfiguration;
-		/** @var PaletteAndSingleContainer $paletteAndSingleContainer */
-		$paletteAndSingleContainer = GeneralUtility::makeInstance(PaletteAndSingleContainer::class);
-		$paletteAndSingleContainer->setGlobalOptions($options);
-		return $paletteAndSingleContainer->render();
-	}
-
-	/**
-	 * @return LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
-
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

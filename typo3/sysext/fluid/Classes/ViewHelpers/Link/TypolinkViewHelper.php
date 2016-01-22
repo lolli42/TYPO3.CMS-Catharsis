@@ -19,6 +19,7 @@ use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\Service\TypoLinkCodecService;
 
 /**
  * A ViewHelper to create links from fields supported by the link wizard
@@ -50,140 +51,126 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  * </output>
  *
  */
-class TypolinkViewHelper extends AbstractViewHelper implements CompilableInterface {
+class TypolinkViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Render
+     *
+     * @param string $parameter stdWrap.typolink style parameter string
+     * @param string $target
+     * @param string $class
+     * @param string $title
+     * @param string $additionalParams
+     * @param array $additionalAttributes
+     *
+     * @return string
+     */
+    public function render($parameter, $target = '', $class = '', $title = '', $additionalParams = '', $additionalAttributes = array())
+    {
+        return static::renderStatic(
+            array(
+                'parameter' => $parameter,
+                'target' => $target,
+                'class' => $class,
+                'title' => $title,
+                'additionalParams' => $additionalParams,
+                'additionalAttributes' => $additionalAttributes
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Render
-	 *
-	 * @param string $parameter stdWrap.typolink style parameter string
-	 * @param string $target
-	 * @param string $class
-	 * @param string $title
-	 * @param string $additionalParams
-	 * @param array $additionalAttributes
-	 *
-	 * @return string
-	 */
-	public function render($parameter, $target = '', $class = '', $title = '', $additionalParams = '', $additionalAttributes = array()) {
-		return self::renderStatic(
-			array(
-				'parameter' => $parameter,
-				'target' => $target,
-				'class' => $class,
-				'title' => $title,
-				'additionalParams' => $additionalParams,
-				'additionalAttributes' => $additionalAttributes
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     * @return mixed|string
+     * @throws \InvalidArgumentException
+     * @throws \UnexpectedValueException
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $parameter = $arguments['parameter'];
+        $target = $arguments['target'];
+        $class = $arguments['class'];
+        $title = $arguments['title'];
+        $additionalParams = $arguments['additionalParams'];
+        $additionalAttributes = $arguments['additionalAttributes'];
 
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 * @return mixed|string
-	 * @throws \InvalidArgumentException
-	 * @throws \UnexpectedValueException
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$parameter = $arguments['parameter'];
-		$target = $arguments['target'];
-		$class = $arguments['class'];
-		$title = $arguments['title'];
-		$additionalParams = $arguments['additionalParams'];
-		$additionalAttributes = $arguments['additionalAttributes'];
+        // Merge the $parameter with other arguments
+        $typolinkParameter = self::createTypolinkParameterArrayFromArguments($parameter, $target, $class, $title, $additionalParams);
 
-		// Merge the $parameter with other arguments
-		$typolinkParameter = self::createTypolinkParameterArrayFromArguments($parameter, $target, $class, $title, $additionalParams);
+        // array(param1 -> value1, param2 -> value2) --> param1="value1" param2="value2" for typolink.ATagParams
+        $extraAttributes = array();
+        foreach ($additionalAttributes as $attributeName => $attributeValue) {
+            $extraAttributes[] = $attributeName . '="' . htmlspecialchars($attributeValue) . '"';
+        }
+        $aTagParams = implode(' ', $extraAttributes);
 
-		// array(param1 -> value1, param2 -> value2) --> "param1=value1 param2=>value2" for typolink.ATagParams
-		$extraAttributes = array();
-		foreach ($additionalAttributes as $attributeName => $attributeValue) {
-			$extraAttributes[] = $attributeName . '="' . htmlspecialchars($attributeValue) . '"';
-		}
-		$aTagParams = implode(' ', $extraAttributes);
+        // If no link has to be rendered, the inner content will be returned as such
+        $content = (string)$renderChildrenClosure();
 
-		// If no link has to be rendered, the inner content will be returned as such
-		$content = $renderChildrenClosure();
+        if ($parameter) {
+            /** @var ContentObjectRenderer $contentObject */
+            $contentObject = GeneralUtility::makeInstance(ContentObjectRenderer::class);
+            $contentObject->start(array(), '');
+            $content = $contentObject->stdWrap(
+                $content,
+                array(
+                    'typolink.' => array(
+                        'parameter' => $typolinkParameter,
+                        'ATagParams' => $aTagParams,
+                    )
+                )
+            );
+        }
 
-		if ($parameter) {
-			/** @var ContentObjectRenderer $contentObject */
-			$contentObject = GeneralUtility::makeInstance(ContentObjectRenderer::class);
-			$contentObject->start(array(), '');
-			$content = $contentObject->stdWrap(
-				$content,
-				array(
-					'typolink.' => array(
-						'parameter' => implode(' ', $typolinkParameter),
-						'ATagParams' => $aTagParams,
-					)
-				)
-			);
-		}
+        return $content;
+    }
 
-		return $content;
-	}
+    /**
+     * Transforms ViewHelper arguments to typo3link.parameters.typoscript option as array.
+     *
+     * @param string $parameter Example: 19 _blank - "testtitle \"with whitespace\"" &X=y
+     * @param string $target
+     * @param string $class
+     * @param string $title
+     * @param string $additionalParams
+     *
+     * @return string The final TypoLink string
+     */
+    protected static function createTypolinkParameterArrayFromArguments($parameter, $target = '', $class = '', $title = '', $additionalParams = '')
+    {
+        $typoLinkCodec = GeneralUtility::makeInstance(TypoLinkCodecService::class);
+        $typolinkConfiguration = $typoLinkCodec->decode($parameter);
+        if (empty($typolinkConfiguration)) {
+            return $typolinkConfiguration;
+        }
 
-	/**
-	 * Transforms ViewHelper arguments to typo3link.parameters.typoscript option as array.
-	 *
-	 * @param string $parameter Example: 19 _blank - "testtitle with whitespace" &X=y
-	 * @param string $target
-	 * @param string $class
-	 * @param string $title
-	 * @param string $additionalParams
-	 *
-	 * @return array Final merged typolink.parameter as array to be imploded with empty string later
-	 */
-	static protected function createTypolinkParameterArrayFromArguments($parameter, $target = '', $class = '', $title = '', $additionalParams = '') {
-		// Explode $parameter by whitespace and remove any " around resulting array values
-		$parameterArray = GeneralUtility::unQuoteFilenames($parameter, TRUE);
+        // Override target if given in target argument
+        if ($target) {
+            $typolinkConfiguration['target'] = $target;
+        }
 
-		if (empty($parameterArray)) {
-			return array();
-		}
+        // Combine classes if given in both "parameter" string and "class" argument
+        if ($class) {
+            if ($typolinkConfiguration['class']) {
+                $typolinkConfiguration['class'] .= ' ';
+            }
+            $typolinkConfiguration['class'] .= $class;
+        }
 
-		// Extend to 4 elements
-		$typolinkConfiguration = array_pad($parameterArray, 4, '-');
+        // Override title if given in title argument
+        if ($title) {
+            $typolinkConfiguration['title'] = $title;
+        }
 
-		// Override target if given in target argument
-		if ($target) {
-			$typolinkConfiguration[1] = $target;
-		}
+        // Combine additionalParams
+        if ($additionalParams) {
+            $typolinkConfiguration['additionalParams'] .= $additionalParams;
+        }
 
-		// Combine classes if given in both "parameter" string and "class" argument
-		if ($class) {
-			$typolinkConfiguration[2] = $typolinkConfiguration[2] !== '-' ? $typolinkConfiguration[2] . ' ' : '';
-			$typolinkConfiguration[2] .= $class;
-		}
-
-		// Override title if given in title argument
-		if ($title) {
-			$typolinkConfiguration[3] = $title;
-		}
-
-		// Combine additionalParams
-		if ($additionalParams) {
-			$typolinkConfiguration[4] .= $additionalParams;
-		}
-
-		// Unset unused parameters again from the end, wrap all given values with "
-		$reverseSortedParameters = array_reverse($typolinkConfiguration, TRUE);
-		$aValueWasSet = FALSE;
-		foreach ($reverseSortedParameters as $position => $value) {
-			if ($value === '-' && !$aValueWasSet) {
-				unset($typolinkConfiguration[$position]);
-			} else {
-				$aValueWasSet = TRUE;
-				if ($value !== '-') {
-					$typolinkConfiguration[$position] = '"' . $value . '"';
-				}
-			}
-		}
-
-		return $typolinkConfiguration;
-	}
-
+        return $typoLinkCodec->encode($typolinkConfiguration);
+    }
 }

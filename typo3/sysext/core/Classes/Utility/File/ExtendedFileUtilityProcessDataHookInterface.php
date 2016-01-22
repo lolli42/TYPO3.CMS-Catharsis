@@ -16,20 +16,17 @@ namespace TYPO3\CMS\Core\Utility\File;
 
 /**
  * Interface for classes which hook into extFileFunctions and do additional processData processing.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
  */
-interface ExtendedFileUtilityProcessDataHookInterface {
-
-	/**
-	 * Post-process a file action.
-	 *
-	 * @param string $action The action
-	 * @param array $cmdArr The parameter sent to the action handler
-	 * @param array $result The results of all calls to the action handler
-	 * @param \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility $parentObject Parent object
-	 * @return void
-	 */
-	public function processData_postProcessAction($action, array $cmdArr, array $result, ExtendedFileUtility $parentObject);
-
+interface ExtendedFileUtilityProcessDataHookInterface
+{
+    /**
+     * Post-process a file action.
+     *
+     * @param string $action The action
+     * @param array $cmdArr The parameter sent to the action handler
+     * @param array $result The results of all calls to the action handler
+     * @param \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility $parentObject Parent object
+     * @return void
+     */
+    public function processData_postProcessAction($action, array $cmdArr, array $result, ExtendedFileUtility $parentObject);
 }

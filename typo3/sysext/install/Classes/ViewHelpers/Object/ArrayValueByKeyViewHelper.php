@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Install\ViewHelpers\Object;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Install\ViewHelpers\Exception;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
-use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
+use TYPO3\CMS\Install\ViewHelpers\Exception;
 
 /**
  * View helper which allows you to access a key in an array.
@@ -33,48 +33,49 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class ArrayValueByKeyViewHelper extends AbstractViewHelper implements CompilableInterface {
+class ArrayValueByKeyViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Get the value of an key in an array.
+     *
+     * @param array $array The array being processed
+     * @param mixed $key The key being accessed
+     * @return string
+     */
+    public function render(array $array, $key)
+    {
+        return static::renderStatic(
+            array(
+                'array' => $array,
+                'key' => $key,
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Get the value of an key in an array.
-	 *
-	 * @param array $array The array being processed
-	 * @param mixed $key The key being accessed
-	 * @return string
-	 */
-	public function render(array $array, $key) {
-		return self::renderStatic(
-			array(
-				'array' => $array,
-				'key' => $key,
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
-
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 * @throws Exception
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$array = $arguments['array'];
-		$key = $arguments['key'];
-		$result = '';
-		if (isset($array[$key])) {
-			$result = $array[$key];
-		}
-		if (!is_scalar($result)) {
-			throw new Exception(
-				'Only scalar return values (string, int, float or double) are supported.',
-				1430852128
-			);
-		}
-		return (string)$result;
-	}
-
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     * @throws Exception
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $array = $arguments['array'];
+        $key = $arguments['key'];
+        $result = '';
+        if (isset($array[$key])) {
+            $result = $array[$key];
+        }
+        if (!is_scalar($result)) {
+            throw new Exception(
+                'Only scalar return values (string, int, float or double) are supported.',
+                1430852128
+            );
+        }
+        return (string)$result;
+    }
 }

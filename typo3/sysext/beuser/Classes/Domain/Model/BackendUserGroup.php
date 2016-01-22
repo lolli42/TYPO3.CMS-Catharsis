@@ -16,67 +16,91 @@ namespace TYPO3\CMS\Beuser\Domain\Model;
 
 /**
  * Model for backend user group
- *
- * @author Felix Kopp <felix-source@phorax.com>
  */
-class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
+class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
+{
+    /**
+     * @var string
+     */
+    protected $title;
 
-	/**
-	 * @var string
-	 */
-	protected $title;
+    /**
+     * @var string
+     */
+    protected $description;
 
-	/**
-	 * @var bool
-	 */
-	protected $hidden;
+    /**
+     * @var bool
+     */
+    protected $hidden;
 
-	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\TYPO3\CMS\Beuser\Domain\Model\BackendUserGroup>
-	 * @lazy
-	 */
-	protected $subGroups;
+    /**
+     * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\TYPO3\CMS\Beuser\Domain\Model\BackendUserGroup>
+     * @lazy
+     */
+    protected $subGroups;
 
-	/**
-	 * @param string $title
-	 */
-	public function setTitle($title) {
-		$this->title = $title;
-	}
+    /**
+     * @param string $title
+     */
+    public function setTitle($title)
+    {
+        $this->title = $title;
+    }
 
-	/**
-	 * @return string
-	 */
-	public function getTitle() {
-		return $this->title;
-	}
+    /**
+     * @return string
+     */
+    public function getTitle()
+    {
+        return $this->title;
+    }
 
-	/**
-	 * @param bool $hidden
-	 */
-	public function setHidden($hidden) {
-		$this->hidden = $hidden;
-	}
+    /**
+     * @return string
+     */
+    public function getDescription()
+    {
+        return $this->description;
+    }
 
-	/**
-	 * @return bool
-	 */
-	public function getHidden() {
-		return $this->hidden;
-	}
+    /**
+     * @param string $description
+     */
+    public function setDescription($description)
+    {
+        $this->description = $description;
+    }
 
-	/**
-	 * @param \TYPO3\CMS\Extbase\Persistence\ObjectStorage $subGroups
-	 */
-	public function setSubGroups($subGroups) {
-		$this->subGroups = $subGroups;
-	}
+    /**
+     * @param bool $hidden
+     */
+    public function setHidden($hidden)
+    {
+        $this->hidden = $hidden;
+    }
 
-	/**
-	 * @return \TYPO3\CMS\Extbase\Persistence\ObjectStorage
-	 */
-	public function getSubGroups() {
-		return $this->subGroups;
-	}
+    /**
+     * @return bool
+     */
+    public function getHidden()
+    {
+        return $this->hidden;
+    }
 
+    /**
+     * @param \TYPO3\CMS\Extbase\Persistence\ObjectStorage $subGroups
+     */
+    public function setSubGroups($subGroups)
+    {
+        $this->subGroups = $subGroups;
+    }
+
+    /**
+     * @return \TYPO3\CMS\Extbase\Persistence\ObjectStorage
+     */
+    public function getSubGroups()
+    {
+        return $this->subGroups;
+    }
 }

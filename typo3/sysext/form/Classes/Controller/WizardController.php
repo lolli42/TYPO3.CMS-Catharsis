@@ -14,81 +14,118 @@ namespace TYPO3\CMS\Form\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Form\Domain\Repository\ContentRepository;
 
 /**
  * The form wizard controller
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
-class WizardController {
+class WizardController
+{
+    /**
+     * The constructor to load the LL file
+     */
+    public function __construct()
+    {
+        $this->getLanguageService()->includeLLFile('EXT:form/Resources/Private/Language/locallang_wizard.xlf');
+    }
 
-	/**
-	 * Dispatch on action
-	 *
-	 * Calls the requested action
-	 *
-	 * @return void
-	 */
-	public function dispatch() {
-		switch (GeneralUtility::_GP('action')) {
-			case 'save':
-				$this->saveAction();
-				break;
-			case 'load':
-				$this->loadAction();
-				break;
-			default:
-				$this->indexAction();
-		}
-	}
+    /**
+     * The index action
+     *
+     * The action which should be taken when the wizard is loaded
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface returns a 500 error or a valid JSON response
+     */
+    public function indexAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        /** @var $view \TYPO3\CMS\Form\View\Wizard\WizardView */
+        $view = GeneralUtility::makeInstance(\TYPO3\CMS\Form\View\Wizard\WizardView::class, $this->getRepository());
+        $content = $view->render();
+        $response->getBody()->write($content);
+        return $response;
+    }
 
-	/**
-	 * The index action
-	 *
-	 * The action which should be taken when the wizard is loaded
-	 *
-	 * @return void
-	 */
-	protected function indexAction() {
-		/** @var $view \TYPO3\CMS\Form\View\Wizard\WizardView */
-		$view = GeneralUtility::makeInstance(\TYPO3\CMS\Form\View\Wizard\WizardView::class, $this->getRepository());
-		$view->render();
-	}
+    /**
+     * The save action called via AJAX
+     *
+     * The action which should be taken when the form in the wizard is saved
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface returns a 500 error or a valid JSON response
+     */
+    public function saveAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $repository = $this->getRepository();
+        $success = false;
+        // Check if the referenced record is available
+        if ($repository->hasRecord()) {
+            // Save the data
+            $success = $repository->save();
+        }
 
-	/**
-	 * The save action
-	 *
-	 * The action which should be taken when the form in the wizard is saved
-	 *
-	 * @return void
-	 */
-	protected function saveAction() {
-		/** @var $view \TYPO3\CMS\Form\View\Wizard\SaveWizardView */
-		$view = GeneralUtility::makeInstance(\TYPO3\CMS\Form\View\Wizard\SaveWizardView::class, $this->getRepository());
-		$view->render();
-	}
+        if (!$success) {
+            $response = $response->withStatus(500);
+            $message = $this->getLanguageService()->getLL('action_save_message_failed', false);
+        } else {
+            $message = $this->getLanguageService()->getLL('action_save_message_saved', false);
+        }
+        $response->getBody()->write(json_encode(['message' => $message]));
+        return $response
+                ->withHeader('Expires', 'Mon, 26 Jul 1997 05:00:00 GMT')
+                ->withHeader('Last-Modified', gmdate('D, d M Y H:i:s') . ' GMT')
+                ->withHeader('Cache-Control', 'no-cache, must-revalidate')
+                ->withHeader('Pragma', 'no-cache');
+    }
 
-	/**
-	 * The load action
-	 *
-	 * The action which should be taken when the form in the wizard is loaded
-	 *
-	 * @return void
-	 */
-	protected function loadAction() {
-		/** @var $view \TYPO3\CMS\Form\View\Wizard\LoadWizardView */
-		$view = GeneralUtility::makeInstance(\TYPO3\CMS\Form\View\Wizard\LoadWizardView::class, $this->getRepository());
-		$view->render();
-	}
+    /**
+     * The load action called via AJAX
+     *
+     * The action which should be taken when the form in the wizard is loaded
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response the response object
+     * @return ResponseInterface returns a 500 error or a valid JSON response
+     */
+    public function loadAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $result = $this->getRepository()->getRecordAsJson();
+        if (!$result) {
+            $response = $response->withStatus(500);
+            $result = ['message' => $this->getLanguageService()->getLL('action_load_message_failed', false)];
+        } else {
+            $result = ['configuration' => $result];
+        }
+        $response->getBody()->write(json_encode($result));
+        return $response
+                ->withHeader('Expires', 'Mon, 26 Jul 1997 05:00:00 GMT')
+                ->withHeader('Last-Modified', gmdate('D, d M Y H:i:s') . ' GMT')
+                ->withHeader('Cache-Control', 'no-cache, must-revalidate')
+                ->withHeader('Pragma', 'no-cache');
+    }
 
-	/**
-	 * Gets the repository object.
-	 *
-	 * @return \TYPO3\CMS\Form\Domain\Repository\ContentRepository
-	 */
-	protected function getRepository() {
-		return GeneralUtility::makeInstance(\TYPO3\CMS\Form\Domain\Repository\ContentRepository::class);
-	}
+    /**
+     * Gets the repository object.
+     *
+     * @return ContentRepository
+     */
+    protected function getRepository()
+    {
+        return GeneralUtility::makeInstance(ContentRepository::class);
+    }
 
+    /**
+     * Returns an instance of LanguageService
+     *
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

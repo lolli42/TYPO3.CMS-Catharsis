@@ -1,19 +1,13 @@
 {namespace em=TYPO3\CMS\Extensionmanager\ViewHelpers}
+{namespace core=TYPO3\CMS\Core\ViewHelpers}
 
-<f:layout name="main"/>
+<f:layout name="main" />
 
-<f:section name="docheader-buttons">
-	<div id="upload-button-wrap">
-		<f:be.buttons.icon uri="{f:uri.action(action:'form',controller:'UploadExtensionFile')}" icon="actions-edit-upload" title="{f:translate(key:'extensionList.uploadExtension')}"/>
-	</div>
-</f:section>
-
-<f:section name="module-headline">
+<f:section name="headline">
 	<h1><f:translate key="getExtensions">Get Extensions</f:translate></h1>
 </f:section>
 
-<f:section name="Content">
-
+<f:section name="content">
 	<f:render partial="List/UploadForm" />
 
 	<div class="row">
@@ -45,7 +39,7 @@
 				<f:render partial="List/TerPaginator" arguments="{extensions:extensions, showVersionList:showVersionList,  availableAndInstalled:availableAndInstalled}" />
 			</f:else>
 		</f:if>
-		<div class="splash-receivedata x-mask-loading"><div class="spinner"><f:translate key="extensionList.updateFromTer.label"/></div></div>
+		<div class="splash-receivedata x-mask-loading"><core:icon identifier="spinner-circle-dark" /> <f:translate key="extensionList.updateFromTer.label"/></div>
 	</div>
 
 </f:section>

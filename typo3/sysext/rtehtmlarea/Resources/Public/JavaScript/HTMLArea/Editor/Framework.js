@@ -12,10 +12,10 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework
  * Framework is the visual component of the Editor and contains the tool bar, the iframe, the textarea and the status bar
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
@@ -25,6 +25,9 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 
 	/**
 	 * Framework constructor
+	 * @param {Object} config
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework
 	 */
 	var Framework = function (config) {
 		Util.apply(this, config);
@@ -303,7 +306,7 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 		 * Resize the framework to its initial size
 		 */
 		resizeFramework: function () {
-			var frameworkHeight = this.fullScreen ? Typo3.getWindowSize().height - 25 : parseInt(this.textAreaInitialSize.height) + this.toolbar.getHeight() - this.statusBar.getHeight();
+			var frameworkHeight = this.fullScreen ? Typo3.getWindowSize().height - 50 : parseInt(this.textAreaInitialSize.height) + this.toolbar.getHeight() - this.statusBar.getHeight();
 			if (this.textAreaInitialSize.width.indexOf('%') === -1) {
 				// Width is specified in pixels
 				// Initial framework sizing
@@ -378,7 +381,7 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 			} else {
 				var self = this;
 				window.setTimeout(function () {
-					self.onIframeReady();	
+					self.onIframeReady();
 				}, 50);
 			}
 		},

@@ -28,7 +28,7 @@ TYPO3.Form.Wizard.Elements.Basic.Select = Ext.extend(TYPO3.Form.Wizard.Elements,
 			'</tpl>',
 			'<select {[this.getAttributes(values.attributes)]}>',
 				'<tpl for="options">',
-					'<option {[this.getAttributes(values.attributes)]}>{data}</option>',
+					'<option {[this.getAttributes(values.attributes)]}>{text}</option>',
 				'</tpl>',
 			'</select>',
 			'<tpl for="label">',
@@ -74,16 +74,28 @@ TYPO3.Form.Wizard.Elements.Basic.Select = Ext.extend(TYPO3.Form.Wizard.Elements,
 		Ext.apply(this, {
 			configuration: {
 				attributes: {
-					"class": '',
-					disabled: '',
-					id: '',
-					lang: '',
-					multiple: '',
-					name: '',
-					size: '',
-					style: '',
-					tabindex: '',
-					title: ''
+					'accesskey': '',
+					'class': '',
+					'contenteditable': '',
+					'contextmenu': '',
+					'dir': '',
+					'draggable': '',
+					'dropzone': '',
+					'hidden': '',
+					'id': '',
+					'lang': '',
+					'spellcheck': '',
+					'style': '',
+					'tabindex': '',
+					'title': '',
+					'translate': '',
+
+					'autofocus': '',
+					'disabled': '',
+					'multiple': '',
+					'name': '',
+					'required': '',
+					'size': ''
 				},
 				filters: {},
 				label: {
@@ -91,11 +103,20 @@ TYPO3.Form.Wizard.Elements.Basic.Select = Ext.extend(TYPO3.Form.Wizard.Elements,
 				},
 				options: [
 					{
-						data: TYPO3.l10n.localize('elements_option_1')
+						text: TYPO3.l10n.localize('elements_option_1'),
+						attributes: {
+							value: TYPO3.l10n.localize('elements_value_1')
+						}
 					}, {
-						data: TYPO3.l10n.localize('elements_option_2')
+						text: TYPO3.l10n.localize('elements_option_2'),
+						attributes: {
+							value: TYPO3.l10n.localize('elements_value_2')
+						}
 					}, {
-						data: TYPO3.l10n.localize('elements_option_3')
+						text: TYPO3.l10n.localize('elements_option_3'),
+						attributes: {
+							value: TYPO3.l10n.localize('elements_value_3')
+						}
 					}
 				],
 				layout: 'front',

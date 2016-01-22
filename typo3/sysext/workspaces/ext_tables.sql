@@ -22,12 +22,15 @@ CREATE TABLE sys_workspace (
 	publish_access tinyint(3) DEFAULT '0' NOT NULL,
 	custom_stages int(11) DEFAULT '0' NOT NULL,
 	stagechg_notification tinyint(3) DEFAULT '0' NOT NULL,
-	edit_notification_mode tinyint(3) DEFAULT '0' NOT NULL,
 	edit_notification_defaults varchar(255) DEFAULT '' NOT NULL,
+	edit_notification_preselection tinyint(3) DEFAULT '3' NOT NULL,
 	edit_allow_notificaton_settings tinyint(3) DEFAULT '0' NOT NULL,
-	publish_notification_mode tinyint(3) DEFAULT '0' NOT NULL,
 	publish_notification_defaults varchar(255) DEFAULT '' NOT NULL,
+	publish_notification_preselection tinyint(3) DEFAULT '3' NOT NULL,
 	publish_allow_notificaton_settings tinyint(3) DEFAULT '0' NOT NULL,
+	execute_notification_defaults varchar(255) DEFAULT '' NOT NULL,
+	execute_notification_preselection tinyint(3) DEFAULT '3' NOT NULL,
+	execute_allow_notificaton_settings tinyint(3) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid)
@@ -48,9 +51,9 @@ CREATE TABLE sys_workspace_stage (
 	default_mailcomment text,
 	parentid int(11) DEFAULT '0' NOT NULL,
 	parenttable tinytext NOT NULL,
-	notification_mode tinyint(3) DEFAULT '0' NOT NULL,
 	notification_defaults varchar(255) DEFAULT '' NOT NULL,
 	allow_notificaton_settings tinyint(3) DEFAULT '0' NOT NULL,
+	notification_preselection tinyint(3) DEFAULT '8' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid)

@@ -14,71 +14,54 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
+
 /**
  * EditorMode plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
-class EditorMode extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
+class EditorMode extends RteHtmlAreaApi
+{
+    /**
+     * The name of the plugin registered by the extension
+     *
+     * @var string
+     */
+    protected $pluginName = 'EditorMode';
 
-	/**
-	 * The key of the extension that is extending htmlArea RTE
-	 *
-	 * @var string
-	 */
-	protected $extensionKey = 'rtehtmlarea';
+    /**
+     * The comma-separated list of button names that the registered plugin is adding to the htmlArea RTE toolbar
+     *
+     * @var string
+     */
+    protected $pluginButtons = 'chMode';
 
-	/**
-	 * The name of the plugin registered by the extension
-	 *
-	 * @var string
-	 */
-	protected $pluginName = 'EditorMode';
+    /**
+     * The name-converting array, converting the button names used in the RTE PageTSConfing to the button id's used by the JS scripts
+     *
+     * @var array
+     */
+    protected $convertToolbarForHtmlAreaArray = array(
+        'chMode' => 'TextMode'
+    );
 
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = '';
+    /**
+     * Requiring itself so that it is always loaded.
+     *
+     * @var string
+     */
+    protected $requiredPlugins = 'EditorMode';
 
-	/**
-	 * Path to the skin file relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/editor-mode.css';
-
-	/**
-	 * Reference to the invoking object
-	 *
-	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
-	 */
-	protected $htmlAreaRTE;
-
-	protected $thisConfig;
-
-	// Reference to RTE PageTSConfig
-	protected $toolbar;
-
-	// Reference to RTE toolbar array
-	protected $LOCAL_LANG;
-
-	// Frontend language array
-	protected $pluginButtons = 'chMode';
-
-	protected $convertToolbarForHtmlAreaArray = array(
-		'chMode' => 'TextMode'
-	);
-
-	// Requiring itself so that it is always loaded.
-	protected $requiredPlugins = 'EditorMode';
-
-	public function main($parentObject) {
-		parent::main($parentObject);
-		// Do not disable this plugin even if the chMode button is disabled
-		$this->pluginAddsButtons = FALSE;
-		return TRUE;
-	}
-
+    /**
+     * Returns TRUE if the plugin is available and correctly initialized
+     *
+     * @param array $configuration Configuration array given from calling object down to the single plugins
+     * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
+     */
+    public function main(array $configuration)
+    {
+        parent::main($configuration);
+        // Do not disable this plugin even if the chMode button is disabled
+        $this->pluginAddsButtons = false;
+        return true;
+    }
 }

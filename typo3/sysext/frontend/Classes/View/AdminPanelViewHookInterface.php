@@ -16,18 +16,15 @@ namespace TYPO3\CMS\Frontend\View;
 
 /**
  * Interface for classes which hook into AdminPanelView
- *
- * @author Georg Ringer <typo3@ringerge.org>
  */
-interface AdminPanelViewHookInterface {
-
-	/**
-	 * Extend the adminPanel
-	 *
-	 * @param string $moduleContent Content of the admin panel
-	 * @param \TYPO3\CMS\Frontend\View\AdminPanelView $obj The adminPanel object
-	 * @return string Returns content of admin panel
-	 */
-	public function extendAdminPanel($moduleContent, AdminPanelView $obj);
-
+interface AdminPanelViewHookInterface
+{
+    /**
+     * Extend the adminPanel
+     *
+     * @param string $moduleContent Content of the admin panel
+     * @param \TYPO3\CMS\Frontend\View\AdminPanelView $obj The adminPanel object
+     * @return string Returns content of admin panel
+     */
+    public function extendAdminPanel($moduleContent, AdminPanelView $obj);
 }

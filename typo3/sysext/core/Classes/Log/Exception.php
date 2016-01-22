@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Log;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -17,5 +17,6 @@ namespace TYPO3\CMS\Core\Log;
 /**
  * An exception when something is wrong with the file handling
  */
-class Exception extends \TYPO3\CMS\Core\Exception {
+class Exception extends \TYPO3\CMS\Core\Exception
+{
 }

@@ -22,14 +22,14 @@ To manage and compare users, getting an overview of their access credentials etc
 			</trans-unit>
 			<trans-unit id="_.seeAlso" xml:space="preserve">
 				<source>be_groups,
-About backend users | http://typo3.org/documentation/document-library/doc_tut_quickstart/Backend_users/
-Setting up a new user and group | http://typo3.org/documentation/document-library/doc_core_inside/Setting_up_a_new_use/
-Users and Groups [Technical] | http://typo3.org/documentation/document-library/doc_core_inside/Users_and_groups/</source>
+About backend users | https://docs.typo3.org/typo3cms/GettingStartedTutorial/UserManagement/BackendUsers/
+Setting up a new user and group | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/AccessControl/SettingUpANewUser/
+Users and Groups [Technical] | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/AccessControl/UsersAndGroups/</source>
 			</trans-unit>
 			<trans-unit id="_.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/beuser_2.png,
-EXT:lang/cshimages/beuser_1.png,
-EXT:lang/cshimages/beuser_3.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/beuser_2.png,
+EXT:lang/Resources/Public/Images/cshimages/beuser_1.png,
+EXT:lang/Resources/Public/Images/cshimages/beuser_3.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id=".image_descr" xml:space="preserve">
@@ -112,8 +112,8 @@ xMOD_csh_corebe:pagetree</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_db_mountpoints.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/be_groups_3.png,
-EXT:lang/cshimages/be_groups_4.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/be_groups_3.png,
+EXT:lang/Resources/Public/Images/cshimages/be_groups_4.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="db_mountpoints.image_descr" xml:space="preserve">
@@ -178,7 +178,7 @@ be_users:endtime</source>
 You should probably not assign any other users than yourself as an 'Admin' user.</source>
 			</trans-unit>
 			<trans-unit id="_admin.image">
-				<source>EXT:lang/cshimages/beuser_4.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/beuser_4.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="options.description">
@@ -275,7 +275,7 @@ Notice that the same list of modules may be configured for the backend user grou
 				<source>pages:TSconfig,
 fe_users:TSconfig,
 be_groups:TSconfig,
-User TSconfig | http://typo3.org/documentation/document-library/doc_core_tsconfig/User_TSconfig/</source>
+User TSconfig | https://docs.typo3.org/typo3cms/TSconfigReference/UserTsconfig/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="allowed_languages.description">
@@ -289,7 +289,7 @@ User TSconfig | http://typo3.org/documentation/document-library/doc_core_tsconfi
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_allowed_languages.image">
-				<source>EXT:lang/cshimages/be_groups_18.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/be_groups_18.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 		</body>

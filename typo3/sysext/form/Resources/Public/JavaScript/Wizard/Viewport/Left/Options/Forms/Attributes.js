@@ -72,10 +72,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						}
 					});
 					break;
-				case 'acceptcharset':
+				case 'accept-charset':
 					formItems.push({
 						fieldLabel: TYPO3.l10n.localize('attributes_acceptcharset'),
-						name: 'acceptcharset',
+						name: 'accept-charset',
 						listeners: {
 							'triggerclick': {
 								scope: this,
@@ -121,9 +121,51 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						}
 					});
 					break;
+				case 'autocomplete':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_autocomplete'),
+						name: 'autocomplete',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'autocomplete',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_autocomplete_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_autocomplete_off'), value: 'off'},
+								{label: TYPO3.l10n.localize('attributes_autocomplete_on'), value: 'on'}
+							]
+						}),
+						listeners: {
+							'select': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'autofocus':
+					formItems.push({
+						xtype: 'typo3-form-wizard-valuecheckbox',
+						fieldLabel: TYPO3.l10n.localize('attributes_autofocus'),
+						name: 'autofocus',
+						inputValue: 'autofocus',
+						listeners: {
+							'check': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
 				case 'checked':
 					formItems.push({
-						xtype: 'checkbox',
+						xtype: 'typo3-form-wizard-valuecheckbox',
 						fieldLabel: TYPO3.l10n.localize('attributes_checked'),
 						name: 'checked',
 						inputValue: 'checked',
@@ -155,6 +197,50 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						allowBlank: false,
 						listeners: {
 							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'contenteditable':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_contenteditable'),
+						name: 'contenteditable',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'contenteditable',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_contenteditable_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_contenteditable_true'), value: 'true'},
+								{label: TYPO3.l10n.localize('attributes_contenteditable_false'), value: 'false'}
+							]
+						}),
+						listeners: {
+							'select': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'contextmenu':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_contextmenu'),
+						name: 'contextmenu',
+						listeners: {
+							'triggerclick': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -190,12 +276,53 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 					break;
 				case 'disabled':
 					formItems.push({
-						xtype: 'checkbox',
+						xtype: 'typo3-form-wizard-valuecheckbox',
 						fieldLabel: TYPO3.l10n.localize('attributes_disabled'),
 						name: 'disabled',
 						inputValue: 'disabled',
 						listeners: {
 							'check': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'draggable':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_draggable'),
+						name: 'draggable',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'draggable',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_draggable_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_draggable_false'), value: 'false'},
+								{label: TYPO3.l10n.localize('attributes_draggable_true'), value: 'true'},
+								{label: TYPO3.l10n.localize('attributes_draggable_auto'), value: 'auto'}
+							]
+						}),
+						listeners: {
+							'select': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'dropzone':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_dropzone'),
+						name: 'dropzone',
+						listeners: {
+							'triggerclick': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -230,12 +357,81 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						}
 					});
 					break;
+				case 'height':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_height'),
+						name: 'height',
+						xtype: 'spinnerfield',
+						listeners: {
+							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'hidden':
+					formItems.push({
+						xtype: 'typo3-form-wizard-valuecheckbox',
+						fieldLabel: TYPO3.l10n.localize('attributes_hidden'),
+						name: 'hidden',
+						inputValue: 'hidden',
+						listeners: {
+							'check': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
 				case 'id':
 					formItems.push({
 						fieldLabel: TYPO3.l10n.localize('attributes_id'),
 						name: 'id',
 						listeners: {
 							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'inputmode':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_inputmode'),
+						name: 'inputmode',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'inputmode',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_inputmode_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_inputmode_verbatim'), value: 'verbatim'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_latin'), value: 'latin'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_latin-name'), value: 'latin-name'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_latin-prose'), value: 'latin-prose'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_full-width-latin'), value: 'full-width-latin'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_kana'), value: 'kana'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_kana-name'), value: 'kana-name'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_katakana'), value: 'katakana'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_numeric'), value: 'numeric'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_tel'), value: 'tel'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_email'), value: 'email'},
+								{label: TYPO3.l10n.localize('attributes_inputmode_url'), value: 'url'}
+							]
+						}),
+						listeners: {
+							'select': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -266,6 +462,30 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						}
 					});
 					break;
+				case 'list':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_list'),
+						name: 'list',
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'max':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_max'),
+						name: 'max',
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
 				case 'maxlength':
 					formItems.push({
 						fieldLabel: TYPO3.l10n.localize('attributes_maxlength'),
@@ -273,6 +493,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						xtype: 'spinnerfield',
 						listeners: {
 							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -306,9 +530,38 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						}
 					});
 					break;
+				case 'min':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_min'),
+						name: 'min',
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'minlength':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_minlength'),
+						name: 'minlength',
+						xtype: 'spinnerfield',
+						listeners: {
+							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
 				case 'multiple':
 					formItems.push({
-						xtype: 'checkbox',
+						xtype: 'typo3-form-wizard-valuecheckbox',
 						fieldLabel: TYPO3.l10n.localize('attributes_multiple'),
 						name: 'multiple',
 						inputValue: 'multiple',
@@ -333,12 +586,64 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						}
 					});
 					break;
+				case 'novalidate':
+					formItems.push({
+						xtype: 'typo3-form-wizard-valuecheckbox',
+						fieldLabel: TYPO3.l10n.localize('attributes_novalidate'),
+						name: 'novalidate',
+						inputValue: 'novalidate',
+						listeners: {
+							'check': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'pattern':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_pattern'),
+						name: 'pattern',
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'placeholder':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_placeholder'),
+						name: 'placeholder',
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
 				case 'readonly':
 					formItems.push({
-						xtype: 'checkbox',
+						xtype: 'typo3-form-wizard-valuecheckbox',
 						fieldLabel: TYPO3.l10n.localize('attributes_readonly'),
 						name: 'readonly',
 						inputValue: 'readonly',
+						listeners: {
+							'check': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'required':
+					formItems.push({
+						xtype: 'typo3-form-wizard-valuecheckbox',
+						fieldLabel: TYPO3.l10n.localize('attributes_required'),
+						name: 'required',
+						inputValue: 'required',
 						listeners: {
 							'check': {
 								scope: this,
@@ -357,18 +662,84 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 							'spin': {
 								scope: this,
 								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
 							}
 						}
 					});
 					break;
 				case 'selected':
 					formItems.push({
-						xtype: 'checkbox',
+						xtype: 'typo3-form-wizard-valuecheckbox',
 						fieldLabel: TYPO3.l10n.localize('attributes_selected'),
 						name: 'selected',
 						inputValue: 'selected',
 						listeners: {
 							'check': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'selectionDirection':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_selectionDirection'),
+						name: 'selectionDirection',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'selectionDirection',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_selectionDirection_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_selectionDirection_forward'), value: 'forward'},
+								{label: TYPO3.l10n.localize('attributes_selectionDirection_backward'), value: 'backward'}
+							]
+						}),
+						listeners: {
+							'select': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'selectionEnd':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_selectionEnd'),
+						name: 'selectionEnd',
+						xtype: 'spinnerfield',
+						listeners: {
+							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'selectionStart':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_selectionStart'),
+						name: 'selectionStart',
+						xtype: 'spinnerfield',
+						listeners: {
+							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -384,6 +755,38 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 							'spin': {
 								scope: this,
 								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'spellcheck':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_spellcheck'),
+						name: 'spellcheck',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'spellcheck',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_spellcheck_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_spellcheck_true'), value: 'true'},
+								{label: TYPO3.l10n.localize('attributes_spellcheck_false'), value: 'false'}
+							]
+						}),
+						listeners: {
+							'select': {
+								scope: this,
+								fn: this.storeValue
 							}
 						}
 					});
@@ -394,6 +797,23 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						name: 'src',
 						listeners: {
 							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'step':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_step'),
+						name: 'step',
+						xtype: 'spinnerfield',
+						listeners: {
+							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -421,6 +841,28 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 							'spin': {
 								scope: this,
 								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'text':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_text'),
+						xtype: 'textarea',
+						name: 'text',
+						allowBlank: true,
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
 							}
 						}
 					});
@@ -431,6 +873,34 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						name: 'title',
 						listeners: {
 							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'translate':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_translate'),
+						name: 'translate',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'translate',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_translate_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_translate_no'), value: 'no'},
+								{label: TYPO3.l10n.localize('attributes_translate_yes'), value: 'yes'}
+							]
+						}),
+						listeners: {
+							'select': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -452,16 +922,19 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						store: new Ext.data.JsonStore({
 							fields: ['label', 'value'],
 							data: [
-								{label: TYPO3.l10n.localize('attributes_type_button'), value: 'button'},
-								{label: TYPO3.l10n.localize('attributes_type_checkbox'), value: 'checkbox'},
-								{label: TYPO3.l10n.localize('attributes_type_file'), value: 'file'},
-								{label: TYPO3.l10n.localize('attributes_type_hidden'), value: 'hidden'},
-								{label: TYPO3.l10n.localize('attributes_type_image'), value: 'image'},
-								{label: TYPO3.l10n.localize('attributes_type_password'), value: 'password'},
-								{label: TYPO3.l10n.localize('attributes_type_radio'), value: 'radio'},
-								{label: TYPO3.l10n.localize('attributes_type_reset'), value: 'reset'},
-								{label: TYPO3.l10n.localize('attributes_type_submit'), value: 'submit'},
-								{label: TYPO3.l10n.localize('attributes_type_text'), value: 'text'}
+								{label: TYPO3.l10n.localize('attributes_type_color'), value: 'color'},
+								{label: TYPO3.l10n.localize('attributes_type_date'), value: 'date'},
+								{label: TYPO3.l10n.localize('attributes_type_datetime'), value: 'datetime'},
+								{label: TYPO3.l10n.localize('attributes_type_datetime-local'), value: 'datetime-local'},
+								{label: TYPO3.l10n.localize('attributes_type_email'), value: 'email'},
+								{label: TYPO3.l10n.localize('attributes_type_month'), value: 'month'},
+								{label: TYPO3.l10n.localize('attributes_type_number'), value: 'number'},
+								{label: TYPO3.l10n.localize('attributes_type_search'), value: 'search'},
+								{label: TYPO3.l10n.localize('attributes_type_tel'), value: 'tel'},
+								{label: TYPO3.l10n.localize('attributes_type_text'), value: 'text'},
+								{label: TYPO3.l10n.localize('attributes_type_time'), value: 'time'},
+								{label: TYPO3.l10n.localize('attributes_type_url'), value: 'url'},
+								{label: TYPO3.l10n.localize('attributes_type_week'), value: 'week'}
 							]
 						}),
 						listeners: {
@@ -478,6 +951,51 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						name: 'value',
 						listeners: {
 							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'width':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_width'),
+						name: 'width',
+						xtype: 'spinnerfield',
+						listeners: {
+							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'wrap':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_wrap'),
+						name: 'wrap',
+						xtype: 'combo',
+						mode: 'local',
+						triggerAction: 'all',
+						forceSelection: true,
+						editable: false,
+						hiddenName: 'wrap',
+						displayField: 'label',
+						valueField: 'value',
+						store: new Ext.data.JsonStore({
+							fields: ['label', 'value'],
+							data: [
+								{label: TYPO3.l10n.localize('attributes_wrap_none'), value: ''},
+								{label: TYPO3.l10n.localize('attributes_wrap_soft'), value: 'soft'},
+								{label: TYPO3.l10n.localize('attributes_wrap_hard'), value: 'hard'}
+							]
+						}),
+						listeners: {
+							'select': {
 								scope: this,
 								fn: this.storeValue
 							}

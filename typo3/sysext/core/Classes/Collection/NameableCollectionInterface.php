@@ -21,39 +21,36 @@ namespace TYPO3\CMS\Core\Collection;
  * With the nameable interface a title and a description are added
  * to an collection, allowing every collection implementing Nameable
  * being display by the same logic.
- *
- * @author Steffen Ritter <typo3steffen-ritter.net>
  */
-interface NameableCollectionInterface {
+interface NameableCollectionInterface
+{
+    /**
+     * Setter for the title
+     *
+     * @param string $title
+     * @return void
+     */
+    public function setTitle($title);
 
-	/**
-	 * Setter for the title
-	 *
-	 * @param string $title
-	 * @return void
-	 */
-	public function setTitle($title);
+    /**
+     * Setter for the description
+     *
+     * @param string $description
+     * @return void
+     */
+    public function setDescription($description);
 
-	/**
-	 * Setter for the description
-	 *
-	 * @param string $description
-	 * @return void
-	 */
-	public function setDescription($description);
+    /**
+     * Getter for the title
+     *
+     * @return string
+     */
+    public function getTitle();
 
-	/**
-	 * Getter for the title
-	 *
-	 * @return string
-	 */
-	public function getTitle();
-
-	/**
-	 * Getter for the description
-	 *
-	 * @return void
-	 */
-	public function getDescription();
-
+    /**
+     * Getter for the description
+     *
+     * @return void
+     */
+    public function getDescription();
 }

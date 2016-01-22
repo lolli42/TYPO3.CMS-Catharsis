@@ -14,66 +14,102 @@ namespace TYPO3\CMS\Impexp;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
+
 /**
  * Adding Import/Export clickmenu item
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class Clickmenu {
+class Clickmenu
+{
+    /**
+     * @var IconFactory
+     */
+    protected $iconFactory;
 
-	/**
-	 * Processing of clickmenu items
-	 *
-	 * @param \TYPO3\CMS\Backend\ClickMenu\ClickMenu $backRef parent
-	 * @param array $menuItems Menu items array to modify
-	 * @param string $table Table name
-	 * @param int $uid Uid of the record
-	 * @return array Menu item array, returned after modification
-	 * @todo Skinning for icons...
-	 */
-	public function main(&$backRef, $menuItems, $table, $uid) {
-		$localItems = array();
-		// Show import/export on second level menu OR root level.
-		if ($backRef->cmLevel && \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('subname') == 'moreoptions' || $table === 'pages' && $uid == 0) {
-			$LL = $this->includeLL();
-			$urlParameters = array(
-				'tx_impexp' => array(
-					'action' => 'export'
-				),
-				'id' => ($table == 'pages' ? $uid : $backRef->rec['pid'])
-			);
-			if ($table == 'pages') {
-				$urlParameters['tx_impexp']['pagetree']['id'] = $uid;
-				$urlParameters['tx_impexp']['pagetree']['levels'] = 0;
-				$urlParameters['tx_impexp']['pagetree']['tables'][] = '_ALL';
-			} else {
-				$urlParameters['tx_impexp']['record'][] = $table . ':' . $uid;
-				$urlParameters['tx_impexp']['external_ref']['tables'][] = '_ALL';
-			}
-			$url = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('xMOD_tximpexp', $urlParameters);
-			$localItems[] = $backRef->linkItem($GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->getLLL('export', $LL)), $backRef->excludeIcon(\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-export-t3d')), $backRef->urlRefForCM($url), 1);
-			if ($table == 'pages') {
-				$urlParameters = array(
-					'id' => $uid,
-					'table' => $table,
-					'tx_impexp' => array(
-						'action' => 'import'
-					),
-				);
-				$url = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('xMOD_tximpexp', $urlParameters);
-				$localItems[] = $backRef->linkItem($GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->getLLL('import', $LL)), $backRef->excludeIcon(\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-import-t3d')), $backRef->urlRefForCM($url), 1);
-			}
-		}
-		return array_merge($menuItems, $localItems);
-	}
+    /**
+     * Construct
+     */
+    public function __construct()
+    {
+        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+    }
 
-	/**
-	 * Include local lang file and return $LOCAL_LANG array loaded.
-	 *
-	 * @return array Local lang array
-	 */
-	public function includeLL() {
-		return $GLOBALS['LANG']->includeLLFile('EXT:impexp/app/locallang.xlf', FALSE);
-	}
+    /**
+     * Processing of clickmenu items
+     *
+     * @param \TYPO3\CMS\Backend\ClickMenu\ClickMenu $backRef parent
+     * @param array $menuItems Menu items array to modify
+     * @param string $table Table name
+     * @param int $uid Uid of the record
+     * @return array Menu item array, returned after modification
+     * @todo Skinning for icons...
+     */
+    public function main(&$backRef, $menuItems, $table, $uid)
+    {
+        $localItems = array();
+        // Show import/export on second level menu OR root level.
+        if ($backRef->cmLevel && GeneralUtility::_GP('subname') == 'moreoptions' || $table === 'pages' && $uid == 0) {
+            $LL = $this->includeLL();
+            $urlParameters = array(
+                'tx_impexp' => array(
+                    'action' => 'export'
+                ),
+                'id' => ($table == 'pages' ? $uid : $backRef->rec['pid'])
+            );
+            if ($table == 'pages') {
+                $urlParameters['tx_impexp']['pagetree']['id'] = $uid;
+                $urlParameters['tx_impexp']['pagetree']['levels'] = 0;
+                $urlParameters['tx_impexp']['pagetree']['tables'][] = '_ALL';
+            } else {
+                $urlParameters['tx_impexp']['record'][] = $table . ':' . $uid;
+                $urlParameters['tx_impexp']['external_ref']['tables'][] = '_ALL';
+            }
+            $url = BackendUtility::getModuleUrl('xMOD_tximpexp', $urlParameters);
+            $localItems[] = $backRef->linkItem(
+                htmlspecialchars($this->getLanguageService()->getLLL('export', $LL)),
+                $this->iconFactory->getIcon('actions-document-export-t3d', Icon::SIZE_SMALL),
+                $backRef->urlRefForCM($url),
+                1
+            );
+            if ($table === 'pages') {
+                $urlParameters = array(
+                    'id' => $uid,
+                    'table' => $table,
+                    'tx_impexp' => array(
+                        'action' => 'import'
+                    ),
+                );
+                $url = BackendUtility::getModuleUrl('xMOD_tximpexp', $urlParameters);
+                $localItems[] = $backRef->linkItem(
+                    htmlspecialchars($this->getLanguageService()->getLLL('import', $LL)),
+                    $this->iconFactory->getIcon('actions-document-import-t3d', Icon::SIZE_SMALL),
+                    $backRef->urlRefForCM($url),
+                    1
+                );
+            }
+        }
+        return array_merge($menuItems, $localItems);
+    }
 
+    /**
+     * Include local lang file and return $LOCAL_LANG array loaded.
+     *
+     * @return array Local lang array
+     */
+    public function includeLL()
+    {
+        return $this->getLanguageService()->includeLLFile('EXT:impexp/Resources/Private/Language/locallang.xlf', false);
+    }
+
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

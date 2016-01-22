@@ -54,6 +54,9 @@
 			<trans-unit id="be_users.password">
 				<source>Password:</source>
 			</trans-unit>
+			<trans-unit id="be_users.avatar">
+				<source>Avatar</source>
+			</trans-unit>
 			<trans-unit id="be_users.usergroup">
 				<source>Group:</source>
 			</trans-unit>
@@ -76,10 +79,10 @@
 				<source>Mount from groups:</source>
 			</trans-unit>
 			<trans-unit id="be_users.options_db_mounts">
-				<source>DB Mounts:</source>
+				<source>DB Mounts</source>
 			</trans-unit>
 			<trans-unit id="be_users.options_file_mounts">
-				<source>File Mounts:</source>
+				<source>File Mounts</source>
 			</trans-unit>
 			<trans-unit id="be_users.fileoper_perms">
 				<source>Fileoperation permissions:</source>
@@ -98,6 +101,9 @@
 			</trans-unit>
 			<trans-unit id="be_users.file_permissions.files_rename">
 				<source>Files: Rename</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_replace">
+				<source>Files: Replace</source>
 			</trans-unit>
 			<trans-unit id="be_users.file_permissions.files_move">
 				<source>Files: Move</source>
@@ -285,6 +291,9 @@
 			<trans-unit id="sys_filemounts.base_relative">
 				<source>relative ../fileadmin/</source>
 			</trans-unit>
+			<trans-unit id="sys_history">
+				<source>System History</source>
+			</trans-unit>
 			<trans-unit id="sys_log">
 				<source>System Log</source>
 			</trans-unit>
@@ -357,9 +366,6 @@
 			<trans-unit id="is_siteroot">
 				<source>Is root of website:</source>
 			</trans-unit>
-			<trans-unit id="storage_pid">
-				<source>General Record Storage page:</source>
-			</trans-unit>
 			<trans-unit id="be_users">
 				<source>Backend user</source>
 			</trans-unit>
@@ -419,6 +425,9 @@
 			</trans-unit>
 			<trans-unit id="sys_file_storage.is_writable">
 				<source>Is writable?</source>
+			</trans-unit>
+			<trans-unit id="sys_file_storage.auto_extract_metadata">
+				<source>Automatically extract metadata after upload</source>
 			</trans-unit>
 			<trans-unit id="sys_file_storage.capabilities">
 				<source>Capabilities</source>
@@ -483,9 +492,6 @@
 			<trans-unit id="sys_file.size">
 				<source>Size</source>
 			</trans-unit>
-			<trans-unit id="sys_file.identifier">
-				<source>Identifier</source>
-			</trans-unit>
 			<trans-unit id="sys_file.usage_count">
 				<source>Usage Count</source>
 			</trans-unit>
@@ -528,6 +534,12 @@
 			<trans-unit id="sys_file_reference.imageoverlayPalette">
 				<source>Image Metadata</source>
 			</trans-unit>
+			<trans-unit id="sys_file_reference.audioOverlayPalette">
+				<source>Audio Metadata</source>
+			</trans-unit>
+			<trans-unit id="sys_file_reference.videoOverlayPalette">
+				<source>Video Metadata</source>
+			</trans-unit>
 			<trans-unit id="sys_file_reference.title">
 				<source>Title</source>
 			</trans-unit>
@@ -545,6 +557,9 @@
 			</trans-unit>
 			<trans-unit id="sys_file_reference.crop">
 				<source>Image manipulation</source>
+			</trans-unit>
+			<trans-unit id="sys_file_reference.autoplay">
+				<source>Autoplay</source>
 			</trans-unit>
 			<trans-unit id="sys_file_collection">
 				<source>File collection</source>
@@ -572,6 +587,9 @@
 			</trans-unit>
 			<trans-unit id="sys_file_collection.folder">
 				<source>Folder</source>
+			</trans-unit>
+			<trans-unit id="sys_file_collection.recursive">
+				<source>Recursive</source>
 			</trans-unit>
 			<trans-unit id="sys_file_collection.category">
 				<source>Category</source>

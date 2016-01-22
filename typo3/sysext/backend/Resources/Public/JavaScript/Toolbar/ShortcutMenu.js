@@ -12,18 +12,22 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Toolbar/ShortcutMenu
  * shortcut menu logic to add new shortcut, remove a shortcut
  * and edit a shortcut
  */
-define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Backend/Icons'], function($, Modal, Icons) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{options: {containerSelector: string, toolbarIconSelector: string, toolbarMenuSelector: string, shortcutItemSelector: string, shortcutDeleteSelector: string, shortcutEditSelector: string, shortcutFormTitleSelector: string, shortcutFormGroupSelector: string, shortcutFormSaveSelector: string, shortcutFormCancelSelector: string}}}
+	 * @exports TYPO3/CMS/Backend/Toolbar/ShortcutMenu
+	 */
 	var ShortcutMenu = {
-		$spinnerElement: $('<span>', {
-			class: 't3-icon fa fa-circle-o-notch fa-spin'
-		}),
 		options: {
 			containerSelector: '#typo3-cms-backend-backend-toolbaritems-shortcuttoolbaritem',
-			toolbarIconSelector: '.dropdown-toggle span.t3-icon',
+			toolbarIconSelector: '.dropdown-toggle span.icon',
 			toolbarMenuSelector: '.dropdown-menu',
 			shortcutItemSelector: '.dropdown-menu .shortcut',
 			shortcutDeleteSelector: '.shortcut-delete',
@@ -37,11 +41,13 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 
 	/**
 	 * build the in-place-editor for a shortcut
+	 *
+	 * @param {Object} $shortcutRecord
 	 */
 	ShortcutMenu.editShortcut = function($shortcutRecord) {
 		// load the form
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['ShortcutMenu::getShortcutEditForm'],
+			url: TYPO3.settings.ajaxUrls['shortcut_editform'],
 			data: {
 				shortcutId: $shortcutRecord.data('shortcutid'),
 				shortcutGroup: $shortcutRecord.data('shortcutgroup')
@@ -53,11 +59,13 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 	};
 
 	/**
-	 * save the data from the in-place-editor for a shortcut
+	 * Save the data from the in-place-editor for a shortcut
+	 *
+	 * @param {Object} $shortcutRecord
 	 */
 	ShortcutMenu.saveShortcutForm = function($shortcutRecord) {
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['ShortcutMenu::saveShortcut'],
+			url: TYPO3.settings.ajaxUrls['shortcut_saveform'],
 			data: {
 				shortcutId: $shortcutRecord.data('shortcutid'),
 				shortcutTitle: $shortcutRecord.find(ShortcutMenu.options.shortcutFormTitleSelector).val(),
@@ -73,54 +81,85 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 
 	/**
 	 * removes an existing short by sending an AJAX call
+	 *
+	 * @param {Object} $shortcutRecord
 	 */
 	ShortcutMenu.deleteShortcut = function($shortcutRecord) {
 		// @todo: translations
-		if (confirm('Do you really want to remove this bookmark?')) {
-			$.ajax({
-				url: TYPO3.settings.ajaxUrls['ShortcutMenu::delete'],
-				data: {
-					shortcutId: $shortcutRecord.data('shortcutid')
-				},
-				type: 'post',
-				cache: false
-			}).done(function() {
-				// a reload is used in order to restore the original behaviour
-				// e.g. remove groups that are now empty because the last one in the group
-				// was removed
-				ShortcutMenu.refreshMenu();
+		Modal.confirm('Delete bookmark', 'Do you really want to remove this bookmark?')
+			.on('confirm.button.ok', function() {
+				$.ajax({
+					url: TYPO3.settings.ajaxUrls['shortcut_remove'],
+					data: {
+						shortcutId: $shortcutRecord.data('shortcutid')
+					},
+					type: 'post',
+					cache: false
+				}).done(function() {
+					// a reload is used in order to restore the original behaviour
+					// e.g. remove groups that are now empty because the last one in the group
+					// was removed
+					ShortcutMenu.refreshMenu();
+				});
+				$(this).trigger('modal-dismiss');
+			})
+			.on('confirm.button.cancel', function() {
+				$(this).trigger('modal-dismiss');
 			});
-		}
 	};
 
 	/**
 	 * makes a call to the backend class to create a new shortcut,
 	 * when finished it reloads the menu
+	 *
+	 * @param {String} moduleName
+	 * @param {String} url
+	 * @param {String} confirmationText
+	 * @param {String} motherModule
+	 * @param {Object} shortcutButton
+	 * @param {String} displayName
 	 */
-	ShortcutMenu.createShortcut = function(moduleName, url, confirmationText) {
-		var shouldCreateShortcut = true;
+	ShortcutMenu.createShortcut = function(moduleName, url, confirmationText, motherModule, shortcutButton, displayName) {
 		if (typeof confirmationText !== 'undefined') {
-			shouldCreateShortcut = window.confirm(confirmationText);
+			// @todo: translations
+			Modal.confirm('Create bookmark', confirmationText)
+				.on('confirm.button.ok', function() {
+ 					var $toolbarItemIcon = $(ShortcutMenu.options.toolbarIconSelector, ShortcutMenu.options.containerSelector),
+						$existingIcon = $toolbarItemIcon.clone();
+
+					Icons.getIcon('spinner-circle-light', Icons.sizes.small).done(function(spinner) {
+						$toolbarItemIcon.replaceWith(spinner);
+					});
+
+					$.ajax({
+						url: TYPO3.settings.ajaxUrls['shortcut_create'],
+						type: 'post',
+						data: {
+							module: moduleName,
+							url: url,
+							motherModName: motherModule,
+							displayName: displayName
+						},
+						cache: false
+					}).done(function() {
+						ShortcutMenu.refreshMenu();
+						$(ShortcutMenu.options.toolbarIconSelector, ShortcutMenu.options.containerSelector).replaceWith($existingIcon);
+						if (typeof shortcutButton === 'object') {
+							Icons.getIcon('actions-system-shortcut-active', Icons.sizes.small).done(function(icons) {
+								$(shortcutButton).html(icons['actions-system-shortcut-active']);
+							});
+							$(shortcutButton).addClass('active');
+							$(shortcutButton).attr('title', null);
+							$(shortcutButton).attr('onclick', null);
+						}
+					});
+					$(this).trigger('modal-dismiss');
+				})
+				.on('confirm.button.cancel', function() {
+					$(this).trigger('modal-dismiss');
+				});
 		}
 
-		if (shouldCreateShortcut) {
-			var $toolbarItemIcon = $(ShortcutMenu.options.toolbarIconSelector, ShortcutMenu.options.containerSelector);
-			var $spinner = ShortcutMenu.$spinnerElement.clone();
-			var $existingItem = $toolbarItemIcon.replaceWith($spinner);
-
-			$.ajax({
-				url: TYPO3.settings.ajaxUrls['ShortcutMenu::create'],
-				type: 'post',
-				data: {
-					module: moduleName,
-					url: url
-				},
-				cache: false
-			}).done(function() {
-				ShortcutMenu.refreshMenu();
-				$spinner.replaceWith($existingItem);
-			});
-		}
 	};
 
 	/**
@@ -128,7 +167,7 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 	 */
 	ShortcutMenu.refreshMenu = function() {
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['ShortcutMenu::render'],
+			url: TYPO3.settings.ajaxUrls['shortcut_list'],
 			type: 'get',
 			cache: false
 		}).done(function(data) {
@@ -156,15 +195,10 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 		});
 	};
 
-	/**
-	 * initialize and return the ShortcutMenu object
-	 */
-	return function() {
-		$(document).ready(function() {
-			ShortcutMenu.initializeEvents();
-		});
+	$(ShortcutMenu.initializeEvents);
 
-		TYPO3.ShortcutMenu = ShortcutMenu;
-		return ShortcutMenu;
-	}();
+	// expose as global object
+	TYPO3.ShortcutMenu = ShortcutMenu;
+
+	return ShortcutMenu;
 });

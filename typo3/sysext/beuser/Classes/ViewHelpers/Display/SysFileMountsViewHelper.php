@@ -14,59 +14,58 @@ namespace TYPO3\CMS\Beuser\ViewHelpers\Display;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Converts comma separated list of sys_filemounts uids to html unordered list (<ul>) with speaking titles
- *
- * @author Felix Kopp <felix-source@phorax.com>
  * @internal
  */
-class SysFileMountsViewHelper extends AbstractViewHelper implements CompilableInterface {
+class SysFileMountsViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Render unordered list for sys_filemounts
+     *
+     * @param string $uids
+     * @return string
+     */
+    public function render($uids = '')
+    {
+        return static::renderStatic(
+            array(
+                'uids' => $uids,
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Render unordered list for sys_filemounts
-	 *
-	 * @param string $uids
-	 * @return string
-	 */
-	public function render($uids = '') {
-		return self::renderStatic(
-			array(
-				'uids' => $uids,
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $uids = $arguments['uids'];
+        if (!$uids) {
+            return '';
+        }
 
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$uids = $arguments['uids'];
-		if (!$uids) {
-			return '';
-		}
-
-		$content = '';
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
-			'uid, title',
-			'sys_filemounts',
-			'uid IN (' . $GLOBALS['TYPO3_DB']->cleanIntList($uids) . ')',
-			'title ASC'
-		);
-		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			$content .= '<li>' . htmlspecialchars($row['title']) . ' [' . htmlspecialchars($row['uid']) . ']</li>';
-		}
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
-		return '<ul>' . $content . '</ul>';
-	}
-
+        $content = '';
+        $res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+            'uid, title',
+            'sys_filemounts',
+            'uid IN (' . $GLOBALS['TYPO3_DB']->cleanIntList($uids) . ')',
+            'title ASC'
+        );
+        while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+            $content .= '<li>' . htmlspecialchars($row['title']) . ' [' . htmlspecialchars($row['uid']) . ']</li>';
+        }
+        $GLOBALS['TYPO3_DB']->sql_free_result($res);
+        return '<ul>' . $content . '</ul>';
+    }
 }

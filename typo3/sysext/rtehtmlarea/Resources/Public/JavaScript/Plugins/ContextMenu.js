@@ -14,8 +14,7 @@
 /**
  * Context Menu Plugin for TYPO3 htmlArea RTE
  */
-define('TYPO3/CMS/Rtehtmlarea/Plugins/ContextMenu',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
@@ -282,9 +281,6 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/ContextMenu',
 		 * Handler invoked when the editor is about to be destroyed
 		 */
 		onBeforeDestroy: function (event) {
-			this.menu.items.each(function (menuItem) {
-				Ext.QuickTips.unregister(menuItem);
-			});
 			this.menu.removeAll(true);
 			this.menu.destroy();
 		}

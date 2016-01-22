@@ -13,13 +13,9 @@
  */
 
 /**
- * Login-screen of TYPO3.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * Main entry point for all backend-related scripts.
  */
-define('TYPO3_PROCEED_IF_NO_USER', 1);
-require __DIR__ . '/init.php';
-
-$loginController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\LoginController::class);
-$loginController->main();
-$loginController->printContent();
+call_user_func(function () {
+    $classLoader = require __DIR__ . '/../vendor/autoload.php';
+    (new \TYPO3\CMS\Backend\Http\Application($classLoader))->run();
+});

@@ -14,50 +14,68 @@ namespace TYPO3\CMS\Belog\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
+
 /**
  * Get workspace title from workspace id
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  * @internal
  */
-class WorkspaceTitleViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class WorkspaceTitleViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * First level cache of workspace titles
+     *
+     * @var array
+     */
+    protected static $workspaceTitleRuntimeCache = array();
 
-	/**
-	 * @var \TYPO3\CMS\Belog\Domain\Repository\WorkspaceRepository
-	 * @inject
-	 */
-	protected $workspaceRepository = NULL;
+    /**
+     * Resolve workspace title from UID.
+     *
+     * @param int $uid UID of the workspace
+     * @return string workspace title or UID
+     */
+    public function render($uid)
+    {
+        return static::renderStatic(
+            array(
+                'uid' => $uid
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * First level cache of workspace titles
-	 *
-	 * @var array
-	 */
-	static protected $workspaceTitleRuntimeCache = array();
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $uid = $arguments['uid'];
 
-	/**
-	 * Resolve workspace title from UID.
-	 *
-	 * @param int $uid UID of the workspace
-	 * @return string username or UID
-	 */
-	public function render($uid) {
-		if (isset(static::$workspaceTitleRuntimeCache[$uid])) {
-			return static::$workspaceTitleRuntimeCache[$uid];
-		}
+        if (isset(static::$workspaceTitleRuntimeCache[$uid])) {
+            return htmlspecialchars(static::$workspaceTitleRuntimeCache[$uid]);
+        }
 
-		if ($uid === 0) {
-			static::$workspaceTitleRuntimeCache[$uid] = \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('live', $this->controllerContext->getRequest()->getControllerExtensionName());
-		} elseif (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('workspaces')) {
-			static::$workspaceTitleRuntimeCache[$uid] = '';
-		} else {
-			/** @var $workspace \TYPO3\CMS\Belog\Domain\Model\Workspace */
-			$workspace = $this->workspaceRepository->findByUid($uid);
-			// $workspace may be null, force empty string in this case
-			static::$workspaceTitleRuntimeCache[$uid] = ($workspace === NULL) ? '' : $workspace->getTitle();
-		}
+        if ($uid === 0) {
+            static::$workspaceTitleRuntimeCache[$uid] = \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('live', $renderingContext->getControllerContext()->getRequest()->getControllerExtensionName());
+        } elseif (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('workspaces')) {
+            static::$workspaceTitleRuntimeCache[$uid] = '';
+        } else {
+            $objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
+            $workspaceRepository = $objectManager->get(\TYPO3\CMS\Belog\Domain\Repository\WorkspaceRepository::class);
+            /** @var $workspace \TYPO3\CMS\Belog\Domain\Model\Workspace */
+            $workspace = $workspaceRepository->findByUid($uid);
+            // $workspace may be null, force empty string in this case
+            static::$workspaceTitleRuntimeCache[$uid] = ($workspace === null) ? '' : $workspace->getTitle();
+        }
 
-		return static::$workspaceTitleRuntimeCache[$uid];
-	}
-
+        return htmlspecialchars(static::$workspaceTitleRuntimeCache[$uid]);
+    }
 }

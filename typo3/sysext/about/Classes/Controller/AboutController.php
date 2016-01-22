@@ -14,33 +14,57 @@ namespace TYPO3\CMS\About\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\View\BackendTemplateView;
+use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
+
 /**
  * Module 'about' shows some standard information for TYPO3 CMS: About-text, version number and so on.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Steffen Kamper <steffen@typo3.org>
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
-class AboutController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
+class AboutController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController
+{
+    /**
+     * @var
+     */
+    protected $defaultViewObjectName = BackendTemplateView::class;
 
-	/**
-	 * @var \TYPO3\CMS\About\Domain\Repository\ExtensionRepository
-	 * @inject
-	 */
-	protected $extensionRepository;
+    /**
+     * @var \TYPO3\CMS\About\Domain\Repository\ExtensionRepository
+     */
+    protected $extensionRepository;
 
-	/**
-	 * Main action: Show standard information
-	 *
-	 * @return void
-	 */
-	public function indexAction() {
-		$extensions = $this->extensionRepository->findAllLoaded();
-		$this->view
-			->assign('TYPO3Version', TYPO3_version)
-			->assign('TYPO3CopyrightYear', TYPO3_copyright_year)
-			->assign('TYPO3UrlDonate', TYPO3_URL_DONATE)
-			->assign('loadedExtensions', $extensions);
-	}
+    /**
+     * @param \TYPO3\CMS\About\Domain\Repository\ExtensionRepository $extensionRepository
+     */
+    public function injectExtensionRepository(\TYPO3\CMS\About\Domain\Repository\ExtensionRepository $extensionRepository)
+    {
+        $this->extensionRepository = $extensionRepository;
+    }
 
+    /**
+     * Set up the doc header properly here
+     *
+     * @param ViewInterface $view
+     */
+    protected function initializeView(ViewInterface $view)
+    {
+        /** @var BackendTemplateView $view */
+        parent::initializeView($view);
+        // Disable Path
+        $view->getModuleTemplate()->getDocHeaderComponent()->setMetaInformation([]);
+    }
+
+    /**
+     * Main action: Show standard information
+     *
+     * @return void
+     */
+    public function indexAction()
+    {
+        $extensions = $this->extensionRepository->findAllLoaded();
+        $this->view
+            ->assign('TYPO3Version', TYPO3_version)
+            ->assign('TYPO3CopyrightYear', TYPO3_copyright_year)
+            ->assign('TYPO3UrlDonate', TYPO3_URL_DONATE)
+            ->assign('loadedExtensions', $extensions);
+    }
 }

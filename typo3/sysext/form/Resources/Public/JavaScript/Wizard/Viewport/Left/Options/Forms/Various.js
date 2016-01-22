@@ -66,10 +66,33 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Various = Ext.extend(Ext.FormPanel
 				case 'content':
 					formItems.push({
 						fieldLabel: TYPO3.l10n.localize('various_properties_content'),
+						xtype: 'textarea',
 						name: 'content',
 						allowBlank: false,
 						listeners: {
 							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
+				case 'text':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('various_properties_text'),
+						xtype: 'textarea',
+						name: 'text',
+						allowBlank: false,
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}

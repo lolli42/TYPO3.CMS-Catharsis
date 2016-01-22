@@ -11,9 +11,9 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
-use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 
 /**
  * Declares new variables which are aliases of other variables.
@@ -43,44 +43,45 @@ use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
  *
  * @api
  */
-class AliasViewHelper extends AbstractViewHelper implements CompilableInterface {
+class AliasViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Declare aliases
+     *
+     * @param array $map array that specifies which variables should be mapped to which alias
+     * @return string Rendered string
+     * @api
+     */
+    public function render(array $map)
+    {
+        return static::renderStatic(
+            array('map' => $map),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Declare aliases
-	 *
-	 * @param array $map array that specifies which variables should be mapped to which alias
-	 * @return string Rendered string
-	 * @api
-	 */
-	public function render(array $map) {
-		return self::renderStatic(
-			array('map' => $map),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
+    /**
+     * Declare aliases
+     *
+     * @param array $arguments
+     * @param \Closure $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $map = $arguments['map'];
+        $templateVariableContainer = $renderingContext->getTemplateVariableContainer();
 
-	/**
-	 * Declare aliases
-	 *
-	 * @param array $arguments
-	 * @param \Closure $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$map = $arguments['map'];
-		$templateVariableContainer = $renderingContext->getTemplateVariableContainer();
-
-		foreach ($map as $aliasName => $value) {
-			$templateVariableContainer->add($aliasName, $value);
-		}
-		$output = $renderChildrenClosure();
-		foreach ($map as $aliasName => $value) {
-			$templateVariableContainer->remove($aliasName);
-		}
-		return $output;
-	}
-
+        foreach ($map as $aliasName => $value) {
+            $templateVariableContainer->add($aliasName, $value);
+        }
+        $output = $renderChildrenClosure();
+        foreach ($map as $aliasName => $value) {
+            $templateVariableContainer->remove($aliasName);
+        }
+        return $output;
+    }
 }

@@ -18,7 +18,6 @@ Ext.namespace('TYPO3.Components.PageTree');
  * Actions dedicated for the page tree
  *
  * @namespace TYPO3.Components.PageTree
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 TYPO3.Components.PageTree.Actions = {
 
@@ -733,44 +732,50 @@ TYPO3.Components.PageTree.Actions = {
 		}
 
 		node.select();
+		var nodeId = node.attributes.nodeData.id,
+			idPattern = '###ID###';
 		TYPO3.Backend.ContentContainer.setUrl(
-			contextItem.customAttributes.contentUrl.replace('###ID###', node.attributes.nodeData.id)
+			contextItem.customAttributes.contentUrl
+				.replace(idPattern, nodeId)
+				.replace(encodeURIComponent(idPattern), nodeId)
 		);
 	},
 
 	/**
 	 * Updates the title of a node
 	 *
-	 * @param {Ext.tree.TreeNode} node
 	 * @param {String} newText
 	 * @param {String} oldText
 	 * @param {TYPO3.Components.PageTree.TreeEditor} treeEditor
 	 * @return {void}
 	 */
-	saveTitle: function(node, newText, oldText, treeEditor) {
+	saveTitle: function(newText, oldText, treeEditor) {
+		// Save current editNode in case treeEditor.editNode changes before the ajax call completes
+		var editedNode = treeEditor.editNode;
+
 		if (newText === oldText || newText == '') {
 			treeEditor.updateNodeText(
-				node,
-				node.editNode.attributes.nodeData.editableText,
+				editedNode,
+				editedNode.attributes.nodeData.editableText,
 				Ext.util.Format.htmlEncode(oldText)
 			);
 			return;
 		}
 
 		TYPO3.Components.PageTree.Commands.updateLabel(
-			node.editNode.attributes.nodeData,
+			editedNode.attributes.nodeData,
 			newText,
 			function(response) {
 				if (this.evaluateResponse(response)) {
-					treeEditor.updateNodeText(node, response.editableText, response.updatedText);
+					treeEditor.updateNodeText(editedNode, response.editableText, response.updatedText);
 				} else {
 					treeEditor.updateNodeText(
-						node,
-						node.editNode.attributes.nodeData.editableText,
+						editedNode,
+						editedNode.attributes.nodeData.editableText,
 						Ext.util.Format.htmlEncode(oldText)
 					);
 				}
-				this.singleClick(node.editNode, node.editNode.ownerTree);
+				this.singleClick(treeEditor.editNode, treeEditor.editNode.ownerTree);
 			},
 			this
 		);

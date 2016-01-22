@@ -19,7 +19,6 @@ Ext.namespace('TYPO3.Components.PageTree');
  *
  * @namespace TYPO3.Components.PageTree
  * @extends Ext.tree.TreePanel
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 TYPO3.Components.PageTree.Tree = Ext.extend(Ext.tree.TreePanel, {
 	/**
@@ -173,23 +172,25 @@ TYPO3.Components.PageTree.Tree = Ext.extend(Ext.tree.TreePanel, {
 	listeners: {
 			// single click handler that only triggers after a delay to let the double click event
 			// a possibility to be executed (needed for label edit)
-		dblclick: {
-			fn: function(node, event) {
-				this.triggerEdit(node);
-			}
-		},
-
 		click: {
 			fn: function(node, event) {
+				if (this.clicksRegistered === 2) {
+					this.clicksRegistered = 0;
+					event.stopEvent();
+					return false;
+				}
+
+				this.clicksRegistered = 0;
 				if (this.commandProvider.singleClick) {
 					this.commandProvider.singleClick(node, this);
 				}
-			}
+			},
+			delay: 400
 		},
 
 			// prevent the expanding / collapsing on double click
 		beforedblclick: {
-			fn: function(node, event) {
+			fn: function() {
 				return false;
 			}
 		},
@@ -501,7 +502,7 @@ TYPO3.Components.PageTree.Tree = Ext.extend(Ext.tree.TreePanel, {
 	 *
 	 * This must be done to prevent the calling of the moveNode event.
 	 *
-	 * @param {object} dragElement
+	 * @param {Object} dragElement
 	 */
 	beforeDropNode: function(dragElement) {
 		if (dragElement.data && dragElement.data.item && dragElement.data.item.shouldCreateNewNode) {

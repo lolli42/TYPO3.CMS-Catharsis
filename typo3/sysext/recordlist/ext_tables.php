@@ -2,31 +2,59 @@
 defined('TYPO3_MODE') or die();
 
 if (TYPO3_MODE === 'BE') {
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
-		'web_list',
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'mod1/'
-	);
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModule(
-		'web',
-		'list',
-		'',
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'mod1/',
-		array(
-			'script' => '_DISPATCH',
-			'access' => 'user,group',
-			'name' => 'web_list',
-			'labels' => array(
-				'tabs_images' => array(
-					'tab' => '../Resources/Public/Icons/module-list.png',
-				),
-				'll_ref' => 'LLL:EXT:lang/locallang_mod_web_list.xlf',
-			),
-		)
-	);
+    \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModule(
+        'web',
+        'list',
+        '',
+        '',
+        array(
+            'routeTarget' => \TYPO3\CMS\Recordlist\RecordList::class . '::mainAction',
+            'access' => 'user,group',
+            'name' => 'web_list',
+            'labels' => array(
+                'tabs_images' => array(
+                    'tab' => 'EXT:recordlist/Resources/Public/Icons/module-list.svg',
+                ),
+                'll_ref' => 'LLL:EXT:lang/locallang_mod_web_list.xlf',
+            ),
+        )
+    );
 
-	// Register element browser wizard
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
-		'wizard_element_browser',
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Wizards/ElementBrowserWizard/'
-	);
+    // register element browsers
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ElementBrowsers']['db'] =  \TYPO3\CMS\Recordlist\Browser\DatabaseBrowser::class;
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ElementBrowsers']['file'] =  \TYPO3\CMS\Recordlist\Browser\FileBrowser::class;
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ElementBrowsers']['folder'] =  \TYPO3\CMS\Recordlist\Browser\FolderBrowser::class;
+
+    // register default link handlers
+    \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
+		TCEMAIN.linkHandler {
+			page {
+				handler = TYPO3\\CMS\\Recordlist\\LinkHandler\\PageLinkHandler
+				label = LLL:EXT:lang/locallang_browse_links.xlf:page
+			}
+			file {
+				handler = TYPO3\\CMS\\Recordlist\\LinkHandler\\FileLinkHandler
+				label = LLL:EXT:lang/locallang_browse_links.xlf:file
+				displayAfter = page
+				scanAfter = page
+			}
+			folder {
+				handler = TYPO3\\CMS\\Recordlist\\LinkHandler\\FolderLinkHandler
+				label = LLL:EXT:lang/locallang_browse_links.xlf:folder
+				displayAfter = file
+				scanAfter = file
+			}
+			url {
+				handler = TYPO3\\CMS\\Recordlist\\LinkHandler\\UrlLinkHandler
+				label = LLL:EXT:lang/locallang_browse_links.xlf:extUrl
+				displayAfter = folder
+				scanAfter = mail
+			}
+			mail {
+				handler = TYPO3\\CMS\\Recordlist\\LinkHandler\\MailLinkHandler
+				label = LLL:EXT:lang/locallang_browse_links.xlf:email
+				displayAfter = url
+			}
+		}
+	');
 }

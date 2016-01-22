@@ -19,7 +19,6 @@ Ext.namespace('TYPO3.Components.PageTree');
  *
  * @namespace TYPO3.Components.PageTree
  * @extends Ext.Panel
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 	/**
@@ -28,6 +27,13 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 	 * @type {String}
 	 */
 	id: 'typo3-pagetree-topPanel',
+
+	/**
+	 * Component Class
+	 *
+	 * @type {String}
+	 */
+	cls: 'typo3-pagetree-toppanel',
 
 	/**
 	 * Border
@@ -107,7 +113,8 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 	initComponent: function() {
 		this.currentlyShownPanel = new Ext.Panel({
 			id: this.id + '-defaultPanel',
-			cls: this.id + '-item'
+			cls: this.id + '-item typo3-pagetree-toppanel-item',
+			border: false
 		});
 		this.items = [this.currentlyShownPanel];
 
@@ -133,7 +140,7 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 	 */
 	getButtonTemplate: function() {
 		return new Ext.Template(
-			'<div id="{4}" class="x-btn {3}"><button type="{0}"">&nbsp;</button></div>'
+			'<div id="{4}" class="x-btn {3}"><button type="{0}">&nbsp;</button></div>'
 		);
 	},
 
@@ -146,6 +153,7 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 	 */
 	addButton: function(button, connectedWidget) {
 		button.template = this.getButtonTemplate();
+		button.on('toggle', this.topbarButtonToggleCallback);
 		if (!button.hasListener('click')) {
 			button.on('click', this.topbarButtonCallback);
 		}
@@ -158,6 +166,19 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 
 		this.getTopToolbar().addItem(button);
 		this.doLayout();
+	},
+
+	/**
+	 * Toggle button state
+	 *
+	 * @return {void}
+	 */
+	topbarButtonToggleCallback: function() {
+		if (this.pressed) {
+			this.el.addClass(['active']);
+		} else {
+			this.el.removeClass(['active']);
+		}
 	},
 
 	/**
@@ -203,6 +224,7 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 		this.filteringTree.searchWord = searchWord;
 		if (this.filteringTree.searchWord === '') {
 			this.app.activeTree = this.tree;
+			this.tree.t3ContextNode = this.filteringTree.t3ContextNode;
 
 			textField.setHideTrigger(true);
 			this.filteringTree.hide();
@@ -251,16 +273,22 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 			border: false,
 			id: this.app.id + '-indicatorBar-filter',
 			cls: this.app.id + '-indicatorBar-item',
-			html: '<p>' +
-					'<span id="' + this.app.id + '-indicatorBar-filter-info' + '" ' +
-						'class="' + this.app.id + '-indicatorBar-item-leftIcon ' +
-							TYPO3.Components.PageTree.Sprites.Info + '">&nbsp;' +
-					'</span>' +
-					'<span id="' + this.app.id + '-indicatorBar-filter-clear' + '" ' +
-						'class="' + this.app.id + '-indicatorBar-item-rightIcon ' + '">X' +
-					'</span>' +
-					TYPO3.Components.PageTree.LLL.activeFilterMode +
-				'</p>',
+			html: '' +
+				'<div class="alert alert-info">' +
+					'<div class="media">' +
+						'<div class="media-left">' +
+							TYPO3.Components.PageTree.Icons.Info +
+						'</div>' +
+						'<div class="media-body">' +
+							TYPO3.Components.PageTree.LLL.activeFilterMode +
+						'</div>' +
+						'<div class="media-right">' +
+							'<a href="#" id="' + this.app.id + '-indicatorBar-filter-clear">' +
+								TYPO3.Components.PageTree.Icons.Close +
+							'</a>' +
+						'</div>' +
+					'</div>' +
+				'</div>',
 			filteringTree: this.filteringTree,
 
 			listeners: {
@@ -286,15 +314,20 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 	addFilterFeature: function() {
 		var topPanelButton = new Ext.Button({
 			id: this.id + '-button-filter',
-			cls: this.id + '-button',
-			iconCls: TYPO3.Components.PageTree.Sprites.Filter,
+			cls: 'btn btn-default btn-sm',
+			text: TYPO3.Components.PageTree.Icons.Filter,
 			tooltip: TYPO3.Components.PageTree.LLL.buttonFilter
 		});
 
 		var textField = new Ext.form.TriggerField({
 			id: this.id + '-filter',
+			cls: 'form-control input-sm typo3-pagetree-toppanel-filter',
 			enableKeyEvents: true,
-			triggerClass: TYPO3.Components.PageTree.Sprites.InputClear,
+			triggerConfig: {
+				tag: 'span',
+				html: TYPO3.Components.PageTree.Icons.InputClear,
+				cls: 'typo3-pagetree-toppanel-filter-clear'
+			},
 			value: TYPO3.Components.PageTree.LLL.searchTermInfo,
 
 			listeners: {
@@ -332,10 +365,11 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 			this.createFilterTree(textField);
 		}.createDelegate(this);
 
-		var topPanelWidget = new Ext.Panel({
+		var topPanelWidget = new Ext.Container({
 			border: false,
 			id: this.id + '-filterWrap',
-			cls: this.id + '-item',
+			cls: this.id + '-item typo3-pagetree-toppanel-item',
+			border: false,
 			items: [textField],
 
 			listeners: {
@@ -367,24 +401,23 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 
 			getDragData: function(event) {
 				this.proxyElement = document.createElement('div');
-
-				var node = Ext.getCmp(event.getTarget('.x-btn').id);
-				node.shouldCreateNewNode = true;
-
-				return {
-					ddel: this.proxyElement,
-					item: node
+				if (event.getTarget('.x-btn') !== null){
+					var node = Ext.getCmp(event.getTarget('.x-btn').id);
+					node.shouldCreateNewNode = true;
+					return {
+						ddel: this.proxyElement,
+						item: node
+					}
 				}
 			},
 
 			onInitDrag: function() {
 				this.topPanel.app.activeTree.dontSetOverClass = true;
 				var clickedButton = this.dragData.item;
-				var cls = clickedButton.initialConfig.iconCls;
 
 				this.proxyElement.shadow = false;
 				this.proxyElement.innerHTML = '<div class="x-dd-drag-ghost-pagetree">' +
-					'<span class="x-dd-drag-ghost-pagetree-icon ' + cls + '">&nbsp;</span>' +
+					'<span class="x-dd-drag-ghost-pagetree-icon">' + clickedButton.initialConfig.html + '</span>' +
 					'<span class="x-dd-drag-ghost-pagetree-text">'  + clickedButton.title + '</span>' +
 				'</div>';
 
@@ -415,8 +448,6 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 		var newNodeToolbar = new Ext.Toolbar({
 			border: false,
 			id: this.id + '-item-newNode',
-			cls: this.id + '-item',
-
 			listeners: {
 				render: {
 					fn: this.createNewNodeToolbar
@@ -425,18 +456,24 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 		});
 
 		this.dataProvider.getNodeTypes(function(response) {
-			for (var i = 0; i < response.length; ++i) {
-				response[i].template = this.getButtonTemplate();
-				newNodeToolbar.addItem(response[i]);
+			var amountOfNodeTypes = response.length;
+			if (amountOfNodeTypes > 0) {
+				topPanelButton.show();
+				for (var i = 0; i < amountOfNodeTypes; ++i) {
+					response[i].template = this.getButtonTemplate();
+					response[i].cls = 'typo3-pagetree-toppanel-drag-node';
+					newNodeToolbar.addItem(response[i]);
+				}
+				newNodeToolbar.doLayout();
 			}
-			newNodeToolbar.doLayout();
 		}, this);
 
 		var topPanelButton = new Ext.Button({
 			id: this.id + '-button-newNode',
-			cls: this.id + '-button',
-			iconCls: TYPO3.Components.PageTree.Sprites.NewNode,
-			tooltip: TYPO3.Components.PageTree.LLL.buttonNewNode
+			cls: 'btn btn-default btn-sm',
+			text: TYPO3.Components.PageTree.Icons.NewNode,
+			tooltip: TYPO3.Components.PageTree.LLL.buttonNewNode,
+			hidden: true
 		});
 
 		this.addButton(topPanelButton, newNodeToolbar);
@@ -450,8 +487,8 @@ TYPO3.Components.PageTree.TopPanel = Ext.extend(Ext.Panel, {
 	addRefreshTreeFeature: function() {
 		var topPanelButton = new Ext.Button({
 			id: this.id + '-button-refresh',
-			cls: this.id + '-button',
-			iconCls: TYPO3.Components.PageTree.Sprites.Refresh,
+			cls: 'btn btn-default btn-sm',
+			text: TYPO3.Components.PageTree.Icons.Refresh,
 			tooltip: TYPO3.Components.PageTree.LLL.buttonRefresh,
 
 			listeners: {

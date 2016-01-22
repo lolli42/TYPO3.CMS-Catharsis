@@ -22,6 +22,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  *                                                                        */
 
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 
@@ -29,25 +30,43 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  * The abstract base class for all backend view helpers
  * Note: backend view helpers are still experimental!
  */
-abstract class AbstractBackendViewHelper extends AbstractViewHelper {
+abstract class AbstractBackendViewHelper extends AbstractViewHelper
+{
+    /**
+     * Gets instance of template if exists or create a new one.
+     * Saves instance in viewHelperVariableContainer
+     *
+     * @return DocumentTemplate $doc
+     */
+    public function getDocInstance()
+    {
+        if ($this->viewHelperVariableContainer->exists(AbstractBackendViewHelper::class, 'DocumentTemplate')) {
+            $doc = $this->viewHelperVariableContainer->get(AbstractBackendViewHelper::class, 'DocumentTemplate');
+        } else {
+            /** @var $doc DocumentTemplate */
+            $doc = GeneralUtility::makeInstance(DocumentTemplate::class);
+            $this->viewHelperVariableContainer->add(AbstractBackendViewHelper::class, 'DocumentTemplate', $doc);
+        }
 
-	/**
-	 * Gets instance of template if exists or create a new one.
-	 * Saves instance in viewHelperVariableContainer
-	 *
-	 * @return DocumentTemplate $doc
-	 */
-	public function getDocInstance() {
-		if ($this->viewHelperVariableContainer->exists(AbstractBackendViewHelper::class, 'DocumentTemplate')) {
-			$doc = $this->viewHelperVariableContainer->get(AbstractBackendViewHelper::class, 'DocumentTemplate');
-		} else {
-			/** @var $doc DocumentTemplate */
-			$doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-			$doc->backPath = $GLOBALS['BACK_PATH'];
-			$this->viewHelperVariableContainer->add(AbstractBackendViewHelper::class, 'DocumentTemplate', $doc);
-		}
+        return $doc;
+    }
 
-		return $doc;
-	}
+    /**
+     * Gets instance of PageRenderer if exists or create a new one.
+     * Saves instance in viewHelperVariableContainer
+     *
+     * @return PageRenderer
+     */
+    public function getPageRenderer()
+    {
+        if ($this->viewHelperVariableContainer->exists(AbstractBackendViewHelper::class, 'PageRenderer')) {
+            $pageRenderer = $this->viewHelperVariableContainer->get(AbstractBackendViewHelper::class, 'PageRenderer');
+        } else {
+            /** @var $doc DocumentTemplate */
+            $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+            $this->viewHelperVariableContainer->add(AbstractBackendViewHelper::class, 'PageRenderer', $pageRenderer);
+        }
 
+        return $pageRenderer;
+    }
 }

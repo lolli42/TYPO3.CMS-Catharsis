@@ -12,20 +12,19 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Configuration/Config
  * Configuration of af an Editor of TYPO3 htmlArea RTE
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Configuration/Config',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util'],
 	function (UserAgent, Util) {
 
 	/**
-	 *  Constructor: Sets editor configuration defaults
+	 * Constructor: Sets editor configuration defaults
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Configuration/Config
 	 */
 	var Config = function (editorId) {
 		this.editorId = editorId;
-			// if the site is secure, create a secure iframe
-		this.useHTTPS = false;
 			// for Mozilla
 		this.useCSS = false;
 		this.enableMozillaExtension = true;

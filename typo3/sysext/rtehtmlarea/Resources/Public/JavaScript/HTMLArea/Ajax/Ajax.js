@@ -12,15 +12,19 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/Ajax/Ajax
  * Ajax object
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Ajax/Ajax',
-	['jquery',
+define(['jquery',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util'],
 	function($, Util) {
 
 	/**
 	 * Constructor method
+	 *
+	 * @param config
+	 * @constructor
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/Ajax/Ajax
 	 */
 	var Ajax = function (config) {
 		Util.apply(this, config);
@@ -78,7 +82,7 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Ajax/Ajax',
 		postData: function (url, data, callback, scope) {
 			var success = false,
 				self = this;
-			data.charset = this.editor.config.typo3ContentCharset ? this.editor.config.typo3ContentCharset : 'utf-8';
+			data.charset = 'utf-8';
 			var params = '';
 			for (var parameter in data) {
 				params += (params.length ? '&' : '') + parameter + '=' + encodeURIComponent(data[parameter]);

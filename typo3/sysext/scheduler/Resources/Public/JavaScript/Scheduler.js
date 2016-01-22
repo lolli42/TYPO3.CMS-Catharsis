@@ -11,8 +11,16 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
+/**
+ * Module: TYPO3/CMS/Scheduler/Scheduler
+ */
+define(['jquery'], function($) {
 
+	/**
+	 *
+	 * @type {{}}
+	 * @exports TYPO3/CMS/Scheduler/Scheduler
+	 */
 	var Scheduler = {};
 
 	var allCheckedStatus = false;
@@ -20,6 +28,8 @@ define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
 	/**
 	 * This method reacts on changes to the task class
 	 * It switches on or off the relevant extra fields
+	 *
+	 * @param {Object} theSelector
 	 */
 	Scheduler.actOnChangedTaskClass = function(theSelector) {
 		var taskClass = theSelector.val();
@@ -32,37 +42,34 @@ define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
 	};
 
 	/**
-	 * This method reacts on changes to the type of a task, i.e. single or recurring,
-	 * by showing or hiding the relevant form fields
+	 * This method reacts on changes to the type of a task, i.e. single or recurring
 	 */
-	Scheduler.actOnChangedTaskType = function(theSelector) {
-		// Get task type from selected value, or set default value
-		// Single taskType = 1, Recurring task = 0
-		var taskType = parseInt(theSelector.val()) == 1 ? 0 : 1;
-		$('#task_end_row').toggle(taskType);
-		$('#task_frequency_row').toggle(taskType);
-		$('#task_multiple_row').toggle(taskType);
+	Scheduler.actOnChangedTaskType = function() {
+		Scheduler.toggleFieldsByTaskType($(this).val());
 	};
 
 	/**
 	 * This method reacts on field changes of all table field for table garbage collection task
+	 *
+	 * @param {Object} theCheckbox
 	 */
 	Scheduler.actOnChangeSchedulerTableGarbageCollectionAllTables = function(theCheckbox) {
 		var $numberOfDays = $('#task_tableGarbageCollection_numberOfDays');
+		var $taskTableGarbageCollectionTable = $('#task_tableGarbageCollection_table');
 		if (theCheckbox.prop('checked')) {
-			$('#task_tableGarbageCollection_table').prop('disabled', true);
+			$taskTableGarbageCollectionTable.prop('disabled', true);
 			$numberOfDays.prop('disabled', true);
 		} else {
 			// Get number of days for selected table
 			var numberOfDays = parseInt($numberOfDays.val());
 			if (numberOfDays < 1) {
-				var selectedTable = $('#task_tableGarbageCollection_table').val();
-				if (typeof(defaultNumberOfDays[selectedTable]) != 'undefined') {
+				var selectedTable = $taskTableGarbageCollectionTable.val();
+				if (typeof(defaultNumberOfDays[selectedTable]) !== 'undefined') {
 					numberOfDays = defaultNumberOfDays[selectedTable];
 				}
 			}
 
-			$('#task_tableGarbageCollection_table').prop('disabled', false);
+			$taskTableGarbageCollectionTable.prop('disabled', false);
 			if (numberOfDays > 0) {
 				$numberOfDays.prop('disabled', false);
 			}
@@ -72,6 +79,8 @@ define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
 	/**
 	 * This methods set the 'number of days' field to the default expire period
 	 * of the selected table
+	 *
+	 * @param {Object} theSelector
 	 */
 	Scheduler.actOnChangeSchedulerTableGarbageCollectionTable = function(theSelector) {
 		var $numberOfDays = $('#task_tableGarbageCollection_numberOfDays');
@@ -86,11 +95,26 @@ define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
 
 	/**
 	 * Check or uncheck all checkboxes
+	 *
+	 * @param {Object} theSelector
+	 * @returns {Boolean}
 	 */
 	Scheduler.checkOrUncheckAllCheckboxes = function(theSelector) {
 		theSelector.parents('.tx_scheduler_mod1').find(':checkbox').prop('checked', !allCheckedStatus);
 		allCheckedStatus = !allCheckedStatus;
 		return false;
+	};
+
+	/**
+	 * Toggle the relevant form fields by task type
+	 *
+	 * @param {Integer} taskType
+	 */
+	Scheduler.toggleFieldsByTaskType = function(taskType) {
+		// Single task option = 1, Recurring task option = 2
+		taskType = parseInt(taskType);
+		$('#task_end_col').toggle(taskType === 2);
+		$('#task_frequency_row').toggle(taskType === 2);
 	};
 
 	/**
@@ -105,9 +129,7 @@ define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
 			Scheduler.actOnChangedTaskClass($(this));
 		});
 
-		$('#task_type').change(function() {
-			Scheduler.actOnChangedTaskType($(this));
-		});
+		$('#task_type').change(Scheduler.actOnChangedTaskType);
 
 		$('#task_tableGarbageCollection_allTables').change(function() {
 			Scheduler.actOnChangeSchedulerTableGarbageCollectionAllTables($(this));
@@ -118,13 +140,18 @@ define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
 		});
 	};
 
-	// initialize and return the Scheduler object
-	return function() {
-		$(document).ready(function() {
-			Scheduler.initializeEvents();
-		});
+	/**
+	 * Initialize default states
+	 */
+	Scheduler.initializeDefaultStates = function() {
+		var $taskType = $('#task_type');
+		if ($taskType.length) {
+			Scheduler.toggleFieldsByTaskType($taskType.val());
+		}
+	};
 
-		TYPO3.Scheduler = Scheduler;
-		return Scheduler;
-	}();
+	$(Scheduler.initializeEvents);
+	$(Scheduler.initializeDefaultStates);
+
+	return Scheduler;
 });

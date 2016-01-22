@@ -18,60 +18,140 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
  * view helper
- *
- * @author Susanne Moog <susanne.moog@typo3.org>
  * @internal
  */
-class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper {
+class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormViewHelper
+{
+    /**
+     * @var string
+     */
+    protected $tagName = 'form';
 
-	/**
-	 * @var string
-	 */
-	protected $tagName = 'form';
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility
+     */
+    protected $configurationUtility;
 
-	/**
-	 * Renders a download link
-	 *
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension
-	 * @return string the rendered a tag
-	 */
-	public function render(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension) {
-		$installPaths = \TYPO3\CMS\Extensionmanager\Domain\Model\Extension::returnAllowedInstallPaths();
-		if (empty($installPaths)) {
-			return '';
-		}
-		$pathSelector = '<ul class="is-hidden">';
-		foreach ($installPaths as $installPathType => $installPath) {
-			$pathSelector .= '<li>
-				<input type="radio" id="' . htmlspecialchars($extension->getExtensionKey()) . '-downloadPath-' . htmlspecialchars($installPathType) . '" name="' . htmlspecialchars($this->getFieldNamePrefix('downloadPath')) . '[downloadPath]" class="downloadPath" value="' . htmlspecialchars($installPathType) . '"' . ($installPathType == 'Local' ? ' checked="checked"' : '') . '/>
+    /**
+     * @var \TYPO3\CMS\Extbase\Service\ExtensionService
+     */
+    protected $extensionService;
+
+    /**
+     * @param \TYPO3\CMS\Extbase\Service\ExtensionService $extensionService
+     */
+    public function injectExtensionService(\TYPO3\CMS\Extbase\Service\ExtensionService $extensionService)
+    {
+        $this->extensionService = $extensionService;
+    }
+
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility
+     */
+    public function injectConfigurationUtility(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility)
+    {
+        $this->configurationUtility = $configurationUtility;
+    }
+
+    /**
+     * Initialize arguments.
+     *
+     * @return void
+     */
+    public function initializeArguments()
+    {
+        $this->registerTagAttribute('enctype', 'string', 'MIME type with which the form is submitted');
+        $this->registerTagAttribute('method', 'string', 'Transfer type (GET or POST)');
+        $this->registerTagAttribute('name', 'string', 'Name of form');
+        $this->registerTagAttribute('onreset', 'string', 'JavaScript: On reset of the form');
+        $this->registerTagAttribute('onsubmit', 'string', 'JavaScript: On submit of the form');
+        $this->registerUniversalTagAttributes();
+    }
+
+    /**
+     * Renders a download link
+     *
+     * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension
+     * @return string the rendered a tag
+     */
+    public function render(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension)
+    {
+        $installPaths = \TYPO3\CMS\Extensionmanager\Domain\Model\Extension::returnAllowedInstallPaths();
+        if (empty($installPaths)) {
+            return '';
+        }
+        $pathSelector = '<ul class="is-hidden">';
+        foreach ($installPaths as $installPathType => $installPath) {
+            $pathSelector .= '<li>
+				<input type="radio" id="' . htmlspecialchars($extension->getExtensionKey()) . '-downloadPath-' . htmlspecialchars($installPathType) . '" name="' . htmlspecialchars($this->getFieldNamePrefix()) . '[downloadPath]" class="downloadPath" value="' . htmlspecialchars($installPathType) . '" ' . ($installPathType == 'Local' ? 'checked="checked"' : '') . ' />
 				<label for="' . htmlspecialchars($extension->getExtensionKey()) . '-downloadPath-' . htmlspecialchars($installPathType) . '">' . htmlspecialchars($installPathType) . '</label>
 			</li>';
-		}
-		$pathSelector .= '</ul>';
-		$uriBuilder = $this->controllerContext->getUriBuilder();
-		$action = 'checkDependencies';
-		$uriBuilder->reset();
-		$uriBuilder->setFormat('json');
-		$uri = $uriBuilder->uriFor($action, array(
-			'extension' => (int)$extension->getUid()
-		), 'Download');
-		$this->tag->addAttribute('data-href', $uri);
+        }
+        $pathSelector .= '</ul>';
+        $uriBuilder = $this->controllerContext->getUriBuilder();
+        $action = 'checkDependencies';
+        $uriBuilder->reset();
+        $uriBuilder->setFormat('json');
+        $uri = $uriBuilder->uriFor($action, array(
+            'extension' => (int)$extension->getUid()
+        ), 'Download');
+        $this->tag->addAttribute('data-href', $uri);
 
-		$label = '
+        $automaticInstallation = $this->configurationUtility->getCurrentConfiguration('extensionmanager')['automaticInstallation']['value'];
+        $labelKeySuffix = $automaticInstallation ? '' : '.downloadOnly';
+        $label = '
 			<div class="btn-group">
 				<button
-					title="' . LocalizationUtility::translate('extensionList.downloadViewHelper.submit', 'extensionmanager') . '"
+					title="' . LocalizationUtility::translate('extensionList.downloadViewHelper.submit' . $labelKeySuffix, 'extensionmanager') . '"
 					type="submit"
 					class="btn btn-default"
-					value="' . LocalizationUtility::translate('extensionList.downloadViewHelper.submit', 'extensionmanager') . '"
+					value="' . LocalizationUtility::translate('extensionList.downloadViewHelper.submit' . $labelKeySuffix, 'extensionmanager') . '"
 				>
 					<span class="t3-icon fa fa-cloud-download"></span>
 				</button>
 			</div>';
 
-		$this->tag->setContent($label . $pathSelector);
-		$this->tag->addAttribute('class', 'download');
-		return '<div id="' . htmlspecialchars($extension->getExtensionKey()) . '-downloadFromTer" class="downloadFromTer">' . $this->tag->render() . '</div>';
-	}
+        $this->tag->setContent($label . $pathSelector);
+        $this->tag->addAttribute('class', 'download');
+        return '<div id="' . htmlspecialchars($extension->getExtensionKey()) . '-downloadFromTer" class="downloadFromTer">' . $this->tag->render() . '</div>';
+    }
 
+    /**
+     * Get the field name prefix
+     *
+     * @return string
+     */
+    protected function getFieldNamePrefix()
+    {
+        if ($this->hasArgument('fieldNamePrefix')) {
+            return $this->arguments['fieldNamePrefix'];
+        } else {
+            return $this->getDefaultFieldNamePrefix();
+        }
+    }
+
+    /**
+     * Retrieves the default field name prefix for this form
+     *
+     * @return string default field name prefix
+     */
+    protected function getDefaultFieldNamePrefix()
+    {
+        $request = $this->controllerContext->getRequest();
+        if ($this->hasArgument('extensionName')) {
+            $extensionName = $this->arguments['extensionName'];
+        } else {
+            $extensionName = $request->getControllerExtensionName();
+        }
+        if ($this->hasArgument('pluginName')) {
+            $pluginName = $this->arguments['pluginName'];
+        } else {
+            $pluginName = $request->getPluginName();
+        }
+        if ($extensionName !== null && $pluginName != null) {
+            return $this->extensionService->getPluginNamespace($extensionName, $pluginName);
+        } else {
+            return '';
+        }
+    }
 }

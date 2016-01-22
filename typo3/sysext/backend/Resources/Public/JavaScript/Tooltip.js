@@ -12,12 +12,17 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Tooltip
  * API for tooltip windows powered by Twitter Bootstrap.
  */
-define('TYPO3/CMS/Backend/Tooltip', ['jquery', 'bootstrap'], function($) {
+define(['jquery', 'bootstrap'], function($) {
+	'use strict';
 
 	/**
 	 * The main tooltip object
+	 *
+	 * @type {{}}
+	 * @exports TYPO3/CMS/Backend/Tooltip
 	 */
 	var Tooltip = {
 	};
@@ -33,8 +38,8 @@ define('TYPO3/CMS/Backend/Tooltip', ['jquery', 'bootstrap'], function($) {
 	/**
 	 * Show tooltip on $element
 	 *
-	 * @param {object} $element
-	 * @param {string} title
+	 * @param {Object} $element
+	 * @param {String} title
 	 */
 	Tooltip.show = function($element, title) {
 		$element
@@ -46,13 +51,18 @@ define('TYPO3/CMS/Backend/Tooltip', ['jquery', 'bootstrap'], function($) {
 	/**
 	 * Hide tooltip on $element
 	 *
-	 * @param $element
+	 * @param {Object} $element
 	 */
 	Tooltip.hide = function($element) {
 		$element.tooltip('hide');
 	};
 
-	Tooltip.initialize('[data-toggle="tooltip"]');
+	$(function () {
+		Tooltip.initialize('[data-toggle="tooltip"]');
+	});
+
+	// expose as global object
 	TYPO3.Tooltip = Tooltip;
+
 	return Tooltip;
 });

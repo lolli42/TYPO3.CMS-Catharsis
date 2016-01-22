@@ -17,27 +17,24 @@ namespace TYPO3\CMS\Backend\View\BackendLayout;
 /**
  * Interface for classes which hook into BackendLayoutDataProvider
  * to provide additional backend layouts from various sources.
- *
- * @author Jo Hasenau <info@cybercraft.de>
  */
-interface DataProviderInterface {
+interface DataProviderInterface
+{
+    /**
+     * Adds backend layouts to the given backend layout collection.
+     *
+     * @param DataProviderContext $dataProviderContext
+     * @param BackendLayoutCollection $backendLayoutCollection
+     * @return void
+     */
+    public function addBackendLayouts(DataProviderContext $dataProviderContext, BackendLayoutCollection $backendLayoutCollection);
 
-	/**
-	 * Adds backend layouts to the given backend layout collection.
-	 *
-	 * @param DataProviderContext $dataProviderContext
-	 * @param BackendLayoutCollection $backendLayoutCollection
-	 * @return void
-	 */
-	public function addBackendLayouts(DataProviderContext $dataProviderContext, BackendLayoutCollection $backendLayoutCollection);
-
-	/**
-	 * Gets a backend layout by (regular) identifier.
-	 *
-	 * @param string $identifier
-	 * @param int $pageId
-	 * @return NULL|BackendLayout
-	 */
-	public function getBackendLayout($identifier, $pageId);
-
+    /**
+     * Gets a backend layout by (regular) identifier.
+     *
+     * @param string $identifier
+     * @param int $pageId
+     * @return NULL|BackendLayout
+     */
+    public function getBackendLayout($identifier, $pageId);
 }

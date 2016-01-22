@@ -16,42 +16,42 @@ namespace TYPO3\CMS\Form\Tests\Unit\Filter;
 
 /**
  * Test case
- *
- * @author Andreas Lappe <nd@kaeufli.ch>
  */
-class UpperCaseFilterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+class UpperCaseFilterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+{
+    /**
+     * @var \TYPO3\CMS\Form\Domain\Filter\UpperCaseFilter
+     */
+    protected $subject = null;
 
-	/**
-	 * @var \TYPO3\CMS\Form\Filter\UpperCaseFilter
-	 */
-	protected $subject = NULL;
+    /**
+     * Set up
+     */
+    protected function setUp()
+    {
+        $this->subject = new \TYPO3\CMS\Form\Domain\Filter\UpperCaseFilter();
+        $GLOBALS['TSFE'] = new \stdClass();
+        $GLOBALS['TSFE']->csConvObj = new \TYPO3\CMS\Core\Charset\CharsetConverter();
+        $GLOBALS['TSFE']->renderCharset = 'utf-8';
+    }
 
-	/**
-	 * Set up
-	 */
-	protected function setUp() {
-		$this->subject = new \TYPO3\CMS\Form\Filter\UpperCaseFilter();
-		$GLOBALS['TSFE'] = new \stdClass();
-		$GLOBALS['TSFE']->csConvObj = new \TYPO3\CMS\Core\Charset\CharsetConverter();
-		$GLOBALS['TSFE']->renderCharset = 'utf-8';
-	}
+    public function stringProvider()
+    {
+        return array(
+            'asdf' => array('asdf', 'ASDF'),
+            'as?df' => array('as?df', 'AS?DF'),
+        );
+    }
 
-	public function stringProvider() {
-		return array(
-			'asdf' => array('asdf', 'ASDF'),
-			'as?df' => array('as?df', 'AS?DF'),
-		);
-	}
-
-	/**
-	 * @test
-	 * @dataProvider stringProvider
-	 */
-	public function filterForStringReturnsUppercasedString($input, $expected) {
-		$this->assertSame(
-			$expected,
-			$this->subject->filter($input)
-		);
-	}
-
+    /**
+     * @test
+     * @dataProvider stringProvider
+     */
+    public function filterForStringReturnsUppercasedString($input, $expected)
+    {
+        $this->assertSame(
+            $expected,
+            $this->subject->filter($input)
+        );
+    }
 }

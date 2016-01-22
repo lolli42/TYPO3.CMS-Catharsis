@@ -18,9 +18,7 @@ namespace TYPO3\CMS\Core\Error;
  * An exception which represents a PHP error.
  *
  * This file is a backport from FLOW3
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
-class Exception extends \TYPO3\CMS\Core\Exception {
-
+class Exception extends \TYPO3\CMS\Core\Exception
+{
 }

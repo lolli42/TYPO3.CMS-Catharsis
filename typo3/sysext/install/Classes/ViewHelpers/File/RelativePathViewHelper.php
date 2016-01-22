@@ -15,8 +15,8 @@ namespace TYPO3\CMS\Install\ViewHelpers\File;
  */
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
-use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Get file path relative to PATH_site from absolute path
@@ -32,31 +32,32 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class RelativePathViewHelper extends AbstractViewHelper implements CompilableInterface {
+class RelativePathViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Get relative path
+     *
+     * @return string Relative path
+     */
+    public function render()
+    {
+        return static::renderStatic(
+            array(),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Get relative path
-	 *
-	 * @return string Relative path
-	 */
-	public function render() {
-		return self::renderStatic(
-			array(),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
-
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$absolutePath = $renderChildrenClosure();
-		return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($absolutePath);
-	}
-
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $absolutePath = $renderChildrenClosure();
+        return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($absolutePath);
+    }
 }

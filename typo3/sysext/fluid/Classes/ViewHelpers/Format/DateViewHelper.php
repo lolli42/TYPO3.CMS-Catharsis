@@ -10,6 +10,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
@@ -17,7 +18,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
- * Formats a \DateTime object.
+ * Formats an object implementing \DateTimeInterface.
  *
  * = Examples =
  *
@@ -35,6 +36,14 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
  * <output>
  * 01:23
  * (depending on the current time)
+ * </output>
+ *
+ * <code title="Relative date with given time">
+ * <f:format.date format="Y" base="{dateObject}">-1 year</f:format.date>
+ * </code>
+ * <output>
+ * 2016
+ * (assuming dateObject is in 2017)
  * </output>
  *
  * <code title="strtotime string">
@@ -71,72 +80,88 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
  *
  * @api
  */
-class DateViewHelper extends AbstractViewHelper implements CompilableInterface {
+class DateViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * @var bool
+     */
+    protected $escapingInterceptorEnabled = false;
 
-	/**
-	 * @var bool
-	 */
-	protected $escapingInterceptorEnabled = FALSE;
+    /**
+     * Render the supplied DateTime object as a formatted date.
+     *
+     * @param mixed $date either an object implementing DateTimeInterface or a string that is accepted by DateTime constructor
+     * @param string $format Format String which is taken to format the Date/Time
+     * @param mixed $base A base time (an object implementing DateTimeInterface or a string) used if $date is a relative date specification. Defaults to current time.
+     *
+     * @return string Formatted date
+     * @throws Exception
+     * @api
+     */
+    public function render($date = null, $format = '', $base = null)
+    {
+        return static::renderStatic(
+            array(
+                'date' => $date,
+                'format' => $format,
+                'base' => $base
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Render the supplied DateTime object as a formatted date.
-	 *
-	 * @param mixed $date either a DateTime object or a string that is accepted by DateTime constructor
-	 * @param string $format Format String which is taken to format the Date/Time
-	 *
-	 * @return string Formatted date
-	 * @throws Exception
-	 * @api
-	 */
-	public function render($date = NULL, $format = '') {
-		return self::renderStatic(
-			array(
-				'date' => $date,
-				'format' => $format
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
+    /**
+     * @param array $arguments
+     * @param \Closure $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     * @throws Exception
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $date = $arguments['date'];
+        $format = $arguments['format'];
+        $base = $arguments['base'] === null ? time() : $arguments['base'];
+        if (is_string($base)) {
+            $base = trim($base);
+        }
 
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 * @throws Exception
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$date = $arguments['date'];
-		$format = $arguments['format'];
-		if ($format === '') {
-			$format = $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] ?: 'Y-m-d';
-		}
+        if ($format === '') {
+            $format = $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] ?: 'Y-m-d';
+        }
 
-		if ($date === NULL) {
-			$date = $renderChildrenClosure();
-			if ($date === NULL) {
-				return '';
-			}
-		}
-		if (!$date instanceof \DateTime) {
-			try {
-				if (MathUtility::canBeInterpretedAsInteger($date)) {
-					$date = new \DateTime('@' . $date);
-				} else {
-					$date = new \DateTime($date);
-				}
-				$date->setTimezone(new \DateTimeZone(date_default_timezone_get()));
-			} catch (\Exception $exception) {
-				throw new Exception('"' . $date . '" could not be parsed by \DateTime constructor.', 1241722579);
-			}
-		}
+        if ($date === null) {
+            $date = $renderChildrenClosure();
+            if ($date === null) {
+                return '';
+            }
+        }
 
-		if (strpos($format, '%') !== FALSE) {
-			return strftime($format, $date->format('U'));
-		} else {
-			return $date->format($format);
-		}
-	}
+        if (is_string($date)) {
+            $date = trim($date);
+        }
+
+        if ($date === '') {
+            $date = 'now';
+        }
+
+        if (!$date instanceof \DateTimeInterface) {
+            try {
+                $base = $base instanceof \DateTimeInterface ? $base->format('U') : strtotime((MathUtility::canBeInterpretedAsInteger($base) ? '@' : '') . $base);
+                $dateTimestamp = strtotime((MathUtility::canBeInterpretedAsInteger($date) ? '@' : '') . $date, $base);
+                $date = new \DateTime('@' . $dateTimestamp);
+                $date->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+            } catch (\Exception $exception) {
+                throw new Exception('"' . $date . '" could not be parsed by \DateTime constructor: ' . $exception->getMessage(), 1241722579);
+            }
+        }
+
+        if (strpos($format, '%') !== false) {
+            return strftime($format, $date->format('U'));
+        } else {
+            return $date->format($format);
+        }
+    }
 }

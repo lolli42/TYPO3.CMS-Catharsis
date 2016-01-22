@@ -41,6 +41,9 @@
 			<trans-unit id="sys_file_metadata.source">
 				<source>Source</source>
 			</trans-unit>
+			<trans-unit id="sys_file_metadata.copyright">
+				<source>Copyright</source>
+			</trans-unit>
 			<trans-unit id="sys_file_metadata.location_country">
 				<source>Country</source>
 			</trans-unit>
@@ -71,11 +74,53 @@
 			<trans-unit id="sys_file_metadata.unit">
 				<source>Unit</source>
 			</trans-unit>
+			<trans-unit id="sys_file_metadata.unit.px">
+				<source>Pixels</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.unit.cm">
+				<source>Centimeters</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.unit.in">
+				<source>Inches</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.unit.mm">
+				<source>Millimeters</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.unit.m">
+				<source>Meters</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.unit.p">
+				<source>Picas</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.unit.pt">
+				<source>Points</source>
+			</trans-unit>
 			<trans-unit id="sys_file_metadata.duration">
-				<source>Duration</source>
+				<source>Duration (in seconds)</source>
 			</trans-unit>
 			<trans-unit id="sys_file_metadata.color_space">
 				<source>Color Space</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.color_space.RGB">
+				<source>RGB</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.color_space.sRGB">
+				<source>sRGB</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.color_space.CMYK">
+				<source>CMYK</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.color_space.CMY">
+				<source>CMY</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.color_space.YUV">
+				<source>YUV</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.color_space.grey">
+				<source>Grey</source>
+			</trans-unit>
+			<trans-unit id="sys_file_metadata.color_space.indx">
+				<source>Indexed</source>
 			</trans-unit>
 			<trans-unit id="sys_file_metadata.pages">
 				<source>Number of Pages</source>
@@ -97,10 +142,19 @@
 			<trans-unit id="tabs.metadata">
 				<source>Metadata</source>
 			</trans-unit>
+			<trans-unit id="tabs.camera">
+				<source>Camera Data</source>
+			</trans-unit>
+			<trans-unit id="tabs.audio">
+				<source>Audio</source>
+			</trans-unit>
+			<trans-unit id="tabs.video">
+				<source>Video</source>
+			</trans-unit>
 
 			<!-- sys_file_metadata placeholder -->
 			<trans-unit id="placeholder.keywords">
-				<source>Keywords1, keywords2, ...</source>
+				<source>Keyword #1, keyword #2, ...</source>
 			</trans-unit>
 
 			<!-- sys_file_metadata palette -->
@@ -115,6 +169,12 @@
 			</trans-unit>
 			<trans-unit id="palette.content_date">
 				<source>Content Date</source>
+			</trans-unit>
+			<trans-unit id="palette.accessibility">
+				<source>Accessibility</source>
+			</trans-unit>
+			<trans-unit id="palette.gps">
+				<source>GPS</source>
 			</trans-unit>
 
 			<!-- fe_groups fields -->

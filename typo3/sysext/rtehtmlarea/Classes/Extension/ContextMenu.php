@@ -14,87 +14,65 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
+
 /**
  * Context Menu plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
-class ContextMenu extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
+class ContextMenu extends RteHtmlAreaApi
+{
+    /**
+     * The name of the plugin registered by the extension
+     *
+     * @var string
+     */
+    protected $pluginName = 'ContextMenu';
 
-	/**
-	 * The key of the extension that is extending htmlArea RTE
-	 *
-	 * @var string
-	 */
-	protected $extensionKey = 'rtehtmlarea';
+    /**
+     * Returns TRUE if the plugin is available and correctly initialized
+     *
+     * @param array $configuration Configuration array given from calling object down to the single plugins
+     * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
+     */
+    public function main(array $configuration)
+    {
+        return parent::main($configuration)
+            && !($this->configuration['client']['browser'] === 'opera' || $this->configuration['thisConfig']['contextMenu.']['disabled']);
+    }
 
-	/**
-	 * The name of the plugin registered by the extension
-	 *
-	 * @var string
-	 */
-	protected $pluginName = 'ContextMenu';
+    /**
+     * Return JS configuration of the htmlArea plugins registered by the extension
+     *
+     * @return string JS configuration for registered plugins
+     */
+    public function buildJavascriptConfiguration()
+    {
+        $jsArray = array();
+        if (is_array($this->configuration['thisConfig']['contextMenu.'])) {
+            $jsArray[] = 'RTEarea[editornumber].contextMenu =  ' . $this->buildNestedJSArray($this->configuration['thisConfig']['contextMenu.']) . ';';
+            if ($this->configuration['thisConfig']['contextMenu.']['showButtons']) {
+                $jsArray[] = 'RTEarea[editornumber].contextMenu.showButtons = ' . json_encode(GeneralUtility::trimExplode(',', $this->cleanList(GeneralUtility::strtolower($this->configuration['thisConfig']['contextMenu.']['showButtons'])), true)) . ';';
+            }
+            if ($this->configuration['thisConfig']['contextMenu.']['hideButtons']) {
+                $jsArray[] = 'RTEarea[editornumber].contextMenu.hideButtons = ' . json_encode(GeneralUtility::trimExplode(',', $this->cleanList(GeneralUtility::strtolower($this->configuration['thisConfig']['contextMenu.']['hideButtons'])), true)) . ';';
+            }
+        }
+        return implode(LF, $jsArray);
+    }
 
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = '';
-
-	/**
-	 * Path to the skin file relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToSkin = '';
-
-	/**
-	 * Reference to the invoking object
-	 *
-	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
-	 */
-	protected $htmlAreaRTE;
-
-	protected $thisConfig;
-
-	// Reference to RTE PageTSConfig
-	protected $toolbar;
-
-	// Reference to RTE toolbar array
-	protected $LOCAL_LANG;
-
-	// Frontend language array
-	protected $pluginButtons;
-
-	protected $convertToolbarForHtmlAreaArray = array();
-
-	public function main($parentObject) {
-		$enabled = parent::main($parentObject) && !($this->htmlAreaRTE->client['browser'] == 'opera' || $this->thisConfig['contextMenu.']['disabled']);
-		return $enabled;
-	}
-
-	/**
-	 * Return JS configuration of the htmlArea plugins registered by the extension
-	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
-	 * @return string JS configuration for registered plugins
-	 */
-	public function buildJavascriptConfiguration($rteNumberPlaceholder) {
-		$registerRTEinJavascriptString = '';
-		if (is_array($this->thisConfig['contextMenu.'])) {
-			$registerRTEinJavascriptString .= '
-	RTEarea[' . $rteNumberPlaceholder . '].contextMenu =  ' . $this->htmlAreaRTE->buildNestedJSArray($this->thisConfig['contextMenu.']) . ';';
-			if ($this->thisConfig['contextMenu.']['showButtons']) {
-				$registerRTEinJavascriptString .= '
-	RTEarea[' . $rteNumberPlaceholder . '].contextMenu.showButtons = ' . json_encode(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList(\TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['contextMenu.']['showButtons'])), TRUE)) . ';';
-			}
-			if ($this->thisConfig['contextMenu.']['hideButtons']) {
-				$registerRTEinJavascriptString .= '
-	RTEarea[' . $rteNumberPlaceholder . '].contextMenu.hideButtons = ' . json_encode(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList(\TYPO3\CMS\Core\Utility\GeneralUtility::strtolower($this->thisConfig['contextMenu.']['hideButtons'])), TRUE)) . ';';
-			}
-		}
-		return $registerRTEinJavascriptString;
-	}
-
+    /**
+     * Translate Page TS Config array in JS nested array definition
+     * Replace 0 values with false
+     * Unquote regular expression values
+     * Replace empty arrays with empty objects
+     *
+     * @param array $conf: Page TSConfig configuration array
+     * @return string nested JS array definition
+     */
+    protected function buildNestedJSArray($conf)
+    {
+        $convertedConf = GeneralUtility::removeDotsFromTS($conf);
+        return str_replace(array(':"0"', ':"\\/^(', ')$\\/i"', ':"\\/^(', ')$\\/"', '[]'), array(':false', ':/^(', ')$/i', ':/^(', ')$/', '{}'), json_encode($convertedConf));
+    }
 }

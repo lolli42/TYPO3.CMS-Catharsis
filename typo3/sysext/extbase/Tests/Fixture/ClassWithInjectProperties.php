@@ -15,18 +15,17 @@ namespace TYPO3\CMS\Extbase\Tests\Fixture;
  */
 
 /**
- * @author Felix Oertel, <f@oer.tel>
  */
-class ClassWithInjectProperties {
+class ClassWithInjectProperties
+{
+    /**
+     * @var \TYPO3\CMS\Extbase\Tests\Fixture\DummyClass
+     */
+    protected $dummyClass;
 
-	/**
-	 * @var \TYPO3\CMS\Extbase\Tests\Fixture\DummyClass
-	 */
-	protected $dummyClass;
-
-	/**
-	 * @var \TYPO3\CMS\Extbase\Tests\Fixture\SecondDummyClass
-	 * @inject
-	 */
-	protected $secondDummyClass;
+    /**
+     * @var \TYPO3\CMS\Extbase\Tests\Fixture\SecondDummyClass
+     * @inject
+     */
+    protected $secondDummyClass;
 }

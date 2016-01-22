@@ -7,14 +7,12 @@
  *
  * @param {Function} fn The method the event invokes.
  * @param {Object} scope (optional) The scope (this reference) in which the handler function executes. Defaults to the browser window.
- * @param {boolean} options (optional) Options object as passed to {@link Ext.Element#addListener}. It is recommended that the options
+ * @param {Boolean} options (optional) Options object as passed to {@link Ext.Element#addListener}. It is recommended that the options
  * {single: true} be used so that the handler is removed on first invocation.
  *
  * @return void
  */
 Ext.onReady(function() {
-		// Initialize QuickTips (Can be used anywhere)
-	Ext.QuickTips.init();
 		// Instantiate new viewport
 	var viewport = new TYPO3.Form.Wizard.Viewport({});
 		// When the window is resized, the viewport has to be resized as well

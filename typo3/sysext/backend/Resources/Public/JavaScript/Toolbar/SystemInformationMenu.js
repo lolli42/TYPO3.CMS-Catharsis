@@ -12,21 +12,26 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Toolbar/SystemInformationMenu
  * System information menu handler
  */
-define('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu', ['jquery', 'TYPO3/CMS/Backend/Storage'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Icons', 'TYPO3/CMS/Backend/Storage'], function($, Icons, Storage) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{identifier: {containerSelector: string, toolbarIconSelector: string, menuContainerSelector: string, moduleLinks: string}, elements: {$counter: (*|jQuery|HTMLElement)}}}
+	 * @exports TYPO3/CMS/Backend/Toolbar/SystemInformationMenu
+	 */
 	var SystemInformationMenu = {
 		identifier: {
 			containerSelector: '#typo3-cms-backend-backend-toolbaritems-systeminformationtoolbaritem',
-			toolbarIconSelector: '.dropdown-toggle span.t3-icon',
+			toolbarIconSelector: '.dropdown-toggle span.icon',
 			menuContainerSelector: '.dropdown-menu',
 			moduleLinks: '.t3js-systeminformation-module'
 		},
 		elements: {
-			$counter: $('#t3js-systeminformation-counter'),
-			$spinnerElement: $('<span>', {
-				'class': 't3-icon fa fa-circle-o-notch spinner fa-spin'
-			})
+			$counter: $('#t3js-systeminformation-counter')
 		}
 	};
 
@@ -42,8 +47,7 @@ define('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu', ['jquery', 'TYPO3/CMS/
 	 */
 	SystemInformationMenu.updateMenu = function() {
 		var $toolbarItemIcon = $(SystemInformationMenu.identifier.toolbarIconSelector, SystemInformationMenu.identifier.containerSelector),
-			$spinnerIcon = SystemInformationMenu.elements.$spinnerElement.clone(),
-			$existingIcon = $toolbarItemIcon.replaceWith($spinnerIcon),
+			$existingIcon = $toolbarItemIcon.clone(),
 			$menuContainer = $(SystemInformationMenu.identifier.containerSelector).find(SystemInformationMenu.identifier.menuContainerSelector);
 
 		// hide the menu if it's active
@@ -51,18 +55,22 @@ define('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu', ['jquery', 'TYPO3/CMS/
 			$menuContainer.click();
 		}
 
+		Icons.getIcon('spinner-circle-light', Icons.sizes.small).done(function(spinner) {
+			$toolbarItemIcon.replaceWith(spinner);
+		});
+
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['SystemInformationMenu::load'],
+			url: TYPO3.settings.ajaxUrls['systeminformation_render'],
 			type: 'post',
 			cache: false,
 			success: function(data) {
 				$menuContainer.html(data);
 				SystemInformationMenu.updateCounter();
-				$spinnerIcon.replaceWith($existingIcon);
+				$(SystemInformationMenu.identifier.toolbarIconSelector, SystemInformationMenu.identifier.containerSelector).replaceWith($existingIcon);
 
 				SystemInformationMenu.initialize();
 			}
-		})
+		});
 	};
 
 	/**
@@ -83,6 +91,8 @@ define('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu', ['jquery', 'TYPO3/CMS/
 
 	/**
 	 * Updates the UC and opens the linked module
+	 *
+	 * @param {Event} e
 	 */
 	SystemInformationMenu.openModule = function(e) {
 		e.preventDefault();
@@ -91,28 +101,23 @@ define('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu', ['jquery', 'TYPO3/CMS/
 		var storedSystemInformationSettings = {},
 			moduleStorageObject = {},
 			requestedModule = $(e.currentTarget).data('modulename'),
-			timestamp = Math.floor((new Date).getTime() / 1000);
+			timestamp = Math.floor((new Date()).getTime() / 1000);
 
-		if (TYPO3.Storage.Persistent.isset('systeminformation')) {
-			storedSystemInformationSettings = JSON.parse(TYPO3.Storage.Persistent.get('systeminformation'));
+		if (Storage.Persistent.isset('systeminformation')) {
+			storedSystemInformationSettings = JSON.parse(Storage.Persistent.get('systeminformation'));
 		}
 
 		moduleStorageObject[requestedModule] = {lastAccess: timestamp};
 		$.extend(true, storedSystemInformationSettings, moduleStorageObject);
-		TYPO3.Storage.Persistent.set('systeminformation', JSON.stringify(storedSystemInformationSettings)).done(function() {
+		var $ajax = Storage.Persistent.set('systeminformation', JSON.stringify(storedSystemInformationSettings));
+		$ajax.done(function() {
 			// finally, open the module now
 			TYPO3.ModuleMenu.App.showModule(requestedModule);
 			SystemInformationMenu.updateMenu();
 		});
 	};
 
-	/**
-	 * Initialize and return the SystemInformationMenu object
-	 */
-	$(document).ready(function() {
-		SystemInformationMenu.updateMenu();
-	});
+	$(SystemInformationMenu.updateMenu);
 
-	TYPO3.SystemInformationMenu = SystemInformationMenu;
 	return SystemInformationMenu;
 });

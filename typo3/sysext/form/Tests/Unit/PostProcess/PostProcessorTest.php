@@ -14,101 +14,136 @@ namespace TYPO3\CMS\Form\Tests\Unit\PostProcess;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Prophecy\Argument;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Form\Domain\Model\Element;
+use TYPO3\CMS\Form\Mvc\Controller\ControllerContext;
+use TYPO3\CMS\Form\PostProcess\PostProcessor;
+use TYPO3\CMS\Form\Tests\Unit\Fixtures\PostProcessorWithFormPrefixFixture;
+use TYPO3\CMS\Form\Tests\Unit\Fixtures\PostProcessorWithoutFormPrefixFixture;
+use TYPO3\CMS\Form\Tests\Unit\Fixtures\PostProcessorWithoutInterfaceFixture;
+
 /**
  * Testcase for PostProcessor
  */
-class PostProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+class PostProcessorTest extends UnitTestCase
+{
+    /**
+     * @var array A backup of registered singleton instances
+     */
+    protected $singletonInstances = array();
 
-	/**
-	 * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Form\PostProcess\PostProcessor
-	 */
-	public $subject;
+    /**
+     * @var Element|\Prophecy\Prophecy\ObjectProphecy
+     */
+    protected $elementProphecy;
 
-	/**
-	 * Set up
-	 */
-	protected function setUp() {
-		$form = $this->getMock(\TYPO3\CMS\Form\Domain\Model\Form::class, array(), array(), '', FALSE);
-		$this->subject = $this->getMock(
-			\TYPO3\CMS\Form\PostProcess\PostProcessor::class,
-			array('sortTypoScriptKeyList'),
-			array($form, array())
-		);
-	}
+    /**
+     * @var ObjectManager|\Prophecy\Prophecy\ObjectProphecy
+     */
+    protected $objectManagerProphecy;
 
-	/**
-	 * @test
-	 */
-	public function processFindsClassSpecifiedByTypoScriptWithoutFormPrefix() {
-		$classNameWithoutPrefix = $this->getUniqueId('postprocess');
-		eval(
-			'namespace TYPO3\CMS\Form\PostProcess;' .
-			'class ' . $classNameWithoutPrefix . 'PostProcessor implements PostProcessorInterface {' .
-			'  public function __construct(\TYPO3\CMS\Form\Domain\Model\Form $form, array $typoScript) {' .
-			'  }' .
-			'  public function process() {' .
-			'    return \'processedWithoutPrefix\';' .
-			'  }' .
-			'}'
-		);
-		$typoScript = array(
-			10 => $this->getUniqueId('postprocess'),
-			20 => $classNameWithoutPrefix
-		);
-		$this->subject->typoScript = $typoScript;
-		$this->subject->expects($this->once())->method('sortTypoScriptKeyList')->will($this->returnValue(array(10, 20)));
-		$returnValue = $this->subject->process();
-		$this->assertEquals('processedWithoutPrefix', $returnValue);
-	}
+    /**
+     * @var ControllerContext|\Prophecy\Prophecy\ObjectProphecy
+     */
+    protected $controllerContextProphecy;
 
-	/**
-	 * @test
-	 */
-	public function processFindsClassSpecifiedByTypoScriptWithFormPrefix() {
-		$classNameWithPrefix = $this->getUniqueId('postprocess');
-		eval(
-			'namespace TYPO3\CMS\Form\PostProcess;' .
-			'class ' . $classNameWithPrefix . 'PostProcessor implements PostProcessorInterface {' .
-			'  public function __construct(\TYPO3\CMS\Form\Domain\Model\Form $form, array $typoScript) {' .
-			'  }' .
-			'  public function process() {' .
-			'    return \'processedWithPrefix\';' .
-			'  }' .
-			'}'
-		);
-		$typoScript = array(
-			10 => $this->getUniqueId('postprocess'),
-			20 => $classNameWithPrefix
-		);
-		$this->subject->typoScript = $typoScript;
-		$this->subject->expects($this->once())->method('sortTypoScriptKeyList')->will($this->returnValue(array(10, 20)));
-		$returnValue = $this->subject->process();
-		$this->assertEquals('processedWithPrefix', $returnValue);
-	}
+    /**
+     * Sets up this test case.
+     */
+    protected function setUp()
+    {
+        parent::setUp();
+        $this->elementProphecy = $this->prophesize(Element::class);
+        $this->objectManagerProphecy = $this->prophesize(ObjectManager::class);
+        $this->controllerContextProphecy = $this->prophesize(ControllerContext::class);
+    }
 
-	/**
-	 * @test
-	 */
-	public function processReturnsEmptyStringIfSpecifiedPostProcessorDoesNotImplementTheInterface() {
-		$classNameWithoutInterface = $this->getUniqueId('postprocess');
-		eval(
-			'namespace TYPO3\CMS\Form\PostProcess;' .
-			'class ' . $classNameWithoutInterface . 'PostProcessor {' .
-			'  public function __construct(\TYPO3\CMS\Form\Domain\Model\Form $form, array $typoScript) {' .
-			'  }' .
-			'  public function process() {' .
-			'    return \'withoutInterface\';' .
-			'  }' .
-			'}'
-		);
-		$typoScript = array(
-			10 => $this->getUniqueId('postprocess'),
-			20 => $classNameWithoutInterface
-		);
-		$this->subject->typoScript = $typoScript;
-		$this->subject->expects($this->once())->method('sortTypoScriptKeyList')->will($this->returnValue(array(10, 20)));
-		$returnValue = $this->subject->process();
-		$this->assertEquals('', $returnValue);
-	}
+    /**
+     * Tears down this test case.
+     */
+    protected function tearDown()
+    {
+        parent::tearDown();
+        unset($this->elementProphecy);
+        unset($this->objectManagerProphecy);
+        unset($this->controllerContextProphecy);
+    }
 
+    /**
+     * @test
+     */
+    public function processFindsClassSpecifiedByTypoScriptWithoutFormPrefix()
+    {
+        $typoScript = array(
+            10 => $this->getUniqueId('postprocess'),
+            20 => PostProcessorWithoutFormPrefixFixture::class
+        );
+
+        $this->objectManagerProphecy
+            ->get(Argument::cetera())
+            ->will(function ($arguments) {
+                return new $arguments[0]($arguments[1], $arguments[2]);
+            });
+
+        $subject = $this->createSubject($typoScript);
+        $this->assertEquals('processedWithoutPrefix', $subject->process());
+    }
+
+    /**
+     * @test
+     */
+    public function processFindsClassSpecifiedByTypoScriptWithFormPrefix()
+    {
+        $typoScript = array(
+            10 => $this->getUniqueId('postprocess'),
+            20 => PostProcessorWithFormPrefixFixture::class
+        );
+
+        $this->objectManagerProphecy
+            ->get(Argument::cetera())
+            ->will(function ($arguments) {
+                return new $arguments[0]($arguments[1], $arguments[2]);
+            });
+
+        $subject = $this->createSubject($typoScript);
+        $this->assertEquals('processedWithPrefix', $subject->process());
+    }
+
+    /**
+     * @test
+     */
+    public function processReturnsEmptyStringIfSpecifiedPostProcessorDoesNotImplementTheInterface()
+    {
+        $typoScript = array(
+            10 => $this->getUniqueId('postprocess'),
+            20 => PostProcessorWithoutInterfaceFixture::class
+        );
+
+        $this->objectManagerProphecy
+            ->get(Argument::cetera())
+            ->will(function ($arguments) {
+                return new $arguments[0]($arguments[1], $arguments[2]);
+            });
+
+        $subject = $this->createSubject($typoScript);
+        $this->assertEquals('', $subject->process());
+    }
+
+    /**
+     * @param array $typoScript
+     * @return PostProcessor|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
+     */
+    protected function createSubject(array $typoScript)
+    {
+        $subject = $this->getAccessibleMock(
+            PostProcessor::class,
+            array('__none'),
+            array($this->elementProphecy->reveal(), $typoScript)
+        );
+        $subject->_set('controllerContext', $this->controllerContextProphecy->reveal());
+        $subject->_set('objectManager', $this->objectManagerProphecy->reveal());
+        return $subject;
+    }
 }

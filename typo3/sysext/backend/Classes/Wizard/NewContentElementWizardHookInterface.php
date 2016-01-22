@@ -17,17 +17,15 @@ namespace TYPO3\CMS\Backend\Wizard;
 /**
  * Interface for classes which hook into \TYPO3\CMS\Backend\Controller\ContentElement\NewContentElementController
  * and manipulate wizardItems array
- *
- * @author Steffen Kamper <info@sk-typo3.de>
  */
-interface NewContentElementWizardHookInterface {
-	/**
-	 * Modifies WizardItems array
-	 *
-	 * @param array $wizardItems Array of Wizard Items
-	 * @param \TYPO3\CMS\Backend\Controller\ContentElement\NewContentElementController $parentObject Parent object New Content element wizard
-	 * @return void
-	 */
-	public function manipulateWizardItems(&$wizardItems, &$parentObject);
-
+interface NewContentElementWizardHookInterface
+{
+    /**
+     * Modifies WizardItems array
+     *
+     * @param array $wizardItems Array of Wizard Items
+     * @param \TYPO3\CMS\Backend\Controller\ContentElement\NewContentElementController $parentObject Parent object New Content element wizard
+     * @return void
+     */
+    public function manipulateWizardItems(&$wizardItems, &$parentObject);
 }

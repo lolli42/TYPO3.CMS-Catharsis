@@ -12,46 +12,31 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Tabs
  * This class handle the tabs in the TYPO3 backend.
  * It stores the last active tab and open it again after a reload,
  */
-define('TYPO3/CMS/Backend/Tabs', ['jquery', 'TYPO3/CMS/Backend/Storage', 'bootstrap'], function ($) {
+define(['jquery', 'TYPO3/CMS/Backend/Storage', 'bootstrap'], function ($, Storage) {
+	'use strict';
 
 	/**
 	 * Tabs helper
 	 *
-	 * @type {{storage: (Storage.Client|*), cacheTimeInSeconds: number, storeLastActiveTab: number}}
+	 * @type {{storage: (Storage.Client|*), cacheTimeInSeconds: number, storeLastActiveTab: bool}}
+	 * @exports TYPO3/CMS/Backend/Tabs
 	 */
 	var Tabs = {
-		storage: top.TYPO3.Storage.Client,
-		// cache liftime in seconds
+		storage: Storage.Client,
+		// cache lifetime in seconds
 		cacheTimeInSeconds: 1800,
-		storeLastActiveTab: 1
+		storeLastActiveTab: true
 	};
 
 	/**
-	 * initialize Tabs Helper
-	 */
-	Tabs.initialize = function() {
-		$('.t3js-tabs').each(function() {
-			var $tabContainer = $(this);
-			Tabs.storeLastActiveTab = $tabContainer.data('store-last-tab') == '1' ? 1 : 0;
-			$tabContainer.find('a[href="' + Tabs.receiveActiveTab($tabContainer.attr('id')) + '"]').tab('show');
-			$tabContainer.on('show.bs.tab', function(e) {
-				if (Tabs.storeLastActiveTab == 1) {
-					var id = e.currentTarget.id;
-					var target = e.target.hash;
-					Tabs.storeActiveTab(id, target);
-				}
-			});
-		});
-	};
-
-	/**
-	 * receive active tab from storage
+	 * Receive active tab from storage
 	 *
-	 * @param id
-	 * @returns {string}
+	 * @param {String} id
+	 * @returns {String}
 	 */
 	Tabs.receiveActiveTab = function(id) {
 		var target = Tabs.storage.get(id) || '';
@@ -63,10 +48,10 @@ define('TYPO3/CMS/Backend/Tabs', ['jquery', 'TYPO3/CMS/Backend/Storage', 'bootst
 	};
 
 	/**
-	 * store active tab in storage
+	 * Store active tab in storage
 	 *
-	 * @param id
-	 * @param target
+	 * @param {String} id
+	 * @param {String} target
 	 */
 	Tabs.storeActiveTab = function(id, target) {
 		Tabs.storage.set(id, target);
@@ -74,19 +59,31 @@ define('TYPO3/CMS/Backend/Tabs', ['jquery', 'TYPO3/CMS/Backend/Storage', 'bootst
 	};
 
 	/**
-	 * get unixtimestamp
+	 * Get unixtimestamp
 	 *
-	 * @returns {number}
+	 * @returns {Number}
 	 */
 	Tabs.getTimestamp = function() {
 		return Math.round((new Date()).getTime() / 1000);
 	};
 
-	/**
-	 * return the Tabs object
-	 */
-	return function() {
-		Tabs.initialize();
-		return Tabs;
-	}();
+	$(function () {
+		$('.t3js-tabs').each(function() {
+			var $tabContainer = $(this);
+			Tabs.storeLastActiveTab = $tabContainer.data('storeLastTab') === 1;
+			var currentActiveTab = Tabs.receiveActiveTab($tabContainer.attr('id'));
+			if (currentActiveTab) {
+				$tabContainer.find('a[href="' + currentActiveTab + '"]').tab('show');
+			}
+			$tabContainer.on('show.bs.tab', function(e) {
+				if (Tabs.storeLastActiveTab) {
+					var id = e.currentTarget.id;
+					var target = e.target.hash;
+					Tabs.storeActiveTab(id, target);
+				}
+			});
+		});
+	});
+
+	return Tabs;
 });

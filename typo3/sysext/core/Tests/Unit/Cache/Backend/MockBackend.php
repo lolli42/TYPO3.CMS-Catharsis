@@ -19,33 +19,32 @@ namespace TYPO3\CMS\Core\Tests\Unit\Cache\Backend;
  * Used in FactoryTest
  *
  * This file is a backport from FLOW3
- *
- * @author Robert Lemke <robert@typo3.org>
  */
-class MockBackend extends \TYPO3\CMS\Core\Cache\Backend\NullBackend {
+class MockBackend extends \TYPO3\CMS\Core\Cache\Backend\NullBackend
+{
+    /**
+     * @var mixed
+     */
+    protected $someOption;
 
-	/**
-	 * @var mixed
-	 */
-	protected $someOption;
+    /**
+     * Sets some option
+     *
+     * @param mixed $value
+     * @return void
+     */
+    public function setSomeOption($value)
+    {
+        $this->someOption = $value;
+    }
 
-	/**
-	 * Sets some option
-	 *
-	 * @param mixed $value
-	 * @return void
-	 */
-	public function setSomeOption($value) {
-		$this->someOption = $value;
-	}
-
-	/**
-	 * Returns the option value
-	 *
-	 * @return mixed
-	 */
-	public function getSomeOption() {
-		return $this->someOption;
-	}
-
+    /**
+     * Returns the option value
+     *
+     * @return mixed
+     */
+    public function getSomeOption()
+    {
+        return $this->someOption;
+    }
 }

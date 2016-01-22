@@ -16,32 +16,28 @@ namespace TYPO3\CMS\Backend\Tree;
 
 /**
  * Abstract Tree Data Provider
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
-abstract class AbstractTreeDataProvider {
+abstract class AbstractTreeDataProvider
+{
+    /**
+     * Root Node
+     *
+     * @var \TYPO3\CMS\Backend\Tree\TreeNode
+     */
+    protected $rootNode = null;
 
-	/**
-	 * Root Node
-	 *
-	 * @var \TYPO3\CMS\Backend\Tree\TreeNode
-	 */
-	protected $rootNode = NULL;
+    /**
+     * Returns the root node
+     *
+     * @return \TYPO3\CMS\Backend\Tree\TreeNode
+     */
+    abstract public function getRoot();
 
-	/**
-	 * Returns the root node
-	 *
-	 * @return \TYPO3\CMS\Backend\Tree\TreeNode
-	 */
-	abstract public function getRoot();
-
-	/**
-	 * Fetches the subnodes of the given node
-	 *
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @return \TYPO3\CMS\Backend\Tree\TreeNodeCollection
-	 */
-	abstract public function getNodes(\TYPO3\CMS\Backend\Tree\TreeNode $node);
-
+    /**
+     * Fetches the subnodes of the given node
+     *
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
+     * @return \TYPO3\CMS\Backend\Tree\TreeNodeCollection
+     */
+    abstract public function getNodes(\TYPO3\CMS\Backend\Tree\TreeNode $node);
 }

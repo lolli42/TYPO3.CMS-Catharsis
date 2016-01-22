@@ -40,7 +40,7 @@ To be listed, documents should be stored within ``typo3conf/Documentation/<docum
 
 ``format``
 	Either ``html`` or ``pdf``. Additional formats may be supported by 3rd party extensions
-	(such as `EXT:sphinx <http://typo3.org/extensions/repository/view/sphinx>`_).
+	(such as `EXT:sphinx <https://typo3.org/extensions/repository/view/sphinx>`_).
 
 
 Registering Custom Documents
@@ -71,7 +71,7 @@ Download Documentation
 ======================
 
 This view is only accessible to TYPO3 administrators. It shows a form to retrieve rendered documentation for loaded
-extensions and to fetch a copy of official TYPO3 manuals, guides and references from http://docs.typo3.org.
+extensions and to fetch a copy of official TYPO3 manuals, guides and references from https://docs.typo3.org.
 
 
 Configuration

@@ -12,35 +12,44 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Tstemplate/ConstantEditor
  * Various functions related to the Constant Editor
  * e.g. updating the field and working with colors
  */
-define('TYPO3/CMS/Tstemplate/ConstantEditor', ['jquery'], function($) {
+define(['jquery'], function($) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{options: {editIconSelector: string, colorSelectSelector: string, colorInputSelector: string}}}
+	 * @exports TYPO3/CMS/Tstemplate/ConstantEditor
+	 */
 	var ConstantEditor = {
 		options: {
-			editIconSelector: '.typo3-tstemplate-ceditor-control',
-			colorSelectSelector: '.typo3-tstemplate-ceditor-color-select',
-			colorInputSelector: '.typo3-tstemplate-ceditor-color-input'
+			editIconSelector: '.t3js-toggle',
+			colorSelectSelector: '.t3js-color-select',
+			colorInputSelector: '.t3js-color-input'
 		}
 	};
 
 	/**
 	 * initially register event listeners
+	 *
+	 * @param {Object} $editIcon
 	 */
 	ConstantEditor.changeProperty = function($editIcon) {
 		var constantName = $editIcon.attr('rel');
 		var $defaultDiv = $('#defaultTS-' + constantName);
 		var $userDiv = $('#userTS-' + constantName);
 		var $checkBox = $('#check-' + constantName);
+		var toggleState = $editIcon.data('toggle');
 
-		if ($editIcon.hasClass('editIcon')) {
+		if (toggleState === 'edit') {
 			$defaultDiv.hide();
-			$userDiv.show().css({background: '#fdf8bd'});
+			$userDiv.show();
+			$userDiv.find('input').css({background: '#fdf8bd'});
 			$checkBox.attr('disabled', false).attr('checked', true);
-		}
-
-		if ($editIcon.hasClass('undoIcon')) {
+		} else if (toggleState === 'undo') {
 			$userDiv.hide();
 			$defaultDiv.show();
 			$checkBox.val('').attr('disabled', true);
@@ -49,6 +58,8 @@ define('TYPO3/CMS/Tstemplate/ConstantEditor', ['jquery'], function($) {
 
 	/**
 	 * updates the color from a dropdown
+	 *
+	 * @param {Object} $colorSelect
 	 */
 	ConstantEditor.updateColorFromSelect = function($colorSelect) {
 		var constantName = $colorSelect.attr('rel');
@@ -60,6 +71,8 @@ define('TYPO3/CMS/Tstemplate/ConstantEditor', ['jquery'], function($) {
 
 	/**
 	 * updates the color from an input field
+	 *
+	 * @param {Object} $colorInput
 	 */
 	ConstantEditor.updateColorFromInput = function($colorInput) {
 		var constantName = $colorInput.attr('rel');
@@ -75,22 +88,17 @@ define('TYPO3/CMS/Tstemplate/ConstantEditor', ['jquery'], function($) {
 	 * Registers listeners
 	 */
 	ConstantEditor.initializeEvents = function() {
+		// no DOMready needed since only events for document are registered
 		$(document).on('click', ConstantEditor.options.editIconSelector, function() {
 			ConstantEditor.changeProperty($(this));
-		}).on('click', ConstantEditor.options.colorSelectSelector, function() {
+		}).on('change', ConstantEditor.options.colorSelectSelector, function() {
 			ConstantEditor.updateColorFromSelect($(this));
-		}).on('click', ConstantEditor.options.colorInputSelector, function() {
+		}).on('blur', ConstantEditor.options.colorInputSelector, function() {
 			ConstantEditor.updateColorFromInput($(this));
 		});
 	};
 
-	/**
-	 * initialize and return the ConstantEditor object
-	 */
-	return function() {
-		$(document).ready(function() {
-			ConstantEditor.initializeEvents();
-		});
-		return ConstantEditor;
-	}();
+	ConstantEditor.initializeEvents();
+
+	return ConstantEditor;
 });

@@ -70,7 +70,7 @@
 				<source>Sorry, you didn't have proper permissions to perform this change.</source>
 			</trans-unit>
 			<trans-unit id="labels.fieldsMissing">
-				<source>The fields marked with a yellow exclamation mark are not yet correctly filled in. Please complete them properly.</source>
+				<source>The fields marked with an exclamation mark are not yet correctly filled in. Please complete them properly.</source>
 			</trans-unit>
 			<trans-unit id="labels.fieldsChanged" xml:space="preserve">
 				<source>There are unsaved changes in the form!
@@ -84,12 +84,6 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="labels.noRTEfound">
 				<source>Notice: This field can only be edited with a Rich Text Editor. No editor is currently available or enabled.</source>
-			</trans-unit>
-			<trans-unit id="labels.showPalettes">
-				<source>Show secondary options (palettes)</source>
-			</trans-unit>
-			<trans-unit id="labels.showDescriptions">
-				<source>Show field descriptions</source>
 			</trans-unit>
 			<trans-unit id="labels.disableRTE">
 				<source>Disable Rich Text Editor (RTE)</source>
@@ -283,9 +277,6 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="labels.allTables">
 				<source>[All tables]</source>
 			</trans-unit>
-			<trans-unit id="labels.moreOptions">
-				<source>More options...</source>
-			</trans-unit>
 			<trans-unit id="labels.noMatchingValue">
 				<source>INVALID VALUE ("%s")</source>
 			</trans-unit>
@@ -294,9 +285,6 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="labels.copymode">
 				<source>Copy items instead of moving them</source>
-			</trans-unit>
-			<trans-unit id="labels.clipNoEl">
-				<source>No elements</source>
 			</trans-unit>
 			<trans-unit id="labels.normal">
 				<source>Normal (single record mode)</source>
@@ -312,6 +300,12 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="labels.cliptabs-description">
 				<source>This clipboard allows to select and edit/copy/move multiple records at once. Choose it to show a checkbox by each record.</source>
+			</trans-unit>
+			<trans-unit id="labels.clipboard.delete_elements">
+				<source>Delete elements</source>
+			</trans-unit>
+			<trans-unit id="labels.clipboard.clear_clipboard">
+				<source>Clear clipboard</source>
 			</trans-unit>
 			<trans-unit id="labels.removeItem">
 				<source>Remove item</source>
@@ -399,6 +393,12 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="labels.referencesToRecord">
 				<source>(There are %s reference(s) to this record!)</source>
+			</trans-unit>
+			<trans-unit id="labels.referencesToFolder">
+				<source>(There are %s reference(s) to this folder!)</source>
+			</trans-unit>
+			<trans-unit id="labels.referencesToFile">
+				<source>(There are %s reference(s) to this file!)</source>
 			</trans-unit>
 			<trans-unit id="labels.translationsOfRecord">
 				<source>(This record has %s translation(s) which will be deleted, too!)</source>
@@ -517,6 +517,57 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="file_upload.overwriteExistingFiles">
 				<source>Shall existing files be overwritten?</source>
 			</trans-unit>
+			<trans-unit id="file_upload.header.originalFile">
+				<source>Original file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.header.uploadedFile">
+				<source>Uploaded file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.header.action">
+				<source>Action</source>
+			</trans-unit>
+			<trans-unit id="file_upload.existingfiles.title">
+				<source>Some files exist already</source>
+			</trans-unit>
+			<trans-unit id="file_upload.existingfiles.description">
+				<source>Some files you wanted to upload exist already on the system. Please select what you want to do with each file.</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.skip">
+				<source>Skip the file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.rename">
+				<source>Rename</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.override">
+				<source>Overwrite</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.use_existing">
+				<source>Use existing file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.label">
+				<source>Alternatively, choose a mass action:</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.empty">
+				<source>Please choose</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.skip">
+				<source>Skip all files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.rename">
+				<source>Rename all files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.override">
+				<source>Overwrite all files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.use_existing">
+				<source>Use existing files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.button.cancel">
+				<source>Cancel</source>
+			</trans-unit>
+			<trans-unit id="file_upload.button.continue">
+				<source>Continue with selected actions</source>
+			</trans-unit>
 			<trans-unit id="file_upload.php.number_of_files">
 				<source>Number of files:</source>
 			</trans-unit>
@@ -525,6 +576,21 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="file_rename.php.submit">
 				<source>Rename</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.pagetitle">
+				<source>Replace</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.selectfile">
+				<source>Select new file</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.keepfiletitle">
+				<source>Keep the current filename?</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.browse">
+				<source>Browse</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.submit">
+				<source>Replace</source>
 			</trans-unit>
 			<trans-unit id="file_edit.php.pagetitle">
 				<source>Edit</source>
@@ -565,6 +631,33 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="file_newfolder.php.number_of_folders">
 				<source>Number of folders:</source>
 			</trans-unit>
+			<trans-unit id="online_media.new_media">
+				<source>Add new media asset</source>
+			</trans-unit>
+			<trans-unit id="online_media.new_media.label">
+				<source>Url of remote source:</source>
+			</trans-unit>
+			<trans-unit id="online_media.new_media.allowedProviders">
+				<source>Allowed media providers:</source>
+			</trans-unit>
+			<trans-unit id="online_media.new_media.button">
+				<source>Add media by URL</source>
+			</trans-unit>
+			<trans-unit id="online_media.new_media.submit">
+				<source>Add media</source>
+			</trans-unit>
+			<trans-unit id="online_media.new_media.added">
+				<source>Added media</source>
+			</trans-unit>
+			<trans-unit id="online_media.new_media.placeholder">
+				<source>Paste media url here...</source>
+			</trans-unit>
+			<trans-unit id="online_media.error.new_media.failed">
+				<source>Adding media failed</source>
+			</trans-unit>
+			<trans-unit id="online_media.error.invalid_url">
+				<source>Unknown/not allowed URL</source>
+			</trans-unit>
 			<trans-unit id="file_clipupload.php.warning_head">
 				<source>Upload path error</source>
 			</trans-unit>
@@ -578,7 +671,7 @@ Do you want to continue WITHOUT saving?</source>
 				<source>Are you sure you want to delete "%s"?</source>
 			</trans-unit>
 			<trans-unit id="mess.deleteClip">
-				<source>Are you sure you want to delete ALL selected elements (%s) on the clipboard?</source>
+				<source>Are you sure you want to delete ALL referenced elements (%s) on the clipboard?</source>
 			</trans-unit>
 			<trans-unit id="mess.refresh_login" xml:space="preserve">
 				<source>Your login has probably expired.
@@ -620,6 +713,9 @@ Do you want to refresh it now?</source>
 			<trans-unit id="mess.refresh_login_button">
 				<source>Login</source>
 			</trans-unit>
+			<trans-unit id="mess.refresh_exit_button">
+				<source>Exit</source>
+			</trans-unit>
 			<trans-unit id="mess.refresh_login_emptyPassword">
 				<source>Empty password is not allowed!</source>
 			</trans-unit>
@@ -632,6 +728,12 @@ Do you want to refresh it now?</source>
 			<trans-unit id="mess.login_about_to_expire">
 				<source>Your TYPO3 login is about to expire. Please confirm that you want to stay logged in.</source>
 			</trans-unit>
+			<trans-unit id="mess.refresh_login_logout_button">
+				<source>Log me out</source>
+			</trans-unit>
+			<trans-unit id="mess.login_refresh_about_to_expire">
+				<source>Your TYPO3 login is about to expire. Please confirm that you want to be logged out.</source>
+			</trans-unit>
 			<trans-unit id="mess.login_about_to_expire_title">
 				<source>TYPO3 login expiration notice</source>
 			</trans-unit>
@@ -641,9 +743,11 @@ Do you want to refresh it now?</source>
 			<trans-unit id="mess.noSelItemForEdit">
 				<source>Please select one or more items in the list before you can edit.</source>
 			</trans-unit>
-			<trans-unit id="mess.onChangeAlert" xml:space="preserve">
-				<source>This change will affect which fields are available in the form.
-Would you like to save now in order to refresh the display?</source>
+			<trans-unit id="mess.refreshRequired.title">
+				<source>Refresh required</source>
+			</trans-unit>
+			<trans-unit id="mess.refreshRequired.content">
+				<source>This change will affect which fields are available in the form. Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="mess.move_into">
 				<source>Move "%s" into "%s"?</source>
@@ -679,13 +783,13 @@ Would you like to save now in order to refresh the display?</source>
 				<source>[menu]</source>
 			</trans-unit>
 			<trans-unit id="rm.saveDoc">
-				<source>Save document</source>
+				<source>Save</source>
 			</trans-unit>
 			<trans-unit id="rm.saveDocShow">
-				<source>Save document and view page</source>
+				<source>Save and view page</source>
 			</trans-unit>
 			<trans-unit id="rm.saveCloseDoc">
-				<source>Save and close document</source>
+				<source>Save and close</source>
 			</trans-unit>
 			<trans-unit id="rm.translationSaveDoc">
 				<source>Translation finished, save and close</source>
@@ -694,16 +798,16 @@ Would you like to save now in order to refresh the display?</source>
 				<source>Translation NOT finished, Save</source>
 			</trans-unit>
 			<trans-unit id="rm.saveCloseAllDocs">
-				<source>Save and close all documents</source>
+				<source>Save and close all</source>
 			</trans-unit>
 			<trans-unit id="rm.saveNewDoc">
-				<source>Save document and create a new one</source>
+				<source>Save and create a new one</source>
 			</trans-unit>
 			<trans-unit id="rm.closeDoc">
-				<source>Close document</source>
+				<source>Close</source>
 			</trans-unit>
 			<trans-unit id="rm.closeAllDocs">
-				<source>Close all documents</source>
+				<source>Close all</source>
 			</trans-unit>
 			<trans-unit id="rm.clearCache_clearCache">
 				<source>Clear cache</source>
@@ -883,6 +987,9 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="cm.rename">
 				<source>Rename</source>
 			</trans-unit>
+			<trans-unit id="cm.replace">
+				<source>Replace</source>
+			</trans-unit>
 			<trans-unit id="cm.open">
 				<source>Open</source>
 			</trans-unit>
@@ -943,6 +1050,9 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="cm.allowedFileExtensions">
 				<source>Allowed file extensions:</source>
 			</trans-unit>
+			<trans-unit id="sortable.dragmove">
+				<source>Drag to move</source>
+			</trans-unit>
 			<trans-unit id="tree.defaultPageTitle">
 				<source>[Default Title]</source>
 			</trans-unit>
@@ -993,6 +1103,9 @@ Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="warning.install_enabled_cmd">
 				<source>Click to remove the file now!</source>
+			</trans-unit>
+			<trans-unit id="warning.install_trustedhosts">
+				<source>The trusted hosts pattern check is disabled. Please define the allowed hosts in the [SYS][trustedHostsPattern] section of the Install Tool.</source>
 			</trans-unit>
 			<trans-unit id="warning.install_encryption">
 				<source>The encryption key is not set. Set it in the %sBasic Configuration section%s of the Install Tool.</source>
@@ -1078,6 +1191,9 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="toolbarItems.sysinfo.applicationcontext">
 				<source>Application Context</source>
 			</trans-unit>
+			<trans-unit id="toolbarItems.sysinfo.composerMode">
+				<source>Composer mode</source>
+			</trans-unit>
 			<trans-unit id="toolbarItems.sysinfo.gitrevision">
 				<source>GIT Revision</source>
 			</trans-unit>
@@ -1116,10 +1232,10 @@ Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="ExtDirect.namespaceError" xml:space="preserve">
 				<source>Ext Direct error in "%s" with namespace: "%s"\n
-Try to clear the TYPO3 cache and / or use parameter no_cache=1 as parameter in URL typo3/ajax.php\n\n
+Try to clear the TYPO3 cache and / or use parameter no_cache=1 as parameter in URL typo3/index.php\n\n
 Check also the following points:\n
 - configuration in ext_localconf.php: registration key should be like "TYPO3.MyExtension.Sample"\n
-- URL typo3/ajax.php: namespace parameter should be like: "TYPO3.MyExtension"\n
+- URL typo3/index.php: namespace parameter should be like: "TYPO3.MyExtension"\n
 - javascript: method\'s name should be like: "TYPO3.MyExtension.Sample.myMethod"\n</source>
 			</trans-unit>
 			<trans-unit id="ExtDirect.noNamespace">
@@ -1151,6 +1267,21 @@ Check also the following points:\n
 			</trans-unit>
 			<trans-unit id="error.invalidEmail">
 				<source>"%s" is not a valid e-mail address.</source>
+			</trans-unit>
+			<trans-unit id="error.backendUserGroupListTypeError.header">
+				<source>Possible misconfiguration detected</source>
+			</trans-unit>
+			<trans-unit id="error.backendUserGroupListTypeError.message">
+				<source>Editing of at least one plugin was enabled but editing the page content type "Insert Plugin" is still disallowed. Group members won't be able to edit plugins unless you activate editing for the content type.</source>
+			</trans-unit>
+			<trans-unit id="error.missingLanguageIsocode">
+				<source>Missing ISO code for language "%s" (UID %d), please edit the language record and set it.</source>
+			</trans-unit>
+			<trans-unit id="labels.deleteTitle">
+				<source>Revert to default Constant</source>
+			</trans-unit>
+			<trans-unit id="labels.editTitle">
+				<source>Edit this Constant</source>
 			</trans-unit>
 		</body>
 	</file>

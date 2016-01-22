@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,14 +10,20 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-/***************************************************
- *  Make resizable
- ***************************************************/
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable',
-	['jquery',
+
+/**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable
+ * Make resizable
+ */
+define(['jquery',
 	'jquery-ui/resizable'],
 	function ($, Resizable) {
 
+	/**
+	 *
+	 * @type {{makeResizable: Function, destroy: Function}}
+	 * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable
+	 */
 	var Resizable = {
 
 		/**

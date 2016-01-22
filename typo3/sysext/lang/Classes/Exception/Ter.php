@@ -16,9 +16,7 @@ namespace TYPO3\CMS\Lang\Exception;
 
 /**
  * An exception when something is wrong within the ter
- *
- * @author Sebastian Fischer <typo3@evoweb.de>
  */
-class Ter extends \TYPO3\CMS\Core\Exception {
-
+class Ter extends \TYPO3\CMS\Core\Exception
+{
 }

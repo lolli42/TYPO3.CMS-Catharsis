@@ -21,34 +21,31 @@ namespace TYPO3\CMS\Core\Collection;
  * your own sorting method and explicitly move an item from one position
  * to another.
  *
- * This assumes that entries are sortable and therefore a index can be assigned
- *
- * @author Steffen Ritter <typo3steffen-ritter.net>
+ * This assumes that entries are sortable and therefore an index can be assigned
  */
-interface SortableCollectionInterface {
+interface SortableCollectionInterface
+{
+    /**
+     * Sorts collection via given callBackFunction
+     *
+     * The comparison function given as must return an integer less than, equal to, or greater than
+     * zero if the first argument is considered to be respectively less than, equal to, or greater than the second.
+     *
+     * @param $callbackFunction
+     * @see http://www.php.net/manual/en/function.usort.php
+     * @return void
+     */
+    public function usort($callbackFunction);
 
-	/**
-	 * Sorts collection via given callBackFunction
-	 *
-	 * The comparison function given as must return an integer less than, equal to, or greater than
-	 * zero if the first argument is considered to be respectively less than, equal to, or greater than the second.
-	 *
-	 * @param $callbackFunction
-	 * @see http://www.php.net/manual/en/function.usort.php
-	 * @return void
-	 */
-	public function usort($callbackFunction);
-
-	/**
-	 * Moves the item within the collection
-	 *
-	 * The item at $currentPosition will be moved to
-	 * $newPosition. Omiting $newPosition will move to top.
-	 *
-	 * @param int $currentPosition
-	 * @param int $newPosition
-	 * @return void
-	 */
-	public function moveItemAt($currentPosition, $newPosition = 0);
-
+    /**
+     * Moves the item within the collection
+     *
+     * The item at $currentPosition will be moved to
+     * $newPosition. Omiting $newPosition will move to top.
+     *
+     * @param int $currentPosition
+     * @param int $newPosition
+     * @return void
+     */
+    public function moveItemAt($currentPosition, $newPosition = 0);
 }

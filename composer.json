@@ -2,7 +2,7 @@
 	"name": "typo3/cms",
 	"description": "TYPO3 CMS is a free open source Content Management Framework initially created by Kasper Skaarhoj and licensed under GNU/GPL.",
 	"keywords": ["typo3", "cms", "content management system", "extbase"],
-	"homepage": "http://typo3.org/",
+	"homepage": "https://typo3.org/",
 	"type": "typo3-cms-core",
 	"license": "GPL-2.0+",
 	"authors": [
@@ -18,13 +18,13 @@
 		}
 	],
 	"support": {
-		"general": "http://typo3.org/support/",
+		"general": "https://typo3.org/support/",
 		"issues": "http://forge.typo3.org",
 		"irc": "irc://irc.freenode.net/#typo3-cms",
 		"news": "nntp://lists.typo3.org"
 	},
 	"config": {
-		"vendor-dir": "typo3/contrib/vendor",
+		"optimize-autoloader": true,
 		"bin-dir": "bin"
 	},
 	"require": {
@@ -34,17 +34,20 @@
 		"ext-session": "*",
 		"ext-xml": "*",
 		"psr/log": "1.0.*@dev",
-		"pear/http_request2": "2.2.1",
-		"phpwhois/idna-convert": "0.8.2",
-		"swiftmailer/swiftmailer": "5.2.1",
-		"symfony/console": "2.5.11",
-		"helhum/class-alias-loader": "1.1.4",
-		"typo3/cms-composer-installers": "1.1.2",
-		"doctrine/instantiator": "1.0.4"
+		"pear/http_request2": "~2.2.1",
+		"swiftmailer/swiftmailer": "~5.4.1",
+		"symfony/console": "~2.7.0",
+		"symfony/finder": "~2.7.0",
+		"doctrine/instantiator": "~1.0.4",
+		"typo3/class-alias-loader": "^1.0",
+		"typo3/cms-composer-installers": "^1.2.5",
+		"psr/http-message": "~1.0",
+		"cogpowered/finediff": "~0.3.1",
+		"mso/idna-convert": "^0.9.1"
 	},
 	"require-dev": {
-		"mikey179/vfsStream": "1.4.*@dev",
-		"phpunit/phpunit": "~4.6.0"
+		"phpunit/phpunit": "~4.8.0",
+		"mikey179/vfsStream": "1.6.0"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -54,12 +57,12 @@
 		"ext-zip": ""
 	},
 	"extra": {
+		"typo3/class-alias-loader": {
+			"always-add-alias-loader": true
+		},
 		"branch-alias": {
 			"dev-master": "7.x-dev"
-		},
-		"class-alias-maps": [
-			"typo3/sysext/core/Migrations/Code/ClassAliasMap.php"
-		]
+		}
 	},
 	"replace": {
 		"typo3/cms-about": "self.version",
@@ -68,7 +71,6 @@
 		"typo3/cms-backend": "self.version",
 		"typo3/cms-belog": "self.version",
 		"typo3/cms-beuser": "self.version",
-		"typo3/cms-cms": "self.version",
 		"typo3/cms-context-help": "self.version",
 		"typo3/cms-core": "self.version",
 		"typo3/cms-cshmanual": "self.version",
@@ -82,6 +84,7 @@
 		"typo3/cms-filelist": "self.version",
 		"typo3/cms-filemetadata": "self.version",
 		"typo3/cms-fluid": "self.version",
+		"typo3/cms-fluid-styled-content": "self.version",
 		"typo3/cms-form": "self.version",
 		"typo3/cms-frontend": "self.version",
 		"typo3/cms-func": "self.version",
@@ -96,7 +99,6 @@
 		"typo3/cms-linkvalidator": "self.version",
 		"typo3/cms-lowlevel": "self.version",
 		"typo3/cms-opendocs": "self.version",
-		"typo3/cms-openid": "self.version",
 		"typo3/cms-recordlist": "self.version",
 		"typo3/cms-recycler": "self.version",
 		"typo3/cms-reports": "self.version",
@@ -119,24 +121,64 @@
 		"typo3/cms-workspaces": "self.version"
 	},
 	"autoload": {
-		"psr-0": {
-			"TYPO3\\Flow\\": "typo3/sysext/core/Resources/PHP/TYPO3.Flow/Classes/"
-		},
 		"psr-4": {
+			"TYPO3\\CMS\\About\\": "typo3/sysext/about/Classes/",
+			"TYPO3\\CMS\\Aboutmodules\\": "typo3/sysext/aboutmodules/Classes/",
 			"TYPO3\\CMS\\Backend\\": "typo3/sysext/backend/Classes/",
+			"TYPO3\\CMS\\Belog\\": "typo3/sysext/belog/Classes/",
+			"TYPO3\\CMS\\Beuser\\": "typo3/sysext/beuser/Classes/",
+			"TYPO3\\CMS\\ContextHelp\\": "typo3/sysext/context_help/Classes/",
 			"TYPO3\\CMS\\Core\\": "typo3/sysext/core/Classes/",
 			"TYPO3\\CMS\\Cshmanual\\": "typo3/sysext/cshmanual/Classes/",
+			"TYPO3\\CMS\\CssStyledContent\\": "typo3/sysext/css_styled_content/Classes/",
+			"TYPO3\\CMS\\Dbal\\": "typo3/sysext/dbal/Classes/",
+			"TYPO3\\CMS\\Documentation\\": "typo3/sysext/documentation/Classes/",
 			"TYPO3\\CMS\\Extbase\\": "typo3/sysext/extbase/Classes/",
 			"TYPO3\\CMS\\Extensionmanager\\": "typo3/sysext/extensionmanager/Classes/",
+			"TYPO3\\CMS\\Feedit\\": "typo3/sysext/feedit/Classes/",
+			"TYPO3\\CMS\\Felogin\\": "typo3/sysext/felogin/Classes/",
+			"TYPO3\\CMS\\Filelist\\": "typo3/sysext/filelist/Classes/",
 			"TYPO3\\CMS\\Fluid\\": "typo3/sysext/fluid/Classes/",
+			"TYPO3\\CMS\\FluidStyledContent\\": "typo3/sysext/fluid_styled_content/Classes/",
+			"TYPO3\\CMS\\Form\\": "typo3/sysext/form/Classes/",
 			"TYPO3\\CMS\\Frontend\\": "typo3/sysext/frontend/Classes/",
+			"TYPO3\\CMS\\Func\\": "typo3/sysext/func/Classes/",
+			"TYPO3\\CMS\\Impexp\\": "typo3/sysext/impexp/Classes/",
+			"TYPO3\\CMS\\IndexedSearch\\": "typo3/sysext/indexed_search/Classes/",
+			"TYPO3\\CMS\\IndexedSearchMysql\\": "typo3/sysext/indexed_search_mysql/Classes/",
+			"TYPO3\\CMS\\Info\\": "typo3/sysext/info/Classes/",
+			"TYPO3\\CMS\\InfoPagetsconfig\\": "typo3/sysext/info_pagetsconfig/Classes/",
 			"TYPO3\\CMS\\Install\\": "typo3/sysext/install/Classes/",
 			"TYPO3\\CMS\\Lang\\": "typo3/sysext/lang/Classes/",
+			"TYPO3\\CMS\\Linkvalidator\\": "typo3/sysext/linkvalidator/Classes/",
+			"TYPO3\\CMS\\Lowlevel\\": "typo3/sysext/lowlevel/Classes/",
+			"TYPO3\\CMS\\Opendocs\\": "typo3/sysext/opendocs/Classes/",
 			"TYPO3\\CMS\\Recordlist\\": "typo3/sysext/recordlist/Classes/",
+			"TYPO3\\CMS\\Recycler\\": "typo3/sysext/recycler/Classes/",
+			"TYPO3\\CMS\\Reports\\": "typo3/sysext/reports/Classes/",
+			"TYPO3\\CMS\\Rsaauth\\": "typo3/sysext/rsaauth/Classes/",
+			"TYPO3\\CMS\\Rtehtmlarea\\": "typo3/sysext/rtehtmlarea/Classes/",
 			"TYPO3\\CMS\\Saltedpasswords\\": "typo3/sysext/saltedpasswords/Classes/",
-			"TYPO3\\CMS\\Sv\\": "typo3/sysext/sv/Classes/"
+			"TYPO3\\CMS\\Scheduler\\": "typo3/sysext/scheduler/Classes/",
+			"TYPO3\\CMS\\Setup\\": "typo3/sysext/setup/Classes/",
+			"TYPO3\\CMS\\Sv\\": "typo3/sysext/sv/Classes/",
+			"TYPO3\\CMS\\SysAction\\": "typo3/sysext/sys_action/Classes/",
+			"TYPO3\\CMS\\SysNote\\": "typo3/sysext/sys_note/Classes/",
+			"TYPO3\\CMS\\T3editor\\": "typo3/sysext/t3editor/Classes/",
+			"TYPO3\\CMS\\Taskcenter\\": "typo3/sysext/taskcenter/Classes/",
+			"TYPO3\\CMS\\Tstemplate\\": "typo3/sysext/tstemplate/Classes/",
+			"TYPO3\\CMS\\Version\\": "typo3/sysext/version/Classes/",
+			"TYPO3\\CMS\\Viewpage\\": "typo3/sysext/viewpage/Classes/",
+			"TYPO3\\CMS\\WizardCrpages\\": "typo3/sysext/wizard_crpages/Classes/",
+			"TYPO3\\CMS\\WizardSortpages\\": "typo3/sysext/wizard_sortpages/Classes/",
+			"TYPO3\\CMS\\Workspaces\\": "typo3/sysext/workspaces/Classes/"
 		},
-		"classmap": ["typo3/sysext/core/Resources/PHP/RemoveXSS.php"]
+		"classmap": [
+			"typo3/sysext/core/Resources/PHP/"
+		],
+		"files": [
+			"typo3/sysext/core/Resources/PHP/GlobalDebugFunctions.php"
+		]
 	},
 	"autoload-dev": {
 		"psr-4": {
@@ -163,10 +205,13 @@
 			"TYPO3\\CMS\\Saltedpasswords\\Tests\\": "typo3/sysext/saltedpasswords/Tests/",
 			"TYPO3\\CMS\\Scheduler\\Tests\\": "typo3/sysext/scheduler/Tests/",
 			"TYPO3\\CMS\\Sv\\Tests\\": "typo3/sysext/sv/Tests/",
-			"TYPO3\\CMS\\Workspaces\\Tests\\": "typo3/sysext/workspaces/Tests/"
-		}
+			"TYPO3\\CMS\\Workspaces\\Tests\\": "typo3/sysext/workspaces/Tests/",
+			"TYPO3\\CMS\\Recycler\\Tests\\": "typo3/sysext/recycler/Tests/"
+		},
+		"classmap": ["typo3/sysext/extbase/Tests/Unit/Object/Container/Fixtures/"]
 	},
 	"include-path": [
-		"./typo3/contrib/vendor/pear/http_request2"
+		"vendor/pear/http_request2/",
+		"vendor/pear/net_url2/"
 	]
 }

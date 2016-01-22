@@ -17,27 +17,25 @@ namespace TYPO3\CMS\Version\Task;
 /**
  * This class provides a wrapper around the autopublication
  * mechanism of workspaces, as a Scheduler task
- *
- * @author François Suter <francois@typo3.org>
  */
-class AutoPublishTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
-
-	/**
-	 * Method executed from the Scheduler.
-	 * Call on the workspace logic to publish workspaces whose publication date
-	 * is in the past
-	 *
-	 * @return void
-	 */
-	public function execute() {
-		// Load the workspace library class and instatiate it
-		$autopubObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Version\Utility\WorkspacesUtility::class);
-		// Publish the workspaces that need to be
-		$autopubObj->autoPublishWorkspaces();
-		// There's no feedback from the publishing process,
-		// so there can't be any failure.
-		// @todo This could certainly be improved.
-		return TRUE;
-	}
-
+class AutoPublishTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask
+{
+    /**
+     * Method executed from the Scheduler.
+     * Call on the workspace logic to publish workspaces whose publication date
+     * is in the past
+     *
+     * @return void
+     */
+    public function execute()
+    {
+        // Load the workspace library class and instatiate it
+        $autopubObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Version\Utility\WorkspacesUtility::class);
+        // Publish the workspaces that need to be
+        $autopubObj->autoPublishWorkspaces();
+        // There's no feedback from the publishing process,
+        // so there can't be any failure.
+        // @todo This could certainly be improved.
+        return true;
+    }
 }

@@ -14,358 +14,426 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Toolbar\Enumeration\InformationStatus;
+use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
-use TYPO3\CMS\Core\Http\AjaxRequestHandler;
+use TYPO3\CMS\Core\Core\Bootstrap;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\CommandUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Render system info toolbar item
  */
-class SystemInformationToolbarItem extends AbstractToolbarItem implements ToolbarItemInterface {
+class SystemInformationToolbarItem implements ToolbarItemInterface
+{
+    /**
+     * @var StandaloneView
+     */
+    protected $standaloneView = null;
 
-	/**
-	 * Template file for the dropdown menu
-	 */
-	const TOOLBAR_MENU_TEMPLATE = 'SystemInformation.html';
+    /**
+     * Template file for the dropdown menu
+     */
+    const TOOLBAR_MENU_TEMPLATE = 'SystemInformation.html';
 
-	/**
-	 * Number displayed as badge on the dropdown trigger
-	 *
-	 * @var int
-	 */
-	protected $totalCount = 0;
+    /**
+     * Number displayed as badge on the dropdown trigger
+     *
+     * @var int
+     */
+    protected $totalCount = 0;
 
-	/**
-	 * Holds the highest severity
-	 *
-	 * @var string
-	 */
-	protected $highestSeverity = '';
+    /**
+     * Holds the highest severity
+     *
+     * @var InformationStatus
+     */
+    protected $highestSeverity;
 
-	/**
-	 * The CSS class for the badge
-	 *
-	 * @var string
-	 */
-	protected $severityBadgeClass = '';
+    /**
+     * The CSS class for the badge
+     *
+     * @var string
+     */
+    protected $severityBadgeClass = '';
 
-	/**
-	 * @var array
-	 */
-	protected $systemInformation = array();
+    /**
+     * @var array
+     */
+    protected $systemInformation = array();
 
-	/**
-	 * @var array
-	 */
-	protected $systemMessages = array();
+    /**
+     * @var array
+     */
+    protected $systemMessages = array();
 
-	/**
-	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
-	 */
-	protected $signalSlotDispatcher = NULL;
+    /**
+     * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+     */
+    protected $signalSlotDispatcher = null;
 
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		if (!$this->checkAccess()) {
-			return;
-		}
+    /**
+     * @var IconFactory
+     */
+    protected $iconFactory;
 
-		parent::__construct();
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        if (!$this->checkAccess()) {
+            return;
+        }
+        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
-		$pageRenderer = $this->getPageRenderer();
-		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu');
-	}
+        $extPath = ExtensionManagementUtility::extPath('backend');
+        /* @var $view StandaloneView */
+        $this->standaloneView = GeneralUtility::makeInstance(StandaloneView::class);
+        $this->standaloneView->setTemplatePathAndFilename($extPath . 'Resources/Private/Templates/ToolbarMenu/' . static::TOOLBAR_MENU_TEMPLATE);
 
-	/**
-	 * Collect the information for the menu
-	 */
-	protected function collectInformation() {
-		$this->getWebServer();
-		$this->getPhpVersion();
-		$this->getDatabase();
-		$this->getApplicationContext();
-		$this->getGitRevision();
-		$this->getOperatingSystem();
+        $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar/SystemInformationMenu');
 
-		$this->emitGetSystemInformation();
-		$this->emitLoadMessages();
+        $this->highestSeverity = InformationStatus::cast(InformationStatus::STATUS_INFO);
+    }
 
-		$this->severityBadgeClass = $this->highestSeverity !== InformationStatus::STATUS_NOTICE ? 'badge-' . $this->highestSeverity : '';
-	}
+    /**
+     * Collect the information for the menu
+     */
+    protected function collectInformation()
+    {
+        $this->getWebServer();
+        $this->getPhpVersion();
+        $this->getDatabase();
+        $this->getApplicationContext();
+        $this->getComposerMode();
+        $this->getGitRevision();
+        $this->getOperatingSystem();
 
-	/**
-	 * Renders the menu for AJAX calls
-	 *
-	 * @param array $params
-	 * @param AjaxRequestHandler $ajaxObj
-	 */
-	public function renderAjax($params = array(), $ajaxObj) {
-		$this->collectInformation();
-		$ajaxObj->addContent('systemInformationMenu', $this->getDropDown());
-	}
+        $this->emitGetSystemInformation();
+        $this->emitLoadMessages();
 
-	/**
-	 * Gets the PHP version
-	 *
-	 * @return void
-	 */
-	protected function getPhpVersion() {
-		$this->systemInformation[] = array(
-			'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.phpversion', TRUE),
-			'value' => PHP_VERSION,
-			'icon' => '<span class="fa fa-code"></span>'
-		);
-	}
+        $this->severityBadgeClass = !$this->highestSeverity->equals(InformationStatus::STATUS_NOTICE) ? 'badge-' . (string)$this->highestSeverity : '';
+    }
 
-	/**
-	 * Get the database info
-	 *
-	 * @return void
-	 */
-	protected function getDatabase() {
-		$this->systemInformation[] = array(
-			'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.database', TRUE),
-			'value' => $this->getDatabaseConnection()->getServerVersion(),
-			'icon' => '<span class="fa fa-database"></span>'
-		);
-	}
+    /**
+     * Renders the menu for AJAX calls
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function renderMenuAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $this->collectInformation();
 
-	/**
-	 * Gets the application context
-	 *
-	 * @return void
-	 */
-	protected function getApplicationContext() {
-		$applicationContext = GeneralUtility::getApplicationContext();
-		$this->systemInformation[] = array(
-			'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.applicationcontext', TRUE),
-			'value' => (string)$applicationContext,
-			'status' => $applicationContext->isProduction() ? InformationStatus::STATUS_OK : InformationStatus::STATUS_WARNING,
-			'icon' => '<span class="fa fa-tasks"></span>'
-		);
-	}
+        $response->getBody()->write($this->getDropDown());
+        $response = $response->withHeader('Content-Type', 'text/html; charset=utf-8');
+        return $response;
+    }
 
-	/**
-	 * Gets the current GIT revision and branch
-	 *
-	 * @return void
-	 */
-	protected function getGitRevision() {
-		if (!StringUtility::endsWith(TYPO3_version, '-dev') || \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::isFunctionDisabled('exec')) {
-			return;
-		}
-		// check if git exists
-		CommandUtility::exec('git --version', $_, $returnCode);
-		if ((int)$returnCode !== 0) {
-			// git is not available
-			return;
-		}
+    /**
+     * Gets the PHP version
+     *
+     * @return void
+     */
+    protected function getPhpVersion()
+    {
+        $this->systemInformation[] = array(
+            'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.phpversion')),
+            'value' => PHP_VERSION,
+            'icon' => $this->iconFactory->getIcon('sysinfo-php-version', Icon::SIZE_SMALL)->render()
+        );
+    }
 
-		$revision = trim(CommandUtility::exec('git rev-parse --short HEAD'));
-		$branch = trim(CommandUtility::exec('git rev-parse --abbrev-ref HEAD'));
-		if (!empty($revision) && !empty($branch)) {
-			$this->systemInformation[] = array(
-				'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.gitrevision', TRUE),
-				'value' => sprintf('%s [%s]', $revision, $branch),
-				'icon' => '<span class="fa fa-git"></span>'
-			);
-		}
-	}
+    /**
+     * Get the database info
+     *
+     * @return void
+     */
+    protected function getDatabase()
+    {
+        $this->systemInformation[] = array(
+            'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.database')),
+            'value' => $this->getDatabaseConnection()->getServerVersion(),
+            'icon' => $this->iconFactory->getIcon('sysinfo-database', Icon::SIZE_SMALL)->render()
+        );
+    }
 
-	/**
-	 * Gets the system kernel and version
-	 *
-	 * @return void
-	 */
-	protected function getOperatingSystem() {
-		$kernelName = php_uname('s');
-		switch (strtolower($kernelName)) {
-			case 'linux':
-				$icon = 'linux';
-				break;
-			case 'darwin':
-				$icon = 'apple';
-				break;
-			default:
-				$icon = 'windows';
-		}
-		$this->systemInformation[] = array(
-			'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.operatingsystem', TRUE),
-			'value' => $kernelName . ' ' . php_uname('r'),
-			'icon' => '<span class="fa fa-' . htmlspecialchars($icon) . '"></span>'
-		);
-	}
+    /**
+     * Gets the application context
+     *
+     * @return void
+     */
+    protected function getApplicationContext()
+    {
+        $applicationContext = GeneralUtility::getApplicationContext();
+        $this->systemInformation[] = array(
+            'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.applicationcontext')),
+            'value' => (string)$applicationContext,
+            'status' => $applicationContext->isProduction() ? InformationStatus::STATUS_OK : InformationStatus::STATUS_WARNING,
+            'icon' => $this->iconFactory->getIcon('sysinfo-application-context', Icon::SIZE_SMALL)->render()
+        );
+    }
 
-	/**
-	 * Gets the webserver software
-	 */
-	protected function getWebServer() {
-		$this->systemInformation[] = array(
-			'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.webserver', TRUE),
-			'value' => htmlspecialchars($_SERVER['SERVER_SOFTWARE']),
-			'icon' => '<span class="fa fa-server"></span>'
-		);
-	}
+    /**
+     * Adds the information if the Composer mode is enabled or disabled to the displayed system information
+     */
+    protected function getComposerMode()
+    {
+        if (!Bootstrap::usesComposerClassLoading()) {
+            return;
+        }
 
-	/**
-	 * Emits the "getSystemInformation" signal
-	 *
-	 * @return void
-	 */
-	protected function emitGetSystemInformation() {
-		list($systemInformation) = $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'getSystemInformation', array(array()));
-		if (!empty($systemInformation)) {
-			$this->systemInformation[] = $systemInformation;
-		}
-	}
+        $languageService = $this->getLanguageService();
+        $this->systemInformation[] = array(
+            'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.composerMode')),
+            'value' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.enabled')),
+            'icon' => $this->iconFactory->getIcon('sysinfo-composer-mode', Icon::SIZE_SMALL)->render()
+        );
+    }
 
-	/**
-	 * Emits the "loadMessages" signal
-	 *
-	 * @return void
-	 */
-	protected function emitLoadMessages() {
-		list($message) = $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'loadMessages', array(array()));
-		if (empty($message)) {
-			return;
-		}
+    /**
+     * Gets the current GIT revision and branch
+     *
+     * @return void
+     */
+    protected function getGitRevision()
+    {
+        if (!StringUtility::endsWith(TYPO3_version, '-dev') || \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::isFunctionDisabled('exec')) {
+            return;
+        }
+        // check if git exists
+        CommandUtility::exec('git --version', $_, $returnCode);
+        if ((int)$returnCode !== 0) {
+            // git is not available
+            return;
+        }
 
-		// increase counter
-		if (isset($message['count'])) {
-			$this->totalCount += (int)$message['count'];
-		}
+        $revision = trim(CommandUtility::exec('git rev-parse --short HEAD'));
+        $branch = trim(CommandUtility::exec('git rev-parse --abbrev-ref HEAD'));
+        if (!empty($revision) && !empty($branch)) {
+            $this->systemInformation[] = array(
+                'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.gitrevision')),
+                'value' => sprintf('%s [%s]', $revision, $branch),
+                'icon' => $this->iconFactory->getIcon('sysinfo-git', Icon::SIZE_SMALL)->render()
+            );
+        }
+    }
 
-		// define the severity for the badge
-		if (InformationStatus::mapStatusToInt($message['status']) > InformationStatus::mapStatusToInt($this->highestSeverity)) {
-			$this->highestSeverity = $message['status'];
-		}
+    /**
+     * Gets the system kernel and version
+     *
+     * @return void
+     */
+    protected function getOperatingSystem()
+    {
+        $kernelName = php_uname('s');
+        switch (strtolower($kernelName)) {
+            case 'linux':
+                $icon = 'linux';
+                break;
+            case 'darwin':
+                $icon = 'apple';
+                break;
+            default:
+                $icon = 'windows';
+        }
+        $this->systemInformation[] = array(
+            'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.operatingsystem')),
+            'value' => $kernelName . ' ' . php_uname('r'),
+            'icon' => $this->iconFactory->getIcon('sysinfo-os-' . $icon, Icon::SIZE_SMALL)->render()
+        );
+    }
 
-		$this->systemMessages[] = $message;
-	}
+    /**
+     * Gets the webserver software
+     */
+    protected function getWebServer()
+    {
+        $this->systemInformation[] = array(
+            'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.webserver')),
+            'value' => htmlspecialchars($_SERVER['SERVER_SOFTWARE']),
+            'icon' => $this->iconFactory->getIcon('sysinfo-webserver', Icon::SIZE_SMALL)->render()
+        );
+    }
 
-	/**
-	 * Checks whether the user has access to this toolbar item
-	 *
-	 * @return bool TRUE if user has access, FALSE if not
-	 */
-	public function checkAccess() {
-		return $this->getBackendUserAuthentication()->isAdmin();
-	}
+    /**
+     * Emits the "getSystemInformation" signal
+     *
+     * @return void
+     */
+    protected function emitGetSystemInformation()
+    {
+        // @internal This API is subject to be rebuilt from scratch anytime. Do not use in extensions!
+        list($systemInformation) = $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'getSystemInformation', array(array()));
+        if (!empty($systemInformation)) {
+            $this->systemInformation[] = $systemInformation;
+        }
+    }
 
-	/**
-	 * Render system information dropdown
-	 *
-	 * @return string Icon HTML
-	 */
-	public function getItem() {
-		$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo', TRUE);
-		return IconUtility::getSpriteIcon('actions-system-list-open', array('title' => $title))
-				. '<span id="t3js-systeminformation-counter" class="badge"></span>';
-	}
+    /**
+     * Emits the "loadMessages" signal
+     *
+     * @return void
+     */
+    protected function emitLoadMessages()
+    {
+        // @internal This API is subject to be rebuilt from scratch anytime. Do not use in extensions!
+        list($message) = $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'loadMessages', array(array()));
+        if (empty($message)) {
+            return;
+        }
 
-	/**
-	 * Render drop down
-	 *
-	 * @return string Drop down HTML
-	 */
-	public function getDropDown() {
-		if (!$this->checkAccess()) {
-			return '';
-		}
+        // increase counter
+        if (isset($message['count'])) {
+            $this->totalCount += (int)$message['count'];
+        }
 
-		$this->getStandaloneView('backend')->assignMultiple(array(
-			'installToolUrl' => BackendUtility::getModuleUrl('system_InstallInstall'),
-			'messages' => $this->systemMessages,
-			'count' => $this->totalCount,
-			'severityBadgeClass' => $this->severityBadgeClass,
-			'systemInformation' => $this->systemInformation
-		));
-		return $this->getStandaloneView()->render();
-	}
+        /** @var InformationStatus $messageSeverity */
+        $messageSeverity = InformationStatus::cast($message['status']);
+        // define the severity for the badge
+        if ($messageSeverity->isGreaterThan($this->highestSeverity)) {
+            $this->highestSeverity = $messageSeverity;
+        }
 
-	/**
-	 * No additional attributes needed.
-	 *
-	 * @return array
-	 */
-	public function getAdditionalAttributes() {
-		return array();
-	}
+        $this->systemMessages[] = $message;
+    }
 
-	/**
-	 * This item has a drop down
-	 *
-	 * @return bool
-	 */
-	public function hasDropDown() {
-		return TRUE;
-	}
+    /**
+     * Checks whether the user has access to this toolbar item
+     *
+     * @return bool TRUE if user has access, FALSE if not
+     */
+    public function checkAccess()
+    {
+        return $this->getBackendUserAuthentication()->isAdmin();
+    }
 
-	/**
-	 * Position relative to others
-	 *
-	 * @return int
-	 */
-	public function getIndex() {
-		return 75;
-	}
+    /**
+     * Render system information dropdown
+     *
+     * @return string Icon HTML
+     */
+    public function getItem()
+    {
+        $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo'));
+        $icon = $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render('inline');
+        return '<span title="' . $title . '">' . $icon . '<span id="t3js-systeminformation-counter" class="badge"></span></span>';
+    }
 
-	/**
-	 * Returns the current BE user.
-	 *
-	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
-	 */
-	protected function getBackendUserAuthentication() {
-		return $GLOBALS['BE_USER'];
-	}
+    /**
+     * Render drop down
+     *
+     * @return string Drop down HTML
+     */
+    public function getDropDown()
+    {
+        if (!$this->checkAccess()) {
+            return '';
+        }
 
-	/**
-	 * Returns DatabaseConnection
-	 *
-	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-	 */
-	protected function getDatabaseConnection() {
-		return $GLOBALS['TYPO3_DB'];
-	}
+        $request = $this->standaloneView->getRequest();
+        $request->setControllerExtensionName('backend');
+        $this->standaloneView->assignMultiple(array(
+            'installToolUrl' => BackendUtility::getModuleUrl('system_InstallInstall'),
+            'messages' => $this->systemMessages,
+            'count' => $this->totalCount,
+            'severityBadgeClass' => $this->severityBadgeClass,
+            'systemInformation' => $this->systemInformation
+        ));
+        return $this->standaloneView->render();
+    }
 
-	/**
-	 * Returns current PageRenderer
-	 *
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
-	 */
-	protected function getPageRenderer() {
-		/** @var \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplate */
-		$documentTemplate = $GLOBALS['TBE_TEMPLATE'];
-		return $documentTemplate->getPageRenderer();
-	}
+    /**
+     * No additional attributes needed.
+     *
+     * @return array
+     */
+    public function getAdditionalAttributes()
+    {
+        return array();
+    }
 
-	/**
-	 * Returns LanguageService
-	 *
-	 * @return \TYPO3\CMS\Lang\LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
+    /**
+     * This item has a drop down
+     *
+     * @return bool
+     */
+    public function hasDropDown()
+    {
+        return true;
+    }
 
-	/**
-	 * Get the SignalSlot dispatcher
-	 *
-	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
-	 */
-	protected function getSignalSlotDispatcher() {
-		if (!isset($this->signalSlotDispatcher)) {
-			$this->signalSlotDispatcher = GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class)
-				->get(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
-		}
-		return $this->signalSlotDispatcher;
-	}
+    /**
+     * Position relative to others
+     *
+     * @return int
+     */
+    public function getIndex()
+    {
+        return 75;
+    }
 
+    /**
+     * Returns the current BE user.
+     *
+     * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+     */
+    protected function getBackendUserAuthentication()
+    {
+        return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * Returns DatabaseConnection
+     *
+     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+     */
+    protected function getDatabaseConnection()
+    {
+        return $GLOBALS['TYPO3_DB'];
+    }
+
+    /**
+     * Returns current PageRenderer
+     *
+     * @return PageRenderer
+     */
+    protected function getPageRenderer()
+    {
+        return GeneralUtility::makeInstance(PageRenderer::class);
+    }
+
+    /**
+     * Returns LanguageService
+     *
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
+
+    /**
+     * Get the SignalSlot dispatcher
+     *
+     * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+     */
+    protected function getSignalSlotDispatcher()
+    {
+        if (!isset($this->signalSlotDispatcher)) {
+            $this->signalSlotDispatcher = GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class)
+                ->get(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
+        }
+        return $this->signalSlotDispatcher;
+    }
 }

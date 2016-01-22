@@ -23,7 +23,7 @@ TYPO3.Form.Wizard.Elements.Content.Textblock = Ext.extend(TYPO3.Form.Wizard.Elem
 		'<div class="overflow-hidden">',
 			'<tpl for="various">',
 				'<div {[this.getAttributes(parent.attributes)]}>',
-				'{content}',
+				'{text:nl2br}',
 				'</{type}>',
 			'</tpl>',
 		'</div>',
@@ -51,7 +51,7 @@ TYPO3.Form.Wizard.Elements.Content.Textblock = Ext.extend(TYPO3.Form.Wizard.Elem
 		Ext.apply(this, {
 			configuration: {
 				attributes: {
-					"class": 'content-textblock',
+					"class": '',
 					dir: '',
 					id: '',
 					lang: '',
@@ -59,7 +59,7 @@ TYPO3.Form.Wizard.Elements.Content.Textblock = Ext.extend(TYPO3.Form.Wizard.Elem
 					title: ''
 				},
 				various: {
-					content: TYPO3.l10n.localize('elements_textblock_content')
+					text: TYPO3.l10n.localize('elements_textblock_content')
 				}
 			}
 		});

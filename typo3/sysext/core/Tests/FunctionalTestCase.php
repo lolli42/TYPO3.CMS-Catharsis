@@ -37,344 +37,371 @@ use TYPO3\CMS\Core\Tests\Functional\Framework\Frontend\Response;
  *
  * Call whole functional test suite, example:
  * - cd /var/www/t3master/foo  # Document root of CMS instance, here is index.php of frontend
- * - ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
+ * - typo3/../bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
  *
  * Call single test case, example:
  * - cd /var/www/t3master/foo  # Document root of CMS instance, here is index.php of frontend
- * - ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit \
+ * - typo3/../bin/phpunit \
  *     --process-isolation \
  *     --bootstrap typo3/sysext/core/Build/FunctionalTestsBootstrap.php \
  *     typo3/sysext/core/Tests/Functional/DataHandling/DataHandlerTest.php
  */
-abstract class FunctionalTestCase extends BaseTestCase {
-	/**
-	 * Core extensions to load.
-	 *
-	 * If the test case needs additional core extensions as requirement,
-	 * they can be noted here and will be added to LocalConfiguration
-	 * extension list and ext_tables.sql of those extensions will be applied.
-	 *
-	 * This property will stay empty in this abstract, so it is possible
-	 * to just overwrite it in extending classes. Extensions noted here will
-	 * be loaded for every test of a test case and it is not possible to change
-	 * the list of loaded extensions between single tests of a test case.
-	 *
-	 * A default list of core extensions is always loaded.
-	 *
-	 * @see FunctionalTestCaseUtility $defaultActivatedCoreExtensions
-	 * @var array
-	 */
-	protected $coreExtensionsToLoad = array();
+abstract class FunctionalTestCase extends BaseTestCase
+{
+    /**
+     * Core extensions to load.
+     *
+     * If the test case needs additional core extensions as requirement,
+     * they can be noted here and will be added to LocalConfiguration
+     * extension list and ext_tables.sql of those extensions will be applied.
+     *
+     * This property will stay empty in this abstract, so it is possible
+     * to just overwrite it in extending classes. Extensions noted here will
+     * be loaded for every test of a test case and it is not possible to change
+     * the list of loaded extensions between single tests of a test case.
+     *
+     * A default list of core extensions is always loaded.
+     *
+     * @see FunctionalTestCaseUtility $defaultActivatedCoreExtensions
+     * @var array
+     */
+    protected $coreExtensionsToLoad = array();
 
-	/**
-	 * Array of test/fixture extensions paths that should be loaded for a test.
-	 *
-	 * This property will stay empty in this abstract, so it is possible
-	 * to just overwrite it in extending classes. Extensions noted here will
-	 * be loaded for every test of a test case and it is not possible to change
-	 * the list of loaded extensions between single tests of a test case.
-	 *
-	 * Given path is expected to be relative to your document root, example:
-	 *
-	 * array(
-	 *   'typo3conf/ext/some_extension/Tests/Functional/Fixtures/Extensions/test_extension',
-	 *   'typo3conf/ext/base_extension',
-	 * );
-	 *
-	 * Extensions in this array are linked to the test instance, loaded
-	 * and their ext_tables.sql will be applied.
-	 *
-	 * @var array
-	 */
-	protected $testExtensionsToLoad = array();
+    /**
+     * Array of test/fixture extensions paths that should be loaded for a test.
+     *
+     * This property will stay empty in this abstract, so it is possible
+     * to just overwrite it in extending classes. Extensions noted here will
+     * be loaded for every test of a test case and it is not possible to change
+     * the list of loaded extensions between single tests of a test case.
+     *
+     * Given path is expected to be relative to your document root, example:
+     *
+     * array(
+     *   'typo3conf/ext/some_extension/Tests/Functional/Fixtures/Extensions/test_extension',
+     *   'typo3conf/ext/base_extension',
+     * );
+     *
+     * Extensions in this array are linked to the test instance, loaded
+     * and their ext_tables.sql will be applied.
+     *
+     * @var array
+     */
+    protected $testExtensionsToLoad = array();
 
-	/**
-	 * Array of test/fixture folder or file paths that should be linked for a test.
-	 *
-	 * This property will stay empty in this abstract, so it is possible
-	 * to just overwrite it in extending classes. Path noted here will
-	 * be linked for every test of a test case and it is not possible to change
-	 * the list of folders between single tests of a test case.
-	 *
-	 * array(
-	 *   'link-source' => 'link-destination'
-	 * );
-	 *
-	 * Given paths are expected to be relative to the test instance root.
-	 * The array keys are the source paths and the array values are the destination
-	 * paths, example:
-	 *
-	 * array(
-	 *   'typo3/sysext/impext/Tests/Functional/Fixtures/Folders/fileadmin/user_upload' =>
-	 *   'fileadmin/user_upload',
-	 *   'typo3conf/ext/my_own_ext/Tests/Functional/Fixtures/Folders/uploads/tx_myownext' =>
-	 *   'uploads/tx_myownext'
-	 * );
-	 *
-	 * To be able to link from my_own_ext the extension path needs also to be registered in
-	 * property $testExtensionsToLoad
-	 *
-	 * @var array
-	 */
-	protected $pathsToLinkInTestInstance = array();
+    /**
+     * Array of test/fixture folder or file paths that should be linked for a test.
+     *
+     * This property will stay empty in this abstract, so it is possible
+     * to just overwrite it in extending classes. Path noted here will
+     * be linked for every test of a test case and it is not possible to change
+     * the list of folders between single tests of a test case.
+     *
+     * array(
+     *   'link-source' => 'link-destination'
+     * );
+     *
+     * Given paths are expected to be relative to the test instance root.
+     * The array keys are the source paths and the array values are the destination
+     * paths, example:
+     *
+     * array(
+     *   'typo3/sysext/impext/Tests/Functional/Fixtures/Folders/fileadmin/user_upload' =>
+     *   'fileadmin/user_upload',
+     *   'typo3conf/ext/my_own_ext/Tests/Functional/Fixtures/Folders/uploads/tx_myownext' =>
+     *   'uploads/tx_myownext'
+     * );
+     *
+     * To be able to link from my_own_ext the extension path needs also to be registered in
+     * property $testExtensionsToLoad
+     *
+     * @var array
+     */
+    protected $pathsToLinkInTestInstance = array();
 
-	/**
-	 * This configuration array is merged with TYPO3_CONF_VARS
-	 * that are set in default configuration and factory configuration
-	 *
-	 * @var array
-	 */
-	protected $configurationToUseInTestInstance = array();
+    /**
+     * This configuration array is merged with TYPO3_CONF_VARS
+     * that are set in default configuration and factory configuration
+     *
+     * @var array
+     */
+    protected $configurationToUseInTestInstance = array();
 
-	/**
-	 * Array of folders that should be created inside the test instance document root.
-	 *
-	 * This property will stay empty in this abstract, so it is possible
-	 * to just overwrite it in extending classes. Path noted here will
-	 * be linked for every test of a test case and it is not possible to change
-	 * the list of folders between single tests of a test case.
-	 *
-	 * Per default the following folder are created
-	 * /fileadmin
-	 * /typo3temp
-	 * /typo3conf
-	 * /typo3conf/ext
-	 * /uploads
-	 *
-	 * To create additional folders add the paths to this array. Given paths are expected to be
-	 * relative to the test instance root and have to begin with a slash. Example:
-	 *
-	 * array(
-	 *   'fileadmin/user_upload'
-	 * );
-	 *
-	 * @var array
-	 */
-	protected $additionalFoldersToCreate = array();
+    /**
+     * Array of folders that should be created inside the test instance document root.
+     *
+     * This property will stay empty in this abstract, so it is possible
+     * to just overwrite it in extending classes. Path noted here will
+     * be linked for every test of a test case and it is not possible to change
+     * the list of folders between single tests of a test case.
+     *
+     * Per default the following folder are created
+     * /fileadmin
+     * /typo3temp
+     * /typo3conf
+     * /typo3conf/ext
+     * /uploads
+     *
+     * To create additional folders add the paths to this array. Given paths are expected to be
+     * relative to the test instance root and have to begin with a slash. Example:
+     *
+     * array(
+     *   'fileadmin/user_upload'
+     * );
+     *
+     * @var array
+     */
+    protected $additionalFoldersToCreate = array();
 
-	/**
-	 * Private utility class used in setUp() and tearDown(). Do NOT use in test cases!
-	 *
-	 * @var \TYPO3\CMS\Core\Tests\FunctionalTestCaseBootstrapUtility
-	 */
-	private $bootstrapUtility = NULL;
+    /**
+     * The fixture which is used when initializing a backend user
+     *
+     * @var string
+     */
+    protected $backendUserFixture = 'typo3/sysext/core/Tests/Functional/Fixtures/be_users.xml';
 
-	/**
-	 * Path to TYPO3 CMS test installation for this test case
-	 *
-	 * @var string
-	 */
-	private $instancePath;
+    /**
+     * Private utility class used in setUp() and tearDown(). Do NOT use in test cases!
+     *
+     * @var \TYPO3\CMS\Core\Tests\FunctionalTestCaseBootstrapUtility
+     */
+    private $bootstrapUtility = null;
 
-	/**
-	 * Set up creates a test instance and database.
-	 *
-	 * This method should be called with parent::setUp() in your test cases!
-	 *
-	 * @return void
-	 */
-	protected function setUp() {
-		if (!defined('ORIGINAL_ROOT')) {
-			$this->markTestSkipped('Functional tests must be called through phpunit on CLI');
-		}
-		$this->bootstrapUtility = new FunctionalTestCaseBootstrapUtility();
-		$this->instancePath = $this->bootstrapUtility->setUp(
-			get_class($this),
-			$this->coreExtensionsToLoad,
-			$this->testExtensionsToLoad,
-			$this->pathsToLinkInTestInstance,
-			$this->configurationToUseInTestInstance,
-			$this->additionalFoldersToCreate
-		);
-	}
+    /**
+     * Calculate a "unique" identifier for the test database and the
+     * instance patch based on the given test case class name.
+     *
+     * @return string
+     */
+    protected function getInstanceIdentifier()
+    {
+        return FunctionalTestCaseBootstrapUtility::getInstanceIdentifier(get_class($this));
+    }
 
-	/**
-	 * Get DatabaseConnection instance - $GLOBALS['TYPO3_DB']
-	 *
-	 * This method should be used instead of direct access to
-	 * $GLOBALS['TYPO3_DB'] for easy IDE auto completion.
-	 *
-	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-	 */
-	protected function getDatabaseConnection() {
-		return $GLOBALS['TYPO3_DB'];
-	}
+    /**
+     * Calculates path to TYPO3 CMS test installation for this test case.
+     *
+     * @return string
+     */
+    protected function getInstancePath()
+    {
+        return FunctionalTestCaseBootstrapUtility::getInstancePath(get_class($this));
+    }
 
-	/**
-	 * Initialize backend user
-	 *
-	 * @param int $userUid uid of the user we want to initialize. This user must exist in the fixture file
-	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
-	 * @throws Exception
-	 */
-	protected function setUpBackendUserFromFixture($userUid) {
-		$this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/be_users.xml');
-		$database = $this->getDatabaseConnection();
-		$userRow = $database->exec_SELECTgetSingleRow('*', 'be_users', 'uid = ' . (int)$userUid);
+    /**
+     * Set up creates a test instance and database.
+     *
+     * This method should be called with parent::setUp() in your test cases!
+     *
+     * @return void
+     */
+    protected function setUp()
+    {
+        if (!defined('ORIGINAL_ROOT')) {
+            $this->markTestSkipped('Functional tests must be called through phpunit on CLI');
+        }
+        $this->bootstrapUtility = new FunctionalTestCaseBootstrapUtility();
+        $this->bootstrapUtility->setUp(
+            get_class($this),
+            $this->coreExtensionsToLoad,
+            $this->testExtensionsToLoad,
+            $this->pathsToLinkInTestInstance,
+            $this->configurationToUseInTestInstance,
+            $this->additionalFoldersToCreate
+        );
+    }
 
-		/** @var $backendUser \TYPO3\CMS\Core\Authentication\BackendUserAuthentication */
-		$backendUser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
-		$sessionId = $backendUser->createSessionId();
-		$_COOKIE['be_typo_user'] = $sessionId;
-		$backendUser->id = $sessionId;
-		$backendUser->sendNoCacheHeaders = FALSE;
-		$backendUser->dontSetCookie = TRUE;
-		$backendUser->createUserSession($userRow);
+    /**
+     * Get DatabaseConnection instance - $GLOBALS['TYPO3_DB']
+     *
+     * This method should be used instead of direct access to
+     * $GLOBALS['TYPO3_DB'] for easy IDE auto completion.
+     *
+     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+     */
+    protected function getDatabaseConnection()
+    {
+        return $GLOBALS['TYPO3_DB'];
+    }
 
-		$GLOBALS['BE_USER'] = $backendUser;
-		$GLOBALS['BE_USER']->start();
-		if (!is_array($GLOBALS['BE_USER']->user) || !$GLOBALS['BE_USER']->user['uid']) {
-			throw new Exception(
-				'Can not initialize backend user',
-				1377095807
-			);
-		}
-		$GLOBALS['BE_USER']->backendCheckLogin();
+    /**
+     * Initialize backend user
+     *
+     * @param int $userUid uid of the user we want to initialize. This user must exist in the fixture file
+     * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+     * @throws Exception
+     */
+    protected function setUpBackendUserFromFixture($userUid)
+    {
+        $this->importDataSet(ORIGINAL_ROOT . $this->backendUserFixture);
+        $database = $this->getDatabaseConnection();
+        $userRow = $database->exec_SELECTgetSingleRow('*', 'be_users', 'uid = ' . (int)$userUid);
 
-		return $backendUser;
-	}
+        /** @var $backendUser \TYPO3\CMS\Core\Authentication\BackendUserAuthentication */
+        $backendUser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+        $sessionId = $backendUser->createSessionId();
+        $_COOKIE['be_typo_user'] = $sessionId;
+        $backendUser->id = $sessionId;
+        $backendUser->sendNoCacheHeaders = false;
+        $backendUser->dontSetCookie = true;
+        $backendUser->createUserSession($userRow);
 
-	/**
-	 * Imports a data set represented as XML into the test database,
-	 *
-	 * @param string $path Absolute path to the XML file containing the data set to load
-	 * @return void
-	 * @throws Exception
-	 */
-	protected function importDataSet($path) {
-		if (!is_file($path)) {
-			throw new Exception(
-				'Fixture file ' . $path . ' not found',
-				1376746261
-			);
-		}
+        $GLOBALS['BE_USER'] = $backendUser;
+        $GLOBALS['BE_USER']->start();
+        if (!is_array($GLOBALS['BE_USER']->user) || !$GLOBALS['BE_USER']->user['uid']) {
+            throw new Exception(
+                'Can not initialize backend user',
+                1377095807
+            );
+        }
+        $GLOBALS['BE_USER']->backendCheckLogin();
 
-		$database = $this->getDatabaseConnection();
+        return $backendUser;
+    }
 
-		$xml = simplexml_load_file($path);
-		$foreignKeys = array();
+    /**
+     * Imports a data set represented as XML into the test database,
+     *
+     * @param string $path Absolute path to the XML file containing the data set to load
+     * @return void
+     * @throws Exception
+     */
+    protected function importDataSet($path)
+    {
+        if (!is_file($path)) {
+            throw new Exception(
+                'Fixture file ' . $path . ' not found',
+                1376746261
+            );
+        }
 
-		/** @var $table \SimpleXMLElement */
-		foreach ($xml->children() as $table) {
-			$insertArray = array();
+        $database = $this->getDatabaseConnection();
 
-			/** @var $column \SimpleXMLElement */
-			foreach ($table->children() as $column) {
-				$columnName = $column->getName();
-				$columnValue = NULL;
+        $xml = simplexml_load_file($path);
+        $foreignKeys = array();
 
-				if (isset($column['ref'])) {
-					list($tableName, $elementId) = explode('#', $column['ref']);
-					$columnValue = $foreignKeys[$tableName][$elementId];
-				} elseif (isset($column['is-NULL']) && ($column['is-NULL'] === 'yes')) {
-					$columnValue = NULL;
-				} else {
-					$columnValue = (string)$table->$columnName;
-				}
+        /** @var $table \SimpleXMLElement */
+        foreach ($xml->children() as $table) {
+            $insertArray = array();
 
-				$insertArray[$columnName] = $columnValue;
-			}
+            /** @var $column \SimpleXMLElement */
+            foreach ($table->children() as $column) {
+                $columnName = $column->getName();
+                $columnValue = null;
 
-			$tableName = $table->getName();
-			$result = $database->exec_INSERTquery($tableName, $insertArray);
-			if ($result === FALSE) {
-				throw new Exception(
-					'Error when processing fixture file: ' . $path . ' Can not insert data to table ' . $tableName . ': ' . $database->sql_error(),
-					1376746262
-				);
-			}
-			if (isset($table['id'])) {
-				$elementId = (string)$table['id'];
-				$foreignKeys[$tableName][$elementId] = $database->sql_insert_id();
-			}
-		}
-	}
+                if (isset($column['ref'])) {
+                    list($tableName, $elementId) = explode('#', $column['ref']);
+                    $columnValue = $foreignKeys[$tableName][$elementId];
+                } elseif (isset($column['is-NULL']) && ($column['is-NULL'] === 'yes')) {
+                    $columnValue = null;
+                } else {
+                    $columnValue = (string)$table->$columnName;
+                }
 
-	/**
-	 * @param int $pageId
-	 * @param array $typoScriptFiles
-	 */
-	protected function setUpFrontendRootPage($pageId, array $typoScriptFiles = array()) {
-		$pageId = (int)$pageId;
-		$page = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'pages', 'uid=' . $pageId);
+                $insertArray[$columnName] = $columnValue;
+            }
 
-		if (empty($page)) {
-			$this->fail('Cannot set up frontend root page "' . $pageId . '"');
-		}
+            $tableName = $table->getName();
+            $result = $database->exec_INSERTquery($tableName, $insertArray);
+            if ($result === false) {
+                throw new Exception(
+                    'Error when processing fixture file: ' . $path . ' Can not insert data to table ' . $tableName . ': ' . $database->sql_error(),
+                    1376746262
+                );
+            }
+            if (isset($table['id'])) {
+                $elementId = (string)$table['id'];
+                $foreignKeys[$tableName][$elementId] = $database->sql_insert_id();
+            }
+        }
+    }
 
-		$pagesFields = array(
-			'is_siteroot' => 1
-		);
+    /**
+     * @param int $pageId
+     * @param array $typoScriptFiles
+     */
+    protected function setUpFrontendRootPage($pageId, array $typoScriptFiles = array())
+    {
+        $pageId = (int)$pageId;
+        $page = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'pages', 'uid=' . $pageId);
 
-		$this->getDatabaseConnection()->exec_UPDATEquery('pages', 'uid=' . $pageId, $pagesFields);
+        if (empty($page)) {
+            $this->fail('Cannot set up frontend root page "' . $pageId . '"');
+        }
 
-		$templateFields = array(
-			'pid' => $pageId,
-			'title' => '',
-			'config' => '',
-			'clear' => 3,
-			'root' => 1,
-		);
+        $pagesFields = array(
+            'is_siteroot' => 1
+        );
 
-		foreach ($typoScriptFiles as $typoScriptFile) {
-			$templateFields['config'] .= '<INCLUDE_TYPOSCRIPT: source="FILE:' . $typoScriptFile . '">' . LF;
-		}
+        $this->getDatabaseConnection()->exec_UPDATEquery('pages', 'uid=' . $pageId, $pagesFields);
 
-		$this->getDatabaseConnection()->exec_INSERTquery('sys_template', $templateFields);
-	}
+        $templateFields = array(
+            'pid' => $pageId,
+            'title' => '',
+            'config' => '',
+            'clear' => 3,
+            'root' => 1,
+        );
 
-	/**
-	 * @param int $pageId
-	 * @param int $languageId
-	 * @param int $backendUserId
-	 * @param int $workspaceId
-	 * @param bool $failOnFailure
-	 * @param int $frontendUserId
-	 * @return Response
-	 */
-	protected function getFrontendResponse($pageId, $languageId = 0, $backendUserId = 0, $workspaceId = 0, $failOnFailure = TRUE, $frontendUserId = 0) {
-		$pageId = (int)$pageId;
-		$languageId = (int)$languageId;
+        foreach ($typoScriptFiles as $typoScriptFile) {
+            $templateFields['config'] .= '<INCLUDE_TYPOSCRIPT: source="FILE:' . $typoScriptFile . '">' . LF;
+        }
 
-		$additionalParameter = '';
+        $this->getDatabaseConnection()->exec_INSERTquery('sys_template', $templateFields);
+    }
 
-		if (!empty($frontendUserId)) {
-			$additionalParameter .= '&frontendUserId=' . (int)$frontendUserId;
-		}
-		if (!empty($backendUserId)) {
-			$additionalParameter .= '&backendUserId=' . (int)$backendUserId;
-		}
-		if (!empty($workspaceId)) {
-			$additionalParameter .= '&workspaceId=' . (int)$workspaceId;
-		}
+    /**
+     * @param int $pageId
+     * @param int $languageId
+     * @param int $backendUserId
+     * @param int $workspaceId
+     * @param bool $failOnFailure
+     * @param int $frontendUserId
+     * @return Response
+     */
+    protected function getFrontendResponse($pageId, $languageId = 0, $backendUserId = 0, $workspaceId = 0, $failOnFailure = true, $frontendUserId = 0)
+    {
+        $pageId = (int)$pageId;
+        $languageId = (int)$languageId;
 
-		$arguments = array(
-			'documentRoot' => $this->instancePath,
-			'requestUrl' => 'http://localhost/?id=' . $pageId . '&L=' . $languageId . $additionalParameter,
-		);
+        $additionalParameter = '';
 
-		$template = new \Text_Template(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/request.tpl');
-		$template->setVar(
-			array(
-				'arguments' => var_export($arguments, TRUE),
-				'originalRoot' => ORIGINAL_ROOT,
-			)
-		);
+        if (!empty($frontendUserId)) {
+            $additionalParameter .= '&frontendUserId=' . (int)$frontendUserId;
+        }
+        if (!empty($backendUserId)) {
+            $additionalParameter .= '&backendUserId=' . (int)$backendUserId;
+        }
+        if (!empty($workspaceId)) {
+            $additionalParameter .= '&workspaceId=' . (int)$workspaceId;
+        }
 
-		$php = \PHPUnit_Util_PHP::factory();
-		$response = $php->runJob($template->render());
-		$result = json_decode($response['stdout'], TRUE);
+        $arguments = array(
+            'documentRoot' => $this->getInstancePath(),
+            'requestUrl' => 'http://localhost/?id=' . $pageId . '&L=' . $languageId . $additionalParameter,
+        );
 
-		if ($result === NULL) {
-			$this->fail('Frontend Response is empty');
-		}
+        $template = new \Text_Template(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/request.tpl');
+        $template->setVar(
+            array(
+                'arguments' => var_export($arguments, true),
+                'originalRoot' => ORIGINAL_ROOT,
+            )
+        );
 
-		if ($failOnFailure && $result['status'] === Response::STATUS_Failure) {
-			$this->fail('Frontend Response has failure:' . LF . $result['error']);
-		}
+        $php = \PHPUnit_Util_PHP::factory();
+        $response = $php->runJob($template->render());
+        $result = json_decode($response['stdout'], true);
 
-		$response = new Response($result['status'], $result['content'], $result['error']);
-		return $response;
-	}
+        if ($result === null) {
+            $this->fail('Frontend Response is empty');
+        }
 
+        if ($failOnFailure && $result['status'] === Response::STATUS_Failure) {
+            $this->fail('Frontend Response has failure:' . LF . $result['error']);
+        }
+
+        $response = new Response($result['status'], $result['content'], $result['error']);
+        return $response;
+    }
 }

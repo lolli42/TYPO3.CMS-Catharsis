@@ -16,20 +16,17 @@ namespace TYPO3\CMS\Workspaces;
 
 /**
  * Interface for (additional) columns.
- *
- * @author Oliver Hader <oliver.hader@typo3.org>
  */
-interface ColumnDataProviderInterface {
+interface ColumnDataProviderInterface
+{
+    /**
+     * @return array
+     */
+    public function getDefinition();
 
-	/**
-	 * @return array
-	 */
-	public function getDefinition();
-
-	/**
-	 * @param Domain\Model\CombinedRecord $combinedRecord
-	 * @return string|integer|array
-	 */
-	public function getData(\TYPO3\CMS\Workspaces\Domain\Model\CombinedRecord $combinedRecord);
-
+    /**
+     * @param Domain\Model\CombinedRecord $combinedRecord
+     * @return string|int|array
+     */
+    public function getData(\TYPO3\CMS\Workspaces\Domain\Model\CombinedRecord $combinedRecord);
 }

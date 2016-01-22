@@ -1,0 +1,157 @@
+//
+// Deprecated
+//
+.t3-row-header {
+	background-color: #666;
+	padding: 6px;
+	a,
+	a:hover {
+		color: #fff;
+	}
+}
+.tableheader td {
+	padding: 6px;
+}
+.typo3-tstemplate-ceditor-control {
+	cursor: pointer;
+}
+
+
+//
+// Background color classes
+//
+.bgColor-20 {
+	background-color: #e3dfdb;
+}
+.bgColor2 {
+	background-color: #585858;
+	color: #ffffff;
+}
+.bgColor3 {
+	background-color: #f6f2e6;
+}
+.bgColor3-20 {
+	background-color: #f7f7f7;
+}
+.bgColor4 {
+	background-color: #f1f1f1;
+	color: #212424;
+}
+.bgColor4-20 {
+	background-color: #f8f9fa;
+}
+.bgColor5 {
+	background-color: #9b9b9b;
+}
+.bgColor6 {
+	background-color: #f7f7f7;
+}
+
+
+//
+// Messages
+//
+#typo3-messages {
+	margin-bottom: 10px;
+}
+.typo3-message {
+	.alert;
+	background-position: 10px 12px;
+	background-repeat: no-repeat;
+	padding: 12px 12px 12px 36px;
+	.message-header {
+		font-weight: bold;
+		margin-bottom: floor(@line-height-computed / 2);
+	}
+	ul,
+	ol {
+		padding-left: 16px;
+	}
+	.message-header {
+		display: block;
+	}
+	.t3-icon-actions-message-close {
+		cursor: pointer;
+		float: right;
+	}
+	li {
+		margin-bottom: 10px;
+		list-style: disc;
+	}
+	a {
+		text-decoration: underline;
+	}
+}
+.message-notice {
+	// Nothing to inherit from Bootstrap - there is no alert-notice
+	color: #777;
+	background-color: #f6f7fa;
+	background-image: url('../../../../icons/gfx/notice.png');
+	border-color: #c2cbcf;
+	a {
+		color: #777;
+	}
+}
+.message-information {
+	.alert-info;
+	background-image: url('../../../../icons/gfx/information.png');
+	a {
+		color: #4c73a1;
+	}
+}
+.message-ok {
+	.alert-success;
+	background-image: url('../../../../icons/gfx/ok.png');
+	a {
+		color: #3b7826;
+	}
+}
+.message-warning {
+	.alert-warning;
+	background-image: url("../../../../icons/gfx/warning.png");
+	a {
+		color: #9e7d4a;
+	}
+}
+.message-error {
+	.alert-danger;
+	background-image: url('../../../../icons/gfx/error.png');
+	a {
+		color: #aa0225;
+	}
+}
+
+
+//
+// Docheader
+//
+div#typo3-docbody {
+	bottom: 0;
+	overflow: auto;
+	position: absolute;
+	top: 51px;
+	width: 100%;
+}
+
+
+//
+// Context Sensitive Help (CSH)
+//
+.t3-help-link {
+	span.t3-help-inline {
+		display: none;
+	}
+	&:hover span.t3-help-inline {
+		display: block;
+	}
+}
+
+
+//
+// Print
+//
+@media print {
+	div#typo3-docbody {
+		overflow: visible;
+	}
+}

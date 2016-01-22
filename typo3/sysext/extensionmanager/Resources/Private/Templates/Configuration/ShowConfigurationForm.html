@@ -1,20 +1,16 @@
 {namespace em=TYPO3\CMS\Extensionmanager\ViewHelpers}
+{namespace core=TYPO3\CMS\Core\ViewHelpers}
+
 <f:layout name="main" />
 
-<f:section name="docheader-buttons">
-	<f:be.buttons.icon uri="{f:uri.action(action:'index',controller:'List',additionalParams:{search:extension.key})}" icon="actions-view-go-back" title="{f:translate(key:'extConfTemplate.backToList')}" />
-	<f:be.buttons.icon uri="javascript:document.configurationform.submit();" icon="actions-document-save" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:save')}" />
-	<f:be.buttons.icon uri="#" icon="actions-document-save-close" title="{f:translate(key:'LLL:EXT:lang/locallang_common.xlf:saveAndClose')}" />
-</f:section>
-
-<f:section name="module-headline">
+<f:section name="headline">
 	<h1>
 		<f:translate key="extConfTemplate.headline" />
 		{extension.key}
 	</h1>
 </f:section>
 
-<f:section name="Content">
+<f:section name="content">
 	<div role="tabpanel">
 		<ul class="nav nav-tabs" role="tablist">
 			<f:for each="{configuration}" as="category" key="categoryNumber" iteration="iteration">
@@ -28,7 +24,7 @@
 			</f:for>
 		</ul>
 
-		<f:form action="save" name="configurationform" class="validate">
+		<f:form action="save" name="configurationform" id="configurationform">
 			<div class="tab-content">
 				<f:form.hidden name="extensionKey" value="{extension.key}" />
 				<f:for each="{configuration}" as="category" key="categoryNumber" iteration="iteration">
@@ -81,6 +77,11 @@
 					</f:if>
 				</f:for>
 			</div>
+			<f:comment>
+				In order to allow form submit on pressing enter, a submit button is needed. See #66846
+				The submit button is hidden as long as the save buttons are not part of the form yet.
+			</f:comment>
+			<f:form.submit name="mySubmit" value="Go" class="hidden" />
 		</f:form>
 	</div>
 </f:section>

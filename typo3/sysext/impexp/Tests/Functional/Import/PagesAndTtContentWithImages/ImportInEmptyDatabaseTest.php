@@ -14,128 +14,140 @@ namespace TYPO3\CMS\Impexp\Tests\Functional\Import\PagesAndTtContentWithImages;
  * The TYPO3 project - inspiring people to share!
  */
 
-require_once __DIR__ . '/../AbstractImportTestCase.php';
-
 /**
- * Functional test for the ImportExport
+ * Functional test for the Import
  */
-class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase {
+class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase
+{
+    protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/PagesAndTtContentWithImages/DataSet/Assertion/';
 
-	protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/PagesAndTtContentWithImages/DataSet/Assertion/';
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContentWithImagesOnCaseSensitiveFilesystems()
+    {
+        if (!$this->isCaseSensitiveFilesystem()) {
+            $this->markTestSkipped('Test not available on case insensitive filesystems.');
+        }
 
+        $this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent-with-image.xml', 1);
+        $this->import->importData(0);
 
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image2.jpg';
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContentWithImagesOnCaseSensitiveFilesystems() {
-		if (!$this->isCaseSensitiveFilesystem()) {
-			$this->markTestSkipped('Test not available on case insensitive filesystems.');
-		}
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesOnCaseSensitiveFilesystems');
 
-		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent-with-image.xml', 1);
-		$this->import->importData(0);
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
+    }
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesOnCaseSensitiveFilesystems');
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContentWithImagesOnCaseInsensitiveFilesystems()
+    {
+        if ($this->isCaseSensitiveFilesystem()) {
+            $this->markTestSkipped('Test not available on case sensitive filesystems.');
+        }
 
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
+        $this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent-with-image.xml', 1);
+        $this->import->importData(0);
 
-	}
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image2.jpg';
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContentWithImagesOnCaseInsensitiveFilesystems() {
-		if ($this->isCaseSensitiveFilesystem()) {
-			$this->markTestSkipped('Test not available on case sensitive filesystems.');
-		}
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesOnCaseInsensitiveFilesystems');
 
-		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent-with-image.xml', 1);
-		$this->import->importData(0);
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
+    }
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesOnCaseInsensitiveFilesystems');
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseSensitiveFilesystems()
+    {
+        if (!$this->isCaseSensitiveFilesystem()) {
+            $this->markTestSkipped('Test not available on case insensitive filesystems.');
+        }
 
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
+        $this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-without-storage.xml', 1);
+        $this->import->importData(0);
 
-	}
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image2.jpg';
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseSensitiveFilesystems() {
-		if (!$this->isCaseSensitiveFilesystem()) {
-			$this->markTestSkipped('Test not available on case insensitive filesystems.');
-		}
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseSensitiveFilesystems');
 
-		$this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-without-storage.xml', 1);
-		$this->import->importData(0);
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
+    }
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseSensitiveFilesystems');
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseInsensitiveFilesystems()
+    {
+        if ($this->isCaseSensitiveFilesystem()) {
+            $this->markTestSkipped('Test not available on case sensitive filesystems.');
+        }
 
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
-	}
+        $this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-without-storage.xml', 1);
+        $this->import->importData(0);
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseInsensitiveFilesystems() {
-		if ($this->isCaseSensitiveFilesystem()) {
-			$this->markTestSkipped('Test not available on case sensitive filesystems.');
-		}
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image2.jpg';
 
-		$this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-without-storage.xml', 1);
-		$this->import->importData(0);
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseInsensitiveFilesystems');
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesButWithoutStorageOnCaseInsensitiveFilesystems');
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
+    }
 
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
-	}
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContentWithImagesWithSpacesInPath()
+    {
+        $this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-with-spaces-in-path.xml', 1);
+        $this->import->importData(0);
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContentWithImagesWithSpacesInPath() {
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/folder_with_spaces/typo3_image2.jpg';
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/folder_with_spaces/typo3_image3.jpg';
 
-		$this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-with-spaces-in-path.xml', 1);
-		$this->import->importData(0);
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesWithSpacesInPath');
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesWithSpacesInPath');
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/folder_with_spaces/typo3_image2.jpg');
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image3.jpg', PATH_site . 'fileadmin/user_upload/folder_with_spaces/typo3_image3.jpg');
+    }
 
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/folder_with_spaces/typo3_image2.jpg');
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image3.jpg', PATH_site . 'fileadmin/user_upload/folder_with_spaces/typo3_image3.jpg');
-	}
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContentWithImagesButNotIncluded()
+    {
+        $this->import->loadFile(PATH_site . 'typo3/sysext/impexp/Tests/Functional/Fixtures/ImportExportXml/pages-and-ttcontent-with-image-but-not-included.xml', 1);
+        $this->import->importData(0);
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContentWithImagesButNotIncluded() {
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image2.jpg';
 
-		$this->import->loadFile(PATH_site . 'typo3/sysext/impexp/Tests/Functional/Fixtures/ImportExportXml/pages-and-ttcontent-with-image-but-not-included.xml', 1);
-		$this->import->importData(0);
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesButNotIncluded');
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImagesButNotIncluded');
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
+    }
 
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
-	}
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContentWithImageWithForcedUids()
+    {
+        $this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-with-forced-uids.xml', 1);
+        $this->import->force_all_UIDS = true;
+        $this->import->importData(0);
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContentWithImageWithForcedUids() {
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image2.jpg';
 
-		$this->import->loadFile(__DIR__ . '/ImportExportXml/pages-and-ttcontent-with-image-with-forced-uids.xml', 1);
-		$this->import->force_all_UIDS = TRUE;
-		$this->import->importData(0);
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImageWithForcedUids');
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContentWithImageWithForcedUids');
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
 
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image2.jpg', PATH_site . 'fileadmin/user_upload/typo3_image2.jpg');
-
-		$expectedErrors = array(
-				'Forcing uids of sys_file records is not supported! They will be imported as new records!'
-		);
-		$errors = $this->import->errorLog;
-		$this->assertSame($expectedErrors, $errors);
-	}
-
+        $expectedErrors = array(
+                'Forcing uids of sys_file records is not supported! They will be imported as new records!'
+        );
+        $errors = $this->import->errorLog;
+        $this->assertSame($expectedErrors, $errors);
+    }
 }

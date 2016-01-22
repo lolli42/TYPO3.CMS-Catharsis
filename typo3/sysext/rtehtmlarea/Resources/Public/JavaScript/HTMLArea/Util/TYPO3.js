@@ -10,11 +10,12 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-/***************************************************
+/**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/TYPO3
  * HTMLArea.util.TYPO3: Utility functions for dealing with tabs and inline elements in TYPO3 forms
- ***************************************************/
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/TYPO3',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+ * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/TYPO3
+ */
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM'],
 	function (UserAgent, Dom) {
 
@@ -25,7 +26,6 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/TYPO3',
 		 *
 		 * @param	object		nested: The array with the nested levels
 		 * @return	object		The simplified array
-		 * @author	Oliver Hader <oh@inpublica.de>
 		 */
 		simplifyNested: function(nested) {
 			var i, type, level, elementId, max, simplifiedNested=[],
@@ -58,7 +58,6 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/TYPO3',
 		 * @params object callbackFunc: A function to be called, when the embedded objects are "accessible".
 		 * @params array args: array of arguments
 		 * @return object An object returned by the callbackFunc.
-		 * @author Oliver Hader <oh@inpublica.de>
 		 */
 		accessParentElements: function (parentElements, callbackFunc, args) {
 			var result = {};

@@ -16,24 +16,120 @@ module.exports = function(grunt) {
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+		banner: '/*!\n' +
+			' * This file is part of the TYPO3 CMS project.\n' +
+			' *\n' +
+			' * It is free software; you can redistribute it and/or modify it under\n' +
+			' * the terms of the GNU General Public License, either version 2\n' +
+			' * of the License, or any later version.\n' +
+			' *\n' +
+			' * For the full copyright and license information, please read the\n' +
+			' * LICENSE.txt file that was distributed with this source code.\n' +
+			' *\n' +
+			' * The TYPO3 project - inspiring people to share!\n' +
+			' */\n',
 		paths: {
-			root    : "../",
-			t3skin  : "<%= paths.root %>typo3/sysext/t3skin/Resources/",
-			core    : "<%= paths.root %>typo3/sysext/core/Resources/"
+			resources : 'Resources/',
+			less      : '<%= paths.resources %>Public/Less/',
+			root      : '../',
+			sysext    : '<%= paths.root %>typo3/sysext/',
+			t3skin    : '<%= paths.sysext %>t3skin/Resources/',
+			install   : '<%= paths.sysext %>install/Resources/',
+			backend   : '<%= paths.sysext %>backend/Resources/',
+			core      : '<%= paths.sysext %>core/Resources/',
+			flags     : 'bower_components/region-flags/svg/',
+			t3icons   : 'bower_components/wmdbsystems-typo3-icons/dist/'
 		},
 		less: {
 			t3skin: {
 				options: {
+					banner: '<%= banner %>',
 					outputSourceFiles: true
 				},
-				src : '<%= paths.t3skin %>Private/Styles/t3skin.less',
-				dest: '<%= paths.t3skin %>Public/Css/visual/t3skin.css'
+				files: {
+					"<%= paths.t3skin %>Public/Css/backend.css": "<%= paths.less %>backend.less"
+				}
+			},
+			InstallTool: {
+				options: {
+					banner: '<%= banner %>',
+					outputSourceFiles: true
+				},
+				files: {
+					"<%= paths.install %>Public/Css/InstallTool.css": "<%= paths.less %>InstallTool.less"
+				}
+			}
+		},
+		postcss: {
+			options: {
+				map: false,
+				processors: [
+					require('autoprefixer')({ // add vendor prefixes
+						browsers: [
+							'Last 2 versions',
+							'Firefox ESR',
+							'IE 11'
+						]
+					})
+				]
+			},
+			t3skin: {
+				src: '<%= paths.t3skin %>Public/Css/*.css'
+			},
+			InstallTool: {
+				src: '<%= paths.install %>Public/Css/InstallTool.css'
 			}
 		},
 		watch: {
 			less: {
-				files: '<%= paths.t3skin %>Private/Styles/**/*.less',
-				tasks: 'less'
+				files: '<%= paths.less %>**/*.less',
+				tasks: 'css'
+			}
+		},
+		copy: {
+			options: {
+				punctuation: ''
+			},
+			core_icons: {
+				files: [{
+					expand: true,
+					cwd: '<%= paths.t3icons %>',
+					src: ['**/*.svg', '!module/*'],
+					dest: '<%= paths.sysext %>core/Resources/Public/Icons/T3Icons/',
+					ext: '.svg'
+				}]
+			},
+			module_icons: {
+				files: [
+					{ dest: '<%= paths.sysext %>about/Resources/Public/Icons/module-about.svg', src: '<%= paths.t3icons %>module/module-about.svg' },
+					{ dest: '<%= paths.sysext %>aboutmodules/Resources/Public/Icons/module-aboutmodules.svg', src: '<%= paths.t3icons %>module/module-aboutmodules.svg' },
+					{ dest: '<%= paths.sysext %>belog/Resources/Public/Icons/module-belog.svg', src: '<%= paths.t3icons %>module/module-belog.svg' },
+					{ dest: '<%= paths.sysext %>beuser/Resources/Public/Icons/module-beuser.svg', src: '<%= paths.t3icons %>module/module-beuser.svg' },
+					{ dest: '<%= paths.sysext %>lowlevel/Resources/Public/Icons/module-config.svg', src: '<%= paths.t3icons %>module/module-config.svg' },
+					{ dest: '<%= paths.sysext %>cshmanual/Resources/Public/Icons/module-cshmanual.svg', src: '<%= paths.t3icons %>module/module-cshmanual.svg' },
+					{ dest: '<%= paths.sysext %>dbal/Resources/Public/Icons/module-dbal.svg', src: '<%= paths.t3icons %>module/module-dbal.svg' },
+					{ dest: '<%= paths.sysext %>lowlevel/Resources/Public/Icons/module-dbint.svg', src: '<%= paths.t3icons %>module/module-dbint.svg' },
+					{ dest: '<%= paths.sysext %>documentation/Resources/Public/Icons/module-documentation.svg', src: '<%= paths.t3icons %>module/module-documentation.svg' },
+					{ dest: '<%= paths.sysext %>extensionmanager/Resources/Public/Icons/module-extensionmanager.svg', src: '<%= paths.t3icons %>module/module-extensionmanager.svg' },
+					{ dest: '<%= paths.sysext %>filelist/Resources/Public/Icons/module-filelist.svg', src: '<%= paths.t3icons %>module/module-filelist.svg' },
+					{ dest: '<%= paths.sysext %>func/Resources/Public/Icons/module-func.svg', src: '<%= paths.t3icons %>module/module-func.svg' },
+					{ dest: '<%= paths.sysext %>indexed_search/Resources/Public/Icons/module-indexed_search.svg', src: '<%= paths.t3icons %>module/module-indexed_search.svg' },
+					{ dest: '<%= paths.sysext %>info/Resources/Public/Icons/module-info.svg', src: '<%= paths.t3icons %>module/module-info.svg' },
+					{ dest: '<%= paths.sysext %>install/Resources/Public/Icons/module-install.svg', src: '<%= paths.t3icons %>module/module-install.svg' },
+					{ dest: '<%= paths.sysext %>lang/Resources/Public/Icons/module-lang.svg', src: '<%= paths.t3icons %>module/module-lang.svg' },
+					{ dest: '<%= paths.sysext %>recordlist/Resources/Public/Icons/module-list.svg', src: '<%= paths.t3icons %>module/module-list.svg' },
+					{ dest: '<%= paths.sysext %>backend/Resources/Public/Icons/module-page.svg', src: '<%= paths.t3icons %>module/module-page.svg' },
+					{ dest: '<%= paths.sysext %>beuser/Resources/Public/Icons/module-permission.svg', src: '<%= paths.t3icons %>module/module-permission.svg' },
+					{ dest: '<%= paths.sysext %>recycler/Resources/Public/Icons/module-recycler.svg', src: '<%= paths.t3icons %>module/module-recycler.svg' },
+					{ dest: '<%= paths.sysext %>reports/Resources/Public/Icons/module-reports.svg', src: '<%= paths.t3icons %>module/module-reports.svg' },
+					{ dest: '<%= paths.sysext %>scheduler/Resources/Public/Icons/module-scheduler.svg', src: '<%= paths.t3icons %>module/module-scheduler.svg' },
+					{ dest: '<%= paths.sysext %>setup/Resources/Public/Icons/module-setup.svg', src: '<%= paths.t3icons %>module/module-setup.svg' },
+					{ dest: '<%= paths.sysext %>taskcenter/Resources/Public/Icons/module-taskcenter.svg', src: '<%= paths.t3icons %>module/module-taskcenter.svg' },
+					{ dest: '<%= paths.sysext %>tstemplate/Resources/Public/Icons/module-tstemplate.svg', src: '<%= paths.t3icons %>module/module-tstemplate.svg' },
+					{ dest: '<%= paths.sysext %>version/Resources/Public/Icons/module-version.svg', src: '<%= paths.t3icons %>module/module-version.svg' },
+					{ dest: '<%= paths.sysext %>viewpage/Resources/Public/Icons/module-viewpage.svg', src: '<%= paths.t3icons %>module/module-viewpage.svg' },
+					{ dest: '<%= paths.sysext %>workspaces/Resources/Public/Icons/module-workspaces.svg', src: '<%= paths.t3icons %>module/module-workspaces.svg' }
+				]
 			}
 		},
 		bowercopy: {
@@ -44,42 +140,80 @@ module.exports = function(grunt) {
 				srcPrefix: "bower_components/"
 			},
 			all: {
+				options: {
+					destPrefix: "<%= paths.core %>Public/JavaScript/Contrib"
+				},
 				files: {
-					'<%= paths.core %>Public/JavaScript/Contrib/nprogress.js': '/nprogress/nprogress.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery.dataTables.js': '/datatables/media/js/jquery.dataTables.min.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/require.js': '/requirejs/require.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/moment.js': '/moment/moment.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/cropper.min.js': '/cropper/dist/cropper.min.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/imagesloaded.pkgd.min.js': '/imagesloaded/imagesloaded.pkgd.min.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js': '/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/autosize.js': '/autosize/dest/autosize.min.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/placeholders.jquery.min.js': '/Placeholders.js/dist/placeholders.jquery.min.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/taboverride.min.js': '/taboverride/build/output/taboverride.min.js',
+					'nprogress.js': 'nprogress/nprogress.js',
+					'jquery.dataTables.js': 'datatables/media/js/jquery.dataTables.min.js',
+					'require.js': 'requirejs/require.js',
+					'moment.js': 'moment/moment.js',
+					'moment-timezone.js': 'moment-timezone/builds/moment-timezone-with-data.min.js',
+					'cropper.min.js': 'cropper/dist/cropper.min.js',
+					'imagesloaded.pkgd.min.js': 'imagesloaded/imagesloaded.pkgd.min.js',
+					'bootstrap-datetimepicker.js': 'eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js',
+					'autosize.js': 'autosize/dist/autosize.min.js',
+					'taboverride.min.js': 'taboverride/build/output/taboverride.min.js',
+					'bootstrap-slider.min.js': 'seiyria-bootstrap-slider/dist/bootstrap-slider.min.js',
+					/* disabled until autocomplete groupBy is fixed by the author
+						see https://github.com/devbridge/jQuery-Autocomplete/pull/387
+					'jquery.autocomplete.js': 'devbridge-autocomplete/src/jquery.autocomplete.js',
+					 */
 
 					/**
-					 * copy needed files of scriptaculous
+					 * copy needed parts of jquery
 					 */
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/builder.js': '/scriptaculous-bower/builder.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/controls.js': '/scriptaculous-bower/controls.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/dragdrop.js': '/scriptaculous-bower/dragdrop.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/effects.js': '/scriptaculous-bower/effects.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/scriptaculous.js': '/scriptaculous-bower/scriptaculous.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/slider.js': '/scriptaculous-bower/slider.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/sound.js': '/scriptaculous-bower/sound.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/scriptaculous/unittest.js': '/scriptaculous-bower/unittest.js',
+					'jquery/jquery-2.1.4.js': 'jquery/dist/jquery.js',
+					'jquery/jquery-2.1.4.min.js': 'jquery/dist/jquery.min.js',
 					/**
 					 * copy needed parts of jquery-ui
 					 */
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/core.js': '/jquery-ui/ui/core.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/draggable.js': '/jquery-ui/ui/draggable.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/droppable.js': '/jquery-ui/ui/droppable.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/mouse.js': '/jquery-ui/ui/mouse.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/position.js': '/jquery-ui/ui/position.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/resizable.js': '/jquery-ui/ui/resizable.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js': '/jquery-ui/ui/selectable.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js': '/jquery-ui/ui/sortable.js',
-					'<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js': '/jquery-ui/ui/widget.js'
+					'jquery-ui/core.js': 'jquery-ui/ui/core.js',
+					'jquery-ui/draggable.js': 'jquery-ui/ui/draggable.js',
+					'jquery-ui/droppable.js': 'jquery-ui/ui/droppable.js',
+					'jquery-ui/mouse.js': 'jquery-ui/ui/mouse.js',
+					'jquery-ui/position.js': 'jquery-ui/ui/position.js',
+					'jquery-ui/resizable.js': 'jquery-ui/ui/resizable.js',
+					'jquery-ui/selectable.js': 'jquery-ui/ui/selectable.js',
+					'jquery-ui/sortable.js': 'jquery-ui/ui/sortable.js',
+					'jquery-ui/widget.js': 'jquery-ui/ui/widget.js'
 				}
+			}
+		},
+		uglify: {
+			thirdparty: {
+				files: {
+					"<%= paths.core %>Public/JavaScript/Contrib/require.js": ["<%= paths.core %>Public/JavaScript/Contrib/require.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/moment.js": ["<%= paths.core %>Public/JavaScript/Contrib/moment.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/nprogress.js": ["<%= paths.core %>Public/JavaScript/Contrib/nprogress.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/core.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/core.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/draggable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/draggable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/droppable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/droppable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/mouse.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/mouse.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/position.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/position.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/resizable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/resizable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js"]
+				}
+			}
+		},
+		svgmin: {
+			options: {
+				plugins: [
+					{ removeViewBox: false }
+				]
+			},
+			// Flags
+			flags: {
+				files: [{
+					expand: true,
+					cwd: '<%= paths.flags %>',
+					src: '*.svg',
+					dest: '<%= paths.sysext %>core/Resources/Public/Icons/Flags/SVG/',
+					ext: '.svg',
+					extDot: 'first'
+				}]
 			}
 		}
 	});
@@ -90,15 +224,30 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-bowercopy');
 	grunt.loadNpmTasks('grunt-npm-install');
 	grunt.loadNpmTasks('grunt-bower-just-install');
+	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-svgmin');
+	grunt.loadNpmTasks('grunt-postcss');
+	grunt.loadNpmTasks('grunt-copy');
 
 	/**
 	 * grunt default task
 	 *
 	 * call "$ grunt"
 	 *
-	 * this will trigger the less build
+	 * this will trigger the CSS build
 	 */
-	grunt.registerTask('default', ['less']);
+	grunt.registerTask('default', ['css']);
+
+	/**
+	 * grunt css task
+	 *
+	 * call "$ grunt css"
+	 *
+	 * this task does the following things:
+	 * - less
+	 * - postcss
+	 */
+	grunt.registerTask('css', ['less', 'postcss']);
 
 	/**
 	 * grunt update task
@@ -106,9 +255,23 @@ module.exports = function(grunt) {
 	 * call "$ grunt update"
 	 *
 	 * this task does the following things:
-	 * - npn install
+	 * - npm install
 	 * - bower install
 	 * - copy some bower components to a specific destinations because they need to be included via PHP
 	 */
 	grunt.registerTask('update', ['npm-install', 'bower_install', 'bowercopy']);
+
+	/**
+	 * grunt build task
+	 *
+	 * call "$ grunt build"
+	 *
+	 * this task does the following things:
+	 * - execute update task
+	 * - execute copy task
+	 * - compile less files
+	 * - uglify js files
+	 * - minifies svg files
+	 */
+	grunt.registerTask('build', ['update', 'copy', 'css', 'uglify', 'svgmin']);
 };

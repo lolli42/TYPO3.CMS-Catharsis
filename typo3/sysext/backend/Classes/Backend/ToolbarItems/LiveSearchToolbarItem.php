@@ -14,103 +14,116 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
-use TYPO3\CMS\Backend\Module\ModuleLoader;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Adds backend live search to the toolbar
- *
- * @author Michael Klapper <michael.klapper@aoemedia.de>
- * @author Jeff Segars <jeff@webempoweredchurch.org>
  */
-class LiveSearchToolbarItem implements ToolbarItemInterface {
+class LiveSearchToolbarItem implements ToolbarItemInterface
+{
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LiveSearch');
+    }
 
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$this->getPageRenderer()->addJsFile('sysext/backend/Resources/Public/JavaScript/livesearch.js');
-	}
+    /**
+     * Checks whether the user has access to this toolbar item,
+     * only allowed when the list module is available
+     *
+     * @return bool TRUE if user has access, FALSE if not
+     */
+    public function checkAccess()
+    {
+        /** @var BackendModuleRepository $backendModuleRepository */
+        $backendModuleRepository = GeneralUtility::makeInstance(BackendModuleRepository::class);
+        /** @var \TYPO3\CMS\Backend\Domain\Model\Module\BackendModule $listModule */
 
-	/**
-	 * Checks whether the user has access to this toolbar item
-	 *
-	 * @return bool TRUE if user has access, FALSE if not
-	 */
-	public function checkAccess() {
-		$access = FALSE;
-		// Loads the backend modules available for the logged in user.
-		$loadModules = GeneralUtility::makeInstance(ModuleLoader::class);
-		$loadModules->observeWorkspaces = TRUE;
-		$loadModules->load($GLOBALS['TBE_MODULES']);
-		// Live search is heavily dependent on the list module and only available when that module is.
-		if (is_array($loadModules->modules['web']['sub']['list'])) {
-			$access = TRUE;
-		}
-		return $access;
-	}
+        // Live search is heavily dependent on the list module and only available when that module is.
+        $listModule = $backendModuleRepository->findByModuleName('web_list');
+        return $listModule !== null;
+    }
 
-	/**
-	 * Render search field
-	 *
-	 * @return string Live search form HTML
-	 */
-	public function getItem() {
-		return '
-			<form class="typo3-topbar-navigation-search live-search-wrapper" role="search">
+    /**
+     * Render search field
+     *
+     * @return string Live search form HTML
+     */
+    public function getItem()
+    {
+        return '
+			<form class="typo3-topbar-navigation-search t3js-topbar-navigation-search live-search-wrapper" role="search">
 				<div class="form-group">
-					<input type="text" class="form-control" placeholder="Search" id="live-search-box">
+					<input type="text" class="form-control t3js-topbar-navigation-search-field" placeholder="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.search')) . '" id="live-search-box" autocomplete="off">
 				</div>
 			</form>
+			<div class="dropdown-menu" role="menu"></div>
 		';
-	}
+    }
 
-	/**
-	 * This item needs to additional attributes
-	 *
-	 * @return array
-	 */
-	public function getAdditionalAttributes() {
-		return array();
-	}
+    /**
+     * This item needs to additional attributes
+     *
+     * @return array
+     */
+    public function getAdditionalAttributes()
+    {
+        return array('class' => 'dropdown');
+    }
 
-	/**
-	 * This item has no drop down
-	 *
-	 * @return bool
-	 */
-	public function hasDropDown() {
-		return FALSE;
-	}
+    /**
+     * This item has no drop down
+     *
+     * @return bool
+     */
+    public function hasDropDown()
+    {
+        return false;
+    }
 
-	/**
-	 * No drop down here
-	 *
-	 * @return string
-	 */
-	public function getDropDown() {
-		return '';
-	}
+    /**
+     * No drop down here
+     *
+     * @return string
+     */
+    public function getDropDown()
+    {
+        return '';
+    }
 
-	/**
-	 * Position relative to others, live search should be very right
-	 *
-	 * @return int
-	 */
-	public function getIndex() {
-		return 90;
-	}
+    /**
+     * Position relative to others, live search should be very right
+     *
+     * @return int
+     */
+    public function getIndex()
+    {
+        return 90;
+    }
 
-	/**
-	 * Returns current PageRenderer
-	 *
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
-	 */
-	protected function getPageRenderer() {
-		/** @var  \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplate */
-		$documentTemplate = $GLOBALS['TBE_TEMPLATE'];
-		return $documentTemplate->getPageRenderer();
-	}
+    /**
+     * Returns current PageRenderer
+     *
+     * @return PageRenderer
+     */
+    protected function getPageRenderer()
+    {
+        return GeneralUtility::makeInstance(PageRenderer::class);
+    }
 
+    /**
+     * Returns LanguageService
+     *
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

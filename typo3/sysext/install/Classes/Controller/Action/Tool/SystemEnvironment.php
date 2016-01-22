@@ -15,28 +15,35 @@ namespace TYPO3\CMS\Install\Controller\Action\Tool;
  */
 
 use TYPO3\CMS\Install\Controller\Action;
+use TYPO3\CMS\Install\Status\StatusUtility;
+use TYPO3\CMS\Install\SystemEnvironment\Check;
+use TYPO3\CMS\Install\SystemEnvironment\DatabaseCheck;
 
 /**
  * Show system environment check results
  */
-class SystemEnvironment extends Action\AbstractAction {
+class SystemEnvironment extends Action\AbstractAction
+{
+    /**
+     * Executes the tool
+     *
+     * @return string Rendered content
+     */
+    protected function executeAction()
+    {
+        /** @var $statusCheck Check */
+        $statusCheck = $this->objectManager->get(Check::class);
+        $statusObjects = $statusCheck->getStatus();
 
-	/**
-	 * Executes the tool
-	 *
-	 * @return string Rendered content
-	 */
-	protected function executeAction() {
-		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
-		$statusCheck = $this->objectManager->get(\TYPO3\CMS\Install\SystemEnvironment\Check::class);
-		$statusObjects = $statusCheck->getStatus();
+        /** @var $statusCheck DatabaseCheck */
+        $databaseStatusCheck = $this->objectManager->get(DatabaseCheck::class);
+        $statusObjects = array_merge($statusObjects, $databaseStatusCheck->getStatus());
 
-		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
-		$statusUtility = $this->objectManager->get(\TYPO3\CMS\Install\Status\StatusUtility::class);
-		$sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
-		$this->view->assign('statusObjectsBySeverity', $sortedStatusObjects);
+        /** @var $statusUtility StatusUtility */
+        $statusUtility = $this->objectManager->get(StatusUtility::class);
+        $sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
+        $this->view->assign('statusObjectsBySeverity', $sortedStatusObjects);
 
-		return $this->view->render();
-	}
-
+        return $this->view->render();
+    }
 }

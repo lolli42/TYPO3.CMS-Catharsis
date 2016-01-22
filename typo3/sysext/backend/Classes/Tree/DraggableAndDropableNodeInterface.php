@@ -17,46 +17,42 @@ namespace TYPO3\CMS\Backend\Tree;
 /**
  * Describes necessary methods if the nodes are draggable and dropable
  * within the tree.
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
 interface DraggableAndDropableNodeInterface
 {
-	/**
-	 * Moves given node inside a destination node
-	 *
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
-	 * @return void
-	 */
-	public function moveNodeInDestinationNode($node, $destination);
+    /**
+     * Moves given node inside a destination node
+     *
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
+     * @return void
+     */
+    public function moveNodeInDestinationNode($node, $destination);
 
-	/**
-	 * Moves given node after a destination node
-	 *
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
-	 * @return void
-	 */
-	public function moveNodeAfterDestinationNode($node, $destination);
+    /**
+     * Moves given node after a destination node
+     *
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
+     * @return void
+     */
+    public function moveNodeAfterDestinationNode($node, $destination);
 
-	/**
-	 * Copies given node inside a destination node
-	 *
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
-	 * @return void
-	 */
-	public function copyNodeInDestinationNode($node, $destination);
+    /**
+     * Copies given node inside a destination node
+     *
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
+     * @return void
+     */
+    public function copyNodeInDestinationNode($node, $destination);
 
-	/**
-	 * Copies given node after a destination node
-	 *
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
-	 * @return void
-	 */
-	public function copyNodeAfterDestinationNode($node, $destination);
-
+    /**
+     * Copies given node after a destination node
+     *
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
+     * @param \TYPO3\CMS\Backend\Tree\TreeNode $destination
+     * @return void
+     */
+    public function copyNodeAfterDestinationNode($node, $destination);
 }

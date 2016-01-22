@@ -16,20 +16,18 @@ namespace TYPO3\CMS\Backend\Tree\Pagetree;
 
 /**
  * Tree Node Collection
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
-class PagetreeNodeCollection extends \TYPO3\CMS\Backend\Tree\TreeNodeCollection {
-
-	/**
-	 * Returns the collection in an array representation for e.g. serialization
-	 *
-	 * @return array
-	 */
-	public function toArray() {
-		$arrayRepresentation = parent::toArray();
-		unset($arrayRepresentation['serializeClassName']);
-		return $arrayRepresentation;
-	}
-
+class PagetreeNodeCollection extends \TYPO3\CMS\Backend\Tree\TreeNodeCollection
+{
+    /**
+     * Returns the collection in an array representation for e.g. serialization
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $arrayRepresentation = parent::toArray();
+        unset($arrayRepresentation['serializeClassName']);
+        return $arrayRepresentation;
+    }
 }

@@ -16,54 +16,63 @@ namespace TYPO3\CMS\Form\Domain\Model\Json;
 
 /**
  * JSON Fileupload
- *
- * @author Peter Beernink <p.beernink@drecomm.nl>
  */
-class FileuploadJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement {
+class FileuploadJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement
+{
+    /**
+     * The ExtJS xtype of the element
+     *
+     * @var string
+     */
+    public $xtype = 'typo3-form-wizard-elements-basic-fileupload';
 
-	/**
-	 * The ExtJS xtype of the element
-	 *
-	 * @var string
-	 */
-	public $xtype = 'typo3-form-wizard-elements-basic-fileupload';
+    /**
+     * The configuration array for the xtype
+     *
+     * @var array
+     */
+    public $configuration = array(
+        'attributes' => array(
+            'type' => 'file'
+        ),
+        'filters' => array(),
+        'label' => array(
+            'value' => ''
+        ),
+        'layout' => 'front',
+        'validation' => array()
+    );
 
-	/**
-	 * The configuration array for the xtype
-	 *
-	 * @var array
-	 */
-	public $configuration = array(
-		'attributes' => array(
-			'type' => 'file'
-		),
-		'filters' => array(),
-		'label' => array(
-			'value' => ''
-		),
-		'layout' => 'front',
-		'validation' => array()
-	);
-
-	/**
-	 * Allowed attributes for this object
-	 *
-	 * @var array
-	 */
-	protected $allowedAttributes = array(
-		'accesskey',
-		'alt',
-		'class',
-		'dir',
-		'disabled',
-		'id',
-		'lang',
-		'name',
-		'size',
-		'style',
-		'tabindex',
-		'title',
-		'type'
-	);
-
+    /**
+     * Allowed attributes for this object
+     *
+     * @var array
+     */
+    protected $allowedAttributes = array(
+        'accesskey',
+        'class',
+        'contenteditable',
+        'contextmenu',
+        'dir',
+        'draggable',
+        'dropzone',
+        'hidden',
+        'id',
+        'lang',
+        'spellcheck',
+        'style',
+        'tabindex',
+        'title',
+        'translate',
+        /* element specific attributes */
+        'accept',
+        'autofocus',
+        'disabled',
+        'multiple',
+        'name',
+        'readonly',
+        'required',
+        'type',
+        'value'
+    );
 }

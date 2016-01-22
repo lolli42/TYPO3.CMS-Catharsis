@@ -14,79 +14,72 @@ namespace TYPO3\CMS\Install\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Core\FormProtection\AbstractFormProtection;
+use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
+use TYPO3\CMS\Install\Service\EnableFileService;
+
 /**
  * Backend module controller
  *
- * Embeds in backend an only shows the 'enable install tool button' or redirects
+ * Embeds in backend and only shows the 'enable install tool button' or redirects
  * to step installer if install tool is enabled.
  *
- * This is a classic extbase module that does not interfere with the other code
- * within the install tool.
+ * This is a classic backend module that does not interfere with other code
+ * within the install tool, it can be seen as a facade around install tool just
+ * to embed the install tool in backend.
  */
-class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
+class BackendModuleController
+{
+    /**
+     * Index action shows install tool / step installer or redirect to action to enable install tool
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function index(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        /** @var EnableFileService $enableFileService */
+        $enableFileService = GeneralUtility::makeInstance(EnableFileService::class);
+        /** @var AbstractFormProtection $formProtection */
+        $formProtection = FormProtectionFactory::get();
 
-	/**
-	 * @var \TYPO3\CMS\Install\Service\EnableFileService
-	 * @inject
-	 */
-	protected $enableFileService;
-
-	/**
-	 * @var \TYPO3\CMS\Core\FormProtection\AbstractFormProtection
-	 */
-	protected $formProtection;
-
-	/**
-	 * Set formprotection property
-	 */
-	public function initializeAction() {
-		$this->formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
-	}
-
-	/**
-	 * Index action shows install tool / step installer or redirect to action to enable install tool
-	 *
-	 * @return void
-	 */
-	public function indexAction() {
-		if ($this->enableFileService->checkInstallToolEnableFile()) {
-			$this->redirect('sysext/install/Start/Install.php?install[context]=backend');
-		} else {
-			$this->forward('showEnableInstallToolButton');
-		}
-	}
-
-	/**
-	 * Show enable install tool
-	 *
-	 * @return void
-	 */
-	public function showEnableInstallToolButtonAction() {
-		$token = $this->formProtection->generateToken('installTool');
-		$this->view->assign('installToolEnableToken', $token);
-	}
-
-	/**
-	 * Enable the install tool
-	 *
-	 * @param string $installToolEnableToken
-	 * @throws \RuntimeException
-	 */
-	public function enableInstallToolAction($installToolEnableToken) {
-		if (!$this->formProtection->validateToken($installToolEnableToken, 'installTool')) {
-			throw new \RuntimeException('Given form token was not valid', 1369161225);
-		}
-		$this->enableFileService->createInstallToolEnableFile();
-		$this->forward('index');
-	}
-
-	/**
-	 * Redirect to specified URI
-	 *
-	 * @param string $uri
-	 */
-	protected function redirect($uri) {
-		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($uri);
-	}
-
+        if ($enableFileService->checkInstallToolEnableFile()) {
+            // Install tool is open and valid, redirect to it
+            $response = $response->withStatus(303)->withHeader('Location', 'sysext/install/Start/Install.php?install[context]=backend');
+        } elseif ($request->getMethod() === 'POST' && $request->getParsedBody()['action'] === 'enableInstallTool') {
+            // Request to open the install tool
+            $installToolEnableToken = $request->getParsedBody()['installToolEnableToken'];
+            if (!$formProtection->validateToken($installToolEnableToken, 'installTool')) {
+                throw new \RuntimeException('Given form token was not valid', 1369161225);
+            }
+            $enableFileService->createInstallToolEnableFile();
+            // Install tool is open and valid, redirect to it
+            $response = $response->withStatus(303)->withHeader('Location', 'sysext/install/Start/Install.php?install[context]=backend');
+        } else {
+            // Show the "create enable install tool" button
+            /** @var StandaloneView $view */
+            $view = GeneralUtility::makeInstance(StandaloneView::class);
+            $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName(
+                'EXT:install/Resources/Private/Templates/BackendModule/ShowEnableInstallToolButton.html', false)
+            );
+            $token = $formProtection->generateToken('installTool');
+            $view->assign('installToolEnableToken', $token);
+            /** @var ModuleTemplate $moduleTemplate */
+            $moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
+            $pageRenderer = $moduleTemplate->getPageRenderer();
+            $pageRenderer->addCssFile(
+                ExtensionManagementUtility::extRelPath('install') . 'Resources/Public/Css/BackendModule/ShowEnableInstallToolButton.css'
+            );
+            $moduleTemplate->setContent($view->render());
+            $response->getBody()->write($moduleTemplate->renderContent());
+        }
+        return $response;
+    }
 }

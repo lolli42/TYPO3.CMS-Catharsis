@@ -14,12 +14,13 @@ namespace TYPO3\CMS\Beuser\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Beuser\Domain\Model\BackendUser;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
@@ -29,52 +30,58 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
  *
  * @internal
  */
-class RemoveUserViewHelper extends AbstractViewHelper implements CompilableInterface {
+class RemoveUserViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Render link with sprite icon to remove user
+     *
+     * @param \TYPO3\CMS\Beuser\Domain\Model\BackendUser $backendUser Target backendUser to switch active session to
+     * @return string
+     */
+    public function render(BackendUser $backendUser)
+    {
+        return static::renderStatic(
+            array(
+                'backendUser' => $backendUser
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Render link with sprite icon to remove user
-	 *
-	 * @param \TYPO3\CMS\Beuser\Domain\Model\BackendUser $backendUser Target backendUser to switch active session to
-	 * @return string
-	 */
-	public function render(BackendUser $backendUser) {
-		return self::renderStatic(
-			array(
-				'backendUser' => $backendUser
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        /** @var \TYPO3\CMS\Beuser\Domain\Model\BackendUser $backendUser */
+        $backendUser = $arguments['backendUser'];
+        /** @var BackendUserAuthentication $beUser */
+        $beUser = $GLOBALS['BE_USER'];
+        /** @var IconFactory $iconFactory */
+        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        if ($backendUser->getUid() === (int)$beUser->user['uid']) {
+            return '<span class="btn btn-default disabled">' . $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>';
+        }
 
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		/** @var \TYPO3\CMS\Beuser\Domain\Model\BackendUser $backendUser */
-		$backendUser = $arguments['backendUser'];
-		/** @var BackendUserAuthentication $beUser */
-		$beUser = $GLOBALS['BE_USER'];
-		if ($backendUser->getUid() === (int)$beUser->user['uid']) {
-			return '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
-		}
+        $urlParameters = [
+            'cmd[be_users][' . $backendUser->getUid() . '][delete]' => 1,
+            'vC' => $beUser->veriCode(),
+            'prErr' => 1,
+            'uPT' => 1,
+            'redirect' => GeneralUtility::getIndpEnv('REQUEST_URI')
+        ];
+        $url = BackendUtility::getModuleUrl('tce_db', $urlParameters);
 
-		$urlParameters = [
-			'cmd[be_users][' . $backendUser->getUid() . '][delete]' => 1,
-			'vC' => $beUser->veriCode(),
-			'prErr' => 1,
-			'uPT' => 1,
-			'redirect' => GeneralUtility::getIndpEnv('REQUEST_URI')
-		];
-		$url = BackendUtility::getModuleUrl('tce_db', $urlParameters) . BackendUtility::getUrlToken('tceAction');
-
-		return '<a class="btn btn-default" href="' . htmlspecialchars($url) . '"  onclick="return confirm(' .
-			GeneralUtility::quoteJSvalue(LocalizationUtility::translate('confirm', 'beuser', array($backendUser->getUserName()))) .
-			')">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
-	}
-
+        return '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($url) . '"'
+            . ' data-severity="warning"'
+            . ' data-title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_alt_doc.xlf:label.confirm.delete_record.title')) . '"'
+            . ' data-content="' . htmlspecialchars(LocalizationUtility::translate('confirm', 'beuser', array($backendUser->getUserName()))) . '" '
+            . ' data-button-close-text="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:cancel')) . '"'
+            . '>' . $iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
+    }
 }

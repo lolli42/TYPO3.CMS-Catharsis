@@ -41,16 +41,15 @@ Deprecation
 
 	Changelog/master/Deprecation-*
 
-Old changes
-===========
+Important
+=========
 
 .. toctree::
 	:maxdepth: 1
 	:titlesonly:
+	:glob:
 
-	Changelog/7.0/Index
-	Changelog/7.1/Index
-	Changelog/7.2/Index
+	Changelog/master/Important-*
 
 How to contribute
 =================

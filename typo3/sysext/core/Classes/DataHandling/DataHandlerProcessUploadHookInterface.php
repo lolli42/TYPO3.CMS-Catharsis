@@ -17,18 +17,15 @@ namespace TYPO3\CMS\Core\DataHandling;
 /**
  * Interface for classes which hook into TCEmain and do additional processing
  * after the upload of a file.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
  */
-interface DataHandlerProcessUploadHookInterface {
-
-	/**
-	 * Post-process a file upload.
-	 *
-	 * @param string $filename The uploaded file
-	 * @param \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
-	 * @return void
-	 */
-	public function processUpload_postProcessAction(&$filename, \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject);
-
+interface DataHandlerProcessUploadHookInterface
+{
+    /**
+     * Post-process a file upload.
+     *
+     * @param string $filename The uploaded file
+     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
+     * @return void
+     */
+    public function processUpload_postProcessAction(&$filename, \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject);
 }

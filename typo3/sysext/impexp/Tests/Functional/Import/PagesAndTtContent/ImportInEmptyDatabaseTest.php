@@ -14,27 +14,26 @@ namespace TYPO3\CMS\Impexp\Tests\Functional\Import\PagesAndTtContent;
  * The TYPO3 project - inspiring people to share!
  */
 
-require_once __DIR__ . '/../AbstractImportTestCase.php';
-
 /**
- * Functional test for the ImportExport
+ * Functional test for the Import
  */
-class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase {
+class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase
+{
+    protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/PagesAndTtContent/DataSet/Assertion/';
 
-	protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/PagesAndTtContent/DataSet/Assertion/';
+    /**
+     * @test
+     */
+    public function importPagesAndRelatedTtContent()
+    {
+        $this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent.xml', 1);
+        $this->import->importData(0);
 
-	/**
-	 * @test
-	 */
-	public function importPagesAndRelatedTtContent() {
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image3.jpg';
 
-		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent.xml', 1);
-		$this->import->importData(0);
+        $this->assertAssertionDataSet('importPagesAndRelatedTtContent');
 
-		$this->assertAssertionDataSet('importPagesAndRelatedTtContent');
-
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image3.jpg', PATH_site . 'fileadmin/user_upload/typo3_image3.jpg');
-		$this->assertFileEquals(__DIR__ . '/../../Fixtures/Extensions/template_extension/Resources/Public/Templates/Empty.html', PATH_site . 'typo3conf/ext/template_extension/Resources/Public/Templates/Empty.html');
-	}
-
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Folders/fileadmin/user_upload/typo3_image3.jpg', PATH_site . 'fileadmin/user_upload/typo3_image3.jpg');
+        $this->assertFileEquals(__DIR__ . '/../../Fixtures/Extensions/template_extension/Resources/Public/Templates/Empty.html', PATH_site . 'typo3conf/ext/template_extension/Resources/Public/Templates/Empty.html');
+    }
 }

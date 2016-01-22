@@ -16,18 +16,16 @@ namespace TYPO3\CMS\Lang\View\Language;
 
 /**
  * JSON view for "updateTranslation" action in "Language" controller
- *
- * @author Kai Vogel <k.vogel@reply.de>
  */
-class UpdateTranslationJson extends \TYPO3\CMS\Lang\View\AbstractJsonView {
-
-	/**
-	 * Returns the response data
-	 *
-	 * @return array The response data
-	 */
-	protected function getReponseData() {
-		return $this->variables['response'];
-	}
-
+class UpdateTranslationJson extends \TYPO3\CMS\Lang\View\AbstractJsonView
+{
+    /**
+     * Returns the response data
+     *
+     * @return array The response data
+     */
+    protected function getReponseData()
+    {
+        return $this->variables['response'];
+    }
 }

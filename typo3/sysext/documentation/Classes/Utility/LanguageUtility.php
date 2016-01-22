@@ -16,19 +16,17 @@ namespace TYPO3\CMS\Documentation\Utility;
 
 /**
  * Utility for language selection.
- *
- * @author Andrea Schmuttermair <spam@schmutt.de>
  */
-class LanguageUtility implements \TYPO3\CMS\Core\SingletonInterface {
-
-	/**
-	 * Returns the language from BE User settings.
-	 *
-	 * @return string language identifier 2 chars or default (English)
-	 */
-	public function getDocumentationLanguage() {
-		$backendLanguage = $GLOBALS['BE_USER']->uc['lang'] ?: 'default';
-		return $backendLanguage;
-	}
-
+class LanguageUtility implements \TYPO3\CMS\Core\SingletonInterface
+{
+    /**
+     * Returns the language from BE User settings.
+     *
+     * @return string language identifier 2 chars or default (English)
+     */
+    public function getDocumentationLanguage()
+    {
+        $backendLanguage = $GLOBALS['BE_USER']->uc['lang'] ?: 'default';
+        return $backendLanguage;
+    }
 }

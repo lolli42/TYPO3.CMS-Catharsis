@@ -69,8 +69,6 @@ Ext.override(Ext.layout.BorderLayout.SplitRegion, {
 });
 /**
  * Extends the viewport with some functionality for TYPO3.
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 TYPO3.Viewport = Ext.extend(Ext.Viewport, {
 	/**
@@ -111,13 +109,6 @@ TYPO3.Viewport = Ext.extend(Ext.Viewport, {
 	NavigationContainer: null,
 
 	/**
-	 * Dummy panel, shown when no NavigationContainer is in use
-	 *
-	 * @var Ext.Panel
-	 */
-	NavigationDummy: null,
-
-	/**
 	 * The iframe navigation component
 	 *
 	 * @var TYPO3.iframePanel
@@ -130,13 +121,6 @@ TYPO3.Viewport = Ext.extend(Ext.Viewport, {
 	 * @var Ext.Panel
 	 */
 	ModuleMenuContainer: null,
-
-	/**
-	 * The debug console
-	 *
-	 * @var Ext.TabPanel
-	 */
-	DebugConsole: null,
 
 	/**
 	 * Initializes the ExtJS viewport with the given configuration.
@@ -155,7 +139,6 @@ TYPO3.Viewport = Ext.extend(Ext.Viewport, {
 
 		this.ContentContainer = Ext.getCmp('typo3-contentContainer');
 		this.NavigationContainer = Ext.getCmp('typo3-navigationContainer');
-		this.NavigationDummy = Ext.getCmp('typo3-navigationDummy');
 		this.NavigationIframe = Ext.getCmp('typo3-navigationIframe');
 		this.Topbar = Ext.getCmp('typo3-topbar');
 		this.ModuleMenuContainer = Ext.getCmp('typo3-module-menu');

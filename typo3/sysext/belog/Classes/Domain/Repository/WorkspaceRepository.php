@@ -16,23 +16,20 @@ namespace TYPO3\CMS\Belog\Domain\Repository;
 
 /**
  * Repository for workspaces
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
- * @author Oliver Klee <typo3-coding@oliverklee.de>
  * @todo This should be moved to EXT:workspaces if EXT:belog works no matter if workspaces are installed or not
  */
-class WorkspaceRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
-
-	/**
-	 * Initializes the repository.
-	 *
-	 * @return void
-	 */
-	public function initializeObject() {
-		/** @var $querySettings \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface */
-		$querySettings = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface::class);
-		$querySettings->setRespectStoragePage(FALSE);
-		$this->setDefaultQuerySettings($querySettings);
-	}
-
+class WorkspaceRepository extends \TYPO3\CMS\Extbase\Persistence\Repository
+{
+    /**
+     * Initializes the repository.
+     *
+     * @return void
+     */
+    public function initializeObject()
+    {
+        /** @var $querySettings \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface */
+        $querySettings = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface::class);
+        $querySettings->setRespectStoragePage(false);
+        $this->setDefaultQuerySettings($querySettings);
+    }
 }

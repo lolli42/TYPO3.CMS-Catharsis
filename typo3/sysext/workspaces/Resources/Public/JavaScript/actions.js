@@ -172,7 +172,13 @@ TYPO3.Workspaces.Actions = {
 		});
 	},
 	sendToSpecificStageWindow: function(selection, nextStage) {
-		TYPO3.Workspaces.ExtDirectActions.sendToSpecificStageWindow(nextStage, function(response) {
+		var elements = [];
+
+		Ext.each(selection, function(row) {
+			elements.push({table: row.json.table, uid: row.json.uid})
+		});
+
+		TYPO3.Workspaces.ExtDirectActions.sendToSpecificStageWindow(nextStage, elements, function(response) {
 			TYPO3.Workspaces.Actions.currentSendToMode = 'specific';
 			TYPO3.Workspaces.Actions.sendToStageWindow(response, selection);
 		});
@@ -234,8 +240,6 @@ TYPO3.Workspaces.Actions = {
 	 * This method is used in the split frontend preview part.
 	 *
 	 * @return void
-	 *
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	sendPageToNextStage: function () {
 		TYPO3.Workspaces.ExtDirectActions.sendPageToNextStage(TYPO3.settings.Workspaces.id, function (response) {
@@ -278,8 +282,6 @@ TYPO3.Workspaces.Actions = {
 	 * This method is used in the split frontend preview part.
 	 *
 	 * @return void
-	 *
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	sendPageToPrevStage: function () {
 		TYPO3.Workspaces.ExtDirectActions.sendPageToPreviousStage(TYPO3.settings.Workspaces.id, function (response) {
@@ -318,8 +320,6 @@ TYPO3.Workspaces.Actions = {
 	 *
 	 * @param object response
 	 * @return void
-	 *
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	updateStageChangeButtons: function (response) {
 
@@ -354,8 +354,6 @@ TYPO3.Workspaces.Actions = {
 	 * This method is used in the split frontend preview part.
 	 *
 	 * @return void
-	 *
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	discardPage: function () {
 		var configuration = {
@@ -375,5 +373,31 @@ TYPO3.Workspaces.Actions = {
 		};
 
 		top.TYPO3.Dialog.QuestionDialog(configuration);
+	},
+
+	/**
+	 * Generate workspace preview links for all available languages of a page
+	 *
+	 * @return {void}
+	 */
+	generateWorkspacePreviewLinksForAllLanguages: function() {
+		TYPO3.Workspaces.ExtDirectActions.generateWorkspacePreviewLinksForAllLanguages(TYPO3.settings.Workspaces.id, function(response) {
+
+			var msg = '<ul>';
+
+			for (language in response) {
+				var url = response[language];
+
+				msg += String.format('<li style="margin: 0 0 8px;"><strong>{1}</strong><br /><a href="{0}" target="_blank">{0}</a></li>', url, language);
+			}
+
+			msg += '</ul>';
+
+			top.TYPO3.Dialog.InformationDialog({
+				title: TYPO3.l10n.localize('previewLink'),
+				minWidth: '400',
+				msg: msg
+			});
+		});
 	}
 };

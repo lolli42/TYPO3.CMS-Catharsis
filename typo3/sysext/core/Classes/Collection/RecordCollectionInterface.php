@@ -16,24 +16,21 @@ namespace TYPO3\CMS\Core\Collection;
 
 /**
  * Collection for handling records from a single database-table.
- *
- * @author Steffen Ritter <typo3steffen-ritter.net>
  */
 interface RecordCollectionInterface extends \TYPO3\CMS\Core\Collection\CollectionInterface, \TYPO3\CMS\Core\Collection\NameableCollectionInterface
 {
-	/**
-	 * Setter for the name of the data-source table
-	 *
-	 * @param string $tableName
-	 * @return void
-	 */
-	public function setItemTableName($tableName);
+    /**
+     * Setter for the name of the data-source table
+     *
+     * @param string $tableName
+     * @return void
+     */
+    public function setItemTableName($tableName);
 
-	/**
-	 * Setter for the name of the data-source table
-	 *
-	 * @return string
-	 */
-	public function getItemTableName();
-
+    /**
+     * Setter for the name of the data-source table
+     *
+     * @return string
+     */
+    public function getItemTableName();
 }

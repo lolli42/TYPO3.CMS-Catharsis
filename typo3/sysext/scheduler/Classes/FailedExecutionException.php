@@ -16,9 +16,7 @@ namespace TYPO3\CMS\Scheduler;
 
 /**
  * Failed execution exception
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
-class FailedExecutionException extends \RuntimeException {
-
+class FailedExecutionException extends \RuntimeException
+{
 }

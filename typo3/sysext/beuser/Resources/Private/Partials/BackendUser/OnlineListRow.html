@@ -1,22 +1,24 @@
 {namespace be = TYPO3\CMS\Backend\ViewHelpers}
 {namespace bu = TYPO3\CMS\Beuser\ViewHelpers}
+{namespace core = TYPO3\CMS\Core\ViewHelpers}
 
 <f:for each="{onlineUser.sessions}" as="session" iteration="it">
 	<tr>
 		<f:if condition="{it.isFirst}">
 			<f:then>
-				<td class="col-icon">
-					<a href="#" class="t3-js-clickmenutrigger" data-table="be_users" data-uid="{onlineUser.backendUser.uid}" data-listframe="1" title="id={onlineUser.backendUser.uid}">
-						<bu:spriteIconForRecord table="be_users" object="{onlineUser.backendUser}" />
+				<td>
+					<a href="#" class="t3-js-clickmenutrigger" data-table="be_users" data-uid="{onlineUser.backendUser.uid}" data-listframe="1" title="{f:if(condition: '{onlineUser.backendUser.description}', then: '{onlineUser.backendUser.description} ')}(id={onlineUser.backendUser.uid})">
+						<be:avatar backendUser="{onlineUser.backendUser.uid}" showIcon="true" />
 					</a>
 				</td>
 				<td class="col-title">
-					<b>{onlineUser.backendUser.userName}</b><br />
+					<b>{onlineUser.backendUser.userName}</b>
+					<span class="label label-success"><f:translate key="online" /></span><br />
 					{onlineUser.backendUser.realName}
 				</td>
 			</f:then>
 			<f:else>
-				<td class="col-icon"></td>
+				<td></td>
 				<td class="col-title"></td>
 			</f:else>
 		</f:if>
@@ -29,19 +31,19 @@
 				<f:if condition="{currentSessionId} == {session.id}">
 					<f:else>
 						<f:link.action
-							class="btn btn-default"
+							class="btn btn-default t3js-modal-trigger"
 							action="terminateBackendUserSession"
 							controller="BackendUser"
 							arguments="{backendUser: onlineUser.backendUser, sessionId: session.id}"
-							onclick="javascript:return confirm('{f:translate(key: 'reallyLogout')} {onlineUser.backendUser.userName}?');"
+							data="{severity: 'warning', title: '{f:translate(key: \'endSession\')}', content: '{f:translate(key: \'reallyLogout\')} {onlineUser.backendUser.userName}?', button-close-text: '{f:translate(key: \'LLL:EXT:lang/locallang_common.xlf:cancel\')}'}"
 						>
-							<be:spriteManagerIcon iconName="actions-document-close" />
+							<core:icon identifier="actions-document-close" />
 							<f:translate key="endSession" />
 						</f:link.action>
 					</f:else>
 				</f:if>
 				<a class="btn btn-default" href="#" onclick="top.launchView('be_users', '{onlineUser.backendUser.uid}',''); return false;">
-					<be:spriteManagerIcon iconName="actions-document-info" />
+					<core:icon identifier="actions-document-info" />
 				</a>
 			</div>
 		</td>

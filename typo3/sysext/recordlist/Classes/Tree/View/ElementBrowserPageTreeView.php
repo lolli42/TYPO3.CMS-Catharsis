@@ -14,38 +14,47 @@ namespace TYPO3\CMS\Recordlist\Tree\View;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Extension class for the TBE record browser
  */
-class ElementBrowserPageTreeView extends \TYPO3\CMS\Backend\Tree\View\ElementBrowserPageTreeView {
+class ElementBrowserPageTreeView extends \TYPO3\CMS\Backend\Tree\View\ElementBrowserPageTreeView
+{
+    /**
+     * Returns TRUE if a doktype can be linked (which is always the case here).
+     *
+     * @param int $doktype Doktype value to test
+     * @param int $uid uid to test.
+     * @return bool
+     */
+    public function ext_isLinkable($doktype, $uid)
+    {
+        return true;
+    }
 
-	/**
-	 * Returns TRUE if a doktype can be linked (which is always the case here).
-	 *
-	 * @param int $doktype Doktype value to test
-	 * @param int $uid uid to test.
-	 * @return bool
-	 */
-	public function ext_isLinkable($doktype, $uid) {
-		return TRUE;
-	}
+    /**
+     * Wrapping the title in a link, if applicable.
+     *
+     * @param string $title Title, ready for output.
+     * @param array $v The record
+     * @param bool $ext_pArrPages If set, pages clicked will return immediately, otherwise reload page.
+     * @return string Wrapping title string.
+     */
+    public function wrapTitle($title, $v, $ext_pArrPages = false)
+    {
+        if ($ext_pArrPages && $v['uid']) {
+            $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+            $ficon = $iconFactory->getIconForRecord('pages', $v, Icon::SIZE_SMALL)->render();
+            $out = '<span data-uid="' . htmlspecialchars($v['uid']) . '" data-table="pages" data-title="' . htmlspecialchars($v['title']) . '" data-icon="' . htmlspecialchars($ficon) . '">';
+            $out .= '<a href="#" data-close="1">' . $title . '</a>';
+            $out .= '</span>';
+            return $out;
+        }
 
-	/**
-	 * Wrapping the title in a link, if applicable.
-	 *
-	 * @param string $title Title, ready for output.
-	 * @param array $v The record
-	 * @param bool $ext_pArrPages If set, pages clicked will return immediately, otherwise reload page.
-	 * @return string Wrapping title string.
-	 */
-	public function wrapTitle($title, $v, $ext_pArrPages) {
-		if ($ext_pArrPages) {
-			$ficon = \TYPO3\CMS\Backend\Utility\IconUtility::getIcon('pages', $v);
-			$onClick = 'return insertElement(\'pages\', \'' . $v['uid'] . '\', \'db\', ' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($v['title']) . ', \'\', \'\', \'' . $ficon . '\',\'\',1);';
-		} else {
-			$onClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandPage=' . $v['uid']) . ');';
-		}
-		return '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $title . '</a>';
-	}
-
+        $parameters = GeneralUtility::implodeArrayForUrl('', $this->linkParameterProvider->getUrlParameters(['pid' => $v['uid']]));
+        return '<a href="#" onclick="return jumpToUrl(' . htmlspecialchars(GeneralUtility::quoteJSvalue($this->getThisScript() . ltrim($parameters, '&'))) . ');">' . $title . '</a>';
+    }
 }

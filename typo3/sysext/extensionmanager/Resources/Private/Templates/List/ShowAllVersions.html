@@ -1,16 +1,19 @@
 {namespace em=TYPO3\CMS\Extensionmanager\ViewHelpers}
+{namespace core=TYPO3\CMS\Core\ViewHelpers}
 
-<f:layout name="main"/>
+<f:layout name="main" />
 
 <f:section name="docheader-buttons">
-	<f:be.buttons.icon uri="{f:uri.action(action: 'ter')}" icon="actions-view-go-back" title="{f:translate(key:'extConfTemplate.backToList')}" />
+	<a href="{f:uri.action(action: 'ter')}" title="{f:translate(key:'extConfTemplate.backToList')}">
+		<core:icon identifier="actions-view-go-back" />
+	</a>
 </f:section>
 
-<f:section name="module-headline">
+<f:section name="headline">
 	<h1><f:translate key="showAllVersions" /> {extensionKey}</h1>
 </f:section>
 
-<f:section name="Content">
+<f:section name="content">
 	<f:if condition="{currentVersion}">
 		<p>{currentVersion.description}</p>
 
@@ -46,7 +49,7 @@
 			<tr class="ter-ext-single-info-manual">
 				<th><f:translate key="extensionList.showAllVersions.manual" /></th>
 				<td>
-					<a href="http://docs.typo3.org/typo3cms/extensions/{currentVersion.extensionKey}/" target="_blank">
+					<a href="https://docs.typo3.org/typo3cms/extensions/{currentVersion.extensionKey}/" target="_blank">
 						<f:translate key="extensionList.showAllVersions.readOnline" />
 					</a>
 				</td>

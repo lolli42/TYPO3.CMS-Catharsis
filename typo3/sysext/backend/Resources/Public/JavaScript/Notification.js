@@ -12,32 +12,37 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Notification
  * Notification API for the TYPO3 backend
  *
- * @author Frank Nägler <typo3@naegler.net>
+ * @deprecation: Severity got its own AMD module, it is required here only for
+ * backwards compatibility reasons
  */
+define(['jquery', 'TYPO3/CMS/Backend/Severity'], function ($) {
+	'use strict';
 
-define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
+	try {
+		// fetch from parent
+		if (parent && parent.window.TYPO3 && parent.window.TYPO3.Notification) {
+			return parent.window.TYPO3.Notification;
+		}
 
-	/**
-	 * Severity object
-	 *
-	 * @type {{notice: number, information: number, info: number, ok: number, warning: number, error: number}}
-	 */
-	var Severity = {
-		notice: -2,
-		// @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 9, use info instead of information
-		information: -1,
-		info: -1,
-		ok: 0,
-		warning: 1,
-		error: 2
-	};
+		// fetch object from outer frame
+		if (top && top.TYPO3.Notification) {
+			return top.TYPO3.Notification;
+		}
+	} catch (e) {
+		// This only happens if the opener, parent or top is some other url (eg a local file)
+		// which loaded the current window. Then the browser's cross domain policy jumps in
+		// and raises an exception.
+		// For this case we are safe and we can create our global object below.
+	}
 
 	/**
 	 * The main Notification object
 	 *
 	 * @type {{NOTICE: number, INFO: number, OK: number, WARNING: number, ERROR: number, messageContainer: null}}
+	 * @exports TYPO3/CMS/Backend/Notification
 	 */
 	var Notification = {
 		NOTICE: -2,
@@ -51,8 +56,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show a notice notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -64,8 +69,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show an info notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -77,8 +82,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show an ok notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -90,8 +95,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show a warning notification
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
 	 * @public
@@ -102,9 +107,9 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 
 	/**
 	 * Show an error notification
-	 *, duration
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 *
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 0, 0 = sticky
 	 *
 	 * @public
@@ -117,8 +122,8 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 	/**
 	 * Show message
 	 *
-	 * @param {string} title The title for the notification
-	 * @param {string} message The message for the notification
+	 * @param {String} title The title for the notification
+	 * @param {String} message The message for the notification
 	 * @param {int} severity See constants in this object
 	 * @param {float} duration Time in seconds to show notification before it disappears, default 5, 0 = sticky
 	 *
@@ -158,7 +163,7 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 		if (Notification.messageContainer === null) {
 			Notification.messageContainer = $('<div id="alert-container"></div>').appendTo('body');
 		}
-		$box = $(
+		var $box = $(
 			'<div class="alert alert-' + className + ' alert-dismissible fade" role="alert">' +
 				'<button type="button" class="close" data-dismiss="alert">' +
 					'<span aria-hidden="true"><i class="fa fa-times-circle"></i></span>' +
@@ -172,12 +177,14 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 						'</span>' +
 					'</div>' +
 					'<div class="media-body">' +
-						'<h4 class="alert-title">' + title + '</h4>' +
-						'<p class="alert-message">' + message + '</p>' +
+						'<h4 class="alert-title"></h4>' +
+						'<p class="alert-message text-pre-wrap"></p>' +
 					'</div>' +
 				'</div>' +
 			'</div>'
 		);
+		$box.find('.alert-title').text(title);
+		$box.find('.alert-message').text(message);
 		$box.on('close.bs.alert', function(e) {
 			e.preventDefault();
 			$(this)
@@ -206,22 +213,10 @@ define('TYPO3/CMS/Backend/Notification', ['jquery'], function ($) {
 		}
 	};
 
-	/**
-	 * return the Notification object
-	 */
-	return function () {
-		if (typeof TYPO3.Severity === 'undefined') {
-			TYPO3.Severity = Severity;
-		}
-		if (typeof top.TYPO3.Severity === 'undefined') {
-			top.TYPO3.Severity = Severity;
-		}
-		if (typeof TYPO3.Notification === 'undefined') {
-			TYPO3.Notification = Notification;
-		}
-		if (typeof top.TYPO3.Notification === 'undefined') {
-			top.TYPO3.Notification = Notification;
-		}
-		return Notification;
-	}();
+
+
+	// attach to global frame
+	TYPO3.Notification = Notification;
+
+	return Notification;
 });

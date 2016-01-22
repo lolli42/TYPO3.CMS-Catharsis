@@ -12,58 +12,59 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Documentation/Main
  * JavaScript module for ext:documentation
  */
-define('TYPO3/CMS/Documentation/Main', ['jquery', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable'], function($) {
+define(['jquery', 'datatables', 'TYPO3/CMS/Backend/jquery.clearable'], function($) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{dataTable: null, searchField: null, identifier: {documentationList: string, searchField: string}}}
+	 * @exports TYPO3/CMS/Documentation/Main
+	 */
 	var Documentation = {
-		datatable: null
+		dataTable: null,
+		searchField: null,
+		identifier: {
+			documentationList: '.t3js-documentation-list',
+			searchField: '.t3js-documentation-searchfield'
+		}
 	};
 
-	// Initializes the data table, depending on the current view
+	/**
+	 *  Initializes the data table, depending on the current view
+	 */
 	Documentation.initializeView = function() {
 		var getVars = Documentation.getUrlVars();
-		// getVars[2] contains the name of the action key
-		// List view is the default view
-		if (getVars[getVars[2]] === 'download') {
-			Documentation.documentationDownloadView(getVars);
-		} else {
-			Documentation.documentationListView(getVars);
-		}
-	};
-
-	// Initializes the list view
-	Documentation.documentationListView = function(getVars) {
-		Documentation.datatable = $('#typo3-documentation-list').DataTable({
-			'paging': false,
-			'lengthChange': false,
-			'pageLength': 15,
-			'stateSave': true
+		// init datatable
+		this.dataTable = $(this.identifier.documentationList).DataTable({
+			paging: false,
+			dom: 'lrtip',
+			lengthChange: false,
+			pageLength: 15,
+			stateSave: true,
+			order: [[ 1, 'asc' ]]
 		});
-
-		// restore filter
-		if (Documentation.datatable.length && getVars['search']) {
-			Documentation.datatable.search(getVars['search']);
+		// search field
+		this.searchField = $(this.identifier.searchField);
+		if (this.dataTable && this.searchField.length) {
+			this.searchField.parents('form').on('submit', function() {
+				return false;
+			});
+			var currentSearch = (getVars['search'] ? getVars['search'] : this.dataTable.search());
+			this.searchField.val(currentSearch);
+			this.searchField.on('input', function(e) {
+				Documentation.dataTable.search($(this).val()).draw();
+			});
 		}
 	};
 
-	// Initializes the download view
-	Documentation.documentationDownloadView = function(getVars) {
-		Documentation.datatable = $('#typo3-documentation-download').DataTable({
-			'paging': false,
-			'lengthChange': false,
-			'pageLength': 15,
-			'stateSave': true,
-			'order': [[ 1, 'asc' ]]
-		});
-
-		// restore filter
-		if (Documentation.datatable.length && getVars['search']) {
-			Documentation.datatable.search(getVars['search']);
-		}
-	};
-
-	// Utility method to retrieve query parameters
+	/**
+	 * Utility method to retrieve query parameters
+	 *
+	 * @returns {Array}
+	 */
 	Documentation.getUrlVars = function getUrlVars() {
 		var vars = [], hash;
 		var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
@@ -75,15 +76,17 @@ define('TYPO3/CMS/Documentation/Main', ['jquery', 'datatables', 'TYPO3/CMS/Backe
 		return vars;
 	};
 
-	$(document).ready(function() {
+	$(function() {
 		// Initialize the view
 		Documentation.initializeView();
 
 		// Make the data table filter react to the clearing of the filter field
-		$('.dataTables_wrapper .dataTables_filter input').clearable({
+		$(Documentation.identifier.searchField).clearable({
 			onClear: function() {
-				Documentation.datatable.search('');
+				Documentation.dataTable.search('').draw();
 			}
 		});
 	});
+
+	return Documentation;
 });

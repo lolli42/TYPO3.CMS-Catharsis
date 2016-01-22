@@ -3,7 +3,7 @@
 <f:layout name="ToolAuthenticated" />
 
 <f:section name="Content">
-	<h3>Configuration presets</h3>
+	<h1>Configuration presets</h1>
 
 	<f:for each="{actionMessages}" as="statusMessage">
 		<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
@@ -14,7 +14,7 @@
 		based on your system setup.
 	</p>
 	<p>
-		Alternatively TYPO3 can be run in a specific <a href="http://docs.typo3.org/typo3cms/CoreApiReference/ApiOverview/Bootstrapping/Index.html#bootstrapping-context" target="_blank">application context</a>,
+		Alternatively TYPO3 can be run in a specific <a href="https://docs.typo3.org/typo3cms/CoreApiReference/ApiOverview/Bootstrapping/Index.html#bootstrapping-context" target="_blank">application context</a>,
 		by setting an environment variable in the web server configuration.
 		The application context can then be accessed e.g. in the AdditionalConfiguration.php file or
 		TypoScript configuration to customize settings accordingly.
@@ -24,17 +24,20 @@
 		is not controlled by the TYPO3 CMS core and may override single settings again. Administrators
 		must maintain AdditionalConfiguration.php on their own and should use it with care.
 	</p>
-	<form method="post">
+	<form method="post" class="form-horizontal">
 		<f:render partial="Action/Common/HiddenFormFields" arguments="{_all}" />
 
-		<f:for each="{features}" as="feature">
-			<f:render partial="Action/Tool/Configuration/{feature.name}" arguments="{_all}" />
-		</f:for>
+		<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+			<f:for each="{features}" as="feature">
+				<f:render partial="Action/Tool/Configuration/{feature.name}" arguments="{_all}" />
+			</f:for>
+		</div>
 
 		<div id="fixed-footer-handler">
 			<div id="fixed-footer">
-				<f:render partial="Action/Common/SubmitButton" arguments="{name:'activate', text:'Activate', className:'btn-save'}"/>
-				<div class="toggleAll button">Toggle All</div>
+				<div class="footer-innerWrap">
+					<f:render partial="Action/Common/SubmitButton" arguments="{name:'activate', text:'Activate', className:'btn-save'}"/>
+				</div>
 			</div>
 		</div>
 

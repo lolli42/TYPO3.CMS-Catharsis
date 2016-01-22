@@ -16,19 +16,16 @@ namespace TYPO3\CMS\Frontend\Page;
 
 /**
  * Interface for classes which hook into \TYPO3\CMS\Frontend\Page\PageRepository
- *
- * @author Tolleiv Nietsch <nietsch@aoemedia.de>
  */
-interface PageRepositoryGetPageOverlayHookInterface {
-
-	/**
-	 * enables to preprocess the pageoverlay
-	 *
-	 * @param array $pageInput The page record
-	 * @param int $lUid The overlay language
-	 * @param \TYPO3\CMS\Frontend\Page\PageRepository $parent The calling parent object
-	 * @return void
-	 */
-	public function getPageOverlay_preProcess(&$pageInput, &$lUid, PageRepository $parent);
-
+interface PageRepositoryGetPageOverlayHookInterface
+{
+    /**
+     * enables to preprocess the pageoverlay
+     *
+     * @param array $pageInput The page record
+     * @param int $lUid The overlay language
+     * @param \TYPO3\CMS\Frontend\Page\PageRepository $parent The calling parent object
+     * @return void
+     */
+    public function getPageOverlay_preProcess(&$pageInput, &$lUid, PageRepository $parent);
 }

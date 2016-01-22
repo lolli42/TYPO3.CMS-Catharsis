@@ -4,6 +4,9 @@
 		<uid>1</uid>
 		<pid>0</pid>
 		<title>Blog1</title>
+		<description>Blog1 Description</description>
+		<logo></logo>
+		<l18n_diffsource></l18n_diffsource>
 		<deleted>0</deleted>
 		<posts>10</posts>
 	</tx_blogexample_domain_model_blog>
@@ -11,7 +14,41 @@
 		<uid>2</uid>
 		<pid>0</pid>
 		<title>Blog2</title>
+		<description>Blog2 Description</description>
+		<logo></logo>
+		<l18n_diffsource></l18n_diffsource>
 		<deleted>0</deleted>
+		<posts>1</posts>
+	</tx_blogexample_domain_model_blog>
+	<tx_blogexample_domain_model_blog>
+		<uid>3</uid>
+		<pid>0</pid>
+		<title>Blog3</title>
+		<description>Blog3 Description</description>
+		<logo></logo>
+		<l18n_diffsource></l18n_diffsource>
+		<deleted>0</deleted>
+		<posts>1</posts>
+	</tx_blogexample_domain_model_blog>
+	<tx_blogexample_domain_model_blog>
+		<uid>4</uid>
+		<pid>0</pid>
+		<title>Blog4Hidden</title>
+		<description>Blog4 Description</description>
+		<logo></logo>
+		<l18n_diffsource></l18n_diffsource>
+		<hidden>1</hidden>
+		<deleted>0</deleted>
+		<posts>1</posts>
+	</tx_blogexample_domain_model_blog>
+	<tx_blogexample_domain_model_blog>
+		<uid>5</uid>
+		<pid>0</pid>
+		<title>Blog5Deleted</title>
+		<description>Blog5 Description</description>
+		<logo></logo>
+		<l18n_diffsource></l18n_diffsource>
+		<deleted>1</deleted>
 		<posts>1</posts>
 	</tx_blogexample_domain_model_blog>
 </dataset>

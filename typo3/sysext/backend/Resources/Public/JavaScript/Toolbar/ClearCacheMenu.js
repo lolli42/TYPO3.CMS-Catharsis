@@ -12,19 +12,23 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Backend/Toolbar/ClearCacheMenu
  * main functionality for clearing caches via the top bar
  * reloading the clear cache icon
  */
-define('TYPO3/CMS/Backend/Toolbar/ClearCacheMenu', ['jquery'], function($) {
+define(['jquery', 'TYPO3/CMS/Backend/Icons'], function($, Icons) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{options: {containerSelector: string, menuItemSelector: string, toolbarIconSelector: string}}}
+	 * @exports TYPO3/CMS/Backend/Toolbar/ClearCacheMenu
+	 */
 	var ClearCacheMenu = {
-		$spinnerElement: $('<span>', {
-			'class': 't3-icon fa fa-circle-o-notch fa-spin'
-		}),
 		options: {
 			containerSelector: '#typo3-cms-backend-backend-toolbaritems-clearcachetoolbaritem',
 			menuItemSelector: '.dropdown-menu a',
-			toolbarIconSelector: '.dropdown-toggle span.t3-icon'
+			toolbarIconSelector: '.dropdown-toggle span.icon'
 		}
 	};
 
@@ -44,37 +48,32 @@ define('TYPO3/CMS/Backend/Toolbar/ClearCacheMenu', ['jquery'], function($) {
 
 	/**
 	 * calls TYPO3 to clear a cache, then changes the topbar icon
-	 * to a spinner. Once done, restores the original topbar icon
+	 * to a spinner. Restores the original topbar icon when the request completed.
 	 *
-	 * @param ajaxUrl the URL to load
+	 * @param {String} ajaxUrl the URL to load
 	 */
 	ClearCacheMenu.clearCache = function(ajaxUrl) {
 		// Close clear cache menu
 		$(ClearCacheMenu.options.containerSelector).removeClass('open');
 
-		var $toolbarItemIcon = $(ClearCacheMenu.options.toolbarIconSelector, ClearCacheMenu.options.containerSelector);
+		var $toolbarItemIcon = $(ClearCacheMenu.options.toolbarIconSelector, ClearCacheMenu.options.containerSelector),
+			$existingIcon = $toolbarItemIcon.clone();
 
-		var $spinnerIcon = ClearCacheMenu.$spinnerElement.clone();
-		var $existingIcon = $toolbarItemIcon.replaceWith($spinnerIcon);
+		Icons.getIcon('spinner-circle-light', Icons.sizes.small).done(function(spinner) {
+			$toolbarItemIcon.replaceWith(spinner);
+		});
+
 		$.ajax({
 			url: ajaxUrl,
 			type: 'post',
 			cache: false,
-			success: function() {
-				$spinnerIcon.replaceWith($existingIcon);
+			complete: function() {
+				$(ClearCacheMenu.options.toolbarIconSelector, ClearCacheMenu.options.containerSelector).replaceWith($existingIcon);
 			}
 		});
 	};
 
-	/**
-	 * initialize and return the ClearCacheMenu object
-	 */
-	return function() {
-		$(document).ready(function() {
-			ClearCacheMenu.initializeEvents();
-		});
+	$(ClearCacheMenu.initializeEvents);
 
-		TYPO3.ClearCacheMenu = ClearCacheMenu;
-		return ClearCacheMenu;
-	}();
+	return ClearCacheMenu;
 });

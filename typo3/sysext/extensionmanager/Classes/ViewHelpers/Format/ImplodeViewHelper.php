@@ -14,46 +14,45 @@ namespace TYPO3\CMS\Extensionmanager\ViewHelpers\Format;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * View Helper for imploding arrays
- *
- * @author Susanne Moog <typo3@susannemoog.de>
  * @internal
  */
-class ImplodeViewHelper extends AbstractViewHelper implements CompilableInterface {
+class ImplodeViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Implodes a string
+     *
+     * @param array $implode
+     * @param string $delimiter
+     * @return string the altered string.
+     * @api
+     */
+    public function render(array $implode, $delimiter = ', ')
+    {
+        return static::renderStatic(
+            array(
+                'implode' => $implode,
+                'delimiter' => $delimiter,
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Implodes a string
-	 *
-	 * @param array $implode
-	 * @param string $delimiter
-	 * @return string the altered string.
-	 * @api
-	 */
-	public function render(array $implode, $delimiter = ', ') {
-		return self::renderStatic(
-			array(
-				'implode' => $implode,
-				'delimiter' => $delimiter,
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
-
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		return implode($arguments['delimiter'], $arguments['implode']);
-	}
-
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        return implode($arguments['delimiter'], $arguments['implode']);
+    }
 }

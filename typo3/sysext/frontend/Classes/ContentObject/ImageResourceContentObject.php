@@ -16,28 +16,26 @@ namespace TYPO3\CMS\Frontend\ContentObject;
 
 /**
  * Contains IMG_RESOURCE class object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
-class ImageResourceContentObject extends AbstractContentObject {
+class ImageResourceContentObject extends AbstractContentObject
+{
+    /**
+     * Rendering the cObject, IMG_RESOURCE
+     *
+     * @param array $conf Array of TypoScript properties
+     *
+     * @return string Output
+     */
+    public function render($conf = [])
+    {
+        $GLOBALS['TSFE']->lastImgResourceInfo = $this->cObj->getImgResource($conf['file'], $conf['file.']);
+        if ($GLOBALS['TSFE']->lastImgResourceInfo) {
+            $imageResource = $GLOBALS['TSFE']->lastImgResourceInfo[3];
+            $theValue = isset($conf['stdWrap.']) ? $this->cObj->stdWrap($imageResource, $conf['stdWrap.']) : $imageResource;
+        } else {
+            $theValue = '';
+        }
 
-	/**
-	 * Rendering the cObject, IMG_RESOURCE
-	 *
-	 * @param array $conf Array of TypoScript properties
-	 * @return string Output
-	 */
-	public function render($conf = array()) {
-		$GLOBALS['TSFE']->lastImgResourceInfo = $this->cObj->getImgResource($conf['file'], $conf['file.']);
-		if ($GLOBALS['TSFE']->lastImgResourceInfo) {
-			$imageResource = $GLOBALS['TSFE']->lastImgResourceInfo[3];
-			$theValue = isset($conf['stdWrap.']) ? $this->cObj->stdWrap($imageResource, $conf['stdWrap.']) : $imageResource;
-		} else {
-			$theValue = '';
-		}
-
-		return $theValue;
-	}
-
+        return $theValue;
+    }
 }

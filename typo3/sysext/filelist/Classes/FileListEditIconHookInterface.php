@@ -15,19 +15,16 @@ namespace TYPO3\CMS\Filelist;
  */
 
 /**
- * Interface for classes which hook into file list module and manipulated edit icon array
- *
- * @author Steffen Kamper <info@sk-typo3.de>
+ * Interface for classes which hook into filelist module and manipulated edit icon array
  */
-interface FileListEditIconHookInterface {
-
-	/**
-	 * Modifies edit icon array
-	 *
-	 * @param array $cells Array of edit icons
-	 * @param \TYPO3\CMS\Filelist\FileList $parentObject Parent object
-	 * @return void
-	 */
-	public function manipulateEditIcons(&$cells, &$parentObject);
-
+interface FileListEditIconHookInterface
+{
+    /**
+     * Modifies edit icon array
+     *
+     * @param array $cells Array of edit icons
+     * @param \TYPO3\CMS\Filelist\FileList $parentObject Parent object
+     * @return void
+     */
+    public function manipulateEditIcons(&$cells, &$parentObject);
 }

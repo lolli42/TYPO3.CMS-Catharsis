@@ -72,11 +72,8 @@
 			<trans-unit id="addKey">
 				<source>&lt;b&gt;Add key&lt;/b&gt;&lt;/a&gt; "%s" to Object List</source>
 			</trans-unit>
-			<trans-unit id="removeKey">
-				<source>&lt;b&gt;Remove key&lt;/b&gt;&lt;/a&gt; "%s" from Object List</source>
-			</trans-unit>
 			<trans-unit id="back">
-				<source>&lt; Back</source>
+				<source>Back</source>
 			</trans-unit>
 			<trans-unit id="browse">
 				<source>Browse:</source>
@@ -125,6 +122,18 @@
 			</trans-unit>
 			<trans-unit id="setConditions">
 				<source>Set conditions</source>
+			</trans-unit>
+			<trans-unit id="severity.1">
+				<source>Info</source>
+			</trans-unit>
+			<trans-unit id="severity.2">
+				<source>Warning</source>
+			</trans-unit>
+			<trans-unit id="severity.3">
+				<source>Error</source>
+			</trans-unit>
+			<trans-unit id="error.1446559458">
+				<source>Error evaluating regular expression "%s".</source>
 			</trans-unit>
 		</body>
 	</file>

@@ -15,9 +15,8 @@ namespace TYPO3\CMS\Install\ViewHelpers\Format;
  */
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
-use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
-
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Simplified crop view helper that does not need a frontend environment
@@ -41,42 +40,43 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class CropViewHelper extends AbstractViewHelper implements CompilableInterface {
+class CropViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Render the cropped text
+     *
+     * @param int $maxCharacters Place where to truncate the string
+     * @throws \TYPO3\CMS\Install\ViewHelpers\Exception
+     * @return string cropped text
+     */
+    public function render($maxCharacters)
+    {
+        return static::renderStatic(
+            array(
+                'maxCharacters' => $maxCharacters,
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Render the cropped text
-	 *
-	 * @param int $maxCharacters Place where to truncate the string
-	 * @throws \TYPO3\CMS\Install\ViewHelpers\Exception
-	 * @return string cropped text
-	 */
-	public function render($maxCharacters) {
-		return self::renderStatic(
-			array(
-				'maxCharacters' => $maxCharacters,
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
-
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$maxCharacters = $arguments['maxCharacters'];
-		if (empty($maxCharacters) || $maxCharacters < 1) {
-			throw new \TYPO3\CMS\Install\ViewHelpers\Exception(
-				'maxCharacters must be a positive integer',
-				1371410113
-			);
-		}
-		$stringToTruncate = $renderChildrenClosure();
-		return substr($stringToTruncate, 0, $maxCharacters);
-	}
-
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     * @throws \TYPO3\CMS\Install\ViewHelpers\Exception
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $maxCharacters = $arguments['maxCharacters'];
+        if (empty($maxCharacters) || $maxCharacters < 1) {
+            throw new \TYPO3\CMS\Install\ViewHelpers\Exception(
+                'maxCharacters must be a positive integer',
+                1371410113
+            );
+        }
+        $stringToTruncate = $renderChildrenClosure();
+        return substr($stringToTruncate, 0, $maxCharacters);
+    }
 }

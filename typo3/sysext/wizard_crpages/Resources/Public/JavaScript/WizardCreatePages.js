@@ -12,10 +12,17 @@
  */
 
 /**
+ * Module: TYPO3/CMS/WizardCrpages/WizardCreatePages
  * JavaScript functions for creating multiple pages
  */
-define('TYPO3/CMS/WizardCrpages/WizardCreatePages', ['jquery'], function($) {
+define(['jquery'], function($) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{lineCounter: number, containerSelector: string, addMoreFieldsButtonSelector: string, doktypeSelector: string}}
+	 * @exports TYPO3/CMS/WizardCrpages/WizardCreatePages
+	 */
 	var WizardCreatePages = {
 		lineCounter: 5,
 		containerSelector: '.t3js-wizardcrpages-container',
@@ -23,18 +30,25 @@ define('TYPO3/CMS/WizardCrpages/WizardCreatePages', ['jquery'], function($) {
 		doktypeSelector: '.t3js-wizardcrpages-select-doktype'
 	};
 
+	/**
+	 *
+	 */
 	WizardCreatePages.createNewFormFields = function() {
-		for (i = 0; i < 5; i++) {
-			var label = this.lineCounter + i + 1;
+		for (var i = 0; i < 5; i++) {
+			var label = WizardCreatePages.lineCounter + i + 1;
 			var line = tpl
-				.replace(/\{0\}/g, (this.lineCounter + i))
+				.replace(/\{0\}/g, (WizardCreatePages.lineCounter + i))
 				.replace(/\{1\}/g, label);
 
-			$(line).appendTo(this.containerSelector);
+			$(line).appendTo(WizardCreatePages.containerSelector);
 		}
 		WizardCreatePages.lineCounter += 5;
 	};
 
+	/**
+	 *
+	 * @param {Object} $selectElement
+	 */
 	WizardCreatePages.actOnTypeSelectChange = function($selectElement) {
 		var $optionElement = $selectElement.find(':selected');
 		var $target = $($selectElement.data('target'));
@@ -45,21 +59,16 @@ define('TYPO3/CMS/WizardCrpages/WizardCreatePages', ['jquery'], function($) {
 	 * Register listeners
 	 */
 	WizardCreatePages.initializeEvents = function() {
-		$(this.addMoreFieldsButtonSelector).on('click', function() {
+		$(WizardCreatePages.addMoreFieldsButtonSelector).on('click', function() {
 			WizardCreatePages.createNewFormFields();
 		});
 
-		$(document).on('change', this.doktypeSelector, function() {
+		$(document).on('change', WizardCreatePages.doktypeSelector, function() {
 			WizardCreatePages.actOnTypeSelectChange($(this));
 		});
 	};
 
-	return function() {
-		$(document).ready(function() {
-			WizardCreatePages.initializeEvents();
-		});
+	$(WizardCreatePages.initializeEvents);
 
-		TYPO3.WizardCreatePages = WizardCreatePages;
-		return WizardCreatePages;
-	}();
+	return WizardCreatePages;
 });

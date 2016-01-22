@@ -609,28 +609,6 @@ separateRows
 
 
 
-.. _constants-styles-content-imgtext-addintextclearer:
-
-addIntextClearer
-~~~~~~~~~~~~~~~~
-
-.. container:: table-row
-
-   Property
-         addIntextClearer
-
-   Data type
-         bool
-
-   Description
-         Whether a clearer should be added after textpic elements of type
-         intext-left or intext-right
-
-   Default
-         1
-
-
-
 .. _constants-styles-content-imgtext-linkwrap:
 
 styles.content.imgtext.linkWrap
@@ -1095,7 +1073,7 @@ videoPlayer
          configure the path to the video player
 
    Default
-         typo3/contrib/flashmedia/flvplayer.swf
+         EXT:mediace/Resources/Contrib/flashmedia/flvplayer.swf
 
 
 
@@ -1158,7 +1136,7 @@ audioPlayer
          configure the path to the audio player
 
    Default
-         typo3/contrib/flashmedia/player.swf
+         EXT:mediace/Resources/Contrib/flashmedia/player.swf
 
 
 

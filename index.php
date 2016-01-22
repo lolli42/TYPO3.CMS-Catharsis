@@ -24,10 +24,11 @@
  * @see https://forge.typo3.org/issues/64504
  */
 if (version_compare(PHP_VERSION, '5.5.0', '<')) {
-	die('TYPO3 CMS requires PHP 5.5 or above');
+    die('TYPO3 CMS requires PHP 5.5 or above');
 }
 
-define('TYPO3_MODE', 'FE');
-
-require __DIR__ . '/typo3/sysext/core/Classes/Core/Bootstrap.php';
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->run()->shutdown();
+// Set up the application for the Frontend
+call_user_func(function () {
+    $classLoader = require rtrim(realpath(__DIR__ . '/typo3'), '\\/') . '/../vendor/autoload.php';
+    (new \TYPO3\CMS\Frontend\Http\Application($classLoader))->run();
+});

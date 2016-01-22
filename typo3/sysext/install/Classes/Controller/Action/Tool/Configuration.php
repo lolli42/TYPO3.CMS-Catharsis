@@ -19,63 +19,78 @@ use TYPO3\CMS\Install\Controller\Action;
 /**
  * Show configuration features and handle presets
  */
-class Configuration extends Action\AbstractAction {
+class Configuration extends Action\AbstractAction
+{
+    /**
+     * @var \TYPO3\CMS\Install\Configuration\FeatureManager
+     */
+    protected $featureManager;
 
-	/**
-	 * @var \TYPO3\CMS\Install\Configuration\FeatureManager
-	 * @inject
-	 */
-	protected $featureManager;
+    /**
+     * @var \TYPO3\CMS\Core\Configuration\ConfigurationManager
+     */
+    protected $configurationManager = null;
 
-	/**
-	 * @var \TYPO3\CMS\Core\Configuration\ConfigurationManager
-	 * @inject
-	 */
-	protected $configurationManager = NULL;
+    /**
+     * @param \TYPO3\CMS\Install\Configuration\FeatureManager $featureManager
+     */
+    public function injectFeatureManager(\TYPO3\CMS\Install\Configuration\FeatureManager $featureManager)
+    {
+        $this->featureManager = $featureManager;
+    }
 
-	/**
-	 * Executes the tool
-	 *
-	 * @return string Rendered content
-	 */
-	protected function executeAction() {
-		$actionMessages = array();
-		if (isset($this->postValues['set']['activate'])) {
-			$actionMessages[] = $this->activate();
-			$this->activate();
-		}
-		$this->view->assign('actionMessages', $actionMessages);
+    /**
+     * @param \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager
+     */
+    public function injectConfigurationManager(\TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager)
+    {
+        $this->configurationManager = $configurationManager;
+    }
 
-		$postValues = is_array($this->postValues['values']) ? $this->postValues['values'] : array();
-		$this->view->assign('features', $this->featureManager->getInitializedFeatures($postValues));
+    /**
+     * Executes the tool
+     *
+     * @return string Rendered content
+     */
+    protected function executeAction()
+    {
+        $actionMessages = array();
+        if (isset($this->postValues['set']['activate'])) {
+            $actionMessages[] = $this->activate();
+            $this->activate();
+        }
+        $this->view->assign('actionMessages', $actionMessages);
 
-		return $this->view->render();
-	}
+        $postValues = is_array($this->postValues['values']) ? $this->postValues['values'] : array();
+        $this->view->assign('features', $this->featureManager->getInitializedFeatures($postValues));
 
-	/**
-	 * Configure selected feature presets to be active
-	 *
-	 * @return \TYPO3\CMS\Install\Status\StatusInterface
-	 */
-	protected function activate() {
-		$configurationValues = $this->featureManager->getConfigurationForSelectedFeaturePresets($this->postValues['values']);
+        return $this->view->render();
+    }
 
-		if (count($configurationValues) > 0) {
-			$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($configurationValues);
-			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
-			$message = $this->objectManager->get(\TYPO3\CMS\Install\Status\OkStatus::class);
-			$message->setTitle('Configuration written');
-			$messageBody = array();
-			foreach ($configurationValues as $configurationKey => $configurationValue) {
-				$messageBody[] = '\'' . $configurationKey . '\' => \'' . $configurationValue . '\'';
-			}
-			$message->setMessage(implode(LF, $messageBody));
-		} else {
-			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
-			$message = $this->objectManager->get(\TYPO3\CMS\Install\Status\InfoStatus::class);
-			$message->setTitle('No configuration change selected');
-		}
-		return $message;
-	}
+    /**
+     * Configure selected feature presets to be active
+     *
+     * @return \TYPO3\CMS\Install\Status\StatusInterface
+     */
+    protected function activate()
+    {
+        $configurationValues = $this->featureManager->getConfigurationForSelectedFeaturePresets($this->postValues['values']);
 
+        if (!empty($configurationValues)) {
+            $this->configurationManager->setLocalConfigurationValuesByPathValuePairs($configurationValues);
+            /** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+            $message = $this->objectManager->get(\TYPO3\CMS\Install\Status\OkStatus::class);
+            $message->setTitle('Configuration written');
+            $messageBody = array();
+            foreach ($configurationValues as $configurationKey => $configurationValue) {
+                $messageBody[] = '\'' . $configurationKey . '\' => \'' . $configurationValue . '\'';
+            }
+            $message->setMessage(implode(LF, $messageBody));
+        } else {
+            /** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+            $message = $this->objectManager->get(\TYPO3\CMS\Install\Status\InfoStatus::class);
+            $message->setTitle('No configuration change selected');
+        }
+        return $message;
+    }
 }

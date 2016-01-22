@@ -16,19 +16,17 @@ namespace TYPO3\CMS\Core\Tests\Unit\Log\Fixtures;
 
 /**
  * A processor dedicated for testing
- *
- * @author Steffen Müller <typo3@t3node.com>
  */
-class ProcessorFixture extends \TYPO3\CMS\Core\Log\Processor\AbstractProcessor {
-
-	/**
-	 * Processing the record
-	 *
-	 * @param \TYPO3\CMS\Core\Log\LogRecord $record
-	 * @return \TYPO3\CMS\Core\Log\LogRecord
-	 */
-	public function processLogRecord(\TYPO3\CMS\Core\Log\LogRecord $record) {
-		return $record;
-	}
-
+class ProcessorFixture extends \TYPO3\CMS\Core\Log\Processor\AbstractProcessor
+{
+    /**
+     * Processing the record
+     *
+     * @param \TYPO3\CMS\Core\Log\LogRecord $record
+     * @return \TYPO3\CMS\Core\Log\LogRecord
+     */
+    public function processLogRecord(\TYPO3\CMS\Core\Log\LogRecord $record)
+    {
+        return $record;
+    }
 }

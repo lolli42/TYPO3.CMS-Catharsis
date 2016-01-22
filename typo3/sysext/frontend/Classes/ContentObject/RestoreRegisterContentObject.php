@@ -16,22 +16,19 @@ namespace TYPO3\CMS\Frontend\ContentObject;
 
 /**
  * Contains RESTORE_REGISTER class object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
-class RestoreRegisterContentObject extends AbstractContentObject {
-
-	/**
-	 * Rendering the cObject, RESTORE_REGISTER
-	 * NOTICE: This cObject does NOT return any content since it just sets internal data based on the TypoScript properties.
-	 *
-	 * @param array $conf Array of TypoScript properties
-	 * @return string Empty string (the cObject only sets internal data!)
-	 */
-	public function render($conf = array()) {
-		$GLOBALS['TSFE']->register = array_pop($GLOBALS['TSFE']->registerStack);
-		return '';
-	}
-
+class RestoreRegisterContentObject extends AbstractContentObject
+{
+    /**
+     * Rendering the cObject, RESTORE_REGISTER
+     * NOTICE: This cObject does NOT return any content since it just sets internal data based on the TypoScript properties.
+     *
+     * @param array $conf Array of TypoScript properties
+     * @return string Empty string (the cObject only sets internal data!)
+     */
+    public function render($conf = array())
+    {
+        $GLOBALS['TSFE']->register = array_pop($GLOBALS['TSFE']->registerStack);
+        return '';
+    }
 }

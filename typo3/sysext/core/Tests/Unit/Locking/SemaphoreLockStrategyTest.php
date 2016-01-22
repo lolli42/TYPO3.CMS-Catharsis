@@ -19,27 +19,26 @@ use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Testcase for \TYPO3\CMS\Core\Locking\SemaphoreLockStrategy
- *
- * @author Markus Klein <klein.t3@reelworx.at>
  */
-class SemaphoreLockStrategyTest extends UnitTestCase {
+class SemaphoreLockStrategyTest extends UnitTestCase
+{
+    /**
+     * Set up the tests
+     */
+    protected function setUp()
+    {
+        if (!SemaphoreLockStrategy::getCapabilities()) {
+            $this->markTestSkipped('The system does not support semaphore locking.');
+        }
+    }
 
-	/**
-	 * Set up the tests
-	 */
-	protected function setUp() {
-		if (!SemaphoreLockStrategy::getCapabilities()) {
-			$this->markTestSkipped('The system does not support semaphore locking.');
-		}
-	}
-
-	/**
-	 * @test
-	 */
-	public function acquireGetsSemaphore() {
-		$lock = new SemaphoreLockStrategy('99999');
-		$this->assertTrue($lock->acquire());
-		$lock->release();
-	}
-
+    /**
+     * @test
+     */
+    public function acquireGetsSemaphore()
+    {
+        $lock = new SemaphoreLockStrategy('99999');
+        $this->assertTrue($lock->acquire());
+        $lock->release();
+    }
 }

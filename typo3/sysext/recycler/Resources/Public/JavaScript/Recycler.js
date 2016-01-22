@@ -12,9 +12,23 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Recycler/Recycler
  * RequireJS module for Recycler
  */
-define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($, NProgress) {
+define(['jquery',
+		'nprogress',
+		'TYPO3/CMS/Backend/Modal',
+		'TYPO3/CMS/Backend/Notification',
+		'TYPO3/CMS/Backend/Severity',
+		'TYPO3/CMS/Backend/jquery.clearable'
+	   ], function($, NProgress, Modal, Notification, Severity) {
+	'use strict';
+
+	/**
+	 *
+	 * @type {{identifiers: {searchForm: string, searchText: string, searchSubmitBtn: string, depthSelector: string, tableSelector: string, recyclerTable: string, paginator: string, reloadAction: string, massUndo: string, massDelete: string, toggleAll: string}, elements: {}, paging: {currentPage: number, totalPages: number, totalItems: number, itemsPerPage: number}, markedRecordsForMassAction: Array, allToggled: boolean}}
+	 * @exports TYPO3/CMS/Recycler/Recycler
+	 */
 	var Recycler = {
 		identifiers: {
 			searchForm: '#recycler-form',
@@ -26,16 +40,18 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 			paginator: '#recycler-index nav',
 			reloadAction: 'a[data-action=reload]',
 			massUndo: 'button[data-action=massundo]',
-			massDelete: 'button[data-action=massdelete]'
+			massDelete: 'button[data-action=massdelete]',
+			toggleAll: '.t3js-toggle-all'
 		},
 		elements: {}, // filled in getElements()
 		paging: {
 			currentPage: 1,
 			totalPages: 1,
 			totalItems: 0,
-			itemsPerPage: 20
+			itemsPerPage: TYPO3.settings.Recycler.pagingSize
 		},
-		markedRecordsForMassAction: []
+		markedRecordsForMassAction: [],
+		allToggled: false
 	};
 
 	/**
@@ -53,7 +69,8 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 			$paginator: $(Recycler.identifiers.paginator),
 			$reloadAction: $(Recycler.identifiers.reloadAction),
 			$massUndo: $(Recycler.identifiers.massUndo),
-			$massDelete: $(Recycler.identifiers.massDelete)
+			$massDelete: $(Recycler.identifiers.massDelete),
+			$toggleAll: $(Recycler.identifiers.toggleAll)
 		};
 	};
 
@@ -90,8 +107,9 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 
 		// changing "depth"
 		Recycler.elements.$depthSelector.on('change', function() {
-			Recycler.loadAvailableTables();
-			Recycler.loadDeletedElements();
+			$.when(Recycler.loadAvailableTables()).done(function() {
+				Recycler.loadDeletedElements();
+			});
 		});
 
 		// changing "table"
@@ -108,8 +126,9 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 
 		Recycler.elements.$reloadAction.on('click', function(e) {
 			e.preventDefault();
-			Recycler.loadAvailableTables();
-			Recycler.loadDeletedElements();
+			$.when(Recycler.loadAvailableTables()).done(function() {
+				Recycler.loadDeletedElements();
+			});
 		});
 
 		// clicking an action in the paginator
@@ -170,7 +189,11 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		});
 
 		// checkboxes in the table
-		Recycler.elements.$recyclerTable.on('click', 'tr input[type=checkbox]', Recycler.handleCheckboxSelects);
+		Recycler.elements.$toggleAll.on('click', function() {
+			Recycler.allToggled = !Recycler.allToggled;
+			$('input[type="checkbox"]').prop('checked', Recycler.allToggled).trigger('change');
+		});
+		Recycler.elements.$recyclerTable.on('change', 'tr input[type=checkbox]', Recycler.handleCheckboxSelects);
 
 		Recycler.elements.$massUndo.on('click', Recycler.undoRecord);
 		Recycler.elements.$massDelete.on('click', Recycler.deleteRecord);
@@ -180,7 +203,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 	 * Initialize the recycler module
 	 */
 	Recycler.initialize = function() {
-		NProgress.configure({parent: '#typo3-docheader', showSpinner: false});
+		NProgress.configure({parent: 'body', showSpinner: false});
 
 		Recycler.getElements();
 		Recycler.registerEvents();
@@ -188,8 +211,9 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		if (TYPO3.settings.Recycler.depthSelection > 0) {
 			Recycler.elements.$depthSelector.val(TYPO3.settings.Recycler.depthSelection).trigger('change');
 		} else {
-			Recycler.loadAvailableTables();
-			Recycler.loadDeletedElements();
+			$.when(Recycler.loadAvailableTables()).done(function() {
+				Recycler.loadDeletedElements();
+			});
 		}
 	};
 
@@ -242,14 +266,14 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 	};
 
 	/**
-	 * Loads all tables which contain deleted records. This call is not asynchronous
-	 * due to settings the stored table before loading the deleted records.
+	 * Loads all tables which contain deleted records.
+	 *
+	 * @returns {Promise}
 	 */
 	Recycler.loadAvailableTables = function() {
-		$.ajax({
-			url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::dispatch'],
+		return $.ajax({
+			url: TYPO3.settings.ajaxUrls['recycler'],
 			dataType: 'json',
-			async: false,
 			data: {
 				action: 'getTables',
 				startUid: TYPO3.settings.Recycler.startUid,
@@ -290,10 +314,12 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 
 	/**
 	 * Loads the deleted elements, based on the filters
+	 *
+	 * @returns {Promise}
 	 */
 	Recycler.loadDeletedElements = function() {
-		$.ajax({
-			url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::dispatch'],
+		return $.ajax({
+			url: TYPO3.settings.ajaxUrls['recycler'],
 			dataType: 'json',
 			data: {
 				action: 'getDeletedRecords',
@@ -318,6 +344,9 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		});
 	};
 
+	/**
+	 *
+	 */
 	Recycler.deleteRecord = function() {
 		if (TYPO3.settings.Recycler.deleteDisable) {
 			return;
@@ -326,23 +355,25 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		var $tr = $(this).parents('tr'),
 			isMassDelete = $tr.parent().prop('tagName') !== 'TBODY'; // deleteRecord() was invoked by the mass delete button
 
+		var records, message;
 		if (isMassDelete) {
-			var records = Recycler.markedRecordsForMassAction,
-				message = TYPO3.lang['modal.massdelete.text'];
+			records = Recycler.markedRecordsForMassAction;
+			message = TYPO3.lang['modal.massdelete.text'];
 		} else {
 			var uid = $tr.data('uid'),
 				table = $tr.data('table'),
-				records = table + ':' + uid,
-				recordTitle = $tr.data('recordtitle'),
-				message = table === 'pages' ? TYPO3.lang['modal.deletepage.text'] : TYPO3.lang['modal.deletecontent.text'];
-				message = Recycler.createMessage(message, [recordTitle, '[' + records + ']']);
+				recordTitle = $tr.data('recordtitle');
+			records = table + ':' + uid;
+			message = table === 'pages' ? TYPO3.lang['modal.deletepage.text'] : TYPO3.lang['modal.deletecontent.text'];
+			message = Recycler.createMessage(message, [recordTitle, '[' + records + ']']);
 		}
 
-		top.TYPO3.Modal.confirm(TYPO3.lang['modal.delete.header'], message, top.TYPO3.Severity.error, [
+		Modal.confirm(TYPO3.lang['modal.delete.header'], message, Severity.error, [
 			{
 				text: TYPO3.lang['button.cancel'],
+				btnClass: 'btn-default',
 				trigger: function() {
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				}
 			}, {
 				text: TYPO3.lang['button.delete'],
@@ -354,25 +385,34 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		]);
 	};
 
+	/**
+	 *
+	 */
 	Recycler.undoRecord = function() {
 		var $tr = $(this).parents('tr'),
 			isMassUndo = $tr.parent().prop('tagName') !== 'TBODY'; // undoRecord() was invoked by the mass delete button
 
+		var records, messageText, recoverPages;
 		if (isMassUndo) {
-			var records = Recycler.markedRecordsForMassAction,
-				messageText = TYPO3.lang['modal.massundo.text'],
-				recoverPages = true;
+			records = Recycler.markedRecordsForMassAction;
+			messageText = TYPO3.lang['modal.massundo.text'];
+			recoverPages = true;
 		} else {
 			var uid = $tr.data('uid'),
 				table = $tr.data('table'),
-				records = table + ':' + uid,
-				recordTitle = $tr.data('recordtitle'),
-				$message = null,
-				recoverPages = table === 'pages',
-				messageText = recoverPages ? TYPO3.lang['modal.undopage.text'] : TYPO3.lang['modal.undocontent.text'];
-				messageText = Recycler.createMessage(messageText, [recordTitle, '[' + records + ']']);
+				recordTitle = $tr.data('recordtitle');
+
+			records = table + ':' + uid;
+			recoverPages = table === 'pages';
+			messageText = recoverPages ? TYPO3.lang['modal.undopage.text'] : TYPO3.lang['modal.undocontent.text'];
+			messageText = Recycler.createMessage(messageText, [recordTitle, '[' + records + ']']);
+
+			if (recoverPages && $tr.data('parentDeleted')) {
+				messageText += TYPO3.lang['modal.undo.parentpages'];
+			}
 		}
 
+		var $message = null;
 		if (recoverPages) {
 			$message = $('<div />').append(
 				$('<p />').text(messageText),
@@ -384,11 +424,12 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 			$message = messageText;
 		}
 
-		top.TYPO3.Modal.confirm(TYPO3.lang['modal.undo.header'], $message, top.TYPO3.Severity.ok, [
+		Modal.confirm(TYPO3.lang['modal.undo.header'], $message, Severity.ok, [
 			{
 				text: TYPO3.lang['button.cancel'],
+				btnClass: 'btn-default',
 				trigger: function() {
-					top.TYPO3.Modal.dismiss();
+					Modal.dismiss();
 				}
 			}, {
 				text: TYPO3.lang['button.undo'],
@@ -401,7 +442,10 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 	};
 
 	/**
-	 * Method that really calls the action via AJAX
+	 *
+	 * @param {String} action
+	 * @param {Object} records
+	 * @param {Boolean} isMassAction
 	 */
 	Recycler.callAjaxAction = function(action, records, isMassAction) {
 		var data = {
@@ -420,7 +464,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		}
 
 		$.ajax({
-			url: TYPO3.settings.ajaxUrls['RecyclerAjaxController::dispatch'],
+			url: TYPO3.settings.ajaxUrls['recycler'],
 			dataType: 'json',
 			data: data,
 			beforeSend: function() {
@@ -428,26 +472,30 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 			},
 			success: function(data) {
 				if (data.success) {
-					top.TYPO3.Notification.success('', data.message);
+					Notification.success('', data.message);
 				} else {
-					top.TYPO3.Notification.error('', data.message);
+					Notification.error('', data.message);
 				}
 
 				// reload recycler data
 				Recycler.paging.currentPage = 1;
-				Recycler.loadAvailableTables();
-				Recycler.loadDeletedElements();
 
-				if (isMassAction) {
-					Recycler.resetMassActionButtons();
-				}
+				$.when(Recycler.loadAvailableTables()).done(function() {
+					Recycler.loadDeletedElements();
+					if (isMassAction) {
+						Recycler.resetMassActionButtons();
+					}
 
-				if (reloadPageTree) {
-					Recycler.refreshPageTree();
-				}
+					if (reloadPageTree) {
+						Recycler.refreshPageTree();
+					}
+
+					// Reset toggle state
+					Recycler.allToggled = false;
+				});
 			},
 			complete: function() {
-				top.TYPO3.Modal.dismiss();
+				Modal.dismiss();
 				NProgress.done();
 			}
 		});
@@ -455,6 +503,10 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 
 	/**
 	 * Replaces the placeholders with actual values
+	 *
+	 * @param {String} message
+	 * @param {Array} placeholders
+	 * @returns {*}
 	 */
 	Recycler.createMessage = function(message, placeholders) {
 		if (typeof message === 'undefined') {
@@ -480,6 +532,8 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 
 	/**
 	 * Build the paginator
+	 *
+	 * @param {Number} totalItems
 	 */
 	Recycler.buildPaginator = function(totalItems) {
 		if (totalItems === 0) {
@@ -538,15 +592,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/jquery.clearable'], function($
 		$(this).addClass('disabled').find('.t3-icon').unwrap().wrap($('<span />'));
 	};
 
-	/**
-	 * return the main Recycler object
-	 * initialize once on document ready
-	 */
-	return function() {
-		$(document).ready(function() {
-			Recycler.initialize();
-		});
+	$(Recycler.initialize);
 
-		return Recycler;
-	}();
+	return Recycler;
 });

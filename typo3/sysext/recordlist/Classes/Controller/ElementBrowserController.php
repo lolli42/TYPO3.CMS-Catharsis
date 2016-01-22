@@ -14,179 +14,157 @@ namespace TYPO3\CMS\Recordlist\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Recordlist\Browser\ElementBrowser;
+use TYPO3\CMS\Recordlist\Browser\ElementBrowserInterface;
 
 /**
  * Script class for the Element Browser window.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class ElementBrowserController {
+class ElementBrowserController
+{
+    /**
+     * The mode determines the main kind of output of the element browser.
+     *
+     * There are these options for values:
+     *  - "db" will allow you to browse for pages or records in the page tree for FormEngine select fields
+     *  - "file" will allow you to browse for files in the folder mounts for FormEngine file selections
+     *  - "folder" will allow you to browse for folders in the folder mounts for FormEngine folder selections
+     *  - Other options may be registered via extensions
+     *
+     * @var string
+     */
+    protected $mode;
 
-	/**
-	 * The mode determines the main kind of output from the element browser.
-	 * There are these options for values: rte, db, file, filedrag, wizard.
-	 * "rte" will show the link selector for the Rich Text Editor (see main_rte())
-	 * "db" will allow you to browse for pages or records in the page tree (for TCEforms, see main_db())
-	 * "file"/"filedrag" will allow you to browse for files or folders in the folder mounts (for TCEforms, main_file())
-	 * "wizard" will allow you to browse for links (like "rte") which are passed back to TCEforms (see main_rte(1))
-	 *
-	 * @see main()
-	 * @var string
-	 */
-	public $mode;
+    /**
+     * Document template object
+     *
+     * @var DocumentTemplate
+     */
+    public $doc;
 
-	/**
-	 * Holds Instance of main browse_links class
-	 * needed fo intercommunication between various classes that need access to variables via $GLOBALS['SOBE']
-	 * Not the most nice solution but introduced since we don't have another general way to return class-instances or registry for now
-	 *
-	 * @var ElementBrowser
-	 */
-	public $browser;
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $GLOBALS['SOBE'] = $this;
 
-	/**
-	 * Document template object
-	 *
-	 * @var DocumentTemplate
-	 */
-	public $doc;
+        // Creating backend template object:
+        // this might not be needed but some classes refer to $GLOBALS['SOBE']->doc, so ...
+        $this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
+        // Apply the same styles as those of the base script
+        $this->doc->bodyTagId = 'typo3-browse-links-php';
 
-	/**
-	 * @var string
-	 */
-	public $content = '';
+        $this->init();
+    }
 
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$GLOBALS['SOBE'] = $this;
-		$GLOBALS['BACK_PATH'] = '';
-		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_browse_links.xlf');
+    /**
+     * Initialize the controller
+     *
+     * @return void
+     */
+    protected function init()
+    {
+        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_browse_links.xlf');
 
-		$this->init();
-	}
+        $this->mode = GeneralUtility::_GP('mode');
+    }
 
-	/**
-	 * Not really needed but for backwards compatibility ...
-	 *
-	 * @return void
-	 */
-	protected function init() {
-		// Find "mode"
-		$this->mode = GeneralUtility::_GP('mode');
-		if (!$this->mode) {
-			$this->mode = 'rte';
-		}
-		// Creating backend template object:
-		// this might not be needed but some classes refer to $GLOBALS['SOBE']->doc, so ...
-		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		// Apply the same styles as those of the base script
-		$this->doc->bodyTagId = 'typo3-browse-links-php';
+    /**
+     * Injects the request object for the current request or sub-request
+     * As this controller goes only through the main() method, it is rather simple for now
+     *
+     * @param ServerRequestInterface $request the current request
+     * @param ResponseInterface $response the prepared response object
+     * @return ResponseInterface the response with the content
+     */
+    public function mainAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        // Fallback for old calls, which use mode "wizard" or "rte" for link selection
+        if ($this->mode === 'wizard' || $this->mode === 'rte') {
+            return $response->withStatus(303)->withHeader('Location', BackendUtility::getModuleUrl('wizard_link', $_GET, false, true));
+        }
 
-	}
+        $response->getBody()->write($this->main());
+        return $response;
+    }
 
-	/**
-	 * Main function, detecting the current mode of the element browser and branching out to internal methods.
-	 *
-	 * @return void
-	 */
-	public function main() {
-		// Clear temporary DB mounts
-		$tmpMount = GeneralUtility::_GET('setTempDBmount');
-		$backendUser = $this->getBackendUserAuthentication();
-		if (isset($tmpMount)) {
-			$backendUser->setAndSaveSessionData('pageTree_temporaryMountPoint', (int)$tmpMount);
-		}
-		// Set temporary DB mounts
-		$alternativeWebmountPoint = (int)$backendUser->getSessionData('pageTree_temporaryMountPoint');
-		if ($alternativeWebmountPoint) {
-			$alternativeWebmountPoint = GeneralUtility::intExplode(',', $alternativeWebmountPoint);
-			$backendUser->setWebmounts($alternativeWebmountPoint);
-		} else {
-			switch ((string)$this->mode) {
-				case 'rte':
-				case 'db':
-				case 'wizard':
-					// Setting alternative browsing mounts (ONLY local to browse_links.php this script so they stay "read-only")
-					$alternativeWebmountPoints = trim($backendUser->getTSConfigVal('options.pageTree.altElementBrowserMountPoints'));
-					$appendAlternativeWebmountPoints = $backendUser->getTSConfigVal('options.pageTree.altElementBrowserMountPoints.append');
-					if ($alternativeWebmountPoints) {
-						$alternativeWebmountPoints = GeneralUtility::intExplode(',', $alternativeWebmountPoints);
-						$GLOBALS['BE_USER']->setWebmounts($alternativeWebmountPoints, $appendAlternativeWebmountPoints);
-					}
-			}
-		}
-		$this->content = '';
-		// Render type by user func
-		$browserRendered = FALSE;
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/browse_links.php']['browserRendering'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/browse_links.php']['browserRendering'] as $classRef) {
-				$browserRenderObj = GeneralUtility::getUserObj($classRef);
-				if (is_object($browserRenderObj) && method_exists($browserRenderObj, 'isValid') && method_exists($browserRenderObj, 'render')) {
-					if ($browserRenderObj->isValid($this->mode, $this)) {
-						$this->content .= $browserRenderObj->render($this->mode, $this);
-						$browserRendered = TRUE;
-						break;
-					}
-				}
-			}
-		}
-		// if type was not rendered use default rendering functions
-		if (!$browserRendered) {
-			$this->browser = GeneralUtility::makeInstance(ElementBrowser::class);
-			$this->browser->init();
-			$modData = $backendUser->getModuleData('browse_links.php', 'ses');
-			list($modData) = $this->browser->processSessionData($modData);
-			$backendUser->pushModuleData('browse_links.php', $modData);
-			// Output the correct content according to $this->mode
-			switch ((string)$this->mode) {
-				case 'rte':
-					$this->content = $this->browser->main_rte();
-					break;
-				case 'db':
-					$this->content = $this->browser->main_db();
-					break;
-				case 'file':
-				case 'filedrag':
-					$this->content = $this->browser->main_file();
-					break;
-				case 'folder':
-					$this->content = $this->browser->main_folder();
-					break;
-				case 'wizard':
-					$this->content = $this->browser->main_rte(TRUE);
-					break;
-			}
-		}
-	}
+    /**
+     * Main function, detecting the current mode of the element browser and branching out to internal methods.
+     *
+     * @return string HTML content
+     */
+    public function main()
+    {
+        $content = '';
 
-	/**
-	 * Print module content
-	 *
-	 * @return void
-	 */
-	public function printContent() {
-		echo $this->content;
-	}
+        // Render type by user func
+        $browserRendered = false;
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/browse_links.php']['browserRendering'])) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/browse_links.php']['browserRendering'] as $classRef) {
+                $browserRenderObj = GeneralUtility::getUserObj($classRef);
+                if (is_object($browserRenderObj) && method_exists($browserRenderObj, 'isValid') && method_exists($browserRenderObj, 'render')) {
+                    if ($browserRenderObj->isValid($this->mode, $this)) {
+                        $content = $browserRenderObj->render($this->mode, $this);
+                        $browserRendered = true;
+                        break;
+                    }
+                }
+            }
+        }
 
-	/**
-	 * @return LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
+        // if type was not rendered use default rendering functions
+        if (!$browserRendered) {
+            $browser = $this->getElementBrowserInstance();
 
-	/**
-	 * @return BackendUserAuthentication
-	 */
-	protected function getBackendUserAuthentication() {
-		return $GLOBALS['BE_USER'];
-	}
+            $backendUser = $this->getBackendUser();
+            $modData = $backendUser->getModuleData('browse_links.php', 'ses');
+            list($modData) = $browser->processSessionData($modData);
+            $backendUser->pushModuleData('browse_links.php', $modData);
 
+            $content = $browser->render();
+        }
+
+        return $content;
+    }
+
+    /**
+     * Get instance of the actual element browser
+     *
+     * This method shall be overwritten in subclasses
+     *
+     * @return ElementBrowserInterface
+     * @throws \UnexpectedValueException
+     */
+    protected function getElementBrowserInstance()
+    {
+        $className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ElementBrowsers'][$this->mode];
+        $browser = GeneralUtility::makeInstance($className);
+        if (!$browser instanceof ElementBrowserInterface) {
+            throw new \UnexpectedValueException('The specified element browser "' . $className . '" does not implement the required ElementBrowserInterface', 1442763890);
+        }
+        return $browser;
+    }
+
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
+
+    /**
+     * @return BackendUserAuthentication
+     */
+    protected function getBackendUser()
+    {
+        return $GLOBALS['BE_USER'];
+    }
 }

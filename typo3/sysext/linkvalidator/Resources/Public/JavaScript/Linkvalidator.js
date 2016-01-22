@@ -11,19 +11,32 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-define('TYPO3/CMS/Linkvalidator/Linkvalidator', ['jquery'], function($) {
+/**
+ * Module: TYPO3/CMS/Linkvalidator/Linkvalidator
+ */
+define(['jquery'], function($) {
+	'use strict';
 
+	/**
+	 *
+	 * @type {{}}
+	 * @exports TYPO3/CMS/Linkvalidator/Linkvalidator
+	 */
 	var Linkvalidator = {};
 
+	/**
+	 *
+	 * @param {String} prefix
+	 */
 	Linkvalidator.toggleActionButton = function(prefix) {
 		var buttonDisable = true;
-		$('.' + prefix).each(function(index) {
+		$('.' + prefix).each(function() {
 			if ($(this).prop('checked')) {
 				buttonDisable = false;
 			}
 		});
 
-		if (prefix == 'check') {
+		if (prefix === 'check') {
 			$('#updateLinkList').prop('disabled', buttonDisable);
 		} else {
 			$('#refreshLinkList').prop('disabled', buttonDisable);
@@ -43,13 +56,7 @@ define('TYPO3/CMS/Linkvalidator/Linkvalidator', ['jquery'], function($) {
 		});
 	};
 
-	// intialize and return the Linkvalidator object
-	return function() {
-		$(document).ready(function() {
-			Linkvalidator.initializeEvents();
-		});
+	$(Linkvalidator.initializeEvents);
 
-		TYPO3.Linkvalidator = Linkvalidator;
-		return Linkvalidator;
-	}();
+	return Linkvalidator;
 });

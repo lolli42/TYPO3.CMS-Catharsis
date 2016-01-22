@@ -91,20 +91,6 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Validation.Rule = Ext.extend(Ext.F
 						}
 					});
 					break;
-				case 'breakOnError':
-					formItems.push({
-						xtype: 'checkbox',
-						fieldLabel: TYPO3.l10n.localize('validation_properties_breakonerror'),
-						name: 'breakOnError',
-						inputValue: '1',
-						listeners: {
-							'check': {
-								scope: this,
-								fn: this.storeValue
-							}
-						}
-					});
-					break;
 				case 'showMessage':
 					formItems.push({
 						xtype: 'checkbox',
@@ -144,6 +130,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Validation.Rule = Ext.extend(Ext.F
 							'spin': {
 								scope: this,
 								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
 							}
 						}
 					});
@@ -157,6 +147,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Validation.Rule = Ext.extend(Ext.F
 						accelerate: true,
 						listeners: {
 							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -388,7 +382,6 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Validation.Rule = Ext.extend(Ext.F
 			allowedGeneralFields = [
 				'message',
 				'error',
-				'breakOnError',
 				'showMessage',
 				'allowWhiteSpace',
 				'minimum',

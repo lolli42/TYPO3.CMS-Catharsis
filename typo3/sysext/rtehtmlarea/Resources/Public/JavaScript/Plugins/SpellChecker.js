@@ -14,8 +14,7 @@
 /**
  * Spell Checker Plugin for TYPO3 htmlArea RTE
  */
-define('TYPO3/CMS/Rtehtmlarea/Plugins/SpellChecker',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM'],
@@ -33,7 +32,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/SpellChecker',
 		configurePlugin: function(editor) {
 			this.pageTSconfiguration = this.editorConfiguration.buttons.spellcheck;
 			this.contentISOLanguage = this.pageTSconfiguration.contentISOLanguage;
-			this.contentCharset = this.pageTSconfiguration.contentCharset;
+			this.contentCharset = 'utf-8';
 			this.spellCheckerMode = this.pageTSconfiguration.spellCheckerMode;
 			this.enablePersonalDicts = this.pageTSconfiguration.enablePersonalDicts;
 			this.userUid = this.editorConfiguration.userUid;

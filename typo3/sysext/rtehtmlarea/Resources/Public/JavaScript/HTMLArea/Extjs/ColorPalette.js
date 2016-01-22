@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -12,10 +12,11 @@
  */
 
 /**
+ * Module: TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ColorPalette
  * Intercept Ext.ColorPalette.prototype.select
+ * @exports TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ColorPalette
  */
-define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ColorPalette',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Color'],
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Color'],
 	function (Color) {
 
 	Ext.ColorPalette.prototype.select = Ext.ColorPalette.prototype.select.createInterceptor(Color.checkIfColorInPalette);

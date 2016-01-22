@@ -14,96 +14,81 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
+
 /**
  * Copy Paste plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
-class CopyPaste extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
+class CopyPaste extends RteHtmlAreaApi
+{
+    /**
+     * The name of the plugin registered by the extension
+     *
+     * @var string
+     */
+    protected $pluginName = 'CopyPaste';
 
-	/**
-	 * The key of the extension that is extending htmlArea RTE
-	 *
-	 * @var string
-	 */
-	protected $extensionKey = 'rtehtmlarea';
+    /**
+     * The comma-separated list of button names that the registered plugin is adding to the htmlArea RTE toolbar
+     *
+     * @var string
+     */
+    protected $pluginButtons = 'copy, cut, paste';
 
-	/**
-	 * The name of the plugin registered by the extension
-	 *
-	 * @var string
-	 */
-	protected $pluginName = 'CopyPaste';
+    /**
+     * The name-converting array, converting the button names used in the RTE PageTSConfing to the button id's used by the JS scripts
+     *
+     * @var array
+     */
+    protected $convertToolbarForHtmlAreaArray = array(
+        'copy' => 'Copy',
+        'cut' => 'Cut',
+        'paste' => 'Paste'
+    );
 
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = '';
+    /**
+     * Hide buttons not implemented in client browsers
+     *
+     * @var array
+     */
+    protected $hideButtonsFromClient = array(
+        'gecko' => array('copy', 'cut', 'paste'),
+        'webkit' => array('copy', 'cut', 'paste'),
+        'opera' => array('copy', 'cut', 'paste')
+    );
 
-	/**
-	 * Path to the skin file relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/copy-paste.css';
+    /**
+     * Returns TRUE if the plugin is available and correctly initialized
+     *
+     * @param array $configuration Configuration array given from calling object down to the single plugins
+     * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
+     */
+    public function main(array $configuration)
+    {
+        $enabled = parent::main($configuration);
+        // Hiding some buttons
+        if ($enabled && is_array($this->hideButtonsFromClient[$this->configuration['client']['browser']])) {
+            $this->pluginButtons = implode(',', array_diff(GeneralUtility::trimExplode(',', $this->pluginButtons, true), $this->hideButtonsFromClient[$this->configuration['client']['browser']]));
+        }
+        // Force enabling the plugin even if no button remains in the tool bar, so that hot keys still are enabled
+        $this->pluginAddsButtons = false;
+        return $enabled;
+    }
 
-	/**
-	 * Reference to the invoking object
-	 *
-	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
-	 */
-	protected $htmlAreaRTE;
-
-	protected $thisConfig;
-
-	// Reference to RTE PageTSConfig
-	protected $toolbar;
-
-	// Reference to RTE toolbar array
-	protected $LOCAL_LANG;
-
-	// Frontend language array
-	protected $pluginButtons = 'copy, cut, paste';
-
-	protected $convertToolbarForHtmlAreaArray = array(
-		'copy' => 'Copy',
-		'cut' => 'Cut',
-		'paste' => 'Paste'
-	);
-
-	// Hide buttons not implemented in client browsers
-	protected $hideButtonsFromClient = array(
-		'gecko' => array('copy', 'cut', 'paste'),
-		'webkit' => array('copy', 'cut', 'paste'),
-		'opera' => array('copy', 'cut', 'paste')
-	);
-
-	public function main($parentObject) {
-		$enabled = parent::main($parentObject);
-		// Hiding some buttons
-		if ($enabled && is_array($this->hideButtonsFromClient[$this->htmlAreaRTE->client['browser']])) {
-			$this->pluginButtons = implode(',', array_diff(\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons, TRUE), $this->hideButtonsFromClient[$this->htmlAreaRTE->client['browser']]));
-		}
-		// Force enabling the plugin even if no button remains in the tool bar, so that hot keys still are enabled
-		$this->pluginAddsButtons = FALSE;
-		return $enabled;
-	}
-
-	/**
-	 * Return an updated array of toolbar enabled buttons
-	 *
-	 * @param array $show: array of toolbar elements that will be enabled, unless modified here
-	 * @return array toolbar button array, possibly updated
-	 */
-	public function applyToolbarConstraints($show) {
-		// Remove some buttons
-		if (is_array($this->hideButtonsFromClient[$this->htmlAreaRTE->client['browser']])) {
-			return array_diff($show, $this->hideButtonsFromClient[$this->htmlAreaRTE->client['browser']]);
-		} else {
-			return $show;
-		}
-	}
-
+    /**
+     * Return an updated array of toolbar enabled buttons
+     *
+     * @param array $show: array of toolbar elements that will be enabled, unless modified here
+     * @return array toolbar button array, possibly updated
+     */
+    public function applyToolbarConstraints($show)
+    {
+        // Remove some buttons
+        if (is_array($this->hideButtonsFromClient[$this->configuration['client']['browser']])) {
+            return array_diff($show, $this->hideButtonsFromClient[$this->configuration['client']['browser']]);
+        } else {
+            return $show;
+        }
+    }
 }

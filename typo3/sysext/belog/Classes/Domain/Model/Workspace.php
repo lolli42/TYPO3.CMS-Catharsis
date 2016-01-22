@@ -18,44 +18,44 @@ namespace TYPO3\CMS\Belog\Domain\Model;
  * Stub model for workspaces - only properties required for belog module are added currently
  *
  * @todo : This should be extended and put at some more central place
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
-class Workspace extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
+class Workspace extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
+{
+    /**
+     * @var int
+     */
+    const UID_LIVE_WORKSPACE = 0;
 
-	/**
-	 * @var int
-	 */
-	const UID_LIVE_WORKSPACE = 0;
+    /**
+     * @var int
+     */
+    const UID_ANY_WORKSPACE = -99;
 
-	/**
-	 * @var int
-	 */
-	const UID_ANY_WORKSPACE = -99;
+    /**
+     * title of the workspace
+     *
+     * @var string
+     */
+    protected $title = '';
 
-	/**
-	 * title of the workspace
-	 *
-	 * @var string
-	 */
-	protected $title = '';
+    /**
+     * Set workspace title
+     *
+     * @param string $title
+     * @return void
+     */
+    public function setTitle($title)
+    {
+        $this->title = $title;
+    }
 
-	/**
-	 * Set workspace title
-	 *
-	 * @param string $title
-	 * @return void
-	 */
-	public function setTitle($title) {
-		$this->title = $title;
-	}
-
-	/**
-	 * Get workspace title
-	 *
-	 * @return string
-	 */
-	public function getTitle() {
-		return $this->title;
-	}
-
+    /**
+     * Get workspace title
+     *
+     * @return string
+     */
+    public function getTitle()
+    {
+        return $this->title;
+    }
 }

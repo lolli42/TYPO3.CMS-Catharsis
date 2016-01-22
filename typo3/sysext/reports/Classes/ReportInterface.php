@@ -16,16 +16,13 @@ namespace TYPO3\CMS\Reports;
 
 /**
  * Interface for classes which provide a report.
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
-interface ReportInterface {
-
-	/**
-	 * Returns the content for a report
-	 *
-	 * @return string A reports rendered HTML
-	 */
-	public function getReport();
-
+interface ReportInterface
+{
+    /**
+     * Returns the content for a report
+     *
+     * @return string A reports rendered HTML
+     */
+    public function getReport();
 }

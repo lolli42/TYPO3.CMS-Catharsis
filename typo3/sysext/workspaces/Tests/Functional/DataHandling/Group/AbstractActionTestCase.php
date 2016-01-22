@@ -14,32 +14,30 @@ namespace TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Group;
  * The TYPO3 project - inspiring people to share!
  */
 
-require_once __DIR__ . '/../../../../../core/Tests/Functional/DataHandling/Group/AbstractActionTestCase.php';
-
 /**
  * Functional test for the DataHandler
  */
-abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\DataHandling\Group\AbstractActionTestCase {
+abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\DataHandling\Group\AbstractActionTestCase
+{
+    const VALUE_WorkspaceId = 1;
 
-	const VALUE_WorkspaceId = 1;
+    /**
+     * @var string
+     */
+    protected $scenarioDataSetDirectory = 'typo3/sysext/workspaces/Tests/Functional/DataHandling/Group/DataSet/';
 
-	/**
-	 * @var string
-	 */
-	protected $scenarioDataSetDirectory = 'typo3/sysext/workspaces/Tests/Functional/DataHandling/Group/DataSet/';
+    /**
+     * @var array
+     */
+    protected $coreExtensionsToLoad = array(
+        'fluid',
+        'version',
+        'workspaces',
+    );
 
-	/**
-	 * @var array
-	 */
-	protected $coreExtensionsToLoad = array(
-		'fluid',
-		'version',
-		'workspaces',
-	);
-
-	protected function setUp() {
-		parent::setUp();
-		$this->backendUser->workspace = self::VALUE_WorkspaceId;
-	}
-
+    protected function setUp()
+    {
+        parent::setUp();
+        $this->backendUser->workspace = self::VALUE_WorkspaceId;
+    }
 }

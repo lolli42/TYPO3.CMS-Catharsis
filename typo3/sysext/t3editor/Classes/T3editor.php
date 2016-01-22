@@ -14,385 +14,385 @@ namespace TYPO3\CMS\T3editor;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Provides a javascript-driven code editor with syntax highlighting for TS, HTML, CSS and more
- *
- * @author Tobias Liebig <mail_typo3@etobi.de>
  */
-class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
+class T3editor implements \TYPO3\CMS\Core\SingletonInterface
+{
+    const MODE_TYPOSCRIPT = 'typoscript';
+    const MODE_JAVASCRIPT = 'javascript';
+    const MODE_CSS = 'css';
+    const MODE_XML = 'xml';
+    const MODE_HTML = 'html';
+    const MODE_PHP = 'php';
+    const MODE_SPARQL = 'sparql';
+    const MODE_MIXED = 'mixed';
 
-	const MODE_TYPOSCRIPT = 'typoscript';
-	const MODE_JAVASCRIPT = 'javascript';
-	const MODE_CSS = 'css';
-	const MODE_XML = 'xml';
-	const MODE_HTML = 'html';
-	const MODE_PHP = 'php';
-	const MODE_SPARQL = 'sparql';
-	const MODE_MIXED = 'mixed';
-	/**
-	 * @var string
-	 */
-	protected $mode = '';
+    /**
+     * @var string
+     */
+    protected $mode = '';
 
-	/**
-	 * @var string
-	 */
-	protected $ajaxSaveType = '';
+    /**
+     * @var string
+     */
+    protected $ajaxSaveType = '';
 
-	/**
-	 * Counts the editors on the current page
-	 *
-	 * @var int
-	 */
-	protected $editorCounter = 0;
+    /**
+     * Counts the editors on the current page
+     *
+     * @var int
+     */
+    protected $editorCounter = 0;
 
-	/**
-	 * Flag to enable the t3editor
-	 *
-	 * @var bool
-	 */
-	protected $_isEnabled = TRUE;
+    /**
+     * Relative path to EXT:t3editor
+     *
+     * @var string
+     */
+    protected $relExtPath = '';
 
-	/**
-	 * sets the type of code to edit (::MODE_TYPOSCRIPT, ::MODE_JAVASCRIPT)
-	 *
-	 * @param $mode	string Expects one of the predefined constants
-	 * @return \TYPO3\CMS\T3editor\T3editor
-	 */
-	public function setMode($mode) {
-		$this->mode = $mode;
-		return $this;
-	}
+    /**
+     * Relative directory to codemirror
+     *
+     * @var string
+     */
+    protected $codemirrorPath = 'Resources/Public/JavaScript/Contrib/codemirror/js/';
 
-	/**
-	 * Set the AJAX save type
-	 *
-	 * @param string $ajaxSaveType
-	 * @return \TYPO3\CMS\T3editor\T3editor
-	 */
-	public function setAjaxSaveType($ajaxSaveType) {
-		$this->ajaxSaveType = $ajaxSaveType;
-		return $this;
-	}
+    /**
+     * RequireJS modules loaded for code completion
+     *
+     * @var array
+     */
+    protected $codeCompletionComponents = array('TsRef', 'CompletionResult', 'TsParser', 'TsCodeCompletion');
 
-	/**
-	 * Set mode by file
-	 *
-	 * @param string $file
-	 * @return string
-	 */
-	public function setModeByFile($file) {
-		$fileInfo = \TYPO3\CMS\Core\Utility\GeneralUtility::split_fileref($file);
-		return $this->setModeByType($fileInfo['fileext']);
-	}
+    /**
+     * sets the type of code to edit (::MODE_TYPOSCRIPT, ::MODE_JAVASCRIPT)
+     *
+     * @param $mode	string Expects one of the predefined constants
+     * @return \TYPO3\CMS\T3editor\T3editor
+     */
+    public function setMode($mode)
+    {
+        $this->mode = $mode;
+        return $this;
+    }
 
-	/**
-	 * Set mode by type
-	 *
-	 * @param string $type
-	 * @return void
-	 */
-	public function setModeByType($type) {
-		switch ($type) {
-			case 'html':
+    /**
+     * Set the AJAX save type
+     *
+     * @param string $ajaxSaveType
+     * @return \TYPO3\CMS\T3editor\T3editor
+     */
+    public function setAjaxSaveType($ajaxSaveType)
+    {
+        $this->ajaxSaveType = $ajaxSaveType;
+        return $this;
+    }
 
-			case 'htm':
+    /**
+     * Set mode by file
+     *
+     * @param string $file
+     * @return string
+     */
+    public function setModeByFile($file)
+    {
+        $fileInfo = GeneralUtility::split_fileref($file);
+        // @TODO: @FIXME: the method setModeByType returns void, so this method will never return a string
+        return $this->setModeByType($fileInfo['fileext']);
+    }
 
-			case 'tmpl':
-				$mode = self::MODE_HTML;
-				break;
-			case 'js':
-				$mode = self::MODE_JAVASCRIPT;
-				break;
-			case 'xml':
+    /**
+     * Set mode by type
+     *
+     * @param string $type
+     * @return void
+     */
+    public function setModeByType($type)
+    {
+        switch ($type) {
+            case 'html':
+            case 'htm':
+            case 'tmpl':
+                $mode = self::MODE_HTML;
+                break;
+            case 'js':
+                $mode = self::MODE_JAVASCRIPT;
+                break;
+            case 'xml':
+            case 'svg':
+                $mode = self::MODE_XML;
+                break;
+            case 'css':
+                $mode = self::MODE_CSS;
+                break;
+            case 'ts':
+                $mode = self::MODE_TYPOSCRIPT;
+                break;
+            case 'sparql':
+                $mode = self::MODE_SPARQL;
+                break;
+            case 'php':
+            case 'phpsh':
+            case 'inc':
+                $mode = self::MODE_PHP;
+                break;
+            default:
+                $mode = self::MODE_MIXED;
+        }
+        $this->setMode($mode);
+    }
 
-			case 'svg':
-				$mode = self::MODE_XML;
-				break;
-			case 'css':
-				$mode = self::MODE_CSS;
-				break;
-			case 'ts':
-				$mode = self::MODE_TYPOSCRIPT;
-				break;
-			case 'sparql':
-				$mode = self::MODE_SPARQL;
-				break;
-			case 'php':
+    /**
+     * Get mode
+     *
+     * @return string
+     */
+    public function getMode()
+    {
+        return $this->mode;
+    }
 
-			case 'phpsh':
+    /**
+     * Creates a new instance of the class
+     */
+    public function __construct()
+    {
+        $GLOBALS['LANG']->includeLLFile('EXT:t3editor/Resources/Private/Language/locallang.xlf');
+        // Disable pmktextarea to avoid conflicts (thanks Peter Klein for this suggestion)
+        $GLOBALS['BE_USER']->uc['disablePMKTextarea'] = 1;
 
-			case 'inc':
-				$mode = self::MODE_PHP;
-				break;
-			default:
-				$mode = self::MODE_MIXED;
-		}
-		$this->setMode($mode);
-	}
+        $this->relExtPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3editor');
+        $this->codemirrorPath = $this->relExtPath . $this->codemirrorPath;
+    }
 
-	/**
-	 * Get mode
-	 *
-	 * @return string
-	 */
-	public function getMode() {
-		return $this->mode;
-	}
+    /**
+     * Retrieves JavaScript code (header part) for editor
+     *
+     * @return string
+     */
+    public function getJavascriptCode()
+    {
+        /** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+        $pageRenderer = $this->getPageRenderer();
+        $pageRenderer->addCssFile($this->relExtPath . 'Resources/Public/Css/t3editor.css');
+        // Include editor-js-lib
+        $pageRenderer->addJsLibrary('codemirror', $this->codemirrorPath . 'codemirror.js');
+        if ($this->mode === self::MODE_TYPOSCRIPT) {
+            foreach ($this->codeCompletionComponents as $codeCompletionComponent) {
+                $pageRenderer->loadRequireJsModule('TYPO3/CMS/T3editor/Plugins/CodeCompletion/' . $codeCompletionComponent);
+            }
+        }
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/T3editor/T3editor');
+        return '';
+    }
 
-	/**
-	 * @return bool TRUE if the t3editor is enabled
-	 */
-	public function isEnabled() {
-		return $this->_isEnabled;
-	}
+    /**
+     * Get the template code, prepared for javascript (no line breaks, quoted in single quotes)
+     *
+     * @return string The template code, prepared to use in javascript
+     */
+    protected function getPreparedTemplate()
+    {
+        $T3editor_template = GeneralUtility::getUrl(
+            GeneralUtility::getFileAbsFileName('EXT:t3editor/Resources/Private/Templates/t3editor.html')
+        );
+        return str_replace(array(CR, LF), '', $T3editor_template);
+    }
 
-	/**
-	 * Creates a new instance of the class
-	 */
-	public function __construct() {
-		$GLOBALS['LANG']->includeLLFile('EXT:t3editor/locallang.xlf');
-		// Disable pmktextarea to avoid conflicts (thanks Peter Klein for this suggestion)
-		$GLOBALS['BE_USER']->uc['disablePMKTextarea'] = 1;
-	}
+    /**
+     * Determine the correct parser js file for given mode
+     *
+     * @param string $mode
+     * @return string Parser file name
+     */
+    protected function getParserfileByMode($mode)
+    {
+        switch ($mode) {
+            case self::MODE_TYPOSCRIPT:
+                $relPath = '../../../parse_typoscript/';
+                $parserfile = array($relPath . 'tokenizetyposcript.js', $relPath . 'parsetyposcript.js');
+                break;
+            case self::MODE_JAVASCRIPT:
+                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js');
+                break;
+            case self::MODE_CSS:
+                $parserfile = array('parsecss.js');
+                break;
+            case self::MODE_XML:
+                $parserfile = array('parsexml.js');
+                break;
+            case self::MODE_SPARQL:
+                $parserfile = array('parsesparql.js');
+                break;
+            case self::MODE_HTML:
+                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js', 'parsecss.js', 'parsexml.js', 'parsehtmlmixed.js');
+                break;
+            case self::MODE_PHP:
+            case self::MODE_MIXED:
+                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js', 'parsecss.js', 'parsexml.js', '../contrib/php/js/tokenizephp.js', '../contrib/php/js/parsephp.js', '../contrib/php/js/parsephphtmlmixed.js');
+                break;
+        }
+        return json_encode($parserfile);
+    }
 
-	/**
-	 * Retrieves JavaScript code (header part) for editor
-	 *
-	 * @param \TYPO3\CMS\Backend\Template\DocumentTemplate $doc
-	 * @return string JavaScript code
-	 */
-	public function getJavascriptCode($doc) {
-		$content = '';
-		if ($this->isEnabled()) {
-			$path_t3e = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3editor');
-			$path_codemirror = 'contrib/codemirror/js/';
-			// Include needed javascript-frameworks
-			$pageRenderer = $doc->getPageRenderer();
-			/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-			$pageRenderer->loadPrototype();
-			$pageRenderer->loadScriptaculous();
-			// Include editor-css
-			$content .= '<link href="' . \TYPO3\CMS\Core\Utility\GeneralUtility::createVersionNumberedFilename(($GLOBALS['BACK_PATH'] . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3editor') . 'res/css/t3editor.css')) . '" type="text/css" rel="stylesheet" />';
-			// Include editor-js-lib
-			$doc->loadJavascriptLib($path_codemirror . 'codemirror.js');
-			$doc->loadJavascriptLib($path_t3e . 'res/jslib/t3editor.js');
-			$pageRenderer->loadRequireJsModule('TYPO3/CMS/T3editor/T3editor');
+    /**
+     * Determine the correct css file for given mode
+     *
+     * @param string $mode
+     * @return string css file name
+     */
+    protected function getStylesheetByMode($mode)
+    {
+        switch ($mode) {
+            case self::MODE_TYPOSCRIPT:
+                $stylesheet = array($this->relExtPath . 'Resources/Public/Css/typoscriptcolors.css');
+                break;
+            case self::MODE_JAVASCRIPT:
+                $stylesheet = array($this->codemirrorPath . '../css/jscolors.css');
+                break;
+            case self::MODE_CSS:
+                $stylesheet = array($this->codemirrorPath . '../css/csscolors.css');
+                break;
+            case self::MODE_XML:
+                $stylesheet = array($this->codemirrorPath . '../css/xmlcolors.css');
+                break;
+            case self::MODE_HTML:
+                $stylesheet = array($this->codemirrorPath . '../css/xmlcolors.css', $this->codemirrorPath . '../css/jscolors.css', $this->codemirrorPath . '../css/csscolors.css');
+                break;
+            case self::MODE_SPARQL:
+                $stylesheet = array($this->codemirrorPath . '../css/sparqlcolors.css');
+                break;
+            case self::MODE_PHP:
+                $stylesheet = array($this->codemirrorPath . '../contrib/php/css/phpcolors.css');
+                break;
+            case self::MODE_MIXED:
+                $stylesheet = array($this->codemirrorPath . '../css/xmlcolors.css', $this->codemirrorPath . '../css/jscolors.css', $this->codemirrorPath . '../css/csscolors.css', $this->codemirrorPath . '../contrib/php/css/phpcolors.css');
+                break;
+            default:
+                $stylesheet = array();
+        }
+        $stylesheet[] = $this->relExtPath . 'Resources/Public/Css/t3editor_inner.css';
+        return json_encode($stylesheet);
+    }
 
-			$content .= \TYPO3\CMS\Core\Utility\GeneralUtility::wrapJS(
-				'T3editor = T3editor || {};' .
-				'T3editor.lang = ' . json_encode($GLOBALS['LANG']->getLabelsWithPrefix('js.', 'label_')) . ';' . LF .
-				'T3editor.PATH_t3e = "' . $GLOBALS['BACK_PATH'] . $path_t3e . '"; ' . LF .
-				'T3editor.PATH_codemirror = "' . $GLOBALS['BACK_PATH'] . $path_codemirror . '"; ' . LF .
-				'T3editor.template = ' . $this->getPreparedTemplate() . ';' . LF .
-				'T3editor.ajaxSavetype = "' . $this->ajaxSaveType . '";' . LF
-			);
-			$content .= $this->getModeSpecificJavascriptCode();
-		}
-		return $content;
-	}
+    /**
+     * Generates HTML with code editor
+     *
+     * @param string $name Name attribute of HTML tag
+     * @param string $class Class attribute of HTML tag
+     * @param string $content Content of the editor
+     * @param string $additionalParams Any additional editor parameters
+     * @param string $alt Alt attribute
+     * @param array $hiddenfields
+     * @return string Generated HTML code for editor
+     */
+    public function getCodeEditor($name, $class = '', $content = '', $additionalParams = '', $alt = '', array $hiddenfields = array())
+    {
+        $code = '';
+        $class .= ' t3editor';
+        $alt = trim($alt);
+        $code .=
+            '<div class="t3editor">'
+                . '<div class="t3e_wrap">'
+                    . $this->getPreparedTemplate()
+                . '</div>'
+                . '<textarea '
+                    . 'id="t3editor_' . (int)$this->editorCounter . '" '
+                    . 'name="' . htmlspecialchars($name) . '" '
+                    . 'class="' . htmlspecialchars($class) . '" '
+                    . $additionalParams . ' '
+                    . ($alt !== '' ? ' alt="' . htmlspecialchars($alt) . '"' : '')
+                    . ' data-labels="' . htmlspecialchars(json_encode($GLOBALS['LANG']->getLabelsWithPrefix('js.', 'label_'))) . '"'
+                    . ' data-instance-number="' . (int)$this->editorCounter . '"'
+                    . ' data-editor-path="' . htmlspecialchars($this->relExtPath) . '"'
+                    . ' data-codemirror-path="' . htmlspecialchars($this->codemirrorPath) . '"'
+                    . ' data-ajaxsavetype="' . htmlspecialchars($this->ajaxSaveType) . '"'
+                    . ' data-parserfile="' . htmlspecialchars($this->getParserfileByMode($this->mode)) . '"'
+                    . ' data-stylesheet="' . htmlspecialchars($this->getStylesheetByMode($this->mode)) . '"'
+                    . '>' . htmlspecialchars($content)
+                . '</textarea>'
+            . '</div>';
+        if (!empty($hiddenfields)) {
+            foreach ($hiddenfields as $name => $value) {
+                $code .= '<input type="hidden" ' . 'name="' . htmlspecialchars($name) . '" ' . 'value="' . htmlspecialchars($value) . '" />';
+            }
+        }
+        $this->editorCounter++;
+        return $code;
+    }
 
-	/**
-	 * Get mode specific JavaScript code
-	 *
-	 * @return string
-	 */
-	public function getModeSpecificJavascriptCode() {
-		if (empty($this->mode)) {
-			return '';
-		}
-		$path_t3e = $GLOBALS['BACK_PATH'] . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3editor');
-		$content = '';
-		if ($this->mode === self::MODE_TYPOSCRIPT) {
-			$content .= '<script type="text/javascript" src="' . $path_t3e . 'res/jslib/ts_codecompletion/tsref.js' . '"></script>';
-			$content .= '<script type="text/javascript" src="' . $path_t3e . 'res/jslib/ts_codecompletion/completionresult.js' . '"></script>';
-			$content .= '<script type="text/javascript" src="' . $path_t3e . 'res/jslib/ts_codecompletion/tsparser.js' . '"></script>';
-			$content .= '<script type="text/javascript" src="' . $path_t3e . 'res/jslib/ts_codecompletion/tscodecompletion.js' . '"></script>';
-		}
-		$content .= \TYPO3\CMS\Core\Utility\GeneralUtility::wrapJS('T3editor.parserfile = ' . $this->getParserfileByMode($this->mode) . ';' . LF . 'T3editor.stylesheet = ' . $this->getStylesheetByMode($this->mode) . ';');
-		return $content;
-	}
+    /**
+     * Save the content from t3editor retrieved via Ajax
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function ajaxSaveCode(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        // cancel if its not an Ajax request
+        if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX) {
+            $codeType = isset($request->getParsedBody()['t3editor_savetype']) ? $request->getParsedBody()['t3editor_savetype'] : $request->getQueryParams()['t3editor_savetype'];
+            $savingsuccess = false;
+            try {
+                if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/t3editor/classes/class.tx_t3editor.php']['ajaxSaveCode'])) {
+                    $_params = array(
+                        'pObj' => &$this,
+                        'type' => $codeType,
+                        'request' => $request,
+                        'response' => $response
+                    );
+                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/t3editor/classes/class.tx_t3editor.php']['ajaxSaveCode'] as $key => $_funcRef) {
+                        $savingsuccess = GeneralUtility::callUserFunction($_funcRef, $_params, $this) || $savingsuccess;
+                    }
+                }
+                $responseContent = array('result' => $savingsuccess);
+            } catch (\Exception $e) {
+                $responseContent = array(
+                    'result' => false,
+                    'exceptionMessage' => htmlspecialchars($e->getMessage()),
+                    'exceptionCode' => $e->getCode()
+                );
+            }
+            /** @var \TYPO3\CMS\Core\Http\Response $response */
+            $response = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Http\Response::class);
+            $response->getBody()->write(json_encode($responseContent));
+        }
 
-	/**
-	 * Get the template code, prepared for javascript (no line breaks, quoted in single quotes)
-	 *
-	 * @return string The template code, prepared to use in javascript
-	 */
-	protected function getPreparedTemplate() {
-		$T3editor_template = \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl(\TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName('EXT:t3editor/res/templates/t3editor.html'));
-		$T3editor_template = addslashes($T3editor_template);
-		$T3editor_template = str_replace(array(CR, LF), array('', '\' + \''), $T3editor_template);
-		return '\'' . $T3editor_template . '\'';
-	}
+        return $response;
+    }
 
-	/**
-	 * Determine the correct parser js file for given mode
-	 *
-	 * @param string $mode
-	 * @return string Parser file name
-	 */
-	protected function getParserfileByMode($mode) {
-		switch ($mode) {
-			case self::MODE_TYPOSCRIPT:
-				$relPath = ($GLOBALS['BACK_PATH'] ? $GLOBALS['BACK_PATH'] : '../../../') . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3editor') . 'res/jslib/parse_typoscript/';
-				$parserfile = '["' . $relPath . 'tokenizetyposcript.js", "' . $relPath . 'parsetyposcript.js"]';
-				break;
-			case self::MODE_JAVASCRIPT:
-				$parserfile = '["tokenizejavascript.js", "parsejavascript.js"]';
-				break;
-			case self::MODE_CSS:
-				$parserfile = '"parsecss.js"';
-				break;
-			case self::MODE_XML:
-				$parserfile = '"parsexml.js"';
-				break;
-			case self::MODE_SPARQL:
-				$parserfile = '"parsesparql.js"';
-				break;
-			case self::MODE_HTML:
-				$parserfile = '["tokenizejavascript.js", "parsejavascript.js", "parsecss.js", "parsexml.js", "parsehtmlmixed.js"]';
-				break;
-			case self::MODE_PHP:
+    /**
+     * Gets plugins that are defined at $TYPO3_CONF_VARS['EXTCONF']['t3editor']['plugins']
+     * Called by AjaxRequestHandler
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function getPlugins(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $result = array();
+        $plugins = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['t3editor']['plugins'];
+        if (is_array($plugins)) {
+            $result = array_values($plugins);
+        }
+        $request->getBody()->write(json_encode($result));
+        return $request;
+    }
 
-			case self::MODE_MIXED:
-				$parserfile = '[' . '"tokenizejavascript.js", ' . '"parsejavascript.js", ' . '"parsecss.js", ' . '"parsexml.js", ' . '"../contrib/php/js/tokenizephp.js", ' . '"../contrib/php/js/parsephp.js", ' . '"../contrib/php/js/parsephphtmlmixed.js"' . ']';
-				break;
-		}
-		return $parserfile;
-	}
-
-	/**
-	 * Determine the correct css file for given mode
-	 *
-	 * @param string $mode
-	 * @return string css file name
-	 */
-	protected function getStylesheetByMode($mode) {
-		switch ($mode) {
-			case self::MODE_TYPOSCRIPT:
-				$stylesheet = 'T3editor.PATH_t3e + "res/css/typoscriptcolors.css"';
-				break;
-			case self::MODE_JAVASCRIPT:
-				$stylesheet = 'T3editor.PATH_codemirror + "../css/jscolors.css"';
-				break;
-			case self::MODE_CSS:
-				$stylesheet = 'T3editor.PATH_codemirror + "../css/csscolors.css"';
-				break;
-			case self::MODE_XML:
-				$stylesheet = 'T3editor.PATH_codemirror + "../css/xmlcolors.css"';
-				break;
-			case self::MODE_HTML:
-				$stylesheet = 'T3editor.PATH_codemirror + "../css/xmlcolors.css", ' . 'T3editor.PATH_codemirror + "../css/jscolors.css", ' . 'T3editor.PATH_codemirror + "../css/csscolors.css"';
-				break;
-			case self::MODE_SPARQL:
-				$stylesheet = 'T3editor.PATH_codemirror + "../css/sparqlcolors.css"';
-				break;
-			case self::MODE_PHP:
-				$stylesheet = 'T3editor.PATH_codemirror + "../contrib/php/css/phpcolors.css"';
-				break;
-			case self::MODE_MIXED:
-				$stylesheet = 'T3editor.PATH_codemirror + "../css/xmlcolors.css", ' . 'T3editor.PATH_codemirror + "../css/jscolors.css", ' . 'T3editor.PATH_codemirror + "../css/csscolors.css", ' . 'T3editor.PATH_codemirror + "../contrib/php/css/phpcolors.css"';
-				break;
-		}
-		if ($stylesheet != '') {
-			$stylesheet = '' . $stylesheet . ', ';
-		}
-		return '[' . $stylesheet . 'T3editor.PATH_t3e + "res/css/t3editor_inner.css"]';
-	}
-
-	/**
-	 * Generates HTML with code editor
-	 *
-	 * @param string $name Name attribute of HTML tag
-	 * @param string $class Class attribute of HTML tag
-	 * @param string $content Content of the editor
-	 * @param string $additionalParams Any additional editor parameters
-	 * @param string $alt Alt attribute
-	 * @param array $hiddenfields
-	 * @return string Generated HTML code for editor
-	 */
-	public function getCodeEditor($name, $class = '', $content = '', $additionalParams = '', $alt = '', array $hiddenfields = array()) {
-		$code = '';
-		if ($this->isEnabled()) {
-			$this->editorCounter++;
-			$class .= ' t3editor';
-			$alt = htmlspecialchars($alt);
-			if (!empty($alt)) {
-				$alt = ' alt="' . $alt . '"';
-			}
-			$code .= '<div>' . '<textarea id="t3editor_' . $this->editorCounter . '" ' . 'name="' . $name . '" ' . 'class="' . $class . '" ' . $additionalParams . ' ' . $alt . '>' . htmlspecialchars($content) . '</textarea></div>';
-			$checked = $GLOBALS['BE_USER']->uc['disableT3Editor'] ? 'checked="checked"' : '';
-			$code .= '<br /><br />' . '<div class="checkbox"><label for="t3editor_disableEditor_' . $this->editorCounter . '_checkbox"><input type="checkbox" class="checkbox t3editor_disableEditor" onclick="T3editor.toggleEditor(this);" name="t3editor_disableEditor" value="true" id="t3editor_disableEditor_' . $this->editorCounter . '_checkbox" ' . $checked . ' />' . $GLOBALS['LANG']->getLL('deactivate') . '</label></div><br /><br />';
-			if (count($hiddenfields)) {
-				foreach ($hiddenfields as $name => $value) {
-					$code .= '<input type="hidden" ' . 'name="' . $name . '" ' . 'value="' . $value . '" />';
-				}
-			}
-		} else {
-			// Fallback
-			if (!empty($class)) {
-				$class = 'class="' . $class . '" ';
-			}
-			$code .= '<textarea name="' . $name . '" ' . $class . $additionalParams . '>' . $content . '</textarea>';
-		}
-		return $code;
-	}
-
-	/**
-	 * Save the content from t3editor retrieved via Ajax
-	 *
-	 * new Ajax.Request('/dev/t3e/dummy/typo3/ajax.php', {
-	 * parameters: {
-	 * ajaxID: 'T3editor::saveCode',
-	 * t3editor_savetype: 'TypoScriptTemplateInformationModuleFunctionController'
-	 * }
-	 * });
-	 *
-	 * @param array $params Parameters (not used yet)
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj AjaxRequestHandler to handle response
-	 */
-	public function ajaxSaveCode($params, $ajaxObj) {
-		// cancel if its not an Ajax request
-		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX) {
-			$ajaxObj->setContentFormat('json');
-			$codeType = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('t3editor_savetype');
-			$savingsuccess = FALSE;
-			try {
-				if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/t3editor/classes/class.tx_t3editor.php']['ajaxSaveCode'])) {
-					$_params = array(
-						'pObj' => &$this,
-						'type' => $codeType,
-						'ajaxObj' => &$ajaxObj
-					);
-					foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/t3editor/classes/class.tx_t3editor.php']['ajaxSaveCode'] as $key => $_funcRef) {
-						$savingsuccess = \TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($_funcRef, $_params, $this) || $savingsuccess;
-					}
-				}
-			} catch (\Exception $e) {
-				$ajaxObj->setContent(array('result' => FALSE, 'exceptionMessage' => htmlspecialchars($e->getMessage()), 'exceptionCode' => $e->getCode()));
-				return;
-			}
-			$ajaxObj->setContent(array('result' => $savingsuccess));
-		}
-	}
-
-	/**
-	 * Gets plugins that are defined at $TYPO3_CONF_VARS['EXTCONF']['t3editor']['plugins']
-	 * (called by typo3/ajax.php)
-	 *
-	 * @param array $params additional parameters (not used here)
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj The AjaxRequestHandler object of this request
-	 * @return void
-	 * @author Oliver Hader <oliver@typo3.org>
-	 */
-	public function getPlugins($params, \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj) {
-		$result = array();
-		$plugins = &$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['t3editor']['plugins'];
-		if (is_array($plugins)) {
-			$result = array_values($plugins);
-		}
-		$ajaxObj->setContent($result);
-		$ajaxObj->setContentFormat('jsonbody');
-	}
-
+    /**
+     * @return PageRenderer
+     */
+    protected function getPageRenderer()
+    {
+        return GeneralUtility::makeInstance(PageRenderer::class);
+    }
 }

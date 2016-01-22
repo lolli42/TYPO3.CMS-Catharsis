@@ -18,38 +18,38 @@ namespace TYPO3\CMS\Core\Error;
  * Contract for an exception handler
  *
  * This file is a backport from TYPO3 Flow
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
-interface ExceptionHandlerInterface {
+interface ExceptionHandlerInterface
+{
+    /**
+     * Constructs this exception handler - registers itself as the default exception handler.
+     */
+    public function __construct();
 
-	/**
-	 * Constructs this exception handler - registers itself as the default exception handler.
-	 */
-	public function __construct();
+    /**
+     * Handles the given exception
+     *
+     * @param \Exception|\Throwable $exception The exception(PHP 5.x) or throwable(PHP >= 7.0) object.
+     * @return void
+     * @TODO #72293 This will change to \Throwable only if we are >= PHP7.0 only
+     */
+    public function handleException($exception);
 
-	/**
-	 * Handles the given exception
-	 *
-	 * @param \Exception $exception: The exception object
-	 * @return void
-	 */
-	public function handleException(\Exception $exception);
+    /**
+     * Formats and echoes the exception as XHTML.
+     *
+     * @param \Exception|\Throwable $exception The exception(PHP 5.x) or throwable(PHP >= 7.0) object.
+     * @return void
+     * @TODO #72293 This will change to \Throwable only if we are >= PHP7.0 only
+     */
+    public function echoExceptionWeb($exception);
 
-	/**
-	 * Formats and echoes the exception as XHTML.
-	 *
-	 * @param \Exception $exception The exception object
-	 * @return void
-	 */
-	public function echoExceptionWeb(\Exception $exception);
-
-	/**
-	 * Formats and echoes the exception for the command line
-	 *
-	 * @param \Exception $exception The exception object
-	 * @return void
-	 */
-	public function echoExceptionCLI(\Exception $exception);
-
+    /**
+     * Formats and echoes the exception for the command line
+     *
+     * @param \Exception|\Throwable $exception The exception(PHP 5.x) or throwable(PHP >= 7.0) object.
+     * @return void
+     * @TODO #72293 This will change to \Throwable only if we are >= PHP7.0 only
+     */
+    public function echoExceptionCLI($exception);
 }

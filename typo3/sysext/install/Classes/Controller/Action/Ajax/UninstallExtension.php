@@ -14,7 +14,8 @@ namespace TYPO3\CMS\Install\Controller\Action\Ajax;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Uninstall Extensions
@@ -26,29 +27,29 @@ use TYPO3\CMS\Core\Utility;
  * to take care of changed cache configurations due to no longer installed extensions.
  * Use the clearCache ajax action afterwards.
  */
-class UninstallExtension extends AbstractAjaxAction {
-
-	/**
-	 * Uninstall one or multiple extensions
-	 * Extension keys are read from get vars, more than one extension has to be comma separated
-	 *
-	 * @return string "OK" on success, the error message otherwise
-	 */
-	protected function executeAction() {
-		$getVars = Utility\GeneralUtility::_GET('install');
-		if (isset($getVars['uninstallExtension']) && isset($getVars['uninstallExtension']['extensions'])) {
-			$extensionsToUninstall = Utility\GeneralUtility::trimExplode(',', $getVars['uninstallExtension']['extensions']);
-			foreach ($extensionsToUninstall as $extension) {
-				if (Utility\ExtensionManagementUtility::isLoaded($extension)) {
-					try {
-						Utility\ExtensionManagementUtility::unloadExtension($extension);
-					} catch (\Exception $e) {
-						return $e->getMessage();
-					}
-				}
-			}
-		}
-		return 'OK';
-	}
-
+class UninstallExtension extends AbstractAjaxAction
+{
+    /**
+     * Uninstall one or multiple extensions
+     * Extension keys are read from get vars, more than one extension has to be comma separated
+     *
+     * @return string "OK" on success, the error message otherwise
+     */
+    protected function executeAction()
+    {
+        $getVars = GeneralUtility::_GET('install');
+        if (isset($getVars['uninstallExtension']) && isset($getVars['uninstallExtension']['extensions'])) {
+            $extensionsToUninstall = GeneralUtility::trimExplode(',', $getVars['uninstallExtension']['extensions']);
+            foreach ($extensionsToUninstall as $extension) {
+                if (ExtensionManagementUtility::isLoaded($extension)) {
+                    try {
+                        ExtensionManagementUtility::unloadExtension($extension);
+                    } catch (\Exception $e) {
+                        return $e->getMessage();
+                    }
+                }
+            }
+        }
+        return 'OK';
+    }
 }

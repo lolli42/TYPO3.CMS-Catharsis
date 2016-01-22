@@ -16,20 +16,18 @@ namespace TYPO3\CMS\Workspaces\Task;
 
 /**
  * This class provides a task to cleanup ol preview links.
- *
- * @author Timo Webler <timo.webler@dkd.de>
  */
-class CleanupPreviewLinkTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
-
-	/**
-	 * Cleanup old preview links.
-	 * endtime < $GLOBALS['EXEC_TIME']
-	 *
-	 * @return bool
-	 */
-	public function execute() {
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_preview', 'endtime < ' . (int)$GLOBALS['EXEC_TIME']);
-		return TRUE;
-	}
-
+class CleanupPreviewLinkTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask
+{
+    /**
+     * Cleanup old preview links.
+     * endtime < $GLOBALS['EXEC_TIME']
+     *
+     * @return bool
+     */
+    public function execute()
+    {
+        $GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_preview', 'endtime < ' . (int)$GLOBALS['EXEC_TIME']);
+        return true;
+    }
 }

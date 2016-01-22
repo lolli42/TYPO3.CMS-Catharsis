@@ -14,24 +14,21 @@ namespace TYPO3\CMS\Impexp\Tests\Functional\Import\IrreTutorialRecords;
  * The TYPO3 project - inspiring people to share!
  */
 
-require_once __DIR__ . '/../AbstractImportTestCase.php';
-
 /**
- * Functional test for the ImportExport
+ * Functional test for the Import
  */
-class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase {
+class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase
+{
+    protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/IrreTutorialRecords/DataSet/Assertion/';
 
-	protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/IrreTutorialRecords/DataSet/Assertion/';
+    /**
+     * @test
+     */
+    public function importIrreRecords()
+    {
+        $this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/irre-records.xml', 1);
+        $this->import->importData(0);
 
-	/**
-	 * @test
-	 */
-	public function importIrreRecords() {
-
-		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/irre-records.xml', 1);
-		$this->import->importData(0);
-
-		$this->assertAssertionDataSet('importIrreRecords');
-	}
-
+        $this->assertAssertionDataSet('importIrreRecords');
+    }
 }

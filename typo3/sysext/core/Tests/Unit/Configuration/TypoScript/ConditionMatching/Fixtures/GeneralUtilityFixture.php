@@ -16,17 +16,15 @@ namespace TYPO3\CMS\Core\Tests\Unit\Configuration\TypoScript\ConditionMatching\F
 
 /**
  * Fixture for TYPO3\CMS\Core\Utility\GeneralUtility
- *
- * @author Steffen Müller <typo3@t3node.com>
  */
-class GeneralUtilityFixture extends \TYPO3\CMS\Core\Utility\GeneralUtility {
-
-	/**
-	 * @param \TYPO3\CMS\Core\Core\ApplicationContext $applicationContext
-	 * @return void
-	 */
-	static public function setApplicationContext($applicationContext) {
-		static::$applicationContext = $applicationContext;
-	}
-
+class GeneralUtilityFixture extends \TYPO3\CMS\Core\Utility\GeneralUtility
+{
+    /**
+     * @param \TYPO3\CMS\Core\Core\ApplicationContext $applicationContext
+     * @return void
+     */
+    public static function setApplicationContext($applicationContext)
+    {
+        static::$applicationContext = $applicationContext;
+    }
 }

@@ -19,38 +19,26 @@ namespace TYPO3\CMS\Core\Tests\Unit\FormProtection\Fixtures;
  *
  * This is a testing subclass of the abstract \TYPO3\CMS\Core\FormProtection\AbstractFormProtection
  * class.
- *
- * @author Oliver Klee <typo3-coding@oliverklee.de>
  */
-class FormProtectionTesting extends \TYPO3\CMS\Core\FormProtection\AbstractFormProtection {
+class FormProtectionTesting extends \TYPO3\CMS\Core\FormProtection\AbstractFormProtection
+{
+    /**
+     * Retrieves all saved tokens.
+     *
+     * @return string The saved token
+     */
+    protected function retrieveSessionToken()
+    {
+        return $this->sessionToken = $this->generateSessionToken();
+    }
 
-	/**
-	 * Creates or displayes an error message telling the user that the submitted
-	 * form token is invalid.
-	 *
-	 * @return void
-	 */
-	protected function createValidationErrorMessage() {
-
-	}
-
-	/**
-	 * Retrieves all saved tokens.
-	 *
-	 * @return string The saved token
-	 */
-	protected function retrieveSessionToken() {
-		return $this->sessionToken = $this->generateSessionToken();
-	}
-
-	/**
-	 * Saves the tokens so that they can be used by a later incarnation of this
-	 * class.
-	 *
-	 * @return void
-	 */
-	public function persistSessionToken() {
-
-	}
-
+    /**
+     * Saves the tokens so that they can be used by a later incarnation of this
+     * class.
+     *
+     * @return void
+     */
+    public function persistSessionToken()
+    {
+    }
 }

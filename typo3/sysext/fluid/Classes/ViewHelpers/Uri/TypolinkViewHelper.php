@@ -19,6 +19,7 @@ use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\Service\TypoLinkCodecService;
 
 /**
  * A ViewHelper to create uris from fields supported by the link wizard
@@ -45,92 +46,74 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  * </output>
  *
  */
-class TypolinkViewHelper extends AbstractViewHelper implements CompilableInterface {
+class TypolinkViewHelper extends AbstractViewHelper implements CompilableInterface
+{
+    /**
+     * Render
+     *
+     * @param string $parameter stdWrap.typolink style parameter string
+     * @param string $additionalParams
+     *
+     * @return string
+     */
+    public function render($parameter, $additionalParams = '')
+    {
+        return static::renderStatic(
+            array(
+                'parameter' => $parameter,
+                'additionalParams' => $additionalParams
+            ),
+            $this->buildRenderChildrenClosure(),
+            $this->renderingContext
+        );
+    }
 
-	/**
-	 * Render
-	 *
-	 * @param string $parameter stdWrap.typolink style parameter string
-	 * @param string $additionalParams
-	 *
-	 * @return string
-	 */
-	public function render($parameter, $additionalParams = '') {
-		return self::renderStatic(
-			array(
-				'parameter' => $parameter,
-				'additionalParams' => $additionalParams
-			),
-			$this->buildRenderChildrenClosure(),
-			$this->renderingContext
-		);
-	}
+    /**
+     * @param array $arguments
+     * @param callable $renderChildrenClosure
+     * @param RenderingContextInterface $renderingContext
+     *
+     * @return string
+     */
+    public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
+    {
+        $parameter = $arguments['parameter'];
+        $additionalParams = $arguments['additionalParams'];
 
-	/**
-	 * @param array $arguments
-	 * @param callable $renderChildrenClosure
-	 * @param RenderingContextInterface $renderingContext
-	 *
-	 * @return string
-	 */
-	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$parameter = $arguments['parameter'];
-		$additionalParams = $arguments['additionalParams'];
+        $content = '';
+        if ($parameter) {
+            $contentObject = GeneralUtility::makeInstance(ContentObjectRenderer::class);
+            $content = $contentObject->typoLink_URL(
+                array(
+                    'parameter' => self::createTypolinkParameterArrayFromArguments($parameter, $additionalParams),
+                )
+            );
+        }
 
-		// Merge the $parameter with other arguments
-		$typolinkParameter = self::createTypolinkParameterArrayFromArguments($parameter, $additionalParams);
+        return $content;
+    }
 
-		$content = '';
+    /**
+     * Transforms ViewHelper arguments to typo3link.parameters.typoscript option as array.
+     *
+     * @param string $parameter Example: 19 _blank - "testtitle with whitespace" &X=y
+     * @param string $additionalParameters
+     *
+     * @return string The final TypoLink string
+     */
+    protected static function createTypolinkParameterArrayFromArguments($parameter, $additionalParameters = '')
+    {
+        $typoLinkCodec = GeneralUtility::makeInstance(TypoLinkCodecService::class);
+        $typolinkConfiguration = $typoLinkCodec->decode($parameter);
+        if (empty($typolinkConfiguration)) {
+            return $typolinkConfiguration;
+        }
 
-		if ($parameter) {
-			$contentObject = GeneralUtility::makeInstance(ContentObjectRenderer::class);
-			$content = $contentObject->typoLink_URL(
-				array(
-					'parameter' => implode(' ', $typolinkParameter),
-				)
-			);
-		}
+        // Combine additionalParams
+        if ($additionalParameters) {
+            $typolinkConfiguration['additionalParams'] .= $additionalParameters;
+        }
 
-		return $content;
-	}
-
-	/**
-	 * Transforms ViewHelper arguments to typo3link.parameters.typoscript option as array.
-	 *
-	 * @param string $parameter Example: 19 _blank - "testtitle with whitespace" &X=y
-	 * @param string $additionalParameters
-	 *
-	 * @return array Final merged typolink.parameter as array to be imploded with empty string later
-	 */
-	static protected function createTypolinkParameterArrayFromArguments($parameter, $additionalParameters = '') {
-		// Explode $parameter by whitespace and remove any " around resulting array values
-		$parameterArray = GeneralUtility::unQuoteFilenames($parameter, TRUE);
-
-		if (empty($parameterArray)) {
-			return array();
-		}
-
-		// Extend to 4 elements
-		$typolinkConfiguration = array_pad($parameterArray, 4, '-');
-
-		// Combine additionalParameters
-		if ($additionalParameters) {
-			$typolinkConfiguration[4] .= $additionalParameters;
-		}
-
-		// Unset unused parameters again from the end, wrap all given values with "
-		$reverseSortedParameters = array_reverse($typolinkConfiguration, TRUE);
-		$aValueWasSet = FALSE;
-		foreach ($reverseSortedParameters as $position => $value) {
-			if ($value === '-' && !$aValueWasSet) {
-				unset($typolinkConfiguration[$position]);
-			} else {
-				$aValueWasSet = TRUE;
-				if ($value !== '-') {
-					$typolinkConfiguration[$position] = '"' . $value . '"';
-				}
-			}
-		}
-		return $typolinkConfiguration;
-	}
+        return $typoLinkCodec->encode($typolinkConfiguration);
+    }
 }

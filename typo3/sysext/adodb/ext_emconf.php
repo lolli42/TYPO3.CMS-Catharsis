@@ -10,11 +10,10 @@ $EM_CONF[$_EXTKEY] = array(
 	'author' => 'Xavier Perseguers',
 	'author_email' => 'xavier@typo3.org',
 	'author_company' => '',
-	'version' => '7.3.0',
-	'_md5_values_when_last_written' => '',
+	'version' => '8.0.0',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '7.3.0-7.3.99',
+			'typo3' => '8.0.0-8.0.99',
 		),
 		'conflicts' => array(),
 		'suggests' => array(),

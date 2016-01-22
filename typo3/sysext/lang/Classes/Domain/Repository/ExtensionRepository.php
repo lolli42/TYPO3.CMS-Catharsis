@@ -15,101 +15,123 @@ namespace TYPO3\CMS\Lang\Domain\Repository;
  */
 
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManagerInterface;
+use TYPO3\CMS\Extensionmanager\Utility\ListUtility;
+use TYPO3\CMS\Lang\Domain\Model\Extension;
 
 /**
  * Extension repository
- *
- * @author Kai Vogel <k.vogel@reply.de>
  */
-class ExtensionRepository {
+class ExtensionRepository
+{
+    /**
+     * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+     */
+    protected $objectManager;
 
-	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
-	 * @inject
-	 */
-	protected $objectManager;
+    /**
+     * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
+     */
+    protected $listUtility;
 
-	/**
-	 * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
-	 * @inject
-	 */
-	protected $listUtility;
+    /**
+     * @var array
+     */
+    protected $extensions = array();
 
-	/**
-	 * @var array
-	 */
-	protected $extensions = array();
+    /**
+     * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+     */
+    public function injectObjectManager(ObjectManagerInterface $objectManager)
+    {
+        $this->objectManager = $objectManager;
+    }
 
-	/**
-	 * Returns all objects of this repository
-	 *
-	 * @return array The extensions
-	 */
-	public function findAll() {
-		if (empty($this->extensions)) {
-			$extensions = $this->listUtility->getAvailableAndInstalledExtensionsWithAdditionalInformation();
-			foreach ($extensions as $entry) {
-				/** @var $extension \TYPO3\CMS\Lang\Domain\Model\Extension */
-				$extension = $this->objectManager->get(
-					\TYPO3\CMS\Lang\Domain\Model\Extension::class,
-					$entry['key'],
-					$entry['title'],
-					$this->getExtensionIconWithPath($entry)
-				);
-				$extension->setVersionFromString($entry['version']);
-				$extension->setIconWidth($entry['ext_icon_width']);
-				$extension->setIconHeight($entry['ext_icon_height']);
+    /**
+     * @param \TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility
+     */
+    public function injectListUtility(ListUtility $listUtility)
+    {
+        $this->listUtility = $listUtility;
+    }
 
-				$this->extensions[$entry['key']] = $extension;
-			}
-			ksort($this->extensions);
-		}
-		return $this->extensions;
-	}
+    /**
+     * Returns all objects of this repository
+     *
+     * @return array The extensions
+     */
+    public function findAll()
+    {
+        if (empty($this->extensions)) {
+            $extensions = $this->listUtility->getAvailableAndInstalledExtensionsWithAdditionalInformation();
+            foreach ($extensions as $entry) {
+                /** @var $extension \TYPO3\CMS\Lang\Domain\Model\Extension */
+                $extension = $this->objectManager->get(
+                    Extension::class,
+                    $entry['key'],
+                    $entry['title'],
+                    $this->getExtensionIconWithPath($entry)
+                );
+                $extension->setVersionFromString($entry['version']);
+                if ($entry['ext_icon_width'] > 0) {
+                    $extension->setIconWidth($entry['ext_icon_width']);
+                }
+                if ($entry['ext_icon_height'] > 0) {
+                    $extension->setIconHeight($entry['ext_icon_height']);
+                }
 
-	/**
-	 * Counts all objects of this repository
-	 *
-	 * @return int The extension count
-	 */
-	public function countAll() {
-		$extensions = $this->findAll();
-		return count($extensions);
-	}
+                $this->extensions[$entry['key']] = $extension;
+            }
+            ksort($this->extensions);
+        }
+        return $this->extensions;
+    }
 
-	/**
-	 * Find one extension by offset
-	 *
-	 * @param int $offset The offset
-	 * @return TYPO3\CMS\Lang\Domain\Model\Extension The extension
-	 */
-	public function findOneByOffset($offset) {
-		$extensions = $this->findAll();
-		$extensions = array_values($extensions);
-		$offset = (int)$offset;
-		if (!empty($extensions[$offset])) {
-			return $extensions[$offset];
-		}
-		return NULL;
-	}
+    /**
+     * Counts all objects of this repository
+     *
+     * @return int The extension count
+     */
+    public function countAll()
+    {
+        $extensions = $this->findAll();
+        return count($extensions);
+    }
 
-	/**
-	 * Returns the extension icon
-	 *
-	 * @param array $extensionEntry
-	 * @return string
-	 */
-	protected function getExtensionIconWithPath($extensionEntry) {
-		$extensionIcon = $GLOBALS['TYPO3_LOADED_EXT'][$extensionEntry['key']]['ext_icon'];
-		if (empty($extensionIcon)) {
-			$extensionIcon = ExtensionManagementUtility::getExtensionIcon(PATH_site . $extensionEntry['siteRelPath'] . '/');
-		}
-		if (empty($extensionIcon)) {
-			$extensionIcon = '/typo3/clear.gif';
-		} else {
-			$extensionIcon = '../' . $extensionEntry['siteRelPath'] . '/' . $extensionIcon;
-		}
-		return $extensionIcon;
-	}
+    /**
+     * Find one extension by offset
+     *
+     * @param int $offset The offset
+     * @return \TYPO3\CMS\Lang\Domain\Model\Extension The extension
+     */
+    public function findOneByOffset($offset)
+    {
+        $extensions = $this->findAll();
+        $extensions = array_values($extensions);
+        $offset = (int)$offset;
+        if (!empty($extensions[$offset])) {
+            return $extensions[$offset];
+        }
+        return null;
+    }
 
+    /**
+     * Returns the extension icon
+     *
+     * @param array $extensionEntry
+     * @return string
+     */
+    protected function getExtensionIconWithPath($extensionEntry)
+    {
+        $extensionIcon = $GLOBALS['TYPO3_LOADED_EXT'][$extensionEntry['key']]['ext_icon'];
+        if (empty($extensionIcon)) {
+            $extensionIcon = ExtensionManagementUtility::getExtensionIcon(PATH_site . $extensionEntry['siteRelPath'] . '/');
+        }
+        if (empty($extensionIcon)) {
+            $extensionIcon = ExtensionManagementUtility::siteRelPath('core') . 'ext_icon.png';
+        } else {
+            $extensionIcon = '../' . $extensionEntry['siteRelPath'] . '/' . $extensionIcon;
+        }
+        return $extensionIcon;
+    }
 }

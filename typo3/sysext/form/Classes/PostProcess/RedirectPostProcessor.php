@@ -15,78 +15,70 @@ namespace TYPO3\CMS\Form\PostProcess;
  */
 
 /**
- * The redirect post processor
+ * The redirect post-processor
  */
-class RedirectPostProcessor implements \TYPO3\CMS\Form\PostProcess\PostProcessorInterface {
+class RedirectPostProcessor extends AbstractPostProcessor implements PostProcessorInterface
+{
+    /**
+     * @var \TYPO3\CMS\Form\Domain\Model\Element
+     */
+    protected $form;
 
-	/**
-	 * @var \TYPO3\CMS\Form\Domain\Model\Form
-	 */
-	protected $form;
+    /**
+     * @var array
+     */
+    protected $typoScript;
 
-	/**
-	 * @var array
-	 */
-	protected $typoScript;
+    /**
+     * @var string
+     */
+    protected $destination;
 
-	/**
-	 * @var \TYPO3\CMS\Form\Request
-	 */
-	protected $requestHandler;
+    /**
+     * Constructor
+     *
+     * @param \TYPO3\CMS\Form\Domain\Model\Element $form Form domain model
+     * @param array $typoScript Post processor TypoScript settings
+     */
+    public function __construct(\TYPO3\CMS\Form\Domain\Model\Element $form, array $typoScript)
+    {
+        $this->form = $form;
+        $this->typoScript = $typoScript;
+    }
 
-	/**
-	 * @var string
-	 */
-	protected $destination;
+    /**
+     * The main method called by the post processor
+     *
+     * @return string HTML message from this processor
+     */
+    public function process()
+    {
+        $this->setDestination();
+        $this->render();
+    }
 
-	/**
-	 * @var array
-	 */
-	protected $dirtyHeaders = array();
+    /**
+     * Sets the redirect destination
+     *
+     * @return void
+     */
+    protected function setDestination()
+    {
+        $this->destination = '';
+        if ($this->typoScript['destination']) {
+            $urlConf = array('parameter' => $this->typoScript['destination']);
+            $this->destination = $GLOBALS['TSFE']->cObj->typoLink_URL($urlConf);
+        }
+    }
 
-	/**
-	 * Constructor
-	 *
-	 * @param \TYPO3\CMS\Form\Domain\Model\Form $form Form domain model
-	 * @param array $typoScript Post processor TypoScript settings
-	 */
-	public function __construct(\TYPO3\CMS\Form\Domain\Model\Form $form, array $typoScript) {
-		$this->form = $form;
-		$this->typoScript = $typoScript;
-		$this->requestHandler = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Form\Request::class);
-	}
-
-	/**
-	 * The main method called by the post processor
-	 *
-	 * @return string HTML message from this processor
-	 */
-	public function process() {
-		$this->setDestination();
-		return $this->render();
-	}
-
-	/**
-	 * Sets the redirect destination
-	 *
-	 * @return void
-	 */
-	protected function setDestination() {
-		$this->destination = '';
-		if ($this->typoScript['destination']) {
-			$urlConf = array('parameter' => $this->typoScript['destination']);
-			$this->destination = $GLOBALS['TSFE']->cObj->typoLink_URL($urlConf);
-		}
-	}
-
-	/**
-	 * Render the message after trying to send the mail
-	 *
-	 * @return string HTML message from the mail view
-	 */
-	protected function render() {
-		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->destination);
-		return '';
-	}
-
+    /**
+     * Redirect to a destination
+     *
+     * @return void
+     */
+    protected function render()
+    {
+        \TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->destination);
+        return;
+    }
 }

@@ -14,8 +14,7 @@
 /**
  * TYPO3Link plugin for htmlArea RTE
  */
-define('TYPO3/CMS/Rtehtmlarea/Plugins/TYPO3Link',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
+define(['TYPO3/CMS/Rtehtmlarea/HTMLArea/Plugin/Plugin',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util'],
@@ -127,22 +126,21 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/TYPO3Link',
 					this.unLink(true);
 					return false;
 				}
-				var additionalParameter;
 				var node = this.editor.getSelection().getParentElement();
 				var el = this.editor.getSelection().getFirstAncestorOfType('a');
 				if (el != null) {
 					node = el;
 				}
+				var additionalParameter = '';
 				if (node != null && /^a$/i.test(node.nodeName)) {
-					additionalParameter = '&curUrl[href]=' + encodeURIComponent(node.getAttribute('href'));
+					additionalParameter = '&curUrl[url]=' + encodeURIComponent(node.getAttribute('href'));
 					if (node.target) additionalParameter += '&curUrl[target]=' + encodeURIComponent(node.target);
 					if (node.className) additionalParameter += '&curUrl[class]=' + encodeURIComponent(node.className);
 					if (node.title) additionalParameter += '&curUrl[title]=' + encodeURIComponent(node.title);
 					if (this.pageTSConfiguration && this.pageTSConfiguration.additionalAttributes) {
 						var additionalAttributes = this.pageTSConfiguration.additionalAttributes.split(',');
 						for (var i = additionalAttributes.length; --i >= 0;) {
-								// hasAttribute() not available in IE < 8
-							if ((node.hasAttribute && node.hasAttribute(additionalAttributes[i])) || node.getAttribute(additionalAttributes[i]) != null) {
+							if (node.hasAttribute(additionalAttributes[i])) {
 								additionalParameter += '&curUrl[' + additionalAttributes[i] + ']=' + encodeURIComponent(node.getAttribute(additionalAttributes[i]));
 							}
 						}
@@ -323,14 +321,13 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/TYPO3Link',
 					}
 					if (cur_target.trim()) node.target = cur_target.trim();
 						else node.removeAttribute('target');
-					if (cur_class.trim()) {
-						node.className = cur_class.trim();
+					if (!UserAgent.isOpera) {
+						node.removeAttribute('class');
 					} else {
-						if (!UserAgent.isOpera) {
-							node.removeAttribute('class');
-						} else {
-							node.className = '';
-						}
+						node.className = '';
+					}
+					if (cur_class.trim()) {
+						Dom.addClass(node, cur_class.trim());
 					}
 					if (cur_title.trim()) {
 						node.title = cur_title.trim();

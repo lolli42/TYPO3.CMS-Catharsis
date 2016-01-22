@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+
+	RewriteEngine On
+	# Use options from the htaccess in the main directory of the frontend in order
+	# to have versioned static files working
+	RewriteOptions inherit
+
+	# Store the current location in an environment variable CWD to use
+	# mod_rewrite in .htaccess files without knowing the RewriteBase
+	RewriteCond $0#%{REQUEST_URI} ([^#]*)#(.*)\1$
+	RewriteRule ^.*$ - [E=CWD:%2]
+
+	# Redirect install tool files
+	RewriteRule ^install(\/?.*)$ %{ENV:CWD}sysext/install/Start/Install.php [R=307,L]
+</IfModule>

@@ -16,37 +16,49 @@ namespace TYPO3\CMS\SysNote\Controller;
 
 /**
  * Note controller
- *
- * @author Kai Vogel <kai.vogel@speedprogs.de>
  */
-class NoteController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
+class NoteController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController
+{
+    /**
+     * @var \TYPO3\CMS\SysNote\Domain\Repository\SysNoteRepository
+     */
+    protected $sysNoteRepository;
 
-	/**
-	 * @var \TYPO3\CMS\SysNote\Domain\Repository\SysNoteRepository
-	 * @inject
-	 */
-	protected $sysNoteRepository;
+    /**
+     * @var \TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository
+     */
+    protected $backendUserRepository;
 
-	/**
-	 * @var \TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository
-	 * @inject
-	 */
-	protected $backendUserRepository;
+    /**
+     * @param \TYPO3\CMS\SysNote\Domain\Repository\SysNoteRepository $sysNoteRepository
+     */
+    public function injectSysNoteRepository(\TYPO3\CMS\SysNote\Domain\Repository\SysNoteRepository $sysNoteRepository)
+    {
+        $this->sysNoteRepository = $sysNoteRepository;
+    }
 
-	/**
-	 * Render notes by single PID or PID list
-	 *
-	 * @param string $pids Single PID or comma separated list of PIDs
-	 * @return string
-	 * @dontvalidate $pids
-	 */
-	public function listAction($pids) {
-		if (empty($pids) || empty($GLOBALS['BE_USER']->user['uid'])) {
-			return '';
-		}
-		$author = $this->backendUserRepository->findByUid($GLOBALS['BE_USER']->user['uid']);
-		$notes = $this->sysNoteRepository->findByPidsAndAuthor($pids, $author);
-		$this->view->assign('notes', $notes);
-	}
+    /**
+     * @param \TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository $backendUserRepository
+     */
+    public function injectBackendUserRepository(\TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository $backendUserRepository)
+    {
+        $this->backendUserRepository = $backendUserRepository;
+    }
 
+    /**
+     * Render notes by single PID or PID list
+     *
+     * @param string $pids Single PID or comma separated list of PIDs
+     * @return string
+     * @ignorevalidation $pids
+     */
+    public function listAction($pids)
+    {
+        if (empty($pids) || empty($GLOBALS['BE_USER']->user['uid'])) {
+            return '';
+        }
+        $author = $this->backendUserRepository->findByUid($GLOBALS['BE_USER']->user['uid']);
+        $notes = $this->sysNoteRepository->findByPidsAndAuthor($pids, $author);
+        $this->view->assign('notes', $notes);
+    }
 }

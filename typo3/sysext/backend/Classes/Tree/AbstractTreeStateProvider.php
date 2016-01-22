@@ -18,23 +18,20 @@ namespace TYPO3\CMS\Backend\Tree;
  * Abstract State Provider
  *
  * @todo This class is incomplete, because the methods still need
- * @author Stefan Galinski <stefan.galinski@gmail.com>
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
-abstract class AbstractTreeStateProvider {
+abstract class AbstractTreeStateProvider
+{
+    /**
+     * Sets the current tree state
+     *
+     * @return void
+     */
+    abstract public function setState();
 
-	/**
-	 * Sets the current tree state
-	 *
-	 * @return void
-	 */
-	abstract public function setState();
-
-	/**
-	 * Returns the last tree state
-	 *
-	 * @return something
-	 */
-	abstract public function getState();
-
+    /**
+     * Returns the last tree state
+     *
+     * @return something
+     */
+    abstract public function getState();
 }

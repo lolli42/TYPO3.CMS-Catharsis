@@ -14,48 +14,65 @@ namespace TYPO3\CMS\Rtehtmlarea\Hook;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Reports\Status;
+use TYPO3\CMS\Reports\StatusProviderInterface;
+
 /**
  * Hook into the backend module "Reports" checking whether there are extensions installed that conflicting with htmlArea RTE
  */
-class StatusReportConflictsCheckHook implements \TYPO3\CMS\Reports\StatusProviderInterface {
+class StatusReportConflictsCheckHook implements StatusProviderInterface
+{
+    /**
+     * Compiles a collection of system status checks as a status report.
+     *
+     * @return array List of statuses
+     */
+    public function getStatus()
+    {
+        $reports = array(
+            'noConflictingExtensionISInstalled' => $this->checkIfNoConflictingExtensionIsInstalled()
+        );
+        return $reports;
+    }
 
-	/**
-	 * Compiles a collection of system status checks as a status report.
-	 *
-	 * @return array List of statuses
-	 */
-	public function getStatus() {
-		$reports = array(
-			'noConflictingExtensionISInstalled' => $this->checkIfNoConflictingExtensionIsInstalled()
-		);
-		return $reports;
-	}
+    /**
+     * Check whether any conflicting extension has been installed
+     *
+     * @return Status
+     */
+    protected function checkIfNoConflictingExtensionIsInstalled()
+    {
+        $languageService = $this->getLanguageService();
+        $title = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_statusreport.xlf:title');
+        $conflictingExtensions = array();
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['rtehtmlarea']['conflicts'])) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['rtehtmlarea']['conflicts'] as $extensionKey => $version) {
+                if (ExtensionManagementUtility::isLoaded($extensionKey)) {
+                    $conflictingExtensions[] = $extensionKey;
+                }
+            }
+        }
+        if (!empty($conflictingExtensions)) {
+            $value = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_statusreport.xlf:keys')
+                . ' ' . implode(', ', $conflictingExtensions);
+            $message = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_statusreport.xlf:uninstall');
+            $status = Status::ERROR;
+        } else {
+            $value = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_statusreport.xlf:none');
+            $message = '';
+            $status = Status::OK;
+        }
+        return GeneralUtility::makeInstance(Status::class, $title, $value, $message, $status);
+    }
 
-	/**
-	 * Check whether any conflicting extension has been installed
-	 *
-	 * @return \TYPO3\CMS\Reports\Status
-	 */
-	protected function checkIfNoConflictingExtensionIsInstalled() {
-		$title = $GLOBALS['LANG']->sL('LLL:EXT:rtehtmlarea/hooks/statusreport/locallang.xlf:title');
-		$conflictingExtensions = array();
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['rtehtmlarea']['conflicts'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['rtehtmlarea']['conflicts'] as $extensionKey => $version) {
-				if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extensionKey)) {
-					$conflictingExtensions[] = $extensionKey;
-				}
-			}
-		}
-		if (count($conflictingExtensions)) {
-			$value = $GLOBALS['LANG']->sL('LLL:EXT:rtehtmlarea/hooks/statusreport/locallang.xlf:keys') . ' ' . implode(', ', $conflictingExtensions);
-			$message = $GLOBALS['LANG']->sL('LLL:EXT:rtehtmlarea/hooks/statusreport/locallang.xlf:uninstall');
-			$status = \TYPO3\CMS\Reports\Status::ERROR;
-		} else {
-			$value = $GLOBALS['LANG']->sL('LLL:EXT:rtehtmlarea/hooks/statusreport/locallang.xlf:none');
-			$message = '';
-			$status = \TYPO3\CMS\Reports\Status::OK;
-		}
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Reports\Status::class, $title, $value, $message, $status);
-	}
-
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

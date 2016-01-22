@@ -16,9 +16,7 @@ namespace TYPO3\CMS\Extensionmanager\Exception;
 
 /**
  * An exception when some dependency is unresolved
- *
- * @author Nicole Cordes <typo3@cordes.co>
  */
-class UnresolvedPhpDependencyException extends UnresolvedDependencyException {
-
+class UnresolvedPhpDependencyException extends UnresolvedDependencyException
+{
 }

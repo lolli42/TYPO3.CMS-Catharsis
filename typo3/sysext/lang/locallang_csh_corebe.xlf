@@ -13,10 +13,10 @@
 				<source>For most people TYPO3 is equivalent to a CMS providing a backend for management of the content and a frontend engine for website display. However TYPO3s core is natively designed to be a general purpose framework for management of database content. The core of TYPO3 delivers a set of principles for storage of this content, user access management, editing of the content, uploading and managing files etc. Many of these principles are expressed as an API (Application Programmers Interface) for use in the &lt;em&gt;extensions&lt;/em&gt; which ultimately adds most of the real functionality.</source>
 			</trans-unit>
 			<trans-unit id="_.seeAlso">
-				<source>Inside TYPO3 | http://typo3.org/documentation/document-library/doc_core_inside/This_document-1/</source>
+				<source>Inside TYPO3 | https://docs.typo3.org/typo3cms/InsideTypo3Reference/</source>
 			</trans-unit>
 			<trans-unit id="_.image">
-				<source>EXT:lang/cshimages/login.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/login.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id=".image_descr">
@@ -38,12 +38,12 @@ When you click the little "+" or "-" icons next to the main modules, you can col
 			<trans-unit id="_menu_modules.seeAlso" xml:space="preserve">
 				<source>be_groups:groupMods,
 be_users:userMods,
-More about Modules | http://typo3.org/documentation/document-library/doc_tut_quickstart/Backend_and_frontend/</source>
+More about Modules | https://docs.typo3.org/typo3cms/GettingStartedTutorial/GeneralPrinciples/Index.html</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_menu_modules.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_2.png,
-EXT:lang/cshimages/core_3.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_2.png,
+EXT:lang/Resources/Public/Images/cshimages/core_3.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="menu_modules.image_descr" xml:space="preserve">
@@ -72,7 +72,7 @@ TYPO3 also caches small configuration scripts from extensions, "ext_localconf.ph
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_menu_adminFunction.image">
-				<source>EXT:lang/cshimages/core_1.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_1.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="pagetree.alttitle">
@@ -92,8 +92,8 @@ Clicking the title of a page is another option. It will load the right frame of 
 			</trans-unit>
 			<trans-unit id="_pagetree.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:list_module,
-More about the Page Tree | http://typo3.org/documentation/document-library/doc_tut_quickstart/Pagetree/
-Rendering Page trees [Technical] | http://typo3.org/documentation/document-library/doc_core_api/Rendering_page_trees/
+More about the Page Tree | https://docs.typo3.org/typo3cms/GettingStartedTutorial/GeneralPrinciples/PageTree/
+Rendering Page trees [Technical] | https://docs.typo3.org/typo3cms/CoreApiReference/JavaScript/UsingExtjs/PageTree/
 Using the page tree (Animation) | FILE:EXT:welcome/modsub/ani_01.gif
 Clicking Icons or Titles? (Animation) | FILE:EXT:welcome/modsub/ani_06.gif
 Creating pages (Animation) | FILE:EXT:welcome/modsub/ani_07.gif
@@ -101,10 +101,10 @@ Moving pages (Animation) | FILE:EXT:welcome/modsub/ani_08.gif</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_pagetree.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_4.png,
-EXT:lang/cshimages/core_5.png,
-EXT:lang/cshimages/core_6.png,
-EXT:lang/cshimages/core_7.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_4.png,
+EXT:lang/Resources/Public/Images/cshimages/core_5.png,
+EXT:lang/Resources/Public/Images/cshimages/core_6.png,
+EXT:lang/Resources/Public/Images/cshimages/core_7.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="pagetree.image_descr" xml:space="preserve">
@@ -135,17 +135,17 @@ The administrator needs to allow backend users to access the File modules and in
 				<source>be_groups:groupMods,
 be_groups:file_mountpoints,
 be_users:file_mountpoints,
-Managing files in TYPO3 | http://typo3.org/documentation/document-library/doc_tut_quickstart/Managing_files_in_TY/
-Uploading Files | http://typo3.org/documentation/document-library/doc_tut_quickstart/Uploading_images_to/,
-Details about file mounts | http://typo3.org/documentation/document-library/doc_core_inside/More_about_File_Moun/,
+Managing files in TYPO3 | https://docs.typo3.org/typo3cms/GettingStartedTutorial/TheFileModuleOrImageArchives/ManagingFilesInTypo3/
+Uploading Files | https://docs.typo3.org/typo3cms/GettingStartedTutorial/TheFileModuleOrImageArchives/UploadingImagesToTheArchive/,
+Details about file mounts | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/AccessControl/MoreAboutFileMounts/,
 sys_filemounts,
 xMOD_csh_corebe:filelist_module</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_filetree.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_8.png,
-EXT:lang/cshimages/core_9.png,
-EXT:lang/cshimages/core_10.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_8.png,
+EXT:lang/Resources/Public/Images/cshimages/core_9.png,
+EXT:lang/Resources/Public/Images/cshimages/core_10.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="filetree.image_descr" xml:space="preserve">
@@ -193,14 +193,14 @@ If you click the tabel title in the listing you will enter single-table mode. In
 xMOD_csh_corebe:list_module_root,
 xMOD_csh_corebe:filelist_module,
 xMOD_csh_corebe:TCEforms
-Selective Editing | http://typo3.org/documentation/document-library/doc_tut_quickstart/Selective_editing/
-The List module ("Inside TYPO3") | http://typo3.org/documentation/document-library/doc_core_inside/List_module/,</source>
+Selective Editing | https://docs.typo3.org/typo3cms/GettingStartedTutorial/TheListModuleAndClipboard/SelectiveEditing/
+The List module ("Inside TYPO3") | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/CoreModules/ListModule/,</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_list_module.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_11.png,
-EXT:lang/cshimages/core_12.png,
-EXT:lang/cshimages/core_34.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_11.png,
+EXT:lang/Resources/Public/Images/cshimages/core_12.png,
+EXT:lang/Resources/Public/Images/cshimages/core_34.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="list_module.image_descr" xml:space="preserve">
@@ -230,12 +230,12 @@ Usually records that are located in the page tree root are somehow "global" for 
 			</trans-unit>
 			<trans-unit id="_list_module_root.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:list_module
-The List module ("Inside TYPO3") | http://typo3.org/documentation/document-library/doc_core_inside/List_module/</source>
+The List module ("Inside TYPO3") | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/CoreModules/ListModule/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_list_module_root.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_13.png,
-EXT:lang/cshimages/core_14.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_13.png,
+EXT:lang/Resources/Public/Images/cshimages/core_14.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="list_module_root.image_descr" xml:space="preserve">
@@ -251,15 +251,15 @@ When "Admin"-users wants to create a new record in the page tree root they will 
 			<trans-unit id="_list_clipboard.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:list_module,
 xMOD_csh_corebe:filelist_clipboard,
-Using the clipboard | http://typo3.org/documentation/document-library/doc_tut_quickstart/Using_the_List_modul/
-Numeric Clipboard pads | http://typo3.org/documentation/document-library/doc_tut_quickstart/The_numeric_clipboar/
-Clipboard details [Technical] | http://typo3.org/documentation/document-library/doc_core_inside/Clipboard/,
-Accessing clipboard in scripts [Technical] | http://typo3.org/documentation/document-library/doc_core_api/Accessing_the_clipbo/</source>
+Using the clipboard | https://docs.typo3.org/typo3cms/GettingStartedTutorial/TheListModuleAndClipboard/UsingTheListModuleEffectively/
+Numeric Clipboard pads | https://docs.typo3.org/typo3cms/GettingStartedTutorial/TheListModuleAndClipboard/TheNumericClipboardPads-ManagingManyElements/
+Clipboard details [Technical] | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/GeneralInterfaceFeatures/Clipboard/,
+Accessing clipboard in scripts [Technical] | https://docs.typo3.org/typo3cms/CoreApiReference/ApiOverview/Examples/Clipboard/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_list_clipboard.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_16.png,
-EXT:lang/cshimages/core_17.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_16.png,
+EXT:lang/Resources/Public/Images/cshimages/core_17.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="list_clipboard.image_descr" xml:space="preserve">
@@ -277,7 +277,7 @@ If you select one of the numeric clipboard pads you will be able to store more t
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_list_searchbox.image">
-				<source>EXT:lang/cshimages/core_15.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_15.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="list_options.alttitle">
@@ -293,8 +293,8 @@ xMOD_csh_corebe:filelist_options</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_list_options.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_18.png,
-EXT:lang/cshimages/core_19.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_18.png,
+EXT:lang/Resources/Public/Images/cshimages/core_19.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="list_options.image_descr" xml:space="preserve">
@@ -313,11 +313,11 @@ xMOD_csh_corebe:new_pages</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_new_regular.image">
-				<source>EXT:lang/cshimages/core_70.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_70.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="new_regular.image_descr">
-				<source>The selection of records a user can create on this particular page. The selection depends on the users permissions and the page type. For example a SysFolder page type can contain any kind of record while regular pages can contain only some types (like content elements).</source>
+				<source>The selection of records a user can create on this particular page. The selection depends on the user's permissions and the page type. For example a Folder page type can contain any kind of record while regular pages can contain only some types (like Content Elements).</source>
 			</trans-unit>
 			<trans-unit id="new_pages.alttitle">
 				<source>Create new page wizard</source>
@@ -328,12 +328,12 @@ xMOD_csh_corebe:new_pages</source>
 			<trans-unit id="_new_pages.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:new_regular,
 xMOD_csh_corebe:new_ce,
-How to create a new page | http://typo3.org/documentation/document-library/doc_tut_quickstart/New_page/</source>
+How to create a new page | https://docs.typo3.org/typo3cms/GettingStartedTutorial/EditAndCreatePagesAndContent/NewPage/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_new_pages.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_20.png,
-EXT:lang/cshimages/core_21.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_20.png,
+EXT:lang/Resources/Public/Images/cshimages/core_21.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="new_pages.image_descr" xml:space="preserve">
@@ -352,15 +352,15 @@ To access the "Create new page wizard" in the first place, just click the link i
 			<trans-unit id="_new_ce.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:new_pages,
 xMOD_csh_corebe:new_regular,
-How to create new page content | http://typo3.org/documentation/document-library/doc_tut_quickstart/New_page/
-More about Content Element types | http://typo3.org/documentation/document-library/doc_tut_quickstart/Content_element_type/
-Adding Custom elements [Technical] | http://typo3.org/documentation/document-library/doc_core_api/Adding_elements_to_t/</source>
+How to create new page content | https://docs.typo3.org/typo3cms/GettingStartedTutorial/EditAndCreatePagesAndContent/NewPage/
+More about Content Element types | https://docs.typo3.org/typo3cms/GettingStartedTutorial/GeneralPrinciples/PageContent/
+Adding Custom elements [Technical] | https://docs.typo3.org/typo3cms/CoreApiReference/ApiOverview/Examples/ContentElementWizard/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_new_ce.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_22.png,
-EXT:lang/cshimages/core_23.png,
-EXT:lang/cshimages/core_24.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_22.png,
+EXT:lang/Resources/Public/Images/cshimages/core_23.png,
+EXT:lang/Resources/Public/Images/cshimages/core_24.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="new_ce.image_descr" xml:space="preserve">
@@ -380,12 +380,12 @@ You can access the Content Element wizard from the Create new record dialog.</so
 			<trans-unit id="_move_el_pages.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:move_el_cs,
 xMOD_csh_corebe:new_pages,
-Moving pages | http://typo3.org/documentation/document-library/doc_tut_quickstart/Move_page/</source>
+Moving pages | https://docs.typo3.org/typo3cms/GettingStartedTutorial/EditAndCreatePagesAndContent/NewPage/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_move_el_pages.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_27.png,
-EXT:lang/cshimages/core_28.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_27.png,
+EXT:lang/Resources/Public/Images/cshimages/core_28.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="move_el_pages.image_descr" xml:space="preserve">
@@ -407,8 +407,8 @@ xMOD_csh_corebe:new_regular</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_move_el_cs.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_25.png,
-EXT:lang/cshimages/core_26.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_25.png,
+EXT:lang/Resources/Public/Images/cshimages/core_26.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="move_el_cs.image_descr" xml:space="preserve">
@@ -433,13 +433,13 @@ If you want to extend the number of history states to above the default 20 you c
 			</trans-unit>
 			<trans-unit id="_history_log.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:history_sum,
-Configuring History using Page TSconfig | http://typo3.org/documentation/document-library/doc_core_tsconfig/MOD/
+Configuring History using Page TSconfig | https://docs.typo3.org/typo3cms/TSconfigReference/PageTsconfig/Mod/
 Undo/History article | http://typo3.org/documentation/tips-tricks/the-undohistory-feature/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_history_log.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_37.png,
-EXT:lang/cshimages/core_38.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_37.png,
+EXT:lang/Resources/Public/Images/cshimages/core_38.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="history_log.image_descr" xml:space="preserve">
@@ -464,7 +464,7 @@ Undo/History article | http://typo3.org/documentation/tips-tricks/the-undohistor
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_history_sum.image">
-				<source>EXT:lang/cshimages/core_39.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_39.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="history_sum.image_descr">
@@ -480,7 +480,7 @@ Undo/History article | http://typo3.org/documentation/tips-tricks/the-undohistor
 				<source>&lt;b&gt;Notice:&lt;/b&gt; If you do not see red/green difference values, the server TYPO3 runs on does not support making difference views or it has been incorrectly configured to provide this feature.</source>
 			</trans-unit>
 			<trans-unit id="_history_entry.image">
-				<source>EXT:lang/cshimages/core_40.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_40.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="TCEforms.alttitle">
@@ -493,9 +493,6 @@ Undo/History article | http://typo3.org/documentation/tips-tricks/the-undohistor
 				<source>&lt;b&gt;Saving content&lt;/b&gt;
 Just press one of the save-buttons in the top of bottom of the form. There are some variants allowing you to "Save and close document" or "Save document and View page". The latter will save the document and open a new window where the affected page is shown (be sure to disable pop-up blockers for this function!)
 
-&lt;b&gt;Secondary options (palettes)&lt;/b&gt;
-Fields in the editing forms are prioritized so that certain fields of generally lesser interest is moved to a so called "palette". By default it means that the fields appears in the top frame when you enter the field to which the secondary fields are associated. But you can also enable the fields to be shown in the main form which is more convenient some times - just select the "Show secondary options" checkbox (bottom of page).
-
 &lt;b&gt;Editing multiple records at a time&lt;/b&gt;
 From the Web&gt;List module you can activate editing of multiple records at a time. This is done when you list a single table and enable multiple columns for display (see Web&gt;List module for details) - then icons will link you to a form with multiple records displayed, possibly with only certain fields available for editing.
 
@@ -506,27 +503,24 @@ Another way of editing records in TYPO3 is using the website frontend. Depending
 You can customize the TCEforms in many ways using User TSconfig and Page TSconfig. See links below.</source>
 			</trans-unit>
 			<trans-unit id="_TCEforms.seeAlso" xml:space="preserve">
-				<source>Editing pages | http://typo3.org/documentation/document-library/doc_tut_quickstart/Edit_page/
+				<source>Editing pages | https://docs.typo3.org/typo3cms/GettingStartedTutorial/EditAndCreatePagesAndContent/EditPageContent/
 Frontend Editing | http://typo3.org/documentation/document-library/doc_tut_quickstart/Frontend_editing/,
 xMOD_csh_corebe:list_module
-User TSconfig related to forms | http://typo3.org/documentation/document-library/doc_core_tsconfig/OPTIONS/
-Page TSconfig related to forms | http://typo3.org/documentation/document-library/doc_core_tsconfig/RTE/
-Linking to the edit forms [Technical] | http://typo3.org/documentation/document-library/doc_core_api/Links_to_edit_record/</source>
+User TSconfig related to forms | https://docs.typo3.org/typo3cms/TSconfigReference/UserTsconfig/Options/
+Page TSconfig related to forms | https://docs.typo3.org/typo3cms/CoreApiReference/Rte/Transformations/Tsconfig/
+Linking to the edit forms [Technical] | https://docs.typo3.org/typo3cms/CoreApiReference/ApiOverview/Examples/EditLinks/</source>
 			</trans-unit>
 			<trans-unit id="_TCEforms.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_30.png,
-EXT:lang/cshimages/core_29.png,
-EXT:lang/cshimages/core_32.png,
-EXT:lang/cshimages/core_33.png,
-EXT:lang/cshimages/core_31.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_30.png,
+EXT:lang/Resources/Public/Images/cshimages/core_29.png,
+EXT:lang/Resources/Public/Images/cshimages/core_32.png,
+EXT:lang/Resources/Public/Images/cshimages/core_33.png,
+EXT:lang/Resources/Public/Images/cshimages/core_31.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="TCEforms.image_descr" xml:space="preserve">
 				<source>This is how a typical record is edited in TYPO3. The form display is standardized for all types of records. You will always see the same buttons in the top for saving or closing. In the blue bar you will see the type of record (table name) and the ID number that each record has (uid). Here the record is a page with ID "2" and the title "Content Elements".
-In the bottom of the editing page you will find additional options for the interface. You can select "Show field descriptions" if you want a small text shown for each element that explains what it is used for. Also "Show secondary options" is very important since it will show additional form fields in the main forms (from "palettes").
-Here "Show secondary options (palettes)" is enabled. The result is that a number of additional fields of "lower priority" is shown under the "Pagetitle" field.
-The "additional fields" from the example above is located in a so called "palette" which is normally shown in the top frame when "Show secondary options" is disabled. Whether you prefer the one or the other solution is your choice.
-This is an example of three Content Elements being edited at the same time. You can edit multiple records by using the links from the Web&gt;List module in single-table mode. Notice that not only are three records shown at the same time - it is also a limited number of fields shown for editing, here "Header" and "Hide". You can combine this almost any way you like. This is of course very useful if you need to edit only the header of multiple records.</source>
+The "additional fields" from the example above is located in a so called "palette". This is an example of three content elements being edited at the same time. You can edit multiple records by using the links from the Web&gt;List module in single-table mode. Notice that not only are three records shown at the same time - it is also a limited number of fields shown for editing, here "Header" and "Hide". You can combine this almost any way you like. This is of course very useful if you need to edit only the header of multiple records.</source>
 			</trans-unit>
 			<trans-unit id="TCEforms_docSelector.alttitle">
 				<source>Document Selector</source>
@@ -535,7 +529,7 @@ This is an example of three Content Elements being edited at the same time. You 
 				<source>Here you can switch between "open documents" in TYPO3.</source>
 			</trans-unit>
 			<trans-unit id="_TCEforms_docSelector.image">
-				<source>EXT:lang/cshimages/core_35.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_35.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="TCEforms_cacheSelector.alttitle">
@@ -549,10 +543,10 @@ This is an example of three Content Elements being edited at the same time. You 
 If cache options are not available for you, you should ask your administrator to enable it for you. (Admins: See link below to TSconfig.)</source>
 			</trans-unit>
 			<trans-unit id="_TCEforms_cacheSelector.seeAlso">
-				<source>User TSconfig (See "clearCache.pages/.all") | http://typo3.org/documentation/document-library/doc_core_tsconfig/OPTIONS/</source>
+				<source>User TSconfig (See "clearCache.pages/.all") | https://docs.typo3.org/typo3cms/TSconfigReference/PageTsconfig/Options/</source>
 			</trans-unit>
 			<trans-unit id="_TCEforms_cacheSelector.image">
-				<source>EXT:lang/cshimages/core_36.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_36.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="perm_module.alttitle">
@@ -573,14 +567,14 @@ Shows the permissions settings for owner / group / everybody. You will be able t
 			</trans-unit>
 			<trans-unit id="_perm_module.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:perm_module_setting,
-User Management Howto | http://typo3.org/documentation/document-library/doc_tut_quickstart/Setting_up_user_perm/
-Permission system in TYPO3 [Technical] | http://typo3.org/documentation/document-library/doc_core_inside/Access_Control_optio/,
+User Management How-to | https://docs.typo3.org/typo3cms/GettingStartedTutorial/UserManagement/SettingUpUserPermissions/
+Permission system in TYPO3 [Technical] | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/AccessControl/AccessControlOptions/,
 _MOD_user_setup:option_helpText</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_perm_module.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_43.png,
-EXT:lang/cshimages/core_41.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_43.png,
+EXT:lang/Resources/Public/Images/cshimages/core_41.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="perm_module_setting.alttitle">
@@ -609,11 +603,11 @@ Allows users to create sub-pages to this page.</source>
 			</trans-unit>
 			<trans-unit id="_perm_module_setting.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:perm_module,
-User Management Howto | http://typo3.org/documentation/document-library/doc_tut_quickstart/Setting_up_user_perm/</source>
+User Management Howto | https://docs.typo3.org/typo3cms/GettingStartedTutorial/UserManagement/SettingUpUserPermissions/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_perm_module_setting.image">
-				<source>EXT:lang/cshimages/core_42.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_42.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="perm_module_setting.image_descr">
@@ -643,8 +637,8 @@ sys_filemounts</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_filelist_module.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_47.png,
-EXT:lang/cshimages/core_49.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_47.png,
+EXT:lang/Resources/Public/Images/cshimages/core_49.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="filelist_module.image_descr" xml:space="preserve">
@@ -659,12 +653,12 @@ When you click a file icon you see a context menu appear over it. Here you can p
 			</trans-unit>
 			<trans-unit id="_filelist_clipboard.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:list_clipboard,
-About the Clipboard [Technical] | http://typo3.org/documentation/document-library/doc_core_inside/Clipboard/</source>
+About the Clipboard [Technical] | https://docs.typo3.org/typo3cms/InsideTypo3Reference/CoreArchitecture/GeneralInterfaceFeatures/Clipboard/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_filelist_clipboard.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_44.png,
-EXT:lang/cshimages/core_46.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_44.png,
+EXT:lang/Resources/Public/Images/cshimages/core_46.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="filelist_clipboard.image_descr" xml:space="preserve">
@@ -684,7 +678,7 @@ xMOD_csh_corebe:filelist_clipboard</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_filelist_options.image">
-				<source>EXT:lang/cshimages/core_48.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_48.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="filelist_options.image_descr">
@@ -701,7 +695,7 @@ xMOD_csh_corebe:filelist_clipboard</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_file_edit.image">
-				<source>EXT:lang/cshimages/core_50.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_50.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="file_edit.image_descr">
@@ -720,9 +714,9 @@ xMOD_csh_corebe:file_rename</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_file_newfolder.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_51.png,
-EXT:lang/cshimages/core_52.png,
-EXT:lang/cshimages/core_53.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_51.png,
+EXT:lang/Resources/Public/Images/cshimages/core_52.png,
+EXT:lang/Resources/Public/Images/cshimages/core_53.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="file_newfolder.image_descr" xml:space="preserve">
@@ -734,7 +728,7 @@ After pressing the "Create folders" button the folders will appear in the folder
 				<source>Creating a new file</source>
 			</trans-unit>
 			<trans-unit id="file_newfile.description">
-				<source>Enter a filename here if you want to create a new text-based file. Notice that it must have one of the endings in the list of text-endings shown above (except "php" endings).</source>
+				<source>Enter a filename here if you want to create a new text-based file. Notice that it must have one of the endings in the list of text-endings shown below (except "php" endings).</source>
 			</trans-unit>
 			<trans-unit id="file_newfile.details">
 				<source>Newly created files will have the size of 0 (zero). After creating a new file it would be natural that you wanted to edit the file to put content into it. This is done simply by clicking the icon of the file and select "Edit" from the clickmenu.</source>
@@ -747,15 +741,21 @@ xMOD_csh_corebe:file_rename</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_file_newfile.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_51.png,
-EXT:lang/cshimages/core_54.png,
-EXT:lang/cshimages/core_55.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_51.png,
+EXT:lang/Resources/Public/Images/cshimages/core_54.png,
+EXT:lang/Resources/Public/Images/cshimages/core_55.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="file_newfile.image_descr" xml:space="preserve">
 				<source>To create a new file, first click the folder icon where you want to create the file. Select "New".
 Then enter the filename in the dialog in the right frame.
 After pressing "Create file" you will see a new, empty file in the folder you selected.</source>
+			</trans-unit>
+			<trans-unit id="file_newMedia.alttitle">
+				<source>Adding a new media asset</source>
+			</trans-unit>
+			<trans-unit id="file_newMedia.description">
+				<source>Enter an URL to a media asset here. Notice that it must be from one of the allowed providers listed below.</source>
 			</trans-unit>
 			<trans-unit id="file_rename.alttitle">
 				<source>Rename a file or folder</source>
@@ -768,8 +768,8 @@ After pressing "Create file" you will see a new, empty file in the folder you se
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_file_rename.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_56.png,
-EXT:lang/cshimages/core_57.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_56.png,
+EXT:lang/Resources/Public/Images/cshimages/core_57.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="file_rename.image_descr" xml:space="preserve">
@@ -791,12 +791,12 @@ Notice that file uploads may take a significant amount of time, even if you have
 			</trans-unit>
 			<trans-unit id="_file_upload.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:filelist_module,
-Howto upload files | http://typo3.org/documentation/document-library/doc_tut_quickstart/Uploading_images_to/</source>
+How-to upload files | https://docs.typo3.org/typo3cms/GettingStartedTutorial/TheFileModuleOrImageArchives/UploadingImagesToTheArchive/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_file_upload.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_58.png,
-EXT:lang/cshimages/core_59.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_58.png,
+EXT:lang/Resources/Public/Images/cshimages/core_59.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="file_upload.image_descr" xml:space="preserve">
@@ -819,12 +819,12 @@ The most typical application of the Form wizard is with Content Elements of the 
 			</trans-unit>
 			<trans-unit id="_wizard_forms_wiz.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:wizard_table_wiz,
-Form Wizard details [Technical]| http://typo3.org/documentation/document-library/doc_core_api/Wizards_Configuratio/,</source>
+Form Wizard details [Technical]| https://docs.typo3.org/typo3cms/CoreApiReference/ApiOverview/Examples/ContentElementWizard/,</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_wizard_forms_wiz.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_60.png,
-EXT:lang/cshimages/core_69.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_60.png,
+EXT:lang/Resources/Public/Images/cshimages/core_69.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="wizard_forms_wiz.image_descr" xml:space="preserve">
@@ -838,7 +838,7 @@ Usually you enter the Form Wizard by clicking the form wizard icon next for a te
 				<source>Use the refresh button to update the form (without saving it), for instance if you changed a field type or so. When you are done you should click one of the real save buttons to save and return to the form from which you entered the wizard. The information from this wizard should then be saved into the field the wizard was associated with.</source>
 			</trans-unit>
 			<trans-unit id="_wizard_forms_wiz_buttons.image">
-				<source>EXT:lang/cshimages/core_62.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_62.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="wizard_forms_wiz_formmail_info.alttitle">
@@ -851,10 +851,10 @@ Usually you enter the Form Wizard by clicking the form wizard icon next for a te
 				<source>Notice: In order to enter a recipient address you need access to the "Subheader" field in the Content Elements. Yes, its quite strange, but so it is. Ask your administrator for access if you don't have it.</source>
 			</trans-unit>
 			<trans-unit id="_wizard_forms_wiz_formmail_info.seeAlso">
-				<source>Howto create Mail Forms | http://typo3.org/documentation/document-library/doc_tut_quickstart/Email_form/</source>
+				<source>How-to create Mail Forms | https://docs.typo3.org/typo3cms/GettingStartedTutorial/EditAndCreatePagesAndContent/EmailForm/</source>
 			</trans-unit>
 			<trans-unit id="_wizard_forms_wiz_formmail_info.image">
-				<source>EXT:lang/cshimages/core_61.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_61.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="wizard_table_wiz.alttitle">
@@ -869,11 +869,11 @@ You can also disable the setting "Small fields" below the wizard if you want lar
 			</trans-unit>
 			<trans-unit id="_wizard_table_wiz.seeAlso" xml:space="preserve">
 				<source>xMOD_csh_corebe:wizard_forms_wiz,
-Table Wizard details [Technical]| http://typo3.org/documentation/document-library/doc_core_api/Wizard_scripts_in_th/</source>
+Table Wizard details [Technical]| https://docs.typo3.org/typo3cms/TCAReference/AdditionalFeatures/CoreWizardScripts/</source>
 				<note from="developer">A part of this string is an internal text, which must not be changed. Just copy this part into the translation field and do not change it. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="_wizard_table_wiz.image">
-				<source>EXT:lang/cshimages/core_63.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_63.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="wizard_table_wiz_buttons.alttitle">
@@ -883,7 +883,7 @@ Table Wizard details [Technical]| http://typo3.org/documentation/document-librar
 				<source>Use the refresh button to update the form without saving it. When you are done you should click one of the real save buttons to save and return to the form from which you entered the wizard. The information from this wizard should then be saved into the field the wizard was associated with.</source>
 			</trans-unit>
 			<trans-unit id="_wizard_table_wiz_buttons.image">
-				<source>EXT:lang/cshimages/core_62.png</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_62.png</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="shortcuts.alttitle">
@@ -902,13 +902,13 @@ Only "Admin"-users can access the shortcut frame in TYPO3 by default. Other user
 Editing pages from an id is easy with the shortcut frame. Simply enter an integer number and that page will be loaded for editing. If you enter "[table]:[id]" then it will try to edit a record from the [table] table, for example "tt_content:123" will look for content element 123 (for admins only). Finally, if you enter a string that doesn't match a page or other record the Web&gt;List module will be invoked doing a search in the first database mount you have.</source>
 			</trans-unit>
 			<trans-unit id="_shortcuts.seeAlso">
-				<source>User TSconfig -&gt;SETUP | http://typo3.org/documentation/document-library/doc_core_tsconfig/OPTIONS/</source>
+				<source>User TSconfig -&gt;SETUP | https://docs.typo3.org/typo3cms/TSconfigReference/UserTsconfig/Options/</source>
 			</trans-unit>
 			<trans-unit id="_shortcuts.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_64.png,
-EXT:lang/cshimages/core_65.png,
-EXT:lang/cshimages/core_67.png,
-EXT:lang/cshimages/core_68.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_64.png,
+EXT:lang/Resources/Public/Images/cshimages/core_65.png,
+EXT:lang/Resources/Public/Images/cshimages/core_67.png,
+EXT:lang/Resources/Public/Images/cshimages/core_68.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="shortcuts.image_descr" xml:space="preserve">
@@ -927,13 +927,13 @@ You can name shortcuts, you can even group them and share them. If you want to e
 				<source>In order to create a bookmark it must be supported by the module you want to create the bookmark to. Whether bookmarks are supported can be seen in the top of a module. If there is a small star icon you can click it to create the bookmark.</source>
 			</trans-unit>
 			<trans-unit id="_bookmarks.seeAlso">
-				<source>User TSconfig -&gt;SETUP | http://typo3.org/documentation/document-library/doc_core_tsconfig/OPTIONS/</source>
+				<source>User TSconfig -&gt;SETUP | https://docs.typo3.org/typo3cms/TSconfigReference/UserTsconfig/Options/</source>
 			</trans-unit>
 			<trans-unit id="_bookmarks.image" xml:space="preserve">
-				<source>EXT:lang/cshimages/core_64.png,
-EXT:lang/cshimages/core_65.png,
-EXT:lang/cshimages/core_67.png,
-EXT:lang/cshimages/core_68.png,</source>
+				<source>EXT:lang/Resources/Public/Images/cshimages/core_64.png,
+EXT:lang/Resources/Public/Images/cshimages/core_65.png,
+EXT:lang/Resources/Public/Images/cshimages/core_67.png,
+EXT:lang/Resources/Public/Images/cshimages/core_68.png,</source>
 				<note from="developer">This string contains an internal text, which must not be changed. Just copy the original text into the translation field. For more information have a look at the Tutorial.</note>
 			</trans-unit>
 			<trans-unit id="bookmarks.image_descr" xml:space="preserve">

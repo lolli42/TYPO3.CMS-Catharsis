@@ -32,12 +32,12 @@ Build/node_modules/*
 .cache
 .sass-cache
 .session
+typo3/sysext/core/Build/Configuration/Acceptance/Support/_generated/*
+typo3/sysext/core/Build/Configuration/Acceptance/Support/AcceptanceTester.php
 #
 # Ignore composer stuff
 bin/*
-Packages/*
-typo3/contrib/vendor/*
-composer.lock
+vendor/*
 #
 # Ignore common TYPO3 CMS directories
 typo3temp/*

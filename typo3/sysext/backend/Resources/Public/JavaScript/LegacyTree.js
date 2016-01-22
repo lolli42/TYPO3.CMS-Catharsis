@@ -11,14 +11,17 @@
  * The TYPO3 project - inspiring people to share!
  */
 
+var Tree, DragDrop;
+
 /**
+ * Module: TYPO3/CMS/Backend/LegacyTree
  * JavaScript RequireJS module in use for legacy trees, used
  * in FolderTree, Element Browser PageTree and
  * Element Browser FolderTree
  * note that this should not be used (thus, declared as anonymous
  * UMD module)
+ * @exports TYPO3/CMS/Backend/LegacyTree
  */
-var Tree, DragDrop;
 define(['jquery'], function($) {
 
 	DragDrop = {
@@ -97,7 +100,7 @@ define(['jquery'], function($) {
 	};
 
 	Tree = {
-		ajaxID: 'SC_alt_db_navframe::expandCollapse',	// has to be either "SC_alt_db_navframe::expandCollapse" or "SC_alt_file_navframe::expandCollapse"
+		ajaxID: 'sc_alt_db_navframe_expandtoggle',	// has to be either "sc_alt_db_navframe_expandtoggle" or "sc_alt_file_navframe_expandtoggle"
 		frameSetModule: null,
 		activateDragDrop: true,
 		highlightClass: 'active',
@@ -160,6 +163,9 @@ define(['jquery'], function($) {
 
 		// selects the activated item again, in case it collapsed and got expanded again
 		reSelectActiveItem: function() {
+			if (!top.fsMod) {
+				return;
+			}
 			var $activeItem = $('#' + top.fsMod.navFrameHighlightedID[this.frameSetModule]);
 			if ($activeItem.length) {
 				$activeItem.addClass(Tree.highlightClass);
@@ -192,7 +198,5 @@ define(['jquery'], function($) {
 		}
 	};
 
-	return function() {
-		return Tree;
-	}();
+	return Tree;
 });

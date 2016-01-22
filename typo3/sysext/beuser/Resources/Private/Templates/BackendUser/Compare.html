@@ -1,11 +1,8 @@
 {namespace be = TYPO3\CMS\Backend\ViewHelpers}
 {namespace bu = TYPO3\CMS\Beuser\ViewHelpers}
+{namespace core = TYPO3\CMS\Core\ViewHelpers}
 
 <f:layout name="Default" />
-
-<f:section name="iconButtons">
-	<f:link.action action="index"><be:spriteManagerIcon iconName="actions-view-go-back" /></f:link.action>
-</f:section>
 
 <f:section name="headline">
 	<h1><f:translate key="compareBackendUsers">Compare backend users</f:translate></h1>
@@ -20,7 +17,7 @@
 					<f:for each="{compareUserList}" as="compareUser">
 						<th>
 							<a href="#" class="t3-js-clickmenutrigger" data-table="be_users" data-uid="{compareUser.uid}" data-listframe="1" title="id={compareUser.uid}">
-								<bu:spriteIconForRecord table="be_users" object="{compareUser}" />
+								<be:avatar backendUser="{compareUser.uid}" showIcon="true" />
 							</a>
 							{compareUser.userName}
 						</th>
@@ -64,17 +61,19 @@
 					<th><f:translate key="disable_compare" /></th>
 					<f:for each="{compareUserList}" as="compareUser">
 						<td>
-							<f:if condition="{compareUser.isDisabled} == 1">
-								<f:then>
-									<a class="btn btn-default" href="{bu:issueCommand(parameters: 'data[be_users][{compareUser.uid}][disable]=0', redirectUrl: redirectUrl)}">
-										<be:spriteManagerIcon iconName="actions-edit-unhide" options="{title: 'unhide'}" />
-									</a>
-								</f:then>
-								<f:else>
-									<a class="btn btn-default" href="{bu:issueCommand(parameters: 'data[be_users][{compareUser.uid}][disable]=1', redirectUrl: redirectUrl)}">
-										<be:spriteManagerIcon iconName="actions-edit-hide" options="{title: 'hide'}" />
-									</a>
-								</f:else>
+							<f:if condition="{compareUser.currentlyLoggedIn} == 0">
+								<f:if condition="{compareUser.isDisabled} == 1">
+									<f:then>
+										<a class="btn btn-default" href="{bu:issueCommand(parameters: 'data[be_users][{compareUser.uid}][disable]=0', redirectUrl: redirectUrl)}" title="{f:translate(key: 'visibility.unhide')}">
+											<core:icon identifier="actions-edit-unhide" />
+										</a>
+									</f:then>
+									<f:else>
+										<a class="btn btn-default" href="{bu:issueCommand(parameters: 'data[be_users][{compareUser.uid}][disable]=1', redirectUrl: redirectUrl)}" title="{f:translate(key: 'visibility.hide')}">
+											<core:icon identifier="actions-edit-hide" />
+										</a>
+									</f:else>
+								</f:if>
 							</f:if>
 						</td>
 					</f:for>

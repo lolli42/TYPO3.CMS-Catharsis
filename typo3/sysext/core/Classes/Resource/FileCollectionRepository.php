@@ -14,59 +14,59 @@ namespace TYPO3\CMS\Core\Resource;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
+use TYPO3\CMS\Core\Collection\RecordCollectionRepository;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Repository for accessing the collections stored in the database
- *
- * @author Andreas Wolf <andreas.wolf@ikt-werk.de>
- * @author Ingmar Schlecht <ingmar@typo3.org>
  */
-class FileCollectionRepository extends \TYPO3\CMS\Core\Collection\RecordCollectionRepository {
+class FileCollectionRepository extends RecordCollectionRepository
+{
+    /**
+     * @var string
+     */
+    protected $table = 'sys_file_collection';
 
-	/**
-	 * @var string
-	 */
-	protected $table = 'sys_file_collection';
+    /**
+     * @var string
+     */
+    protected $typeField = 'type';
 
-	/**
-	 * @var string
-	 */
-	protected $typeField = 'type';
+    /**
+     * Finds a record collection by uid.
+     *
+     * @param int $uid The uid to be looked up
+     * @return NULL|Collection\AbstractFileCollection
+     * @throws Exception\ResourceDoesNotExistException
+     */
+    public function findByUid($uid)
+    {
+        $object = parent::findByUid($uid);
+        if ($object === null) {
+            throw new Exception\ResourceDoesNotExistException('Could not find row with uid "' . $uid . '" in table "' . $this->table . '"', 1314354066);
+        }
+        return $object;
+    }
 
-	/**
-	 * Finds a record collection by uid.
-	 *
-	 * @param int $uid The uid to be looked up
-	 * @return NULL|Collection\AbstractFileCollection
-	 * @throws ResourceDoesNotExistException
-	 */
-	public function findByUid($uid) {
-		$object = parent::findByUid($uid);
-		if ($object === NULL) {
-			throw new ResourceDoesNotExistException('Could not find row with uid "' . $uid . '" in table "' . $this->table . '"', 1314354066);
-		}
-		return $object;
-	}
+    /**
+     * Creates a record collection domain object.
+     *
+     * @param array $record Database record to be reconsituted
+     *
+     * @return Collection\AbstractFileCollection
+     */
+    protected function createDomainObject(array $record)
+    {
+        return $this->getFileFactory()->createCollectionObject($record);
+    }
 
-	/**
-	 * Creates a record collection domain object.
-	 *
-	 * @param array $record Database record to be reconsituted
-	 *
-	 * @return Collection\AbstractFileCollection
-	 */
-	protected function createDomainObject(array $record) {
-		return $this->getFileFactory()->createCollectionObject($record);
-	}
-
-	/**
-	 * Gets the file factory.
-	 *
-	 * @return ResourceFactory
-	 */
-	protected function getFileFactory() {
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
-	}
-
+    /**
+     * Gets the file factory.
+     *
+     * @return ResourceFactory
+     */
+    protected function getFileFactory()
+    {
+        return GeneralUtility::makeInstance(ResourceFactory::class);
+    }
 }

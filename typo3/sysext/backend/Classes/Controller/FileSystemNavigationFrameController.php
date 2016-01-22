@@ -14,131 +14,165 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Filelist\FileListFolderTree;
+use TYPO3\CMS\Recordlist\Tree\View\DummyLinkParameterProvider;
 
 /**
  * Main script class for rendering of the folder tree
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class FileSystemNavigationFrameController {
+class FileSystemNavigationFrameController
+{
+    /**
+     * Content accumulates in this variable.
+     *
+     * @var string
+     */
+    public $content;
 
-	// Internal, dynamic:
-	// Content accumulates in this variable.
-	/**
-	 * @var string
-	 */
-	public $content;
+    /**
+     * @var \TYPO3\CMS\Backend\Tree\View\FolderTreeView
+     */
+    public $foldertree;
 
-	/**
-	 * @var \TYPO3\CMS\Filelist\FileListFolderTree $foldertree the folder tree object
-	 */
-	public $foldertree;
+    /**
+     * @var string
+     */
+    public $currentSubScript;
 
-	/**
-	 * document template object
-	 *
-	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 */
-	public $doc;
+    /**
+     * @var bool
+     */
+    public $cMR;
 
-	/**
-	 * @var string
-	 */
-	public $backPath;
+    /**
+     * @var array
+     */
+    protected $scopeData;
 
-	// Internal, static: GPvar:
-	/**
-	 * @var string
-	 */
-	public $currentSubScript;
+    /**
+     * @var bool
+     */
+    public $doHighlight;
 
-	/**
-	 * @var bool
-	 */
-	public $cMR;
+    /**
+     * ModuleTemplate Container
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
 
-	/**
-	 * @var array
-	 */
-	protected $scopeData;
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $GLOBALS['SOBE'] = $this;
+        $this->init();
+    }
 
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$GLOBALS['SOBE'] = $this;
-		$GLOBALS['BACK_PATH'] = '';
-		$this->init();
-	}
+    /**
+     * @param ServerRequestInterface $request the current request
+     * @param ResponseInterface $response
+     * @return ResponseInterface the response with the content
+     */
+    public function mainAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $this->initPage();
+        $this->main();
 
-	/**
-	 * Initialiation of the script class
-	 *
-	 * @return void
-	 */
-	protected function init() {
-		// Setting backPath
-		$this->backPath = $GLOBALS['BACK_PATH'];
-		// Setting GPvars:
-		$this->currentSubScript = GeneralUtility::_GP('currentSubScript');
-		$this->cMR = GeneralUtility::_GP('cMR');
+        $response->getBody()->write($this->content);
+        return $response;
+    }
 
-		$scopeData = (string)GeneralUtility::_GP('scopeData');
-		$scopeHash = (string)GeneralUtility::_GP('scopeHash');
+    /**
+     * Initialiation of the script class
+     *
+     * @return void
+     */
+    protected function init()
+    {
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
 
-		if (!empty($scopeData) && GeneralUtility::hmac($scopeData) === $scopeHash) {
-			$this->scopeData = unserialize($scopeData);
-		}
+        // Setting GPvars:
+        $this->currentSubScript = GeneralUtility::_GP('currentSubScript');
+        $this->cMR = GeneralUtility::_GP('cMR');
 
-		// Create folder tree object:
-		if (!empty($this->scopeData)) {
-			$this->foldertree = GeneralUtility::makeInstance($this->scopeData['class']);
-			$this->foldertree->thisScript = $this->scopeData['script'];
-			$this->foldertree->ext_noTempRecyclerDirs = $this->scopeData['ext_noTempRecyclerDirs'];
-			$GLOBALS['SOBE']->browser = new \stdClass();
-			$GLOBALS['SOBE']->browser->mode = $this->scopeData['browser']['mode'];
-			$GLOBALS['SOBE']->browser->act = $this->scopeData['browser']['act'];
-		} else {
-			$this->foldertree = GeneralUtility::makeInstance(\TYPO3\CMS\Filelist\FileListFolderTree::class);
-			$this->foldertree->thisScript = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('file_navframe');
-		}
+        $scopeData = (string)GeneralUtility::_GP('scopeData');
+        $scopeHash = (string)GeneralUtility::_GP('scopeHash');
 
-		$this->foldertree->ext_IconMode = $GLOBALS['BE_USER']->getTSConfigVal('options.folderTree.disableIconLinkToContextmenu');
-	}
+        if (!empty($scopeData) && GeneralUtility::hmac($scopeData) === $scopeHash) {
+            $this->scopeData = unserialize($scopeData);
+        }
 
-	/**
-	 * initialization for the visual parts of the class
-	 * Use template rendering only if this is a non-AJAX call
-	 *
-	 * @return void
-	 */
-	public function initPage() {
-		// Setting highlight mode:
-		$this->doHighlight = !$GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.disableTitleHighlight');
-		// Create template object:
-		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/alt_file_navframe.html');
-		$this->doc->showFlashMessages = FALSE;
-		// Adding javascript code for drag&drop and the filetree as well as the click menu code
-		$dragDropCode = '
-			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
+        // Create folder tree object:
+        if (!empty($this->scopeData)) {
+            $this->foldertree = GeneralUtility::makeInstance($this->scopeData['class']);
+            $this->foldertree->thisScript = $this->scopeData['script'];
+            $this->foldertree->ext_noTempRecyclerDirs = $this->scopeData['ext_noTempRecyclerDirs'];
+            if ($this->foldertree instanceof ElementBrowserFolderTreeView) {
+                // create a fake provider to pass link data along properly
+                $linkParamProvider = GeneralUtility::makeInstance(
+                    DummyLinkParameterProvider::class,
+                    $this->scopeData['browser'],
+                    $this->scopeData['script']
+                );
+                $this->foldertree->setLinkParameterProvider($linkParamProvider);
+            }
+        } else {
+            $this->foldertree = GeneralUtility::makeInstance(FileListFolderTree::class);
+            $this->foldertree->thisScript = BackendUtility::getModuleUrl('file_navframe');
+        }
+        // Only set ext_IconMode if we are not running an ajax request from the ElementBrowser,
+        // which has this property hardcoded to 1.
+        if (!$this->foldertree instanceof ElementBrowserFolderTreeView) {
+            $this->foldertree->ext_IconMode = $this->getBackendUser()->getTSConfigVal('options.folderTree.disableIconLinkToContextmenu');
+        }
+    }
+
+    /**
+     * initialization for the visual parts of the class
+     * Use template rendering only if this is a non-AJAX call
+     *
+     * @return void
+     */
+    public function initPage()
+    {
+        // Setting highlight mode:
+        $this->doHighlight = !$this->getBackendUser()->getTSConfigVal('options.pageTree.disableTitleHighlight');
+
+        $this->moduleTemplate->setBodyTag('<body id="ext-backend-Modules-FileSystemNavigationFrame-index-php">');
+
+        // Adding javascript code for drag&drop and the filetree as well as the click menu code
+        $dragDropCode = '
+			Tree.ajaxID = "sc_alt_file_navframe_expandtoggle";
 			Tree.registerDragDropHandlers()';
-		if ($this->doHighlight) {
-			$hlClass = $GLOBALS['BE_USER']->workspace === 0 ? 'active' : 'active active-ws wsver' . $GLOBALS['BE_USER']->workspace;
-			$dragDropCode .= '
+        if ($this->doHighlight) {
+            $hlClass = $this->getBackendUser()->workspace === 0 ? 'active' : 'active active-ws wsver' . $GLOBALS['BE_USER']->workspace;
+            $dragDropCode .= '
 			Tree.highlightClass = "' . $hlClass . '";
 			Tree.highlightActiveItem("", top.fsMod.navFrameHighlightedID["file"]);
 			';
-		}
-		// Adding javascript for drag & drop activation and highlighting
-		$this->doc->getDragDropCode('folders', $dragDropCode);
-		$this->doc->getContextMenuCode();
+        }
 
-		// Setting JavaScript for menu.
-		$this->doc->JScode .= $this->doc->wrapScriptTags(($this->currentSubScript ? 'top.currentSubScript=unescape("' . rawurlencode($this->currentSubScript) . '");' : '') . '
+        // Adding javascript for drag & drop activation and highlighting
+        $pageRenderer = $this->moduleTemplate->getPageRenderer();
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function() {
+            DragDrop.table = "folders";
+            ' . $dragDropCode . '
+        }');
+
+        // Setting JavaScript for menu.
+        $inlineJs = ($this->currentSubScript ? 'top.currentSubScript=unescape("' . rawurlencode($this->currentSubScript) . '");' : '') . '
 		// Function, loading the list frame from navigation tree:
 		function jumpTo(id, linkObj, highlightID, bank) {
 			var theUrl = top.currentSubScript;
@@ -154,79 +188,96 @@ class FileSystemNavigationFrameController {
 			if (linkObj) { linkObj.blur(); }
 			return false;
 		}
-		' . ($this->cMR ? ' jumpTo(top.fsMod.recentIds[\'file\'],\'\');' : ''));
-	}
+		' . ($this->cMR ? ' jumpTo(top.fsMod.recentIds[\'file\'],\'\');' : '');
 
-	/**
-	 * Main function, rendering the folder tree
-	 *
-	 * @return void
-	 */
-	public function main() {
-		// Produce browse-tree:
-		$tree = $this->foldertree->getBrowsableTree();
-		// Outputting page tree:
-		$this->content .= $tree;
-		// Setting up the buttons and markers for docheader
-		$docHeaderButtons = $this->getButtons();
-		$markers = array(
-			'CONTENT' => $this->content
-		);
-		$subparts = array();
-		// Build the <body> for the module
-		$this->content = $this->doc->startPage('TYPO3 Folder Tree');
-		$this->content .= $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers, $subparts);
-		$this->content .= $this->doc->endPage();
-		$this->content = $this->doc->insertStylesAndJS($this->content);
-	}
+        $this->moduleTemplate->getPageRenderer()->addJsInlineCode(
+            'FileSystemNavigationFrame',
+            $inlineJs
+        );
+    }
 
-	/**
-	 * Outputting the accumulated content to screen
-	 *
-	 * @return void
-	 */
-	public function printContent() {
-		echo $this->content;
-	}
+    /**
+     * Main function, rendering the folder tree
+     *
+     * @return void
+     */
+    public function main()
+    {
+        // Produce browse-tree:
+        $tree = $this->foldertree->getBrowsableTree();
+        // Outputting page tree:
+        $this->moduleTemplate->setContent($tree);
+        // Setting up the buttons
+        $this->getButtons();
+        // Build the <body> for the module
+        $this->moduleTemplate->setTitle('TYPO3 Folder Tree');
+        $this->content = $this->moduleTemplate->renderContent();
+    }
 
-	/**
-	 * Create the panel of buttons for submitting the form or otherwise perform operations.
-	 *
-	 * @return array All available buttons as an assoc. array
-	 */
-	protected function getButtons() {
-		$buttons = array(
-			'csh' => '',
-			'refresh' => ''
-		);
-		// Refresh
-		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
-		// CSH
-		$buttons['csh'] = str_replace('typo3-csh-inline', 'typo3-csh-inline show-right', \TYPO3\CMS\Backend\Utility\BackendUtility::cshItem('xMOD_csh_corebe', 'filetree'));
-		return $buttons;
-	}
+    /**
+     * Register docHeader buttons
+     */
+    protected function getButtons()
+    {
+        /** @var ButtonBar $buttonBar */
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
 
-	/**********************************
-	 *
-	 * AJAX Calls
-	 *
-	 **********************************/
-	/**
-	 * Makes the AJAX call to expand or collapse the foldertree.
-	 * Called by typo3/ajax.php
-	 *
-	 * @param array $params Additional parameters (not used here)
-	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj The AjaxRequestHandler object of this request
-	 * @return void
-	 */
-	public function ajaxExpandCollapse($params, $ajaxObj) {
-		$this->init();
-		$tree = $this->foldertree->getBrowsableTree();
-		if ($this->foldertree->getAjaxStatus() === FALSE) {
-			$ajaxObj->setError($tree);
-		} else {
-			$ajaxObj->addContent('tree', $tree);
-		}
-	}
+        /** @var IconFactory $iconFactory */
+        $iconFactory = $this->moduleTemplate->getIconFactory();
 
+        // Refresh
+        $refreshButton = $buttonBar->makeLinkButton()
+            ->setHref(GeneralUtility::getIndpEnv('REQUEST_URI'))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload'))
+            ->setIcon($iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL));
+        $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT);
+
+        // CSH
+        $cshButton = $buttonBar->makeHelpButton()
+            ->setModuleName('xMOD_csh_corebe')
+            ->setFieldName('filetree');
+        $buttonBar->addButton($cshButton);
+    }
+
+    /**********************************
+     * AJAX Calls
+     **********************************/
+    /**
+     * Makes the AJAX call to expand or collapse the foldertree.
+     * Called by an AJAX Route, see AjaxRequestHandler
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function ajaxExpandCollapse(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $this->init();
+        $tree = $this->foldertree->getBrowsableTree();
+        if ($this->foldertree->getAjaxStatus() === false) {
+            $response = $response->withStatus(500);
+        } else {
+            $response->getBody()->write(json_encode($tree));
+        }
+
+        return $response;
+    }
+
+    /**
+     * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+     */
+    protected function getBackendUser()
+    {
+        return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * Returns an instance of LanguageService
+     *
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
+    }
 }

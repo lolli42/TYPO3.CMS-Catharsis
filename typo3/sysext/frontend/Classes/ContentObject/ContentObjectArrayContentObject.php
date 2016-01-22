@@ -14,39 +14,46 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\TimeTracker\TimeTracker;
+
 /**
  * Contains COA class object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
-class ContentObjectArrayContentObject extends AbstractContentObject {
+class ContentObjectArrayContentObject extends AbstractContentObject
+{
+    /**
+     * Rendering the cObject, COBJ_ARRAY / COA
+     *
+     * @param array $conf Array of TypoScript properties
+     * @return string Output
+     */
+    public function render($conf = array())
+    {
+        if (empty($conf)) {
+            $this->getTimeTracker()->setTSlogMessage('No elements in this content object array (COBJ_ARRAY, COA).', 2);
+            return '';
+        }
+        if (!empty($conf['if.']) && !$this->cObj->checkIf($conf['if.'])) {
+            return '';
+        }
 
-	/**
-	 * Rendering the cObject, COBJ_ARRAY / COA
-	 *
-	 * @param array $conf Array of TypoScript properties
-	 * @return string Output
-	 */
-	public function render($conf = array()) {
-		if (empty($conf)) {
-			$GLOBALS['TT']->setTSlogMessage('No elements in this content object array (COBJ_ARRAY, COA).', 2);
-			return '';
-		}
-		if (!empty($conf['if.']) && !$this->cObj->checkIf($conf['if.'])) {
-			return '';
-		}
+        $this->cObj->includeLibs($conf);
+        $content = $this->cObj->cObjGet($conf);
+        $wrap = isset($conf['wrap.']) ? $this->cObj->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
+        if ($wrap) {
+            $content = $this->cObj->wrap($content, $wrap);
+        }
+        if (isset($conf['stdWrap.'])) {
+            $content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
+        }
+        return $content;
+    }
 
-		$this->cObj->includeLibs($conf);
-		$content = $this->cObj->cObjGet($conf);
-		$wrap = isset($conf['wrap.']) ? $this->cObj->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
-		if ($wrap) {
-			$content = $this->cObj->wrap($content, $wrap);
-		}
-		if (isset($conf['stdWrap.'])) {
-			$content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
-		}
-		return $content;
-	}
-
+    /**
+     * @return TimeTracker
+     */
+    protected function getTimeTracker()
+    {
+        return $GLOBALS['TT'];
+    }
 }
