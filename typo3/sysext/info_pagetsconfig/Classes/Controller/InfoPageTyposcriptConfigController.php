@@ -97,7 +97,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
             $menu .= BackendUtility::getDropdownMenu($this->pObj->id, 'SET[tsconf_parts]', $this->pObj->MOD_SETTINGS['tsconf_parts'], $this->pObj->MOD_MENU['tsconf_parts']);
             $menu .= '<div class="checkbox"><label for="checkTsconf_alphaSort">' . BackendUtility::getFuncCheck($this->pObj->id, 'SET[tsconf_alphaSort]', $this->pObj->MOD_SETTINGS['tsconf_alphaSort'], '', '', 'id="checkTsconf_alphaSort"') . ' ' . $this->getLanguageService()->getLL('sort_alphabetic', true) . '</label></div>';
             $menu .= '</div>';
-            $theOutput = $this->pObj->doc->header($this->getLanguageService()->getLL('tsconf_title'));
+            $theOutput = '<h1>' . htmlspecialchars($this->getLanguageService()->getLL('tsconf_title')) . '</h1>';
 
             if ($this->pObj->MOD_SETTINGS['tsconf_parts'] == 99) {
                 $TSparts = BackendUtility::getPagesTSconfig($this->pObj->id, null, true);
@@ -111,7 +111,9 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
                         } else {
                             $pUids[] = substr($k, 4);
                             $row = BackendUtility::getRecordWSOL('pages', substr($k, 4));
-                            $pTitle = $this->pObj->doc->getHeader('pages', $row, '', false);
+
+                            $icon = $this->iconFactory->getIconForRecord('pages', $row, Icon::SIZE_SMALL);
+                            $pTitle = BackendUtility::wrapClickMenuOnIcon($icon, 'pages', $row['uid']) . ' ' . htmlspecialchars(BackendUtility::getRecordTitle('pages', $row));
                             $editIdList = substr($k, 4);
                             $urlParameters = [
                                 'edit' => [

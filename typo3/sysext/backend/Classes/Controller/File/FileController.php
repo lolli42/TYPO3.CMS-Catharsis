@@ -183,6 +183,16 @@ class FileController
 
         BackendUtility::setUpdateSignal('updateFolderTree');
 
+        // go and edit the new created file
+        if ($request->getParsedBody()['edit']) {
+            $urlParameters = [
+                'target' => $this->file['newfile'][0]['target'] . $this->file['newfile'][0]['data']
+            ];
+            if ($this->redirect) {
+                $urlParameters['returnUrl'] = $this->redirect;
+            }
+            $this->redirect = BackendUtility::getModuleUrl('file_edit', $urlParameters);
+        }
         if ($this->redirect) {
             return $response
                     ->withHeader('Location', GeneralUtility::locationHeaderUrl($this->redirect))

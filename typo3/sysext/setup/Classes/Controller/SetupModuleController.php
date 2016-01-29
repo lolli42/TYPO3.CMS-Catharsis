@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -66,11 +67,6 @@ class SetupModuleController extends AbstractModule
      * @var array
      */
     public $MOD_SETTINGS = array();
-
-    /**
-     * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-     */
-    public $doc;
 
     /**
      * @var string
@@ -184,10 +180,8 @@ class SetupModuleController extends AbstractModule
 
     /**
      * If settings are submitted to _POST[DATA], store them
-     * NOTICE: This method is called before the \TYPO3\CMS\Backend\Template\DocumentTemplate
+     * NOTICE: This method is called before the \TYPO3\CMS\Backend\Template\ModuleTemplate
      * is included. See bottom of document.
-     *
-     * @see \TYPO3\CMS\Backend\Template\DocumentTemplate
      */
     public function storeIncomingData()
     {
@@ -335,8 +329,6 @@ class SetupModuleController extends AbstractModule
             $this->tsFieldConf['password2.']['disabled'] = 1;
             $this->tsFieldConf['passwordCurrent.']['disabled'] = 1;
         }
-        // Create instance of object for output of data
-        $this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
     }
 
     /**
@@ -382,7 +374,7 @@ class SetupModuleController extends AbstractModule
         $this->loadModules = GeneralUtility::makeInstance(ModuleLoader::class);
         $this->loadModules->observeWorkspaces = true;
         $this->loadModules->load($GLOBALS['TBE_MODULES']);
-        $this->content .= $this->doc->header($this->getLanguageService()->getLL('UserSettings'));
+        $this->content .= $this->moduleTemplate->header($this->getLanguageService()->getLL('UserSettings'));
         // Show if setup was saved
         if ($this->setupIsUpdated && !$this->settingsAreResetToDefault) {
             $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('setupWasUpdated'), $this->getLanguageService()->getLL('UserSettings'));
@@ -641,11 +633,19 @@ class SetupModuleController extends AbstractModule
                             ' value="' . $avatarFileUid . '" />';
 
                     $html .= '<div class="btn-group">';
+                    $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
                     if ($avatarFileUid) {
-                        $html .= '<a id="clear_button_' . htmlspecialchars($fieldName) . '" onclick="clearExistingImage(); return false;" class="btn btn-default"><span class="t3-icon fa t3-icon fa fa-remove"> </span></a>';
+                        $html .=
+                            '<a id="clear_button_' . htmlspecialchars($fieldName) . '" '
+                                . 'onclick="clearExistingImage(); return false;" class="btn btn-default">'
+                                . $iconFactory->getIcon('actions-delete', Icon::SIZE_SMALL)
+                            . '</a>';
                     }
-                    $html .= '<a id="add_button_' . htmlspecialchars($fieldName) . '" class="btn btn-default btn-add-avatar" onclick="openFileBrowser();return false;"><span class="t3-icon t3-icon-actions t3-icon-actions-insert t3-icon-insert-record"> </span></a>' .
-                            '</div>';
+                    $html .=
+                        '<a id="add_button_' . htmlspecialchars($fieldName) . '" class="btn btn-default btn-add-avatar"'
+                            . ' onclick="openFileBrowser();return false;">'
+                            . $iconFactory->getIcon('actions-insert-record', Icon::SIZE_SMALL)
+                            . '</a></div>';
 
                     $this->addAvatarButtonJs($fieldName);
                     break;

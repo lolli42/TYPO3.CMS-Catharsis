@@ -2448,13 +2448,13 @@ class GeneralUtility
         // Checking if the "subdir" is found:
         $subdir = substr($fI['dirname'], strlen($dirName));
         if ($subdir) {
-            if (preg_match('/^[[:alnum:]_]+\\/$/', $subdir) || preg_match('/^[[:alnum:]_]+\\/[[:alnum:]_]+\\/$/', $subdir)) {
+            if (preg_match('#^(?:[[:alnum:]_]+/)+$#', $subdir)) {
                 $dirName .= $subdir;
                 if (!@is_dir($dirName)) {
                     static::mkdir_deep(PATH_site . 'typo3temp/', $subdir);
                 }
             } else {
-                return 'Subdir, "' . $subdir . '", was NOT on the form "[[:alnum:]_]/" or  "[[:alnum:]_]/[[:alnum:]_]/"';
+                return 'Subdir, "' . $subdir . '", was NOT on the form "[[:alnum:]_]/+"';
             }
         }
         // Checking dir-name again (sub-dir might have been created):
@@ -3725,7 +3725,7 @@ class GeneralUtility
      */
     public static function tempnam($filePrefix, $fileSuffix = '')
     {
-        $temporaryPath = PATH_site . 'typo3temp/';
+        $temporaryPath = PATH_site . 'typo3temp/var/transient/';
         if ($fileSuffix === '') {
             $tempFileName = static::fixWindowsFilePath(tempnam($temporaryPath, $filePrefix));
         } else {
@@ -4729,7 +4729,7 @@ class GeneralUtility
      * @param string $command Command to be run: identify, convert or combine/composite
      * @param string $parameters The parameters string
      * @param string $path Override the default path (e.g. used by the install tool)
-     * @return string Compiled command that deals with IM6 & GraphicsMagick
+     * @return string Compiled command that deals with ImageMagick & GraphicsMagick
      */
     public static function imageMagickCommand($command, $parameters, $path = '')
     {

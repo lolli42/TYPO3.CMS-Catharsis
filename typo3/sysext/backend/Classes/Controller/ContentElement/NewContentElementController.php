@@ -22,11 +22,10 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Backend\Wizard\NewContentElementWizardHookInterface;
 use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconProvider\BitmapIconProvider;
 use TYPO3\CMS\Core\Imaging\IconRegistry;
+use TYPO3\CMS\Core\Service\DependencyOrderingService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Script Class for the New Content element wizard
@@ -371,6 +370,12 @@ class NewContentElementController extends AbstractModule
             $appendWizards = $this->wizard_appendWizards($wizards['elements.']);
             if (is_array($wizards)) {
                 foreach ($wizards as $groupKey => $wizardGroup) {
+                    $this->prepareDependencyOrdering($wizards[$groupKey], 'before');
+                    $this->prepareDependencyOrdering($wizards[$groupKey], 'after');
+                }
+                $wizards = GeneralUtility::makeInstance(DependencyOrderingService::class)->orderByDependencies($wizards);
+
+                foreach ($wizards as $groupKey => $wizardGroup) {
                     $groupKey = rtrim($groupKey, '.');
                     $showItems = GeneralUtility::trimExplode(',', $wizardGroup['show'], true);
                     $showAll = $wizardGroup['show'] === '*';
@@ -534,6 +539,22 @@ class NewContentElementController extends AbstractModule
             if ($tmp[0] && !$tmp[1] && !in_array($tmp[0], $headersUsed)) {
                 unset($wizardItems[$key]);
             }
+        }
+    }
+
+    /**
+     * Prepare a wizard tab configuration for sorting.
+     *
+     * @param array  $wizardGroup TypoScript wizard tab configuration
+     * @param string $key         Which array key should be prepared
+     *
+     * @return void
+     */
+    protected function prepareDependencyOrdering(&$wizardGroup, $key)
+    {
+        if (isset($wizardGroup[$key])) {
+            $wizardGroup[$key] = GeneralUtility::trimExplode(',', $wizardGroup[$key]);
+            $wizardGroup[$key] = array_map(function ($s) {return $s . '.';}, $wizardGroup[$key]);
         }
     }
 

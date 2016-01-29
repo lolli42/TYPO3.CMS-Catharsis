@@ -27,7 +27,6 @@ use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ClientUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
 
@@ -221,7 +220,7 @@ class RichTextElement extends AbstractFormElement
 
         $this->resultArray = $this->initializeResultArray();
         $this->defaultExtras = BackendUtility::getSpecConfParts($parameterArray['fieldConf']['defaultExtras']);
-        $this->pidOfPageRecord = $table === 'pages' && MathUtility::canBeInterpretedAsInteger($row['uid']) ? (int)$row['uid'] : (int)$row['pid'];
+        $this->pidOfPageRecord = $this->data['effectivePid'];
         BackendUtility::fixVersioningPid($table, $row);
         $this->pidOfVersionedMotherRecord = (int)$row['pid'];
         $this->vanillaRteTsConfig = $backendUser->getTSConfig('RTE', BackendUtility::getPagesTSconfig($this->pidOfPageRecord));
@@ -1297,15 +1296,10 @@ class RichTextElement extends AbstractFormElement
         $value = preg_replace('/<(\\/?)em([^b>]*>)/i', '<$1i$2', $value);
 
         if ($this->defaultExtras['rte_transform']) {
-            $parameters = BackendUtility::getSpecConfParametersFromArray($this->defaultExtras['rte_transform']['parameters']);
-            // There must be a mode set for transformation
-            if ($parameters['mode']) {
-                /** @var RteHtmlParser $parseHTML */
-                $parseHTML = GeneralUtility::makeInstance(RteHtmlParser::class);
-                $parseHTML->init($this->data['table'] . ':' . $this->data['fieldName'], $this->pidOfVersionedMotherRecord);
-                $parseHTML->setRelPath('');
-                $value = $parseHTML->RTE_transform($value, $this->defaultExtras, 'rte', $this->processedRteConfiguration);
-            }
+            /** @var RteHtmlParser $parseHTML */
+            $parseHTML = GeneralUtility::makeInstance(RteHtmlParser::class);
+            $parseHTML->init($this->data['table'] . ':' . $this->data['fieldName'], $this->pidOfVersionedMotherRecord);
+            $value = $parseHTML->RTE_transform($value, $this->defaultExtras, 'rte', $this->processedRteConfiguration);
         }
         return $value;
     }

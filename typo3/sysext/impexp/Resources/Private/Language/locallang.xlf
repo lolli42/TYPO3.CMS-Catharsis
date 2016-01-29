@@ -45,6 +45,9 @@
 			<trans-unit id="execlistqu_structureToBeExported">
 				<source>Structure to be exported:</source>
 			</trans-unit>
+			<trans-unit id="impexpcore_toggle_all_disabled_records">
+				<source>Toggle disabled records</source>
+			</trans-unit>
 			<trans-unit id="execlistqu_maxNumberLimit">
 				<source>Max number limit!</source>
 			</trans-unit>
@@ -90,6 +93,9 @@
 			<trans-unit id="makeconfig_tablePids">
 				<source>Table/Pids:</source>
 			</trans-unit>
+			<trans-unit id="makeconfig_tableListEntry">
+            	<source>Table "%s" from %s</source>
+            </trans-unit>
 			<trans-unit id="makeconfig_relationsAndExclusions">
 				<source>Relations and Exclusions:</source>
 			</trans-unit>
@@ -105,11 +111,14 @@
 			<trans-unit id="makeconfig_excludeElements">
 				<source>Exclude elements:</source>
 			</trans-unit>
-			<trans-unit id="makeconfig_clearAllExclusions">
-				<source>Clear all exclusions:</source>
+			<trans-unit id="makeconfig_clearAllManualExclusions">
+				<source>Clear all manual exclusions:</source>
 			</trans-unit>
-			<trans-unit id="makeconfig_noExcludedElementsYet">
-				<source>No excluded elements yet. Exclude by setting checkboxes below in the element display.</source>
+			<trans-unit id="makeconfig_noManuallyExcludedElementsYet">
+				<source>No manually excluded elements yet. Exclude by setting checkboxes below in the element display.</source>
+			</trans-unit>
+			<trans-unit id="makeconfig_excludeDisabledElements">
+				<source>Exclude disabled elements</source>
 			</trans-unit>
 			<trans-unit id="makeadvanc_update">
 				<source>Update</source>
@@ -182,12 +191,6 @@
 			</trans-unit>
 			<trans-unit id="makesavefo_notes">
 				<source>Notes:</source>
-			</trans-unit>
-			<trans-unit id="makesavefo_thumbnail">
-				<source>Thumbnail:</source>
-			</trans-unit>
-			<trans-unit id="makesavefo_uploadThumbnail">
-				<source>Upload thumbnail:</source>
 			</trans-unit>
 			<trans-unit id="makesavefo_t3dFileCompressed">
 				<source>T3D file / compressed</source>
@@ -337,7 +340,10 @@
 				<source>Structure has been imported, here is the result:</source>
 			</trans-unit>
 			<trans-unit id="importdata_no_accessible_file_mount">
-				<source>No accessible file_mount</source>
+				<source>No accessible filemount</source>
+			</trans-unit>
+			<trans-unit id="importdata_no_default_upload_folder">
+				<source>No default upload folder</source>
 			</trans-unit>
 			<trans-unit id="filterpage_structureToBeImported">
 				<source>Structure to be imported:</source>

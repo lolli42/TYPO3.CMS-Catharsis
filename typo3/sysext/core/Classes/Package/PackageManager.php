@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Compatibility\LoadedExtensionArrayElement;
 use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
@@ -812,10 +813,13 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
         $fileDescription .= "# This file will be regenerated automatically if it doesn't exist. Deleting this file\n";
         $fileDescription .= "# should, however, never become necessary if you use the package commands.\n";
 
-        // We do not need the dependencies on disk...
+        // We do not need the dependencies and suggestions on disk...
         foreach ($this->packageStatesConfiguration['packages'] as &$packageConfiguration) {
             if (isset($packageConfiguration['dependencies'])) {
                 unset($packageConfiguration['dependencies']);
+            }
+            if (isset($packageConfiguration['suggestions'])) {
+                unset($packageConfiguration['suggestions']);
             }
         }
         if (!@is_writable($this->packageStatesPathAndFilename)) {
@@ -829,7 +833,7 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
             }
             fclose($fileHandle);
         }
-        $packageStatesCode = "<?php\n$fileDescription\nreturn " . var_export($this->packageStatesConfiguration, true) . "\n ?>";
+        $packageStatesCode = "<?php\n$fileDescription\nreturn " . ArrayUtility::arrayExport($this->packageStatesConfiguration) . ";\n";
         GeneralUtility::writeFile($this->packageStatesPathAndFilename, $packageStatesCode, true);
 
         $this->initializeCompatibilityLoadedExtArray();

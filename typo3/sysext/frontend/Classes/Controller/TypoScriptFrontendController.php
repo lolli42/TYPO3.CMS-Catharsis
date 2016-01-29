@@ -47,18 +47,18 @@ use TYPO3\CMS\Frontend\View\AdminPanelView;
 
 /**
  * Class for the built TypoScript based frontend. Instantiated in
- * index_ts.php script as the global object TSFE.
+ * \TYPO3\CMS\Frontend\Http\RequestHandler as the global object TSFE.
  *
- * Main frontend class, instantiated in the index_ts.php script as the global
- * object TSFE.
+ * Main frontend class, instantiated in \TYPO3\CMS\Frontend\Http\RequestHandler
+ * as the global object TSFE.
  *
  * This class has a lot of functions and internal variable which are used from
- * index_ts.php.
+ * \TYPO3\CMS\Frontend\Http\RequestHandler
  *
- * The class is instantiated as $GLOBALS['TSFE'] in index_ts.php.
+ * The class is instantiated as $GLOBALS['TSFE'] in \TYPO3\CMS\Frontend\Http\RequestHandler.
  *
  * The use of this class should be inspired by the order of function calls as
- * found in index_ts.php.
+ * found in \TYPO3\CMS\Frontend\Http\RequestHandler.
  */
 class TypoScriptFrontendController
 {
@@ -748,12 +748,6 @@ class TypoScriptFrontendController
     public $metaCharset = 'utf-8';
 
     /**
-     * Assumed charset of locale strings.
-     * @var string
-     */
-    public $localeCharset = '';
-
-    /**
      * Set to the system language key (used on the site)
      * @var string
      */
@@ -864,7 +858,7 @@ class TypoScriptFrontendController
      * @param string $_ previously was used to define the jumpURL
      * @param string $MP The value of GeneralUtility::_GP('MP')
      * @param string $RDCT The value of GeneralUtility::_GP('RDCT')
-     * @see index_ts.php
+     * @see \TYPO3\CMS\Frontend\Http\RequestHandler
      */
     public function __construct($TYPO3_CONF_VARS, $id, $type, $no_cache = '', $cHash = '', $_ = null, $MP = '', $RDCT = '')
     {
@@ -2763,7 +2757,6 @@ class TypoScriptFrontendController
                 setlocale(LC_CTYPE, $this->config['config']['locale_all']);
                 setlocale(LC_MONETARY, $this->config['config']['locale_all']);
                 setlocale(LC_TIME, $this->config['config']['locale_all']);
-                $this->localeCharset = $this->csConvObj->get_locale_charset($this->config['config']['locale_all']);
             } else {
                 $this->getTimeTracker()->setTSlogMessage('Locale "' . htmlspecialchars($this->config['config']['locale_all']) . '" not found.', 3);
             }

@@ -478,7 +478,7 @@ class ExtensionManagementUtility
      * - $item = array(
      * 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.10',
      * 'login',
-     * 'i/tt_content_login.gif',
+     * 'i/imagename.gif',
      * ),
      * - $relativeToField = mailform
      * - $relativePosition = after
@@ -865,15 +865,17 @@ class ExtensionManagementUtility
     public static function configureModule($moduleSignature)
     {
         $moduleConfiguration = $GLOBALS['TBE_MODULES']['_configuration'][$moduleSignature];
-        $iconPathAndFilename = $moduleConfiguration['icon'];
-        if (substr($iconPathAndFilename, 0, 4) === 'EXT:') {
-            list($extensionKey, $relativePath) = explode('/', substr($iconPathAndFilename, 4), 2);
-            $iconPathAndFilename = self::extPath($extensionKey) . $relativePath;
+        if (!empty($moduleConfiguration['labels']['tabs_images']['tab'])) {
+            GeneralUtility::deprecationLog('Module registration for backend module "' . $moduleSignature . '" uses old referencing for the icon. Use the configuration option "icon" directly instead of [labels][tabs_images][tab]. The old option is removed with TYPO3 v9.');
+            $moduleConfiguration['icon'] = $moduleConfiguration['labels']['tabs_images']['tab'];
+            unset($moduleConfiguration['labels']['tabs_images']['tab']);
         }
+
+        if (!empty($moduleConfiguration['icon'])) {
+            $moduleConfiguration['icon'] = GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true);
+        }
+
         $moduleLabels = array(
-            'tabs_images' => array(
-                'tab' => $iconPathAndFilename
-            ),
             'labels' => array(
                 'tablabel' => $GLOBALS['LANG']->sL($moduleConfiguration['labels'] . ':mlang_labels_tablabel'),
                 'tabdescr' => $GLOBALS['LANG']->sL($moduleConfiguration['labels'] . ':mlang_labels_tabdescr')
@@ -934,6 +936,17 @@ class ExtensionManagementUtility
         // add additional configuration
         if (is_array($moduleConfiguration) && !empty($moduleConfiguration)) {
             $fullModuleSignature = $main . ($sub ? '_' . $sub : '');
+
+            if (!empty($moduleConfiguration['labels']['tabs_images']['tab'])) {
+                GeneralUtility::deprecationLog('Module registration for module "' . $fullModuleSignature . '" uses old referencing for the icon. Use the configuration option "icon" directly instead of [labels][tabs_images][tab]. The old option is removed with TYPO3 v9.');
+                $moduleConfiguration['icon'] = $moduleConfiguration['labels']['tabs_images']['tab'];
+                unset($moduleConfiguration['labels']['tabs_images']['tab']);
+            }
+
+            if (!empty($moduleConfiguration['icon'])) {
+                $moduleConfiguration['icon'] = GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true);
+            }
+
             $GLOBALS['TBE_MODULES']['_configuration'][$fullModuleSignature] = $moduleConfiguration;
         }
     }
@@ -1758,13 +1771,13 @@ tt_content.' . $key . $suffix . ' {
         }
 
         // TCA migration
-        // @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. This can be removed *if* no additional TCA migration is added with CMS 8, see class TcaMigration
+        // @deprecated since TYPO3 CMS 7. Not removed in TYPO3 CMS 8 though. This call will stay for now to allow further TCA migrations in 8.
         $tcaMigration = GeneralUtility::makeInstance(TcaMigration::class);
         $GLOBALS['TCA'] = $tcaMigration->migrate($GLOBALS['TCA']);
         $messages = $tcaMigration->getMessages();
         if (!empty($messages)) {
             $context = 'Automatic TCA migration done during bootstrap. Please adapt TCA accordingly, these migrations'
-                . ' will be removed with TYPO3 CMS 8. The backend module "Configuration -> TCA" shows the modified values.'
+                . ' will be removed. The backend module "Configuration -> TCA" shows the modified values.'
                 . ' Please adapt these areas:';
             array_unshift($messages, $context);
             GeneralUtility::deprecationLog(implode(LF, $messages));

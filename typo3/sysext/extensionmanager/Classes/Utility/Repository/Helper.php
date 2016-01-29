@@ -168,8 +168,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface
      */
     public function getLocalExtListFile()
     {
-        $absFilePath = PATH_site . 'typo3temp/ExtensionManager/' . (int)$this->repository->getUid() . '.extensions.xml.gz';
-        return $absFilePath;
+        return PATH_site . 'typo3temp/var/ExtensionManager/' . (int)$this->repository->getUid() . '.extensions.xml.gz';
     }
 
     /**
@@ -182,7 +181,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface
     public function getRemoteExtListFile()
     {
         $mirror = $this->getMirrors(true)->getMirror();
-        $filePath = 'http://' . $mirror['host'] . $mirror['path'] . 'extensions.xml.gz';
+        $filePath = 'https://' . $mirror['host'] . $mirror['path'] . 'extensions.xml.gz';
         return $filePath;
     }
 
@@ -196,7 +195,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface
     public function getRemoteExtHashFile()
     {
         $mirror = $this->getMirrors(true)->getMirror();
-        $filePath = 'http://' . $mirror['host'] . $mirror['path'] . 'extensions.md5';
+        $filePath = 'https://' . $mirror['host'] . $mirror['path'] . 'extensions.md5';
         return $filePath;
     }
 
@@ -209,8 +208,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface
      */
     public function getLocalMirrorListFile()
     {
-        $absFilePath = PATH_site . 'typo3temp/ExtensionManager/' . (int)$this->repository->getUid() . '.mirrors.xml.gz';
-        return $absFilePath;
+        return PATH_site . 'typo3temp/var/ExtensionManager/' . (int)$this->repository->getUid() . '.mirrors.xml.gz';
     }
 
     /**

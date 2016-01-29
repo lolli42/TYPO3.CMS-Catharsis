@@ -24,9 +24,11 @@ define([
 	'TYPO3/CMS/Backend/Modal',
 	'TYPO3/CMS/Backend/SplitButtons',
 	'TYPO3/CMS/Backend/Tooltip',
+	'TYPO3/CMS/Backend/Notification',
+	'TYPO3/CMS/Backend/Severity',
 	'datatables',
 	'TYPO3/CMS/Backend/jquery.clearable'
-], function($, NProgress, Modal, SplitButtons, Tooltip) {
+], function($, NProgress, Modal, SplitButtons, Tooltip, Notification, Severity) {
 
 	/**
 	 *
@@ -36,8 +38,7 @@ define([
 	var ExtensionManager = {
 		identifier: {
 			extensionlist: '#typo3-extension-list',
-			searchField: '#Tx_Extensionmanager_extensionkey',
-			extensionManager: '.typo3-extension-manager'
+			searchField: '#Tx_Extensionmanager_extensionkey'
 		}
 	};
 
@@ -100,7 +101,7 @@ define([
 				Modal.confirm(
 					TYPO3.lang['extensionList.removalConfirmation.title'],
 					TYPO3.lang['extensionList.removalConfirmation.question'],
-					top.TYPO3.Severity.error,
+					Severity.error,
 					[
 						{
 							text: TYPO3.lang['button.cancel'],
@@ -128,8 +129,6 @@ define([
 	 * @param {Object} $extension
 	 */
 	ExtensionManager.removeExtensionFromDisk = function($extension) {
-		var $extManager = $(Repository.identifier.extensionManager);
-		$extManager.mask();
 		$.ajax({
 			url: $extension.data('href'),
 			beforeSend: function() {
@@ -137,9 +136,6 @@ define([
 			},
 			success: function() {
 				location.reload();
-			},
-			error: function() {
-				$extManager.unmask();
 			},
 			complete: function() {
 				NProgress.done();
@@ -257,14 +253,12 @@ define([
 		});
 		message += '</form>';
 
-		var $extManager = $(ExtensionManager.identifier.extensionManager);
 		NProgress.done();
-		$extManager.unmask();
 
 		Modal.confirm(
 			TYPO3.lang['extensionList.updateConfirmation.questionVersionComments'],
 			message,
-			top.TYPO3.Severity.warning,
+			Severity.warning,
 			[
 				{
 					text: TYPO3.lang['button.cancel'],
@@ -286,7 +280,6 @@ define([
 							},
 							dataType: 'json',
 							beforeSend: function() {
-								$extManager.mask();
 								NProgress.start();
 							},
 							complete: function() {
@@ -375,13 +368,10 @@ define([
 
 	/**
 	 *
-	 * @type {{downloadPath: string, identifier: {extensionManager: string}}}
+	 * @type {{downloadPath: string}}
 	 */
 	var Repository = {
-		downloadPath: '',
-		identifier: {
-			extensionManager: '.typo3-extension-manager'
-		}
+		downloadPath: ''
 	};
 
 	/**
@@ -452,7 +442,6 @@ define([
 				url: url,
 				dataType: 'json',
 				beforeSend: function() {
-					$(Repository.identifier.extensionManager).mask();
 					NProgress.start();
 				},
 				success: Repository.getDependencies
@@ -466,11 +455,9 @@ define([
 	 * @returns {Boolean}
 	 */
 	Repository.getDependencies = function(data) {
-		var $extManager = $(Repository.identifier.extensionManager);
 		NProgress.done();
-		$extManager.unmask();
 		if (data.hasDependencies) {
-			Modal.confirm(data.title, data.message, top.TYPO3.Severity.info, [
+			Modal.confirm(data.title, data.message, Severity.info, [
 				{
 					text: TYPO3.lang['button.cancel'],
 					active: true,
@@ -489,7 +476,7 @@ define([
 			]);
 		} else {
 			if(data.hasErrors) {
-				top.TYPO3.Notification.error(data.title, data.message, 15);
+				Notification.error(data.title, data.message, 15);
 			} else {
 				Repository.getResolveDependenciesAndInstallResult(data.url + '&tx_extensionmanager_tools_extensionmanagerextensionmanager[downloadPath]=' + Repository.downloadPath);
 			}
@@ -502,17 +489,15 @@ define([
 	 * @param {String} url
 	 */
 	Repository.getResolveDependenciesAndInstallResult = function(url) {
-		var $extManager = $(Repository.identifier.extensionManager);
 		$.ajax({
 			url: url,
 			dataType: 'json',
 			beforeSend: function() {
-				$extManager.mask();
 				NProgress.start();
 			},
 			success: function (data) {
 				if (data.errorCount > 0) {
-					Modal.confirm(data.errorTitle, data.errorMessage, top.TYPO3.Severity.error, [
+					Modal.confirm(data.errorTitle, data.errorMessage, Severity.error, [
 						{
 							text: TYPO3.lang['button.cancel'],
 							active: true,
@@ -545,13 +530,12 @@ define([
 							successMessage += '\n* ' + extkey
 						});
 					});
-					top.TYPO3.Notification.info(TYPO3.lang['extensionList.dependenciesResolveFlashMessage.title' + data.installationTypeLanguageKey].replace(/\{0\}/g, data.extension), successMessage, 15);
+					Notification.info(TYPO3.lang['extensionList.dependenciesResolveFlashMessage.title' + data.installationTypeLanguageKey].replace(/\{0\}/g, data.extension), successMessage, 15);
 					top.TYPO3.ModuleMenu.App.refreshMenu();
 				}
 			},
 			complete: function() {
 				NProgress.done();
-				$extManager.unmask();
 			}
 		});
 	};
@@ -648,7 +632,7 @@ define([
 			success: function(data) {
 				// Something went wrong, show message
 				if (data.errorMessage.length) {
-					top.TYPO3.Notification.error(TYPO3.lang['extensionList.updateFromTerFlashMessage.title'], data.errorMessage, 10);
+					Notification.error(TYPO3.lang['extensionList.updateFromTerFlashMessage.title'], data.errorMessage, 10);
 				}
 
 				// Message with latest updates
@@ -669,7 +653,7 @@ define([
 				// Create an error message with diagnosis info.
 				var errorMessage = textStatus + '(' + errorThrown + '): ' + jqXHR.responseText;
 
-				top.TYPO3.Notification.warning(
+				Notification.warning(
 					TYPO3.lang['extensionList.updateFromTerFlashMessage.title'],
 					errorMessage,
 					10
@@ -704,7 +688,6 @@ define([
 			$me.attr('href', '#');
 			$me.click(function() {
 				var $terTableWrapper = $(ExtensionManager.Update.identifier.terTableWrapper);
-				$terTableWrapper.mask();
 				NProgress.start();
 				$.ajax({
 					url: $(this).data('href'),
@@ -715,7 +698,6 @@ define([
 					},
 					complete: function() {
 						NProgress.done();
-						$terTableWrapper.unmask();
 					}
 				});
 			});
@@ -761,7 +743,6 @@ define([
 		var dataTable = ExtensionManager.manageExtensionListing();
 
 		$(document).on('click', '.onClickMaskExtensionManager', function() {
-			$(ExtensionManager.identifier.extensionManager).mask();
 			NProgress.start();
 		}).on('click', 'a[data-action=update-extension]', function(e) {
 			e.preventDefault();
@@ -769,7 +750,6 @@ define([
 				url: $(this).attr('href'),
 				dataType: 'json',
 				beforeSend: function() {
-					$(ExtensionManager.identifier.extensionManager).mask();
 					NProgress.start();
 				},
 				success: ExtensionManager.updateExtension
@@ -786,16 +766,14 @@ define([
 		});
 
 		$(document).on('click', '.t3-button-action-installdistribution', function() {
-			$(ExtensionManager.identifier.extensionManager).mask();
+			NProgress.start();
 		});
 
 		ExtensionManager.configurationFieldSupport();
-		var $validate = $('.validate');
-		$validate.validate();
 
 		SplitButtons.addPreSubmitCallback(function(e) {
 			if ($(e.target).hasClass('t3js-save-close')) {
-				$validate.append($('<input />', {type: 'hidden', name: 'tx_extensionmanager_tools_extensionmanagerextensionmanager[action]', value: 'saveAndClose'}));
+				$('#configurationform').append($('<input />', {type: 'hidden', name: 'tx_extensionmanager_tools_extensionmanagerextensionmanager[action]', value: 'saveAndClose'}));
 			}
 		});
 

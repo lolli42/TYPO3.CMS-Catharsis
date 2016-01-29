@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Impexp\Tests\Functional\Import\GroupFileAndFileReferenceItem
  */
 
 /**
- * Functional test for the ImportExport
+ * Functional test for the Import
  */
 class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase
 {
@@ -44,6 +44,10 @@ class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Impor
     {
         $this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/impexp-group-file-and-file_reference-item-in-ff.xml', 1);
         $this->import->importData(0);
+
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image3.jpg';
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image5.jpg';
+        $this->testFilesToDelete[] = PATH_site . 'uploads/tx_impexpgroupfiles/typo3_image4.jpg';
 
         $this->assertAssertionDataSet('importGroupFileAndFileReferenceItemInFlexForm');
 

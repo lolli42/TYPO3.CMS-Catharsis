@@ -97,8 +97,8 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
         parent::setCache($cache);
         if (empty($this->temporaryCacheDirectory)) {
             // If no cache directory was given with cacheDirectory
-            // configuration option, set it to a path below typo3temp/
-            $temporaryCacheDirectory = PATH_site . 'typo3temp/';
+            // configuration option, set it to a path below typo3temp/var/
+            $temporaryCacheDirectory = PATH_site . 'typo3temp/var/';
         } else {
             $temporaryCacheDirectory = $this->temporaryCacheDirectory;
         }
@@ -175,7 +175,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
         } else {
             if ($cacheDirectory[0] == '/') {
                 // Absolute path to cache directory.
-                $documentRoot = '/';
+                $documentRoot = '';
             }
             if (TYPO3_OS === 'WIN') {
                 if (substr($cacheDirectory, 0, strlen($documentRoot)) === $documentRoot) {

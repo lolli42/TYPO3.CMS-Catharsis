@@ -491,7 +491,7 @@ config.htmlTag_setParams =  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-U
 ]]></default>
 		</property>
 		<property name="inlineStyle2TempFile" type="boolean">
-			<description><![CDATA[If set, the inline styles TYPO3 controls in the core are written to a file,  typo3temp/stylesheet_[hashstring].css, and the header will only contain the link to the stylesheet.
+			<description><![CDATA[If set, the inline styles TYPO3 controls in the core are written to a file,  typo3temp/assets/css/stylesheet_[hashstring].css, and the header will only contain the link to the stylesheet.
 The file hash is based solely on the content of the styles.
 
 Depends on the compatibility mode (see Tools>Install>Update wizard):
@@ -557,8 +557,6 @@ Same as above, but "&L=[L-value]" will only be added if the current value is 1, 
 		<property name="locale_all" type="string">
 			<description><![CDATA[PHP: setlocale("LC_ALL", [value]);
 value-examples: deutsch, de_DE, danish, portuguese, spanish, french, norwegian, italian. See www.php.net for other value. Also on linux, look at /usr/share/locale/
-
-TSFE->localeCharset is intelligently set to the assumed charset of the locale strings. This is used in stdWrap.strftime to convert locale strings to the renderCharset of the frontend.
 
 Example:
 This will render dates in danish made with stdWrap/strftime:
@@ -635,7 +633,7 @@ This is especially useful if you want to add RDFa or microformats to your html.
 Please take note that this tag is required for XHTML compliant output, so you should only disable this tag if you generate it manually already.]]></description>
 			<default><![CDATA[0]]></default>
 		</property>
-		<property name="noScaleUp" type="boolean">
+		<property name="processor_allowUpscaling" type="boolean">
 			<description><![CDATA[Normally images are scaled to the size specified via TypoScript. This also forces small images to be scaled to a larger size. This is not always a good thing.
 If this property is set, images are not allowed to be scaled up in size. This parameter clears the $this->mayScaleUp var of the class \TYPO3\CMS\Core\Imaging\GraphicalFunctions (often "gifbuilder").]]></description>
 			<default><![CDATA[
@@ -646,7 +644,7 @@ If this property is set, images are not allowed to be scaled up in size. This pa
 			<default><![CDATA[-]]></default>
 		</property>
 		<property name="pageGenScript" type="string">
-			<description><![CDATA[Alternative page generation script for applications using index_ts.php for initialization, caching, stating and so on. This script is included in the global scope of index_ts.php-script and thus you may include libraries here. Always use include_once for libraries.
+			<description><![CDATA[Alternative page generation script for applications using \TYPO3\CMS\Frontend\Http\RequestHandler for initialization, caching, stating and so on. This script is included in the global scope of \TYPO3\CMS\Frontend\Http\RequestHandler and thus you may include libraries here. Always use include_once for libraries.
 Remember not to output anything from such an included script. All content must be set into $TSFE->content. Take a look at \TYPO3\CMS\Frontend\Page\PageGenerator
 
 NOTE: This option is ignored if
@@ -6433,7 +6431,7 @@ fx. "-rotate 90" or "-negate"]]></description>
 		<property name="stripProfile" type="boolean">
 			<description><![CDATA[If set, IM-command will use a stripProfile-command which shrinks the generated thumbnails. See Install Tool for options and details.
 
-If im_useStripProfileByDefault is set in the install tool, you can deactivate it by setting stripProfile=0.
+If processor_stripColorProfileByDefault is set in the install tool, you can deactivate it by setting stripProfile=0.
 
 Example:
 

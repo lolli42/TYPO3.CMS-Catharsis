@@ -1151,6 +1151,7 @@ class DataHandler
 
                                 /** @var $tce DataHandler */
                                 $tce = GeneralUtility::makeInstance(__CLASS__);
+                                $tce->enableLogging = $this->enableLogging;
                                 // Setting up command for creating a new version of the record:
                                 $cmd = array();
                                 $cmd[$table][$id]['version'] = array(
@@ -1551,7 +1552,7 @@ class DataHandler
      * @param string $value Value to transform.
      * @param string $table The table name
      * @param string $field The field name
-     * @param array $defaultExtras Default extras configuration of this field - typically "richtext:rte_transform[mode=ts_css]"
+     * @param array $defaultExtras Default extras configuration of this field - typically "richtext:rte_transform"
      * @param array $thisConfig Configuration for RTEs; A mix between TSconfig and others. Configuration for additional transformation information
      * @param int $pid PID value of record (true parent page id)
      * @return string Transformed content
@@ -1559,16 +1560,11 @@ class DataHandler
     protected function transformRichtextContentToDatabase($value, $table, $field, $defaultExtras, $thisConfig, $pid)
     {
         if ($defaultExtras['rte_transform']) {
-            $parameters = BackendUtility::getSpecConfParametersFromArray($defaultExtras['rte_transform']['parameters']);
-            // There must be a mode set for transformation, this is typically 'ts_css'
-            if ($parameters['mode']) {
-                // Initialize transformation:
-                $parseHTML = GeneralUtility::makeInstance(RteHtmlParser::class);
-                $parseHTML->init($table . ':' . $field, $pid);
-                $parseHTML->setRelPath('');
-                // Perform transformation:
-                $value = $parseHTML->RTE_transform($value, $defaultExtras, 'db', $thisConfig);
-            }
+            // Initialize transformation:
+            $parseHTML = GeneralUtility::makeInstance(RteHtmlParser::class);
+            $parseHTML->init($table . ':' . $field, $pid);
+            // Perform transformation:
+            $value = $parseHTML->RTE_transform($value, $defaultExtras, 'db', $thisConfig);
         }
         return $value;
     }
@@ -4638,6 +4634,7 @@ class DataHandler
         if (is_array($removeArray) && !empty($removeArray)) {
             /** @var DataHandler $tce */
             $tce = GeneralUtility::makeInstance(__CLASS__);
+            $tce->enableLogging = $this->enableLogging;
             $tce->start(array(), $removeArray);
             $tce->process_cmdmap();
             unset($tce);
@@ -4940,7 +4937,7 @@ class DataHandler
             }
         } else {
             /** @var FlashMessage $flashMessage */
-            $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, htmlspecialchars($res), '', FlashMessage::ERROR, true);
+            $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $res, '', FlashMessage::ERROR, true);
             /** @var $flashMessageService FlashMessageService */
             $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
             /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
@@ -5015,6 +5012,7 @@ class DataHandler
                 );
                 /** @var DataHandler $dataHandler */
                 $dataHandler = GeneralUtility::makeInstance(__CLASS__);
+                $dataHandler->enableLogging = $this->enableLogging;
                 $dataHandler->neverHideAtCopy = true;
                 $dataHandler->start(array(), $command);
                 $dataHandler->process_cmdmap();
@@ -5470,6 +5468,7 @@ class DataHandler
     {
         $copyTCE = GeneralUtility::makeInstance(__CLASS__);
         $copyTCE->copyTree = $this->copyTree;
+        $copyTCE->enableLogging = $this->enableLogging;
         // Copy forth the cached TSconfig
         $copyTCE->cachedTSconfig = $this->cachedTSconfig;
         // Transformations should NOT be carried out during copy
@@ -7931,7 +7930,7 @@ class DataHandler
             $log_data = unserialize($row['log_data']);
             $msg = $row['error'] . ': ' . sprintf($row['details'], $log_data[0], $log_data[1], $log_data[2], $log_data[3], $log_data[4]);
             /** @var FlashMessage $flashMessage */
-            $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, htmlspecialchars($msg), '', FlashMessage::ERROR, true);
+            $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $msg, '', FlashMessage::ERROR, true);
             /** @var $flashMessageService FlashMessageService */
             $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
             $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();

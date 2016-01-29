@@ -2728,10 +2728,8 @@ class ContentObjectRenderer
         // Check for zero length string to mimic default case of strtime/gmstrftime
         $content = (string)$content === '' ? $GLOBALS['EXEC_TIME'] : (int)$content;
         $content = $conf['strftime.']['GMT'] ? gmstrftime($conf['strftime'], $content) : strftime($conf['strftime'], $content);
-        $tsfe = $this->getTypoScriptFrontendController();
-        $tmp_charset = $conf['strftime.']['charset'] ? $conf['strftime.']['charset'] : $tsfe->localeCharset;
-        if ($tmp_charset) {
-            $content = $tsfe->csConv($content, $tmp_charset);
+        if (!empty($conf['strftime.']['charset'])) {
+            $content = $this->getTypoScriptFrontendController()->csConv($content, $conf['strftime.']['charset']);
         }
         return $content;
     }
@@ -4168,7 +4166,7 @@ class ContentObjectRenderer
                 if ($conf['iconCObject']) {
                     $icon = $this->cObjGetSingle($conf['iconCObject'], $conf['iconCObject.'], 'iconCObject');
                 } else {
-                    $notFoundThumb = ExtensionManagementUtility::extPath('core') . 'Resources/Public/Images/NotFound.gif';
+                    $notFoundThumb = ExtensionManagementUtility::siteRelPath('core') . 'Resources/Public/Images/NotFound.gif';
                     $sizeParts = array(64, 64);
                     if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails']) {
                         // using the File Abstraction Layer to generate a preview image
@@ -4201,7 +4199,7 @@ class ContentObjectRenderer
                         $urlPrefix = $tsfe->absRefPrefix;
                     }
                     $icon = '<img src="' . htmlspecialchars($urlPrefix . $icon) . '"' .
-                            'width="' . (int)$sizeParts[0] . '" height="' . (int)$sizeParts[1] . '" ' .
+                            ' width="' . (int)$sizeParts[0] . '" height="' . (int)$sizeParts[1] . '" ' .
                             $this->getBorderAttr(' border="0"') . '' . $this->getAltParam($conf) . ' />';
                 }
             } else {
@@ -5192,7 +5190,7 @@ class ContentObjectRenderer
                     ? $this->stdWrap($fileArray['crop'], $fileArray['crop.'])
                     : (isset($fileArray['crop']) ? $fileArray['crop'] : null);
                 // Possibility to cancel/force profile extraction
-                // see $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_stripProfileCommand']
+                // see $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_stripColorProfileCommand']
                 if (isset($fileArray['stripProfile'])) {
                     $processingConfiguration['stripProfile'] = $fileArray['stripProfile'];
                 }
@@ -5762,7 +5760,7 @@ class ContentObjectRenderer
             $containsSlash = strpos($rootFileDat, '/') !== false;
             $rFD_fI = pathinfo($rootFileDat);
             $fileExtension = strtolower($rFD_fI['extension']);
-            if ($fileExtension === 'php' || $fileExtension === 'html' || $fileExtension === 'htm' || trim($rootFileDat) && !$containsSlash && (@is_file((PATH_site . $rootFileDat)))) {
+            if (!$containsSlash && trim($rootFileDat) && (@is_file(PATH_site . $rootFileDat) || $fileExtension === 'php' || $fileExtension === 'html' || $fileExtension === 'htm')) {
                 $isLocalFile = 1;
             } elseif ($containsSlash) {
                 // Adding this so realurl directories are linked right (non-existing).
@@ -6725,9 +6723,11 @@ class ContentObjectRenderer
      *
      * @param string $params Text which the parameters
      * @return array array with the parameters as key/value pairs
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public function processParams($params)
     {
+        GeneralUtility::logDeprecatedFunction();
         $paramArr = array();
         $lines = GeneralUtility::trimExplode(LF, $params, true);
         foreach ($lines as $val) {

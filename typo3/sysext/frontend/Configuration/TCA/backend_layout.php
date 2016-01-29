@@ -46,20 +46,22 @@ return array(
             'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.config',
             'config' => array(
                 'type' => 'text',
-                'rows' => '5',
-                'cols' => '25',
+                'rows' => '10',
+                'cols' => '48',
+                'wrap' => 'OFF',
                 'wizards' => array(
                     0 => array(
                         'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.wizard',
                         'type' => 'popup',
-                        'icon' => 'EXT:frontend/Resources/Public/Images/wizard_backend_layout.png',
+                        'icon' => 'wizard-backendlayout',
                         'module' => array(
                             'name' => 'wizard_backend_layout'
                         ),
                         'JSopenParams' => 'height=800,width=800,status=0,menubar=0,scrollbars=0'
                     )
                 )
-            )
+            ),
+            'defaultExtras' => 'fixed-font : enable-tab',
         ),
         'hidden' => array(
             'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.disable',

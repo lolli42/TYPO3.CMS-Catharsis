@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class GeneralUtilityFixture extends GeneralUtility
 {
-    const DEPRECATION_LOG_PATH = 'typo3temp/test_deprecation/test.log';
+    const DEPRECATION_LOG_PATH = 'typo3temp/var/test_deprecation/test.log';
 
     /**
      * @var int

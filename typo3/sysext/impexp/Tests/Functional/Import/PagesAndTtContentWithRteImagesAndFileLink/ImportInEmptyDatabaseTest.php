@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Impexp\Tests\Functional\Import\PagesAndTtContentWithRteImage
  */
 
 /**
- * Functional test for the ImportExport
+ * Functional test for the Import
  */
 class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase
 {
@@ -38,6 +38,9 @@ class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Impor
     {
         $this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent-with-rte-image-n-file-link.xml', 1);
         $this->import->importData(0);
+
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image2.jpg';
+        $this->testFilesToDelete[] = PATH_site . 'fileadmin/user_upload/typo3_image3.jpg';
 
         $this->assertAssertionDataSet('importPagesAndRelatedTtContentWithRteImagesAndFileLink');
 

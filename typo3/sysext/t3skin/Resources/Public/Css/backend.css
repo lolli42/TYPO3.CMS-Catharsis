@@ -9158,7 +9158,7 @@ iframe,
   outline-color: #ffffff;
 }
 .cropper-bg {
-  background-image: url("../../Images/cropper-background.png");
+  background-image: url("../Images/cropper-background.png");
 }
 .cropper-preview-container {
   overflow: hidden;
@@ -9880,31 +9880,31 @@ ul.typo3-messages {
   border: 1px solid #9eb2c5;
 }
 .x-dd-drop-nodrop .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-place-denied.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-place-denied.png);
 }
 .x-tree-drop-ok-append.typo3-pagetree-copy .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-new-inside.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-new-inside.png);
 }
 .x-tree-drop-ok-below.typo3-pagetree-copy .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-copy-below.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-copy-below.png);
 }
 .x-tree-drop-ok-above.typo3-pagetree-copy .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-copy-above.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-copy-above.png);
 }
 .x-tree-drop-ok-between.typo3-pagetree-copy .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-new-between.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-new-between.png);
 }
 .x-tree-drop-ok-append .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-move-into.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-move-into.png);
 }
 .x-tree-drop-ok-between .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-move-between.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-move-between.png);
 }
 .x-tree-drop-ok-below .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-move-below.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-move-below.png);
 }
 .x-tree-drop-ok-above .x-dd-drop-icon {
-  background-image: url(../../../../t3skin/images/icons/apps/pagetree-drag-move-above.png);
+  background-image: url(../../../../t3skin/Resources/Public/Images/pagetree-drag-move-above.png);
 }
 #typo3-pagetree .x-tree-node .x-tree-drag-insert-below,
 .x-tree-node div.x-tree-drag-insert-below,
@@ -10021,9 +10021,6 @@ ul.typo3-messages {
   display: inline-block;
   padding: 4px 4px 4px 18px;
   background: transparent url('../../../../images/spinner/d5d5d5.gif') no-repeat 0 3px;
-}
-.typo3-pagetree-deletionDropZone-proxyOver .x-dd-drop-icon {
-  background-image: url(../../../../images/icons/actions/edit-delete.png);
 }
 #typo3-pagetree .typo3-pagetree-deletionDropZone-activateProxyOver {
   background-color: #644d2d;
@@ -12032,6 +12029,107 @@ span.warningboxheader {
   padding-bottom: 30px;
   margin: 0 15px 30px 15px;
 }
+.grideditor td {
+  vertical-align: middle;
+}
+.grideditor td.editor_cell {
+  height: 100%;
+}
+.grideditor table.editor {
+  border-right: 1px gray dashed;
+  border-bottom: 1px gray dashed;
+}
+.grideditor table.editor td {
+  vertical-align: middle;
+  border-top: 1px gray dashed;
+  border-left: 1px gray dashed;
+  text-align: center;
+  background-color: white;
+  min-height: 100px;
+}
+.grideditor div#editor {
+  height: 100%;
+}
+.grideditor div.cell_container {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  left: 50%;
+  margin-left: -30px;
+  opacity: 0.3;
+}
+.grideditor div.cell_container:hover {
+  opacity: 0.5;
+}
+.grideditor .link {
+  display: block;
+  position: absolute;
+  width: 20px;
+  height: 40px;
+  overflow: hidden;
+  opacity: 0.5;
+}
+.grideditor .link:hover {
+  text-decoration: none;
+  opacity: 1;
+}
+.grideditor .link_expand_down,
+.grideditor .link_shrink_up {
+  width: 40px;
+  height: 20px;
+}
+.grideditor .link_expand_right {
+  left: 52px;
+  top: 0;
+}
+.grideditor .link_expand_right:before {
+  font-family: FontAwesome;
+  content: "\f0da";
+  font-size: 42px;
+  line-height: 42px;
+}
+.grideditor .link_shrink_left {
+  left: -8px;
+  top: 0;
+}
+.grideditor .link_shrink_left:before {
+  font-family: FontAwesome;
+  content: "\f0d9";
+  font-size: 42px;
+  line-height: 42px;
+}
+.grideditor .link_expand_down {
+  left: 12px;
+  top: 40px;
+}
+.grideditor .link_expand_down:before {
+  font-family: FontAwesome;
+  content: "\f0d7";
+  font-size: 42px;
+  line-height: 19px;
+}
+.grideditor .link_shrink_up {
+  left: 12px;
+  top: -20px;
+}
+.grideditor .link_shrink_up:before {
+  font-family: FontAwesome;
+  content: "\f0d8";
+  font-size: 42px;
+  line-height: 20px;
+}
+.grideditor .link_editor {
+  width: 40px;
+  height: 40px;
+  left: 12px;
+  top: 0;
+}
+.grideditor .link_editor:before {
+  font-family: FontAwesome;
+  content: "\f14b";
+  font-size: 42px;
+  line-height: 42px;
+}
 *::-ms-clear {
   display: none;
 }
@@ -13802,10 +13900,6 @@ input.c-inputButton,
 img.c-inputButton {
   margin-right: 2px;
   vertical-align: middle;
-}
-.media input[type="radio"],
-.media input[type="checkbox"] {
-  margin: 4px 0 0 1px;
 }
 table.typo3-dblist tr.c-table-row-spacer td {
   display: none;

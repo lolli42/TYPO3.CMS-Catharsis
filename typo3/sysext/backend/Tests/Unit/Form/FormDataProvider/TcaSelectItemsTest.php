@@ -1059,9 +1059,6 @@ class TcaSelectItemsTest extends UnitTestCase
         $GLOBALS['LANG'] = $languageService->reveal();
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
         $languageService->moduleLabels = [
-            'tabs_images' => [
-                'aModule_tab' => PATH_site . 'aModuleTabIcon.gif',
-            ],
             'labels' => [
                 'aModule_tablabel' => 'aModuleTabLabel',
                 'aModule_tabdescr' => 'aModuleTabDescription',
@@ -1077,6 +1074,11 @@ class TcaSelectItemsTest extends UnitTestCase
         $moduleLoaderProphecy->load([])->shouldBeCalled();
         $moduleLoaderProphecy->modListGroup = [
             'aModule',
+        ];
+        $moduleLoaderProphecy->modules = [
+            'aModule' => [
+                'icon' => PATH_site . 'aModuleTabIcon.gif'
+            ]
         ];
 
         $expectedItems = [
@@ -1101,7 +1103,7 @@ class TcaSelectItemsTest extends UnitTestCase
      */
     public function addDataAddsFileItemsWithConfiguredFileFolder()
     {
-        $directory = $this->getUniqueId('typo3temp/test-') . '/';
+        $directory = $this->getUniqueId('typo3temp/var/tests/test-') . '/';
         $input = [
             'tableName' => 'aTable',
             'databaseRow' => [],
@@ -1280,6 +1282,22 @@ class TcaSelectItemsTest extends UnitTestCase
                 'AND fTable.title=\'###REC_FIELD_rowField###\'',
                 'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldValue\'',
                 [],
+            ],
+            'replace REC_FIELD within FlexForm' => [
+                'AND fTable.title=###REC_FIELD_rowFieldFlexForm###',
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldFlexFormValue\'',
+                [
+                    'databaseRow' => [
+                        'rowFieldThree' => [
+                            0 => 'rowFieldThreeValue'
+                        ]
+                    ],
+                    'flexParentDatabaseRow' => [
+                        'rowFieldFlexForm' => [
+                            0 => 'rowFieldFlexFormValue'
+                        ]
+                    ],
+                ],
             ],
             'replace REC_FIELD fullQuote' => [
                 'AND fTable.title=###REC_FIELD_rowField###',

@@ -294,23 +294,38 @@ class HtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function emptyTagsDataProvider()
     {
         return array(
-            array(0 , null, false, '<h1></h1>', '<h1></h1>'),
-            array(1 , null, false, '<h1></h1>', ''),
-            array(1 , null, false, '<h1>hallo</h1>', '<h1>hallo</h1>'),
-            array(1 , null, false, '<h1 class="something"></h1>', ''),
-            array(1 , null, false, '<h1 class="something"></h1><h2></h2>', ''),
-            array(1 , 'h2', false, '<h1 class="something"></h1><h2></h2>', '<h1 class="something"></h1>'),
-            array(1 , 'h2, h1', false, '<h1 class="something"></h1><h2></h2>', ''),
-            array(1 , null, false, '<div><p></p></div>', ''),
-            array(1 , null, false, '<div><p>&nbsp;</p></div>', '<div><p>&nbsp;</p></div>'),
-            array(1 , null, true, '<div><p>&nbsp;&nbsp;</p></div>', ''),
-            array(1 , null, true, '<div>&nbsp;&nbsp;<p></p></div>', ''),
-            array(1 , null, false, '<div>Some content<p></p></div>', '<div>Some content</div>'),
-            array(1 , null, true, '<div>Some content<p></p></div>', '<div>Some content</div>'),
-            array(1 , null, false, '<div>Some content</div>', '<div>Some content</div>'),
-            array(1 , null, true, '<div>Some content</div>', '<div>Some content</div>'),
-            array(1 , null, false, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
-            array(1 , null, true, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
+            array(0, null, false, '<h1></h1>', '<h1></h1>'),
+            array(1, null, false, '<h1></h1>', ''),
+            array(1, null, false, '<h1>hallo</h1>', '<h1>hallo</h1>'),
+            array(1, null, false, '<h1 class="something"></h1>', ''),
+            array(1, null, false, '<h1 class="something"></h1><h2></h2>', ''),
+            array(1, 'h2', false, '<h1 class="something"></h1><h2></h2>', '<h1 class="something"></h1>'),
+            array(1, 'h2, h1', false, '<h1 class="something"></h1><h2></h2>', ''),
+            array(1, null, false, '<div><p></p></div>', ''),
+            array(1, null, false, '<div><p>&nbsp;</p></div>', '<div><p>&nbsp;</p></div>'),
+            array(1, null, true, '<div><p>&nbsp;&nbsp;</p></div>', ''),
+            array(1, null, true, '<div>&nbsp;&nbsp;<p></p></div>', ''),
+            array(1, null, false, '<div>Some content<p></p></div>', '<div>Some content</div>'),
+            array(1, null, true, '<div>Some content<p></p></div>', '<div>Some content</div>'),
+            array(1, null, false, '<div>Some content</div>', '<div>Some content</div>'),
+            array(1, null, true, '<div>Some content</div>', '<div>Some content</div>'),
+            array(1, null, false, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
+            array(1, null, true, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
+            array(0, '', false, '<h1></h1>', '<h1></h1>'),
+            array(1, '', false, '<h1></h1>', ''),
+            array(1, '', false, '<h1>hallo</h1>', '<h1>hallo</h1>'),
+            array(1, '', false, '<h1 class="something"></h1>', ''),
+            array(1, '', false, '<h1 class="something"></h1><h2></h2>', ''),
+            array(1, '', false, '<div><p></p></div>', ''),
+            array(1, '', false, '<div><p>&nbsp;</p></div>', '<div><p>&nbsp;</p></div>'),
+            array(1, '', true, '<div><p>&nbsp;&nbsp;</p></div>', ''),
+            array(1, '', true, '<div>&nbsp;&nbsp;<p></p></div>', ''),
+            array(1, '', false, '<div>Some content<p></p></div>', '<div>Some content</div>'),
+            array(1, '', true, '<div>Some content<p></p></div>', '<div>Some content</div>'),
+            array(1, '', false, '<div>Some content</div>', '<div>Some content</div>'),
+            array(1, '', true, '<div>Some content</div>', '<div>Some content</div>'),
+            array(1, '', false, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
+            array(1, '', true, '<a href="#skiplinks">Skiplinks </a><b></b>', '<a href="#skiplinks">Skiplinks </a>'),
         );
     }
 
@@ -330,6 +345,48 @@ class HtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             'stripEmptyTags' => $stripOn,
             'stripEmptyTags.' => array(
                 'tags' => $tagList,
+                'treatNonBreakingSpaceAsEmpty' => $treatNonBreakingSpaceAsEmpty
+            ),
+        );
+
+        $result = $this->parseConfigAndCleanHtml($tsConfig, $content);
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
+     * @return array
+     */
+    public function stripEmptyTagsKeepsConfiguredTagsDataProvider() {
+        return [
+            array(
+                'tr,td',
+                false,
+                '<div><p><tr><td></td></tr></p></div><div class="test"></div><tr></tr><p></p><td></td><i></i>',
+                '<div><p><tr><td></td></tr></p></div><tr></tr><td></td>'
+            ),
+            array(
+                'tr,td',
+                true,
+                '<div><p><tr><td></td></tr></p></div><p class="test"> &nbsp; </p><tr></tr><p></p><td></td><i></i>',
+                '<div><p><tr><td></td></tr></p></div><tr></tr><td></td>'
+            ),
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider stripEmptyTagsKeepsConfiguredTagsDataProvider
+     * @param string $tagList List of tags that should be kept, event if they are empty.
+     * @param bool $treatNonBreakingSpaceAsEmpty If true &nbsp; will be considered empty.
+     * @param string $content The HTML content that should be parsed.
+     * @param string $expectedResult The expected HTML code result.
+     */
+    public function stripEmptyTagsKeepsConfiguredTags($tagList, $treatNonBreakingSpaceAsEmpty, $content, $expectedResult) {
+        $tsConfig = array(
+            'keepNonMatchedTags' => 1,
+            'stripEmptyTags' => 1,
+            'stripEmptyTags.' => array(
+                'keepTags' => $tagList,
                 'treatNonBreakingSpaceAsEmpty' => $treatNonBreakingSpaceAsEmpty
             ),
         );
@@ -436,6 +493,7 @@ class HtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             array('Something before<span>Wrapper<div>Some content</div></span>Something after', 'Wrapper<div>Some content</div>'),
             array('<span class="hidden">Wrapper<div>Some content</div></span>', 'Wrapper<div>Some content</div>'),
             array('<span>Wrapper<div class="hidden">Some content</div></span>', 'Wrapper<div class="hidden">Some content</div>'),
+            array('Some stuff before <span>Wrapper<div class="hidden">Some content</div></span> and after', 'Wrapper<div class="hidden">Some content</div>'),
         );
     }
 
@@ -451,5 +509,97 @@ class HtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function removeFirstAndLastTag($str, $expectedResult)
     {
         $this->assertEquals($expectedResult, $this->subject->removeFirstAndLastTag($str));
+    }
+
+    /**
+     * @return array
+     */
+    public function getTagAttributesDataProvider()
+    {
+        return [
+            [
+                '<a href="" data-shortCut="DXB" required>',
+                [
+                    ['href' => '', 'data-shortcut' => 'DXB', 'required' => ''],
+                    ['href' => ['origTag' => 'href', 'dashType' => '"'], 'data-shortcut' => ['origTag' => 'data-shortCut', 'dashType' => '"'], 'required' => ['origTag' => 'required']]
+                ]
+            ],
+            [
+                '<ul STYLE=\'background-image: (url: "fra.png")\' data-shortcut=FRA>',
+                [
+                    ['style' => 'background-image: (url: "fra.png")', 'data-shortcut' => 'FRA'],
+                    ['style' => ['origTag' => 'STYLE', 'dashType' => '\''], 'data-shortcut' => ['origTag' => 'data-shortcut', 'dashType' => '']]
+                ]
+            ]
+
+        ];
+    }
+
+    /**
+     * Returns an array with all attributes and its meta information from a tag.
+     * Removes tag-name if found
+     *
+     * @test
+     * @dataProvider getTagAttributesDataProvider
+     * @param string $tag String to process
+     * @param array $expectedResult
+     */
+    public function getTagAttributes($tag, $expectedResult)
+    {
+        $this->assertEquals($expectedResult, $this->subject->get_tag_attributes($tag));
+    }
+
+    /**
+     * @return array
+     */
+    public function stripEmptyTagsDataProvider()
+    {
+        return [
+            // Testing wrongly encapsulated and upper/lowercase tags
+            [
+                '<div>Denpassar</div><p> Bali</P><p></p><P></p><ul><li></li></ul>',
+                '',
+                false,
+                '<div>Denpassar</div><p> Bali</P>'
+            ],
+            // Testing incomplete tags
+            [
+                '<p><div>Klungklung</div></p><p> Semarapura<p></p><p></p><ul><li></li></ul>',
+                '',
+                false,
+                '<p><div>Klungklung</div></p><p> Semarapura'
+            ],
+            // Testing third parameter (break spaces
+            [
+                '<p><div>Badung</div></p><ul> Mangupura<p></p><p></p><ul><li>&nbsp;</li><li>Uluwatu</li></ul>',
+                '',
+                true,
+                '<p><div>Badung</div></p><ul> Mangupura<ul><li>Uluwatu</li></ul>'
+            ],
+            // Testing fourth parameter (keeping empty other tags, keeping defined used tags)
+            [
+                '<p><div>Badung</div></p><ul> Mangupura<p></p><p></p><ul><li></li></ul>',
+                'p,div',
+                true,
+                '<p><div>Badung</div></p><ul> Mangupura<ul><li></li></ul>'
+            ],
+
+        ];
+    }
+
+    /**
+     * Strips empty tags from HTML.
+     *
+     * @test
+     * @dataProvider stripEmptyTagsDataProvider
+     * @param string $content The content to be stripped of empty tags
+     * @param string $tagList The comma separated list of tags to be stripped.
+     *                        If empty, all empty tags will be stripped
+     * @param bool $treatNonBreakingSpaceAsEmpty If TRUE tags containing only &nbsp; entities will be treated as empty.
+     * @param string $expectedResult
+     */
+    public function rawStripEmptyTagsTest($content, $tagList, $treatNonBreakingSpaceAsEmpty, $expectedResult)
+    {
+        $this->assertEquals($expectedResult, $this->subject->stripEmptyTags($content, $tagList, $treatNonBreakingSpaceAsEmpty));
     }
 }

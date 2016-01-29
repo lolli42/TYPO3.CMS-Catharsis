@@ -359,7 +359,7 @@ $extraContentColumns = array(
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns('tt_content', $extraContentColumns);
 
 // Add flexform
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPiFlexFormValue('*', 'FILE:EXT:css_styled_content/flexform_ds.xml', 'table');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPiFlexFormValue('*', 'FILE:EXT:css_styled_content/Configuration/FlexForms/table.xml', 'table');
 
 // Add content elements
 $GLOBALS['TCA']['tt_content']['ctrl']['typeicon_classes'] = array_merge(
@@ -502,7 +502,7 @@ $baseDefaultExtrasOfBodytext = '';
 if (!empty($GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'])) {
     $baseDefaultExtrasOfBodytext = $GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'] . ':';
 }
-$GLOBALS['TCA']['tt_content']['types']['text']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform[mode=ts_css]';
+$GLOBALS['TCA']['tt_content']['types']['text']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform';
 
 // Field arrangement for CE "textpic"
 $GLOBALS['TCA']['tt_content']['types']['textpic']['showitem'] = '
@@ -527,7 +527,7 @@ if (!is_array($GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverride
 if (!is_array($GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext'])) {
     $GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext'] = array();
 }
-$GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform[mode=ts_css]';
+$GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform';
 
 // Field arrangement for CE "image"
 $GLOBALS['TCA']['tt_content']['types']['image']['showitem'] = '

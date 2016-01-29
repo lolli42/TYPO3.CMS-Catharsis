@@ -64,7 +64,6 @@ class InstallStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
         $checkWritable = array(
             'typo3temp/' => 2,
             'typo3temp/assets/' => 2,
-            'typo3temp/assets/transient/' => 2,
             'typo3temp/assets/compressed/' => 2,
             // only needed when GraphicalFunctions is used
             'typo3temp/assets/images/' => 0,
@@ -73,8 +72,10 @@ class InstallStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
             'typo3temp/assets/js/' => 2,
             // fallback storage of FAL
             'typo3temp/assets/_processed_/' => 0,
-            'typo3temp/cs/' => 2,
-            'typo3temp/locks/' => 2,
+            'typo3temp/var/' => 2,
+            'typo3temp/var/transient/' => 2,
+            'typo3temp/var/charset/' => 2,
+            'typo3temp/var/locks/' => 2,
             'typo3conf/' => 2,
             'typo3conf/ext/' => 0,
             'typo3conf/l10n/' => 0,

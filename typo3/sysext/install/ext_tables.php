@@ -11,17 +11,19 @@ if (TYPO3_MODE === 'BE') {
         $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['reports']['tx_reports']['status']['providers']['system'][] = \TYPO3\CMS\Install\Report\EnvironmentStatusReport::class;
     }
 
-    // Register backend module
-    \TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
-        'TYPO3.CMS.Install',
+    \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModule(
         'system',
-        'install', '', array(
-            'BackendModule' => 'index, showEnableInstallToolButton, enableInstallTool',
-        ),
+        'extinstall',
+        '',
+        '',
         array(
+            'routeTarget' => \TYPO3\CMS\Install\Controller\BackendModuleController::class . '::index',
             'access' => 'admin',
+            'name' => 'system_extinstall',
             'icon' => 'EXT:install/Resources/Public/Icons/module-install.svg',
-            'labels' => 'LLL:EXT:install/Resources/Private/Language/BackendModule.xlf',
+            'labels' => array(
+                'll_ref' => 'LLL:EXT:install/Resources/Private/Language/BackendModule.xlf',
+            ),
         )
     );
 }

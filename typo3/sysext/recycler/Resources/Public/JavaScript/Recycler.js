@@ -15,7 +15,13 @@
  * Module: TYPO3/CMS/Recycler/Recycler
  * RequireJS module for Recycler
  */
-define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Backend/jquery.clearable'], function($, NProgress, Modal) {
+define(['jquery',
+		'nprogress',
+		'TYPO3/CMS/Backend/Modal',
+		'TYPO3/CMS/Backend/Notification',
+		'TYPO3/CMS/Backend/Severity',
+		'TYPO3/CMS/Backend/jquery.clearable'
+	   ], function($, NProgress, Modal, Notification, Severity) {
 	'use strict';
 
 	/**
@@ -42,7 +48,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Backend/jqu
 			currentPage: 1,
 			totalPages: 1,
 			totalItems: 0,
-			itemsPerPage: 20
+			itemsPerPage: TYPO3.settings.Recycler.pagingSize
 		},
 		markedRecordsForMassAction: [],
 		allToggled: false
@@ -362,7 +368,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Backend/jqu
 			message = Recycler.createMessage(message, [recordTitle, '[' + records + ']']);
 		}
 
-		Modal.confirm(TYPO3.lang['modal.delete.header'], message, top.TYPO3.Severity.error, [
+		Modal.confirm(TYPO3.lang['modal.delete.header'], message, Severity.error, [
 			{
 				text: TYPO3.lang['button.cancel'],
 				btnClass: 'btn-default',
@@ -400,6 +406,10 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Backend/jqu
 			recoverPages = table === 'pages';
 			messageText = recoverPages ? TYPO3.lang['modal.undopage.text'] : TYPO3.lang['modal.undocontent.text'];
 			messageText = Recycler.createMessage(messageText, [recordTitle, '[' + records + ']']);
+
+			if (recoverPages && $tr.data('parentDeleted')) {
+				messageText += TYPO3.lang['modal.undo.parentpages'];
+			}
 		}
 
 		var $message = null;
@@ -414,7 +424,7 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Backend/jqu
 			$message = messageText;
 		}
 
-		Modal.confirm(TYPO3.lang['modal.undo.header'], $message, top.TYPO3.Severity.ok, [
+		Modal.confirm(TYPO3.lang['modal.undo.header'], $message, Severity.ok, [
 			{
 				text: TYPO3.lang['button.cancel'],
 				btnClass: 'btn-default',
@@ -462,9 +472,9 @@ define(['jquery', 'nprogress', 'TYPO3/CMS/Backend/Modal', 'TYPO3/CMS/Backend/jqu
 			},
 			success: function(data) {
 				if (data.success) {
-					top.TYPO3.Notification.success('', data.message);
+					Notification.success('', data.message);
 				} else {
-					top.TYPO3.Notification.error('', data.message);
+					Notification.error('', data.message);
 				}
 
 				// reload recycler data

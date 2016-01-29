@@ -310,7 +310,12 @@ abstract class AbstractItemProvider
                 if (is_array($modList)) {
                     foreach ($modList as $theMod) {
                         // Icon:
-                        $icon = $languageService->moduleLabels['tabs_images'][$theMod . '_tab'];
+                        if (strpos($theMod, '_') !== false) {
+                            list($mainModule, $subModule) = explode('_', $theMod, 2);
+                            $icon = $loadModules->modules[$mainModule]['sub'][$subModule]['icon'];
+                        } else {
+                            $icon = $loadModules->modules[$theMod]['icon'];
+                        }
                         if ($icon) {
                             $icon = '../' . PathUtility::stripPathSitePrefix($icon);
                         }
@@ -970,7 +975,8 @@ abstract class AbstractItemProvider
                         // "field1###' AND ..." -> array("field1", "' AND ...")
                         $whereClauseSubParts = explode('###', $value, 2);
                         // @todo: Throw exception if there is no value? What happens for NEW records?
-                        $rowFieldValue = $result['databaseRow'][$whereClauseSubParts[0]];
+                        $databaseRowKey = empty($result['flexParentDatabaseRow']) ? 'databaseRow' : 'flexParentDatabaseRow';
+                        $rowFieldValue = isset($result[$databaseRowKey][$whereClauseSubParts[0]]) ? $result[$databaseRowKey][$whereClauseSubParts[0]] : '';
                         if (is_array($rowFieldValue)) {
                             // If a select or group field is used here, it may have been processed already and
                             // is now an array. Use first selected value in this case.

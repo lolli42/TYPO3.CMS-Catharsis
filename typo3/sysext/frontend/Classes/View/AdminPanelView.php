@@ -146,7 +146,7 @@ class AdminPanelView
 
     /**
      * Saves any change in settings made in the Admin Panel.
-     * Called from index_ts.php right after access check for the Admin Panel
+     * Called from \TYPO3\CMS\Frontend\Http\RequestHandler right after access check for the Admin Panel
      *
      * @return void
      */
@@ -335,7 +335,7 @@ class AdminPanelView
 					TSFEtypo3FormFieldSet(theField, evallist, is_in, checkbox, checkboxValue);
 				}') . '/*]]>*/</script><script language="javascript" type="text/javascript">' . $this->extJSCODE . '</script>';
         }
-        $cssPath = htmlspecialchars($this->getTypoScriptFrontendController()->absRefPrefix . ExtensionManagementUtility::siteRelPath('t3skin')) . 'stylesheets/standalone/admin_panel.css';
+        $cssPath = htmlspecialchars($this->getTypoScriptFrontendController()->absRefPrefix . ExtensionManagementUtility::siteRelPath('frontend')) . 'Resources/Public/Css/admin_panel.css';
         $out .= '<script src="' . GeneralUtility::locationHeaderUrl(ExtensionManagementUtility::siteRelPath('frontend') . 'Resources/Public/JavaScript/AdminPanel.js') . '" type="text/javascript"></script><script type="text/javascript">/*<![CDATA[*/' . 'typo3AdminPanel = new TYPO3AdminPanel();typo3AdminPanel.init("typo3-adminPanel-header", "TSFE_ADMIN_PANEL_FORM");' . '/*]]>*/</script>
 <link type="text/css" rel="stylesheet" href="' . $cssPath . '" media="all" />
 <!--
