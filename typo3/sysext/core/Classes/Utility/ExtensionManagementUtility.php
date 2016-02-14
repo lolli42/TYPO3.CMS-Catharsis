@@ -15,6 +15,9 @@ namespace TYPO3\CMS\Core\Utility;
  */
 
 use TYPO3\CMS\Core\Category\CategoryRegistry;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Imaging\IconProvider\BitmapIconProvider;
+use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Migrations\TcaMigration;
 use TYPO3\CMS\Core\Package\PackageManager;
 
@@ -871,8 +874,15 @@ class ExtensionManagementUtility
             unset($moduleConfiguration['labels']['tabs_images']['tab']);
         }
 
+        // Register the icon and move it too "iconIdentifier"
         if (!empty($moduleConfiguration['icon'])) {
-            $moduleConfiguration['icon'] = GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true);
+            $iconIdentifier = 'module-' . $moduleSignature;
+            $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
+            $iconRegistry->registerIcon($iconIdentifier, BitmapIconProvider::class, [
+                'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true)
+            ]);
+            $moduleConfiguration['iconIdentifier'] = $iconIdentifier;
+            unset($moduleConfiguration['icon']);
         }
 
         $moduleLabels = array(
@@ -944,7 +954,13 @@ class ExtensionManagementUtility
             }
 
             if (!empty($moduleConfiguration['icon'])) {
-                $moduleConfiguration['icon'] = GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true);
+                $iconIdentifier = 'module-' . $fullModuleSignature;
+                $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
+                $iconRegistry->registerIcon($iconIdentifier, BitmapIconProvider::class, [
+                    'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true)
+                ]);
+                $moduleConfiguration['iconIdentifier'] = $iconIdentifier;
+                unset($moduleConfiguration['icon']);
             }
 
             $GLOBALS['TBE_MODULES']['_configuration'][$fullModuleSignature] = $moduleConfiguration;
@@ -975,9 +991,11 @@ class ExtensionManagementUtility
      * @param string $ajaxId Identifier of the handler, that is used in the request
      * @param string $callbackMethod TYPO3 callback method (className->methodName).
      * @param bool $csrfTokenCheck Only set this to FALSE if you are sure that the registered handler does not modify any data!
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function registerAjaxHandler($ajaxId, $callbackMethod, $csrfTokenCheck = true)
     {
+        GeneralUtility::logDeprecatedFunction();
         $GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'][$ajaxId] = array(
             'callbackMethod' => $callbackMethod,
             'csrfTokenCheck' => $csrfTokenCheck

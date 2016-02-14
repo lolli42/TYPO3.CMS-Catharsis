@@ -451,10 +451,10 @@ class TypoScriptFrontendController
     public $defaultBodyTag = '<body>';
 
     /**
-     * Debug flag, may output special debug html-code.
-     * @var string
+     * Debug flag. If TRUE special debug-output maybe be shown (which includes html-formatting).
+     * @var bool
      */
-    public $debug = '';
+    public $debug = false;
 
     /**
      * Default internal target
@@ -1234,7 +1234,7 @@ class TypoScriptFrontendController
         if ($this->beUserLogin || $this->doWorkspacePreview()) {
             // Backend user preview features:
             if ($this->beUserLogin && $backendUser->adminPanel instanceof AdminPanelView) {
-                $this->fePreview = (bool)$backendUser->adminPanel->extGetFeAdminValue('preview');
+                $this->fePreview = (int)$backendUser->adminPanel->extGetFeAdminValue('preview');
                 // If admin panel preview is enabled...
                 if ($this->fePreview) {
                     if ($this->fe_user->user) {
@@ -1794,24 +1794,24 @@ class TypoScriptFrontendController
     {
         // Initialize:
         $c = count($this->rootLine);
-        $disable = false;
+        $loginAllowed = true;
         // Traverse root line from root and outwards:
         for ($a = 0; $a < $c; $a++) {
             // If a value is set for login state:
             if ($this->rootLine[$a]['fe_login_mode'] > 0) {
                 // Determine state from value:
                 if ((int)$this->rootLine[$a]['fe_login_mode'] === 1) {
-                    $disable = true;
+                    $loginAllowed = false;
                     $this->loginAllowedInBranch_mode = 'all';
                 } elseif ((int)$this->rootLine[$a]['fe_login_mode'] === 3) {
-                    $disable = true;
+                    $loginAllowed = false;
                     $this->loginAllowedInBranch_mode = 'groups';
                 } else {
-                    $disable = false;
+                    $loginAllowed = true;
                 }
             }
         }
-        return !$disable;
+        return $loginAllowed;
     }
 
     /**
@@ -2678,7 +2678,7 @@ class TypoScriptFrontendController
         // Setting sys_language_uid inside sys-page:
         $this->sys_page->sys_language_uid = $this->sys_language_uid;
         // If default translation is not available:
-        if ((!$this->sys_language_uid || !$this->sys_language_content) && $this->page['l18n_cfg'] & 1) {
+        if ((!$this->sys_language_uid || !$this->sys_language_content) && GeneralUtility::hideIfDefaultLanguage($this->page['l18n_cfg'])) {
             $message = 'Page is not available in default language.';
             GeneralUtility::sysLog($message, 'cms', GeneralUtility::SYSLOG_SEVERITY_ERROR);
             $this->pageNotFoundAndExit($message);
@@ -3400,7 +3400,6 @@ class TypoScriptFrontendController
                     $incContent = '';
                     $INTiS_cObj = unserialize($INTiS_config[$INTiS_key]['cObj']);
                     /* @var $INTiS_cObj ContentObjectRenderer */
-                    $INTiS_cObj->INT_include = 1;
                     switch ($INTiS_config[$INTiS_key]['type']) {
                         case 'COA':
                             $incContent = $INTiS_cObj->cObjGetSingle('COA', $INTiS_config[$INTiS_key]['conf']);

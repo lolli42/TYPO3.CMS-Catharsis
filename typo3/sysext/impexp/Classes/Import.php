@@ -515,6 +515,34 @@ class Import extends ImportExport
 
         // unset the sys_file records to prevent an import in writeRecords_records
         unset($this->dat['header']['records']['sys_file']);
+        // remove all sys_file_reference records that point to file records which are unknown
+        // in the system to prevent exceptions
+        $this->removeSysFileReferenceRecordsFromImportDataWithRelationToMissingFile();
+    }
+
+    /**
+     * Removes all sys_file_reference records from the import data array that are pointing to sys_file records which
+     * are missing not in the import data to prevent exceptions on checking the related file started by the Datahandler.
+     *
+     * @return void
+     */
+    protected function removeSysFileReferenceRecordsFromImportDataWithRelationToMissingFile()
+    {
+        if (!isset($this->dat['header']['records']['sys_file_reference'])) {
+            return;
+        }
+
+        foreach ($this->dat['header']['records']['sys_file_reference'] as $sysFileReferenceUid => $_) {
+            $fileReferenceRecord = $this->dat['records']['sys_file_reference:' . $sysFileReferenceUid]['data'];
+            if (!in_array($fileReferenceRecord['uid_local'], $this->import_mapId['sys_file'])) {
+                unset($this->dat['header']['records']['sys_file_reference'][$sysFileReferenceUid]);
+                unset($this->dat['records']['sys_file_reference:' . $sysFileReferenceUid]);
+                $this->error('Error: sys_file_reference record ' . (int)$sysFileReferenceUid
+                             . ' with relation to sys_file record ' . (int)$fileReferenceRecord['uid_local']
+                             . ', which is not part of the import data, was not imported.'
+                );
+            }
+        }
     }
 
     /**
@@ -578,7 +606,7 @@ class Import extends ImportExport
                 $this->error('Error: the import folder in the default upload folder could not be created! No files will be imported!');
             }
         } else {
-            $this->legacyImportFolder = $folder->getSubFolder($this->legacyImportTargetPath);
+            $this->legacyImportFolder = $folder->getSubfolder($this->legacyImportTargetPath);
         }
     }
 
@@ -2030,11 +2058,12 @@ class Import extends ImportExport
             if ($initStrDat[1]) {
                 if ($this->compress) {
                     $datString = gzuncompress($datString);
-                    return $unserialize ? unserialize($datString) : $datString;
                 } else {
                     $this->error('Content read error: This file requires decompression, but this server does not offer gzcompress()/gzuncompress() functions.');
+                    return null;
                 }
             }
+            return $unserialize ? unserialize($datString) : $datString;
         } else {
             $this->error('MD5 check failed (' . $name . ')');
         }
@@ -2139,19 +2168,19 @@ class Import extends ImportExport
     {
         $importCharset = $this->dat['header']['charset'];
         if ($importCharset) {
-            if ($importCharset !== $this->getLanguageService()->charSet) {
-                $this->error('CHARSET: Converting charset of input file (' . $importCharset . ') to the system charset (' . $this->getLanguageService()->charSet . ')');
+            if ($importCharset !== 'utf-8') {
+                $this->error('CHARSET: Converting charset of input file (' . $importCharset . ') to the system charset (utf-8)');
                 // Convert meta data:
                 if (is_array($this->dat['header']['meta'])) {
-                    $this->getLanguageService()->csConvObj->convArray($this->dat['header']['meta'], $importCharset, $this->getLanguageService()->charSet);
+                    $this->getLanguageService()->csConvObj->convArray($this->dat['header']['meta'], $importCharset, 'utf-8');
                 }
                 // Convert record headers:
                 if (is_array($this->dat['header']['records'])) {
-                    $this->getLanguageService()->csConvObj->convArray($this->dat['header']['records'], $importCharset, $this->getLanguageService()->charSet);
+                    $this->getLanguageService()->csConvObj->convArray($this->dat['header']['records'], $importCharset, 'utf-8');
                 }
                 // Convert records themselves:
                 if (is_array($this->dat['records'])) {
-                    $this->getLanguageService()->csConvObj->convArray($this->dat['records'], $importCharset, $this->getLanguageService()->charSet);
+                    $this->getLanguageService()->csConvObj->convArray($this->dat['records'], $importCharset, 'utf-8');
                 }
             }
         } else {

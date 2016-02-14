@@ -126,15 +126,30 @@ class CreateFolderController extends AbstractModule
         $this->moduleTemplate->addJavaScriptCode(
             'CreateFolderInlineJavaScript',
             'var path = "' . $this->target . '";
+            var confirmTitle = '
+            . GeneralUtility::quoteJSvalue(
+                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:pleaseConfirm')
+            )
+            . ';
+            var confirmText = '
+            . GeneralUtility::quoteJSvalue(
+                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.redraw')
+            )
+            . ';
             function reload(a) {
-            if (!changed || (changed && confirm(' .
-            GeneralUtility::quoteJSvalue($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.redraw'))
-            . '))) {
-                    var params = "&target="+encodeURIComponent(path)+"&number="+a+"&returnUrl='
-            . rawurlencode($this->returnUrl)
-            . '";
-                    window.location.href = '
-            . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('file_newfolder')) . '+params;
+                var params = "&target="+encodeURIComponent(path)+"&number="+a+"&returnUrl=' . rawurlencode($this->returnUrl) . '";
+                var url = \'' . BackendUtility::getModuleUrl('file_newfolder') . '\';
+                if (!changed) {
+                    window.location.href = url + params;
+                } else {
+                    var modal = top.TYPO3.Modal.confirm(confirmTitle, confirmText);
+                    modal.on(\'confirm.button.cancel\', function(e) {
+                        top.TYPO3.Modal.currentModal.trigger(\'modal-dismiss\');
+                    });
+                    modal.on(\'confirm.button.ok\', function(e) {
+                        top.TYPO3.Modal.currentModal.trigger(\'modal-dismiss\');
+                        window.location.href = url + params;
+                    });
                 }
             }
             function backToList() {
@@ -285,7 +300,7 @@ class CreateFolderController extends AbstractModule
         // Back
         if ($this->returnUrl) {
             $backButton = $buttonBar->makeLinkButton()
-               ->setHref(GeneralUtility::linkThisUrl($this->returnUrl))
+               ->setHref($this->returnUrl)
                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($backButton);

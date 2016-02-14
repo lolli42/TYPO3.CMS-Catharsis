@@ -64,9 +64,16 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
 
     /**
      * @var \TYPO3\CMS\Extbase\Service\ImageService
-     * @inject
      */
     protected $imageService;
+
+    /**
+     * @param \TYPO3\CMS\Extbase\Service\ImageService $imageService
+     */
+    public function injectImageService(\TYPO3\CMS\Extbase\Service\ImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
 
     /**
      * Initialize arguments.
@@ -95,7 +102,7 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
      * @param int $maxWidth maximum width of the image
      * @param int $maxHeight maximum height of the image
      * @param bool $treatIdAsReference given src argument is a sys_file_reference record
-     * @param FileInterface|AbstractFileFolder $image a FAL object
+     * @param object $image a FAL object
      * @param string|bool $crop overrule cropping of image (setting to FALSE disables the cropping set in FileReference)
      * @param bool $absolute Force absolute URL
      *

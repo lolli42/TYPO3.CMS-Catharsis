@@ -274,7 +274,7 @@ class GeneralUtility
     public static function fixed_lgd_cs($string, $chars, $appendString = '...')
     {
         if (is_object($GLOBALS['LANG'])) {
-            return $GLOBALS['LANG']->csConvObj->crop($GLOBALS['LANG']->charSet, $string, $chars, $appendString);
+            return $GLOBALS['LANG']->csConvObj->crop('utf-8', $string, $chars, $appendString);
         } elseif (is_object($GLOBALS['TSFE']) && is_object($GLOBALS['TSFE']->csConvObj)) {
             $charSet = $GLOBALS['TSFE']->renderCharset != '' ? $GLOBALS['TSFE']->renderCharset : $GLOBALS['TSFE']->defaultCharSet;
             return $GLOBALS['TSFE']->csConvObj->crop($charSet, $string, $chars, $appendString);
@@ -3933,7 +3933,7 @@ class GeneralUtility
             list($file, $funcRef) = self::revExplode(':', $funcName, 2);
             $requireFile = self::getFileAbsFileName($file);
             if ($requireFile) {
-                self::requireOnce($requireFile);
+                require_once $requireFile;
             }
         } else {
             $funcRef = $funcName;
@@ -4031,7 +4031,7 @@ class GeneralUtility
                 list($file, $class) = self::revExplode(':', $classRef, 2);
                 $requireFile = self::getFileAbsFileName($file);
                 if ($requireFile) {
-                    self::requireOnce($requireFile);
+                    require_once $requireFile;
                 }
             } else {
                 $class = $classRef;
@@ -4424,9 +4424,11 @@ class GeneralUtility
      *
      * @param string $requireFile: Path of the file to be included
      * @return void
+     * @deprecated since TYPO3 CMS 8, this file will be removed in TYPO3 CMS 9
      */
     public static function requireOnce($requireFile)
     {
+        self::logDeprecatedFunction();
         // Needed for require_once
         global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;
         require_once $requireFile;
@@ -4439,9 +4441,11 @@ class GeneralUtility
      *
      * @param string $requireFile: Path of the file to be included
      * @return void
+     * @deprecated since TYPO3 CMS 8, this file will be removed in TYPO3 CMS 9
      */
     public static function requireFile($requireFile)
     {
+        self::logDeprecatedFunction();
         // Needed for require
         global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;
         require $requireFile;

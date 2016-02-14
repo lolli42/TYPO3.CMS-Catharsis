@@ -1,16 +1,18 @@
 <?php
 namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
-/*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
- *                                                                        *
- * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU General Public License, either version 3 of the   *
- * License, or (at your option) any later version.                        *
- *                                                                        *
- * The TYPO3 project - inspiring people to share!                         *
- *                                                                        */
-
+/*
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase;
 
 /**
@@ -29,14 +31,6 @@ class StripTagsViewHelperTest extends ViewHelperBaseTestcase
         $this->viewHelper = $this->getMock(\TYPO3\CMS\Fluid\ViewHelpers\Format\StripTagsViewHelper::class, array('renderChildren'));
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
         $this->viewHelper->initializeArguments();
-    }
-
-    /**
-     * @test
-     */
-    public function viewHelperDeactivatesEscapingInterceptor()
-    {
-        $this->assertFalse($this->viewHelper->isEscapingInterceptorEnabled());
     }
 
     /**
@@ -67,9 +61,10 @@ class StripTagsViewHelperTest extends ViewHelperBaseTestcase
     public function stringsTestDataProvider()
     {
         return array(
-            array('This is a sample text without special characters.', 'This is a sample text without special characters.'),
-            array('This is a sample text <b>with <i>some</i> tags</b>.', 'This is a sample text with some tags.'),
-            array('This text contains some &quot;&Uuml;mlaut&quot;.', 'This text contains some &quot;&Uuml;mlaut&quot;.')
+            array('This is a sample text without special characters.', '', 'This is a sample text without special characters.'),
+            array('This is a sample text <b>with <i>some</i> tags</b>.', '', 'This is a sample text with some tags.'),
+            array('This text contains some &quot;&Uuml;mlaut&quot;.', '', 'This text contains some &quot;&Uuml;mlaut&quot;.'),
+            array('This text <i>contains</i> some <strong>allowed</strong> tags.', '<strong>', 'This text contains some <strong>allowed</strong> tags.'),
         );
     }
 
@@ -77,9 +72,9 @@ class StripTagsViewHelperTest extends ViewHelperBaseTestcase
      * @test
      * @dataProvider stringsTestDataProvider
      */
-    public function renderCorrectlyConvertsIntoPlaintext($source, $expectedResult)
+    public function renderCorrectlyConvertsIntoPlaintext($source, $allowed, $expectedResult)
     {
-        $actualResult = $this->viewHelper->render($source);
+        $actualResult = $this->viewHelper->render($source, $allowed);
         $this->assertSame($expectedResult, $actualResult);
     }
 

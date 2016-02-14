@@ -23,6 +23,7 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * TYPO3 Backend Template Class
@@ -300,7 +301,7 @@ function jumpToUrl(URL) {
         }
         // include all stylesheets
         foreach ($this->getSkinStylesheetDirectories() as $stylesheetDirectory) {
-            $this->addStylesheetDirectory($stylesheetDirectory);
+            $this->addStyleSheetDirectory($stylesheetDirectory);
         }
     }
 
@@ -366,12 +367,13 @@ function jumpToUrl(URL) {
     public function viewPageIcon($id)
     {
         // If access to Web>List for user, then link to that module.
-        $str = BackendUtility::getListViewLink(array(
+        $str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_list', [
             'id' => $id,
-            'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
-        ), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList'));
+            'returnUrl' > GeneralUtility::getIndpEnv('REQUEST_URI')
+        ])) . '" title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList')) . '">' . $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . '</a>';
+
         // Make link to view page
-        $str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
+        $str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage')) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
         return $str;
     }
 
@@ -900,15 +902,11 @@ function jumpToUrl(URL) {
      */
     public function addStyleSheetDirectory($path)
     {
-        // Calculation needed, when TYPO3 source is used via a symlink
-        // absolute path to the stylesheets
-        $filePath = GeneralUtility::getFileAbsFileName($path, false, true);
-        // Clean the path
-        $resolvedPath = GeneralUtility::resolveBackPath($filePath);
+        $path = GeneralUtility::getFileAbsFileName($path);
         // Read all files in directory and sort them alphabetically
-        $files = GeneralUtility::getFilesInDir($resolvedPath, 'css', false, 1);
-        foreach ($files as $file) {
-            $this->pageRenderer->addCssFile($path . $file, 'stylesheet', 'all');
+        $cssFiles = GeneralUtility::getFilesInDir($path, 'css');
+        foreach ($cssFiles as $cssFile) {
+            $this->pageRenderer->addCssFile(PathUtility::getAbsoluteWebPath($path . $cssFile));
         }
     }
 
@@ -955,11 +953,11 @@ function jumpToUrl(URL) {
                     if (substr($stylesheetDir, 0, 4) === 'EXT:') {
                         list($extKey, $path) = explode('/', substr($stylesheetDir, 4), 2);
                         if (!empty($extKey) && ExtensionManagementUtility::isLoaded($extKey) && !empty($path)) {
-                            $stylesheetDirectories[] = ExtensionManagementUtility::extRelPath($extKey) . $path;
+                            $stylesheetDirectories[] = ExtensionManagementUtility::extPath($extKey) . $path;
                         }
                     } else {
                         // For relative paths
-                        $stylesheetDirectories[] = ExtensionManagementUtility::extRelPath($skinExtKey) . $stylesheetDir;
+                        $stylesheetDirectories[] = ExtensionManagementUtility::extPath($skinExtKey) . $stylesheetDir;
                     }
                 }
             }
@@ -1496,6 +1494,6 @@ function jumpToUrl(URL) {
     */
     protected function getBackendFavicon()
     {
-        return $GLOBALS['TBE_STYLES']['favicon'] ?: ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/Icons/favicon.ico';
+        return PathUtility::getAbsoluteWebPath($GLOBALS['TBE_STYLES']['favicon'] ?: ExtensionManagementUtility::extPath('backend') . 'Resources/Public/Icons/favicon.ico');
     }
 }

@@ -1,25 +1,18 @@
 <?php
 namespace TYPO3\CMS\Fluid\ViewHelpers\Widget;
 
-/*                                                                        *
- * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
- *                                                                        *
- * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- *  of the License, or (at your option) any later version.                *
- *                                                                        *
- *                                                                        *
- * This script is distributed in the hope that it will be useful, but     *
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
- * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
- * General Public License for more details.                               *
- *                                                                        *
- * You should have received a copy of the GNU Lesser General Public       *
- * License along with the script.                                         *
- * If not, see http://www.gnu.org/licenses/lgpl.html                      *
- *                                                                        *
- * The TYPO3 project - inspiring people to share!                         *
- *                                                                        */
+/*
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 use TYPO3\CMS\Extbase\Persistence\ObjectStorage;
 use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetViewHelper;
@@ -58,18 +51,29 @@ class PaginateViewHelper extends AbstractWidgetViewHelper
 {
     /**
      * @var \TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller\PaginateController
-     * @inject
      */
     protected $controller;
 
     /**
-     * @param QueryResultInterface|ObjectStorage|array $objects
+     * @param \TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller\PaginateController $controller
+     */
+    public function injectPaginateController(\TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller\PaginateController $controller)
+    {
+        $this->controller = $controller;
+    }
+
+    /**
+     * @param mixed $objects
      * @param string $as
      * @param array $configuration
      * @return string
+     * @throws \UnexpectedValueException
      */
     public function render($objects, $as, array $configuration = array('itemsPerPage' => 10, 'insertAbove' => false, 'insertBelow' => true, 'maximumNumberOfLinks' => 99))
     {
+        if (!($objects instanceof QueryResultInterface || $objects instanceof ObjectStorage || is_array($objects))) {
+            throw new \UnexpectedValueException('Supplied file object type ' . get_class($objects) . ' must be QueryResultInterface or ObjectStorage or be an array.', 1454510731);
+        }
         return $this->initiateSubRequest();
     }
 }

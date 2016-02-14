@@ -43,6 +43,18 @@ class CrawlerHook
     public $callBack = CrawlerHook::class;
 
     /**
+     * The constructor
+     */
+    public function __construct()
+    {
+        // To make sure the backend charset is available:
+        if (!is_object($GLOBALS['LANG'])) {
+            $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Lang\LanguageService::class);
+            $GLOBALS['LANG']->init($GLOBALS['BE_USER']->uc['lang']);
+        }
+    }
+
+    /**
      * Initialization of crawler hook.
      * This function is asked for each instance of the crawler and we must check if something is timed to happen and if so put entry(s) in the crawlers log to start processing.
      * In reality we select indexing configurations and evaluate if any of them needs to run.
@@ -544,7 +556,7 @@ class CrawlerHook
             }
         }
         // Indexing the record as a page (but with parameters set, see ->backend_setFreeIndexUid())
-        $indexerObj->backend_indexAsTYPO3Page(strip_tags(str_replace('<', ' <', $theTitle)), '', '', strip_tags(str_replace('<', ' <', $theContent)), $GLOBALS['LANG']->charSet, $r[$GLOBALS['TCA'][$cfgRec['table2index']]['ctrl']['tstamp']], $r[$GLOBALS['TCA'][$cfgRec['table2index']]['ctrl']['crdate']], $r['uid']);
+        $indexerObj->backend_indexAsTYPO3Page(strip_tags(str_replace('<', ' <', $theTitle)), '', '', strip_tags(str_replace('<', ' <', $theContent)), 'utf-8', $r[$GLOBALS['TCA'][$cfgRec['table2index']]['ctrl']['tstamp']], $r[$GLOBALS['TCA'][$cfgRec['table2index']]['ctrl']['crdate']], $r['uid']);
     }
 
     /**
