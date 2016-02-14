@@ -53,16 +53,16 @@ script:
   - >
     ./bin/selenium-server-standalone &
     php -S localhost:8000 &
-    sleep 20;
+    sleep 5;
     mysql -e 'create database acceptance';
     mysql acceptance < typo3/sysext/core/ext_tables.sql;
     mkdir -p typo3temp/var/logs/codeception/ typo3conf/ext;
     cp typo3/sysext/core/Build/Configuration/Acceptance/TravisLocalConfiguration.php typo3conf/LocalConfiguration.php;
     cp typo3/sysext/core/Build/Configuration/Acceptance/TravisPackageStates.php typo3conf/PackageStates.php;
-    wget http://localhost:8000/typo3/index.php;
-    head -n 120 index.php.1;
     ./bin/codecept run acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml typo3/sysext/core/Tests/Acceptance;
-    cat typo3temp/var/logs/codeception/BackendLoginMouseOverCept.fail.html
+    cat typo3temp/var/logs/codeception/BackendLoginMouseOverCept.fail.html;
+    wget http://localhost:8000/typo3/index.php;
+    cat index.php.1
   - >
     if [[ "$UNIT_TESTS" == "yes" ]]; then
       echo;
