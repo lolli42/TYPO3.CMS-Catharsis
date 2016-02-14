@@ -60,6 +60,7 @@ script:
     cp typo3/sysext/core/Build/Configuration/Acceptance/TravisLocalConfiguration.php typo3conf/LocalConfiguration.php;
     cp typo3/sysext/core/Build/Configuration/Acceptance/TravisPackageStates.php typo3conf/PackageStates.php;
     ./bin/codecept run acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml typo3/sysext/core/Tests/Acceptance;
+    cat typo3temp/var/logs/codeception/BackendLoginMouseOverCept.fail.html
   - >
     if [[ "$UNIT_TESTS" == "yes" ]]; then
       echo;
