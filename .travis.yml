@@ -55,9 +55,6 @@ before_script:
 
 script:
   - >
-    ./bin/selenium-server-standalone &
-    php -S localhost:8000 &
-    mkdir -p typo3temp/var/logs/codeception/
     ./bin/codecept run acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml typo3/sysext/core/Tests/Acceptance
   - >
     if [[ "$UNIT_TESTS" == "yes" ]]; then
