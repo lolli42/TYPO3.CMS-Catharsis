@@ -57,8 +57,8 @@ script:
     mysql -e 'create database acceptance';
     mysql acceptance < typo3/sysext/core/ext_tables.sql;
     mkdir -p typo3temp/var/logs/codeception/ typo3conf/ext;
-    cp typo3/sysext/core/Build/Configuration/Acceptance/TravisLocalConfiguration.php typo3conf/;
-    cp typo3/sysext/core/Build/Configuration/Acceptance/TravisPackageStates.php typo3conf/;
+    cp typo3/sysext/core/Build/Configuration/Acceptance/TravisLocalConfiguration.php typo3conf/LocalConfiguration.php;
+    cp typo3/sysext/core/Build/Configuration/Acceptance/TravisPackageStates.php typo3conf/PackageStates.php;
     ./bin/codecept run acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml typo3/sysext/core/Tests/Acceptance;
   - >
     if [[ "$UNIT_TESTS" == "yes" ]]; then
