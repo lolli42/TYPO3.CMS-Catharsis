@@ -48,18 +48,25 @@ before_script:
     fi
   - if [ "$GITHUB_COMPOSER_AUTH" ]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
   - composer install
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
 
 script:
   - >
     ./bin/selenium-server-standalone &
     php -S 0.0.0.0:8000 &
-    sleep 3;
+    sleep 20;
+    docker ps;
     mysql -e 'create database acceptance';
     mysql acceptance < typo3/sysext/core/ext_tables.sql;
     mkdir -p typo3temp/var/logs/codeception/ typo3conf/ext;
     cp typo3/sysext/core/Build/Configuration/Acceptance/TravisLocalConfiguration.php typo3conf/LocalConfiguration.php;
     cp typo3/sysext/core/Build/Configuration/Acceptance/TravisPackageStates.php typo3conf/PackageStates.php;
+    wget http://localhost:8000/typo3/index.php;
+    head -n 120 index.php.1;
     ./bin/codecept run acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml typo3/sysext/core/Tests/Acceptance;
+    cat typo3temp/var/logs/codeception/BackendLoginMouseOverCept.fail.html
   - >
     if [[ "$UNIT_TESTS" == "yes" ]]; then
       echo;
