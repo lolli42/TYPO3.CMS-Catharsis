@@ -57,7 +57,7 @@ script:
     ./bin/selenium-server-standalone &
     php -S localhost:8000 &
     sleep 20;
-    docker ps;
+    /bin/netstat -anp;
     mysql -e 'create database acceptance';
     mysql acceptance < typo3/sysext/core/ext_tables.sql;
     mkdir -p typo3temp/var/logs/codeception/ typo3conf/ext;
