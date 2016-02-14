@@ -7,7 +7,7 @@ matrix:
     - php: 7
       env: UNIT_TESTS=no
 
-sudo: required
+sudo: false
 
 addons:
   apt:
