@@ -8,10 +8,7 @@ modules:
     config:
       WebDriver:
         url: http://localhost:8000
-        browser: firefox
-        WebDriver:
-            url: http://localhost:8000
-            browser: phantomjs
+        browser: phantomjs
 
 env:
     firefox:
