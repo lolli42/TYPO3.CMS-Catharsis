@@ -4,8 +4,12 @@ matrix:
   fast_finish: true
 
   include:
+    - php: 5.5
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes SUBMODULE_TEST=yes
+    - php: 5.6
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
     - php: 7
-      env: UNIT_TESTS=no
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
 
 sudo: false
 
