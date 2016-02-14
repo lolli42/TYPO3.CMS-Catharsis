@@ -68,5 +68,6 @@ return [
         'sitename' => 't3',
         'sqlDebug' => 1,
         'systemLogLevel' => 0,
+        'trustedHostsPattern' => '.*',
     ],
 ];
