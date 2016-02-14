@@ -92,6 +92,12 @@ return [
             'packagePath' => 'typo3/sysext/t3skin/',
             'classesPath' => 'Classes/',
         ],
+        'frontend' => [
+            'composerName' => 'typo3/cms-frontend',
+            'state' => 'active',
+            'packagePath' => 'typo3/sysext/frontend/',
+            'classesPath' => 'Classes/',
+        ],
     ],
     'version' => 4,
 ];
