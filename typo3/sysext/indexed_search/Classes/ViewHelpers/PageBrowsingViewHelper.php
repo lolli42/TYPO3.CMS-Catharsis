@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Page browser for indexed search, and only useful here, as the
@@ -27,7 +28,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  * functionality
  * @internal
  */
-class PageBrowsingViewHelper extends AbstractViewHelper
+class PageBrowsingViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * @var string

@@ -16,22 +16,21 @@ namespace TYPO3\CMS\Install\ViewHelpers;
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Utility class for phpinfo()
  * @internal
  */
-class PhpInfoViewHelper extends AbstractViewHelper
+class PhpInfoViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
+     * Disable the escaping interceptor because otherwise the child nodes would be escaped before this view helper
+     * can decode the text's entities.
+     *
      * @var bool
      */
-    protected $escapeOutput = false;
-
-    /**
-     * @var bool
-     */
-    protected $escapeChildren = false;
+    protected $escapingInterceptorEnabled = false;
 
     /**
      * Render PHP info

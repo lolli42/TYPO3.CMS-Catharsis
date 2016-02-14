@@ -19,11 +19,12 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Class RenameFileViewHelper
  */
-class RenameFileViewHelper extends AbstractViewHelper
+class RenameFileViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Renders a link to rename a file

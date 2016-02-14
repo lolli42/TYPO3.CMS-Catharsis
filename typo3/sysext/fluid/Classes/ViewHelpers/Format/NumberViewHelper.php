@@ -1,21 +1,19 @@
 <?php
 namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
+/*                                                                        *
+ * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU Lesser General Public License, either version 3   *
+ *  of the License, or (at your option) any later version.                *
+ *                                                                        *
+ * The TYPO3 project - inspiring people to share!                         *
+ *                                                                        */
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Formats a number with custom precision, decimal point and grouped thousands.
@@ -40,7 +38,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @api
  */
-class NumberViewHelper extends AbstractViewHelper
+class NumberViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Format the numeric value as a number with grouped thousands, decimal point and

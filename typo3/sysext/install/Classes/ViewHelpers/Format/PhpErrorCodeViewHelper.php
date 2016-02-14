@@ -16,13 +16,14 @@ namespace TYPO3\CMS\Install\ViewHelpers\Format;
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Transform PHP error code to readable text
  *
  * @internal
  */
-class PhpErrorCodeViewHelper extends AbstractViewHelper
+class PhpErrorCodeViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * @var array

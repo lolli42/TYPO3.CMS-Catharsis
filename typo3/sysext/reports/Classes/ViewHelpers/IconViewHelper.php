@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Reports\ViewHelpers;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper;
 
 /**
@@ -24,7 +25,7 @@ use TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper;
  *
  * @internal
  */
-class IconViewHelper extends AbstractBackendViewHelper
+class IconViewHelper extends AbstractBackendViewHelper implements CompilableInterface
 {
     /**
      * Renders the icon

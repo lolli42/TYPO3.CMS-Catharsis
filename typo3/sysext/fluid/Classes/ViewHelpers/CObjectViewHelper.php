@@ -1,21 +1,18 @@
 <?php
 namespace TYPO3\CMS\Fluid\ViewHelpers;
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
-
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
+/*                                                                        *
+ * This script is part of the TYPO3 project - inspiring people to share!  *
+ *                                                                        *
+ * TYPO3 is free software; you can redistribute it and/or modify it under *
+ * the terms of the GNU General Public License version 2 as published by  *
+ * the Free Software Foundation.                                          *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
+ * Public License for more details.                                       *
+ *                                                                        */
 /**
  * This ViewHelper renders CObjects from the global TypoScript configuration.
  *
@@ -45,18 +42,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 {
     /**
-     * Disable escaping of child nodes' output
+     * Disable the escaping interceptor because otherwise the child nodes would be escaped before this view helper
+     * can decode the text's entities.
      *
      * @var bool
      */
-    protected $escapeChildren = false;
-
-    /**
-     * Disable escaping of this node's output
-     *
-     * @var bool
-     */
-    protected $escapeOutput = false;
+    protected $escapingInterceptorEnabled = false;
 
     /**
      * @var array
@@ -109,14 +100,14 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
             $data = array($data);
         }
         /** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject */
-        $contentObject = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
+        $contentObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
         $contentObject->start($data, $table);
         if ($currentValue !== null) {
             $contentObject->setCurrentVal($currentValue);
         } elseif ($currentValueKey !== null && isset($data[$currentValueKey])) {
             $contentObject->setCurrentVal($data[$currentValueKey]);
         }
-        $pathSegments = GeneralUtility::trimExplode('.', $typoscriptObjectPath);
+        $pathSegments = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $typoscriptObjectPath);
         $lastSegment = array_pop($pathSegments);
         $setup = $this->typoScriptSetup;
         foreach ($pathSegments as $segment) {

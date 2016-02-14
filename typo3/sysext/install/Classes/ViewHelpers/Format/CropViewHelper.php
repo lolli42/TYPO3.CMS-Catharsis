@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Install\ViewHelpers\Format;
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Simplified crop view helper that does not need a frontend environment
@@ -39,7 +40,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class CropViewHelper extends AbstractViewHelper
+class CropViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Render the cropped text

@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Install\ViewHelpers\File;
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Get width or height from image file
@@ -31,7 +32,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class ImageDimensionViewHelper extends AbstractViewHelper
+class ImageDimensionViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Get width / height from image file

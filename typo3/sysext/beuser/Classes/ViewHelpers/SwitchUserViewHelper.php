@@ -21,12 +21,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
  * Displays 'SwitchUser' link with sprite icon to change current backend user to target (non-admin) backendUser
  * @internal
  */
-class SwitchUserViewHelper extends AbstractViewHelper
+class SwitchUserViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Render link with sprite icon to change current backend user to target

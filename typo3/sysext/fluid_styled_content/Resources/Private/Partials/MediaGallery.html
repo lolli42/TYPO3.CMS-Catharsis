@@ -26,9 +26,9 @@
 								<f:case value="4">
 									<f:render section="videoType" arguments="{_all}" />
 								</f:case>
-								<f:defaultCase>
+								<f:case default="TRUE">
 									<f:render section="imageType" arguments="{_all}" />
-								</f:defaultCase>
+								</f:case>
 							 </f:switch>
 
 							<f:if condition="{column.media.description}">

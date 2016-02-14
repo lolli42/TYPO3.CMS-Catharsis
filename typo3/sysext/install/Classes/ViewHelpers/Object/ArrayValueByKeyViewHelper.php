@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Install\ViewHelpers\Object;
 
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Install\ViewHelpers\Exception;
 
 /**
@@ -32,7 +33,7 @@ use TYPO3\CMS\Install\ViewHelpers\Exception;
  *
  * @internal
  */
-class ArrayValueByKeyViewHelper extends AbstractViewHelper
+class ArrayValueByKeyViewHelper extends AbstractViewHelper implements CompilableInterface
 {
     /**
      * Get the value of an key in an array.
