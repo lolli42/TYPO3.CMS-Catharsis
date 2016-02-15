@@ -5,8 +5,8 @@
 
 $I = new AcceptanceTester($scenario);
 $I->wantTo('check login functions');
-$I->amOnUrl('http://localhost:8000/typo3/index.php');
-$I->waitForElement('#t3-username', 10);
+$I->amOnPage('/typo3');
+$I->waitForElement('#t3-username');
 $I->wantTo('mouse over css change login button');
 
 $bs = $I->executeInSelenium(function(\Facebook\WebDriver\Remote\RemoteWebDriver $webdriver) {
