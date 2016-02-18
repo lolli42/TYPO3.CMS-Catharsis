@@ -76,9 +76,9 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '6.2.16-dev');
+		define('TYPO3_version', '6.2.19-dev');
 		define('TYPO3_branch', '6.2');
-		define('TYPO3_copyright_year', '1998-2015');
+		define('TYPO3_copyright_year', '1998-2016');
 
 		// TYPO3 external links
 		define('TYPO3_URL_GENERAL', 'http://typo3.org/');

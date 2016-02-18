@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Cache\Backend;
 
 use \org\bovigo\vfs\vfsStreamDirectory;
 use \org\bovigo\vfs\vfsStreamWrapper;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Testcase for the File cache backend
@@ -371,6 +372,95 @@ class FileBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$backend->get($identifier);
 	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsAbsolutePathWithoutTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('/tmp/foo');
+		$this->assertEquals('/tmp/foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsAbsolutePathWithTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('/tmp/foo/');
+		$this->assertEquals('/tmp/foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsRelativePathWithoutTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('tmp/foo');
+		// get PATH_site without trailing slash
+		$path = GeneralUtility::fixWindowsFilePath(realpath(PATH_site));
+		$this->assertEquals($path . '/tmp/foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsRelativePathWithTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('tmp/foo/');
+		// get PATH_site without trailing slash
+		$path = GeneralUtility::fixWindowsFilePath(realpath(PATH_site));
+		$this->assertEquals($path . '/tmp/foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsRelativeDottedPathWithoutTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('../tmp/foo');
+		// get PATH_site without trailing slash
+		$path = GeneralUtility::fixWindowsFilePath(realpath(PATH_site));
+		$this->assertEquals($path . '/../tmp/foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsRelativeDottedPathWithTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('../tmp/foo/');
+		// get PATH_site without trailing slash
+		$path = GeneralUtility::fixWindowsFilePath(realpath(PATH_site));
+		$this->assertEquals($path . '/../tmp/foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsAbsoluteDottedPathWithoutTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('/tmp/../foo');
+		$this->assertEquals('/tmp/../foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setCacheDirectoryAllowsAbsoluteDottedPathWithTrailingSlash() {
+		$backend = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Cache\\Backend\\FileBackend', array('dummy'), array(), '', false);
+		$backend->_set('cacheIdentifier', 'test');
+		$backend->setCacheDirectory('/tmp/../foo/');
+		$this->assertEquals('/tmp/../foo/test/', $backend->_get('temporaryCacheDirectory'));
+	}
+
 
 	/**
 	 * @test

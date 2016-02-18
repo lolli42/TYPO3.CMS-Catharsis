@@ -321,6 +321,10 @@ class ResourceCompressor {
 			// concatenate all the files together
 			foreach ($filesToInclude as $filename) {
 				$contents = GeneralUtility::getUrl(GeneralUtility::resolveBackPath($this->rootPath . $filename));
+				// remove any UTF-8 byte order mark (BOM) from files
+				if (GeneralUtility::isFirstPartOfStr($contents, "\xEF\xBB\xBF")) {
+					$contents = substr($contents, 3);
+				}
 				// only fix paths if files aren't already in typo3temp (already processed)
 				if ($type === 'css' && !GeneralUtility::isFirstPartOfStr($filename, $this->targetDirectory)) {
 					$contents = $this->cssFixRelativeUrlPaths($contents, PathUtility::dirname($filename) . '/');
