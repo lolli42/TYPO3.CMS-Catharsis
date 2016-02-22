@@ -6,13 +6,17 @@ modules:
     - Asserts
   config:
     WebDriver:
-      url: http://localhost:8000/typo3temp/var/tests/acceptance
+      url: http://localhost:8000
       browser: phantomjs
-      http_proxy: direct
-      window_size: 1024x768
+      window_size: 1440x570
 env:
   firefox:
     modules:
       config:
         WebDriver:
-          browser: 'firefox'
+          browser: firefox
+  chrome:
+    modules:
+      config:
+        WebDriver:
+          browser: chrome
