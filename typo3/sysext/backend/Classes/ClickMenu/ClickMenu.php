@@ -275,7 +275,7 @@ class ClickMenu
                 $menuItems['copy'] = $this->DB_copycut($table, $uid, 'copy');
             }
             // Cut:
-            if (!in_array('cut', $this->disabledItems, true) && !$root && !$DBmount && !$l10nOverlay) {
+            if (!in_array('cut', $this->disabledItems, true) && !$root && !$DBmount && !$l10nOverlay && $this->editOK) {
                 $menuItems['cut'] = $this->DB_copycut($table, $uid, 'cut');
             }
             // Paste:
@@ -1328,7 +1328,7 @@ class ClickMenu
                     $onClick .= 'TYPO3.ClickMenu.hideAll();';
                 }
                 $out[] = '
-					<a href="#" class="list-group-item" onclick="' . htmlspecialchars($onClick) . '">
+					<a href="javascript:;" class="list-group-item" onclick="' . htmlspecialchars($onClick) . '">
 						<span class="list-group-item-icon">' . $i[2] . '</span> ' . $i[1] . '
 					</a>';
             }
@@ -1425,7 +1425,7 @@ class ClickMenu
     public function linkItem($str, $icon, $onClick, $onlyCM = 0, $dontHide = 0)
     {
         return array(
-            '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $str . $icon . '</a>',
+            '<a href="javascript:;" onclick="' . htmlspecialchars($onClick) . '">' . $str . $icon . '</a>',
             $str,
             $icon,
             $onClick,
