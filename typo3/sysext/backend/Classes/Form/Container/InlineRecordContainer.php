@@ -247,13 +247,22 @@ class InlineRecordContainer extends AbstractContainer
             if (!empty($parentConfig['appearance']['overwriteCombinationWarningMessage'])) {
                 $combinationWarningMessage = $parentConfig['appearance']['overwriteCombinationWarningMessage'];
             }
-            $flashMessage = GeneralUtility::makeInstance(
-                FlashMessage::class,
-                $this->getLanguageService()->sL($combinationWarningMessage),
-                '',
-                FlashMessage::WARNING
-            );
-            $resultArray['html'] = $flashMessage->render();
+            $message = $this->getLanguageService()->sL($combinationWarningMessage);
+            $markup = [];
+            $markup[] = '<div class="alert alert-warning">';
+            $markup[] = '    <div class="media">';
+            $markup[] = '        <div class="media-left">';
+            $markup[] = '            <span class="fa-stack fa-lg">';
+            $markup[] = '                <i class="fa fa-circle fa-stack-2x"></i>';
+            $markup[] = '                <i class="fa fa-exclamation fa-stack-1x"></i>';
+            $markup[] = '            </span>';
+            $markup[] = '        </div>';
+            $markup[] = '        <div class="media-body">';
+            $markup[] = '            <div class="alert-message">' . htmlspecialchars($message) .  '</div>';
+            $markup[] = '        </div>';
+            $markup[] = '    </div>';
+            $markup[] = '</div>';
+            $resultArray['html'] = implode(LF, $markup);
         }
 
         $childArray = $this->renderChild($childData);
@@ -315,8 +324,9 @@ class InlineRecordContainer extends AbstractContainer
                     $fileObject = null;
                 }
                 if ($fileObject && $fileObject->isMissing()) {
-                    $flashMessage = \TYPO3\CMS\Core\Resource\Utility\BackendUtility::getFlashMessageForMissingFile($fileObject);
-                    $thumbnail = $flashMessage->render();
+                    $thumbnail .= '<span class="label label-danger">'
+                        . htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing'))
+                        . '</span>&nbsp;' . htmlspecialchars($fileObject->getName()) . '<br />';
                 } elseif ($fileObject) {
                     $imageSetup = $inlineConfig['appearance']['headerThumbnail'];
                     unset($imageSetup['field']);
