@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Core\Tests\Acceptance\Backend\Login;
+namespace TYPO3\CMS\Core\Tests\Acceptance\Backend;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -33,12 +33,12 @@ class LoginBadCredentialsCest
         $I->waitForElement('#t3-username');
 
         $I->wantTo('check empty credentials');
-        $required = $I->executeInSelenium(function (\Facebook\WebDriver\Remote\RemoteWebDriver $webdriver) {
+        $required = $I->executeInSelenium(function(\Facebook\WebDriver\Remote\RemoteWebDriver $webdriver) {
             return $webdriver->findElement(\WebDriverBy::cssSelector('#t3-username'))->getAttribute('required');
         });
         $I->assertEquals('true', $required, '#t3-username');
 
-        $required = $I->executeInSelenium(function (\Facebook\WebDriver\Remote\RemoteWebDriver $webdriver) {
+        $required = $I->executeInSelenium(function(\Facebook\WebDriver\Remote\RemoteWebDriver $webdriver) {
             return $webdriver->findElement(\WebDriverBy::cssSelector('#t3-password'))->getAttribute('required');
         });
         $I->assertEquals('true', $required, '#t3-password');
