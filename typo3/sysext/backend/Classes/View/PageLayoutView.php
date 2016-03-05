@@ -1299,12 +1299,15 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
             if ($pasteParams) {
                 $elFromTable = $this->clipboard->elFromTable('tt_content');
                 if (!empty($elFromTable) && $this->getPageLayoutController()->pageIsNotLockedForEditors()) {
-                    $iconsArr['paste'] = '<a href="'
-                        . htmlspecialchars($this->clipboard->pasteUrl('tt_content', $this->id, true, $pasteParams))
-                        . '" onclick="' . htmlspecialchars(('return '
-                        . $this->clipboard->confirmMsg('pages', $this->pageRecord, 'into', $elFromTable, $colName)))
-                        . '" title="' . $this->getLanguageService()->getLL('pasteIntoColumn', true) . '">'
-                        . $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL)->render() . '</a>';
+                    $iconsArr['paste'] =
+                        '<a href="' . htmlspecialchars($this->clipboard->pasteUrl('tt_content', $this->id, true, $pasteParams)) . '"'
+                        . ' class="t3js-modal-trigger"'
+                        . ' data-severity="warning"'
+                        . ' data-title="' . $this->getLanguageService()->getLL('pasteIntoColumn', true) . '"'
+                        . ' data-content="' . htmlspecialchars($this->clipboard->confirmMsgText('pages', $this->pageRecord, 'into', $elFromTable, $colName)) . '"'
+                        . ' title="' . $this->getLanguageService()->getLL('pasteIntoColumn', true) . '">'
+                        . $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL)->render()
+                        . '</a>';
                 }
             }
         }
@@ -1800,10 +1803,12 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
             }
         }
 
-        foreach ($this->contentElementCache[$lP][$colPos] as $record) {
-            $key = array_search($record['t3_origuid'], $defLanguageCount);
-            if ($key !== false) {
-                unset($defLanguageCount[$key]);
+        if (isset($this->contentElementCache[$lP][$colPos]) && is_array($this->contentElementCache[$lP][$colPos])) {
+            foreach ($this->contentElementCache[$lP][$colPos] as $record) {
+                $key = array_search($record['t3_origuid'], $defLanguageCount);
+                if ($key !== false) {
+                    unset($defLanguageCount[$key]);
+                }
             }
         }
 

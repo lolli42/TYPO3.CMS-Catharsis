@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Core\Utility;
  */
 
 use TYPO3\CMS\Core\Category\CategoryRegistry;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconProvider\BitmapIconProvider;
 use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Migrations\TcaMigration;
@@ -879,7 +878,7 @@ class ExtensionManagementUtility
             $iconIdentifier = 'module-' . $moduleSignature;
             $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
             $iconRegistry->registerIcon($iconIdentifier, BitmapIconProvider::class, [
-                'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true)
+                'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'])
             ]);
             $moduleConfiguration['iconIdentifier'] = $iconIdentifier;
             unset($moduleConfiguration['icon']);
@@ -957,7 +956,7 @@ class ExtensionManagementUtility
                 $iconIdentifier = 'module-' . $fullModuleSignature;
                 $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
                 $iconRegistry->registerIcon($iconIdentifier, BitmapIconProvider::class, [
-                    'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'], false, true)
+                    'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'])
                 ]);
                 $moduleConfiguration['iconIdentifier'] = $iconIdentifier;
                 unset($moduleConfiguration['icon']);

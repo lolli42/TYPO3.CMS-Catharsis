@@ -23,7 +23,6 @@ use TYPO3\CMS\Core\Database\PreparedStatement;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
@@ -1443,6 +1442,10 @@ class BackendUtility
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
         if ($fileReferences !== null) {
             foreach ($fileReferences as $fileReferenceObject) {
+                // Do not show previews of hidden references
+                if ($fileReferenceObject->getProperty('hidden')) {
+                    continue;
+                }
                 $fileObject = $fileReferenceObject->getOriginalFile();
 
                 if ($fileObject->isMissing()) {

@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\Domain\Model\Json;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 
 /**
  * JSON checkboxgroup
@@ -79,7 +80,7 @@ class CheckboxGroupJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\Fieldse
     protected function setOptions(array $parameters)
     {
         if (is_array($parameters)) {
-            $keys = \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList($parameters);
+            $keys = ArrayUtility::filterAndSortByNumericKeys($parameters);
             foreach ($keys as $key) {
                 $class = $parameters[$key];
                 if ((int)$key && strpos($key, '.') === false) {
@@ -89,8 +90,12 @@ class CheckboxGroupJsonElement extends \TYPO3\CMS\Form\Domain\Model\Json\Fieldse
                             $childElementArguments['attributes']['selected'] = 'selected';
                             unset($childElementArguments['checked']);
                         }
+                        if (isset($childElementArguments['value'])) {
+                            $childElementArguments['attributes']['value'] = $childElementArguments['value'];
+                            unset($childElementArguments['value']);
+                        }
                         if (isset($childElementArguments['label.'])) {
-                            $childElementArguments['data'] = $childElementArguments['label.']['value'];
+                            $childElementArguments['text'] = $childElementArguments['label.']['value'];
                             unset($childElementArguments['label.']);
                         }
                         $this->configuration['options'][] = $childElementArguments;
