@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Core\Tests\Acceptance\Backend\Login;
+namespace TYPO3\CMS\Core\Tests\Acceptance\Backend;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -14,21 +14,19 @@ namespace TYPO3\CMS\Core\Tests\Acceptance\Backend\Login;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\Acceptance\Step\Backend\Kasper;
-
 /**
  * Acceptance test
  */
-class MouseOverCest
+class LoginMouseOverCest
 {
 
     /**
      * Call backend login page and verify login button changes color on mouse over,
      * verifies page is available and CSS is properly loaded.
      *
-     * @param Kasper $I
+     * @param \AcceptanceTester $I
      */
-    public function tryToTest(Kasper $I)
+    public function tryToTest(\AcceptanceTester $I)
     {
         $I->wantTo('check login functions');
         $I->amOnPage('/typo3/index.php');

@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Core\Tests\Acceptance\Backend\Login;
+namespace TYPO3\CMS\Core\Tests\Acceptance\Backend;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -14,28 +14,32 @@ namespace TYPO3\CMS\Core\Tests\Acceptance\Backend\Login;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\Acceptance\Step\Backend\Kasper;
-
 /**
  * Acceptance test
  */
-class AdminCest
+class LoginAdminCest
 {
 
     /**
      * Login a admin user and logout again
      *
-     * @param Kasper $I
+     * @param \AcceptanceTester $I
      */
-    public function tryToTest(Kasper $I)
+    public function tryToTest(\AcceptanceTester $I)
     {
         $I->wantTo('login with admin');
-        $I->loginAsAdmin();
-
+        $I->amOnPage('/typo3/index.php');
+        $I->waitForElement('#t3-username');
+        $I->fillField('#t3-username', 'admin');
+        $I->fillField('#t3-password', 'password');
+        $I->click('#t3-login-submit-section > button');
+        $I->waitForElement('.nav');
+        $I->seeCookie('be_lastLoginProvider');
+        $I->seeCookie('be_typo_user');
         // user is redirected to 'about modules' after login, and must see the 'admin tools' section
         $I->see('Admin tools');
-
-        $I->logout();
+        $I->click('#typo3-cms-backend-backend-toolbaritems-usertoolbaritem > a');
+        $I->click('Logout');
         $I->waitForElement('#t3-username');
     }
 }
