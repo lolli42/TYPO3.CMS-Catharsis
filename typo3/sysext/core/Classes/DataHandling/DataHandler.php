@@ -994,7 +994,7 @@ class DataHandler
                         if (isset($config['config']['dbType']) && ($config['config']['dbType'] === 'date' || $config['config']['dbType'] === 'datetime')) {
                             $emptyValue = $dateTimeFormats[$config['config']['dbType']]['empty'];
                             $format = $dateTimeFormats[$config['config']['dbType']]['format'];
-                            $incomingFieldArray[$column] = $incomingFieldArray[$column] ? gmdate($format, $incomingFieldArray[$column]) : $emptyValue;
+                            $incomingFieldArray[$column] = $incomingFieldArray[$column] && $incomingFieldArray[$column] !== $emptyValue ? gmdate($format, $incomingFieldArray[$column]) : $emptyValue;
                         }
                     }
                 }
@@ -1521,7 +1521,7 @@ class DataHandler
             $fieldArray[$GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']] = serialize($originalLanguage_diffStorage);
         }
         // Checking for RTE-transformations of fields:
-        $types_fieldConfig = BackendUtility::getTCAtypes($table, $currentRecord);
+        $types_fieldConfig = BackendUtility::getTCAtypes($table, $this->checkValue_currentRecord);
         $theTypeString = null;
         if (is_array($types_fieldConfig)) {
             foreach ($types_fieldConfig as $vconf) {
@@ -1533,12 +1533,12 @@ class DataHandler
                 // Look for transformation flag:
                 if ((string)$incomingFieldArray['_TRANSFORM_' . $vconf['field']] === 'RTE') {
                     if ($theTypeString === null) {
-                        $theTypeString = BackendUtility::getTCAtypeValue($table, $currentRecord);
+                        $theTypeString = BackendUtility::getTCAtypeValue($table, $this->checkValue_currentRecord);
                     }
                     $RTEsetup = $this->BE_USER->getTSConfig('RTE', BackendUtility::getPagesTSconfig($tscPID));
                     $thisConfig = BackendUtility::RTEsetup($RTEsetup['properties'], $table, $vconf['field'], $theTypeString);
                     $fieldArray[$vconf['field']] = $this->transformRichtextContentToDatabase(
-                        $fieldArray[$vconf['field']], $table, $vconf['field'], $vconf['spec'], $thisConfig, $currentRecord['pid']
+                        $fieldArray[$vconf['field']], $table, $vconf['field'], $vconf['spec'], $thisConfig, $this->checkValue_currentRecord['pid']
                     );
                 }
             }
@@ -1752,15 +1752,19 @@ class DataHandler
         $format = '';
         $emptyValue = '';
         if (isset($tcaFieldConf['dbType']) && ($tcaFieldConf['dbType'] === 'date' || $tcaFieldConf['dbType'] === 'datetime')) {
-            $isDateOrDateTimeField = true;
-            $dateTimeFormats = $this->databaseConnection->getDateTimeFormats($table);
-            // Convert the date/time into a timestamp for the sake of the checks
-            $emptyValue = $dateTimeFormats[$tcaFieldConf['dbType']]['empty'];
-            $format = $dateTimeFormats[$tcaFieldConf['dbType']]['format'];
-            // At this point in the processing, the timestamps are still based on UTC
-            $timeZone = new \DateTimeZone('UTC');
-            $dateTime = \DateTime::createFromFormat('!' . $format, $value, $timeZone);
-            $value = $value === $emptyValue ? 0 : $dateTime->getTimestamp();
+            if (empty($value)) {
+                $value = 0;
+            } else {
+                $isDateOrDateTimeField = true;
+                $dateTimeFormats = $this->databaseConnection->getDateTimeFormats($table);
+                // Convert the date/time into a timestamp for the sake of the checks
+                $emptyValue = $dateTimeFormats[$tcaFieldConf['dbType']]['empty'];
+                $format = $dateTimeFormats[$tcaFieldConf['dbType']]['format'];
+                // At this point in the processing, the timestamps are still based on UTC
+                $timeZone = new \DateTimeZone('UTC');
+                $dateTime = \DateTime::createFromFormat('!' . $format, $value, $timeZone);
+                $value = $value === $emptyValue ? 0 : $dateTime->getTimestamp();
+            }
         }
         // Secures the string-length to be less than max.
         if ((int)$tcaFieldConf['max'] > 0) {
@@ -2659,7 +2663,7 @@ class DataHandler
                 case 'date':
                 case 'datetime':
                     $value = (int)$value;
-                    if ($value > 0 && !$this->dontProcessTransformations) {
+                    if ($value !== 0 && !$this->dontProcessTransformations) {
                         $value -= date('Z', $value);
                     }
                     break;
