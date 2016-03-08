@@ -36,22 +36,14 @@ class ModuleMenuSliderCest
     {
         $ids = ['#web', '#tools', '#system'];
         $sees = ['Page', 'Extensions'];
-
-        $menuItems = [
-            ["mainId" => "#web", "menuItem" => "Page"],
-            ["mainId" => "#tools", "menuItem" => "Extensions"],
-            ["mainId" => "#system", "menuItem" => "Log"]
-        ];
+        $typo3Menu = '#typo3-menu';
 
         $I->wantTo('check the slider in the module menu');
 
-        foreach ($menuItems as $menuItem) {
-            $id = $menuItem['mainId'];
-            $menuItem = $menuItem['menuItem'];
-
+        foreach ($ids as $id) {
             $I->waitForElement($id);
 
-            // close the item
+            // we close all
             $classString = $I->executeInSelenium(function (\Facebook\WebDriver\Remote\RemoteWebDriver $webdriver) use ($id) {
                 return $webdriver->findElement(\WebDriverBy::cssSelector($id))->getAttribute('class');
             });
@@ -60,14 +52,20 @@ class ModuleMenuSliderCest
                 $I->click($id . ' > div');
                 $I->wait(2); // the animation is so fast
             }
+        }
 
-            $I->dontSee($menuItem);
+        foreach ($sees as $see) {
+            $I->cantSee($see);
+        }
 
-            // now we expand it
+        // we open all
+        foreach ($ids as $id) {
             $I->click($id . ' > div');
+            $I->wait(2);
+        }
 
-            // and wait a short moment
-            $I->waitForText($menuItem);
+        foreach ($sees as $see) {
+            $I->see($see);
         }
     }
 }

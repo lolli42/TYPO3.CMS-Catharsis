@@ -41,7 +41,7 @@ class InfoOnModuleCest
         $I->click('Page');
         $I->switchToIFrame('content');
         $I->waitForElement('h4');
-        $I->waitForText('Web>Page module');
+        $I->see('Web>Page module');
         $I->switchToIFrame();
     }
 }
