@@ -2026,8 +2026,9 @@ class GeneralUtility
 
             $followLocationSucceeded = @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 
+            $curlIncludeHeaders = !$followLocationSucceeded || $includeHeader;
             curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_HEADER, !$followLocationSucceeded || $includeHeader ? 1 : 0);
+            curl_setopt($ch, CURLOPT_HEADER, $curlIncludeHeaders ? 1 : 0);
             curl_setopt($ch, CURLOPT_NOBODY, $includeHeader == 2 ? 1 : 0);
             curl_setopt($ch, CURLOPT_HTTPGET, $includeHeader == 2 ? 'HEAD' : 'GET');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -2052,6 +2053,23 @@ class GeneralUtility
             }
             $content = curl_exec($ch);
             $curlInfo = curl_getinfo($ch);
+
+            // Remove additional proxy header block, when proxy is used for https request and CURL_HEADER is enabled.
+            // Most HTTPS proxies add a second header before the actual server headers in their response, as a
+            // response to the CONNECT message sent by the client to the proxy. cURL does not strip this since 2005,
+            // so there are two headers arriving here, of which the first is not of interest to us—therefore, we can
+            // safely strip it.
+            // Detecting two linebreaks followed by a "HTTP/" (as done here) is the only reliable way to detect the
+            // proxy headers, as the relevant RFCs do not specify the exact status code (it might be any of 2xx) or
+            // the status message. Therefore, we check if there is a second HTTP headers block and then strip the
+            // first one.
+            if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']
+                && $curlIncludeHeaders
+                && preg_match('/^https:/', $url)
+                && strpos($content, "\r\n\r\nHTTP/") !== false
+            ) {
+                $content = self::stripHttpHeaders($content);
+            }
 
             if (!$followLocationSucceeded) {
                 // Check if we need to do redirects
@@ -3964,12 +3982,11 @@ class GeneralUtility
      * the instance of a specific class.
      *
      * @param string $className name of the class to instantiate, must not be empty and not start with a backslash
-     *
+     * @param mixed $constructorArguments Arguments for the constructor
      * @return object the created instance
-     *
      * @throws \InvalidArgumentException if $className is empty or starts with a backslash
      */
-    public static function makeInstance($className)
+    public static function makeInstance($className, ...$constructorArguments)
     {
         if (!is_string($className) || empty($className)) {
             throw new \InvalidArgumentException('$className must be a non empty string.', 1288965219);
@@ -3998,58 +4015,10 @@ class GeneralUtility
             return array_shift(self::$nonSingletonInstances[$finalClassName]);
         }
         // Create new instance and call constructor with parameters
-        $instance = static::instantiateClass($finalClassName, func_get_args());
+        $instance = new $finalClassName(...$constructorArguments);
         // Register new singleton instance
         if ($instance instanceof SingletonInterface) {
             self::$singletonInstances[$finalClassName] = $instance;
-        }
-        return $instance;
-    }
-
-    /**
-     * Speed optimized alternative to ReflectionClass::newInstanceArgs()
-     *
-     * @param string $className Name of the class to instantiate
-     * @param array $arguments Arguments passed to self::makeInstance() thus the first one with index 0 holds the requested class name
-     * @return mixed
-     */
-    protected static function instantiateClass($className, $arguments)
-    {
-        switch (count($arguments)) {
-            case 1:
-                $instance = new $className();
-                break;
-            case 2:
-                $instance = new $className($arguments[1]);
-                break;
-            case 3:
-                $instance = new $className($arguments[1], $arguments[2]);
-                break;
-            case 4:
-                $instance = new $className($arguments[1], $arguments[2], $arguments[3]);
-                break;
-            case 5:
-                $instance = new $className($arguments[1], $arguments[2], $arguments[3], $arguments[4]);
-                break;
-            case 6:
-                $instance = new $className($arguments[1], $arguments[2], $arguments[3], $arguments[4], $arguments[5]);
-                break;
-            case 7:
-                $instance = new $className($arguments[1], $arguments[2], $arguments[3], $arguments[4], $arguments[5], $arguments[6]);
-                break;
-            case 8:
-                $instance = new $className($arguments[1], $arguments[2], $arguments[3], $arguments[4], $arguments[5], $arguments[6], $arguments[7]);
-                break;
-            case 9:
-                $instance = new $className($arguments[1], $arguments[2], $arguments[3], $arguments[4], $arguments[5], $arguments[6], $arguments[7], $arguments[8]);
-                break;
-            default:
-                // The default case for classes with constructors that have more than 8 arguments.
-                // This will fail when one of the arguments shall be passed by reference.
-                // In case we really need to support this edge case, we can implement the solution from here: https://review.typo3.org/26344
-                $class = new \ReflectionClass($className);
-                array_shift($arguments);
-                $instance = $class->newInstanceArgs($arguments);
         }
         return $instance;
     }
