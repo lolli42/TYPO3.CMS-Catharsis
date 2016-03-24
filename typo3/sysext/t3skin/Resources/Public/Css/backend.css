@@ -7248,11 +7248,10 @@ button.close {
 .diff {
   background-color: #ffffff;
   border: 1px solid #cccccc;
+  display: table;
 }
 .diff-item {
-  display: table;
-  table-layout: fixed;
-  width: 100%;
+  display: table-row;
 }
 .diff-item + .diff-item {
   border-top: 1px solid #cccccc;
@@ -7264,12 +7263,13 @@ button.close {
 }
 .diff-item-title {
   background-color: #fafafa;
-  width: 120px;
   padding-right: 10px;
   font-style: italic;
+  white-space: nowrap;
 }
 .diff-item-result {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  width: 100%;
   white-space: pre;
   word-break: break-all;
   word-wrap: break-word;
@@ -7284,10 +7284,22 @@ button.close {
   background-color: #ebfce3;
   text-decoration: none;
 }
+.diff-item-result.diff-item-result-inline {
+  white-space: normal;
+}
 .module {
   height: 100%;
   width: 100%;
   background-color: #ffffff;
+}
+.module-loading-indicator {
+  min-height: 5px;
+  width: 100%;
+  z-index: 999999;
+}
+.module-loading-indicator.nprogress-custom-parent {
+  position: fixed;
+  top: 0;
 }
 .module-docheader {
   position: fixed;
@@ -12546,6 +12558,7 @@ iframe {
 .typo3-topbar-navigation-items .dropdown-list .dl-horizontal dd {
   margin-left: 150px;
   width: 170px;
+  word-wrap: break-word;
 }
 .typo3-topbar-navigation-items .dropdown-list-link {
   max-width: 300px;

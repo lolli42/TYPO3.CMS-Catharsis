@@ -1340,7 +1340,7 @@ class BackendUtility
         }
         $label = static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears');
         $age = ' (' . self::calcAge($prefix * ($GLOBALS['EXEC_TIME'] - $tstamp), $label) . ')';
-        return $date === 'date' ? self::date($tstamp) : self::datetime($tstamp) . $age;
+        return ($date === 'date' ? self::date($tstamp) : self::datetime($tstamp)) . $age;
     }
 
     /**
@@ -2448,8 +2448,10 @@ class BackendUtility
             if ($data['alttitle']) {
                 $output['title'] = $data['alttitle'];
             }
-            // If we have more information to show
-            if ($data['image_descr'] || $data['seeAlso'] || $data['details'] || $data['syntax']) {
+            // If we have more information to show and access to the cshmanual
+            if (($data['image_descr'] || $data['seeAlso'] || $data['details'] || $data['syntax'])
+                && static::getBackendUserAuthentication()->check('modules', 'help_CshmanualCshmanual')
+            ) {
                 $output['moreInfo'] = true;
             }
             // Add description
@@ -2639,7 +2641,7 @@ class BackendUtility
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['viewOnClickClass'] as $className) {
                 $hookObj = GeneralUtility::makeInstance($className);
                 if (method_exists($hookObj, 'postProcess')) {
-                    $previewUrl = $hookObj->postProcess($previewUrl, $pageUid, $backPath, $rootLine, $anchorSection, $viewScript, $additionalGetVars, $switchFocus);
+                    $previewUrl = $hookObj->postProcess($previewUrl, $pageUid, $rootLine, $anchorSection, $viewScript, $additionalGetVars, $switchFocus);
                 }
             }
         }
