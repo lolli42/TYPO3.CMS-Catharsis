@@ -1129,8 +1129,8 @@ class ExtensionManagementUtility
      * Adds a service to the global services array
      *
      * @param string $extKey Extension key
-     * @param string $serviceType Service type, must not be prefixed "tx_" or "Tx_
-     * @param string $serviceKey Service key, must be prefixed "tx_", "Tx_" or "user_
+     * @param string $serviceType Service type, must not be prefixed "tx_" or "Tx_"
+     * @param string $serviceKey Service key, must be prefixed "tx_", "Tx_" or "user_"
      * @param array $info Service description array
      * @return void
      */
@@ -1661,7 +1661,7 @@ tt_content.' . $key . $suffix . ' {
                 $phpCodeToCache[] = '$_EXTCONF = $GLOBALS[\'TYPO3_CONF_VARS\'][\'EXT\'][\'extConf\'][$_EXTKEY];';
                 $phpCodeToCache[] = '';
                 // Add ext_localconf.php content of extension
-                $phpCodeToCache[] = trim(GeneralUtility::getUrl($extensionDetails['ext_localconf.php']));
+                $phpCodeToCache[] = trim(file_get_contents($extensionDetails['ext_localconf.php']));
                 $phpCodeToCache[] = '';
                 $phpCodeToCache[] = '';
             }
@@ -1916,7 +1916,7 @@ tt_content.' . $key . $suffix . ' {
                 $phpCodeToCache[] = '$_EXTCONF = $GLOBALS[\'TYPO3_CONF_VARS\'][\'EXT\'][\'extConf\'][$_EXTKEY];';
                 $phpCodeToCache[] = '';
                 // Add ext_tables.php content of extension
-                $phpCodeToCache[] = trim(GeneralUtility::getUrl($extensionDetails['ext_tables.php']));
+                $phpCodeToCache[] = trim(file_get_contents($extensionDetails['ext_tables.php']));
                 $phpCodeToCache[] = '';
             }
         }
