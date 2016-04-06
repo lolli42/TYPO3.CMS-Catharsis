@@ -725,6 +725,7 @@ class TypoScriptFrontendController
      * charset conversion class. May be used by any application.
      *
      * @var CharsetConverter
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, instantiate CharsetConverter on your own if you need it
      */
     public $csConvObj;
 
@@ -2732,15 +2733,9 @@ class TypoScriptFrontendController
     {
         // Setting locale
         if ($this->config['config']['locale_all']) {
-            // There's a problem that PHP parses float values in scripts wrong if the
-            // locale LC_NUMERIC is set to something with a comma as decimal point
-            // Do we set all except LC_NUMERIC
-            $locale = setlocale(LC_COLLATE, $this->config['config']['locale_all']);
-            if ($locale) {
-                setlocale(LC_CTYPE, $this->config['config']['locale_all']);
-                setlocale(LC_MONETARY, $this->config['config']['locale_all']);
-                setlocale(LC_TIME, $this->config['config']['locale_all']);
-            } else {
+            $availableLocales = GeneralUtility::trimExplode(',', $this->config['config']['locale_all'], true);
+            $locale = setlocale(LC_ALL, ...$availableLocales);
+            if (!$locale) {
                 $this->getTimeTracker()->setTSlogMessage('Locale "' . htmlspecialchars($this->config['config']['locale_all']) . '" not found.', 3);
             }
         }
@@ -4320,7 +4315,9 @@ class TypoScriptFrontendController
 
         // Rendering charset of HTML page.
         if ($this->config['config']['metaCharset']) {
-            $this->metaCharset = $this->csConvObj->parse_charset($this->config['config']['metaCharset']);
+            /** @var CharsetConverter $charsetConverter */
+            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
+            $this->metaCharset = $charsetConverter->parse_charset($this->config['config']['metaCharset']);
         }
     }
 
@@ -4334,11 +4331,15 @@ class TypoScriptFrontendController
      * @param string $from Optional "from" charset.
      * @return string Output string, converted if needed.
      * @see CharsetConverter
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function csConv($str, $from = '')
     {
+        GeneralUtility::logDeprecatedFunction();
         if ($from) {
-            $output = $this->csConvObj->conv($str, $this->csConvObj->parse_charset($from), 'utf-8');
+            /** @var CharsetConverter $charsetConverter */
+            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
+            $output = $charsetConverter->conv($str, $charsetConverter->parse_charset($from), 'utf-8');
             return $output ?: $str;
         } else {
             return $str;
@@ -4354,7 +4355,9 @@ class TypoScriptFrontendController
     public function convOutputCharset($content)
     {
         if ($this->metaCharset !== 'utf-8') {
-            $content = $this->csConvObj->conv($content, 'utf-8', $this->metaCharset, true);
+            /** @var CharsetConverter $charsetConverter */
+            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
+            $content = $charsetConverter->conv($content, 'utf-8', $this->metaCharset, true);
         }
         return $content;
     }
@@ -4367,7 +4370,9 @@ class TypoScriptFrontendController
     public function convPOSTCharset()
     {
         if ($this->metaCharset !== 'utf-8' && is_array($_POST) && !empty($_POST)) {
-            $this->csConvObj->convArray($_POST, $this->metaCharset, 'utf-8');
+            /** @var CharsetConverter $charsetConverter */
+            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
+            $charsetConverter->convArray($_POST, $this->metaCharset, 'utf-8');
             $GLOBALS['HTTP_POST_VARS'] = $_POST;
         }
     }

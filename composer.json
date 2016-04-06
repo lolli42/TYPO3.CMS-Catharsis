@@ -38,7 +38,6 @@
 		"ext-session": "*",
 		"ext-xml": "*",
 		"psr/log": "1.0.0",
-		"pear/http_request2": "~2.2.1",
 		"swiftmailer/swiftmailer": "~5.4.1",
 		"symfony/console": ">=2.7|<3.1",
 		"symfony/finder": ">=2.7|<3.1",
@@ -48,7 +47,8 @@
 		"psr/http-message": "~1.0",
 		"cogpowered/finediff": "~0.3.1",
 		"mso/idna-convert": "^0.9.1",
-		"typo3fluid/fluid": "^1.0.6"
+		"typo3fluid/fluid": "^1.0.6",
+		"guzzlehttp/guzzle": "^6.2.0"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "~5.2.0",
@@ -83,6 +83,7 @@
 		"typo3/cms-beuser": "self.version",
 		"typo3/cms-context-help": "self.version",
 		"typo3/cms-core": "self.version",
+		"typo3/cms-compatibility7": "self.version",
 		"typo3/cms-cshmanual": "self.version",
 		"typo3/cms-css-styled-content": "self.version",
 		"typo3/cms-dbal": "self.version",
@@ -138,6 +139,7 @@
 			"TYPO3\\CMS\\Beuser\\": "typo3/sysext/beuser/Classes/",
 			"TYPO3\\CMS\\ContextHelp\\": "typo3/sysext/context_help/Classes/",
 			"TYPO3\\CMS\\Core\\": "typo3/sysext/core/Classes/",
+			"TYPO3\\CMS\\Compatibility7\\": "typo3/sysext/compatibility7/Classes/",
 			"TYPO3\\CMS\\Cshmanual\\": "typo3/sysext/cshmanual/Classes/",
 			"TYPO3\\CMS\\CssStyledContent\\": "typo3/sysext/css_styled_content/Classes/",
 			"TYPO3\\CMS\\Dbal\\": "typo3/sysext/dbal/Classes/",
@@ -218,9 +220,5 @@
 			"TYPO3\\CMS\\Recycler\\Tests\\": "typo3/sysext/recycler/Tests/"
 		},
 		"classmap": ["typo3/sysext/extbase/Tests/Unit/Object/Container/Fixtures/"]
-	},
-	"include-path": [
-		"vendor/pear/http_request2/",
-		"vendor/pear/net_url2/"
-	]
+	}
 }

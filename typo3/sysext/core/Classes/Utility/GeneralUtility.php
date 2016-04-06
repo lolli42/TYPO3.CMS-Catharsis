@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Core\Crypto\Random;
+use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -1618,9 +1619,11 @@ class GeneralUtility
      * @param string $charset Forced charset to prologue
      * @return string An XML string made from the input content in the array.
      * @see xml2array(),array2xml()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9.
      */
     public static function array2xml_cs(array $array, $docTag = 'phparray', array $options = array(), $charset = '')
     {
+        static::logDeprecatedFunction();
         // Set default charset unless explicitly specified
         $charset = $charset ?: 'utf-8';
         // Return XML:
@@ -1628,8 +1631,6 @@ class GeneralUtility
     }
 
     /**
-     * Deprecated to call directly (unless you are aware of using XML prologues)! Use "array2xml_cs" instead (which adds an XML-prologue)
-     *
      * Converts a PHP array into an XML string.
      * The XML output is optimized for readability since associative keys are used as tag names.
      * This also means that only alphanumeric characters are allowed in the tag names AND only keys NOT starting with numbers (so watch your usage of keys!). However there are options you can set to avoid this problem.
@@ -1995,7 +1996,7 @@ class GeneralUtility
      *************************/
     /**
      * Reads the file or url $url and returns the content
-     * If you are having trouble with proxys when reading URLs you can configure your way out of that with settings like $GLOBALS['TYPO3_CONF_VARS']['SYS']['curlUse'] etc.
+     * If you are having trouble with proxies when reading URLs you can configure your way out of that with settings within $GLOBALS['TYPO3_CONF_VARS']['HTTP'].
      *
      * @param string $url File/URL to read
      * @param int $includeHeader Whether the HTTP header should be fetched or not. 0=disable, 1=fetch header+content, 2=fetch header only
@@ -2003,192 +2004,62 @@ class GeneralUtility
      * @param array $report Error code/message and, if $includeHeader is 1, response meta data (HTTP status and content type)
      * @return mixed The content from the resource given as input. FALSE if an error has occurred.
      */
-    public static function getUrl($url, $includeHeader = 0, $requestHeaders = false, &$report = null)
+    public static function getUrl($url, $includeHeader = 0, $requestHeaders = null, &$report = null)
     {
-        $content = false;
         if (isset($report)) {
             $report['error'] = 0;
             $report['message'] = '';
         }
-        // Use cURL for: http, https, ftp, ftps, sftp and scp
-        if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlUse'] == '1' && preg_match('/^(?:http|ftp)s?|s(?:ftp|cp):/', $url)) {
-            if (isset($report)) {
-                $report['lib'] = 'cURL';
-            }
-            // External URL without error checking.
-            if (!function_exists('curl_init') || !($ch = curl_init())) {
-                if (isset($report)) {
-                    $report['error'] = -1;
-                    $report['message'] = 'Couldn\'t initialize cURL.';
-                }
-                return false;
-            }
-
-            $followLocationSucceeded = @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-
-            $curlIncludeHeaders = !$followLocationSucceeded || $includeHeader;
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_HEADER, $curlIncludeHeaders ? 1 : 0);
-            curl_setopt($ch, CURLOPT_NOBODY, $includeHeader == 2 ? 1 : 0);
-            curl_setopt($ch, CURLOPT_HTTPGET, $includeHeader == 2 ? 'HEAD' : 'GET');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, max(0, (int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['curlTimeout']));
-
+        // Looks like it's an external file, use Guzzle by default
+        if (preg_match('/^(?:http|ftp)s?|s(?:ftp|cp):/', $url)) {
+            /** @var RequestFactory $requestFactory */
+            $requestFactory = static::makeInstance(RequestFactory::class);
             if (is_array($requestHeaders)) {
-                curl_setopt($ch, CURLOPT_HTTPHEADER, $requestHeaders);
-            }
-            // (Proxy support implemented by Arco <arco@appeltaart.mine.nu>)
-            if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']) {
-                curl_setopt($ch, CURLOPT_PROXY, $GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']);
-                if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyNTLM']) {
-                    curl_setopt($ch, CURLOPT_PROXYAUTH, CURLAUTH_NTLM);
-                }
-                if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyTunnel']) {
-                    curl_setopt($ch, CURLOPT_HTTPPROXYTUNNEL, $GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyTunnel']);
-                }
-                if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyUserPass']) {
-                    curl_setopt($ch, CURLOPT_PROXYUSERPWD, $GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyUserPass']);
-                }
-            }
-            $content = curl_exec($ch);
-            $curlInfo = curl_getinfo($ch);
-
-            // Remove additional proxy header block, when proxy is used for https request and CURL_HEADER is enabled.
-            // Most HTTPS proxies add a second header before the actual server headers in their response, as a
-            // response to the CONNECT message sent by the client to the proxy. cURL does not strip this since 2005,
-            // so there are two headers arriving here, of which the first is not of interest to us—therefore, we can
-            // safely strip it.
-            // Detecting two linebreaks followed by a "HTTP/" (as done here) is the only reliable way to detect the
-            // proxy headers, as the relevant RFCs do not specify the exact status code (it might be any of 2xx) or
-            // the status message. Therefore, we check if there is a second HTTP headers block and then strip the
-            // first one.
-            if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']
-                && $curlIncludeHeaders
-                && preg_match('/^https:/', $url)
-                && strpos($content, "\r\n\r\nHTTP/") !== false
-            ) {
-                $content = self::stripHttpHeaders($content);
+                $configuration = ['headers' => $requestHeaders];
+            } else {
+                $configuration = [];
             }
 
-            if (!$followLocationSucceeded) {
-                // Check if we need to do redirects
-                if ($curlInfo['http_code'] >= 300 && $curlInfo['http_code'] < 400) {
-                    $locationUrl = $curlInfo['redirect_url'];
-                    if (!$locationUrl) {
-                        // Some curllib versions do not return redirect_url. Examine headers.
-                        $locationUrl = self::getRedirectUrlFromHttpHeaders($content);
-                    }
-                    if ($locationUrl) {
-                        $content = self::getUrl($locationUrl, $includeHeader, $requestHeaders, $report);
-                        $followLocationSucceeded = true;
-                    } else {
-                        // Failure: we got a redirection status code but not the URL to redirect to.
-                        $content = false;
-                    }
-                }
-                if ($content && !$includeHeader) {
-                    $content = self::stripHttpHeaders($content);
-                }
-            }
+            $response = $requestFactory->request($url, 'GET', $configuration);
+            $content = '';
 
+            // Add the headers to the output
+            $includeHeader = (int)$includeHeader;
+            if ($includeHeader) {
+                $parsedURL = parse_url($url);
+                $method = $includeHeader === 2 ? 'HEAD' : 'GET';
+                $content = $method . ' ' . (isset($parsedURL['path']) ? $parsedURL['path'] : '/')
+                    . ($parsedURL['query'] ? '?' . $parsedURL['query'] : '') . ' HTTP/1.0' . CRLF
+                    . 'Host: ' . $parsedURL['host'] . CRLF
+                    . 'Connection: close' . CRLF;
+                if (is_array($requestHeaders)) {
+                    $content .= implode(CRLF, $requestHeaders) . CRLF;
+                }
+                foreach ($response->getHeaders() as $headerName => $headerValues) {
+                    $content .= $headerName . ': ' . implode(', ', $headerValues) . CRLF;
+                }
+                // Headers are separated from the body with two CRLFs
+                $content .= CRLF;
+            }
+            // If not just headers are requested, add the body
+            if ($includeHeader !== 2) {
+                $content .= $response->getBody()->getContents();
+            }
             if (isset($report)) {
-                if (!$followLocationSucceeded && $curlInfo['http_code'] >= 300 && $curlInfo['http_code'] < 400) {
-                    $report['http_code'] = $curlInfo['http_code'];
-                    $report['content_type'] = $curlInfo['content_type'];
-                    $report['error'] = CURLE_GOT_NOTHING;
-                    $report['message'] = 'Expected "Location" header but got nothing.';
-                } elseif ($content === false) {
-                    $report['error'] = curl_errno($ch);
-                    $report['message'] = curl_error($ch);
+                $report['lib'] = 'http';
+                if ($response->getStatusCode() >= 300 && $response->getStatusCode() < 400) {
+                    $report['http_code'] = $response->getStatusCode();
+                    $report['content_type'] = $response->getHeader('Content-type');
+                    $report['error'] = $response->getStatusCode();
+                    $report['message'] = $response->getReasonPhrase();
+                } elseif (!empty($content)) {
+                    $report['error'] = $response->getStatusCode();
+                    $report['message'] = $response->getReasonPhrase();
                 } elseif ($includeHeader) {
                     // Set only for $includeHeader to work exactly like PHP variant
-                    $report['http_code'] = $curlInfo['http_code'];
-                    $report['content_type'] = $curlInfo['content_type'];
+                    $report['http_code'] = $response->getStatusCode();
+                    $report['content_type'] = $response->getHeader('Content-type');
                 }
-            }
-            curl_close($ch);
-        } elseif ($includeHeader) {
-            if (isset($report)) {
-                $report['lib'] = 'socket';
-            }
-            $parsedURL = parse_url($url);
-            if (!preg_match('/^https?/', $parsedURL['scheme'])) {
-                if (isset($report)) {
-                    $report['error'] = -1;
-                    $report['message'] = 'Reading headers is not allowed for this protocol.';
-                }
-                return false;
-            }
-            $port = (int)$parsedURL['port'];
-            if ($port < 1) {
-                if ($parsedURL['scheme'] == 'http') {
-                    $port = $port > 0 ? $port : 80;
-                    $scheme = '';
-                } else {
-                    $port = $port > 0 ? $port : 443;
-                    $scheme = 'ssl://';
-                }
-            }
-            $errno = 0;
-            $fp = @fsockopen(($scheme . $parsedURL['host']), $port, $errno, $errstr, 2.0);
-            if (!$fp || $errno > 0) {
-                if (isset($report)) {
-                    $report['error'] = $errno ?: -1;
-                    $report['message'] = $errno ? ($errstr ?: 'Socket error.') : 'Socket initialization error.';
-                }
-                return false;
-            }
-            $method = $includeHeader == 2 ? 'HEAD' : 'GET';
-            $msg = $method . ' ' . (isset($parsedURL['path']) ? $parsedURL['path'] : '/')
-                   . ($parsedURL['query'] ? '?' . $parsedURL['query'] : '') . ' HTTP/1.0' . CRLF
-                   . 'Host: ' . $parsedURL['host'] . CRLF
-                   . 'Connection: close' . CRLF;
-            if (is_array($requestHeaders)) {
-                $msg .= implode(CRLF, $requestHeaders) . CRLF;
-            }
-            $msg .= CRLF;
-            fputs($fp, $msg);
-            while (!feof($fp)) {
-                $line = fgets($fp, 2048);
-                if (isset($report)) {
-                    if (preg_match('|^HTTP/\\d\\.\\d +(\\d+)|', $line, $status)) {
-                        $report['http_code'] = $status[1];
-                    } elseif (preg_match('/^Content-Type: *(.*)/i', $line, $type)) {
-                        $report['content_type'] = $type[1];
-                    }
-                }
-                $content .= $line;
-                if (trim($line) === '') {
-                    // Stop at the first empty line (= end of header)
-                    break;
-                }
-            }
-            if ($includeHeader != 2) {
-                $content .= stream_get_contents($fp);
-            }
-            fclose($fp);
-        } elseif (is_array($requestHeaders)) {
-            if (isset($report)) {
-                $report['lib'] = 'file/context';
-            }
-            $parsedURL = parse_url($url);
-            if (!preg_match('/^https?/', $parsedURL['scheme'])) {
-                if (isset($report)) {
-                    $report['error'] = -1;
-                    $report['message'] = 'Sending request headers is not allowed for this protocol.';
-                }
-                return false;
-            }
-            $ctx = stream_context_get_default(array(
-                'http' => array(
-                    'header' => implode(CRLF, $requestHeaders)
-                )
-            ));
-            $content = @file_get_contents($url, false, $ctx);
-            if ($content === false && isset($report)) {
-                $report['error'] = -1;
-                $report['message'] = 'Couldn\'t get URL: ' . (isset($http_response_header) ? implode(LF, $http_response_header) : $url);
             }
         } else {
             if (isset($report)) {
@@ -2197,49 +2068,8 @@ class GeneralUtility
             $content = @file_get_contents($url);
             if ($content === false && isset($report)) {
                 $report['error'] = -1;
-                $report['message'] = 'Couldn\'t get URL: ' . (isset($http_response_header) ? implode(LF, $http_response_header) : $url);
+                $report['message'] = 'Couldn\'t get URL: ' . $url;
             }
-        }
-        return $content;
-    }
-
-    /**
-     * Parses HTTP headers and returns the content of the "Location" header
-     * or the empty string if no such header found.
-     *
-     * @param string $content
-     * @return string
-     */
-    protected static function getRedirectUrlFromHttpHeaders($content)
-    {
-        $result = '';
-        $headers = explode("\r\n", $content);
-        foreach ($headers as $header) {
-            if ($header == '') {
-                break;
-            }
-            if (preg_match('/^\s*Location\s*:/i', $header)) {
-                list(, $result) = self::trimExplode(':', $header, false, 2);
-                if ($result) {
-                    $result = self::locationHeaderUrl($result);
-                }
-                break;
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Strips HTTP headers from the content.
-     *
-     * @param string $content
-     * @return string
-     */
-    protected static function stripHttpHeaders($content)
-    {
-        $headersEndPos = strpos($content, "\r\n\r\n");
-        if ($headersEndPos) {
-            $content = substr($content, $headersEndPos + 4);
         }
         return $content;
     }
@@ -3831,12 +3661,12 @@ class GeneralUtility
      * @param string $funcName Function/Method reference or Closure, '[file-reference":"]["&"]class/function["->"method-name]'. You can prefix this reference with "[file-reference]:" and \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName() will then be used to resolve the filename and subsequently include it by "require_once()" which means you don't have to worry about including the class file either! Example: "EXT:realurl/class.tx_realurl.php:&tx_realurl->encodeSpURL". Finally; you can prefix the class name with "&" if you want to reuse a former instance of the same object call ("singleton").
      * @param mixed $params Parameters to be pass along (typically an array) (REFERENCE!)
      * @param mixed $ref Reference to be passed along (typically "$this" - being a reference to the calling object) (REFERENCE!)
-     * @param string $checkPrefix Not used anymore since 6.0
+     * @param string $_ Not used anymore since 6.0
      * @param int $errorMode Error mode (when class/function could not be found): 0 - call debug(), 1 - do nothing, 2 - raise an exception (allows to call a user function that may return FALSE)
      * @return mixed Content from method/function call or FALSE if the class/method/function was not found
      * @see getUserObj()
      */
-    public static function callUserFunction($funcName, &$params, &$ref, $checkPrefix = '', $errorMode = 0)
+    public static function callUserFunction($funcName, &$params, &$ref, $_ = '', $errorMode = 0)
     {
         $content = false;
         // Check if we're using a closure and invoke it directly.

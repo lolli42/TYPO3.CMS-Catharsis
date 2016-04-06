@@ -550,7 +550,7 @@ class SetupModuleController extends AbstractModule
                     break;
                 case 'select':
                     if ($config['itemsProcFunc']) {
-                        $html = GeneralUtility::callUserFunction($config['itemsProcFunc'], $config, $this, '');
+                        $html = GeneralUtility::callUserFunction($config['itemsProcFunc'], $config, $this);
                     } else {
                         $html = '<select id="field_' . htmlspecialchars($fieldName) . '"
                             name="data' . $dataAdd . '[' . htmlspecialchars($fieldName) . ']"' .
@@ -562,7 +562,7 @@ class SetupModuleController extends AbstractModule
                     }
                     break;
                 case 'user':
-                    $html = GeneralUtility::callUserFunction($config['userFunc'], $config, $this, '');
+                    $html = GeneralUtility::callUserFunction($config['userFunc'], $config, $this);
                     break;
                 case 'button':
                     if ($config['onClick']) {
@@ -629,10 +629,10 @@ class SetupModuleController extends AbstractModule
                     $html = '';
             }
 
-            $code[] = '<div class="form-section"><div class="form-group">' .
+            $code[] = '<div class="form-section"><div class="row"><div class="form-group col-md-12">' .
                 $label .
                 $html .
-                '</div></div>';
+                '</div></div></div>';
         }
 
         $result[] = array(
@@ -757,7 +757,7 @@ class SetupModuleController extends AbstractModule
                 $opt[] = '<option value="' . (int)$rr['uid'] . '"' . ($this->simUser === (int)$rr['uid'] ? ' selected="selected"' : '') . '>' . htmlspecialchars($label) . '</option>';
             }
             if (!empty($opt)) {
-                $this->simulateSelector = '<select id="field_simulate" name="simulateUser" onchange="window.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('user_setup') . '&simUser=') . '+this.options[this.selectedIndex].value;"><option></option>' . implode('', $opt) . '</select>';
+                $this->simulateSelector = '<select id="field_simulate" class="form-control" name="simulateUser" onchange="window.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('user_setup') . '&simUser=') . '+this.options[this.selectedIndex].value;"><option></option>' . implode('', $opt) . '</select>';
             }
         }
         // This can only be set if the previous code was executed.
@@ -787,12 +787,12 @@ class SetupModuleController extends AbstractModule
             return '';
         }
 
-        return '<p>'
-            . '<label for="field_simulate" style="margin-right: 20px;">'
-            . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:setup/Resources/Private/Language/locallang.xlf:simulate'))
-            . '</label>'
-            . $this->simulateSelector
-            . '</p>';
+        return '<div class="form-inline"><div class="form-group"><p>'
+             . '<label for="field_simulate" style="margin-right: 20px;">'
+             . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:setup/Resources/Private/Language/locallang.xlf:simulate'))
+             . '</label>'
+             . $this->simulateSelector
+             . '</p></div></div>';
     }
 
     /**
@@ -840,7 +840,7 @@ class SetupModuleController extends AbstractModule
             $out = '<span style="color:#999999">' . $out . '</span>';
         }
         if ($addLabelTag) {
-            $out = '<label for="' . ($altLabelTagId ?: 'field_' . htmlspecialchars($key)) . '">' . $out . '</label>';
+            $out = '<label>' . $out . '</label>';
         }
         return $out;
     }

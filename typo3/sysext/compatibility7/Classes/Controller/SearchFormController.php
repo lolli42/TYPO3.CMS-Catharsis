@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\IndexedSearch\Controller;
+namespace TYPO3\CMS\Compatibility7\Controller;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -2166,9 +2166,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         if ($row['data_page_mp']) {
             $urlParameters['MP'] = $row['data_page_mp'];
         }
-        if ($row['sys_language_uid']) {
-            $urlParameters['L'] = $row['sys_language_uid'];
-        }
+        $urlParameters['L'] = intval($row['sys_language_uid']);
         // markup-GET vars:
         $urlParameters = array_merge($urlParameters, $markUpSwParams);
         // This will make sure that the path is retrieved if it hasn't been already. Used only for the sake of the domain_record thing...
@@ -2315,7 +2313,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
     public function utf8_to_currentCharset($str)
     {
         GeneralUtility::logDeprecatedFunction();
-        return $this->frontendController->csConv($str, 'utf-8');
+        return $str;
     }
 
     /**
