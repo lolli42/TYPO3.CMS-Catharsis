@@ -189,7 +189,7 @@ class AcceptanceCoreEnvironment extends Extension
         $localConfiguration['SYS']['isInitialDatabaseImportDone'] = true;
         $localConfiguration['SYS']['displayErrors'] = '1';
         $localConfiguration['SYS']['debugExceptionHandler'] = '';
-        $localConfiguration['SYS']['trustedHostsPattern'] = 'localhost:8000';
+        $localConfiguration['SYS']['trustedHostsPattern'] = '.*';
         $localConfiguration['SYS']['encryptionKey'] = 'iAmInvalid';
         $localConfiguration['SYS']['setDBinit'] = 'SET SESSION sql_mode = \'STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,ONLY_FULL_GROUP_BY\';';
         $localConfiguration['SYS']['caching']['cacheConfigurations']['extbase_object']['backend'] = NullBackend::class;
