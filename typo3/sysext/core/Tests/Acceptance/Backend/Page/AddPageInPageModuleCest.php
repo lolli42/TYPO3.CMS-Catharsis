@@ -54,6 +54,11 @@ class AddPageInPageModuleCest
 
         // Switch to content frame
         $I->switchToIFrame('content');
+
+        // New page select position wizard
+        $I->click('i[title="Insert the new page here"]');
+
+        // FormEngine new page record
         $saveButton = 'body > div > div.module-docheader.t3js-module-docheader > div.module-docheader-bar.module-docheader-bar-buttons.t3js-module-docheader-bar.t3js-module-docheader-bar-buttons > div.module-docheader-bar-column-left > div > div > button:nth-child(1)';
         $I->waitForElement($saveButton);
 
