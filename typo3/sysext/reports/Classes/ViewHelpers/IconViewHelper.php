@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Reports\ViewHelpers;
 
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper;
 
 /**
@@ -58,7 +58,7 @@ class IconViewHelper extends AbstractBackendViewHelper
         $title = $arguments['title'];
 
         if (!empty($icon)) {
-            $absIconPath = GeneralUtility::getFileAbsFilename($icon);
+            $absIconPath = GeneralUtility::getFileAbsFileName($icon);
             if (file_exists($absIconPath)) {
                 $icon = '../' . str_replace(PATH_site, '', $absIconPath);
             }

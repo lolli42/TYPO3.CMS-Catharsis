@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
 
 use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 
@@ -63,6 +63,13 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  */
 class CropViewHelper extends AbstractViewHelper
 {
+    /**
+     * Output escaping is enabled, thus we must disable escaping for rendered children
+     *
+     * @var bool
+     */
+    protected $escapeChildren = false;
+
     /**
      * @var \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
      */
