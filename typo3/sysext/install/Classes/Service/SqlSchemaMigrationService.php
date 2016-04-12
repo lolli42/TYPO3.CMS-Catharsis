@@ -668,7 +668,7 @@ class SqlSchemaMigrationService
      */
     public function getListOfTables()
     {
-        $whichTables = $this->getDatabaseConnection()->admin_get_tables();
+        $whichTables = $this->getDatabaseConnection()->admin_get_tables(TYPO3_db);
         foreach ($whichTables as $key => &$value) {
             $value = $key;
         }
