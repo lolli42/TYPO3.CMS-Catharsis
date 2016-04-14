@@ -18,4 +18,3 @@ env:
       config:
         WebDriver:
           browser: firefox
-          port: 4444
