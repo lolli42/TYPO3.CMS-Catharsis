@@ -14,12 +14,10 @@ namespace TYPO3\CMS\Core\Tests\Acceptance\Step\Backend;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\Acceptance\Support\AcceptanceTester;
-
 /**
  * A backend user with admin access
  */
-class Admin extends AcceptanceTester
+class Admin extends \AcceptanceTester
 {
     /**
      * @var string Assigned session cookie

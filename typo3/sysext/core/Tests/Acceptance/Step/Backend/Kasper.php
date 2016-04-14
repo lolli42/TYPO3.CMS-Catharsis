@@ -14,9 +14,7 @@ namespace TYPO3\CMS\Core\Tests\Acceptance\Step\Backend;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\Acceptance\Support\AcceptanceTester;
-
-class Kasper extends AcceptanceTester
+class Kasper extends \AcceptanceTester
 {
     /**
      * Login as user "admin" with password "password".

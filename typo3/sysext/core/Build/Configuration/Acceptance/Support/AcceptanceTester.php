@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Core\Tests\Acceptance\Support;
+
 
 /**
  * Inherited Methods
@@ -18,7 +18,7 @@ namespace TYPO3\CMS\Core\Tests\Acceptance\Support;
 */
 class AcceptanceTester extends \Codeception\Actor
 {
-    use \_generated\AcceptanceTesterActions;
+    use _generated\AcceptanceTesterActions;
 
    /**
     * Define custom actions here
