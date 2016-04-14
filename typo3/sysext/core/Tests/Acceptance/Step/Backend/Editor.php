@@ -14,10 +14,12 @@ namespace TYPO3\CMS\Core\Tests\Acceptance\Step\Backend;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Tests\Acceptance\Support\AcceptanceTester;
+
 /**
  * A backend editor
  */
-class Editor extends \AcceptanceTester
+class Editor extends AcceptanceTester
 {
     /**
      * @var string Assigned session cookie
