@@ -34,29 +34,48 @@ module.exports = function(grunt) {
 			root      : '../',
 			sysext    : '<%= paths.root %>typo3/sysext/',
 			t3skin    : '<%= paths.sysext %>t3skin/Resources/',
+			form      : '<%= paths.sysext %>form/Resources/',
+			frontend  : '<%= paths.sysext %>frontend/Resources/',
 			install   : '<%= paths.sysext %>install/Resources/',
+			linkvalidator : '<%= paths.sysext %>linkvalidator/Resources/',
 			backend   : '<%= paths.sysext %>backend/Resources/',
 			core      : '<%= paths.sysext %>core/Resources/',
 			flags     : 'bower_components/region-flags/svg/',
 			t3icons   : 'bower_components/wmdbsystems-typo3-icons/dist/'
 		},
 		less: {
+			options: {
+				banner: '<%= banner %>',
+				outputSourceFiles: true
+			},
 			t3skin: {
-				options: {
-					banner: '<%= banner %>',
-					outputSourceFiles: true
-				},
 				files: {
 					"<%= paths.t3skin %>Public/Css/backend.css": "<%= paths.less %>backend.less"
 				}
 			},
-			InstallTool: {
-				options: {
-					banner: '<%= banner %>',
-					outputSourceFiles: true
-				},
+			core: {
 				files: {
-					"<%= paths.install %>Public/Css/InstallTool.css": "<%= paths.less %>InstallTool.less"
+					"<%= paths.core %>Public/Css/errorpage.css": "<%= paths.less %>errorpage.less"
+				}
+			},
+			form: {
+				files: {
+					"<%= paths.form %>Public/Css/form.css": "<%= paths.less %>form.less"
+				}
+			},
+			frontend: {
+				files: {
+					"<%= paths.frontend %>Public/Css/adminpanel.css": "<%= paths.less %>adminpanel.less"
+				}
+			},
+			install: {
+				files: {
+					"<%= paths.install %>Public/Css/install.css": "<%= paths.less %>install.less"
+				}
+			},
+			linkvalidator: {
+				files: {
+					"<%= paths.linkvalidator %>Public/Css/linkvalidator.css": "<%= paths.less %>linkvalidator.less"
 				}
 			}
 		},
@@ -76,11 +95,26 @@ module.exports = function(grunt) {
 			t3skin: {
 				src: '<%= paths.t3skin %>Public/Css/*.css'
 			},
-			InstallTool: {
-				src: '<%= paths.install %>Public/Css/InstallTool.css'
+			core: {
+				src: '<%= paths.core %>Public/Css/*.css'
+			},
+			form: {
+				src: '<%= paths.form %>Public/Css/*.css'
+			},
+			frontend: {
+				src: '<%= paths.frontend %>Public/Css/*.css'
+			},
+			install: {
+				src: '<%= paths.install %>Public/Css/*.css'
+			},
+			linkvalidator: {
+				src: '<%= paths.linkvalidator %>Public/Css/*.css'
 			}
 		},
 		watch: {
+			options: {
+				livereload: true
+			},
 			less: {
 				files: '<%= paths.less %>**/*.less',
 				tasks: 'css'
@@ -138,6 +172,17 @@ module.exports = function(grunt) {
 				runBower: false,
 				srcPrefix: "bower_components/"
 			},
+			glob: {
+				files: {
+					// When using glob patterns, destinations are *always* folder names
+					// into which matching files will be copied
+					// Also note that subdirectories are **not** maintained
+					// if a destination is specified
+					// For example, one of the files copied here is
+					// 'lodash/dist/lodash.js' -> 'public/js/libs/lodash/lodash.js'
+					'<%= paths.sysext %>core/Resources/Public/Images/colorpicker': 'jquery-minicolors/*.png'
+				}
+			},
 			all: {
 				options: {
 					destPrefix: "<%= paths.core %>Public/JavaScript/Contrib"
@@ -147,7 +192,7 @@ module.exports = function(grunt) {
 					'jquery.matchHeight-min.js': 'matchHeight/jquery.matchHeight-min.js',
 					'jquery.dataTables.js': 'datatables/media/js/jquery.dataTables.min.js',
 					'require.js': 'requirejs/require.js',
-					'moment.js': 'moment/moment.js',
+					'moment.js': 'moment/min/moment-with-locales.min.js',
 					'moment-timezone.js': 'moment-timezone/builds/moment-timezone-with-data.min.js',
 					'cropper.min.js': 'cropper/dist/cropper.min.js',
 					'imagesloaded.pkgd.min.js': 'imagesloaded/imagesloaded.pkgd.min.js',
@@ -155,6 +200,7 @@ module.exports = function(grunt) {
 					'autosize.js': 'autosize/dist/autosize.min.js',
 					'taboverride.min.js': 'taboverride/build/output/taboverride.min.js',
 					'bootstrap-slider.min.js': 'seiyria-bootstrap-slider/dist/bootstrap-slider.min.js',
+					'jquery.minicolors.js': 'jquery-minicolors/jquery.minicolors.min.js',
 					/* disabled until autocomplete groupBy is fixed by the author
 						see https://github.com/devbridge/jQuery-Autocomplete/pull/387
 					'jquery.autocomplete.js': 'devbridge-autocomplete/src/jquery.autocomplete.js',
@@ -184,7 +230,6 @@ module.exports = function(grunt) {
 			thirdparty: {
 				files: {
 					"<%= paths.core %>Public/JavaScript/Contrib/require.js": ["<%= paths.core %>Public/JavaScript/Contrib/require.js"],
-					"<%= paths.core %>Public/JavaScript/Contrib/moment.js": ["<%= paths.core %>Public/JavaScript/Contrib/moment.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/nprogress.js": ["<%= paths.core %>Public/JavaScript/Contrib/nprogress.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/core.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/core.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/draggable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/draggable.js"],
