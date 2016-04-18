@@ -33,12 +33,12 @@ module.exports = function(grunt) {
 			less      : '<%= paths.resources %>Public/Less/',
 			root      : '../',
 			sysext    : '<%= paths.root %>typo3/sysext/',
-			t3skin    : '<%= paths.sysext %>t3skin/Resources/',
 			form      : '<%= paths.sysext %>form/Resources/',
 			frontend  : '<%= paths.sysext %>frontend/Resources/',
 			install   : '<%= paths.sysext %>install/Resources/',
 			linkvalidator : '<%= paths.sysext %>linkvalidator/Resources/',
 			backend   : '<%= paths.sysext %>backend/Resources/',
+			workspaces: '<%= paths.sysext %>workspaces/Resources/',
 			core      : '<%= paths.sysext %>core/Resources/',
 			flags     : 'bower_components/region-flags/svg/',
 			t3icons   : 'bower_components/wmdbsystems-typo3-icons/dist/'
@@ -48,9 +48,9 @@ module.exports = function(grunt) {
 				banner: '<%= banner %>',
 				outputSourceFiles: true
 			},
-			t3skin: {
+			backend: {
 				files: {
-					"<%= paths.t3skin %>Public/Css/backend.css": "<%= paths.less %>backend.less"
+					"<%= paths.backend %>Public/Css/backend.css": "<%= paths.less %>backend.less"
 				}
 			},
 			core: {
@@ -77,6 +77,11 @@ module.exports = function(grunt) {
 				files: {
 					"<%= paths.linkvalidator %>Public/Css/linkvalidator.css": "<%= paths.less %>linkvalidator.less"
 				}
+			},
+			workspaces: {
+				files: {
+					"<%= paths.workspaces %>Public/Css/preview.css": "<%= paths.workspaces %>Private/Less/preview.less"
+				}
 			}
 		},
 		postcss: {
@@ -92,8 +97,8 @@ module.exports = function(grunt) {
 					})
 				]
 			},
-			t3skin: {
-				src: '<%= paths.t3skin %>Public/Css/*.css'
+			backend: {
+				src: '<%= paths.backend %>Public/Css/*.css'
 			},
 			core: {
 				src: '<%= paths.core %>Public/Css/*.css'
@@ -109,6 +114,9 @@ module.exports = function(grunt) {
 			},
 			linkvalidator: {
 				src: '<%= paths.linkvalidator %>Public/Css/*.css'
+			},
+			workspaces: {
+				src: '<%= paths.workspaces %>Public/Css/*.css'
 			}
 		},
 		watch: {
@@ -209,8 +217,8 @@ module.exports = function(grunt) {
 					/**
 					 * copy needed parts of jquery
 					 */
-					'jquery/jquery-2.2.1.js': 'jquery/dist/jquery.js',
-					'jquery/jquery-2.2.1.min.js': 'jquery/dist/jquery.min.js',
+					'jquery/jquery-2.2.3.js': 'jquery/dist/jquery.js',
+					'jquery/jquery-2.2.3.min.js': 'jquery/dist/jquery.min.js',
 					/**
 					 * copy needed parts of jquery-ui
 					 */
