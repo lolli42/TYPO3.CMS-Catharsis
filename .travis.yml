@@ -46,8 +46,13 @@ before_script:
 
 script:
   - >
+    if [[ "$UNIT_TESTS" == "yes" ]]; then
+      echo;
+      echo "Running unit tests";
+      ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+    fi
+  - >
     if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
-        for I in $(seq 1 20); do echo $I; echo processes: `ps x | wc -l`; sleep 1; done &
         echo;
         export typo3DatabaseName="typo3";
         export typo3DatabaseHost="localhost";
@@ -55,3 +60,38 @@ script:
         export typo3DatabasePassword="";
         find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
+  - >
+    if [[ "$ACCEPTANCE_TESTS" == "yes" ]]; then
+        export _JAVA_OPTIONS="-Xms1024m -Xmx1024m";
+        ./bin/selenium-server-standalone >/dev/null 2>&1 &
+        php -S 0.0.0.0:8000 >/dev/null 2>&1 &
+        sleep 5;
+        export typo3DatabaseName="typo3";
+        export typo3DatabaseHost="localhost";
+        export typo3DatabaseUsername="root";
+        export typo3DatabasePassword="";
+        ./bin/codecept run Acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml --debug
+    fi
+  - >
+    if [[ "$PHP_LINT" == "yes" ]]; then
+        echo;
+        echo "Running php lint";
+        find typo3/ -name \*.php -not -path "vendor/*" | parallel --gnu php -d display_errors=stderr -l {} > /dev/null \;
+    fi
+  - >
+    if [[ "$XLF_CHECK" == "yes" ]]; then
+        echo;
+        echo "Running XLF checker";
+        ./typo3/sysext/core/Build/Scripts/xlfcheck.sh
+    fi
+  - >
+      if [[ "$SUBMODULE_TEST" == "yes" ]]; then
+          echo;
+          echo "Running git submodule check";
+          /bin/bash -c "
+              if [[ `git submodule status 2>&1 | wc -l` -ne 0 ]]; then
+                  echo \"Found a submodule definition in repository\";
+                  exit 99;
+              fi
+          "
+      fi
