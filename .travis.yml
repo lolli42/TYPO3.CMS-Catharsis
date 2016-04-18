@@ -53,12 +53,12 @@ script:
         export typo3DatabaseHost="localhost";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
-        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml {}'
+        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --jobs 4 --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
   - >
     if [[ "$PHP_LINT" == "yes" ]]; then
         for I in $(seq 1 60); do echo $I; echo processes: `ps x | wc -l`; sleep 1; done &
         echo;
         echo "Running php lint";
-        find typo3/ -name \*.php -not -path "vendor/*" | parallel --gnu php -d display_errors=stderr -l {} > /dev/null \;
+        find typo3/ -name \*.php -not -path "vendor/*" | parallel --jobs 4 --gnu php -d display_errors=stderr -l {} > /dev/null \;
     fi
