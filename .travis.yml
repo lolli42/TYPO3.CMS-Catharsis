@@ -18,6 +18,7 @@ addons:
       - realpath
 
 cache:
+  apt: true
   directories:
     - $HOME/.composer/cache
 
@@ -49,5 +50,5 @@ script:
         export typo3DatabaseHost="localhost";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
-        ./bin/codecept run Acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml
+        ./bin/codecept run Acceptance -c typo3/sysext/core/Build/AcceptanceTests.yml --debug
     fi
