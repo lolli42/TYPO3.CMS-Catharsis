@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -x
 
 DIR=$(realpath $(dirname "$0"))
 USER=$(whoami)

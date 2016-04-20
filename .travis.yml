@@ -32,7 +32,6 @@ services:
 before_script:
   - phpenv config-rm xdebug.ini
   - if [ "$GITHUB_COMPOSER_AUTH" ]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
-  - typo3/sysext/core/Build/Configuration/TravisNginxFpm/ConfigureStartNginxFpm.sh
   - composer install
 
 script:
@@ -44,6 +43,7 @@ script:
     fi
   - >
     if [[ "$ACCEPTANCE_TESTS" == "yes" ]]; then
+        typo3/sysext/core/Build/Configuration/TravisNginxFpm/ConfigureStartNginxFpm.sh
         mkdir -p typo3temp/var/tests;
         export typo3DatabaseName="typo3";
         export typo3DatabaseHost="localhost";
