@@ -27,10 +27,6 @@ class ModuleMenuCest
     public function _before(Admin $I)
     {
         $I->useExistingSession();
-        // Ensure main content frame is fully loaded, otherwise there are load-race-conditions
-        $I->switchToIFrame('content');
-        $I->waitForText('Web>Page module');
-        $I->switchToIFrame();
     }
 
     /**
