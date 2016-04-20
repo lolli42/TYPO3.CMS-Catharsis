@@ -30,25 +30,15 @@ services:
   - memcached
   - redis-server
 
-notifications:
-  email:
-    recipients:
-      - lolli@schwarzbu.ch
-    on_success: change
-    on_failure: always
-  webhooks:
-    urls:
-      - http://www.t3bot.de/hooks/travis/index.php
-    on_success: always
-    on_failure: always
-    on_start: never
-
 before_script:
   - phpenv config-rm xdebug.ini
   - if [ "$GITHUB_COMPOSER_AUTH" ]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
   - composer install
 
 script:
+  - >
+    curl -vsf 'http://localhost:8000/hello.php' &> /dev/stdout;
+    cat /tmp/error.log
   - >
     if [[ "$UNIT_TESTS" == "yes" ]]; then
       echo;
