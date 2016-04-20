@@ -18,7 +18,7 @@ addons:
       - realpath
 
 cache:
-  apt: true
+  - apt
   directories:
     - $HOME/.composer/cache
 
