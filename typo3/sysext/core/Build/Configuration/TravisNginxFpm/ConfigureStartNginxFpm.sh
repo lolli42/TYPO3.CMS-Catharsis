@@ -22,7 +22,6 @@ function tpl {
 
 # Create some working directories
 mkdir "$DIR/nginx"
-mkdir "$DIR/nginx/sites-enabled"
 mkdir "$DIR/var"
 
 PHP_FPM_BIN="$HOME/.phpenv/versions/$PHP_VERSION/sbin/php-fpm"
