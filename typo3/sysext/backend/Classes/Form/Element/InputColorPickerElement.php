@@ -95,8 +95,14 @@ class InputColorPickerElement extends AbstractFormElement
         $classes[] = 'form-control';
         $classes[] = 'hasDefaultValue';
         $classes[] = 't3js-clearable';
+        $classes[] = 't3js-color-picker';
         $classes[] = 'formengine-colorpickerelement';
         $attributes['class'] = implode(' ', $classes);
+
+        // Load needed js library
+        $resultArray['requireJsModules'][] = array(
+            'TYPO3/CMS/Backend/ColorPicker' => 'function(ColorPicker){ColorPicker.initialize()}'
+        );
 
         // calculate attributes
         $attributes['data-formengine-validation-rules'] = $this->getValidationDataAsJsonString($config);
@@ -114,7 +120,7 @@ class InputColorPickerElement extends AbstractFormElement
         }
 
         if (isset($config['autocomplete'])) {
-            $attributes['autocomplete'] = empty($config['autocomplete']) ? 'off' : 'on';
+            $attributes['autocomplete'] = empty($config['autocomplete']) ? 'new-' . $fieldName : 'on';
         }
 
         // Build the attribute string

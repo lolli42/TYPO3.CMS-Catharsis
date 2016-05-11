@@ -370,7 +370,6 @@ class QueryBuilder
      * Specifies items that are to be returned in the query result.
      * Replaces any previously specified selections, if any.
      *
-     *
      * @param string[] $selects
      * @return QueryBuilder This QueryBuilder instance.
      */
@@ -391,6 +390,37 @@ class QueryBuilder
     public function addSelect(string ...$selects): QueryBuilder
     {
         $this->concreteQueryBuilder->addSelect(...$this->quoteIdentifiersForSelect($selects));
+
+        return $this;
+    }
+
+    /**
+     * Specifies items that are to be returned in the query result.
+     * Replaces any previously specified selections, if any.
+     * This should only be used for literal SQL expressions as no
+     * quoting/escaping of any kind will be performed on the items.
+     *
+     * @param string[] $selects Literal SQL expressions to be selected. Warning: No quoting will be done!
+     * @return QueryBuilder This QueryBuilder instance.
+     */
+    public function selectLiteral(string ...$selects): QueryBuilder
+    {
+        $this->concreteQueryBuilder->select(...$selects);
+
+        return $this;
+    }
+
+    /**
+     * Adds an item that is to be returned in the query result. This should
+     * only be used for literal SQL expressions as no quoting/escaping of
+     * any kind will be performed on the items.
+     *
+     * @param string[] $selects Literal SQL expressions to be selected.
+     * @return QueryBuilder This QueryBuilder instance.
+     */
+    public function addSelectLiteral(string ...$selects): QueryBuilder
+    {
+        $this->concreteQueryBuilder->addSelect(...$selects);
 
         return $this;
     }
@@ -664,7 +694,6 @@ class QueryBuilder
      */
     public function setValue(string $column, $value, bool $createNamedParameter = true): QueryBuilder
     {
-
         $this->concreteQueryBuilder->setValue(
             $this->quoteIdentifier($column),
             $createNamedParameter ? $this->createNamedParameter($value) : $value
@@ -923,18 +952,32 @@ class QueryBuilder
      * @param array $input
      *
      * @return array
+     * @throws \InvalidArgumentException
      */
     public function quoteIdentifiersForSelect(array $input): array
     {
-        // The SQL * operator must not be quoted. As it can only occur either by itself
-        // or preceded by a tablename (tablename.*) check if the last character of a select
-        // expression is the * and quote only prepended table name. In all other cases the
-        // full expression is being quoted.
         foreach ($input as &$select) {
-            if (substr($select, -2) === '.*') {
-                $select = $this->quoteIdentifier(substr($select, 0, -2)) . '.*';
-            } elseif ($select !== '*') {
-                $select = $this->quoteIdentifier($select);
+            list($fieldName, $alias, $suffix) = GeneralUtility::trimExplode(' AS ', $select, 3);
+            if (!empty($suffix)) {
+                throw new \InvalidArgumentException(
+                    'QueryBuilder::quoteIdentifiersForSelect() could not parse the input "' . $input . '"',
+                    1461170686
+                );
+            }
+
+            // The SQL * operator must not be quoted. As it can only occur either by itself
+            // or preceded by a tablename (tablename.*) check if the last character of a select
+            // expression is the * and quote only prepended table name. In all other cases the
+            // full expression is being quoted.
+            if (substr($fieldName, -2) === '.*') {
+                $select = $this->quoteIdentifier(substr($fieldName, 0, -2)) . '.*';
+            } elseif ($fieldName !== '*') {
+                $select = $this->quoteIdentifier($fieldName);
+            }
+
+            // Quote the alias for the current fieldName, if given
+            if (!empty($alias)) {
+                $select .= ' AS ' . $this->quoteIdentifier($alias);
             }
         }
         return $input;

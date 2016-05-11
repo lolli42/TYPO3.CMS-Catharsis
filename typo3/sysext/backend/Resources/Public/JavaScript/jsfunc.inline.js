@@ -305,7 +305,7 @@ var inline = {
 
 	showAjaxFailure: function (method, xhr) {
 		inline.unlockAjaxMethod(method);
-		alert('Error: ' + xhr.status + "\n" + xhr.statusText);
+		top.TYPO3.Notification.error('Error ' + xhr.status, xhr.statusText, 0);
 	},
 
 	// foreign_selector: used by selector box (type='select')
@@ -883,8 +883,8 @@ var inline = {
 		}
 	},
 
-	enableDisableRecord: function (objectIdentifier) {
-		var elName = this.parseObjectId('full', objectIdentifier, 2, 0, true) + '[hidden]';
+	enableDisableRecord: function (objectIdentifier, fieldName) {
+		var elName = this.parseObjectId('full', objectIdentifier, 2, 0, true) + '[' + fieldName + ']';
 		var formObj = document.querySelector('[data-formengine-input-name="' + elName + '"]');
 		var valueObj = document.getElementsByName(elName);
 		var escapedObjectIdentifier = this.escapeObjectId(objectIdentifier);

@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
 use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\ReferenceIndex;
 use TYPO3\CMS\Core\Database\RelationHandler;
@@ -7811,9 +7812,15 @@ class DataHandler
                 }
                 break;
             case 'all':
-                if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.all')) {
+                // allow to clear all caches if the TS config option is enabled or the option is not explicitly
+                // disabled for admins (which could clear all caches by default). The latter option is useful
+                // for big production sites where it should be possible to restrict the cache clearing for some admins.
+                if ($this->BE_USER->getTSConfigVal('options.clearCache.all') || ($this->admin && $this->BE_USER->getTSConfigVal('options.clearCache.all') !== '0')) {
                     $this->getCacheManager()->flushCaches();
-                    $this->databaseConnection->exec_TRUNCATEquery('cache_treelist');
+                    GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getConnectionForTable('cache_treelist')
+                        ->truncate('cache_treelist');
+
                     // Delete Opcode Cache
                     GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive();
                 }
@@ -7822,11 +7829,9 @@ class DataHandler
             case 'system':
                 GeneralUtility::deprecationLog(
                     'Calling clear_cacheCmd() with arguments \'temp_cached\' or \'system\', using'
-                    . ' the ts config option \'options.clearCache.system\' or using'
-                    . '\'$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'clearCacheSystem\'] has been deprecated.'
+                    . ' the TS config option \'options.clearCache.system\' has been deprecated.'
                 );
-                if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.system')
-                    || ((bool)$GLOBALS['TYPO3_CONF_VARS']['SYS']['clearCacheSystem'] === true && $this->admin)) {
+                if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.system')) {
                     $this->getCacheManager()->flushCachesInGroup('system');
                 }
                 break;

@@ -647,7 +647,7 @@ class ExtensionManagementUtility
     {
         $list = $newList = trim($list, ", \t\n\r\0\x0B");
 
-        list($location, $positionName) = GeneralUtility::trimExplode(':', $insertionPosition);
+        list($location, $positionName) = GeneralUtility::trimExplode(':', $insertionPosition, false, 2);
 
         if ($location !== 'replace') {
             $insertionList = self::removeDuplicatesForInsertion($insertionList, $list);
@@ -666,6 +666,7 @@ class ExtensionManagementUtility
         // The $insertPosition may be a palette: after:--palette--;;title
         // In the $list the palette may contain a LLL string in between the ;;
         // Adjust the regex to match that
+        $positionName = preg_quote($positionName, '/');
         if (strpos($positionName, ';;') !== false) {
             $positionName = str_replace(';;', ';[^;]*;', $positionName);
         }
