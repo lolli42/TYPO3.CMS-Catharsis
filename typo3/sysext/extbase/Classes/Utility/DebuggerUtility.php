@@ -267,7 +267,7 @@ class DebuggerUtility
             $domainObjectType = 'object';
         }
         if ($plainText) {
-            $dump .= ' ' . self::ansiEscapeWrap(($persistenceType . ' ' . $domainObjectType), '42;30', $ansiColors);
+            $dump .= ' ' . self::ansiEscapeWrap((($persistenceType ? $persistenceType . ' ' : '') . $domainObjectType), '42;30', $ansiColors);
         } else {
             $dump .= '<span class="extbase-debug-ptype">' . ($persistenceType ? $persistenceType . ' ' : '') . $domainObjectType . '</span>';
         }
@@ -335,6 +335,12 @@ class DebuggerUtility
                 }
                 $dump .= PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, $level) . ($plainText ? '' : '<span class="extbase-debug-property">') . self::ansiEscapeWrap($property->getName(), '37', $ansiColors) . ($plainText ? '' : '</span>') . ' => ';
                 $property->setAccessible(true);
+                $visibility = ($property->isProtected() ? 'protected' : ($property->isPrivate() ? 'private' : 'public'));
+                if ($plainText) {
+                    $dump .= ' ' . self::ansiEscapeWrap($visibility, '42;30', $ansiColors) . ' ';
+                } else {
+                    $dump .= '<span class="extbase-debug-visibility">' . $visibility . '</span>';
+                }
                 $dump .= self::renderDump($property->getValue($object), $level, $plainText, $ansiColors);
                 if ($object instanceof \TYPO3\CMS\Extbase\DomainObject\AbstractDomainObject && !$object->_isNew() && $object->_isDirty($property->getName())) {
                     if ($plainText) {
@@ -435,9 +441,10 @@ class DebuggerUtility
 					.extbase-debugger-center .extbase-debug-string{color:#ce9178;white-space:normal}
 					.extbase-debugger-center .extbase-debug-type{color:#569CD6;padding-right:4px}
 					.extbase-debugger-center .extbase-debug-unregistered{background-color:#dce1e8}
-					.extbase-debugger-center .extbase-debug-filtered,.extbase-debugger-center .extbase-debug-proxy,.extbase-debugger-center .extbase-debug-ptype,.extbase-debugger-center .extbase-debug-scope{color:#fff;font-size:10px;line-height:12px;padding:2px 4px;margin-right:2px;position:relative;top:-1px}
+					.extbase-debugger-center .extbase-debug-filtered,.extbase-debugger-center .extbase-debug-proxy,.extbase-debugger-center .extbase-debug-ptype,.extbase-debugger-center .extbase-debug-visibility,.extbase-debugger-center .extbase-debug-scope{color:#fff;font-size:10px;line-height:12px;padding:2px 4px;margin-right:2px;position:relative;top:-1px}
 					.extbase-debugger-center .extbase-debug-scope{background-color:#497AA2}
 					.extbase-debugger-center .extbase-debug-ptype{background-color:#698747}
+					.extbase-debugger-center .extbase-debug-visibility{background-color:#698747}
 					.extbase-debugger-center .extbase-debug-dirty{background-color:#FFFFB6}
 					.extbase-debugger-center .extbase-debug-filtered{background-color:#4F4F4F}
 					.extbase-debugger-center .extbase-debug-seeabove{text-decoration:none;font-style:italic}

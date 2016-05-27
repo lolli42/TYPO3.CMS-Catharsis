@@ -68,8 +68,8 @@ define(['jquery',
 	 */
 	FormEngine.openPopupWindow = setFormValueOpenBrowser = function(mode, params, width, height) {
 		var url = FormEngine.browserUrl + '&mode=' + mode + '&bparams=' + params;
-		width = width ? width : top.TYPO3.configuration.PopupWindow.width;
-		height = height ? height : top.TYPO3.configuration.PopupWindow.height;
+		width = width ? width : TYPO3.settings.Popup.PopupWindow.width;
+		height = height ? height : TYPO3.settings.Popup.PopupWindow.height;
 		FormEngine.openedPopupWindow = window.open(url, 'Typo3WinBrowser', 'height=' + height + ',width=' + width + ',status=0,menubar=0,resizable=1,scrollbars=1');
 		FormEngine.openedPopupWindow.focus();
 	};
@@ -130,19 +130,24 @@ define(['jquery',
 
 			// Clear elements if exclusive values are found
 			if (exclusiveValues) {
-				var $optionSelect = $optionEl.closest('select');
+				var reenableOptions = false;
+
 				var m = new RegExp('(^|,)' + value + '($|,)');
 				// the new value is exclusive => remove all existing values
 				if (exclusiveValues.match(m)) {
 					$fieldEl.empty();
-					$optionSelect.find('[disabled]').removeClass('hidden').prop('disabled', false);
-				} else if ($fieldEl.children('option').length == 1) {
+					reenableOptions = true;
+				} else if ($fieldEl.find('option').length == 1) {
 					// there is an old value and it was exclusive => it has to be removed
-					m = new RegExp("(^|,)" + $fieldEl.children('option').prop('value') + "($|,)");
+					m = new RegExp("(^|,)" + $fieldEl.find('option').prop('value') + "($|,)");
 					if (exclusiveValues.match(m)) {
 						$fieldEl.empty();
-						$optionSelect.find('[disabled]').removeClass('hidden').prop('disabled', false);
+						reenableOptions = true;
 					}
+				}
+
+				if (reenableOptions && typeof $optionEl !== 'undefined') {
+					$optionEl.closest('select').find('[disabled]').removeClass('hidden').prop('disabled', false)
 				}
 			}
 
@@ -152,14 +157,14 @@ define(['jquery',
 			// check if there is a "_mul" field (a field on the right) and if the field was already added
 			var $multipleFieldEl = FormEngine.getFieldElement(fieldName, '_mul', true);
 			if ($multipleFieldEl.length == 0 || $multipleFieldEl.val() == 0) {
-				$fieldEl.children('option').each(function(k, optionEl) {
+				$fieldEl.find('option').each(function(k, optionEl) {
 					if ($(optionEl).prop('value') == value) {
 						addNewValue = false;
 						return false;
 					}
 				});
 
-				if (addNewValue) {
+				if (addNewValue && typeof $optionEl !== 'undefined') {
 					$optionEl.addClass('hidden').prop('disabled', true);
 				}
 			}
@@ -207,7 +212,7 @@ define(['jquery',
 	 */
 	FormEngine.updateHiddenFieldValueFromSelect = setHiddenFromList = function(selectFieldEl, originalFieldEl) {
 		var selectedValues = [];
-		$(selectFieldEl).children('option').each(function() {
+		$(selectFieldEl).find('option').each(function() {
 			selectedValues.push($(this).prop('value'));
 		});
 
@@ -563,10 +568,12 @@ define(['jquery',
 	FormEngine.removeOption = function($fieldEl, $availableFieldEl) {
 		var $selected = $fieldEl.find(':selected');
 
-		$availableFieldEl
-			.find('option[value="' + $selected.attr('value') + '"]')
-			.removeClass('hidden')
-			.prop('disabled', false);
+		$selected.each(function() {
+			$availableFieldEl
+				.find('option[value="' + $(this).attr('value') + '"]')
+				.removeClass('hidden')
+				.prop('disabled', false);
+		});
 
 		// remove the selected options
 		$selected.remove();

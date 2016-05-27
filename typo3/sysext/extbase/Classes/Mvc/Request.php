@@ -390,27 +390,8 @@ class Request implements RequestInterface
             $this->internalArguments[$argumentName] = $value;
             return;
         }
-        switch ($argumentName) {
-            case '@extension':
-                $this->setControllerExtensionName($value);
-                break;
-            case '@subpackage':
-                $this->setControllerSubpackageKey($value);
-                break;
-            case '@controller':
-                $this->setControllerName($value);
-                break;
-            case '@action':
-                $this->setControllerActionName($value);
-                break;
-            case '@format':
-                $this->setFormat($value);
-                break;
-            case '@vendor':
-                $this->setControllerVendorName($value);
-                break;
-            default:
-                $this->arguments[$argumentName] = $value;
+        if (!in_array($argumentName, array('@extension', '@subpackage', '@controller', '@action', '@format', '@vendor'), true)) {
+            $this->arguments[$argumentName] = $value;
         }
     }
 

@@ -2620,8 +2620,11 @@ class ContentObjectRenderer
 
     /**
      * char
-     * Will return a character based on its position within the current character set
+     * Returns a one-character string containing the character specified by ascii code.
      *
+     * Reliable results only for character codes in the integer range 0 - 127.
+     *
+     * @see http://php.net/manual/en/function.chr.php
      * @param string $content Input value undergoing processing in this function.
      * @param array $conf stdWrap properties for char.
      * @return string The processed input value
@@ -2814,6 +2817,7 @@ class ContentObjectRenderer
      *
      * @param string $content Input value undergoing processing in this function.
      * @return string The processed input value
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function stdWrap_removeBadHTML($content = '')
     {
@@ -4030,9 +4034,11 @@ class ContentObjectRenderer
      *
      * @param string $text Input string to be cleaned.
      * @return string Return string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function removeBadHTML($text)
     {
+        GeneralUtility::logDeprecatedFunction();
         // Copyright 2002-2003 Thomas Bley
         $text = preg_replace(array(
             '\'<script[^>]*?>.*?</script[^>]*?>\'si',

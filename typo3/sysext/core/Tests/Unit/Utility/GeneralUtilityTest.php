@@ -2188,7 +2188,9 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             'empty string' => array(''),
             'http domain' => array('http://www.google.de/'),
             'https domain' => array('https://www.google.de/'),
-            'relative path with XSS' => array('../typo3/whatever.php?argument=javascript:alert(0)'),
+            'XSS attempt' => array('" onmouseover="alert(123)"'),
+            'invalid URL, UNC path' => array('\\\\foo\\bar\\'),
+            'invalid URL, HTML break out attempt' => array('" >blabuubb'),
             'base64 encoded string' => array('data:%20text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4='),
         );
     }
@@ -2692,7 +2694,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $GLOBALS['T3_VAR']['callUserFunction'][$functionName]['method'] = 'minify';
         $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['minifyJavaScript'][] = $functionName;
         $minifyHookMock->expects($this->any())->method('minify')->will($this->returnCallback(array($this, 'minifyJavaScriptErroneousCallback')));
-        $this->setExpectedException('\\RuntimeException');
+        $this->expectException(\RuntimeException::class);
         GeneralUtilityMinifyJavaScriptFixture::minifyJavaScript('string to compress');
     }
 

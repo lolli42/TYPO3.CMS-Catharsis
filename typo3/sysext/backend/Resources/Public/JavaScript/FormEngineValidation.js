@@ -131,13 +131,15 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 				$humanReadableField.val(value);
 			}
 		}
-
 		$humanReadableField.data('main-field', fieldName);
 		$humanReadableField.data('config', config);
 		$humanReadableField.on('change', function() {
 			FormEngineValidation.updateInputField($(this).attr('data-formengine-input-name'));
 		});
 		$humanReadableField.on('keyup', FormEngineValidation.validate);
+
+		// add the attribute so that acceptance tests can know when the field initialization has completed
+		$humanReadableField.attr('data-formengine-input-initialized', 'true');
 	};
 
 	/**
@@ -237,7 +239,7 @@ define(['jquery', 'TYPO3/CMS/Backend/FormEngine'], function ($, FormEngine) {
 	 * @returns {String}
 	 */
 	FormEngineValidation.validateField = function($field, value) {
-		value = value || $field.val();
+		value = value || $field.val() || '';
 
 		var rules = $field.data('formengine-validation-rules');
 		var markParent = false;
