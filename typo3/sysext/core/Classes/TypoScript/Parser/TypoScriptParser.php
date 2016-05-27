@@ -454,8 +454,7 @@ class TypoScriptParser
                                             } else {
                                                 $res = $this->getVal($theVal, $this->setup);
                                             }
-                                            $this->setVal($objStrName, $setup, unserialize(serialize($res)), 1);
-                                            // unserialize(serialize(...)) may look stupid but is needed because of some reference issues. See Kaspers reply to "[TYPO3-core] good question" from December 15 2005.
+                                            $this->setVal($objStrName, $setup, $res, 1);
                                             break;
                                         case '>':
                                             if ($this->syntaxHighLight) {
@@ -483,6 +482,9 @@ class TypoScriptParser
                             break;
                         }
                     } else {
+                        if (preg_match('|^\s*/[^/]|', $line)) {
+                            $this->error('Line ' . ($this->lineNumberOffset + $this->rawP - 1) .  ': Single slash headed one-line comments are deprecated.', 2);
+                        }
                         if ($this->syntaxHighLight) {
                             $this->regHighLight('comment', $lineP);
                         }
