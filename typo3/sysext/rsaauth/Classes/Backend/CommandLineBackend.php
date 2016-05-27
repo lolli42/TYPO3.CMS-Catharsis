@@ -54,7 +54,7 @@ class CommandLineBackend extends AbstractBackend
     {
         $this->opensslPath = CommandUtility::getCommand('openssl');
         // Get temporary directory from the configuration
-        $extconf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['rsaauth'], ['allowed_classes' => false]);
+        $extconf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['rsaauth']);
         if (
             $extconf['temporaryDirectory'] !== ''
             && $extconf['temporaryDirectory'][0] === '/'

@@ -159,7 +159,7 @@ class LoginController
         $this->checkRedirect();
 
         // Extension Configuration
-        $extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['backend'], ['allowed_classes' => false]);
+        $extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['backend']);
 
         // Background Image
         if (!empty($extConf['loginBackgroundImage'])) {
