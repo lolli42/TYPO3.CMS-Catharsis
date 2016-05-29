@@ -670,7 +670,7 @@ class SetupModuleController extends AbstractModule
     {
         $languageOptions = array();
         // Compile the languages dropdown
-        $langDefault = $this->getLanguageService()->getLL('lang_default', true);
+        $langDefault = htmlspecialchars($this->getLanguageService()->getLL('lang_default'));
         $languageOptions[$langDefault] = '<option value=""' . ($this->getBackendUser()->uc['lang'] === '' ? ' selected="selected"' : '') . '>' . $langDefault . '</option>';
         // Traverse the number of languages
         /** @var $locales \TYPO3\CMS\Core\Localization\Locales */
@@ -724,9 +724,9 @@ class SetupModuleController extends AbstractModule
                     $modName = $subData['name'];
                     $modules .= '<option value="' . htmlspecialchars($modName) . '"';
                     $modules .= $this->getBackendUser()->uc['startModule'] === $modName ? ' selected="selected"' : '';
-                    $modules .= '>' . $this->getLanguageService()->sL($this->loadModules->getLabelsForModule($modName)['title'], true) . '</option>';
+                    $modules .= '>' . htmlspecialchars($this->getLanguageService()->sL($this->loadModules->getLabelsForModule($modName)['title'])) . '</option>';
                 }
-                $groupLabel = $this->getLanguageService()->sL($this->loadModules->getLabelsForModule($mainMod)['title'], true);
+                $groupLabel = htmlspecialchars($this->getLanguageService()->sL($this->loadModules->getLabelsForModule($mainMod)['title']));
                 $startModuleSelect .= '<optgroup label="' . htmlspecialchars($groupLabel) . '">' . $modules . '</optgroup>';
             }
         }

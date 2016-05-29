@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Versioning module, including workspace management
@@ -127,7 +128,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
     public function __construct()
     {
         $GLOBALS['SOBE'] = $this;
-        $GLOBALS['LANG']->includeLLFile('EXT:version/Resources/Private/Language/locallang.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:version/Resources/Private/Language/locallang.xlf');
         $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
     }
 
@@ -164,7 +165,8 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         $this->doc->setModuleTemplate('EXT:version/Resources/Private/Templates/version.html');
 
         // Setting up the context sensitive menu:
-        $this->doc->getContextMenuCode();
+        $this->getPageRenderer()->loadJquery();
+        $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
         // Getting input data:
         $this->id = (int)GeneralUtility::_GP('id');
 
@@ -210,13 +212,13 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             $markers['CONTENT'] = $this->content;
         } else {
             // If no access or id value, create empty document
-            $this->content = '<h2>' . $GLOBALS['LANG']->getLL('clickAPage_header', true) . '</h2><div>' . $GLOBALS['LANG']->getLL('clickAPage_content') . '</div>';
+            $this->content = '<h2>' . htmlspecialchars($this->getLanguageService()->getLL('clickAPage_header')) . '</h2><div>' . $this->getLanguageService()->getLL('clickAPage_content') . '</div>';
             // Setting up the buttons and markers for docheader
             $docHeaderButtons = $this->getButtons();
             $markers['CONTENT'] = $this->content;
         }
         // Build the <body> for the module
-        $this->content = $this->doc->startPage($GLOBALS['LANG']->getLL('title'));
+        $this->content = $this->doc->startPage($this->getLanguageService()->getLL('title'));
         $this->content .= $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
         $this->content .= $this->doc->endPage();
         $this->content = $this->doc->insertStylesAndJS($this->content);
@@ -239,7 +241,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         if ($this->recordFound && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS']) {
             // View page
             $buttons['view'] = '
-				<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', true) . '">
+				<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage')) . '">
 					' . $this->moduleTemplate->getIconFactory()->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '
 				</a>';
             // Shortcut
@@ -253,7 +255,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                    'id' => $this->pageinfo['uid'],
                    'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
                 ]
-            )) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList')) . '</a>';
+            )) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList')) . '</a>';
         }
         return $buttons;
     }
@@ -270,13 +272,14 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
      */
     public function versioningMgm()
     {
+        $lang = $this->getLanguageService();
         // Diffing:
         $diff_1 = GeneralUtility::_POST('diff_1');
         $diff_2 = GeneralUtility::_POST('diff_2');
         if (GeneralUtility::_POST('do_diff')) {
             $content = '';
             $content .= '<div class="panel panel-space panel-default">';
-            $content .= '<div class="panel-heading">' . $GLOBALS['LANG']->getLL('diffing') . '</div>';
+            $content .= '<div class="panel-heading">' . $lang->getLL('diffing') . '</div>';
             if ($diff_1 && $diff_2) {
                 $diff_1_record = BackendUtility::getRecord($this->table, $diff_1);
                 $diff_2_record = BackendUtility::getRecord($this->table, $diff_2);
@@ -285,8 +288,8 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                     $rows = array();
                     $rows[] = '
 									<tr>
-										<th>' . $GLOBALS['LANG']->getLL('fieldname') . '</th>
-										<th width="98%">' . $GLOBALS['LANG']->getLL('coloredDiffView') . ':</th>
+										<th>' . $lang->getLL('fieldname') . '</th>
+										<th width="98%">' . $lang->getLL('coloredDiffView') . ':</th>
 									</tr>
 								';
                     foreach ($diff_1_record as $fN => $fV) {
@@ -308,13 +311,13 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                     if (count($rows) > 1) {
                         $content .= '<div class="table-fit"><table class="table">' . implode('', $rows) . '</table></div>';
                     } else {
-                        $content .= '<div class="panel-body">' . $GLOBALS['LANG']->getLL('recordsMatchesCompletely') . '</div>';
+                        $content .= '<div class="panel-body">' . $lang->getLL('recordsMatchesCompletely') . '</div>';
                     }
                 } else {
-                    $content .= '<div class="panel-body">' . $GLOBALS['LANG']->getLL('errorRecordsNotFound') . '</div>';
+                    $content .= '<div class="panel-body">' . $lang->getLL('errorRecordsNotFound') . '</div>';
                 }
             } else {
-                $content .= '<div class="panel-body">' . $GLOBALS['LANG']->getLL('errorDiffSources') . '</div>';
+                $content .= '<div class="panel-body">' . $lang->getLL('errorDiffSources') . '</div>';
             }
             $content .= '</div>';
         }
@@ -331,20 +334,20 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 							<thead>
 								<tr>
 									<th colspan="2" class="col-icon"></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_title') . '">' . $GLOBALS['LANG']->getLL('tblHeader_title') . '</th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_uid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_uid') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_oid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_oid') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_id') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_id') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_wsid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_wsid') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_state', true) . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_state') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_stage') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_stage') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_count') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_count') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_pid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_pid') . '</i></th>
-									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_label') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_label') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_title') . '">' . $lang->getLL('tblHeader_title') . '</th>
+									<th title="' . $lang->getLL('tblHeaderDesc_uid') . '"><i>' . $lang->getLL('tblHeader_uid') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_t3ver_oid') . '"><i>' . $lang->getLL('tblHeader_t3ver_oid') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_t3ver_id') . '"><i>' . $lang->getLL('tblHeader_t3ver_id') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_t3ver_wsid') . '"><i>' . $lang->getLL('tblHeader_t3ver_wsid') . '</i></th>
+									<th title="' . htmlspecialchars($lang->getLL('tblHeaderDesc_t3ver_state')) . '"><i>' . $lang->getLL('tblHeader_t3ver_state') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_t3ver_stage') . '"><i>' . $lang->getLL('tblHeader_t3ver_stage') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_t3ver_count') . '"><i>' . $lang->getLL('tblHeader_t3ver_count') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_pid') . '"><i>' . $lang->getLL('tblHeader_pid') . '</i></th>
+									<th title="' . $lang->getLL('tblHeaderDesc_t3ver_label') . '"><i>' . $lang->getLL('tblHeader_t3ver_label') . '</i></th>
 									<th></th>
 									<th colspan="2">
 										<button class="btn btn-default btn-sm" type="submit"  name="do_diff" value="true">
-											' . $GLOBALS['LANG']->getLL('diff') . '
+											' . $lang->getLL('diff') . '
 										</button>
 									</th>
 								</tr>
@@ -368,8 +371,8 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 				<tr' . ($row['uid'] != $this->uid ? '' : ' class="active"') . '>
 					<td class="col-icon">' .
                         ($row['uid'] != $this->uid ?
-                            '<a href="' . BackendUtility::getLinkToDataHandlerAction('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap') . '" title="' . $GLOBALS['LANG']->getLL('swapWithCurrent', true) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-version-swap-version', Icon::SIZE_SMALL)->render() . '</a>' :
-                            '<span title="' . $GLOBALS['LANG']->getLL('currentOnlineVersion', true) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('status-status-current', Icon::SIZE_SMALL)->render() . '</span>'
+                            '<a href="' . BackendUtility::getLinkToDataHandlerAction('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap') . '" title="' . htmlspecialchars($lang->getLL('swapWithCurrent')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-version-swap-version', Icon::SIZE_SMALL)->render() . '</a>' :
+                            '<span title="' . htmlspecialchars($lang->getLL('currentOnlineVersion')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('status-status-current', Icon::SIZE_SMALL)->render() . '</span>'
                         ) . '
 					</td>
 					<td class="col-icon">' . $this->moduleTemplate->getIconFactory()->getIconForRecord($this->table, $row, Icon::SIZE_SMALL)->render() . '</td>
@@ -383,7 +386,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 					<td>' . $row['t3ver_count'] . '</td>
 					<td>' . $row['pid'] . '</td>
 					<td>
-						<a href="' . htmlspecialchars($editUrl) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', true) . '">
+						<a href="' . htmlspecialchars($editUrl) . '" title="' . htmlspecialchars($lang->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit')) . '">
 							' . $this->moduleTemplate->getIconFactory()->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '
 						</a>' . htmlspecialchars($row['t3ver_label']) . '
 					</td>
@@ -411,28 +414,28 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 					</div>
 				</div>
 			</form>';
-        $this->content .= '<h2>' . $GLOBALS['LANG']->getLL('title', true) . '</h2><div>' . $content . '</div>';
+        $this->content .= '<h2>' . htmlspecialchars($lang->getLL('title')) . '</h2><div>' . $content . '</div>';
         // Create new:
         $content = '
 			<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db')) . '" method="post">
 				<div class="row">
 					<div class="col-sm-6 col-md-4 col-lg-3">
 						<div class="form-group">
-							<label for="typo3-new-version-label">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_label') . '</label>
+							<label for="typo3-new-version-label">' . $lang->getLL('tblHeader_t3ver_label') . '</label>
 							<input id="typo3-new-version-label" class="form-control" type="text" name="cmd[' . $this->table . '][' . $this->uid . '][version][label]" />
 						</div>
 						<div class="form-group">
 							<input type="hidden" name="cmd[' . $this->table . '][' . $this->uid . '][version][action]" value="new" />
 							<input type="hidden" name="prErr" value="1" />
 							<input type="hidden" name="redirect" value="' . htmlspecialchars($this->REQUEST_URI) . '" />
-							<input class="btn btn-default" type="submit" name="_" value="' . $GLOBALS['LANG']->getLL('createNewVersion') . '" />
+							<input class="btn btn-default" type="submit" name="_" value="' . $lang->getLL('createNewVersion') . '" />
 						</div>
 					</div>
 				</div>
 			</form>
 
 		';
-        $this->content .= '<h2>' . $GLOBALS['LANG']->getLL('createNewVersion', true) . '</h2><div>' . $content . '</div>';
+        $this->content .= '<h2>' . htmlspecialchars($lang->getLL('createNewVersion')) . '</h2><div>' . $content . '</div>';
     }
 
     /**
@@ -455,7 +458,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 					<table class="table">
 						<tr>
 							<th class="col-icon">' . $this->moduleTemplate->getIconFactory()->getIconForRecord($table, array(), Icon::SIZE_SMALL)->render() . '</th>
-							<th class="col-title">' . $GLOBALS['LANG']->sL($GLOBALS['TCA'][$table]['ctrl']['title'], true) . '</th>
+							<th class="col-title">' . htmlspecialchars($this->getLanguageService()->sL($GLOBALS['TCA'][$table]['ctrl']['title'])) . '</th>
 							<th></th>
 							<th></th>
 						</tr>';
@@ -522,9 +525,9 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             ],
             'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
         ]);
-        $adminLink = '<a class="btn btn-default" href="' . htmlspecialchars($editUrl) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', true) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '</a>';
+        $adminLink = '<a class="btn btn-default" href="' . htmlspecialchars($editUrl) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '</a>';
         // Delete link:
-        $adminLink .= '<a class="btn btn-default" href="' . htmlspecialchars(BackendUtility::getLinkToDataHandlerAction('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1')) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete', true) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
+        $adminLink .= '<a class="btn btn-default" href="' . htmlspecialchars(BackendUtility::getLinkToDataHandlerAction('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1')) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
         if ($table === 'pages') {
             // If another page module was specified, replace the default Page module with the new one
             $newPageModule = trim($GLOBALS['BE_USER']->getTSConfigVal('options.overridePageModule'));
@@ -562,5 +565,13 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 
         $response->getBody()->write($this->content);
         return $response;
+    }
+
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
     }
 }

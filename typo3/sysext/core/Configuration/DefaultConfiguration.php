@@ -37,7 +37,7 @@ return array(
         'processor_stripColorProfileCommand' => '+profile \'*\'',    // String: Specify the command to strip the profile information, which can reduce thumbnail size up to 60KB. Command can differ in IM/GM, IM also know the -strip command. See <a href="http://www.imagemagick.org/Usage/thumbnails/#profiles" target="_blank">imagemagick.org</a> for details
         'processor_colorspace' => 'RGB',                            // String: Specify the colorspace to use. Some ImageMagick versions (like 6.7.0 and above) use the sRGB colorspace, so all images are darker then the original. <br />Possible Values: CMY, CMYK, Gray, HCL, HSB, HSL, HWB, Lab, LCH, LMS, Log, Luv, OHTA, Rec601Luma, Rec601YCbCr, Rec709Luma, Rec709YCbCr, RGB, sRGB, Transparent, XYZ, YCbCr, YCC, YIQ, YCbCr, YUV
         'jpg_quality' => 70,                            // Integer: Default JPEG generation quality
-        'png_truecolor' => true,
+        'png_truecolor' => true,                        // Boolean: When creating png images, always use the full colorpalette, if disabled could reduce file sizes for scaled images, but the image quality will be let down.
     ),
     'SYS' => array(
         // System related concerning both frontend and backend.
@@ -152,6 +152,14 @@ return array(
                         'defaultLifetime' => 0,
                     ),
                     'groups' => array('lowlevel'),
+                ),
+                'assets' => array(
+                    'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
+                    'backend' => \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend::class,
+                    'options' => array(
+                        'defaultLifetime' => 0,
+                    ),
+                    'groups' => array('system')
                 ),
                 'l10n' => array(
                     'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
@@ -1082,7 +1090,7 @@ return array(
         'checkFeUserPid' => true,        // Boolean: If set, the pid of fe_user logins must be sent in the form as the field 'pid' and then the user must be located in the pid. If you unset this, you should change the fe_users.username eval-flag 'uniqueInPid' to 'unique' in $TCA. This will do: $TCA['fe_users']['columns']['username']['config']['eval']= 'nospace,lower,required,unique';
         'lockIP' => 2,        // Integer (0-4). If >0, fe_users are locked to (a part of) their REMOTE_ADDR IP for their session. Enhances security but may throw off users that may change IP during their session (in which case you can lower it to 2 or 3). The integer indicates how many parts of the IP address to include in the check. Reducing to 1-3 means that only first, second or third part of the IP address is used. 4 is the FULL IP address and recommended. 0 (zero) disables checking of course.
         'loginSecurityLevel' => '',        // See description for <a href="#BE-loginSecurityLevel">[BE][loginSecurityLevel]</a>. Default state for frontend is "normal". Alternative authentication services can implement higher levels if preferred. For example, "rsa" level uses RSA password encryption (only if the rsaauth extension is installed)
-        'lifetime' => 0,        // Integer: positive. If >0, the cookie of FE users will have a lifetime of the number of seconds this value indicates. Otherwise it will be a session cookie (deleted when browser is shut down). Setting this value to 604800 will result in automatic login of FE users during a whole week, 86400 will keep the FE users logged in for a day.
+        'lifetime' => 0,        // Integer: positive. If >0 and the option permalogin is >=0, the cookie of FE users will have a lifetime of the number of seconds this value indicates. Otherwise it will be a session cookie (deleted when browser is shut down). Setting this value to 604800 will result in automatic login of FE users during a whole week, 86400 will keep the FE users logged in for a day.
         'sessionDataLifetime' => 86400,        // Integer: positive. If >0, the session data will timeout and be removed after the number of seconds given (86400 seconds represents 24 hours).
         'permalogin' => 0,        // <p>Integer:</p><dl><dt>-1</dt><dd>Permanent login for FE users disabled.</dd><dt>0</dt><dd>By default permalogin is disabled for FE users but can be enabled by a form control in the login form.</dd><dt>1</dt><dd>Permanent login is by default enabled but can be disabled by a form control in the login form.</dd><dt>2</dt><dd>Permanent login is forced to be enabled.// In any case, permanent login is only possible if <a href="#FE-lifetime">[FE][lifetime]</a> lifetime is > 0.</dd></dl>
         'maxSessionDataSize' => 10000,        // Integer: Setting the maximum size (bytes) of frontend session data stored in the table fe_session_data. Set to zero (0) means no limit, but this is not recommended since it also disables a check that session data is stored only if a confirmed cookie is set.
@@ -1124,7 +1132,7 @@ return array(
         'transport_sendmail_command' => '',        // String: <em>only with transport=sendmail</em>: The command to call to send a mail locally.
         'transport_mbox_file' => '',        // String: <em>only with transport=mbox</em>: The file where to write the mails into. This file will be conforming the mbox format described in RFC 4155. It is a simple text file with a concatenation of all mails. Path must be absolute.
         'defaultMailFromAddress' => '',        // String: This default email address is used when no other "from" address is set for a TYPO3-generated email. You can specify an email address only (ex. info@example.org).
-        'defaultMailFromName' => ''// String: This default name is used when no other "from" name is set for a TYPO3-generated email.
+        'defaultMailFromName' => '',    // String: This default name is used when no other "from" name is set for a TYPO3-generated email.
     ),
     'HTTP' => array(    // HTTP configuration to tune how TYPO3 behaves on HTTP requests made by TYPO3. Have a look at http://docs.guzzlephp.org/en/latest/request-options.html for some background information on those settings.
         'allow_redirects' => array( // Mixed, set to false if you want to allow redirects, or use it as an array to add more values, see http://docs.guzzlephp.org/en/latest/request-options.html#allow-redirects for syntax

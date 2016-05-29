@@ -271,7 +271,7 @@ class PagePositionMap
      */
     public function insertlabel()
     {
-        return $this->getLanguageService()->getLL($this->l_insertNewPageHere, 1);
+        return htmlspecialchars($this->getLanguageService()->getLL($this->l_insertNewPageHere));
     }
 
     /**
@@ -412,7 +412,7 @@ class PagePositionMap
                     $head = '';
                     foreach ($tcaItems as $item) {
                         if ($item[1] == $columnKey) {
-                            $head = $this->getLanguageService()->sL($item[0], true);
+                            $head = htmlspecialchars($this->getLanguageService()->sL($item[0]));
                         }
                     }
                     // Render the grid cell
@@ -451,7 +451,7 @@ class PagePositionMap
             $row = '';
             foreach ($colPosArray as $kk => $vv) {
                 $row .= '<td class="col-nowrap col-min" width="' . round(100 / $count) . '%">';
-                $row .= '<p><strong>' . $this->wrapColumnHeader($this->getLanguageService()->sL(BackendUtility::getLabelFromItemlist('tt_content', 'colPos', $vv), true), $vv) . '</strong></p>';
+                $row .= '<p><strong>' . $this->wrapColumnHeader(htmlspecialchars($this->getLanguageService()->sL(BackendUtility::getLabelFromItemlist('tt_content', 'colPos', $vv))), $vv) . '</strong></p>';
                 if (!empty($lines[$vv])) {
                     $row .= '<ul class="list-unstyled">';
                     foreach ($lines[$vv] as $line) {
@@ -511,7 +511,7 @@ class PagePositionMap
             $uid = '';
         }
         $cc = hexdec(substr(md5($uid . '-' . $vv . '-' . $kk), 0, 4));
-        return '<a href="#" onclick="' . htmlspecialchars($this->onClickInsertRecord($row, $vv, $moveUid, $pid, $this->cur_sys_language)) . '">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImgEnd' . $cc . '" title="' . $this->getLanguageService()->getLL($this->l_insertNewRecordHere, 1) . '"></i></a>';
+        return '<a href="#" onclick="' . htmlspecialchars($this->onClickInsertRecord($row, $vv, $moveUid, $pid, $this->cur_sys_language)) . '">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImgEnd' . $cc . '" title="' . htmlspecialchars($this->getLanguageService()->getLL($this->l_insertNewRecordHere)) . '"></i></a>';
     }
 
     /**

@@ -412,12 +412,12 @@ class FileList extends AbstractRecordList
                         $cells[] = $this->linkClipboardHeaderIcon('<span title="' . htmlspecialchars($this->getLanguageService()->getLL('clip_selectMarked')) . '">' . $this->iconFactory->getIcon('actions-edit-copy', Icon::SIZE_SMALL)->render() . '</span>', $table, 'setCB');
                         $cells[] = $this->linkClipboardHeaderIcon('<span title="' . htmlspecialchars($this->getLanguageService()->getLL('clip_deleteMarked')) . '">' . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render(), $table, 'delete', $this->getLanguageService()->getLL('clip_deleteMarkedWarning'));
                         $onClick = 'checkOffCB(' . GeneralUtility::quoteJSvalue(implode(',', $this->CBnames)) . ', this); return false;';
-                        $cells[] = '<a class="btn btn-default" rel="" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->getLL('clip_markRecords', true) . '">' . $this->iconFactory->getIcon('actions-document-select', Icon::SIZE_SMALL)->render() . '</a>';
+                        $cells[] = '<a class="btn btn-default" rel="" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . htmlspecialchars($this->getLanguageService()->getLL('clip_markRecords')) . '">' . $this->iconFactory->getIcon('actions-document-select', Icon::SIZE_SMALL)->render() . '</a>';
                     }
                     $theData[$v] = implode('', $cells);
                 } else {
                     // Normal row:
-                    $theT = $this->linkWrapSort($this->getLanguageService()->getLL('c_' . $v, true), $this->folderObject->getCombinedIdentifier(), $v);
+                    $theT = $this->linkWrapSort(htmlspecialchars($this->getLanguageService()->getLL('c_' . $v)), $this->folderObject->getCombinedIdentifier(), $v);
                     $theData[$v] = $theT;
                 }
             }
@@ -463,7 +463,7 @@ class FileList extends AbstractRecordList
             $parentFolder = $currentFolder->getParentFolder();
             if ($parentFolder->getIdentifier() !== $currentFolder->getIdentifier() && $currentStorage->isWithinFileMountBoundaries($parentFolder)) {
                 $levelUp = $this->linkWrapDir(
-                    '<span title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.upOneLevel', true) . '">'
+                    '<span title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.upOneLevel')) . '">'
                     . $this->iconFactory->getIcon('actions-view-go-up', Icon::SIZE_SMALL)->render()
                     . '</span>',
                     $parentFolder
@@ -864,8 +864,8 @@ class FileList extends AbstractRecordList
         // For normal clipboard, add copy/cut buttons:
         if ($this->clipObj->current === 'normal') {
             $isSel = $this->clipObj->isSelected('_FILE', $md5);
-            $copyTitle = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.copy', true);
-            $cutTitle = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.cut', true);
+            $copyTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.copy'));
+            $cutTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.cut'));
             $copyIcon = $this->iconFactory->getIcon('actions-edit-copy', Icon::SIZE_SMALL)->render();
             $cutIcon = $this->iconFactory->getIcon('actions-edit-cut', Icon::SIZE_SMALL)->render();
 
