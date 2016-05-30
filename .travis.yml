@@ -5,7 +5,7 @@ matrix:
 
   include:
     - php: 7
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes ACCEPTANCE_TESTS=no PHP_LINT=yes XLF_CHECK=yes SUBMODULE_TEST=yes  EXCEPTIONCODE_TEST=yes
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=no ACCEPTANCE_TESTS=no PHP_LINT=no XLF_CHECK=no SUBMODULE_TEST=no  EXCEPTIONCODE_TEST=no
 
 sudo: false
 
@@ -44,6 +44,8 @@ notifications:
 
 before_script:
   - phpenv config-rm xdebug.ini
+  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - if [ "$GITHUB_COMPOSER_AUTH" ]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
   - composer install
   - typo3/sysext/core/Build/Configuration/TravisNginxFpm/ConfigureStartNginxFpm.sh
