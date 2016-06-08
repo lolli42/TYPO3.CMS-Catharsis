@@ -1981,6 +1981,36 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * @return array
+     */
+    public function stdWrapReturnsExpectationDataProvider()
+    {
+        return [
+            'Prevent silent bool conversion' => [
+                '1+1',
+                [
+                    'prioriCalc.' => [
+                        'wrap' => '|',
+                    ],
+                ],
+                '1+1',
+            ],
+        ];
+    }
+
+    /**
+     * @param string $content
+     * @param array $configuration
+     * @param string $expectation
+     * @dataProvider stdWrapReturnsExpectationDataProvider
+     * @test
+     */
+    public function stdWrapReturnsExpectation($content, array $configuration, $expectation)
+    {
+        $this->assertSame($expectation, $this->subject->stdWrap($content, $configuration));
+    }
+
+    /**
      * Data provider for stdWrap_case test
      *
      * @return array
@@ -2588,6 +2618,11 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertEquals($expected, $result);
     }
 
+    /**
+     * Data provider for stdWrap_brTag
+     *
+     * @return array
+     */
     public function stdWrapBrTagDataProvider()
     {
         $noConfig = [];
@@ -2620,6 +2655,112 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function stdWrap_brTag($input, $expected, $config)
     {
         $this->assertEquals($expected, $this->subject->stdWrap_brTag($input, $config));
+    }
+
+    /**
+     * Data provider for stdWrap_keywords
+     *
+     * @return string[][] Order expected, input
+     */
+    public function stdWrapKeywordsDataProvider()
+    {
+        return [
+            'empty string' => ['', ''],
+            'blank' => ['', ' '],
+            'tab' => ['', "\t"],
+            'single semicolon' => [',', ' ; '],
+            'single comma' => [',', ' , '],
+            'single nl' => [',', ' ' . PHP_EOL . ' '],
+            'double semicolon' => [',,', ' ; ; '],
+            'double comma' => [',,', ' , , '],
+            'double nl' => [',,', ' ' . PHP_EOL . ' ' . PHP_EOL . ' '],
+            'simple word' => ['one', ' one '],
+            'simple word trimmed' => ['one', 'one'],
+            ', separated' => ['one,two', ' one , two '],
+            '; separated' => ['one,two', ' one ; two '],
+            'nl separated' => ['one,two', ' one ' . PHP_EOL . ' two '],
+            ', typical' => ['one,two,three', 'one, two, three'],
+            '; typical' => ['one,two,three', ' one; two; three'],
+            'nl typical' => [
+                'one,two,three',
+                'one' . PHP_EOL . 'two' . PHP_EOL . 'three'
+            ],
+            ', sourounded' => [',one,two,', ' , one , two , '],
+            '; sourounded' => [',one,two,', ' ; one ; two ; '],
+            'nl sourounded' => [
+                ',one,two,',
+                ' ' . PHP_EOL .' one ' . PHP_EOL . ' two ' . PHP_EOL . ' '
+            ],
+            'mixed' => [
+                'one,two,three,four',
+                ' one, two; three' . PHP_EOL . 'four'
+            ],
+            'keywods with blanks in words' => [
+                'one plus,two minus',
+                ' one plus , two minus ',
+            ]
+        ];
+    }
+
+    /**
+     * Check if stdWrap_keywords works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @return void
+     * @test
+     * @dataProvider stdWrapKeywordsDataProvider
+     */
+    public function stdWrap_keywords($expected, $input)
+    {
+        $this->assertSame($expected, $this->subject->stdWrap_keywords($input));
+    }
+
+    /**
+     * Data provider for stdWrap_br
+     *
+     * @return string[][] Order expected, given, xhtmlDoctype
+     */
+    public function stdWrapBrDataProvider()
+    {
+        return [
+            'no xhtml with LF in between' => [
+                'one<br>' . LF . 'two',
+                'one' . LF . 'two',
+                null
+            ],
+            'no xhtml with LF in between and around' => [
+                '<br>' . LF . 'one<br>' . LF . 'two<br>' . LF,
+                LF . 'one' . LF . 'two' . LF,
+                null
+            ],
+            'xhtml with LF in between' => [
+                'one<br />' . LF . 'two',
+                'one' . LF . 'two',
+                'xhtml_strict'
+            ],
+            'xhtml with LF in between and around' => [
+                '<br />' . LF . 'one<br />' . LF . 'two<br />' . LF,
+                LF . 'one' . LF . 'two' . LF,
+                'xhtml_strict'
+            ],
+        ];
+    }
+
+    /**
+     * Test that stdWrap_br works as expected.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param string $xhtmlDoctype Xhtml document type.
+     * @return void
+     * @test
+     * @dataProvider stdWrapBrDataProvider
+     */
+    public function stdWrap_br($expected, $input, $xhtmlDoctype)
+    {
+        $GLOBALS['TSFE']->xhtmlDoctype = $xhtmlDoctype;
+        $this->assertSame($expected, $this->subject->stdWrap_br($input));
     }
 
     /**

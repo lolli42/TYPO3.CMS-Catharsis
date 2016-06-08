@@ -16,7 +16,11 @@ namespace TYPO3\CMS\Core\Authentication;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\RootLevelRestriction;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
@@ -456,27 +460,58 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
             if ($this->isAdmin()) {
                 return ' 1=1';
             }
-            $perms = (int)$perms;
             // Make sure it's integer.
-            $str = ' (' . '(pages.perms_everybody & ' . $perms . ' = ' . $perms . ')' . ' OR (pages.perms_userid = '
-                . $this->user['uid'] . ' AND pages.perms_user & ' . $perms . ' = ' . $perms . ')';
+            $perms = (int)$perms;
+            $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('pages')
+                ->expr();
+
             // User
+            $constraint = $expressionBuilder->orX(
+                $expressionBuilder->comparison(
+                    $expressionBuilder->bitAnd('pages.perms_everybody', $perms),
+                    ExpressionBuilder::EQ,
+                    $perms
+                ),
+                $expressionBuilder->andX(
+                    $expressionBuilder->eq('pages.perms_userid', (int)$this->user['uid']),
+                    $expressionBuilder->comparison(
+                        $expressionBuilder->bitAnd('pages.perms_user', $perms),
+                        ExpressionBuilder::EQ,
+                        $perms
+                    )
+                )
+            );
+
+            // Group (if any is set)
             if ($this->groupList) {
-                // Group (if any is set)
-                $str .= ' OR (pages.perms_groupid in (' . $this->groupList . ') AND pages.perms_group & '
-                    . $perms . ' = ' . $perms . ')';
+                $constraint->add(
+                    $expressionBuilder->andX(
+                        $expressionBuilder->in(
+                            'pages.perms_groupid',
+                            GeneralUtility::intExplode(',', $this->groupList)
+                        ),
+                        $expressionBuilder->comparison(
+                            $expressionBuilder->bitAnd('pages.perms_group', $perms),
+                            ExpressionBuilder::EQ,
+                            $perms
+                        )
+                    )
+                );
             }
-            $str .= ')';
+
+            $constraint = ' (' . (string)$constraint . ')';
+
             // ****************
             // getPagePermsClause-HOOK
             // ****************
             if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getPagePermsClause'])) {
                 foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getPagePermsClause'] as $_funcRef) {
-                    $_params = array('currentClause' => $str, 'perms' => $perms);
+                    $_params = array('currentClause' => $constraint, 'perms' => $perms);
                     $str = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
                 }
             }
-            return $str;
+            return $constraint;
         } else {
             return ' 1=0';
         }
@@ -1339,17 +1374,20 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
                 // Explode mounts
                 // Selecting all webmounts with permission clause for reading
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+                $queryBuilder->getRestrictions()
+                    ->removeAll()
+                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
                 $MProws = $queryBuilder->select('uid')
                     ->from('pages')
-                    ->where($queryBuilder->expr()->eq('deleted', 0))
-                    ->andWhere(
+                    // @todo DOCTRINE: check how to make getPagePermsClause() portable
+                    ->where(
+                        $this->getPagePermsClause(1),
                         $queryBuilder->expr()->in(
                             'uid',
                             $queryBuilder->createNamedParameter($this->groupData['webmounts'])
                         )
                     )
-                    // @todo DOCTRINE: check how to make getPagePermsClause() portable
-                    ->andWhere($this->getPagePermsClause(1))
                     ->execute()
                     ->fetchAll();
                 $MProws = array_column(($MProws ?: []), 'uid', 'uid');
@@ -1382,8 +1420,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->usergroup_table);
         $expressionBuilder = $queryBuilder->expr();
         $constraints = $expressionBuilder->andX(
-            $expressionBuilder->eq('deleted', 0),
-            $expressionBuilder->eq('hidden', 0),
             $expressionBuilder->eq('pid', 0),
             $expressionBuilder->in('uid', GeneralUtility::intExplode(',', $grList)),
             $expressionBuilder->orX(
@@ -1582,11 +1618,15 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
             $orderBy = $GLOBALS['TCA']['sys_filemounts']['ctrl']['default_sortby'] ?? 'sorting';
 
             $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_filemounts');
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                ->add(GeneralUtility::makeInstance(HiddenRestriction::class))
+                ->add(GeneralUtility::makeInstance(RootLevelRestriction::class));
+
             $queryBuilder->select('*')
                 ->from('sys_filemounts')
-                ->where($queryBuilder->expr()->eq('hidden', 0))
-                ->andWhere($queryBuilder->expr()->eq('pid', 0))
-                ->andWhere($queryBuilder->expr()->in('uid', $fileMounts));
+                ->where($queryBuilder->expr()->in('uid', array_map('intval', $fileMounts)));
 
             foreach (QueryHelper::parseOrderBy($orderBy) as $fieldAndDirection) {
                 $queryBuilder->addOrderBy(...$fieldAndDirection);
@@ -2024,13 +2064,13 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
                 default:
                     if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('workspaces')) {
                         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_workspace');
+                        $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(RootLevelRestriction::class));
                         $wsRec = $queryBuilder->select(...GeneralUtility::trimExplode(',', $fields))
                             ->from('sys_workspace')
-                            ->where($queryBuilder->expr()->eq('pid', 0))
-                            ->andWhere(
+                            ->where(
                                 $queryBuilder->expr()->eq(
                                     'uid',
-                                    $queryBuilder->createNamedParameter((int)$wsRec)
+                                    (int)$wsRec
                                 )
                             )
                             ->orderBy('title')
@@ -2195,9 +2235,9 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
         } elseif (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('workspaces')) {
             // Traverse custom workspaces:
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_workspace');
+            $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(RootLevelRestriction::class));
             $workspaces = $queryBuilder->select('uid', 'title', 'adminusers', 'reviewers')
                 ->from('sys_workspace')
-                ->where($queryBuilder->expr()->eq('pid', 0))
                 ->orderBy('title')
                 ->execute()
                 ->fetchAll(\PDO::FETCH_ASSOC);
@@ -2322,9 +2362,11 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
             $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_log');
             $queryBuilder->select('tstamp')
                 ->from('sys_log')
-                ->where($queryBuilder->expr()->eq('type', 255))
-                ->andWhere($queryBuilder->expr()->eq('action', 4))
-                ->andWhere($queryBuilder->expr()->gt('tstamp', $queryBuilder->createNamedParameter((int)$theTimeBack)))
+                ->where(
+                    $queryBuilder->expr()->eq('type', 255),
+                    $queryBuilder->expr()->eq('action', 4),
+                    $queryBuilder->expr()->gt('tstamp', (int)$theTimeBack)
+                )
                 ->orderBy('tstamp', 'DESC')
                 ->setMaxResults(1);
             if ($testRow = $queryBuilder->execute()->fetch(\PDO::FETCH_ASSOC)) {
@@ -2334,10 +2376,12 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
             $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_log');
             $result = $queryBuilder->select('*')
                 ->from('sys_log')
-                ->where($queryBuilder->expr()->eq('type', 255))
-                ->andWhere($queryBuilder->expr()->eq('action', 3))
-                ->andWhere($queryBuilder->expr()->neq('error', 0))
-                ->andWhere($queryBuilder->expr()->gt('tstamp', $queryBuilder->createNamedParameter((int)$theTimeBack)))
+                ->where(
+                    $queryBuilder->expr()->eq('type', 255),
+                    $queryBuilder->expr()->eq('action', 3),
+                    $queryBuilder->expr()->neq('error', 0),
+                    $queryBuilder->expr()->gt('tstamp', (int)$theTimeBack)
+                )
                 ->orderBy('tstamp')
                 ->execute();
 
@@ -2600,7 +2644,7 @@ This is a dump of the failures:
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('be_users');
             $isUserAllowedToLogin = (bool)$queryBuilder->count('uid')
                 ->from('be_users')
-                ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($backendUserId)))
+                ->where($queryBuilder->expr()->eq('uid', (int)$backendUserId))
                 ->andWhere($queryBuilder->expr()->eq('admin', 1))
                 ->execute()
                 ->fetchColumn(0);
