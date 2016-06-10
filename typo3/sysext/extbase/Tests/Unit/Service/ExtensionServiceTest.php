@@ -13,6 +13,16 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Service;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use Doctrine\DBAL\Statement;
+use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Tests\Unit\Database\Mocks\MockPlatform;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Exception;
 
 /**
  * Test case
@@ -33,6 +43,7 @@ class ExtensionServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $GLOBALS['TYPO3_DB'] = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array('fullQuoteStr', 'exec_SELECTgetRows'));
         $GLOBALS['TSFE'] = new \stdClass();
+        $GLOBALS['TSFE']->gr_list = '';
         $this->extensionService = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Service\ExtensionService::class, array('dummy'));
         $this->mockConfigurationManager = $this->getMock(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::class);
         $this->extensionService->_set('configurationManager', $this->mockConfigurationManager);
@@ -71,6 +82,32 @@ class ExtensionServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 )
             )
         );
+    }
+
+    /**
+     * Setup and return a mocked database connection that allows
+     * the QueryBuilder to work.
+     *
+     * @return ObjectProphecy
+     */
+    protected function getMockDatabaseConnection(): ObjectProphecy
+    {
+        $connection = $this->prophesize(Connection::class);
+        $connection->getDatabasePlatform()->willReturn(new MockPlatform());
+        $connection->getExpressionBuilder()->willReturn(new ExpressionBuilder($connection->reveal()));
+        $connection->quoteIdentifier(Argument::cetera())->willReturnArgument(0);
+
+        $queryBuilder = new QueryBuilder(
+            $connection->reveal(),
+            null,
+            new \Doctrine\DBAL\Query\QueryBuilder($connection->reveal())
+        );
+
+        $connectionPool = $this->prophesize(ConnectionPool::class);
+        $connectionPool->getQueryBuilderForTable('tt_content')->willReturn($queryBuilder);
+        GeneralUtility::addInstance(ConnectionPool::class, $connectionPool->reveal());
+
+        return $connection;
     }
 
     /**
@@ -146,10 +183,11 @@ class ExtensionServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
     /**
      * @test
-     * @expectedException \TYPO3\CMS\Extbase\Exception
      */
     public function getPluginNameByActionThrowsExceptionIfMoreThanOnePluginMatches()
     {
+        $this->expectException(Exception::class);
+        $this->expectExceptionCode(1280825466);
         $this->mockConfigurationManager->expects($this->once())->method('getConfiguration')->with(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK)->will($this->returnValue(array('view' => array('pluginNamespace' => 'overridden_plugin_namespace'))));
         $this->extensionService->getPluginNameByAction('ExtensionName', 'ControllerName', 'otherAction');
     }
@@ -224,44 +262,78 @@ class ExtensionServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
     /**
      * @test
+     * @todo This should rather be a functional test since it needs a connection / querybuilder
      */
     public function getTargetPidByPluginSignatureDeterminesTheTargetPidIfDefaultPidIsAuto()
     {
-        $this->mockConfigurationManager->expects($this->once())->method('getConfiguration')->will($this->returnValue(array('view' => array('defaultPid' => 'auto'))));
-        $pluginSignature = 'extensionname_someplugin';
-        $GLOBALS['TSFE']->sys_page = $this->getMock(\TYPO3\CMS\Frontend\Page\PageRepository::class, array('enableFields'));
-        $GLOBALS['TSFE']->sys_page->expects($this->once())->method('enableFields')->with('tt_content')->will($this->returnValue(' AND enable_fields'));
-        $GLOBALS['TYPO3_DB']->expects($this->once())->method('fullQuoteStr')->with($pluginSignature, 'tt_content')->will($this->returnValue('"pluginSignature"'));
-        $GLOBALS['TYPO3_DB']->expects($this->once())->method('exec_SELECTgetRows')->with('pid', 'tt_content', 'list_type="pluginSignature" AND CType="list" AND enable_fields AND sys_language_uid=', '', '')->will($this->returnValue(array(array('pid' => '321'))));
+        $this->mockConfigurationManager->expects($this->once())->method('getConfiguration')->will(
+            $this->returnValue(['view' => ['defaultPid' => 'auto']])
+        );
         $expectedResult = 321;
+
+        $statement = $this->prophesize(Statement::class);
+        $statement->fetchAll()->shouldBeCalled()->willReturn([['pid' => (string)$expectedResult]]);
+
+        $connection = $this->getMockDatabaseConnection();
+        $connection->executeQuery(
+            'SELECT pid FROM tt_content WHERE (list_type = :dcValue1) AND (CType = :dcValue2) AND (sys_language_uid = 0) LIMIT 2',
+            ['dcValue1' => 'extensionname_someplugin', 'dcValue2' => 'list'],
+            Argument::cetera()
+        )->shouldBeCalled()->willReturn($statement->reveal());
+
         $actualResult = $this->extensionService->getTargetPidByPlugin('ExtensionName', 'SomePlugin');
         $this->assertEquals($expectedResult, $actualResult);
     }
 
     /**
      * @test
+     * @todo This should rather be a functional test since it needs a connection / querybuilder
      */
     public function getTargetPidByPluginSignatureReturnsNullIfTargetPidCouldNotBeDetermined()
     {
-        $this->mockConfigurationManager->expects($this->once())->method('getConfiguration')->will($this->returnValue(array('view' => array('defaultPid' => 'auto'))));
-        $GLOBALS['TSFE']->sys_page = $this->getMock(\TYPO3\CMS\Frontend\Page\PageRepository::class, array('enableFields'));
-        $GLOBALS['TSFE']->sys_page->expects($this->once())->method('enableFields')->will($this->returnValue(' AND enable_fields'));
-        $GLOBALS['TYPO3_DB']->expects($this->once())->method('fullQuoteStr')->will($this->returnValue('"pluginSignature"'));
-        $GLOBALS['TYPO3_DB']->expects($this->once())->method('exec_SELECTgetRows')->will($this->returnValue(array()));
+        $this->mockConfigurationManager->expects($this->once())->method('getConfiguration')->will(
+            $this->returnValue(['view' => ['defaultPid' => 'auto']])
+        );
+
+        $statement = $this->prophesize(Statement::class);
+        $statement->fetchAll()->shouldBeCalled()->willReturn([]);
+
+        $connection = $this->getMockDatabaseConnection();
+        $connection->executeQuery(
+            'SELECT pid FROM tt_content WHERE (list_type = :dcValue1) AND (CType = :dcValue2) AND (sys_language_uid = 0) LIMIT 2',
+            ['dcValue1' => 'extensionname_someplugin', 'dcValue2' => 'list'],
+            Argument::cetera()
+        )->shouldBeCalled()->willReturn($statement->reveal());
+
         $this->assertNull($this->extensionService->getTargetPidByPlugin('ExtensionName', 'SomePlugin'));
     }
 
     /**
      * @test
-     * @expectedException \TYPO3\CMS\Extbase\Exception
+     * @todo This should rather be a functional test since it needs a connection / querybuilder
      */
     public function getTargetPidByPluginSignatureThrowsExceptionIfMoreThanOneTargetPidsWereFound()
     {
-        $this->mockConfigurationManager->expects($this->once())->method('getConfiguration')->will($this->returnValue(array('view' => array('defaultPid' => 'auto'))));
-        $GLOBALS['TSFE']->sys_page = $this->getMock(\TYPO3\CMS\Frontend\Page\PageRepository::class, array('enableFields'));
-        $GLOBALS['TSFE']->sys_page->expects($this->once())->method('enableFields')->will($this->returnValue(' AND enable_fields'));
-        $GLOBALS['TYPO3_DB']->expects($this->once())->method('fullQuoteStr')->will($this->returnValue('"pluginSignature"'));
-        $GLOBALS['TYPO3_DB']->expects($this->once())->method('exec_SELECTgetRows')->will($this->returnValue(array(array('pid' => 123), array('pid' => 124))));
+        $this->expectException(Exception::class);
+        $this->expectExceptionCode(1280773643);
+
+        $this->mockConfigurationManager->expects($this->once())->method('getConfiguration')->will(
+            $this->returnValue(['view' => ['defaultPid' => 'auto']])
+        );
+
+        $statement = $this->prophesize(Statement::class);
+        $statement->fetchAll()->shouldBeCalled()->willReturn([['pid' => 123], ['pid' => 124]]);
+
+        $connection = $this->getMockDatabaseConnection();
+        $connection->executeQuery(
+            'SELECT pid FROM tt_content WHERE (list_type = :dcValue1) AND (CType = :dcValue2) AND (sys_language_uid = 0) LIMIT 2',
+            ['dcValue1' => 'extensionname_someplugin', 'dcValue2' => 'list'],
+            Argument::cetera()
+        )->shouldBeCalled()->willReturn($statement->reveal());
+
+        $this->expectException(\TYPO3\CMS\Extbase\Exception::class);
+        $this->expectExceptionCode(1280773643);
+
         $this->extensionService->getTargetPidByPlugin('ExtensionName', 'SomePlugin');
     }
 

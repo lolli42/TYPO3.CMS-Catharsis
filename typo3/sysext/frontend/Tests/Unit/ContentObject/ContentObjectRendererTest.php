@@ -2560,6 +2560,53 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * Data provider for stdWrap_htmlSpecialChars
+     *
+     * @return array Order: expected, input, conf
+     */
+    public function stdWrap_htmlSpecialCharsDataProvider()
+    {
+        return [
+            'void conf' => [
+                '&lt;span&gt;1 &amp;lt; 2&lt;/span&gt;',
+                '<span>1 &lt; 2</span>',
+                [],
+            ],
+            'void preserveEntities' => [
+                '&lt;span&gt;1 &amp;lt; 2&lt;/span&gt;',
+                '<span>1 &lt; 2</span>',
+                ['htmlSpecialChars.' => []],
+            ],
+            'false preserveEntities' => [
+                '&lt;span&gt;1 &amp;lt; 2&lt;/span&gt;',
+                '<span>1 &lt; 2</span>',
+                ['htmlSpecialChars.' => ['preserveEntities' => 0]],
+            ],
+            'true preserveEntities' => [
+                '&lt;span&gt;1 &lt; 2&lt;/span&gt;',
+                '<span>1 &lt; 2</span>',
+                ['htmlSpecialChars.' => ['preserveEntities' => 1]],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_htmlSpecialChars works properly
+     *
+     * @test
+     * @dataProvider stdWrap_htmlSpecialCharsDataProvider
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf htmlSpecialChars.preserveEntities
+     * @return void
+     */
+    public function stdWrap_htmlSpecialChars($expected, $input, $conf)
+    {
+        $this->assertSame($expected,
+            $this->subject->stdWrap_htmlSpecialChars($input, $conf));
+    }
+
+    /**
      * Data provider for stdWrap_encodeForJavaScriptValue test
      *
      * @return array multi-dimensional array with the second level like this:
@@ -2616,6 +2663,82 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $result = $this->subject->stdWrap_encodeForJavaScriptValue($input, $conf);
         $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Data provider for stdWrap_doubleBrTag
+     *
+     * @return array Order expected, input, config
+     */
+    public function stdWrapDoubleBrTagDataProvider()
+    {
+        return [
+            'no config: void input' => [
+                '',
+                '',
+                [],
+            ],
+            'no config: single break' => [
+                'one' . LF . 'two',
+                'one' . LF . 'two',
+                [],
+            ],
+            'no config: double break' => [
+                'onetwo',
+                'one' . LF . LF . 'two',
+                [],
+            ],
+            'no config: double break with whitespace' => [
+                'onetwo',
+                'one' . LF . TAB . ' ' . TAB . ' ' . LF . 'two',
+                [],
+            ],
+            'no config: single break around' => [
+                LF . 'one' . LF,
+                LF . 'one' . LF,
+                [],
+            ],
+            'no config: double break around' => [
+                'one',
+                LF . LF . 'one' . LF . LF,
+                [],
+            ],
+            'empty string: double break around' => [
+                'one',
+                LF . LF . 'one' . LF . LF,
+                ['doubleBrTag' => ''],
+            ],
+            'br tag: double break' => [
+                'one<br/>two',
+                'one' . LF . LF . 'two',
+                ['doubleBrTag' => '<br/>'],
+            ],
+            'br tag: double break around' => [
+                '<br/>one<br/>',
+                LF . LF . 'one' . LF . LF,
+                ['doubleBrTag' => '<br/>'],
+            ],
+            'double br tag: double break around' => [
+                '<br/><br/>one<br/><br/>',
+                LF . LF . 'one' . LF . LF,
+                ['doubleBrTag' => '<br/><br/>'],
+            ],
+        ];
+    }
+
+    /**
+     * Check if doubleBrTag works properly
+     *
+     * @test
+     * @dataProvider stdWrapDoubleBrTagDataProvider
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $config The property 'doubleBrTag'.
+     * @return void
+     */
+    public function stdWrap_doubleBrTag($expected, $input, $config)
+    {
+        $this->assertEquals($expected, $this->subject->stdWrap_doubleBrTag($input, $config));
     }
 
     /**
@@ -2689,7 +2812,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             '; sourounded' => [',one,two,', ' ; one ; two ; '],
             'nl sourounded' => [
                 ',one,two,',
-                ' ' . PHP_EOL .' one ' . PHP_EOL . ' two ' . PHP_EOL . ' '
+                ' ' . PHP_EOL . ' one ' . PHP_EOL . ' two ' . PHP_EOL . ' '
             ],
             'mixed' => [
                 'one,two,three,four',
@@ -2715,6 +2838,366 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $this->assertSame($expected, $this->subject->stdWrap_keywords($input));
     }
+
+    /**
+     * Data provider for stdWrap_outerWrap
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_outerWrapDataProvider()
+    {
+        return [
+            'no conf' => [
+                'XXX',
+                'XXX',
+                [],
+            ],
+            'simple' => [
+                '<wrap>XXX</wrap>',
+                'XXX',
+                ['outerWrap' => '<wrap>|</wrap>'],
+            ],
+            'missing pipe puts wrap before' => [
+                '<pre>XXX',
+                'XXX',
+                ['outerWrap' => '<pre>'],
+            ],
+            'trims whitespace' => [
+                '<wrap>XXX</wrap>',
+                'XXX',
+                ['outerWrap' => '<wrap>' . TAB . ' | ' . TAB . '</wrap>'],
+            ],
+            'split char change is not possible' => [
+                '<wrap> # </wrap>XXX',
+                'XXX',
+                [
+                    'outerWrap' => '<wrap> # </wrap>',
+                    'outerWrap.' => ['splitChar' => '#'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_outerWrap works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf Property: outerWrap
+     * @return void
+     * @test
+     * @dataProvider stdWrap_outerWrapDataProvider
+     */
+    public function stdWrap_outerWrap($expected, $input, $conf)
+    {
+        $this->assertSame($expected,
+            $this->subject->stdWrap_outerWrap($input, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_innerWrap2
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_innerWrap2DataProvider()
+    {
+        return [
+            'no conf' => [
+                'XXX',
+                'XXX',
+                [],
+            ],
+            'simple' => [
+                '<wrap>XXX</wrap>',
+                'XXX',
+                ['innerWrap2' => '<wrap>|</wrap>'],
+            ],
+            'missing pipe puts wrap before' => [
+                '<pre>XXX',
+                'XXX',
+                ['innerWrap2' => '<pre>'],
+            ],
+            'trims whitespace' => [
+                '<wrap>XXX</wrap>',
+                'XXX',
+                ['innerWrap2' => '<wrap>' . TAB . ' | ' . TAB . '</wrap>'],
+            ],
+            'split char change is not possible' => [
+                '<wrap> # </wrap>XXX',
+                'XXX',
+                [
+                    'innerWrap2' => '<wrap> # </wrap>',
+                    'innerWrap2.' => ['splitChar' => '#'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_innerWrap2 works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf Property: innerWrap2
+     * @return void
+     * @test
+     * @dataProvider stdWrap_innerWrap2DataProvider
+     */
+    public function stdWrap_innerWrap2($expected, $input, $conf)
+    {
+        $this->assertSame($expected,
+            $this->subject->stdWrap_innerWrap2($input, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_wrap2
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_wrap2DataProvider()
+    {
+        return [
+            'no conf' => [
+                'XXX',
+                'XXX',
+                [],
+            ],
+            'simple' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                ['wrap2' => '<wrapper>|</wrapper>'],
+            ],
+            'trimms whitespace' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                ['wrap2' => '<wrapper>' . TAB . ' | ' . TAB . '</wrapper>'],
+            ],
+            'missing pipe puts wrap2 before' => [
+                '<pre>XXX',
+                'XXX',
+                [
+                    'wrap2' => '<pre>',
+                ],
+            ],
+            'split char change' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                [
+                    'wrap2' => '<wrapper> # </wrapper>',
+                    'wrap2.' => ['splitChar' => '#'],
+                ],
+            ],
+            'split by pattern' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                [
+                    'wrap2' => '<wrapper> ###splitter### </wrapper>',
+                    'wrap2.' => ['splitChar' => '###splitter###'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_wrap2 works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf Properties: wrap2, wrap2.splitChar
+     * @return void
+     * @test
+     * @dataProvider stdWrap_wrap2DataProvider
+     */
+    public function stdWrap_wrap2($expected, $input, $conf)
+    {
+        $this->assertSame($expected, $this->subject->stdWrap_wrap2($input, $conf));
+    }
+
+
+    /**
+     * Data provider for stdWrap_wrap3
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_wrap3DataProvider()
+    {
+        return [
+            'no conf' => [
+                'XXX',
+                'XXX',
+                [],
+            ],
+            'simple' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                ['wrap3' => '<wrapper>|</wrapper>'],
+            ],
+            'trimms whitespace' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                ['wrap3' => '<wrapper>' . TAB . ' | ' . TAB . '</wrapper>'],
+            ],
+            'missing pipe puts wrap3 before' => [
+                '<pre>XXX',
+                'XXX',
+                [
+                    'wrap3' => '<pre>',
+                ],
+            ],
+            'split char change' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                [
+                    'wrap3' => '<wrapper> # </wrapper>',
+                    'wrap3.' => ['splitChar' => '#'],
+                ],
+            ],
+            'split by pattern' => [
+                '<wrapper>XXX</wrapper>',
+                'XXX',
+                [
+                    'wrap3' => '<wrapper> ###splitter### </wrapper>',
+                    'wrap3.' => ['splitChar' => '###splitter###'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_wrap3 works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf Properties: wrap3, wrap3.splitChar
+     * @return void
+     * @test
+     * @dataProvider stdWrap_wrap3DataProvider
+     */
+    public function stdWrap_wrap3($expected, $input, $conf)
+    {
+        $this->assertSame($expected, $this->subject->stdWrap_wrap3($input, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_wrap
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_wrapDataProvider()
+    {
+        return [
+            'no conf' => [
+                'XXX',
+                'XXX',
+                [],
+            ],
+            'simple' => [
+                '<wapper>XXX</wapper>',
+                'XXX',
+                ['wrap' => '<wapper>|</wapper>'],
+            ],
+            'trimms whitespace' => [
+                '<wapper>XXX</wapper>',
+                'XXX',
+                ['wrap' => '<wapper>' . TAB . ' | ' . TAB . '</wapper>'],
+            ],
+            'missing pipe puts wrap before' => [
+                '<pre>XXX',
+                'XXX',
+                [
+                    'wrap' => '<pre>',
+                ],
+            ],
+            'split char change' => [
+                '<wapper>XXX</wapper>',
+                'XXX',
+                [
+                    'wrap' => '<wapper> # </wapper>',
+                    'wrap.' => ['splitChar' => '#'],
+                ],
+            ],
+            'split by pattern' => [
+                '<wapper>XXX</wapper>',
+                'XXX',
+                [
+                    'wrap' => '<wapper> ###splitter### </wapper>',
+                    'wrap.' => ['splitChar' => '###splitter###'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_wrap works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf Properties: wrap, wrap.splitChar
+     * @return void
+     * @test
+     * @dataProvider stdWrap_wrapDataProvider
+     */
+    public function stdWrap_wrap($expected, $input, $conf)
+    {
+        $this->assertSame($expected,
+            $this->subject->stdWrap_wrap($input, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_innerWrap
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_innerWrapDataProvider()
+    {
+        return [
+            'no conf' => [
+                'XXX',
+                'XXX',
+                [],
+            ],
+            'simple' => [
+                '<wrap>XXX</wrap>',
+                'XXX',
+                ['innerWrap' => '<wrap>|</wrap>'],
+            ],
+            'missing pipe puts wrap before' => [
+                '<pre>XXX',
+                'XXX',
+                ['innerWrap' => '<pre>'],
+            ],
+            'trimms whitespace' => [
+                '<wrap>XXX</wrap>',
+                'XXX',
+                ['innerWrap' => '<wrap>' . TAB . ' | ' . TAB . '</wrap>'],
+            ],
+            'split char change is not possible' => [
+                '<wrap> # </wrap>XXX',
+                'XXX',
+                [
+                    'innerWrap' => '<wrap> # </wrap>',
+                    'innerWrap.' => ['splitChar' => '#'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_innerWrap works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf Property: innerWrap
+     * @return void
+     * @test
+     * @dataProvider stdWrap_innerWrapDataProvider
+     */
+    public function stdWrap_innerWrap($expected, $input, $conf)
+    {
+        $this->assertSame($expected,
+            $this->subject->stdWrap_innerWrap($input, $conf));
+    }
+
 
     /**
      * Data provider for stdWrap_br
@@ -3897,11 +4380,11 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
     /**
      * @test
-     * @expectedException \LogicException
-     * @expectedExceptionCode 1414513947
      */
     public function renderingContentObjectThrowsException()
     {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionCode(1414513947);
         $contentObjectFixture = $this->createContentObjectThrowingExceptionFixture();
         $this->subject->render($contentObjectFixture, array());
     }
@@ -3946,13 +4429,12 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
     /**
      * @test
-     * @expectedException \LogicException
-     * @expectedExceptionCode 1414513947
      */
     public function globalExceptionHandlerConfigurationCanBeOverriddenByLocalConfiguration()
     {
         $contentObjectFixture = $this->createContentObjectThrowingExceptionFixture();
-
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionCode(1414513947);
         $this->typoScriptFrontendControllerMock->config['config']['contentObjectExceptionHandler'] = '1';
         $configuration = array(
             'exceptionHandler' => '0'
@@ -4000,8 +4482,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
     /**
      * @test
-     * @expectedException \LogicException
-     * @expectedExceptionCode 1414513947
      */
     public function specificExceptionsCanBeIgnoredByExceptionHandler()
     {
@@ -4013,7 +4493,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 'ignoreCodes.' => array('10.' => '1414513947'),
             )
         );
-
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionCode(1414513947);
         $this->subject->render($contentObjectFixture, $configuration);
     }
 
