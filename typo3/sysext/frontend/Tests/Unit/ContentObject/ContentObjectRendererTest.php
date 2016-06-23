@@ -95,8 +95,12 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->singletonInstances = \TYPO3\CMS\Core\Utility\GeneralUtility::getSingletonInstances();
         $this->createMockedLoggerAndLogManager();
 
-        $this->templateServiceMock = $this->getMock(TemplateService::class, array('getFileName', 'linkData'));
-        $pageRepositoryMock = $this->getMock(PageRepositoryFixture::class, array('getRawRecord', 'getMountPointInfo'));
+        $this->templateServiceMock = $this->getMockBuilder(TemplateService::class)
+            ->setMethods(array('getFileName', 'linkData'))
+            ->getMock();
+        $pageRepositoryMock = $this->getMockBuilder(PageRepositoryFixture::class)
+            ->setMethods(array('getRawRecord', 'getMountPointInfo'))
+            ->getMock();
 
         $this->typoScriptFrontendControllerMock = $this->getAccessibleMock(TypoScriptFrontendController::class, array('dummy'), array(), '', false);
         $this->typoScriptFrontendControllerMock->tmpl = $this->templateServiceMock;
@@ -104,7 +108,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->typoScriptFrontendControllerMock->page = array();
         $this->typoScriptFrontendControllerMock->sys_page = $pageRepositoryMock;
         $GLOBALS['TSFE'] = $this->typoScriptFrontendControllerMock;
-        $GLOBALS['TYPO3_DB'] = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array());
+        $GLOBALS['TYPO3_DB'] = $this->getMockBuilder(\TYPO3\CMS\Core\Database\DatabaseConnection::class)->getMock();
 
         $this->subject = $this->getAccessibleMock(
             \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
@@ -131,8 +135,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     protected function createMockedLoggerAndLogManager()
     {
-        $logManagerMock = $this->getMock(LogManager::class);
-        $loggerMock = $this->getMock(LoggerInterface::class);
+        $logManagerMock = $this->getMockBuilder(LogManager::class)->getMock();
+        $loggerMock = $this->getMockBuilder(LoggerInterface::class)->getMock();
         $logManagerMock->expects($this->any())
             ->method('getLogger')
             ->willReturn($loggerMock);
@@ -166,11 +170,14 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             ->with('typo3/clear.gif')
             ->will($this->returnValue('typo3/clear.gif'));
 
-        $resourceFactory = $this->getMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class, array(), array(), '', false);
+        $resourceFactory = $this->createMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
         $this->subject->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
 
         $className = $this->getUniqueId('tx_coretest');
-        $getImgResourceHookMock = $this->getMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectGetImageResourceHookInterface::class, array('getImgResourcePostProcess'), array(), $className);
+        $getImgResourceHookMock = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectGetImageResourceHookInterface::class)
+            ->setMethods(array('getImgResourcePostProcess'))
+            ->setMockClassName($className)
+            ->getMock();
         $getImgResourceHookMock
             ->expects($this->once())
             ->method('getImgResourcePostProcess')
@@ -220,7 +227,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function getContentObjectCallsMakeInstanceForNewContentObjectInstance($name, $fullClassName)
     {
-        $contentObjectInstance = $this->getMock($fullClassName, array(), array(), '', false);
+        $contentObjectInstance = $this->createMock($fullClassName);
         \TYPO3\CMS\Core\Utility\GeneralUtility::addInstance($fullClassName, $contentObjectInstance);
         $this->assertSame($contentObjectInstance, $this->subject->getContentObject($name));
     }
@@ -828,6 +835,176 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $expected = "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\nsed diam nonumy eirmod tempor invidunt ut labore et dolore magna";
         $result = $this->subject->cropHTML($subject, '121');
         $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Check if stdWrap_setContentToCurrent works properly.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_setContentToCurrent()
+    {
+        $content = $this->getUniqueId('content');
+        $this->assertNotSame($content, $this->subject->getData('current'));
+        $this->assertSame($content,
+            $this->subject->stdWrap_setContentToCurrent($content));
+        $this->assertSame($content, $this->subject->getData('current'));
+    }
+
+    /**
+     * Data provider for stdWrap_setCurrent
+     *
+     * @return array Order input, conf
+     */
+    public function stdWrap_setCurrentDataProvider()
+    {
+        return [
+            'no conf' => [
+                'content',
+                [],
+            ],
+            'empty string' => [
+                'content',
+                ['setCurrent' => ''],
+            ],
+            'non-empty string' => [
+                'content',
+                ['setCurrent' => 'xxx'],
+            ],
+            'integer null' => [
+                'content',
+                ['setCurrent' => 0],
+            ],
+            'integer not null' => [
+                'content',
+                ['setCurrent' => 1],
+            ],
+            'boolean true' => [
+                'content',
+                ['setCurrent' => true],
+            ],
+            'boolean false' => [
+                'content',
+                ['setCurrent' => false],
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_setCurrent works properly.
+     *
+     * @test
+     * @dataProvider stdWrap_setCurrentDataProvider
+     * @param string $input The input value.
+     * @param array $conf Property: setCurrent
+     * @return void
+     */
+    public function stdWrap_setCurrent($input, $conf)
+    {
+        if (isset($conf['setCurrent'])) {
+            $this->assertNotSame($conf['setCurrent'], $this->subject->getData('current'));
+        }
+        $this->assertSame($input, $this->subject->stdWrap_setCurrent($input, $conf));
+        if (isset($conf['setCurrent'])) {
+            $this->assertSame($conf['setCurrent'], $this->subject->getData('current'));
+        }
+    }
+
+    /**
+     * Check if stdWrap_preIfEmptyListNum works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method listNum.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['preIfEmptyListNum'].
+     * - Parameter 3 is $conf['preIfEmptyListNum.']['splitChar'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_preIfEmptyListNum()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'preIfEmptyListNum' => $this->getUniqueId('preIfEmptyListNum'),
+            'preIfEmptyListNum.' => [
+                'splitChar' => $this->getUniqueId('splitChar')
+            ],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['listNum'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('listNum')
+            ->with(
+                $content,
+                $conf['preIfEmptyListNum'],
+                $conf['preIfEmptyListNum.']['splitChar']
+            )
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_preIfEmptyListNum($content, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_csConv
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_csConvDataProvider()
+    {
+        return [
+            'empty string from ISO-8859-15' => [
+                '',
+                iconv('UTF-8', 'ISO-8859-15', ''),
+                ['csConv' => 'ISO-8859-15']
+            ],
+            'empty string from BIG-5' => [
+                '',
+                mb_convert_encoding('', 'BIG-5'),
+                ['csConv' => 'BIG-5']
+            ],
+            '"0" from ISO-8859-15' => [
+                '0',
+                iconv('UTF-8', 'ISO-8859-15', '0'),
+                ['csConv' => 'ISO-8859-15']
+            ],
+            '"0" from BIG-5' => [
+                '0',
+                mb_convert_encoding('0', 'BIG-5'),
+                ['csConv' => 'BIG-5']
+            ],
+            'euro symbol from ISO-88859-15' => [
+                '€',
+                iconv('UTF-8', 'ISO-8859-15', '€'),
+                ['csConv' => 'ISO-8859-15']
+            ],
+            'good morning from BIG-5' => [
+                '早安',
+                mb_convert_encoding('早安', 'BIG-5'),
+                ['csConv' => 'BIG-5']
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_csConv works properly.
+     *
+     * @test
+     * @dataProvider stdWrap_csConvDataProvider
+     * @param string $expected The expected value.
+     * @param string $value The input value.
+     * @param array $conf Property: csConv
+     * @return void
+     */
+    public function stdWrap_csConv($expected, $input, $conf)
+    {
+        $this->assertSame($expected,
+            $this->subject->stdWrap_csConv($input, $conf));
     }
 
     /**
@@ -1900,10 +2077,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function stdWrap_ageCallsCalcAgeWithSubtractedTimestampAndSubPartOfArray()
     {
-        $subject = $this->getMock(
-            \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
-            array('calcAge')
-        );
+        $subject = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
+            ->setMethods(array('calcAge'))
+            ->getMock();
         // Set exec_time to a hard timestamp
         $GLOBALS['EXEC_TIME'] = 10;
         $subject->expects($this->once())->method('calcAge')->with(1, 'Min| Hrs| Days| Yrs');
@@ -2967,7 +3143,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 'XXX',
                 ['wrap2' => '<wrapper>|</wrapper>'],
             ],
-            'trimms whitespace' => [
+            'trims whitespace' => [
                 '<wrapper>XXX</wrapper>',
                 'XXX',
                 ['wrap2' => '<wrapper>' . TAB . ' | ' . TAB . '</wrapper>'],
@@ -3032,7 +3208,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 'XXX',
                 ['wrap3' => '<wrapper>|</wrapper>'],
             ],
-            'trimms whitespace' => [
+            'trims whitespace' => [
                 '<wrapper>XXX</wrapper>',
                 'XXX',
                 ['wrap3' => '<wrapper>' . TAB . ' | ' . TAB . '</wrapper>'],
@@ -3092,14 +3268,14 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 [],
             ],
             'simple' => [
-                '<wapper>XXX</wapper>',
+                '<wrapper>XXX</wrapper>',
                 'XXX',
-                ['wrap' => '<wapper>|</wapper>'],
+                ['wrap' => '<wrapper>|</wrapper>'],
             ],
-            'trimms whitespace' => [
-                '<wapper>XXX</wapper>',
+            'trims whitespace' => [
+                '<wrapper>XXX</wrapper>',
                 'XXX',
-                ['wrap' => '<wapper>' . TAB . ' | ' . TAB . '</wapper>'],
+                ['wrap' => '<wrapper>' . TAB . ' | ' . TAB . '</wrapper>'],
             ],
             'missing pipe puts wrap before' => [
                 '<pre>XXX',
@@ -3109,18 +3285,18 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 ],
             ],
             'split char change' => [
-                '<wapper>XXX</wapper>',
+                '<wrapper>XXX</wrapper>',
                 'XXX',
                 [
-                    'wrap' => '<wapper> # </wapper>',
+                    'wrap' => '<wrapper> # </wrapper>',
                     'wrap.' => ['splitChar' => '#'],
                 ],
             ],
             'split by pattern' => [
-                '<wapper>XXX</wapper>',
+                '<wrapper>XXX</wrapper>',
                 'XXX',
                 [
-                    'wrap' => '<wapper> ###splitter### </wapper>',
+                    'wrap' => '<wrapper> ###splitter### </wrapper>',
                     'wrap.' => ['splitChar' => '###splitter###'],
                 ],
             ],
@@ -3141,6 +3317,88 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $this->assertSame($expected,
             $this->subject->stdWrap_wrap($input, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_lang
+     *
+     * @return array Order expected, input, conf, language
+     */
+    public function stdWrap_langDataProvider()
+    {
+        return [
+            'empty conf' => [
+                'original',
+                'original',
+                [],
+                'de',
+            ],
+            'translation de' => [
+                'Übersetzung',
+                'original',
+                [
+                    'lang.' => [
+                        'de' => 'Übersetzung',
+                        'it' => 'traduzione',
+                    ]
+                ],
+                'de',
+            ],
+            'translation it' => [
+                'traduzione',
+                'original',
+                [
+                    'lang.' => [
+                        'de' => 'Übersetzung',
+                        'it' => 'traduzione',
+                    ]
+                ],
+                'it',
+            ],
+            'no translation' => [
+                'original',
+                'original',
+                [
+                    'lang.' => [
+                        'de' => 'Übersetzung',
+                        'it' => 'traduzione',
+                    ]
+                ],
+                '',
+            ],
+            'missing label' => [
+                'original',
+                'original',
+                [
+                    'lang.' => [
+                        'de' => 'Übersetzung',
+                        'it' => 'traduzione',
+                    ]
+                ],
+                'fr',
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_lang works properly.
+     *
+     * @param string $expected The expected value.
+     * @param string $input The input value.
+     * @param array $conf Properties: lang.xy.
+     * @param string $language For $TSFE->config[config][language].
+     * @return void
+     * @test
+     * @dataProvider stdWrap_langDataProvider
+     */
+    public function stdWrap_lang($expected, $input, $conf, $language)
+    {
+        if ($language) {
+            $this->typoScriptFrontendControllerMock
+                ->config['config']['language'] = $language;
+        }
+        $this->assertSame($expected,
+            $this->subject->stdWrap_lang($input, $conf));
     }
 
     /**
@@ -3166,7 +3424,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 'XXX',
                 ['innerWrap' => '<pre>'],
             ],
-            'trimms whitespace' => [
+            'trims whitespace' => [
                 '<wrap>XXX</wrap>',
                 'XXX',
                 ['innerWrap' => '<wrap>' . TAB . ' | ' . TAB . '</wrap>'],
@@ -3365,7 +3623,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getDataWithTypeFileReturnsUidOfFileObject()
     {
         $uid = $this->getUniqueId();
-        $file = $this->getMock(\TYPO3\CMS\Core\Resource\File::class, array(), array(), '', false);
+        $file = $this->createMock(\TYPO3\CMS\Core\Resource\File::class);
         $file->expects($this->once())->method('getUid')->will($this->returnValue($uid));
         $this->subject->setCurrentFile($file);
         $this->assertEquals($uid, $this->subject->getData('file:current:uid'));
@@ -3947,10 +4205,10 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getImageSourceCollectionRendersDefinedSources()
     {
         /** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
-        $cObj = $this->getMock(
-            \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
-            array('stdWrap', 'getImgResource')
-        );
+        $cObj = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
+            ->setMethods(array('stdWrap', 'getImgResource'))
+            ->getMock();
+
         $cObj->start(array(), 'tt_content');
 
         $layoutKey = 'test';
@@ -4045,10 +4303,10 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getImageSourceCollectionRendersDefinedLayoutKeyDefault($layoutKey, $configuration)
     {
         /** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
-        $cObj = $this->getMock(
-            \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
-            array('stdWrap', 'getImgResource')
-        );
+        $cObj = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
+            ->setMethods(array('stdWrap', 'getImgResource'))
+            ->getMock();
+
         $cObj->start(array(), 'tt_content');
 
         $file = 'testImageName';
@@ -4168,10 +4426,10 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getImageSourceCollectionRendersDefinedLayoutKeyData($layoutKey, $configuration, $xhtmlDoctype, $expectedHtml)
     {
         /** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
-        $cObj = $this->getMock(
-            \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
-            array('stdWrap', 'getImgResource')
-        );
+        $cObj = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
+            ->setMethods(array('stdWrap', 'getImgResource'))
+            ->getMock();
+
         $cObj->start(array(), 'tt_content');
 
         $file = 'testImageName';
@@ -4218,11 +4476,14 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             ->method('getImgResource')
             ->will($this->returnValue(array(100, 100, null, 'bar-file.jpg')));
 
-        $resourceFactory = $this->getMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class, array(), array(), '', false);
+        $resourceFactory = $this->createMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
         $this->subject->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
 
         $className = $this->getUniqueId('tx_coretest_getImageSourceCollectionHookCalled');
-        $getImageSourceCollectionHookMock = $this->getMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectOneSourceCollectionHookInterface::class, array('getOneSourceCollection'), array(), $className);
+        $getImageSourceCollectionHookMock = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectOneSourceCollectionHookInterface::class)
+            ->setMethods(array('getOneSourceCollection'))
+            ->setMockClassName($className)
+            ->getMock();
         GeneralUtility::addInstance($className, $getImageSourceCollectionHookMock);
         $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['getImageSourceCollection'][] = $className;
 
@@ -4503,7 +4764,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     protected function createContentObjectThrowingExceptionFixture()
     {
-        $contentObjectFixture = $this->getMock(AbstractContentObject::class, array(), array($this->subject));
+        $contentObjectFixture = $this->getMockBuilder(AbstractContentObject::class)
+            ->setConstructorArgs(array($this->subject))
+            ->getMock();
         $contentObjectFixture->expects($this->once())
             ->method('render')
             ->willReturnCallback(function () {
@@ -4851,14 +5114,16 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function detectLinkTypeFromLinkParameter($linkParameter, $expectedResult)
     {
         /** @var TemplateService|\PHPUnit_Framework_MockObject_MockObject $templateServiceObjectMock */
-        $templateServiceObjectMock = $this->getMock(TemplateService::class, array('dummy'));
+        $templateServiceObjectMock = $this->getMockBuilder(TemplateService::class)
+            ->setMethods(array('dummy'))
+            ->getMock();
         $templateServiceObjectMock->setup = array(
             'lib.' => array(
                 'parseFunc.' => $this->getLibParseFunc(),
             ),
         );
         /** @var TypoScriptFrontendController|\PHPUnit_Framework_MockObject_MockObject $typoScriptFrontendControllerMockObject */
-        $typoScriptFrontendControllerMockObject = $this->getMock(TypoScriptFrontendController::class, array(), array(), '', false);
+        $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = array(
             'config' => array(),
             'mainScript' => 'index.php',
@@ -4963,13 +5228,15 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function typolinkReturnsCorrectLinksForEmailsAndUrls($linkText, $configuration, $expectedResult)
     {
-        $templateServiceObjectMock = $this->getMock(TemplateService::class, array('dummy'));
+        $templateServiceObjectMock = $this->getMockBuilder(TemplateService::class)
+            ->setMethods(array('dummy'))
+            ->getMock();
         $templateServiceObjectMock->setup = array(
             'lib.' => array(
                 'parseFunc.' => $this->getLibParseFunc(),
             ),
         );
-        $typoScriptFrontendControllerMockObject = $this->getMock(TypoScriptFrontendController::class, array(), array(), '', false);
+        $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = array(
             'config' => array(),
             'mainScript' => 'index.php',
@@ -5185,15 +5452,19 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function typolinkReturnsCorrectLinksForPages($linkText, $configuration, $pageArray, $expectedResult)
     {
-        $pageRepositoryMockObject = $this->getMock(\TYPO3\CMS\Frontend\Page\PageRepository::class, array('getPage'));
+        $pageRepositoryMockObject = $this->getMockBuilder(\TYPO3\CMS\Frontend\Page\PageRepository::class)
+            ->setMethods(array('getPage'))
+            ->getMock();
         $pageRepositoryMockObject->expects($this->any())->method('getPage')->willReturn($pageArray);
-        $templateServiceObjectMock = $this->getMock(TemplateService::class, array('dummy'));
+        $templateServiceObjectMock = $this->getMockBuilder(TemplateService::class)
+            ->setMethods(array('dummy'))
+            ->getMock();
         $templateServiceObjectMock->setup = array(
             'lib.' => array(
                 'parseFunc.' => $this->getLibParseFunc(),
             ),
         );
-        $typoScriptFrontendControllerMockObject = $this->getMock(TypoScriptFrontendController::class, array(), array(), '', false);
+        $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = array(
             'config' => array(),
             'mainScript' => 'index.php',
@@ -5262,13 +5533,15 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function typolinkReturnsCorrectLinksFiles($linkText, $configuration, $expectedResult)
     {
-        $templateServiceObjectMock = $this->getMock(TemplateService::class, array('dummy'));
+        $templateServiceObjectMock = $this->getMockBuilder(TemplateService::class)
+            ->setMethods(array('dummy'))
+            ->getMock();
         $templateServiceObjectMock->setup = array(
             'lib.' => array(
                 'parseFunc.' => $this->getLibParseFunc(),
             ),
         );
-        $typoScriptFrontendControllerMockObject = $this->getMock(TypoScriptFrontendController::class, array(), array(), '', false);
+        $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = array(
             'config' => array(),
             'mainScript' => 'index.php',
@@ -5410,13 +5683,15 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function typolinkReturnsCorrectLinksForFilesWithAbsRefPrefix($linkText, $configuration, $absRefPrefix, $expectedResult)
     {
-        $templateServiceObjectMock = $this->getMock(TemplateService::class, array('dummy'));
+        $templateServiceObjectMock = $this->getMockBuilder(TemplateService::class)
+            ->setMethods(array('dummy'))
+            ->getMock();
         $templateServiceObjectMock->setup = array(
             'lib.' => array(
                 'parseFunc.' => $this->getLibParseFunc(),
             ),
         );
-        $typoScriptFrontendControllerMockObject = $this->getMock(TypoScriptFrontendController::class, array(), array(), '', false);
+        $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = array(
             'config' => array(),
             'mainScript' => 'index.php',
@@ -5535,7 +5810,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $GLOBALS['SIM_ACCESS_TIME'] = '4242';
         $GLOBALS['TSFE']->sys_language_content = 13;
         /** @var \PHPUnit_Framework_MockObject_MockObject|ContentObjectRenderer $contentObjectRenderer */
-        $contentObjectRenderer = $this->getMock(ContentObjectRenderer::class, array('checkPidArray'));
+        $contentObjectRenderer = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(array('checkPidArray'))
+            ->getMock();
         $contentObjectRenderer->expects($this->any())->method('checkPidArray')->willReturn(explode(',', $configuration['pidInList']));
         $this->assertEquals($expectedResult, $contentObjectRenderer->getWhere($table, $configuration));
     }
