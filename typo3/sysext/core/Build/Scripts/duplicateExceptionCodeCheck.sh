@@ -38,14 +38,14 @@ COUNTER=0
 for CODE in ${DUPLICATES}; do
     # Ignore timestamps which are defined by the "IGNORE" array
     if [ ${IGNORE[@]} != ${CODE} ] ; then
-        echo "Possible duplicate exception code $CODE": ${ACK} --type php ${CODE}
+        echo "Possible duplicate exception code ${CODE}: grep -r --include \*.php --exclude-dir Tests ${CODE} typo3/"
         COUNTER=$((COUNTER+1))
     fi
 
 done
 
 if [ ${COUNTER} -gt 0 ] ; then
-    echo "$COUNTER possible duplicate exception codes found."
+    echo "${COUNTER} possible duplicate exception codes found."
     exit 1
 fi
 
