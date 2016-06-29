@@ -23,9 +23,7 @@
 IGNORE=("1270853884")
 
 # Respect only php files and ignore files within a "Tests" directory
-EXCEPTIONS=$(grep -r --include \*.php --exclude-dir Tests 'throw new' -A5 typo3/ | grep '[[:digit:]]\{10\}')
-
-DUPLICATES=$(echo ${EXCEPTIONS} | awk '{
+DUPLICATES=$(grep -r --include \*.php --exclude-dir Tests 'throw new' -A5 typo3/ | grep '[[:digit:]]\{10\}' | awk '{
     for(i=1; i<=NF; i++) {
         if(match($i, /[0-9]{10}/)) {
             print $i
