@@ -15,21 +15,49 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject;
  */
 
 use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface as CacheFrontendInterface;
 use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Core\ApplicationContext;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\ContentObject\AbstractContentObject;
+use TYPO3\CMS\Frontend\ContentObject\CaseContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ContentContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectArrayContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectArrayInternalContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectOneSourceCollectionHookInterface;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectStdWrapHookInterface;
+use TYPO3\CMS\Frontend\ContentObject\EditPanelContentObject;
+use TYPO3\CMS\Frontend\ContentObject\FileContentObject;
+use TYPO3\CMS\Frontend\ContentObject\FilesContentObject;
+use TYPO3\CMS\Frontend\ContentObject\FluidTemplateContentObject;
+use TYPO3\CMS\Frontend\ContentObject\HierarchicalMenuContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ImageContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ImageResourceContentObject;
+use TYPO3\CMS\Frontend\ContentObject\LoadRegisterContentObject;
+use TYPO3\CMS\Frontend\ContentObject\RecordsContentObject;
+use TYPO3\CMS\Frontend\ContentObject\RestoreRegisterContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ScalableVectorGraphicsContentObject;
+use TYPO3\CMS\Frontend\ContentObject\TemplateContentObject;
+use TYPO3\CMS\Frontend\ContentObject\TextContentObject;
+use TYPO3\CMS\Frontend\ContentObject\UserContentObject;
+use TYPO3\CMS\Frontend\ContentObject\UserInternalContentObject;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Frontend\Page\PageRepository;
 use TYPO3\CMS\Frontend\Tests\Unit\ContentObject\Fixtures\PageRepositoryFixture;
 
 /**
  * Testcase for TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
  */
-class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class ContentObjectRendererTest extends UnitTestCase
 {
     /**
      * @var string
@@ -49,7 +77,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject|TypoScriptFrontendController|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
      */
-    protected $typoScriptFrontendControllerMock = null;
+    protected $frontendControllerMock = null;
 
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject|TemplateService
@@ -61,29 +89,29 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      *
      * @var array
      */
-    protected $contentObjectMap = array(
-        'TEXT'             => \TYPO3\CMS\Frontend\ContentObject\TextContentObject::class,
-        'CASE'             => \TYPO3\CMS\Frontend\ContentObject\CaseContentObject::class,
-        'COBJ_ARRAY'       => \TYPO3\CMS\Frontend\ContentObject\ContentObjectArrayContentObject::class,
-        'COA'              => \TYPO3\CMS\Frontend\ContentObject\ContentObjectArrayContentObject::class,
-        'COA_INT'          => \TYPO3\CMS\Frontend\ContentObject\ContentObjectArrayInternalContentObject::class,
-        'USER'             => \TYPO3\CMS\Frontend\ContentObject\UserContentObject::class,
-        'USER_INT'         => \TYPO3\CMS\Frontend\ContentObject\UserInternalContentObject::class,
-        'FILE'             => \TYPO3\CMS\Frontend\ContentObject\FileContentObject::class,
-        'FILES'            => \TYPO3\CMS\Frontend\ContentObject\FilesContentObject::class,
-        'IMAGE'            => \TYPO3\CMS\Frontend\ContentObject\ImageContentObject::class,
-        'IMG_RESOURCE'     => \TYPO3\CMS\Frontend\ContentObject\ImageResourceContentObject::class,
-        'CONTENT'          => \TYPO3\CMS\Frontend\ContentObject\ContentContentObject::class,
-        'RECORDS'          => \TYPO3\CMS\Frontend\ContentObject\RecordsContentObject::class,
-        'HMENU'            => \TYPO3\CMS\Frontend\ContentObject\HierarchicalMenuContentObject::class,
-        'CASEFUNC'         => \TYPO3\CMS\Frontend\ContentObject\CaseContentObject::class,
-        'LOAD_REGISTER'    => \TYPO3\CMS\Frontend\ContentObject\LoadRegisterContentObject::class,
-        'RESTORE_REGISTER' => \TYPO3\CMS\Frontend\ContentObject\RestoreRegisterContentObject::class,
-        'TEMPLATE'         => \TYPO3\CMS\Frontend\ContentObject\TemplateContentObject::class,
-        'FLUIDTEMPLATE'    => \TYPO3\CMS\Frontend\ContentObject\FluidTemplateContentObject::class,
-        'SVG'              => \TYPO3\CMS\Frontend\ContentObject\ScalableVectorGraphicsContentObject::class,
-        'EDITPANEL'        => \TYPO3\CMS\Frontend\ContentObject\EditPanelContentObject::class
-    );
+    protected $contentObjectMap = [
+        'TEXT'             => TextContentObject::class,
+        'CASE'             => CaseContentObject::class,
+        'COBJ_ARRAY'       => ContentObjectArrayContentObject::class,
+        'COA'              => ContentObjectArrayContentObject::class,
+        'COA_INT'          => ContentObjectArrayInternalContentObject::class,
+        'USER'             => UserContentObject::class,
+        'USER_INT'         => UserInternalContentObject::class,
+        'FILE'             => FileContentObject::class,
+        'FILES'            => FilesContentObject::class,
+        'IMAGE'            => ImageContentObject::class,
+        'IMG_RESOURCE'     => ImageResourceContentObject::class,
+        'CONTENT'          => ContentContentObject::class,
+        'RECORDS'          => RecordsContentObject::class,
+        'HMENU'            => HierarchicalMenuContentObject::class,
+        'CASEFUNC'         => CaseContentObject::class,
+        'LOAD_REGISTER'    => LoadRegisterContentObject::class,
+        'RESTORE_REGISTER' => RestoreRegisterContentObject::class,
+        'TEMPLATE'         => TemplateContentObject::class,
+        'FLUIDTEMPLATE'    => FluidTemplateContentObject::class,
+        'SVG'              => ScalableVectorGraphicsContentObject::class,
+        'EDITPANEL'        => EditPanelContentObject::class
+    ];
 
     /**
      * Set up
@@ -91,32 +119,33 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     protected function setUp()
     {
         $this->currentLocale = setlocale(LC_NUMERIC, 0);
-
-        $this->singletonInstances = \TYPO3\CMS\Core\Utility\GeneralUtility::getSingletonInstances();
+        $this->singletonInstances = GeneralUtility::getSingletonInstances();
         $this->createMockedLoggerAndLogManager();
 
-        $this->templateServiceMock = $this->getMockBuilder(TemplateService::class)
-            ->setMethods(array('getFileName', 'linkData'))
-            ->getMock();
-        $pageRepositoryMock = $this->getMockBuilder(PageRepositoryFixture::class)
-            ->setMethods(array('getRawRecord', 'getMountPointInfo'))
-            ->getMock();
-
-        $this->typoScriptFrontendControllerMock = $this->getAccessibleMock(TypoScriptFrontendController::class, array('dummy'), array(), '', false);
-        $this->typoScriptFrontendControllerMock->tmpl = $this->templateServiceMock;
-        $this->typoScriptFrontendControllerMock->config = array();
-        $this->typoScriptFrontendControllerMock->page = array();
-        $this->typoScriptFrontendControllerMock->sys_page = $pageRepositoryMock;
-        $GLOBALS['TSFE'] = $this->typoScriptFrontendControllerMock;
-        $GLOBALS['TYPO3_DB'] = $this->getMockBuilder(\TYPO3\CMS\Core\Database\DatabaseConnection::class)->getMock();
+        $this->templateServiceMock =
+            $this->getMockBuilder(TemplateService::class)
+            ->setMethods(['getFileName', 'linkData'])->getMock();
+        $pageRepositoryMock =
+            $this->getMockBuilder(PageRepositoryFixture::class)
+            ->setMethods(['getRawRecord', 'getMountPointInfo'])->getMock();
+        $this->frontendControllerMock =
+            $this->getAccessibleMock(TypoScriptFrontendController::class,
+            ['dummy'], [], '', false);
+        $this->frontendControllerMock->tmpl = $this->templateServiceMock;
+        $this->frontendControllerMock->config = [];
+        $this->frontendControllerMock->page =  [];
+        $this->frontendControllerMock->sys_page = $pageRepositoryMock;
+        $GLOBALS['TSFE'] = $this->frontendControllerMock;
+        $GLOBALS['TYPO3_DB'] =
+            $this->getMockBuilder(DatabaseConnection::class)->getMock();
 
         $this->subject = $this->getAccessibleMock(
-            \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
-            array('getResourceFactory', 'getEnvironmentVariable'),
-            array($this->typoScriptFrontendControllerMock)
+            ContentObjectRenderer::class,
+            ['getResourceFactory', 'getEnvironmentVariable'],
+            [$this->frontendControllerMock]
         );
         $this->subject->setContentObjectClassMap($this->contentObjectMap);
-        $this->subject->start(array(), 'tt_content');
+        $this->subject->start([], 'tt_content');
     }
 
     protected function tearDown()
@@ -170,7 +199,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             ->with('typo3/clear.gif')
             ->will($this->returnValue('typo3/clear.gif'));
 
-        $resourceFactory = $this->createMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
+        $resourceFactory = $this->createMock(ResourceFactory::class);
         $this->subject->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
 
         $className = $this->getUniqueId('tx_coretest');
@@ -202,7 +231,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertEquals('typo3/clear.gif', $file);
         $this->assertEquals('typo3/clear.gif', $imageResource['origFile']);
         $this->assertTrue(is_array($fileArray));
-        $this->assertTrue($parent instanceof \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer);
+        $this->assertTrue($parent instanceof ContentObjectRenderer);
         return $imageResource;
     }
 
@@ -228,7 +257,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getContentObjectCallsMakeInstanceForNewContentObjectInstance($name, $fullClassName)
     {
         $contentObjectInstance = $this->createMock($fullClassName);
-        \TYPO3\CMS\Core\Utility\GeneralUtility::addInstance($fullClassName, $contentObjectInstance);
+        GeneralUtility::addInstance($fullClassName, $contentObjectInstance);
         $this->assertSame($contentObjectInstance, $this->subject->getContentObject($name));
     }
 
@@ -838,6 +867,130 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * Data provider for stdWrap_cacheRead
+     *
+     * @return array Order: expect, input, conf, times, with, will
+     */
+    public function stdWrap_cacheReadDataProvider()
+    {
+        $cacheConf = [$this->getUniqueId('cache.')];
+        $conf = ['cache.' => $cacheConf];
+        return [
+            'no conf' => [
+                'content', 'content', [],
+                0, null, null,
+            ],
+            'no cache. conf' => [
+                'content', 'content', ['otherConf' => 1],
+                0, null, null,
+            ],
+            'non-cached simulation' => [
+                'content', 'content', $conf,
+                1, $cacheConf, false,
+            ],
+            'cached simulation' => [
+                'cachedContent', 'content', $conf,
+                1, $cacheConf, 'cachedContent',
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_cacheRead works properly.
+     *
+     * - the method branches correctly
+     * - getFromCache is called to fetch from cache
+     * - $conf['cache.'] is passed on as parameter
+     *
+     * @test
+     * @dataProvider stdWrap_cacheReadDataProvider
+     * @param string $expect Expected result.
+     * @param string $input Given input string.
+     * @param array $conf Property 'cache.'
+     * @param integer $times Times called mocked method.
+     * @param array $with Parameter passed to mocked method.
+     * @param string|false $will Return value of mocked method.
+     * @return void
+     */
+    public function stdWrap_cacheRead(
+        $expect, $input, $conf, $times, $with, $will)
+    {
+        $subject = $this->getAccessibleMock(
+            ContentObjectRenderer::class, ['getFromCache']);
+        $subject
+            ->expects($this->exactly($times))
+            ->method('getFromCache')
+            ->with($with)
+            ->willReturn($will);
+        $this->assertSame($expect,
+            $subject->stdWrap_cacheRead($input, $conf));
+    }
+
+    /**
+     * Data provider for fourTypesOfStdWrapHookObjectProcessors
+     *
+     * @return array Order: stdWrap, hookObjectCall
+     */
+    public function fourTypesOfStdWrapHookObjectProcessorsDataProvider()
+    {
+        return [
+            'preProcess' => [
+                'stdWrap_stdWrapPreProcess', 'stdWrapPreProcess'
+            ],
+            'override' => [
+                'stdWrap_stdWrapOverride', 'stdWrapOverride'
+            ],
+            'process' => [
+                'stdWrap_stdWrapProcess', 'stdWrapProcess'
+            ],
+            'postProcess' => [
+                'stdWrap_stdWrapPostProcess', 'stdWrapPostProcess'
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrapHookObject processors work properly.
+     *
+     * Checks:
+     *
+     * - stdWrap_stdWrapPreProcess
+     * - stdWrap_stdWrapOverride
+     * - stdWrap_stdWrapProcess
+     * - stdWrap_stdWrapPostProcess
+     *
+     * @test
+     * @dataProvider fourTypesOfStdWrapHookObjectProcessorsDataProvider
+     * @param string $stdWrapMethod: The method to cover.
+     * @param string $hookObjectCall: The expected hook object call.
+     * @return void
+     */
+    public function fourTypesOfStdWrapHookObjectProcessors(
+        $stdWrapMethod, $hookObjectCall)
+    {
+        $conf = [$this->getUniqueId('conf')];
+        $content = $this->getUniqueId('content');
+        $processed1 = $this->getUniqueId('processed1');
+        $processed2 = $this->getUniqueId('processed2');
+        $hookObject1 = $this->createMock(
+            ContentObjectStdWrapHookInterface::class);
+        $hookObject1->expects($this->once())
+            ->method($hookObjectCall)
+            ->with($content, $conf)
+            ->willReturn($processed1);
+        $hookObject2 = $this->createMock(
+            ContentObjectStdWrapHookInterface::class);
+        $hookObject2->expects($this->once())
+            ->method($hookObjectCall)
+            ->with($processed1, $conf)
+            ->willReturn($processed2);
+        $this->subject->_set('stdWrapHookObjects',
+            [$hookObject1, $hookObject2]);
+        $result = $this->subject->$stdWrapMethod($content, $conf);
+        $this->assertSame($processed2, $result);
+    }
+
+    /**
      * Check if stdWrap_setContentToCurrent works properly.
      *
      * @test
@@ -912,6 +1065,62 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * Data provider for stdWrap_data.
+     *
+     * @return array [$expect, $data, $alt]
+     */
+    public function stdWrap_dataDataProvider()
+    {
+        $data = [$this->getUniqueId('data')];
+        $alt = [$this->getUniqueId('alternativeData')];
+        return [
+            'default' => [$data, $data, ''],
+            'alt is array' => [$alt, $data, $alt],
+            'alt is empty array' => [[], $data, []],
+            'alt null' => [$data, $data, null],
+            'alt string' => [$data, $data, 'xxx'],
+            'alt int' => [$data, $data, 1],
+            'alt bool' => [$data, $data, true],
+        ];
+    }
+
+    /**
+     * Checks that stdWrap_data works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method getData.
+     * - Parameter 1 is $conf['data'].
+     * - Parameter 2 is property data by default.
+     * - Parameter 2 is property alternativeData, if set as array.
+     * - Property alternativeData is always unset to ''.
+     * - Returns the return value.
+     *
+     * @test
+     * @dataProvider stdWrap_dataDataProvider
+     * @param mixed $expect Expect either $data or $alternativeData.
+     * @param array $data The data.
+     * @param mixed $alt The alternativeData.
+     * @return void
+     */
+    public function stdWrap_data($expect, $data, $alt)
+    {
+        $conf = ['data' => $this->getUniqueId('conf.data')];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getAccessibleMock(
+            ContentObjectRenderer::class, ['getData']);
+        $subject->_set('data', $data);
+        $subject->_set('alternativeData', $alt);
+        $subject
+            ->expects($this->once())
+            ->method('getData')
+            ->with($conf['data'], $expect)
+            ->willReturn($return);
+        $this->assertSame($return, $subject->stdWrap_data('discard', $conf));
+        $this->assertSame('', $subject->_get('alternativeData'));
+    }
+
+    /**
      * Check if stdWrap_preIfEmptyListNum works properly.
      *
      * Show:
@@ -948,6 +1157,363 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             ->willReturn($return);
         $this->assertSame($return,
             $subject->stdWrap_preIfEmptyListNum($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_current works properly.
+     *
+     * Show:
+     *
+     * - current is returned from $this->data
+     * - the key is stored in $this->currentValKey
+     * - the key defaults to 'currentValue_kidjls9dksoje'
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_current()
+    {
+        $data = [
+            'currentValue_kidjls9dksoje' => 'default',
+            'currentValue_new' => 'new',
+        ];
+        $this->subject->_set('data', $data);
+        $this->assertSame('currentValue_kidjls9dksoje',
+            $this->subject->_get('currentValKey'));
+        $this->assertSame('default',
+            $this->subject->stdWrap_current('discarded', ['discarded']));
+        $this->subject->_set('currentValKey', 'currentValue_new');
+        $this->assertSame('new',
+            $this->subject->stdWrap_current('discarded', ['discarded']));
+    }
+
+    /**
+     * Check if stdWrap_preUserFunc works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method callUserFunction.
+     * - Parameter 1 is $conf['preUserFunc'].
+     * - Parameter 2 is $conf['preUserFunc.'].
+     * - Parameter 3 is $content.
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_preUserFunc()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'preUserFunc' => $this->getUniqueId('preUserFunc'),
+            'preUserFunc.' => [$this->getUniqueId('preUserFunc.')],
+        ];
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['callUserFunction'])->getMock();
+        $subject->expects($this->once())->method('callUserFunction')
+            ->with($conf['preUserFunc'], $conf['preUserFunc.'], $content)
+            ->willReturn('return');
+        $this->assertSame('return',
+            $subject->stdWrap_preUserFunc($content, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_csConv
+     *
+     * @return array Order expected, input, conf
+     */
+    public function stdWrap_overrideDataProvider()
+    {
+        return [
+            'standard case' => [
+                'override', 'content', ['override' => 'override']
+            ],
+            'empty conf does not override' => [
+                'content', 'content', []
+            ],
+            'empty string does not override' => [
+                'content', 'content', ['override' => '']
+            ],
+            'whitespace does not override' => [
+                'content', 'content', ['override' => ' ' . TAB]
+            ],
+            'zero does not override' => [
+                'content', 'content', ['override' => 0]
+            ],
+            'false does not override' => [
+                'content', 'content', ['override' => false]
+            ],
+            'null does not override' => [
+                'content', 'content', ['override' => null]
+            ],
+            'one does override' => [
+                1, 'content', ['override' => 1]
+            ],
+            'minus one does override' => [
+                -1, 'content', ['override' => -1]
+            ],
+            'float does override' => [
+                -0.1, 'content', ['override' => -0.1]
+            ],
+            'true does override' => [
+                true, 'content', ['override' => true]
+            ],
+            'the value is not trimmed' => [
+                TAB . 'override', 'content', ['override' => TAB . 'override']
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_override works properly.
+     *
+     * @test
+     * @dataProvider stdWrap_overrideDataProvider
+     * @param string $input The input value.
+     * @param array $conf Property: setCurrent
+     * @return void
+     */
+    public function stdWrap_override($expect, $content, $conf)
+    {
+        $this->assertSame($expect,
+            $this->subject->stdWrap_override($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_listNum works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method listNum.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['listNum'].
+     * - Parameter 3 is $conf['listNum.']['splitChar'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_listNum()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'listNum' => $this->getUniqueId('listNum'),
+            'listNum.' => [
+                'splitChar' => $this->getUniqueId('splitChar')
+            ],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['listNum'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('listNum')
+            ->with(
+                $content,
+                $conf['listNum'],
+                $conf['listNum.']['splitChar']
+            )
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_listNum($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_field works properly.
+     *
+     * Show:
+     *
+     * - calls getFieldVal
+     * - passes conf['field'] as parameter
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_field()
+    {
+        $expect = $this->getUniqueId('expect');
+        $conf = ['field' => $this->getUniqueId('field')];
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['getFieldVal'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('getFieldVal')
+            ->with($conf['field'])
+            ->willReturn($expect);
+        $this->assertSame($expect,
+            $subject->stdWrap_field('discarded', $conf));
+    }
+
+    /**
+     * Check if stdWrap_cObject works properly.
+     *
+     * Show:
+     *
+     * - Delegates to the method cObjGetSingle().
+     * - First parameter is $conf['cObject'].
+     * - Second parameter is $conf['cObject.'].
+     * - Third parameter is '/stdWrap/.cObject'.
+     * - Returns the return.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_cObject()
+    {
+        $debugKey =  '/stdWrap/.cObject';
+        $conf = [
+            'cObject' => $this->getUniqueId('cObject'),
+            'cObject.' => [$this->getUniqueId('cObject.')],
+        ];
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['cObjGetSingle'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('cObjGetSingle')
+            ->with($conf['cObject'], $conf['cObject.'], $debugKey)
+            ->willReturn('return');
+        $this->assertSame('return',
+            $subject->stdWrap_cObject('discard', $conf));
+    }
+
+    /**
+     * Check if stdWrap_numRows works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method numRows.
+     * - Parameter is $conf['numRows.'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_numRows()
+    {
+        $conf = [
+            'numRows' => $this->getUniqueId('numRows'),
+            'numRows.' => [$this->getUniqueId('numRows')],
+        ];
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['numRows'])->getMock();
+        $subject->expects($this->once())->method('numRows')
+            ->with($conf['numRows.'])->willReturn('return');
+        $this->assertSame('return',
+            $subject->stdWrap_numRows('discard', $conf));
+    }
+
+    /**
+     * Check if stdWrap_filelist works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method filelist.
+     * - Parameter is $conf['filelist'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_filelist()
+    {
+        $conf = [
+            'filelist' => $this->getUniqueId('filelist'),
+            'filelist.' => [$this->getUniqueId('not used')],
+        ];
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['filelist'])->getMock();
+        $subject->expects($this->once())->method('filelist')
+            ->with($conf['filelist'])->willReturn('return');
+        $this->assertSame('return',
+            $subject->stdWrap_filelist('discard', $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_fieldRequired.
+     *
+     * @return array [$expect, $stop, $content, $conf]
+     */
+    public function stdWrap_fieldRequiredDataProvider()
+    {
+        $content = $this->getUniqueId('content');
+        return [
+            // resulting in boolean false
+            'false is false' => [
+                '', true, $content, ['fieldRequired' => 'false']
+            ],
+            'null is false' => [
+                '', true, $content, ['fieldRequired' => 'null']
+            ],
+            'empty string is false' => [
+                '', true, $content, ['fieldRequired' => 'empty']
+            ],
+            'whitespace is false' => [
+                '', true, $content, ['fieldRequired' => 'whitespace']
+            ],
+            'string zero is false' => [
+                '', true, $content, ['fieldRequired' => 'stringZero']
+            ],
+            'string zero with whitespace is false' => [
+                '', true, $content,
+                ['fieldRequired' => 'stringZeroWithWhiteSpace']
+            ],
+            'zero is false' => [
+                '', true, $content, ['fieldRequired' => 'zero']
+            ],
+            // resulting in boolean true
+            'true is true' => [
+                $content, false, $content, ['fieldRequired' => 'true']
+            ],
+            'string is true' => [
+                $content, false, $content, ['fieldRequired' => 'string']
+            ],
+            'one is true' => [
+                $content, false, $content, ['fieldRequired' => 'one']
+            ]
+        ];
+    }
+
+    /**
+     * Check if stdWrap_fieldRequired works properly.
+     *
+     * Show:
+     *
+     *  - The value is taken from property array data.
+     *  - The key is taken from $conf['fieldRequired'].
+     *  - The value is casted to string by trim() and trimmed.
+     *  - It is further casted to boolean by if().
+     *  - False triggers a stop of further rendering.
+     *  - False returns '', true the given content as is.
+     *
+     * @test
+     * @dataProvider stdWrap_fieldRequiredDataProvider
+     * @param mixed $expect The expected output.
+     * @param bool $stop Expect stop further rendering.
+     * @param mixed $content The given input.
+     * @param array $conf The given configuration.
+     * @return void
+     */
+    public function stdWrap_fieldRequired($expect, $stop, $content, $conf)
+    {
+        $data = [
+            'null' => null,
+            'false' => false,
+            'empty' => '',
+            'whitespace' => TAB . ' ',
+            'stringZero' => '0',
+            'stringZeroWithWhiteSpace' => TAB . ' 0 ' . TAB,
+            'zero' => 0,
+            'string' => 'string',
+            'true' => true,
+            'one' => 1
+        ];
+        $subject = $this->subject;
+        $subject->_set('data', $data);
+        $subject->_set('stdWrapRecursionLevel', 1);
+        $subject->_set('stopRendering', [1 => false]);
+        $this->assertSame($expect,
+            $subject->stdWrap_fieldRequired($content, $conf));
+        $this->assertSame($stop, $subject->_get('stopRendering')[1]);
     }
 
     /**
@@ -1008,6 +1574,143 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * Check if stdWrap_split works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method splitObj.
+     * - Parameter 1 is $content.
+     * - Prameter 2 is $conf['split.'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+     public function stdWrap_split()
+     {
+         $content = $this->getUniqueId('content');
+         $conf = [
+             'split' => $this->getUniqueId('not used'),
+             'split.' => [$this->getUniqueId('split.')],
+         ];
+         $return = $this->getUniqueId('return');
+         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+             ->setMethods(['splitObj'])->getMock();
+         $subject
+             ->expects($this->once())
+             ->method('splitObj')
+             ->with($content, $conf['split.'])
+             ->willReturn($return);
+         $this->assertSame($return,
+             $subject->stdWrap_split($content, $conf));
+     }
+
+    /**
+     * Data provider for stdWrap_prioriCalc
+     *
+     * @return array [$expect, $content, $conf]
+     */
+    public function stdWrap_prioriCalcDataProvider()
+    {
+        return [
+            'priority of *' => ['7', '1 + 2 * 3', []],
+            'priority of parentheses' => ['9', '(1 + 2) * 3', []],
+            'float' => ['1.5', '3/2', []],
+            'intval casts to int' => [1, '3/2', ['prioriCalc' => 'intval']],
+            'intval does not round' => [2, '2.7', ['prioriCalc' => 'intval']],
+        ];
+    }
+
+    /**
+     * Data provider for stdWrap_HTMLparser
+     *
+     * @return array [$expect, $content, $conf, $times, $will].
+     */
+    public function stdWrap_HTMLparserDataProvider()
+    {
+        $content = $this->getUniqueId('content');
+        $parsed = $this->getUniqueId('parsed');
+        return [
+            'no config' => [
+                $content, $content, [], 0, $parsed
+            ],
+            'no array' => [
+                $content, $content, ['HTMLparser.' => 1], 0, $parsed
+            ],
+            'empty array' => [
+                $parsed, $content, ['HTMLparser.' => []], 1, $parsed
+            ],
+            'non-empty array' => [
+                $parsed, $content, ['HTMLparser.' => [true]], 1, $parsed
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_HTMLparser works properly
+     *
+     * Show:
+     *
+     * - Checks if $conf['HTMLparser.'] is an array.
+     * - No:
+     *   - Returns $content as is.
+     * - Yes:
+     *   - Delegates to method HTMLparser_TSbridge.
+     *   - Parameter 1 is $content.
+     *   - Parameter 2 is $conf['HTMLparser'].
+     *   - Returns the return value.
+     *
+     * @test
+     * @dataProvider stdWrap_HTMLparserDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given content.
+     * @param array $conf The given configuration.
+     * @param int $times Times HTMLparser_TSbridge is called (0 or 1).
+     * @param string $will Return of HTMLparser_TSbridge.
+     * @return void.
+     */
+    public function stdWrap_HTMLparser(
+        $expect, $content, $conf, $times, $will)
+    {
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['HTMLparser_TSbridge'])->getMock();
+        $subject
+            ->expects($this->exactly($times))
+            ->method('HTMLparser_TSbridge')
+            ->with($content, $conf['HTMLparser.'])
+            ->willReturn($will);
+        $this->assertSame($expect,
+            $subject->stdWrap_HTMLparser($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_prioriCalc works properly.
+     *
+     * Show:
+     *
+     * - If $conf['prioriCalc'] is 'intval' the return is casted to int.
+     * - Delegates to MathUtility::calculateWithParentheses.
+     *
+     * Note: As PHPUnit can't mock static methods, the call to
+     *       MathUtility::calculateWithParentheses can't be easily intercepted.
+     *       The test is done by testing input/output pairs instead. To not
+     *       duplicate the testing of calculateWithParentheses just a few
+     *       smoke tests are done here.
+     *
+     * @test
+     * @dataProvider stdWrap_prioriCalcDataProvider
+     * @param mixed $expect The expected output.
+     * @param string $content The given content.
+     * @param array $conf The given configuration.
+     * @return void
+     */
+    public function stdWrap_prioriCalc($expect, $content, $conf)
+    {
+        $result = $this->subject->stdWrap_prioriCalc($content, $conf);
+        $this->assertSame($expect, $result);
+    }
+
+    /**
      * Test for the stdWrap_stripHtml
      *
      * @test
@@ -1020,448 +1723,610 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
-     * @return array
+     * Data provider for round
+     *
+     * @return array [$expect, $contet, $conf]
      */
-    public function stdWrap_roundDataProvider()
+    public function roundDataProvider()
     {
-        return array(
-            'rounding off without any configuration' => array(
-                1.123456789,
-                array(),
-                1
-            ),
-            'rounding up without any configuration' => array(
-                1.523456789,
-                array(),
-                2
-            ),
-            'regular rounding (off) to two decimals' => array(
-                0.123456789,
-                array(
-                    'decimals' => 2
-                ),
-                0.12
-            ),
-            'regular rounding (up) to two decimals' => array(
-                0.1256789,
-                array(
-                    'decimals' => 2
-                ),
-                0.13
-            ),
-            'rounding up to integer with type ceil' => array(
-                0.123456789,
-                array(
-                    'roundType' => 'ceil'
-                ),
-                1
-            ),
-            'rounding down to integer with type floor' => array(
-                2.3481,
-                array(
-                    'roundType' => 'floor'
-                ),
-                2
-            )
-        );
+        return [
+            // floats
+            'down' => [1.0, 1.11, []],
+            'up' => [2.0, 1.51, []],
+            'rounds up from x.50' => [2.0, 1.50, []],
+            'down with decimals' => [0.12, 0.1231, ['decimals' => 2]],
+            'up with decimals' => [0.13, 0.1251, ['decimals' => 2]],
+            'ceil' => [1.0, 0.11, ['roundType' => 'ceil']],
+            'ceil does not accept decimals' => [
+                1.0, 0.111, [
+                    'roundType' => 'ceil',
+                    'decimals' => 2,
+                ],
+            ],
+            'floor' => [2.0, 2.99, ['roundType' => 'floor']],
+            'floor does not accept decimals' => [
+                2.0, 2.999, [
+                    'roundType' => 'floor',
+                    'decimals' => 2,
+                ],
+            ],
+            'round, down' => [1.0, 1.11, ['roundType' => 'round']],
+            'round, up' => [2.0, 1.55, ['roundType' => 'round']],
+            'round does accept decimals' => [
+                5.56, 5.5555, [
+                    'roundType' => 'round',
+                    'decimals' => 2,
+                ],
+            ],
+            // strings
+            'emtpy string' => [0.0, '', []],
+            'word string' => [0.0, 'word', []],
+            'float string' => [1.0, '1.123456789', []],
+            // other types
+            'null' => [0.0, null, []],
+            'false' => [0.0, false, []],
+            'true' => [1.0, true, []]
+        ];
     }
 
     /**
-     * Test for the stdWrap function "round"
+     * Check if round works properly
      *
-     * @param float $float
-     * @param array $conf
-     * @param float $expected
+     * Show:
+     *
+     *  - Different types of input are casted to float.
+     *  - Configuration ceil rounds like ceil().
+     *  - Configuration floor rounds like floor().
+     *  - Otherwise rounds like round() and decimals can be applied.
+     *  - Always returns float.
+     *
+     * @param float $expected The expected output.
+     * @param mixed $content The given content.
+     * @param array $conf The given configuration of 'round.'.
      * @return void
-     * @dataProvider stdWrap_roundDataProvider
+     * @dataProvider roundDataProvider
      * @test
      */
-    public function stdWrap_round($float, $conf, $expected)
+    public function round($expect, $content, $conf)
     {
-        $conf = array(
-            'round.' => $conf
-        );
-        $result = $this->subject->stdWrap_round($float, $conf);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expect,
+            $this->subject->_call('round', $content, $conf));
     }
 
     /**
-     * @return array
-     */
-    public function stdWrap_numberFormatDataProvider()
-    {
-        return array(
-            'testing decimals' => array(
-                0.8,
-                array(
-                    'numberFormat.' => array(
-                        'decimals' => 2
-                    ),
-                ),
-                '0.80'
-            ),
-            'testing decimals with input as string' => array(
-                '0.8',
-                array(
-                    'numberFormat.' => array(
-                        'decimals' => 2
-                    ),
-                ),
-                '0.80'
-            ),
-            'testing dec_point' => array(
-                0.8,
-                array(
-                    'numberFormat.' => array(
-                        'decimals' => 1,
-                        'dec_point' => ','
-                    ),
-                ),
-                '0,8'
-            ),
-            'testing thousands_sep' => array(
-                999.99,
-                array(
-                    'numberFormat.' => array(
-                        'decimals' => 0,
-                        'thousands_sep.' => array(
-                            'char' => 46
-                        ),
-                    ),
-                ),
-                '1.000'
-            ),
-            'testing mixture' => array(
-                1281731.45,
-                array(
-                    'numberFormat.' => array(
-                        'decimals' => 1,
-                        'dec_point.' => array(
-                            'char' => 44
-                        ),
-                        'thousands_sep.' => array(
-                            'char' => 46
-                        ),
-                    ),
-                ),
-                '1.281.731,5'
-            )
-        );
-    }
-
-    /**
-     * Test for the stdWrap function "round"
+     * Check if stdWrap_round works properly
      *
-     * @param float $float
-     * @param array $conf
-     * @param string $expected
-     * @return void
-     * @dataProvider stdWrap_numberFormatDataProvider
+     * Show:
+     *
+     * - Delegates to method round.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['round.'].
+     * - Returns the return value.
+     *
      * @test
+     * @return void
      */
-    public function stdWrap_numberFormat($float, $conf, $expected)
+    public function stdWrap_round()
     {
-        $result = $this->subject->stdWrap_numberFormat($float, $conf);
-        $this->assertEquals($expected, $result);
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'round' => $this->getUniqueId('not used'),
+            'round.' => [$this->getUniqueId('round.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['round'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('round')
+            ->with($content, $conf['round.'])
+            ->willReturn($return);
+        $this->assertSame($return, $subject->stdWrap_round($content, $conf));
     }
 
     /**
-     * @return array
+     * Check if stdWrap_numberFormat works properly.
+     *
+     * Show:
+     *
+     * - Delegates to the method numberFormat.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['numberFormat.'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_numberFormat()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'numberFormat' => $this->getUniqueId('not used'),
+            'numberFormat.' => [$this->getUniqueId('numberFormat.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['numberFormat'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('numberFormat')
+            ->with($content, $conf['numberFormat.'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_numberFormat($content, $conf));
+    }
+
+    /**
+     * Data provider for expandList
+     *
+     * @return array [$expect, $content]
      */
     public function stdWrap_expandListDataProvider()
     {
-        return array(
-            'numbers' => array(
-                '1,2,3',
-                '1,2,3',
-            ),
-            'range' => array(
-                '3-5',
-                '3,4,5',
-            ),
-            'numbers and range' => array(
-                '1,3-5,7',
-                '1,3,4,5,7',
-            ),
-        );
+        return [
+            'numbers' => ['1,2,3', '1,2,3'],
+            'range' => ['3,4,5', '3-5'],
+            'numbers and range' => ['1,3,4,5,7', '1,3-5,7']
+        ];
     }
 
     /**
      * Test for the stdWrap function "expandList"
      *
-     * @param string $content
-     * @param string $expected
+     * The method simply delegates to GeneralUtility::expandList. There is no
+     * need to repeat the full set of tests of this method here. As PHPUnit
+     * can't mock static methods, to prove they are called, all we do here
+     * is to provide a few smoke tests.
      *
-     * @dataProvider stdWrap_expandListDataProvider
      * @test
+     * @dataProvider stdWrap_expandListDataProvider
+     * @param string $expected The expeced output.
+     * @param string $content The given content.
+     * @return void
      */
-    public function stdWrap_expandList($content, $expected)
+    public function stdWrap_expandList($expected, $content)
     {
-        $result = $this->subject->stdWrap_expandList($content);
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expected,
+            $this->subject->stdWrap_expandList($content));
     }
 
     /**
-     * @return array
+     * Data provider for stdWrap_trim.
+     *
+     * @return array [$expect, $content]
      */
     public function stdWrap_trimDataProvider()
     {
-        return array(
-            'trimstring' => array(
-                'trimstring',
-                'trimstring',
-            ),
-            'trim string with space inside' => array(
-                'trim string',
-                'trim string',
-            ),
-            'trim string with space at the begin and end' => array(
-                ' trim string ',
-                'trim string',
-            ),
-        );
+        return [
+            // string not trimmed
+            'empty string' => ['', ''],
+            'string without whitespace' => ['xxx', 'xxx'],
+            'string with whitespace inside' => [
+                'xx ' . TAB . ' xx',
+                'xx ' . TAB . ' xx',
+            ],
+            'string with newlines inside' => [
+                'xx ' . PHP_EOL . ' xx',
+                'xx ' . PHP_EOL . ' xx',
+            ],
+            // string trimmed
+            'blanks around' => ['xxx', '  xxx  '],
+            'tabs around' => ['xxx', TAB . 'xxx' . TAB],
+            'newlines around' => ['xxx', PHP_EOL . 'xxx' . PHP_EOL],
+            'mixed case' => ['xxx', TAB . ' xxx ' . PHP_EOL],
+            // non strings
+            'null' => ['', null],
+            'false' => ['', false],
+            'true' => ['1', true],
+            'zero' => ['0', 0],
+            'one' => ['1', 1],
+            '-1' => ['-1', -1],
+            '0.0' => ['0', 0.0],
+            '1.0' => ['1', 1.0],
+            '-1.0' => ['-1', -1.0],
+            '1.1' => ['1.1', 1.1],
+        ];
     }
 
     /**
-     * Test for the stdWrap function "trim"
+     * Check that stdWrap_trim works properly.
      *
-     * @param string $content
-     * @param string $expected
+     * Show:
      *
-     * @dataProvider stdWrap_trimDataProvider
+     *  - the given string is trimmed like PHP trim
+     *  - non-strings are casted to strings:
+     *    - null => 'null'
+     *    - false => ''
+     *    - true => '1'
+     *    - 0 => '0'
+     *    - -1 => '-1'
+     *    - 1.0 => '1'
+     *    - 1.1 => '1.1'
+     *
      * @test
+     * @dataProvider stdWrap_trimDataProvider
+     * @param string $expected The expected output.
+     * @param mixed $content The given content.
+     * @return void
      */
-    public function stdWrap_trim($content, $expected)
+    public function stdWrap_trim($expect, $content)
     {
         $result = $this->subject->stdWrap_trim($content);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expect, $result);
     }
 
     /**
-     * @return array
+     * Data provider for stdWrap_if.
+     *
+     * @return array [$expect, $stop, $content, $conf, $times, $will]
+     */
+    public function stdWrap_ifDataProvider()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = ['if.' => [$this->getUniqueId('if.')]];
+        return [
+            // evals to true
+            'empty config' => [
+                $content, false, $content, [], 0, null
+            ],
+            'if. is empty array' => [
+                $content, false, $content, ['if.' => []], 0, null
+            ],
+            'if. is null' => [
+                $content, false, $content, ['if.' => null], 0, null
+            ],
+            'if. is false' => [
+                $content, false, $content, ['if.' => false], 0, null
+            ],
+            'if. is 0' => [
+                $content, false, $content, ['if.' => false], 0, null
+            ],
+            'if. is "0"' => [
+                $content, false, $content, ['if.' => '0'], 0, null
+            ],
+            'checkIf returning true' => [
+                $content, false, $content, $conf, 1, true
+            ],
+            // evals to false
+            'checkIf returning false' => [
+                '', true, $content, $conf, 1, false
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_if works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to the method checkIf to check for 'true'.
+     *  - The parameter to checkIf is $conf['if.'].
+     *  - Is also 'true' if $conf['if.'] is empty (PHP method empty).
+     *  - 'False' triggers a stop of further rendering.
+     *  - Returns the content as is or '' if false.
+     *
+     * @test
+     * @dataProvider stdWrap_ifDataProvider
+     * @param mixed $expect The expected output.
+     * @param bool $stop Expect stop further rendering.
+     * @param mixed $content The given content.
+     * @param mixed $config The given configuration.
+     * @param int $times Times checkIf is called (0 or 1).
+     * @param bool|null $will Return of checkIf (null if not called).
+     * @return void
+     */
+    public function stdWrap_if($expect, $stop, $content, $conf, $times, $will)
+    {
+        $subject = $this->getAccessibleMock(
+            ContentObjectRenderer::class, ['checkIf']);
+        $subject->_set('stdWrapRecursionLevel', 1);
+        $subject->_set('stopRendering', [1 => false]);
+        $subject
+            ->expects($this->exactly($times))
+            ->method('checkIf')
+            ->with($conf['if.'])
+            ->willReturn($will);
+        $this->assertSame($expect, $subject->stdWrap_if($content, $conf));
+        $this->assertSame($stop, $subject->_get('stopRendering')[1]);
+    }
+
+    /**
+     * Data provider for stdWrap_required.
+     *
+     * @return array [$expect, $stop, $content]
+     */
+    public function stdWrap_requiredDataProvider()
+    {
+        return [
+            // empty content
+            'empty string is empty' => ['', true, ''],
+            'null is empty' => ['', true, null],
+            'false is empty' => ['', true, false],
+
+            // non-empty content
+            'blank is not empty' => [' ', false, ' '],
+            'tab is not empty' => [TAB, false, TAB],
+            'linebreak is not empty' => [PHP_EOL, false, PHP_EOL],
+            '"0" is not empty' => ['0', false, '0'],
+            '0 is not empty' => [0, false, 0],
+            '1 is not empty' => [1, false, 1],
+            'true is not empty' => [true, false, true],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_required works properly.
+     *
+     * Show:
+     *
+     *  - Content is empty if it equals '' after cast to string.
+     *  - Empty content triggers a stop of further rendering.
+     *  - Returns the content as is or '' for empty content.
+     *
+     * @test
+     * @dataProvider stdWrap_requiredDataProvider
+     * @param mixed $expect The expected output.
+     * @param bool $stop Expect stop further rendering.
+     * @param mixed $content The given input.
+     * @return void
+     */
+    public function stdWrap_required($expect, $stop, $content)
+    {
+        $subject = $this->subject;
+        $subject->_set('stdWrapRecursionLevel', 1);
+        $subject->_set('stopRendering', [1 => false]);
+        $this->assertSame($expect, $subject->stdWrap_required($content));
+        $this->assertSame($stop, $subject->_get('stopRendering')[1]);
+    }
+
+    /**
+     * Data provider for stdWrap_intval
+     *
+     * @return array [$expect, $content]
      */
     public function stdWrap_intvalDataProvider()
     {
-        return array(
-            'number' => array(
-                '123',
-                123,
-            ),
-            'float' => array(
-                '123.45',
-                123,
-            ),
-            'string' => array(
-                'string',
-                0,
-            ),
-            'zero' => array(
-                '0',
-                0,
-            ),
-            'empty' => array(
-                '',
-                0,
-            ),
-            'NULL' => array(
-                null,
-                0,
-            ),
-            'bool TRUE' => array(
-                true,
-                1,
-            ),
-            'bool FALSE' => array(
-                false,
-                0,
-            ),
-        );
+        return [
+            // numbers
+            'int' => [123, 123],
+            'float' => [123, 123.45],
+            'float does not round up' => [123, 123.55],
+            // negative numbers
+            'negative int' => [-123, -123],
+            'negative float' => [-123, -123.45],
+            'negative float does not round down' => [ -123, -123.55],
+            // strings
+            'word string' => [0, 'string'],
+            'empty string' => [0, ''],
+            'zero string' => [0, '0'],
+            'int string' => [123, '123'],
+            'float string' => [123, '123.55'],
+            'negative float string' => [-123, '-123.55'],
+            // other types
+            'null' => [0, null],
+            'true' => [1, true],
+            'false' => [0, false]
+        ];
     }
 
     /**
-     * Test for the stdWrap function "intval"
+     * Check that stdWrap_intval works properly.
      *
-     * @param string $content
-     * @param int $expected
+     * Show:
      *
-     * @dataProvider stdWrap_intvalDataProvider
+     * - It does not round up.
+     * - All types of input is casted to int:
+     *   - null: 0
+     *   - false: 0
+     *   - true: 1
+     *   -
+     *
+     *
+     *
      * @test
+     * @dataProvider stdWrap_intvalDataProvider
+     * @param int $expect The expected output.
+     * @param string $content The given input.
+     * @return void
      */
-    public function stdWrap_intval($content, $expected)
+    public function stdWrap_intval($expect, $content)
     {
-        $result = $this->subject->stdWrap_intval($content);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expect, $this->subject->stdWrap_intval($content));
     }
 
     /**
-     * @return array
+     * Data provider for stdWrap_strPad.
+     *
+     * @return array [$expect, $content, $conf]
      */
     public function stdWrap_strPadDataProvider()
     {
-        return array(
-            'pad string with default settings and length 10' => array(
-                'Alien',
-                array(
-                    'length' => '10',
-                ),
+        return [
+            'pad string with default settings and length 10' => [
                 'Alien     ',
-            ),
-            'pad string with padWith -= and type left and length 10' => array(
                 'Alien',
-                array(
+                [
+                    'length' => '10',
+                ],
+            ],
+            'pad string with padWith -= and type left and length 10' => [
+                '-=-=-Alien',
+                'Alien',
+                [
                     'length' => '10',
                     'padWith' => '-=',
                     'type' => 'left',
-                ),
-                '-=-=-Alien',
-            ),
-            'pad string with padWith _ and type both and length 10' => array(
+                ],
+            ],
+            'pad string with padWith _ and type both and length 10' => [
+                '__Alien___',
                 'Alien',
-                array(
+                [
                     'length' => '10',
                     'padWith' => '_',
                     'type' => 'both',
-                ),
-                '__Alien___',
-            ),
-            'pad string with padWith 0 and type both and length 10' => array(
+                ],
+            ],
+            'pad string with padWith 0 and type both and length 10' => [
+                '00Alien000',
                 'Alien',
-                array(
+                [
                     'length' => '10',
                     'padWith' => '0',
                     'type' => 'both',
-                ),
-                '00Alien000',
-            ),
-            'pad string with padWith ___ and type both and length 6' => array(
+                ],
+            ],
+            'pad string with padWith ___ and type both and length 6' => [
+                'Alien_',
                 'Alien',
-                array(
+                [
                     'length' => '6',
                     'padWith' => '___',
                     'type' => 'both',
-                ),
-                'Alien_',
-            ),
-            'pad string with padWith _ and type both and length 12, using stdWrap for length' => array(
+                ],
+            ],
+            'pad string with padWith _ and type both and length 12, using stdWrap for length' => [
+                '___Alien____',
                 'Alien',
-                array(
+                [
                     'length' => '1',
-                    'length.' => array(
+                    'length.' => [
                         'wrap' => '|2',
-                    ),
+                    ],
                     'padWith' => '_',
                     'type' => 'both',
-                ),
-                '___Alien____',
-            ),
-            'pad string with padWith _ and type both and length 12, using stdWrap for padWidth' => array(
+                ],
+            ],
+            'pad string with padWith _ and type both and length 12, using stdWrap for padWidth' => [
+                '-_=Alien-_=-',
                 'Alien',
-                array(
+                [
                     'length' => '12',
                     'padWith' => '_',
-                    'padWith.' => array(
+                    'padWith.' => [
                         'wrap' => '-|=',
-                    ),
+                    ],
                     'type' => 'both',
-                ),
-                '-_=Alien-_=-',
-            ),
-            'pad string with padWith _ and type both and length 12, using stdWrap for type' => array(
+                ],
+            ],
+            'pad string with padWith _ and type both and length 12, using stdWrap for type' => [
+                '_______Alien',
                 'Alien',
-                array(
+                [
                     'length' => '12',
                     'padWith' => '_',
                     'type' => 'both',
                     // make type become "left"
-                    'type.' => array(
+                    'type.' => [
                         'substring' => '2,1',
                         'wrap' => 'lef|',
-                    ),
-                ),
-                '_______Alien',
-            ),
-        );
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
-     * Test for the stdWrap function "strPad"
+     * Check if stdWrap_strPad works properly.
      *
-     * @param string $content
-     * @param array $conf
-     * @param string $expected
-     *
-     * @dataProvider stdWrap_strPadDataProvider
      * @test
+     * @dataProvider stdWrap_strPadDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @param array $conf The configuration of 'strPad.'.
+     * @return void
      */
-    public function stdWrap_strPad($content, $conf, $expected)
+    public function stdWrap_strPad($expect, $content, $conf)
     {
-        $conf = array(
-            'strPad.' => $conf
-        );
+        $conf = ['strPad.' => $conf];
         $result = $this->subject->stdWrap_strPad($content, $conf);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expect, $result);
+    }
+
+    /**
+     * Check that stdWrap_stdWrap works properly.
+     *
+     * Show:
+     *  - Delegates to method stdWrap.
+     *  - Parameter 1 is $content.
+     *  - Parameter 2 is $conf['stdWrap.'].
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_stdWrap()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'stdWrap' => $this->getUniqueId('not used'),
+            'stdWrap.' => [$this->getUniqueId('stdWrap.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['stdWrap'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('stdWrap')
+            ->with($content, $conf['stdWrap.'])
+            ->willReturn($return);
+        $this->assertSame($return, $subject->stdWrap_stdWrap($content, $conf));
     }
 
     /**
      * Data provider for the hash test
      *
-     * @return array multi-dimensional array with the second level like this:
-     * @see hash
+     * @return array [$expect, $content, $conf]
      */
     public function hashDataProvider()
     {
-        $data = array(
-            'testing md5' => array(
+        return [
+            'md5' => [
+                'bacb98acf97e0b6112b1d1b650b84971',
                 'joh316',
-                array(
-                    'hash' => 'md5'
-                ),
-                'bacb98acf97e0b6112b1d1b650b84971'
-            ),
-            'testing sha1' => array(
+                ['hash' => 'md5']
+            ],
+            'sha1' => [
+                '063b3d108bed9f88fa618c6046de0dccadcf3158',
                 'joh316',
-                array(
-                    'hash' => 'sha1'
-                ),
-                '063b3d108bed9f88fa618c6046de0dccadcf3158'
-            ),
-            'testing non-existing hashing algorithm' => array(
+                ['hash' => 'sha1']
+            ],
+            'stdWrap capability' => [
+                'bacb98acf97e0b6112b1d1b650b84971',
                 'joh316',
-                array(
-                    'hash' => 'non-existing'
-                ),
-                ''
-            ),
-            'testing stdWrap capability' => array(
+                [
+                    'hash' => '5',
+                    'hash.' => ['wrap' => 'md|']
+                ]
+            ],
+            'non-existing hashing algorithm' => [
+                '',
                 'joh316',
-                array(
-                    'hash.' => array(
-                        'cObject' => 'TEXT',
-                        'cObject.' => array(
-                            'value' => 'md5'
-                        )
-                    )
-                ),
-                'bacb98acf97e0b6112b1d1b650b84971'
-            )
-        );
-        return $data;
+                ['hash' => 'non-existing']
+            ]
+        ];
     }
 
     /**
-     * Test for the stdWrap function "hash"
+     * Check if stdWrap_hash works properly.
      *
-     * @param string $text
-     * @param array $conf
-     * @param string $expected
-     * @return void
-     * @dataProvider hashDataProvider
+     * Show:
+     *
+     *  - Algorithms: sha1, md5
+     *  - Returns '' for invalid algorithm.
+     *  - Value can be processed by stdWrap.
+     *
      * @test
+     * @dataProvider hashDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given content.
+     * @param array $conf The given configuration.
+     * @return void
      */
-    public function stdWrap_hash($text, array $conf, $expected)
+    public function stdWrap_hash($expect, $content, $conf)
     {
-        $result = $this->subject->stdWrap_hash($text, $conf);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expect,
+            $this->subject->stdWrap_hash($content, $conf));
     }
 
     /**
@@ -1512,146 +2377,154 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
-     * Data provider for the numberFormat test
+     * Data provider for numberFormat.
      *
-     * @return array multi-dimensional array with the second level like this:
-     * @see numberFormat
+     * @return array [$expect, $content, $conf]
      */
     public function numberFormatDataProvider()
     {
-        $data = array(
-            'testing decimals' => array(
-                0.8,
-                array(
-                    'decimals' => 2
-                ),
-                '0.80'
-            ),
-            'testing decimals with input as string' => array(
-                '0.8',
-                array(
-                    'decimals' => 2
-                ),
-                '0.80'
-            ),
-            'testing dec_point' => array(
-                0.8,
-                array(
-                    'decimals' => 1,
-                    'dec_point' => ','
-                ),
-                '0,8'
-            ),
-            'testing thousands_sep' => array(
-                999.99,
-                array(
+        return [
+            'testing decimals' => [
+                '0.80', 0.8,
+                ['decimals' => 2]
+            ],
+            'testing decimals with input as string' => [
+                '0.80', '0.8',
+                ['decimals' => 2]
+            ],
+            'testing dec_point' => [
+                '0,8', 0.8,
+                ['decimals' => 1, 'dec_point' => ',']
+            ],
+            'testing thousands_sep' => [
+                '1.000', 999.99,
+                [
                     'decimals' => 0,
-                    'thousands_sep.' => array(
-                        'char' => 46
-                    )
-                ),
-                '1.000'
-            ),
-            'testing mixture' => array(
-                1281731.45,
-                array(
+                    'thousands_sep.' => ['char' => 46]
+                ]
+            ],
+            'testing mixture' => [
+                '1.281.731,5', 1281731.45,
+                [
                     'decimals' => 1,
-                    'dec_point.' => array(
-                        'char' => 44
-                    ),
-                    'thousands_sep.' => array(
-                        'char' => 46
-                    )
-                ),
-                '1.281.731,5'
-            )
-        );
-        return $data;
+                    'dec_point.' => ['char' => 44],
+                    'thousands_sep.' => ['char' => 46]
+                ]
+            ]
+        ];
     }
 
     /**
-     * Check if stdWrap.numberFormat and all of its properties work properly
+     * Check if numberFormat works properly.
      *
      * @dataProvider numberFormatDataProvider
      * @test
      */
-    public function numberFormat($float, $formatConf, $expected)
+    public function numberFormat($expects, $content, $conf)
     {
-        $result = $this->subject->numberFormat($float, $formatConf);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expects,
+            $this->subject->numberFormat($content, $conf));
     }
 
     /**
-     * Data provider for the replacement test
+     * Check if stdWrap_replacement works properly.
      *
-     * @return array multi-dimensional array with the second level like this:
-     * @see replacement
+     * Show:
+     *
+     * - Delegates to method replacement.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['replacement.'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_replacement()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'replacement' => $this->getUniqueId('not used'),
+            'replacement.' => [$this->getUniqueId('replacement.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['replacement'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('replacement')
+            ->with( $content, $conf['replacement.'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_replacement($content, $conf));
+    }
+
+    /**
+     * Data provider replacement
+     *
+     * @return array [$expect, $content, $conf]
      */
     public function replacementDataProvider()
     {
-        $data = array(
-            'multiple replacements, including regex' => array(
+        return [
+            'multiple replacements, including regex' => [
+                'There is an animal, an animal and an animal around the block! Yeah!',
                 'There_is_a_cat,_a_dog_and_a_tiger_in_da_hood!_Yeah!',
-                array(
-                    'replacement.' => array(
-                        '120.' => array(
-                            'search' => 'in da hood',
-                            'replace' => 'around the block'
-                        ),
-                        '20.' => array(
-                            'search' => '_',
-                            'replace.' => array('char' => '32')
-                        ),
-                        '130.' => array(
-                            'search' => '#a (Cat|Dog|Tiger)#i',
-                            'replace' => 'an animal',
-                            'useRegExp' => '1'
-                        )
-                    )
-                ),
-                'There is an animal, an animal and an animal around the block! Yeah!'
-            ),
-            'replacement with optionSplit, normal pattern' => array(
+                [
+                    '20.' => [
+                        'search' => '_',
+                        'replace.' => ['char' => '32']
+                    ],
+                    '120.' => [
+                        'search' => 'in da hood',
+                        'replace' => 'around the block'
+                    ],
+                    '130.' => [
+                        'search' => '#a (Cat|Dog|Tiger)#i',
+                        'replace' => 'an animal',
+                        'useRegExp' => '1'
+                    ]
+                ]
+            ],
+            'replacement with optionSplit, normal pattern' => [
+                'There1is2a3cat,3a3dog3and3a3tiger3in3da3hood!3Yeah!',
                 'There_is_a_cat,_a_dog_and_a_tiger_in_da_hood!_Yeah!',
-                array(
-                    'replacement.' => array(
-                        '10.' => array(
-                            'search' => '_',
-                            'replace' => '1 || 2 || 3',
-                            'useOptionSplitReplace' => '1'
-                        ),
-                    )
-                ),
-                'There1is2a3cat,3a3dog3and3a3tiger3in3da3hood!3Yeah!'
-            ),
-            'replacement with optionSplit, using regex' => array(
+                [
+                    '10.' => [
+                        'search' => '_',
+                        'replace' => '1 || 2 || 3',
+                        'useOptionSplitReplace' => '1'
+                    ]
+                ]
+            ],
+            'replacement with optionSplit, using regex' => [
+                'There is a tiny cat, a midsized dog and a big tiger in da hood! Yeah!',
                 'There is a cat, a dog and a tiger in da hood! Yeah!',
-                array(
-                    'replacement.' => array(
-                        '10.' => array(
-                            'search' => '#(a) (Cat|Dog|Tiger)#i',
-                            'replace' => '${1} tiny ${2} || ${1} midsized ${2} || ${1} big ${2}',
-                            'useOptionSplitReplace' => '1',
-                            'useRegExp' => '1'
-                        )
-                    )
-                ),
-                'There is a tiny cat, a midsized dog and a big tiger in da hood! Yeah!'
-            ),
-        );
-        return $data;
+                [
+                    '10.' => [
+                        'search' => '#(a) (Cat|Dog|Tiger)#i',
+                        'replace' => '${1} tiny ${2} || ${1} midsized ${2} || ${1} big ${2}',
+                        'useOptionSplitReplace' => '1',
+                        'useRegExp' => '1'
+                    ]
+                ]
+            ]
+        ];
     }
 
     /**
      * Check if stdWrap.replacement and all of its properties work properly
      *
-     * @dataProvider replacementDataProvider
      * @test
+     * @dataProvider replacementDataProvider
+     * @param string $content The given input.
+     * @param string $expects The expected result.
+     * @param array $conf The given configuration.
+     * @return void
      */
-    public function replacement($input, $conf, $expected)
+    public function replacement($expects, $content, $conf)
     {
-        $result = $this->subject->stdWrap_replacement($input, $conf);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expects,
+            $this->subject->_call('replacement', $content, $conf));
     }
 
     /**
@@ -1830,7 +2703,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 )
             ),
         );
-        $this->subject = $this->getAccessibleMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class, array('getTreeList'));
+        $this->subject = $this->getAccessibleMock(ContentObjectRenderer::class, array('getTreeList'));
         $this->subject->start(array(), 'tt_content');
         $conf = array(
             'recursive' => '15',
@@ -1868,7 +2741,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 )
             ),
         );
-        $this->subject = $this->getAccessibleMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class, array('getTreeList'));
+        $this->subject = $this->getAccessibleMock(ContentObjectRenderer::class, array('getTreeList'));
         $GLOBALS['TSFE']->id = 27;
         $this->subject->start(array(), 'tt_content');
         $conf = array(
@@ -1885,275 +2758,264 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     /**
      * Data provider for the stdWrap_date test
      *
-     * @return array multi-dimensional array with the second level like this:
-     * @see stdWrap_date
+     * @return array [$expect, $content, $conf, $now]
      */
     public function stdWrap_dateDataProvider()
     {
-        return array(
-            'given timestamp' => array(
-                1443780000, // This is 2015-10-02 12:00
-                array(
-                    'date' => 'd.m.Y',
-                ),
+        // Fictive execution time: 2015-10-02 12:00
+        $now =  1443780000;
+        return [
+            'given timestamp' => [
                 '02.10.2015',
-            ),
-            'empty string' => array(
+                $now,
+                ['date' => 'd.m.Y'],
+                $now
+            ],
+            'empty string' => [
+                '02.10.2015',
                 '',
-                array(
-                    'date' => 'd.m.Y',
-                ),
+                ['date' => 'd.m.Y'],
+                $now
+            ],
+            'testing null' => [
                 '02.10.2015',
-            ),
-            'testing null' => array(
                 null,
-                array(
-                    'date' => 'd.m.Y',
-                ),
-                '02.10.2015',
-            ),
-            'given timestamp return GMT' => array(
-                1443780000, // This is 2015-10-02 12:00
-                array(
-                    'date' => 'd.m.Y H:i:s',
-                    'date.' => array(
-                        'GMT' => true,
-                    )
-                ),
+                ['date' => 'd.m.Y'],
+                $now
+            ],
+            'given timestamp return GMT' => [
                 '02.10.2015 10:00:00',
-            ),
-        );
+                $now,
+                [
+                    'date' => 'd.m.Y H:i:s',
+                    'date.' => ['GMT' => true],
+                ],
+                $now
+            ]
+        ];
     }
 
     /**
+     * Check if stdWrap_date works properly.
+     *
      * @test
      * @dataProvider stdWrap_dateDataProvider
-     * @param string|int|NULL $content
-     * @param array $conf
-     * @param string $expected
+     * @param string $expected The expected output.
+     * @param mixed $content The given input.
+     * @param array $conf The given configuration.
+     * @param int $now Fictive execution time.
+     * @return void
      */
-    public function stdWrap_date($content, $conf, $expected)
+    public function stdWrap_date($expected, $content, $conf, $now)
     {
-        // Set exec_time to a hard timestamp
-        $GLOBALS['EXEC_TIME'] = 1443780000;
-
-        $result = $this->subject->stdWrap_date($content, $conf);
-
-        $this->assertEquals($expected, $result);
+        $GLOBALS['EXEC_TIME'] = $now;
+        $this->assertEquals($expected,
+            $this->subject->stdWrap_date($content, $conf));
     }
 
     /**
-     * Data provider for the stdWrap_strftime test
+     * Data provider for stdWrap_strftime
      *
-     * @return array multi-dimensional array with the second level like this:
-     * @see stdWrap_strftime
+     * @return array [$expect, $content, $conf, $now]
      */
-    public function stdWrap_strftimeReturnsFormattedStringDataProvider()
+    public function stdWrap_strftimeDataProvider()
     {
-        $data = array(
-            'given timestamp' => array(
-                1346500800, // This is 2012-09-01 12:00 in UTC/GMT
-                array(
-                    'strftime' => '%d-%m-%Y',
-                ),
-            ),
-            'empty string' => array(
+        // Fictive execution time is 2012-09-01 12:00 in UTC/GMT.
+        $now = 1346500800;
+        return [
+            'given timestamp' => [
+                '01-09-2012',
+                $now,
+                ['strftime' => '%d-%m-%Y'],
+                $now
+            ],
+            'empty string' => [
+                '01-09-2012',
                 '',
-                array(
-                    'strftime' => '%d-%m-%Y',
-                ),
-            ),
-            'testing null' => array(
+                ['strftime' => '%d-%m-%Y'],
+                $now
+            ],
+            'testing null' => [
+                '01-09-2012',
                 null,
-                array(
-                    'strftime' => '%d-%m-%Y',
-                ),
-            ),
-        );
-        return $data;
+                ['strftime' => '%d-%m-%Y'],
+                $now
+            ]
+        ];
     }
 
     /**
+     * Check if stdWrap_strftime works properly.
+     *
      * @test
-     * @dataProvider stdWrap_strftimeReturnsFormattedStringDataProvider
+     * @dataProvider stdWrap_strftimeDataProvider
+     * @param string $expect The expected output.
+     * @param mixed $content The given input.
+     * @param array $conf The given configuration.
+     * @param int $now Fictive execution time.
+     * @return void
      */
-    public function stdWrap_strftimeReturnsFormattedString($content, $conf)
+    public function stdWrap_strftime($expect, $content, $conf, $now)
     {
-        // Set exec_time to a hard timestamp
-        $GLOBALS['EXEC_TIME'] = 1346500800;
-            // Save current timezone and set to UTC to make the system under test behave
-            // the same in all server timezone settings
+        // Save current timezone and set to UTC to make the system under test
+        // behave the same in all server timezone settings
         $timezoneBackup = date_default_timezone_get();
         date_default_timezone_set('UTC');
 
+        $GLOBALS['EXEC_TIME'] = $now;
         $result = $this->subject->stdWrap_strftime($content, $conf);
 
-            // Reset timezone
+        // Reset timezone
         date_default_timezone_set($timezoneBackup);
 
-        $this->assertEquals('01-09-2012', $result);
+        $this->assertSame($expect, $result);
     }
 
     /**
      * Data provider for the stdWrap_strtotime test
      *
-     * @return array
-     * @see stdWrap_strtotime
+     * @return array [$expect, $content, $conf]
      */
-    public function stdWrap_strtotimeReturnsTimestampDataProvider()
+    public function stdWrap_strtotimeDataProvider()
     {
-        return array(
-            'date from content' => array(
-                '2014-12-04',
-                array(
-                    'strtotime' => '1',
-                ),
-                1417651200,
-            ),
-            'manipulation of date from content' => array(
-                '2014-12-04',
-                array(
-                    'strtotime' => '+ 2 weekdays',
-                ),
-                1417996800,
-            ),
-            'date from configuration' => array(
-                '',
-                array(
-                    'strtotime' => '2014-12-04',
-                ),
-                1417651200,
-            ),
-            'manipulation of date from configuration' => array(
-                '',
-                array(
-                    'strtotime' => '2014-12-04 + 2 weekdays',
-                ),
-                1417996800,
-            ),
-            'empty input' => array(
-                '',
-                array(
-                    'strtotime' => '1',
-                ),
-                false,
-            ),
-            'date from content and configuration' => array(
-                '2014-12-04',
-                array(
-                    'strtotime' => '2014-12-05',
-                ),
-                false,
-            ),
-        );
+        return [
+            'date from content' => [
+                1417651200, '2014-12-04',
+                ['strtotime' => '1']
+            ],
+            'manipulation of date from content' => [
+                1417996800, '2014-12-04',
+                ['strtotime' => '+ 2 weekdays']
+            ],
+            'date from configuration' => [
+                1417651200, '',
+                ['strtotime' => '2014-12-04']
+            ],
+            'manipulation of date from configuration' => [
+                1417996800, '',
+                ['strtotime' => '2014-12-04 + 2 weekdays']
+            ],
+            'empty input' => [
+                false, '',
+                ['strtotime' => '1']
+            ],
+            'date from content and configuration' => [
+                false, '2014-12-04',
+                ['strtotime' => '2014-12-05']
+            ]
+        ];
     }
 
     /**
-     * @param string|NULL $content
-     * @param array $configuration
-     * @param int $expected
-     * @dataProvider stdWrap_strtotimeReturnsTimestampDataProvider
+     * Check if stdWrap_strtotime works properly.
+     *
      * @test
+     * @dataProvider stdWrap_strtotimeDataProvider
+     * @param int $expect The expected output.
+     * @param mixed $content The given input.
+     * @param array $conf The given configuration.
+     * @return void
      */
-    public function stdWrap_strtotimeReturnsTimestamp($content, $configuration, $expected)
+    public function stdWrap_strtotime($expect, $content, $conf)
     {
         // Set exec_time to a hard timestamp
         $GLOBALS['EXEC_TIME'] = 1417392000;
-        // Save current timezone and set to UTC to make the system under test behave
-        // the same in all server timezone settings
+        // Save current timezone and set to UTC to make the system under test
+        // behave the same in all server timezone settings
         $timezoneBackup = date_default_timezone_get();
         date_default_timezone_set('UTC');
 
-        $result = $this->subject->stdWrap_strtotime($content, $configuration);
+        $result = $this->subject->stdWrap_strtotime($content, $conf);
 
         // Reset timezone
         date_default_timezone_set($timezoneBackup);
 
-        $this->assertEquals($expected, $result);
+        $this->assertEquals($expect, $result);
     }
 
     /**
-     * @test
-     */
-    public function stdWrap_ageCallsCalcAgeWithSubtractedTimestampAndSubPartOfArray()
-    {
-        $subject = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
-            ->setMethods(array('calcAge'))
-            ->getMock();
-        // Set exec_time to a hard timestamp
-        $GLOBALS['EXEC_TIME'] = 10;
-        $subject->expects($this->once())->method('calcAge')->with(1, 'Min| Hrs| Days| Yrs');
-        $subject->stdWrap_age(9, array('age' => 'Min| Hrs| Days| Yrs'));
-    }
-
-    /**
-     * Data provider for calcAgeCalculatesAgeOfTimestamp
+     * Check if stdWrap_age works properly.
      *
-     * @return array
-     * @see calcAge
+     * Show:
+     *
+     * - Delegates to calcAge.
+     * - Parameter 1 is the difference between $content and EXEC_TIME.
+     * - Parameter 2 is $conf['age'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
      */
-    public function calcAgeCalculatesAgeOfTimestampDataProvider()
+    public function stdWrap_age()
     {
-        return array(
-            'minutes' => array(
-                120,
-                ' min| hrs| days| yrs',
-                '2 min',
-            ),
-            'hours' => array(
-                7200,
-                ' min| hrs| days| yrs',
-                '2 hrs',
-            ),
-            'days' => array(
-                604800,
-                ' min| hrs| days| yrs',
-                '7 days',
-            ),
-            'day with provided singular labels' => array(
-                86400,
-                ' min| hrs| days| yrs| min| hour| day| year',
-                '1 day',
-            ),
-            'years' => array(
-                1417997800,
-                ' min| hrs| days| yrs',
-                '45 yrs',
-            ),
-            'different labels' => array(
-                120,
-                ' Minutes| Hrs| Days| Yrs',
-                '2 Minutes',
-            ),
-            'negative values' => array(
-                -604800,
-                ' min| hrs| days| yrs',
-                '-7 days',
-            ),
-            'default label values for wrong label input' => array(
-                121,
-                10,
-                '2 min',
-            ),
-            'default singular label values for wrong label input' => array(
-                31536000,
-                10,
-                '1 year',
-            )
-        );
+        $now = 10;
+        $content = '9';
+        $conf = ['age' => $this->getUniqueId('age')];
+        $return = $this->getUniqueId('return');
+        $difference = $now - (int)$content;
+        $GLOBALS['EXEC_TIME'] = $now;
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['calcAge'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('calcAge')
+            ->with($difference, $conf['age'])
+            ->willReturn($return);
+        $this->assertSame($return, $subject->stdWrap_age($content, $conf));
     }
 
     /**
+     * Data provider for calcAge.
+     *
+     * @return array [$expect, $timestamp, $labels]
+     */
+    public function calcAgeDataProvider()
+    {
+        return [
+            'minutes' => [
+                '2 min', 120, ' min| hrs| days| yrs',
+            ],
+            'hours' => [
+                '2 hrs', 7200, ' min| hrs| days| yrs',
+            ],
+            'days' => [
+                '7 days', 604800, ' min| hrs| days| yrs',
+            ],
+            'day with provided singular labels' => [
+                '1 day', 86400, ' min| hrs| days| yrs| min| hour| day| year',
+            ],
+            'years' => [
+                '45 yrs', 1417997800, ' min| hrs| days| yrs',
+            ],
+            'different labels' => [
+                '2 Minutes', 120, ' Minutes| Hrs| Days| Yrs',
+            ],
+            'negative values' => [
+                '-7 days', -604800, ' min| hrs| days| yrs',
+            ],
+            'default label values for wrong label input' => [
+                '2 min', 121, 10,
+            ],
+            'default singular label values for wrong label input' => [
+                '1 year', 31536000, 10,
+            ]
+        ];
+    }
+
+    /**
+     * Check if calcAge works properly.
+     *
+     * @test
+     * @dataProvider calcAgeDataProvider
+     * @param int $expect
      * @param int $timestamp
      * @param string $labels
-     * @param int $expectation
-     * @dataProvider calcAgeCalculatesAgeOfTimestampDataProvider
-     * @test
+     * @return void
      */
-    public function calcAgeCalculatesAgeOfTimestamp($timestamp, $labels, $expectation)
+    public function calcAge($expect, $timestamp, $labels)
     {
-        $result = $this->subject->calcAge($timestamp, $labels);
-        $this->assertEquals($result, $expectation);
+        $this->assertSame($expect,
+            $this->subject->calcAge($timestamp, $labels));
     }
 
     /**
@@ -2535,93 +3397,146 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
-     * @param string|NULL $content
-     * @param array $configuration
-     * @param string $expected
-     * @dataProvider stdWrap_ifNullDeterminesNullValuesDataProvider
-     * @test
-     */
-    public function stdWrap_ifNullDeterminesNullValues($content, array $configuration, $expected)
-    {
-        $result = $this->subject->stdWrap_ifNull($content, $configuration);
-        $this->assertEquals($expected, $result);
-    }
-
-    /**
-     * Data provider for stdWrap_ifNullDeterminesNullValues test
+     * Data provider for stdWrap_ifNull.
      *
-     * @return array
+     * @return array [$expect, $content, $conf]
      */
-    public function stdWrap_ifNullDeterminesNullValuesDataProvider()
+    public function stdWrap_ifNullDataProvider()
     {
-        return array(
-            'null value' => array(
-                null,
-                array(
-                    'ifNull' => '1',
-                ),
-                '1',
-            ),
-            'zero value' => array(
-                '0',
-                array(
-                    'ifNull' => '1',
-                ),
-                '0',
-            ),
-        );
+        $alt = $this->getUniqueId('alternative content');
+        $conf = ['ifNull' => $alt];
+        return [
+            'only null is null' => [$alt, null, $conf],
+            'zero is not null' => [0, 0, $conf],
+            'float zero is not null' => [0.0, 0.0, $conf],
+            'false is not null' => [false, false, $conf],
+            'zero is not null' => [0, 0, $conf],
+            'zero string is not null' => ['0', '0', $conf],
+            'empty string is not null' => ['', '', $conf],
+            'whitespace is not null' => [TAB . '', TAB . '', $conf],
+        ];
     }
 
     /**
-     * Data provider for stdWrap_ifEmptyDeterminesEmptyValues test
+     * Check that stdWrap_ifNull works properly.
      *
-     * @return array
+     * Show:
+     *
+     * - Returns the content, if not null.
+     * - Otherwise returns $conf['ifNull'].
+     * - Null is strictly checked by identiy with null.
+     *
+     * @test
+     * @dataProvider stdWrap_ifNullDataProvider
+     * @param mixed $expected The expected output.
+     * @param mixed $content The given input.
+     * @param array $conf The given configuration.
+     * @return void
      */
-    public function stdWrap_ifEmptyDeterminesEmptyValuesDataProvider()
+    public function stdWrap_ifNull($expect, $content, $conf)
     {
-        return array(
-            'null value' => array(
-                null,
-                array(
-                    'ifEmpty' => '1',
-                ),
-                '1',
-            ),
-            'empty value' => array(
-                '',
-                array(
-                    'ifEmpty' => '1',
-                ),
-                '1',
-            ),
-            'string value' => array(
-                'string',
-                array(
-                    'ifEmpty' => '1',
-                ),
-                'string',
-            ),
-            'empty string value' => array(
-                '        ',
-                array(
-                    'ifEmpty' => '1',
-                ),
-                '1',
-            ),
-        );
+        $result = $this->subject->stdWrap_ifNull($content, $conf);
+        $this->assertSame($expect, $result);
     }
 
     /**
-     * @param string|NULL $content
-     * @param array $configuration
-     * @param string $expected
-     * @dataProvider stdWrap_ifEmptyDeterminesEmptyValuesDataProvider
-     * @test
+     * Data provider for stdWrap_ifEmpty.
+     *
+     * @return array [$expect, $content, $conf]
      */
-    public function stdWrap_ifEmptyDeterminesEmptyValues($content, array $configuration, $expected)
+    public function stdWrap_ifEmptyDataProvider()
     {
-        $result = $this->subject->stdWrap_ifEmpty($content, $configuration);
-        $this->assertEquals($expected, $result);
+        $alt = $this->getUniqueId('alternative content');
+        $conf = ['ifEmpty' => $alt];
+        return [
+            // empty cases
+            'null is empty' => [ $alt, null, $conf ],
+            'false is empty' => [ $alt, false, $conf ],
+            'zero is empty' => [ $alt, 0, $conf ],
+            'float zero is empty' => [ $alt, 0.0, $conf ],
+            'whitespace is empty' => [ $alt, TAB . ' ', $conf ],
+            'empty string is empty' => [ $alt, '', $conf ],
+            'zero string is empty' => [ $alt, '0', $conf ],
+            'zero string is empty with whitespace' => [
+                $alt, TAB . ' 0 ' . TAB, $conf
+            ],
+            // non-empty cases
+            'string is not empty' => [ 'string', 'string', $conf ],
+            '1 is not empty' => [ 1, 1, $conf ],
+            '-1 is not empty' => [ -1, -1, $conf ],
+            '0.1 is not empty' => [ 0.1, 0.1, $conf ],
+            '-0.1 is not empty' => [ -0.1, -0.1, $conf ],
+            'true is not empty' => [ true, true, $conf ],
+        ];
+    }
+
+    /**
+     * Check that stdWrap_ifEmpty works properly.
+     *
+     * Show:
+     *
+     * - Returns the content, if not empty.
+     * - Otherwise returns $conf['ifEmpty'].
+     * - Empty is checked by cast to boolean after trimming.
+     *
+     * @test
+     * @dataProvider stdWrap_ifEmptyDataProvider
+     * @param mixed $expect The expected output.
+     * @param mixed $content The given content.
+     * @param array $conf The given configuration.
+     * @return void
+     */
+    public function stdWrap_ifEmpty($expect, $content, $conf)
+    {
+        $result = $this->subject->stdWrap_ifEmpty($content, $conf);
+        $this->assertSame($expect, $result);
+    }
+
+    /**
+     * Data provider for stdWrap_ifBlank.
+     *
+     * @return array [$expect, $content, $conf]
+     */
+    public function stdWrap_ifBlankDataProvider()
+    {
+        $alt = $this->getUniqueId('alternative content');
+        $conf = ['ifBlank' => $alt];
+        return [
+            // blank cases
+            'null is blank' => [$alt, null, $conf],
+            'false is blank' => [$alt, false, $conf],
+            'empty string is blank' => [$alt, '', $conf],
+            'whitespace is blank' => [$alt, TAB . '', $conf],
+            // non-blank cases
+            'string is not blank' => ['string', 'string', $conf],
+            'zero is not blank' => [0, 0, $conf],
+            'zero string is not blank' => ['0', '0', $conf],
+            'zero float is not blank' => [0.0, 0.0, $conf],
+            'true is not blank' => [true, true, $conf],
+        ];
+    }
+
+    /**
+     * Check that stdWrap_ifBlank works properly.
+     *
+     * Show:
+     *
+     * - The content is returned if not blank.
+     * - Otherwise $conf['ifBlank'] is returned.
+     * - The check for blank is done by comparing the trimmed content
+     *   with the empty string for equality.
+     *
+     * @test
+     * @dataProvider stdWrap_ifBlankDataProvider
+     * @param mixed $expected The expected output.
+     * @param mixed $content The given input.
+     * @param array $conf The given configuration.
+     * @return void
+     */
+    public function stdWrap_ifBlank($expect, $content, $conf)
+    {
+        $result = $this->subject->stdWrap_ifBlank($content, $conf);
+        $this->assertSame($expect, $result);
     }
 
     /**
@@ -2708,7 +3623,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function stdWrap_addPageCacheTagsAddsPageTags(array $expectedTags, array $configuration)
     {
         $this->subject->stdWrap_addPageCacheTags('', $configuration);
-        $this->assertEquals($expectedTags, $this->typoScriptFrontendControllerMock->_get('pageCacheTags'));
+        $this->assertEquals($expectedTags, $this->frontendControllerMock->_get('pageCacheTags'));
     }
 
     /**
@@ -3189,7 +4104,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertSame($expected, $this->subject->stdWrap_wrap2($input, $conf));
     }
 
-
     /**
      * Data provider for stdWrap_wrap3
      *
@@ -3394,7 +4308,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function stdWrap_lang($expected, $input, $conf, $language)
     {
         if ($language) {
-            $this->typoScriptFrontendControllerMock
+            $this->frontendControllerMock
                 ->config['config']['language'] = $language;
         }
         $this->assertSame($expected,
@@ -3455,7 +4369,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertSame($expected,
             $this->subject->stdWrap_innerWrap($input, $conf));
     }
-
 
     /**
      * Data provider for stdWrap_br
@@ -3623,7 +4536,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getDataWithTypeFileReturnsUidOfFileObject()
     {
         $uid = $this->getUniqueId();
-        $file = $this->createMock(\TYPO3\CMS\Core\Resource\File::class);
+        $file = $this->createMock(File::class);
         $file->expects($this->once())->method('getUid')->will($this->returnValue($uid));
         $this->subject->setCurrentFile($file);
         $this->assertEquals($uid, $this->subject->getData('file:current:uid'));
@@ -4205,7 +5118,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getImageSourceCollectionRendersDefinedSources()
     {
         /** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
-        $cObj = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
+        $cObj = $this->getMockBuilder(ContentObjectRenderer::class)
             ->setMethods(array('stdWrap', 'getImgResource'))
             ->getMock();
 
@@ -4303,7 +5216,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getImageSourceCollectionRendersDefinedLayoutKeyDefault($layoutKey, $configuration)
     {
         /** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
-        $cObj = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
+        $cObj = $this->getMockBuilder(ContentObjectRenderer::class)
             ->setMethods(array('stdWrap', 'getImgResource'))
             ->getMock();
 
@@ -4426,7 +5339,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getImageSourceCollectionRendersDefinedLayoutKeyData($layoutKey, $configuration, $xhtmlDoctype, $expectedHtml)
     {
         /** @var $cObj \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
-        $cObj = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class)
+        $cObj = $this->getMockBuilder(ContentObjectRenderer::class)
             ->setMethods(array('stdWrap', 'getImgResource'))
             ->getMock();
 
@@ -4461,8 +5374,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function getImageSourceCollectionHookCalled()
     {
-        $this->subject = $this->getAccessibleMock(
-            \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class,
+        $this->subject = $this->getAccessibleMock(ContentObjectRenderer::class,
             array('getResourceFactory', 'stdWrap', 'getImgResource')
         );
         $this->subject->start(array(), 'tt_content');
@@ -4476,11 +5388,12 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             ->method('getImgResource')
             ->will($this->returnValue(array(100, 100, null, 'bar-file.jpg')));
 
-        $resourceFactory = $this->createMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
+        $resourceFactory = $this->createMock(ResourceFactory::class);
         $this->subject->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
 
         $className = $this->getUniqueId('tx_coretest_getImageSourceCollectionHookCalled');
-        $getImageSourceCollectionHookMock = $this->getMockBuilder(\TYPO3\CMS\Frontend\ContentObject\ContentObjectOneSourceCollectionHookInterface::class)
+        $getImageSourceCollectionHookMock = $this->getMockBuilder(
+            ContentObjectOneSourceCollectionHookInterface::class)
             ->setMethods(array('getOneSourceCollection'))
             ->setMockClassName($className)
             ->getMock();
@@ -4684,7 +5597,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $contentObjectFixture = $this->createContentObjectThrowingExceptionFixture();
 
-        $this->typoScriptFrontendControllerMock->config['config']['contentObjectExceptionHandler'] = '1';
+        $this->frontendControllerMock->config['config']['contentObjectExceptionHandler'] = '1';
         $this->subject->render($contentObjectFixture, array());
     }
 
@@ -4696,7 +5609,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $contentObjectFixture = $this->createContentObjectThrowingExceptionFixture();
         $this->expectException(\LogicException::class);
         $this->expectExceptionCode(1414513947);
-        $this->typoScriptFrontendControllerMock->config['config']['contentObjectExceptionHandler'] = '1';
+        $this->frontendControllerMock->config['config']['contentObjectExceptionHandler'] = '1';
         $configuration = array(
             'exceptionHandler' => '0'
         );
@@ -4727,7 +5640,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $contentObjectFixture = $this->createContentObjectThrowingExceptionFixture();
 
-        $this->typoScriptFrontendControllerMock
+        $this->frontendControllerMock
             ->config['config']['contentObjectExceptionHandler.'] = array(
                 'errorMessage' => 'Global message for testing',
             );
@@ -5062,6 +5975,39 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 '<p class="bodytext">Text with <a href="http://example.com/foo/">external link</a></p>',
             ),
         );
+    }
+
+    /**
+     * Check if stdWrap_parseFunc works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method parseFunc.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['parseFunc.'].
+     * - Parameter 3 is $conf['parseFunc'].
+     * - Returns the return.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_parseFunc()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'parseFunc' => $this->getUniqueId('parseFunc'),
+            'parseFunc.' => [$this->getUniqueId('parseFunc.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['parseFunc'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('parseFunc')
+            ->with($content, $conf['parseFunc.'], $conf['parseFunc'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_parseFunc($content, $conf));
     }
 
     /**
@@ -5452,7 +6398,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function typolinkReturnsCorrectLinksForPages($linkText, $configuration, $pageArray, $expectedResult)
     {
-        $pageRepositoryMockObject = $this->getMockBuilder(\TYPO3\CMS\Frontend\Page\PageRepository::class)
+        $pageRepositoryMockObject = $this->getMockBuilder(PageRepository::class)
             ->setMethods(array('getPage'))
             ->getMock();
         $pageRepositoryMockObject->expects($this->any())->method('getPage')->willReturn($pageArray);
@@ -5835,7 +6781,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $result = $this->subject->filelink($fileName, array('path' => 'typo3temp/var/tests/'));
         $this->assertEquals('<a href="' . $expectedLink . '">' . $fileName . '</a>', $result);
 
-        \TYPO3\CMS\Core\Utility\GeneralUtility::unlink_tempfile($fileNameAndPath);
+        GeneralUtility::unlink_tempfile($fileNameAndPath);
     }
 
     /**
@@ -5956,7 +6902,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function substituteMarkerArrayCachedReturnsExpectedContent($content, array $markContentArray, array $subpartContentArray, array $wrappedSubpartContentArray, $expectedContent, $shouldQueryCache = true, $shouldStoreCache = true)
     {
         /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->typoScriptFrontendControllerMock->sys_page;
+        $pageRepo = $this->frontendControllerMock->sys_page;
         $pageRepo->resetCallCount();
 
         $resultContent = $this->subject->substituteMarkerArrayCached($content, $markContentArray, $subpartContentArray, $wrappedSubpartContentArray);
@@ -5972,7 +6918,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function substituteMarkerArrayCachedRetrievesCachedValueFromRuntimeCache()
     {
         /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->typoScriptFrontendControllerMock->sys_page;
+        $pageRepo = $this->frontendControllerMock->sys_page;
         $pageRepo->resetCallCount();
 
         $content = 'Please tell me this ###FOO###.';
@@ -6001,7 +6947,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function substituteMarkerArrayCachedRetrievesCachedValueFromDbCache()
     {
         /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->typoScriptFrontendControllerMock->sys_page;
+        $pageRepo = $this->frontendControllerMock->sys_page;
         $pageRepo->resetCallCount();
 
         $content = 'Please tell me this ###FOO###.';
@@ -6030,7 +6976,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function substituteMarkerArrayCachedStoresResultInCaches()
     {
         /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->typoScriptFrontendControllerMock->sys_page;
+        $pageRepo = $this->frontendControllerMock->sys_page;
         $pageRepo->resetCallCount();
 
         $content = 'Please tell me this ###FOO###.';
@@ -6054,6 +7000,235 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertSame('Please tell me this foo.', $resultContent);
         $this->assertSame($storeArr, $this->subject->substMarkerCache[$storeKey]);
         $this->assertSame(1, $pageRepo::$storeHashCallCount);
+    }
+
+
+    /**
+     * Check if calculateCacheKey works properly.
+     *
+     * @return array Order: expect, conf, times, with, withWrap, will
+     */
+    public function calculateCacheKeyDataProvider()
+    {
+        $value = $this->getUniqueId('value');
+        $wrap = [$this->getUniqueId('wrap')];
+        $valueConf = ['key' => $value];
+        $wrapConf = ['key.' => $wrap];
+        $conf = array_merge($valueConf, $wrapConf);
+        $will = $this->getUniqueId('stdWrap');
+
+        return [
+            'no conf' => [
+                '',
+                [],
+                0,
+                null,
+                null,
+                null
+            ],
+            'value conf only' => [
+                $value,
+                $valueConf,
+                0,
+                null,
+                null,
+                null
+            ],
+            'wrap conf only' => [
+                $will,
+                $wrapConf,
+                1,
+                '',
+                $wrap,
+                $will
+            ],
+            'full conf' => [
+                $will,
+                $conf,
+                1,
+                $value,
+                $wrap,
+                $will
+            ],
+        ];
+    }
+
+    /**
+     * Check if calculateCacheKey works properly.
+     *
+     * - takes key from $conf['key']
+     * - processes key with stdWrap based on $conf['key.']
+     *
+     * @test
+     * @dataProvider calculateCacheKeyDataProvider
+     * @param string $expect Expected result.
+     * @param array $conf Properties 'key', 'key.'
+     * @param integer $times Times called mocked method.
+     * @param array $with Parameter passed to mocked method.
+     * @param string $will Return value of mocked method.
+     * @return void
+     */
+    public function calculateCacheKey($expect, $conf, $times, $with, $withWrap, $will)
+    {
+        $subject = $this->getAccessibleMock(ContentObjectRenderer::class, ['stdWrap']);
+        $subject->expects($this->exactly($times))
+            ->method('stdWrap')
+            ->with($with, $withWrap)
+            ->willReturn($will);
+
+        $result = $subject->_call('calculateCacheKey', $conf);
+        $this->assertSame($expect, $result);
+    }
+
+    /**
+     * Data provider for getFromCache
+     *
+     * @return array Order: expect, conf, cacheKey, times, cached.
+     */
+    public function getFromCacheDtataProvider()
+    {
+        $conf = [$this->getUniqueId('conf')];
+        return [
+            'empty cache key' => [
+                false, $conf, '', 0, null,
+            ],
+            'non-empty cache key' => [
+                'value', $conf, 'non-empty-key', 1, 'value',
+            ],
+        ];
+    }
+
+    /**
+     * Check if getFromCache works properly.
+     *
+     * - CalculateCacheKey is called to calc the cache key.
+     * - $conf is passed on as parameter
+     * - CacheFrontend is created and called if $cacheKey is not empty.
+     * - Else false is returned.
+     *
+     * @test
+     * @dataProvider getFromCacheDtataProvider
+     * @param string $expect Expected result.
+     * @param array $conf Configuration to pass to calculateCacheKey mock.
+     * @param string $cacheKey Return from calculateCacheKey mock.
+     * @param integer $times Times the cache is expected to be called (0 or 1).
+     * @param string $cached Return from cacheFrontend mock.
+     * @return void
+     */
+    public function getFromCache($expect, $conf, $cacheKey, $times, $cached)
+    {
+        $subject = $this->getAccessibleMock(
+            ContentObjectRenderer::class, ['calculateCacheKey']);
+        $subject
+            ->expects($this->exactly(1))
+            ->method('calculateCacheKey')
+            ->with($conf)
+            ->willReturn($cacheKey);
+        $cacheFrontend = $this->createMock(CacheFrontendInterface::class);
+        $cacheFrontend
+            ->expects($this->exactly($times))
+            ->method('get')
+            ->with($cacheKey)
+            ->willReturn($cached);
+        $cacheManager = $this->createMock(CacheManager::class);
+        $cacheManager
+            ->method('getCache')
+            ->willReturn($cacheFrontend);
+        GeneralUtility::setSingletonInstance(
+            CacheManager::class, $cacheManager);
+        $this->assertSame($expect, $subject->_call('getFromCache', $conf));
+    }
+
+    /**
+     * Data provider for getFieldVal
+     *
+     * @return array [$expect, $fields]
+     */
+    public function getFieldValDataProvider()
+    {
+        return [
+            'invalid single key' => [null, 'invalid'],
+            'single key of null' => [null, 'null'],
+            'single key of empty string' => ['', 'empty'],
+            'single key of non-empty string' => ['string 1', 'string1'],
+            'single key of boolean false' => [false, 'false'],
+            'single key of boolean true' => [true, 'true'],
+            'single key of integer 0' => [0, 'zero'],
+            'single key of integer 1' => [1, 'one'],
+            'single key to be trimmed' => ['string 1', ' string1 '],
+
+            'split nothing' => ['', '//'],
+            'split one before' => ['string 1', 'string1//'],
+            'split one after' => ['string 1', '//string1'],
+            'split two ' => ['string 1', 'string1//string2'],
+            'split three ' => ['string 1', 'string1//string2//string3'],
+            'split to be trimmed' => ['string 1', ' string1 // string2 '],
+            '0 is not empty' => [0, '// zero'],
+            '1 is not empty' => [1, '// one'],
+            'true is not empty' => [true, '// true'],
+            'false is empty' => ['', '// false'],
+            'null is empty' => ['', '// null'],
+            'empty string is empty' => ['', '// empty'],
+            'string is not empty' => ['string 1', '// string1'],
+            'first non-empty winns' => [ 0, 'false//empty//null//zero//one'],
+            'empty string is fallback' => ['', 'false // empty // null'],
+        ];
+    }
+
+    /**
+     * Check that getFieldVal works properly.
+     *
+     * Show:
+     *
+     * - Returns the field from $this->data.
+     * - The keys are trimmed.
+     *
+     * - For a single key (no //) returns the field as is:
+     *
+     *   - '' => ''
+     *   - null => null
+     *   - false => false
+     *   - true => true
+     *   -  0 => 0
+     *   -  1 => 1
+     *   - 'string' => 'string'
+     *
+     * - If '//' is present, explodes key candidates.
+     * - Returns the first field, that is not "empty".
+     * - "Empty" is checked after type cast to string by comparing to ''.
+     * - The winning non-empty value is returned as is.
+     * - The fallback, if all evals to empty, is the empty string ''.
+     * - '//' with single elements and empty string fallback results in:
+     *
+     *   - '' => ''
+     *   - null => ''
+     *   - false => ''
+     *   - true => true
+     *   -  0 => 0
+     *   -  1 => 1
+     *   - 'string' => 'string'
+     *
+     * @test
+     * @dataProvider getFieldValDataProvider
+     * @param string $expect The expected string.
+     * @param string $fields Field names divides by //.
+     * @return void
+     */
+    public function getFieldVal($expect, $fields)
+    {
+        $data = [
+            'string1' => 'string 1',
+            'string2' => 'string 2',
+            'string3' => 'string 3',
+            'empty' => '',
+            'null' => null,
+            'false' => false,
+            'true' => true,
+            'zero' => 0,
+            'one' => 1,
+        ];
+        $this->subject->_set('data', $data);
+        $this->assertSame($expect, $this->subject->getFieldVal($fields));
     }
 
     /**
