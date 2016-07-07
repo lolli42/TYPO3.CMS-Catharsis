@@ -950,7 +950,7 @@ class TypoScriptFrontendController
                         $this->pageUnavailableAndExit($message);
                     } else {
                         GeneralUtility::sysLog($message, 'cms', GeneralUtility::SYSLOG_SEVERITY_ERROR);
-                        throw new ServiceUnavailableException('Database Error: ' . $message, 1301648782);
+                        throw new ServiceUnavailableException('Database Error: ' . $message, 1301648945);
                     }
                     break;
                 default:
