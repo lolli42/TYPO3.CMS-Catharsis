@@ -19,11 +19,17 @@
 #
 ##########################
 
+cd typo3/
+
 # Array of timestamps which are allowed to be non-unique
 IGNORE=("1270853884")
 
+# The ack / ack-grep command can be different for different OS
+ACK=${ACK:-ack-grep}
+
 # Respect only php files and ignore files within a "Tests" directory
-EXCEPTIONS=$(grep -r --include \*.php --exclude-dir Tests 'throw new' -A5 typo3/ | grep '[[:digit:]]\{10\}')
+EXCEPTIONS=$(${ACK} --type php --ignore-dir Tests 'throw new' -A5 0<&- | grep '[[:digit:]]\{10\}')
+echo $EXCEPTIONS
 
 DUPLICATES=$(echo ${EXCEPTIONS} | awk '{
     for(i=1; i<=NF; i++) {
@@ -36,6 +42,7 @@ DUPLICATES=$(echo ${EXCEPTIONS} | awk '{
 COUNTER=0
 
 for CODE in ${DUPLICATES}; do
+	echo $CODE
     # Ignore timestamps which are defined by the "IGNORE" array
     if [ ${IGNORE[@]} != ${CODE} ] ; then
         echo "Possible duplicate exception code $CODE": ${ACK} --type php ${CODE}
