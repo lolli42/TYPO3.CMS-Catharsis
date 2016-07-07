@@ -510,360 +510,289 @@ class ContentObjectRendererTest extends UnitTestCase
     //////////////////////////////
     // Tests concerning cropHTML
     //////////////////////////////
+
     /**
-     * This is the data provider for the tests of crop and cropHTML below. It provides all combinations
-     * of charset, text type, and configuration options to be tested.
+     * Check if stdWrap_cropHTML works properly.
      *
-     * @return array two-dimensional array with the second level like this:
-     * @see cropHtmlWithDataProvider
+     * Show:
+     *
+     * - Delegates to method cropHTML.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['cropHTML'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
      */
-    public function cropHtmlDataProvider()
+    public function stdWrap_cropHTML()
     {
-        $plainText = 'Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j implemented the original version of the crop function.';
-        $textWithMarkup = '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j</a>' . ' implemented</strong> the original version of the crop function.';
-        $textWithEntities = 'Kasper Sk&aring;rh&oslash;j implemented the; original ' . 'version of the crop function.';
-        $data = array(
-            'plain text; 11|...' => array(
-                '11|...',
-                $plainText,
-                'Kasper Sk' . chr(229) . 'r...'
-            ),
-            'plain text; -58|...' => array(
-                '-58|...',
-                $plainText,
-                '...h' . chr(248) . 'j implemented the original version of the crop function.'
-            ),
-            'plain text; 4|...|1' => array(
-                '4|...|1',
-                $plainText,
-                'Kasp...'
-            ),
-            'plain text; 20|...|1' => array(
-                '20|...|1',
-                $plainText,
-                'Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j...'
-            ),
-            'plain text; -5|...|1' => array(
-                '-5|...|1',
-                $plainText,
-                '...tion.'
-            ),
-            'plain text; -49|...|1' => array(
-                '-49|...|1',
-                $plainText,
-                '...the original version of the crop function.'
-            ),
-            'text with markup; 11|...' => array(
-                '11|...',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'r...</a></strong>'
-            ),
-            'text with markup; 13|...' => array(
-                '13|...',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . '...</a></strong>'
-            ),
-            'text with markup; 14|...' => array(
-                '14|...',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j</a>...</strong>'
-            ),
-            'text with markup; 15|...' => array(
-                '15|...',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j</a> ...</strong>'
-            ),
-            'text with markup; 29|...' => array(
-                '29|...',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j</a> implemented</strong> th...'
-            ),
-            'text with markup; -58|...' => array(
-                '-58|...',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">...h' . chr(248) . 'j</a> implemented</strong> the original version of the crop function.'
-            ),
-            'text with markup 4|...|1' => array(
-                '4|...|1',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasp...</a></strong>'
-            ),
-            'text with markup; 11|...|1' => array(
-                '11|...|1',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper...</a></strong>'
-            ),
-            'text with markup; 13|...|1' => array(
-                '13|...|1',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper...</a></strong>'
-            ),
-            'text with markup; 14|...|1' => array(
-                '14|...|1',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j</a>...</strong>'
-            ),
-            'text with markup; 15|...|1' => array(
-                '15|...|1',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j</a>...</strong>'
-            ),
-            'text with markup; 29|...|1' => array(
-                '29|...|1',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j</a> implemented</strong>...'
-            ),
-            'text with markup; -66|...|1' => array(
-                '-66|...|1',
-                $textWithMarkup,
-                '<strong><a href="mailto:kasper@typo3.org">...Sk' . chr(229) . 'rh' . chr(248) . 'j</a> implemented</strong> the original version of the crop function.'
-            ),
-            'text with entities 9|...' => array(
-                '9|...',
-                $textWithEntities,
-                'Kasper Sk...'
-            ),
-            'text with entities 10|...' => array(
-                '10|...',
-                $textWithEntities,
-                'Kasper Sk&aring;...'
-            ),
-            'text with entities 11|...' => array(
-                '11|...',
-                $textWithEntities,
-                'Kasper Sk&aring;r...'
-            ),
-            'text with entities 13|...' => array(
-                '13|...',
-                $textWithEntities,
-                'Kasper Sk&aring;rh&oslash;...'
-            ),
-            'text with entities 14|...' => array(
-                '14|...',
-                $textWithEntities,
-                'Kasper Sk&aring;rh&oslash;j...'
-            ),
-            'text with entities 15|...' => array(
-                '15|...',
-                $textWithEntities,
-                'Kasper Sk&aring;rh&oslash;j ...'
-            ),
-            'text with entities 16|...' => array(
-                '16|...',
-                $textWithEntities,
-                'Kasper Sk&aring;rh&oslash;j i...'
-            ),
-            'text with entities -57|...' => array(
-                '-57|...',
-                $textWithEntities,
-                '...j implemented the; original version of the crop function.'
-            ),
-            'text with entities -58|...' => array(
-                '-58|...',
-                $textWithEntities,
-                '...&oslash;j implemented the; original version of the crop function.'
-            ),
-            'text with entities -59|...' => array(
-                '-59|...',
-                $textWithEntities,
-                '...h&oslash;j implemented the; original version of the crop function.'
-            ),
-            'text with entities 4|...|1' => array(
-                '4|...|1',
-                $textWithEntities,
-                'Kasp...'
-            ),
-            'text with entities 9|...|1' => array(
-                '9|...|1',
-                $textWithEntities,
-                'Kasper...'
-            ),
-            'text with entities 10|...|1' => array(
-                '10|...|1',
-                $textWithEntities,
-                'Kasper...'
-            ),
-            'text with entities 11|...|1' => array(
-                '11|...|1',
-                $textWithEntities,
-                'Kasper...'
-            ),
-            'text with entities 13|...|1' => array(
-                '13|...|1',
-                $textWithEntities,
-                'Kasper...'
-            ),
-            'text with entities 14|...|1' => array(
-                '14|...|1',
-                $textWithEntities,
-                'Kasper Sk&aring;rh&oslash;j...'
-            ),
-            'text with entities 15|...|1' => array(
-                '15|...|1',
-                $textWithEntities,
-                'Kasper Sk&aring;rh&oslash;j...'
-            ),
-            'text with entities 16|...|1' => array(
-                '16|...|1',
-                $textWithEntities,
-                'Kasper Sk&aring;rh&oslash;j...'
-            ),
-            'text with entities -57|...|1' => array(
-                '-57|...|1',
-                $textWithEntities,
-                '...implemented the; original version of the crop function.'
-            ),
-            'text with entities -58|...|1' => array(
-                '-58|...|1',
-                $textWithEntities,
-                '...implemented the; original version of the crop function.'
-            ),
-            'text with entities -59|...|1' => array(
-                '-59|...|1',
-                $textWithEntities,
-                '...implemented the; original version of the crop function.'
-            ),
-            'text with dash in html-element 28|...|1' => array(
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'cropHTML' => $this->getUniqueId('cropHTML'),
+            'cropHTML.' => $this->getUniqueId('not used'),
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['cropHTML'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('cropHTML')
+            ->with($content, $conf['cropHTML'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_cropHTML($content, $conf));
+    }
+
+    /**
+     * Data provider for cropHTML.
+     *
+     * Provides combinations of text type and configuration.
+     *
+     * @return array [$expect, $conf, $content]
+     */
+    public function cropHTMLDataProvider()
+    {
+        $plainText = 'Kasper Sk' . chr(229) . 'rh' . chr(248)
+            . 'j implemented the original version of the crop function.';
+        $textWithMarkup = '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+            . chr(229) . 'rh' . chr(248) . 'j</a> implemented</strong> the '
+            . 'original version of the crop function.';
+        $textWithEntities = 'Kasper Sk&aring;rh&oslash;j implemented the; '
+            . 'original ' . 'version of the crop function.';
+        $textWithLinebreaks = "Lorem ipsum dolor sit amet,\n"
+            . "consetetur sadipscing elitr,\n"
+            . 'sed diam nonumy eirmod tempor invidunt ut labore e'
+            . 't dolore magna aliquyam';
+
+        return [
+            'plain text; 11|...' => [
+                'Kasper Sk' . chr(229) . 'r...',
+                $plainText, '11|...',
+            ],
+            'plain text; -58|...' => [
+                '...h' . chr(248) . 'j implemented the original version of '
+                . 'the crop function.',
+                $plainText, '-58|...',
+            ],
+            'plain text; 4|...|1' => [
+                'Kasp...',
+                $plainText, '4|...|1',
+            ],
+            'plain text; 20|...|1' => [
+                'Kasper Sk' . chr(229) . 'rh' . chr(248) . 'j...',
+                $plainText, '20|...|1',
+            ],
+            'plain text; -5|...|1' => [
+                '...tion.',
+                $plainText, '-5|...|1',
+            ],
+            'plain text; -49|...|1' => [
+                '...the original version of the crop function.',
+                $plainText, '-49|...|1',
+            ],
+            'text with markup; 11|...' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'r...</a></strong>',
+                    $textWithMarkup, '11|...',
+            ],
+            'text with markup; 13|...' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'rh' . chr(248) . '...</a></strong>',
+                    $textWithMarkup, '13|...',
+            ],
+            'text with markup; 14|...' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'rh' . chr(248) . 'j</a>...</strong>',
+                    $textWithMarkup, '14|...',
+            ],
+            'text with markup; 15|...' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'rh' . chr(248) . 'j</a> ...</strong>',
+                    $textWithMarkup, '15|...',
+            ],
+            'text with markup; 29|...' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'rh' . chr(248) . 'j</a> implemented</strong> '
+                . 'th...',
+                $textWithMarkup, '29|...',
+            ],
+            'text with markup; -58|...' => [
+                '<strong><a href="mailto:kasper@typo3.org">...h' . chr(248)
+                . 'j</a> implemented</strong> the original version of the crop '
+                . 'function.',
+                $textWithMarkup, '-58|...',
+            ],
+            'text with markup 4|...|1' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasp...</a>'
+                . '</strong>',
+                $textWithMarkup, '4|...|1',
+            ],
+            'text with markup; 11|...|1' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper...</a>'
+                . '</strong>',
+                $textWithMarkup, '11|...|1',
+            ],
+            'text with markup; 13|...|1' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper...</a>'
+                . '</strong>',
+                $textWithMarkup, '13|...|1',
+            ],
+            'text with markup; 14|...|1' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'rh' . chr(248) . 'j</a>...</strong>',
+                 $textWithMarkup, '14|...|1',
+            ],
+            'text with markup; 15|...|1' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'rh' . chr(248) . 'j</a>...</strong>',
+                $textWithMarkup, '15|...|1',
+            ],
+            'text with markup; 29|...|1' => [
+                '<strong><a href="mailto:kasper@typo3.org">Kasper Sk'
+                . chr(229) . 'rh' . chr(248) . 'j</a> implemented</strong>...',
+                $textWithMarkup, '29|...|1',
+            ],
+            'text with markup; -66|...|1' => [
+                '<strong><a href="mailto:kasper@typo3.org">...Sk' . chr(229)
+                . 'rh' . chr(248) . 'j</a> implemented</strong> the original v'
+                . 'ersion of the crop function.',
+                $textWithMarkup, '-66|...|1',
+            ],
+            'text with entities 9|...' => [
+                'Kasper Sk...',
+                $textWithEntities, '9|...',
+            ],
+            'text with entities 10|...' => [
+                'Kasper Sk&aring;...',
+                $textWithEntities, '10|...',
+            ],
+            'text with entities 11|...' => [
+                'Kasper Sk&aring;r...',
+                $textWithEntities, '11|...',
+            ],
+            'text with entities 13|...' => [
+                'Kasper Sk&aring;rh&oslash;...',
+                $textWithEntities, '13|...',
+            ],
+            'text with entities 14|...' => [
+                'Kasper Sk&aring;rh&oslash;j...',
+                $textWithEntities, '14|...',
+            ],
+            'text with entities 15|...' => [
+                'Kasper Sk&aring;rh&oslash;j ...',
+                $textWithEntities, '15|...',
+            ],
+            'text with entities 16|...' => [
+                'Kasper Sk&aring;rh&oslash;j i...',
+                $textWithEntities, '16|...',
+            ],
+            'text with entities -57|...' => [
+                '...j implemented the; original version of the crop function.',
+                $textWithEntities, '-57|...',
+            ],
+            'text with entities -58|...' => [
+                '...&oslash;j implemented the; original version of the crop '
+                . 'function.',
+                $textWithEntities, '-58|...',
+            ],
+            'text with entities -59|...' => [
+                '...h&oslash;j implemented the; original version of the crop '
+                . 'function.',
+                $textWithEntities, '-59|...',
+            ],
+            'text with entities 4|...|1' => [
+                'Kasp...',
+                $textWithEntities, '4|...|1',
+            ],
+            'text with entities 9|...|1' => [
+                'Kasper...',
+                $textWithEntities, '9|...|1',
+            ],
+            'text with entities 10|...|1' => [
+                'Kasper...',
+                $textWithEntities, '10|...|1',
+            ],
+            'text with entities 11|...|1' => [
+                'Kasper...',
+                $textWithEntities, '11|...|1',
+            ],
+            'text with entities 13|...|1' => [
+                'Kasper...',
+                $textWithEntities, '13|...|1',
+            ],
+            'text with entities 14|...|1' => [
+                'Kasper Sk&aring;rh&oslash;j...',
+                $textWithEntities, '14|...|1',
+            ],
+            'text with entities 15|...|1' => [
+                'Kasper Sk&aring;rh&oslash;j...',
+                $textWithEntities, '15|...|1',
+            ],
+            'text with entities 16|...|1' => [
+                'Kasper Sk&aring;rh&oslash;j...',
+                $textWithEntities, '16|...|1',
+            ],
+            'text with entities -57|...|1' => [
+                '...implemented the; original version of the crop function.',
+                $textWithEntities, '-57|...|1',
+            ],
+            'text with entities -58|...|1' => [
+                '...implemented the; original version of the crop function.',
+                $textWithEntities, '-58|...|1',
+            ],
+            'text with entities -59|...|1' => [
+                '...implemented the; original version of the crop function.',
+                $textWithEntities, '-59|...|1',
+            ],
+            'text with dash in html-element 28|...|1' => [
+                'Some text with a link to <link email.address@example.org - '
+                . 'mail "Open email window">my...</link>',
+                'Some text with a link to <link email.address@example.org - m'
+                . 'ail "Open email window">my email.address@example.org<'
+                . '/link> and text after it',
                 '28|...|1',
-                'Some text with a link to <link email.address@example.org - mail "Open email window">my email.address@example.org</link> and text after it',
-                'Some text with a link to <link email.address@example.org - mail "Open email window">my...</link>'
-            ),
-            'html elements with dashes in attributes' => array(
-                '9',
+            ],
+            'html elements with dashes in attributes' => [
+                '<em data-foo="x">foobar</em>foo',
                 '<em data-foo="x">foobar</em>foobaz',
-                '<em data-foo="x">foobar</em>foo'
-            ),
-            'html elements with iframe embedded 24|...|1' => array(
+                '9',
+            ],
+            'html elements with iframe embedded 24|...|1' => [
+                'Text with iframe <iframe src="//what.ever/"></iframe> and...',
+                'Text with iframe <iframe src="//what.ever/">'
+                . '</iframe> and text after it',
                 '24|...|1',
-                'Text with iframe <iframe src="//what.ever/"></iframe> and text after it',
-                'Text with iframe <iframe src="//what.ever/"></iframe> and...'
-            ),
-            'html elements with script tag embedded 24|...|1' => array(
+            ],
+            'html elements with script tag embedded 24|...|1' => [
+                'Text with script <script>alert(\'foo\');</script> and...',
+                'Text with script <script>alert(\'foo\');</script> '
+                . 'and text after it',
                 '24|...|1',
-                'Text with script <script>alert(\'foo\');</script> and text after it',
-                'Text with script <script>alert(\'foo\');</script> and...'
-            )
-        );
-        return $data;
+            ],
+            'text with linebreaks' => [
+                "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\ns"
+                . 'ed diam nonumy eirmod tempor invidunt ut labore e'
+                . 't dolore magna',
+                $textWithLinebreaks, '121',
+            ],
+        ];
     }
 
     /**
-     * Checks if stdWrap.cropHTML works with plain text cropping from left
+     * Check if cropHTML works properly.
      *
      * @test
-     * @dataProvider cropHtmlDataProvider
-     * @param string $settings
-     * @param string $subject the string to crop
-     * @param string $expected the expected cropped result
+     * @dataProvider cropHTMLDataProvider
+     * @param string $expect The expected cropped output.
+     * @param string $content The given input.
+     * @param string $conf The given configuration.
+     * @return void
      */
-    public function cropHtmlWithDataProvider($settings, $subject, $expected)
+    public function cropHTML($expect, $content, $conf)
     {
-        $this->handleCharset($subject, $expected);
-        $this->assertEquals($expected, $this->subject->cropHTML($subject, $settings), 'cropHTML failed with settings: "' . $settings . '"');
-    }
-
-    /**
-     * Checks if stdWrap.cropHTML works with a complex content with many tags. Currently cropHTML
-     * counts multiple invisible characters not as one (as the browser will output the content).
-     *
-     * @test
-     */
-    public function cropHtmlWorksWithComplexContent()
-    {
-        $input =
-            '<h1>Blog Example</h1>' . LF .
-            '<hr>' . LF .
-            '<div class="csc-header csc-header-n1">' . LF .
-            '	<h2 class="csc-firstHeader">Welcome to Blog #1</h2>' . LF .
-            '</div>' . LF .
-            '<p class="bodytext">' . LF .
-            '	A blog about TYPO3 extension development. In order to start blogging, read the <a href="#">Help section</a>. If you have any further questions, feel free to contact the administrator John Doe (<a href="mailto:john.doe@example.com">john.doe@example.com)</a>.' . LF .
-            '</p>' . LF .
-            '<div class="tx-blogexample-list-container">' . LF .
-            '	<p class="bodytext">' . LF .
-            '		Below are the most recent posts:' . LF .
-            '	</p>' . LF .
-            '	<ul>' . LF .
-            '		<li data-element="someId">' . LF .
-            '			<h3>' . LF .
-            '				<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[blog]=&amp;tx_blogexample_pi1[action]=show&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=003b0131ed">The Post #1</a>' . LF .
-            '			</h3>' . LF .
-            '			<p class="bodytext">' . LF .
-            '				Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut...' . LF .
-            '			</p>' . LF .
-            '			<p class="metadata">' . LF .
-            '				Published on 26.08.2009 by Jochen Rau' . LF .
-            '			</p>' . LF .
-            '			<p>' . LF .
-            '				Tags: [MVC]&nbsp;[Domain Driven Design]&nbsp;<br>' . LF .
-            '				<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[action]=show&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=f982643bc3">read more &gt;&gt;</a><br>' . LF .
-            '				<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[blog][uid]=70&amp;tx_blogexample_pi1[action]=edit&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=5b481bc8f0">Edit</a>&nbsp;<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[blog][uid]=70&amp;tx_blogexample_pi1[action]=delete&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=4e52879656">Delete</a>' . LF .
-            '			</p>' . LF .
-            '		</li>' . LF .
-            '	</ul>' . LF .
-            '	<p>' . LF .
-            '		<a href="index.php?id=99&amp;tx_blogexample_pi1[blog][uid]=70&amp;tx_blogexample_pi1[action]=new&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=2718a4b1a0">Create a new Post</a>' . LF .
-            '	</p>' . LF .
-            '</div>' . LF .
-            '<hr>' . LF .
-            '<p>' . LF .
-            '	? TYPO3 Association' . LF .
-            '</p>';
-
-        $result = $this->subject->cropHTML($input, '300');
-
-        $expected =
-            '<h1>Blog Example</h1>' . LF .
-            '<hr>' . LF .
-            '<div class="csc-header csc-header-n1">' . LF .
-            '	<h2 class="csc-firstHeader">Welcome to Blog #1</h2>' . LF .
-            '</div>' . LF .
-            '<p class="bodytext">' . LF .
-            '	A blog about TYPO3 extension development. In order to start blogging, read the <a href="#">Help section</a>. If you have any further questions, feel free to contact the administrator John Doe (<a href="mailto:john.doe@example.com">john.doe@example.com)</a>.' . LF .
-            '</p>' . LF .
-            '<div class="tx-blogexample-list-container">' . LF .
-            '	<p class="bodytext">' . LF .
-            '		Below are the most recent posts:' . LF .
-            '	</p>' . LF .
-            '	<ul>' . LF .
-            '		<li data-element="someId">' . LF .
-            '			<h3>' . LF .
-            '				<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[blog]=&amp;tx_blogexample_pi1[action]=show&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=003b0131ed">The Post</a></h3></li></ul></div>';
-
-        $this->assertEquals($expected, $result);
-
-        $result = $this->subject->cropHTML($input, '-100');
-
-        $expected =
-            '<div class="tx-blogexample-list-container"><ul><li data-element="someId"><p> Design]&nbsp;<br>' . LF .
-            '				<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[action]=show&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=f982643bc3">read more &gt;&gt;</a><br>' . LF .
-            '				<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[blog][uid]=70&amp;tx_blogexample_pi1[action]=edit&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=5b481bc8f0">Edit</a>&nbsp;<a href="index.php?id=99&amp;tx_blogexample_pi1[post][uid]=211&amp;tx_blogexample_pi1[blog][uid]=70&amp;tx_blogexample_pi1[action]=delete&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=4e52879656">Delete</a>' . LF .
-            '			</p>' . LF .
-            '		</li>' . LF .
-            '	</ul>' . LF .
-            '	<p>' . LF .
-            '		<a href="index.php?id=99&amp;tx_blogexample_pi1[blog][uid]=70&amp;tx_blogexample_pi1[action]=new&amp;tx_blogexample_pi1[controller]=Post&amp;cHash=2718a4b1a0">Create a new Post</a>' . LF .
-            '	</p>' . LF .
-            '</div>' . LF .
-            '<hr>' . LF .
-            '<p>' . LF .
-            '	? TYPO3 Association' . LF .
-            '</p>';
-
-        $this->assertEquals($expected, $result);
-    }
-
-    /**
-     * Checks if stdWrap.cropHTML handles linebreaks correctly (by ignoring them)
-     *
-     * @test
-     */
-    public function cropHtmlWorksWithLinebreaks()
-    {
-        $subject = "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\nsed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam";
-        $expected = "Lorem ipsum dolor sit amet,\nconsetetur sadipscing elitr,\nsed diam nonumy eirmod tempor invidunt ut labore et dolore magna";
-        $result = $this->subject->cropHTML($subject, '121');
-        $this->assertEquals($expected, $result);
+        $this->handleCharset($content, $expect);
+        $this->assertSame($expect,
+            $this->subject->cropHTML($content, $conf));
     }
 
     /**
@@ -907,7 +836,7 @@ class ContentObjectRendererTest extends UnitTestCase
      * @param string $expect Expected result.
      * @param string $input Given input string.
      * @param array $conf Property 'cache.'
-     * @param integer $times Times called mocked method.
+     * @param int $times Times called mocked method.
      * @param array $with Parameter passed to mocked method.
      * @param string|false $will Return value of mocked method.
      * @return void
@@ -1118,6 +1047,31 @@ class ContentObjectRendererTest extends UnitTestCase
             ->willReturn($return);
         $this->assertSame($return, $subject->stdWrap_data('discard', $conf));
         $this->assertSame('', $subject->_get('alternativeData'));
+    }
+
+    /**
+     * Check if stdWrap_insertData works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to method insertData.
+     *  - Parameter 1 is $content.
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void
+     */
+    public function stdWrap_insertData()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [$this->getUniqueId('conf not used')];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['insertData'])->getMock();
+        $subject->expects($this->once())->method('insertData')
+            ->with($content)->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_insertData($content, $conf));
     }
 
     /**
@@ -1345,6 +1299,40 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
+     * Check if stdWrap_prepend works properly.
+     *
+     * Show:
+     *
+     * - Delegates to the method cObjGetSingle().
+     * - First parameter is $conf['prepend'].
+     * - Second parameter is $conf['prepend.'].
+     * - Third parameter is '/stdWrap/.prepend'.
+     * - Returns the return value prepended to $content.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_prepend()
+    {
+        $debugKey =  '/stdWrap/.prepend';
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'prepend' => $this->getUniqueId('prepend'),
+            'prepend.' => [$this->getUniqueId('prepend.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['cObjGetSingle'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('cObjGetSingle')
+            ->with($conf['prepend'], $conf['prepend.'], $debugKey)
+            ->willReturn($return);
+        $this->assertSame($return . $content,
+            $subject->stdWrap_prepend($content, $conf));
+    }
+
+    /**
      * Check if stdWrap_cObject works properly.
      *
      * Show:
@@ -1365,15 +1353,50 @@ class ContentObjectRendererTest extends UnitTestCase
             'cObject' => $this->getUniqueId('cObject'),
             'cObject.' => [$this->getUniqueId('cObject.')],
         ];
+        $return = $this->getUniqueId('return');
         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
             ->setMethods(['cObjGetSingle'])->getMock();
         $subject
             ->expects($this->once())
             ->method('cObjGetSingle')
             ->with($conf['cObject'], $conf['cObject.'], $debugKey)
-            ->willReturn('return');
-        $this->assertSame('return',
+            ->willReturn($return);
+        $this->assertSame($return,
             $subject->stdWrap_cObject('discard', $conf));
+    }
+
+    /**
+     * Check if stdWrap_append works properly.
+     *
+     * Show:
+     *
+     * - Delegates to the method cObjGetSingle().
+     * - First parameter is $conf['append'].
+     * - Second parameter is $conf['append.'].
+     * - Third parameter is '/stdWrap/.append'.
+     * - Returns the return value appended to $content.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_append()
+    {
+        $debugKey =  '/stdWrap/.append';
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'append' => $this->getUniqueId('append'),
+            'append.' => [$this->getUniqueId('append.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['cObjGetSingle'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('cObjGetSingle')
+            ->with($conf['append'], $conf['append.'], $debugKey)
+            ->willReturn($return);
+        $this->assertSame($content . $return,
+            $subject->stdWrap_append($content, $conf));
     }
 
     /**
@@ -1426,6 +1449,34 @@ class ContentObjectRendererTest extends UnitTestCase
             ->with($conf['filelist'])->willReturn('return');
         $this->assertSame('return',
             $subject->stdWrap_filelist('discard', $conf));
+    }
+
+    /**
+     * Check if stdWrap_filelink works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method filelink.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['filelink.'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_filelink()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'filelink' => $this->getUniqueId('not used'),
+            'filelink.' => [$this->getUniqueId('filelink.')],
+        ];
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['filelink'])->getMock();
+        $subject->expects($this->once())->method('filelink')
+            ->with($content, $conf['filelink.'])->willReturn('return');
+        $this->assertSame('return',
+            $subject->stdWrap_filelink($content, $conf));
     }
 
     /**
@@ -1720,6 +1771,38 @@ class ContentObjectRendererTest extends UnitTestCase
         $content = '<html><p>Hello <span class="inline">inline tag<span>!</p><p>Hello!</p></html>';
         $expected = 'Hello inline tag!Hello!';
         $this->assertSame($expected, $this->subject->stdWrap_stripHtml($content));
+    }
+
+    /**
+     * Check if stdWrap_crop works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method listNum.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['crop'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_crop()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'crop' => $this->getUniqueId('crop'),
+            'crop.' => $this->getUniqueId('not used'),
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['crop'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('crop')
+            ->with($content, $conf['crop'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_crop($content, $conf));
     }
 
     /**
@@ -2094,7 +2177,7 @@ class ContentObjectRendererTest extends UnitTestCase
             // negative numbers
             'negative int' => [-123, -123],
             'negative float' => [-123, -123.45],
-            'negative float does not round down' => [ -123, -123.55],
+            'negative float does not round down' => [-123, -123.55],
             // strings
             'word string' => [0, 'string'],
             'empty string' => [0, ''],
@@ -2271,6 +2354,93 @@ class ContentObjectRendererTest extends UnitTestCase
             ->with($content, $conf['stdWrap.'])
             ->willReturn($return);
         $this->assertSame($return, $subject->stdWrap_stdWrap($content, $conf));
+    }
+
+    /**
+     * Check that stdWrap_dataWrap works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to method dataWrap.
+     *  - Parameter 1 is $content.
+     *  - Parameter 2 is $conf['dataWrap'].
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_dataWrap()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'dataWrap' => $this->getUniqueId('dataWrap'),
+            'dataWrap.' => [$this->getUniqueId('not used')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['dataWrap'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('dataWrap')
+            ->with($content, $conf['dataWrap'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_dataWrap($content, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_prefixComment.
+     *
+     * @retunr array [$expect, $content, $conf, $disable, $times, $will]
+     */
+    public function stdWrap_prefixCommentDataProvider()
+    {
+        $content = $this->getUniqueId('content');
+        $will = $this->getUniqueId('will');
+        $conf['prefixComment'] = $this->getUniqueId('prefixComment');
+        $emptyConf1 = [];
+        $emptyConf2['prefixComment'] = '';
+        return [
+            'standard case' => [$will, $content, $conf, false, 1, $will],
+            'emptyConf1' => [$content, $content, $emptyConf1, false, 0, $will],
+            'emptyConf2' => [$content, $content, $emptyConf2, false, 0, $will],
+            'disabled by bool' => [$content, $content, $conf, true, 0, $will],
+            'disabled by int' => [$content, $content, $conf, 1, 0, $will],
+        ];
+    }
+
+    /**
+     * Check that stdWrap_prefixComment works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to method prefixComment.
+     *  - Parameter 1 is $conf['prefixComment'].
+     *  - Parameter 2 is [].
+     *  - Parameter 3 is $content.
+     *  - Returns the return value.
+     *  - Returns $content as is,
+     *    - if $conf['prefixComment'] is empty.
+     *    - if 'config.disablePrefixComment' is configured by the frontend.
+     *
+     *  @test
+     *  @dataProvider stdWrap_prefixCommentDataProvider
+     *  @return void
+     */
+    public function stdWrap_prefixComment(
+        $expect, $content, $conf, $disable, $times, $will)
+    {
+        $this->frontendControllerMock
+            ->config['config']['disablePrefixComment'] = $disable;
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['prefixComment'])->getMock();
+        $subject
+            ->expects($this->exactly($times))
+            ->method('prefixComment')
+            ->with($conf['prefixComment'], [], $content)
+            ->willReturn($will);
+        $this->assertSame($expect,
+            $subject->stdWrap_prefixComment($content, $conf));
     }
 
     /**
@@ -2452,7 +2622,7 @@ class ContentObjectRendererTest extends UnitTestCase
         $subject
             ->expects($this->once())
             ->method('replacement')
-            ->with( $content, $conf['replacement.'])
+            ->with($content, $conf['replacement.'])
             ->willReturn($return);
         $this->assertSame($return,
             $subject->stdWrap_replacement($content, $conf));
@@ -2528,25 +2698,37 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
-     * @return array
+     * Data provider for stdWrap_rawUrlEncode
+     *
+     * @return array [$expect, $content].
      */
-    public function stdWrapRawUrlEncodeDataProvider()
+    public function stdWrap_rawUrlEncodeDataProvider()
     {
         return [
-            'https://typo3.org?id=10' => ['https://typo3.org?id=10', 'https%3A%2F%2Ftypo3.org%3Fid%3D10'],
-            'https://typo3.org?id=10&foo=bar' => ['https://typo3.org?id=10&foo=bar', 'https%3A%2F%2Ftypo3.org%3Fid%3D10%26foo%3Dbar'],
+            'https://typo3.org?id=10' => [
+                'https%3A%2F%2Ftypo3.org%3Fid%3D10',
+                'https://typo3.org?id=10',
+            ],
+            'https://typo3.org?id=10&foo=bar' => [
+                'https%3A%2F%2Ftypo3.org%3Fid%3D10%26foo%3Dbar',
+                'https://typo3.org?id=10&foo=bar',
+            ],
         ];
     }
 
     /**
-     * Check if rawUrlEncode works properly
+     * Check if rawUrlEncode works properly.
      *
      * @test
-     * @dataProvider stdWrapRawUrlEncodeDataProvider
+     * @dataProvider stdWrap_rawUrlEncodeDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @return void
      */
-    public function stdWrap_rawUrlEncode($input, $expected)
+    public function stdWrap_rawUrlEncode($expect, $content)
     {
-        $this->assertEquals($expected, $this->subject->stdWrap_rawUrlEncode($input));
+        $this->assertSame($expect,
+            $this->subject->stdWrap_rawUrlEncode($content));
     }
 
     /**
@@ -3122,211 +3304,142 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
-     * Data provider for stdWrap_bytes test
+     * Data provider for stdWrap_bytes.
      *
-     * @return array
+     * @return array [$expect, $content, $conf]
      */
     public function stdWrap_bytesDataProvider()
     {
-        return array(
-            'value 1234 default' => array(
-                '1234',
-                array(
-                    'bytes.' => array(
-                        'labels' => '',
-                        'base' => 0,
-                    ),
-                ),
-                '1.21 Ki',
-                'en_US.UTF-8'
-            ),
-            'value 1234 si' => array(
-                '1234',
-                array(
-                    'bytes.' => array(
-                        'labels' => 'si',
-                        'base' => 0,
-                    ),
-                ),
-                '1.23 k',
-                'en_US.UTF-8'
-            ),
-            'value 1234 iec' => array(
-                '1234',
-                array(
-                    'bytes.' => array(
-                        'labels' => 'iec',
-                        'base' => 0,
-                    ),
-                ),
-                '1.21 Ki',
-                'en_US.UTF-8'
-            ),
-            'value 1234 a-i' => array(
-                '1234',
-                array(
-                    'bytes.' => array(
-                        'labels' => 'a|b|c|d|e|f|g|h|i',
-                        'base' => 1000,
-                    ),
-                ),
-                '1.23b',
-                'en_US.UTF-8'
-            ),
-            'value 1234 a-i invalid base' => array(
-                '1234',
-                array(
-                    'bytes.' => array(
-                        'labels' => 'a|b|c|d|e|f|g|h|i',
-                        'base' => 54,
-                    ),
-                ),
-                '1.21b',
-                'en_US.UTF-8'
-            ),
-            'value 1234567890 default' => array(
-                '1234567890',
-                array(
-                    'bytes.' => array(
-                        'labels' => '',
-                        'base' => 0,
-                    ),
-                ),
-                '1.15 Gi',
-                'en_US.UTF-8'
-            ),
-        );
+        return [
+            'value 1234 default' => [
+                '1.21 Ki', '1234',
+                ['labels' => '', 'base' => 0],
+            ],
+            'value 1234 si' => [
+                '1.23 k', '1234',
+                ['labels' => 'si', 'base' => 0],
+            ],
+            'value 1234 iec' => [
+                '1.21 Ki', '1234',
+                ['labels' => 'iec', 'base' => 0],
+            ],
+            'value 1234 a-i' => [
+                '1.23b', '1234',
+                ['labels' => 'a|b|c|d|e|f|g|h|i', 'base' => 1000],
+            ],
+            'value 1234 a-i invalid base' => [
+                '1.21b', '1234',
+                ['labels' => 'a|b|c|d|e|f|g|h|i', 'base' => 54],
+            ],
+            'value 1234567890 default' => [
+                '1.15 Gi', '1234567890',
+                ['labels' => '', 'base' => 0],
+            ]
+        ];
     }
 
     /**
-     * @param string|NULL $content
-     * @param array $configuration
-     * @param string $expected
-     * @dataProvider stdWrap_bytesDataProvider
+     * Check if stdWrap_bytes works properly.
+     *
+     * Show:
+     *
+     * - Delegates to GeneralUtility::formatSize
+     * - Parameter 1 is $conf['bytes.'][labels'].
+     * - Parameter 2 is $conf['bytes.'][base'].
+     * - Returns the return value.
+     *
+     * Note: As PHPUnit can't mock static methods, the call to
+     *       GeneralUtility::formatSize can't be easily intercepted. The test
+     *       is done by testing input/output pairs instead. To not duplicate
+     *       the testing of formatSize just a few smoke tests are done here.
+     *
      * @test
+     * @dataProvider stdWrap_bytesDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @param array $conf The given configuration for 'bytes.'.
+     * @return void
      */
-    public function stdWrap_bytes($content, array $configuration, $expected, $locale)
+    public function stdWrap_bytes($expect, $content, $conf)
     {
+        $locale = 'en_US.UTF-8';
         if (!setlocale(LC_NUMERIC, $locale)) {
             $this->markTestSkipped('Locale ' . $locale . ' is not available.');
         }
-        $result = $this->subject->stdWrap_bytes($content, $configuration);
-        $this->assertSame($expected, $result);
+        $conf = ['bytes.' => $conf];
+        $this->assertSame($expect,
+            $this->subject->stdWrap_bytes($content, $conf));
     }
 
     /**
-     * Data provider for stdWrap_substring test
+     * Data provider for substring
      *
-     * @return array
+     * @return array [$expect, $content, $conf]
      */
-    public function stdWrap_substringDataProvider()
+    public function substringDataProvider()
     {
-        return array(
-            'sub -1' => array(
-                'substring',
-                array(
-                    'substring' => '-1',
-                ),
-                'g',
-            ),
-            'sub -1,0' => array(
-                'substring',
-                array(
-                    'substring' => '-1,0',
-                ),
-                'g',
-            ),
-            'sub -1,-1' => array(
-                'substring',
-                array(
-                    'substring' => '-1,-1',
-                ),
-                '',
-            ),
-            'sub -1,1' => array(
-                'substring',
-                array(
-                    'substring' => '-1,1',
-                ),
-                'g',
-            ),
-            'sub 0' => array(
-                'substring',
-                array(
-                    'substring' => '0',
-                ),
-                'substring',
-            ),
-            'sub 0,0' => array(
-                'substring',
-                array(
-                    'substring' => '0,0',
-                ),
-                'substring',
-            ),
-            'sub 0,-1' => array(
-                'substring',
-                array(
-                    'substring' => '0,-1',
-                ),
-                'substrin',
-            ),
-            'sub 0,1' => array(
-                'substring',
-                array(
-                    'substring' => '0,1',
-                ),
-                's',
-            ),
-            'sub 1' => array(
-                'substring',
-                array(
-                    'substring' => '1',
-                ),
-                'ubstring',
-            ),
-            'sub 1,0' => array(
-                'substring',
-                array(
-                    'substring' => '1,0',
-                ),
-                'ubstring',
-            ),
-            'sub 1,-1' => array(
-                'substring',
-                array(
-                    'substring' => '1,-1',
-                ),
-                'ubstrin',
-            ),
-            'sub 1,1' => array(
-                'substring',
-                array(
-                    'substring' => '1,1',
-                ),
-                'u',
-            ),
-            'sub' => array(
-                'substring',
-                array(
-                    'substring' => '',
-                ),
-                'substring',
-            ),
-        );
+        return [
+            'sub -1'    => ['g', 'substring', '-1'],
+            'sub -1,0'  => ['g', 'substring', '-1,0'],
+            'sub -1,-1' => ['', 'substring', '-1,-1'],
+            'sub -1,1'  => ['g', 'substring', '-1,1'],
+            'sub 0'     => ['substring', 'substring', '0'],
+            'sub 0,0'   => ['substring', 'substring', '0,0'],
+            'sub 0,-1'  => ['substrin', 'substring', '0,-1'],
+            'sub 0,1'   => ['s', 'substring', '0,1'],
+            'sub 1'     => ['ubstring', 'substring', '1'],
+            'sub 1,0'   => ['ubstring', 'substring', '1,0'],
+            'sub 1,-1'  => ['ubstrin', 'substring', '1,-1'],
+            'sub 1,1'   => ['u', 'substring', '1,1'],
+            'sub'       => ['substring', 'substring', ''],
+        ];
     }
 
     /**
-     * @param string $content
-     * @param array $configuration
-     * @param string $expected
-     * @dataProvider stdWrap_substringDataProvider
+     * Check if substring works properly.
+     *
      * @test
+     * @dataProvider substringDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @param array $conf The given configutation.
+     * @return void
      */
-    public function stdWrap_substring($content, array $configuration, $expected)
+    public function substring($expect, $content, $conf)
     {
-        $result = $this->subject->stdWrap_substring($content, $configuration);
-        $this->assertSame($expected, $result);
+        $this->assertSame($expect, $this->subject->substring($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_substring works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method substring.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['substring'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_substring()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'substring' => $this->getUniqueId('substring'),
+            'substring.' => $this->getUniqueId('not used'),
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['substring'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('substring')
+            ->with($content, $conf['substring'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_substring($content, $conf));
     }
 
     /**
@@ -3450,23 +3563,23 @@ class ContentObjectRendererTest extends UnitTestCase
         $conf = ['ifEmpty' => $alt];
         return [
             // empty cases
-            'null is empty' => [ $alt, null, $conf ],
-            'false is empty' => [ $alt, false, $conf ],
-            'zero is empty' => [ $alt, 0, $conf ],
-            'float zero is empty' => [ $alt, 0.0, $conf ],
-            'whitespace is empty' => [ $alt, TAB . ' ', $conf ],
-            'empty string is empty' => [ $alt, '', $conf ],
-            'zero string is empty' => [ $alt, '0', $conf ],
+            'null is empty' => [$alt, null, $conf ],
+            'false is empty' => [$alt, false, $conf ],
+            'zero is empty' => [$alt, 0, $conf ],
+            'float zero is empty' => [$alt, 0.0, $conf ],
+            'whitespace is empty' => [$alt, TAB . ' ', $conf ],
+            'empty string is empty' => [$alt, '', $conf ],
+            'zero string is empty' => [$alt, '0', $conf ],
             'zero string is empty with whitespace' => [
                 $alt, TAB . ' 0 ' . TAB, $conf
             ],
             // non-empty cases
-            'string is not empty' => [ 'string', 'string', $conf ],
-            '1 is not empty' => [ 1, 1, $conf ],
-            '-1 is not empty' => [ -1, -1, $conf ],
-            '0.1 is not empty' => [ 0.1, 0.1, $conf ],
-            '-0.1 is not empty' => [ -0.1, -0.1, $conf ],
-            'true is not empty' => [ true, true, $conf ],
+            'string is not empty' => ['string', 'string', $conf ],
+            '1 is not empty' => [1, 1, $conf ],
+            '-1 is not empty' => [-1, -1, $conf ],
+            '0.1 is not empty' => [0.1, 0.1, $conf ],
+            '-0.1 is not empty' => [-0.1, -0.1, $conf ],
+            'true is not empty' => [true, true, $conf ],
         ];
     }
 
@@ -3540,78 +3653,88 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
-     * @param $content
-     * @param array $configuration
-     * @param $expected
-     * @dataProvider stdWrap_noTrimWrapAcceptsSplitCharDataProvider
-     * @test
+     * Data provider for stdWrap_noTrimWrap.
+     *
+     * @return array [$expect, $content, $conf]
      */
-    public function stdWrap_noTrimWrapAcceptsSplitChar($content, array $configuration, $expected)
+    public function stdWrap_noTrimWrapDataProvider()
     {
-        $result = $this->subject->stdWrap_noTrimWrap($content, $configuration);
-        $this->assertEquals($expected, $result);
+        return [
+            'Standard case' => [
+                ' left middle right ',
+                'middle',
+                [
+                    'noTrimWrap' => '| left | right |',
+                ],
+            ],
+            'Tabs as whitespace' => [
+                TAB . 'left' . TAB . 'middle' . TAB . 'right' . TAB,
+                'middle',
+                [
+                    'noTrimWrap' =>
+                    '|' . TAB . 'left' . TAB . '|' . TAB . 'right' . TAB . '|',
+                ],
+            ],
+            'Split char is 0' => [
+                ' left middle right ',
+                'middle',
+                [
+                    'noTrimWrap' => '0 left 0 right 0',
+                    'noTrimWrap.' => ['splitChar' => '0'],
+                ],
+            ],
+            'Split char is pipe (default)' => [
+                ' left middle right ',
+                'middle',
+                [
+                    'noTrimWrap' => '| left | right |',
+                    'noTrimWrap.' => ['splitChar' => '|'],
+                ],
+            ],
+            'Split char is a' => [
+                ' left middle right ',
+                'middle',
+                [
+                    'noTrimWrap' => 'a left a right a',
+                    'noTrimWrap.' => ['splitChar' => 'a'],
+                ],
+            ],
+            'Split char is a word (ab)' => [
+                ' left middle right ',
+                'middle',
+                [
+                    'noTrimWrap' => 'ab left ab right ab',
+                    'noTrimWrap.' => ['splitChar' => 'ab'],
+                ],
+            ],
+            'Split char accepts stdWrap' => [
+                ' left middle right ',
+                'middle',
+                [
+                    'noTrimWrap' => 'abc left abc right abc',
+                    'noTrimWrap.' => [
+                        'splitChar' => 'b',
+                        'splitChar.' => ['wrap' => 'a|c'],
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
-     * Data provider for stdWrap_noTrimWrapAcceptsSplitChar test
+     * Check if stdWrap_noTrimWrap works properly.
      *
-     * @return array
+     * @test
+     * @dataProvider stdWrap_noTrimWrapDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @param array $conf The given configuration.
+     * @return void
      */
-    public function stdWrap_noTrimWrapAcceptsSplitCharDataProvider()
+    public function stdWrap_noTrimWrap($expect, $content, $conf)
     {
-        return array(
-            'No char given' => array(
-                'middle',
-                array(
-                    'noTrimWrap' => '| left | right |',
-                ),
-                ' left middle right '
-            ),
-            'Zero char given' => array(
-                'middle',
-                array(
-                    'noTrimWrap' => '0 left 0 right 0',
-                    'noTrimWrap.' => array('splitChar' => '0'),
-
-                ),
-                ' left middle right '
-            ),
-            'Default char given' => array(
-                'middle',
-                array(
-                    'noTrimWrap' => '| left | right |',
-                    'noTrimWrap.' => array('splitChar' => '|'),
-                ),
-                ' left middle right '
-            ),
-            'Split char is a' => array(
-                'middle',
-                array(
-                    'noTrimWrap' => 'a left a right a',
-                    'noTrimWrap.' => array('splitChar' => 'a'),
-                ),
-                ' left middle right '
-            ),
-            'Split char is multi-char (ab)' => array(
-                'middle',
-                array(
-                    'noTrimWrap' => 'ab left ab right ab',
-                    'noTrimWrap.' => array('splitChar' => 'ab'),
-                ),
-                ' left middle right '
-            ),
-            'Split char accepts stdWrap' => array(
-                'middle',
-                array(
-                    'noTrimWrap' => 'abc left abc right abc',
-                    'noTrimWrap.' => array(
-                        'splitChar' => 'b',
-                        'splitChar.' => array('wrap' => 'a|c'),
-                    ),
-                ),
-                ' left middle right '
-            ),
-        );
+        $this->assertSame($expect,
+            $this->subject->stdWrap_noTrimWrap($content, $conf));
     }
 
     /**
@@ -3698,62 +3821,50 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
-     * Data provider for stdWrap_encodeForJavaScriptValue test
+     * Data provider for stdWrap_encodeForJavaScriptValue.
      *
-     * @return array multi-dimensional array with the second level like this:
-     * @see encodeForJavaScriptValue
+     * @return array []
      */
     public function stdWrap_encodeForJavaScriptValueDataProvider()
     {
-        return array(
-            'double quote in string' => array(
-                'double quote"',
-                array(),
-                '\'double\u0020quote\u0022\''
-            ),
-            'backslash in string' => array(
-                'backslash \\',
-                array(),
-                '\'backslash\u0020\u005C\''
-            ),
-            'exclamation mark' => array(
-                'exclamation!',
-                array(),
-                '\'exclamation\u0021\''
-            ),
-            'whitespace tab, newline and carriage return' => array(
-                "white\tspace\ns\r",
-                array(),
-                '\'white\u0009space\u000As\u000D\''
-            ),
-            'single quote in string' => array(
-                'single quote \'',
-                array(),
-                '\'single\u0020quote\u0020\u0027\''
-            ),
-            'tag' => array(
-                '<tag>',
-                array(),
-                '\'\u003Ctag\u003E\''
-            ),
-            'ampersand in string' => array(
-                'amper&sand',
-                array(),
-                '\'amper\u0026sand\''
-            ),
-        );
+        return [
+            'double quote in string' => [
+                '\'double\u0020quote\u0022\'', 'double quote"'
+            ],
+            'backslash in string' => [
+                '\'backslash\u0020\u005C\'', 'backslash \\'
+            ],
+            'exclamation mark' => [
+                '\'exclamation\u0021\'', 'exclamation!'
+            ],
+            'whitespace tab, newline and carriage return' => [
+                '\'white\u0009space\u000As\u000D\'', "white\tspace\ns\r"
+            ],
+            'single quote in string' => [
+                '\'single\u0020quote\u0020\u0027\'', 'single quote \''
+            ],
+            'tag' => [
+                '\'\u003Ctag\u003E\'', '<tag>'
+            ],
+            'ampersand in string' => [
+                '\'amper\u0026sand\'', 'amper&sand'
+            ]
+        ];
     }
 
     /**
-     * Check if encodeForJavaScriptValue works properly
+     * Check if encodeForJavaScriptValue works properly.
      *
-     * @dataProvider stdWrap_encodeForJavaScriptValueDataProvider
      * @test
+     * @dataProvider stdWrap_encodeForJavaScriptValueDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @return void
      */
-    public function stdWrap_encodeForJavaScriptValue($input, $conf, $expected)
+    public function stdWrap_encodeForJavaScriptValue($expect, $content)
     {
-        $result = $this->subject->stdWrap_encodeForJavaScriptValue($input, $conf);
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expect,
+            $this->subject->stdWrap_encodeForJavaScriptValue($content));
     }
 
     /**
@@ -3870,6 +3981,38 @@ class ContentObjectRendererTest extends UnitTestCase
     {
         $this->assertEquals($expected, $this->subject->stdWrap_brTag($input, $config));
     }
+
+    /**
+     * Check if stdWrap_encapsLines works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method encaps_lineSplit.
+     * - Parameter 1 is $content.
+     * - Prameter 2 is $conf['encapsLines'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+     public function stdWrap_encapsLines()
+     {
+         $content = $this->getUniqueId('content');
+         $conf = [
+             'encapsLines' => [$this->getUniqueId('not used')],
+             'encapsLines.' => [$this->getUniqueId('encapsLines.')],
+         ];
+         $return = $this->getUniqueId('return');
+         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+             ->setMethods(['encaps_lineSplit'])->getMock();
+         $subject
+             ->expects($this->once())
+             ->method('encaps_lineSplit')
+             ->with($content, $conf['encapsLines.'])
+             ->willReturn($return);
+         $this->assertSame($return,
+             $subject->stdWrap_encapsLines($content, $conf));
+     }
 
     /**
      * Data provider for stdWrap_keywords
@@ -4418,15 +4561,197 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
-     * Check if char works properly
+     * Check if stdWrap_space works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to method wrapSpace.
+     *  - Parameter 1 is $content.
+     *  - Parameter 2 is $conf['space'],
+     *  - trimmed.
+     *  - Parameter 3 is $conf['space.'].
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_space()
+    {
+        $content = $this->getUniqueId('content');
+        $trimmed = $this->getUniqueId('space trimmed');
+        $conf = [
+            'space' => TAB . ' ' . $trimmed . ' ' . TAB,
+            'space.' => [$this->getUniqueId('space.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['wrapSpace'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('wrapSpace')
+            ->with($content, $trimmed, $conf['space.'])
+            ->willReturn($return);
+        $this->assertSame($return, $subject->stdWrap_space($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_spaceBefore works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to method wrapSpace.
+     *  - Parameter 1 is $content.
+     *  - Parameter 2 is $conf['spaceBefore'],
+     *  - trimmed,
+     *  - appended with '|'.
+     *  - Parameter 3 is $conf['space.'] !!!
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_spaceBefore()
+    {
+        $content = $this->getUniqueId('content');
+        $trimmed = $this->getUniqueId('spaceBefore trimmed');
+        $conf = [
+            'spaceBefore' => TAB . ' ' . $trimmed . ' ' . TAB,
+            'space.' => [$this->getUniqueId('space.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['wrapSpace'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('wrapSpace')
+            ->with($content, $trimmed . '|', $conf['space.'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_spaceBefore($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_spaceAfter works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to method wrapSpace.
+     *  - Parameter 1 is $content.
+     *  - Parameter 2 is $conf['spaceAfter'],
+     *  - trimmed,
+     *  - prepended with '|'.
+     *  - Parameter 3 is $conf['space.'] !!!
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_spaceAfter()
+    {
+        $content = $this->getUniqueId('content');
+        $trimmed = $this->getUniqueId('spaceAfter trimmed');
+        $conf = [
+            'spaceAfter' => TAB . ' ' . $trimmed . ' ' . TAB,
+            'space.' => [$this->getUniqueId('space.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['wrapSpace'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('wrapSpace')
+            ->with($content, '|' . $trimmed, $conf['space.'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_spaceAfter($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_char works properly.
      *
      * @test
+     * @return void
      */
     public function stdWrap_char()
     {
         $input = 'discarded';
         $expected = 'C';
         $this->assertEquals($expected, $this->subject->stdWrap_char($input, ['char' => '67']));
+    }
+
+    /**
+     * Check that stdWrap_typolink works properly.
+     *
+     * Show:
+     *  - Delegates to method typolink.
+     *  - Parameter 1 is $content.
+     *  - Parameter 2 is $conf['typolink.'].
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_typolink()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'typolink' => $this->getUniqueId('not used'),
+            'typolink.' => [$this->getUniqueId('typolink.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['typolink'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('typolink')
+            ->with($content, $conf['typolink.'])
+            ->willReturn($return);
+        $this->assertSame($return, $subject->stdWrap_typolink($content, $conf));
+    }
+
+    /**
+     * Check that stdWrap_postUserFunc works properly.
+     *
+     * Show:
+     *  - Delegates to method callUserFunction.
+     *  - Parameter 1 is $conf['postUserFunc'].
+     *  - Parameter 2 is $conf['postUserFunc.'].
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_postUserFunc()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'postUserFunc' => $this->getUniqueId('postUserFunc'),
+            'postUserFunc.' => [$this->getUniqueId('postUserFunc.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['callUserFunction'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('callUserFunction')
+            ->with($conf['postUserFunc'], $conf['postUserFunc.'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_postUserFunc($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_debug works properly.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_debug()
+    {
+        $expect = '<pre>&lt;p class=&quot;class&quot;&gt;&lt;br/&gt;'
+            . '&lt;/p&gt;</pre>';
+        $content = '<p class="class"><br/></p>';
+        $this->assertSame($expect, $this->subject->stdWrap_debug($content));
     }
 
     ///////////////////////////////
@@ -7002,7 +7327,6 @@ class ContentObjectRendererTest extends UnitTestCase
         $this->assertSame(1, $pageRepo::$storeHashCallCount);
     }
 
-
     /**
      * Check if calculateCacheKey works properly.
      *
@@ -7063,7 +7387,7 @@ class ContentObjectRendererTest extends UnitTestCase
      * @dataProvider calculateCacheKeyDataProvider
      * @param string $expect Expected result.
      * @param array $conf Properties 'key', 'key.'
-     * @param integer $times Times called mocked method.
+     * @param int $times Times called mocked method.
      * @param array $with Parameter passed to mocked method.
      * @param string $will Return value of mocked method.
      * @return void
@@ -7111,7 +7435,7 @@ class ContentObjectRendererTest extends UnitTestCase
      * @param string $expect Expected result.
      * @param array $conf Configuration to pass to calculateCacheKey mock.
      * @param string $cacheKey Return from calculateCacheKey mock.
-     * @param integer $times Times the cache is expected to be called (0 or 1).
+     * @param int $times Times the cache is expected to be called (0 or 1).
      * @param string $cached Return from cacheFrontend mock.
      * @return void
      */
@@ -7170,7 +7494,7 @@ class ContentObjectRendererTest extends UnitTestCase
             'null is empty' => ['', '// null'],
             'empty string is empty' => ['', '// empty'],
             'string is not empty' => ['string 1', '// string1'],
-            'first non-empty winns' => [ 0, 'false//empty//null//zero//one'],
+            'first non-empty winns' => [0, 'false//empty//null//zero//one'],
             'empty string is fallback' => ['', 'false // empty // null'],
         ];
     }

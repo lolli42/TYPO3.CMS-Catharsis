@@ -5,7 +5,7 @@ Feature: #76590 - Introduce UnitTests for JavaScript
 Description
 ===========
 
-The core use karma as test runner and jasmine as testing framework for JavaScript UnitTests.
+The core uses karma as test runner and jasmine as testing framework for JavaScript UnitTests.
 The tests will be run on travis with PhantomJS.
 Locally other browsers like Chrome, Firefox, Safari or IE can be used as well.
 
@@ -32,12 +32,13 @@ To run the UnitTests on a local system the following steps are necessary:
    # Execute the tests for different browser
    ./Build/node_modules/karma/bin/karma start typo3/sysext/core/Build/Configuration/JSUnit/karma.conf.js --single-run --browsers Chrome,Safari,Firefox
 
+
 Test-Files
 ==========
 
 Any test file must be located in extension folder ``typo3/sysext/<EXTKEY>/Tests/JavaScript/``
 The filename must end with Test.js, e.g. ``GridEditorTest.js``
-Each testfile must be implemented as AMD module, must use strict mode and have to use :js:`describe` with module name as outer wrap for each test.
+Each test file must be implemented as AMD module, must use strict mode and has to use :js:``describe`` with module name as outer wrap for each test.
 The following code block shows a good example:
 
 .. code-block:: javascript
@@ -57,11 +58,11 @@ The following code block shows a good example:
       }
    }
 
-Please take a look at the existing test-files and read the jasmine documentation for further information.
+Please take a look at the existing test files and read the jasmine documentation for further information.
 
 DataProvider for tests
 ----------------------
 
-For testing a set of values, the core implement a kind of DataProvider. To use the DataProvider you have to use the function :js:`using`.
+For testing a set of values, the core implement a kind of DataProvider. To use the DataProvider you have to use the function :js:``using``.
 Please take a look at ``FormEngineValidationTest.js`` for an example.
 

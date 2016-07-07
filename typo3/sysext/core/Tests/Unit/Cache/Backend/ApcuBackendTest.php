@@ -14,25 +14,34 @@ namespace TYPO3\CMS\Core\Tests\Unit\Cache\Backend;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Cache\Backend\XcacheBackend;
+use TYPO3\CMS\Core\Cache\Backend\ApcuBackend;
+use TYPO3\CMS\Core\Cache\Exception;
+use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
+use TYPO3\CMS\Core\Tests\AccessibleObjectInterface;
+use TYPO3\CMS\Core\Tests\UnitTestCase;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Test case
+ * Test case for the APCu cache backend.
+ *
+ * NOTE: If you want to execute these tests you need to enable apc in
+ * cli context (apc.enable_cli = 1) and disable slam defense (apc.slam_defense = 0)
  */
-class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class ApcuBackendTest extends UnitTestCase
 {
     /**
-     * Sets up this testcase
+     * Set up
      *
      * @return void
      */
     protected function setUp()
     {
-        if (!extension_loaded('xcache')) {
-            $this->markTestSkipped('xcache extension was not available');
+        // APCu module is called apcu, but options are prefixed with apc
+        if (!extension_loaded('apcu') || !(bool)ini_get('apc.enabled') || !(bool)ini_get('apc.enable_cli')) {
+            $this->markTestSkipped('APCu extension was not available, or it was disabled for CLI.');
         }
-        if (php_sapi_name() === 'cli') {
-            $this->markTestSkipped('XCache is not supported in CLI mode.');
+        if ((bool)ini_get('apc.slam_defense')) {
+            $this->markTestSkipped('This testcase can only be executed with apc.slam_defense = 0');
         }
     }
 
@@ -41,12 +50,11 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function setThrowsExceptionIfNoFrontEndHasBeenSet()
     {
-        $this->expectException(\TYPO3\CMS\Core\Cache\Exception::class);
-        //@todo Add exception code with xcache extension
-
-        $backend = new XcacheBackend('Testing');
+        $backend = new ApcuBackend('Testing');
         $data = 'Some data';
         $identifier = $this->getUniqueId('MyIdentifier');
+        $this->expectException(Exception::class);
+        $this->expectExceptionCode(1232986118);
         $backend->set($identifier, $data);
     }
 
@@ -59,8 +67,7 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $data = 'Some data';
         $identifier = $this->getUniqueId('MyIdentifier');
         $backend->set($identifier, $data);
-        $inCache = $backend->has($identifier);
-        $this->assertTrue($inCache, 'xcache backend failed to set and check entry');
+        $this->assertTrue($backend->has($identifier));
     }
 
     /**
@@ -73,7 +80,7 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $identifier = $this->getUniqueId('MyIdentifier');
         $backend->set($identifier, $data);
         $fetchedData = $backend->get($identifier);
-        $this->assertEquals($data, $fetchedData, 'xcache backend failed to set and retrieve data');
+        $this->assertEquals($data, $fetchedData);
     }
 
     /**
@@ -86,8 +93,7 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $identifier = $this->getUniqueId('MyIdentifier');
         $backend->set($identifier, $data);
         $backend->remove($identifier);
-        $inCache = $backend->has($identifier);
-        $this->assertFalse($inCache, 'Failed to set and remove data from xcache backend');
+        $this->assertFalse($backend->has($identifier));
     }
 
     /**
@@ -102,7 +108,7 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $otherData = 'some other data';
         $backend->set($identifier, $otherData);
         $fetchedData = $backend->get($identifier);
-        $this->assertEquals($otherData, $fetchedData, 'xcache backend failed to overwrite and retrieve data');
+        $this->assertEquals($otherData, $fetchedData);
     }
 
     /**
@@ -115,9 +121,9 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $identifier = $this->getUniqueId('MyIdentifier');
         $backend->set($identifier, $data, array('UnitTestTag%tag1', 'UnitTestTag%tag2'));
         $retrieved = $backend->findIdentifiersByTag('UnitTestTag%tag1');
-        $this->assertEquals($identifier, $retrieved[0], 'Could not retrieve expected entry by tag.');
+        $this->assertEquals($identifier, $retrieved[0]);
         $retrieved = $backend->findIdentifiersByTag('UnitTestTag%tag2');
-        $this->assertEquals($identifier, $retrieved[0], 'Could not retrieve expected entry by tag.');
+        $this->assertEquals($identifier, $retrieved[0]);
     }
 
     /**
@@ -131,18 +137,47 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $backend->set($identifier, $data, array('UnitTestTag%tag1', 'UnitTestTag%tagX'));
         $backend->set($identifier, $data, array('UnitTestTag%tag3'));
         $retrieved = $backend->findIdentifiersByTag('UnitTestTag%tagX');
-        $this->assertEquals(array(), $retrieved, 'Found entry which should no longer exist.');
+        $this->assertEquals([], $retrieved);
     }
 
     /**
      * @test
      */
-    public function hasReturnsFalseIfTheEntryDoesntExist()
+    public function setCacheIsSettingIdentifierPrefixWithCacheIdentifier()
+    {
+        /** @var \PHPUnit_Framework_MockObject_MockObject|FrontendInterface $cacheMock */
+        $cacheMock = $this->createMock(FrontendInterface::class);
+        $cacheMock->expects($this->any())->method('getIdentifier')->will($this->returnValue(
+            'testidentifier'
+        ));
+
+        /** @var $backendMock \PHPUnit_Framework_MockObject_MockObject|ApcuBackend */
+        $backendMock = $this->getMockBuilder(ApcuBackend::class)
+            ->setMethods(array('setIdentifierPrefix', 'getCurrentUserData', 'getPathSite'))
+            ->setConstructorArgs(array('testcontext'))
+            ->getMock();
+
+        $backendMock->expects($this->once())->method('getCurrentUserData')->will(
+            $this->returnValue(array('name' => 'testname'))
+        );
+
+        $backendMock->expects($this->once())->method('getPathSite')->will(
+            $this->returnValue('testpath')
+        );
+
+        $expectedIdentifier = 'TYPO3_' . GeneralUtility::shortMD5('testpath' . 'testname' . 'testcontext' . 'testidentifier', 12);
+        $backendMock->expects($this->once())->method('setIdentifierPrefix')->with($expectedIdentifier);
+        $backendMock->setCache($cacheMock);
+    }
+
+    /**
+     * @test
+     */
+    public function hasReturnsFalseIfTheEntryDoesNotExist()
     {
         $backend = $this->setUpBackend();
         $identifier = $this->getUniqueId('NonExistingIdentifier');
-        $inCache = $backend->has($identifier);
-        $this->assertFalse($inCache, '"has" did not return FALSE when checking on non existing identifier');
+        $this->assertFalse($backend->has($identifier));
     }
 
     /**
@@ -152,8 +187,7 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $backend = $this->setUpBackend();
         $identifier = $this->getUniqueId('NonExistingIdentifier');
-        $inCache = $backend->remove($identifier);
-        $this->assertFalse($inCache, '"remove" did not return FALSE when checking on non existing identifier');
+        $this->assertFalse($backend->remove($identifier));
     }
 
     /**
@@ -163,13 +197,13 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $backend = $this->setUpBackend();
         $data = 'some data' . microtime();
-        $backend->set('BackendXcacheTest1', $data, array('UnitTestTag%test', 'UnitTestTag%boring'));
-        $backend->set('BackendXcacheTest2', $data, array('UnitTestTag%test', 'UnitTestTag%special'));
-        $backend->set('BackendXcacheTest3', $data, array('UnitTestTag%test'));
+        $backend->set('BackendAPCUTest1', $data, array('UnitTestTag%test', 'UnitTestTag%boring'));
+        $backend->set('BackendAPCUTest2', $data, array('UnitTestTag%test', 'UnitTestTag%special'));
+        $backend->set('BackendAPCUTest3', $data, array('UnitTestTag%test'));
         $backend->flushByTag('UnitTestTag%special');
-        $this->assertTrue($backend->has('BackendXcacheTest1'), 'BackendXcacheTest1');
-        $this->assertFalse($backend->has('BackendXcacheTest2'), 'BackendXcacheTest2');
-        $this->assertTrue($backend->has('BackendXcacheTest3'), 'BackendXcacheTest3');
+        $this->assertTrue($backend->has('BackendAPCUTest1'));
+        $this->assertFalse($backend->has('BackendAPCUTest2'));
+        $this->assertTrue($backend->has('BackendAPCUTest3'));
     }
 
     /**
@@ -179,13 +213,13 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $backend = $this->setUpBackend();
         $data = 'some data' . microtime();
-        $backend->set('BackendXcacheTest1', $data);
-        $backend->set('BackendXcacheTest2', $data);
-        $backend->set('BackendXcacheTest3', $data);
+        $backend->set('BackendAPCUTest1', $data);
+        $backend->set('BackendAPCUTest2', $data);
+        $backend->set('BackendAPCUTest3', $data);
         $backend->flush();
-        $this->assertFalse($backend->has('BackendXcacheTest1'), 'BackendXcacheTest1');
-        $this->assertFalse($backend->has('BackendXcacheTest2'), 'BackendXcacheTest2');
-        $this->assertFalse($backend->has('BackendXcacheTest3'), 'BackendXcacheTest3');
+        $this->assertFalse($backend->has('BackendAPCUTest1'));
+        $this->assertFalse($backend->has('BackendAPCUTest2'));
+        $this->assertFalse($backend->has('BackendAPCUTest3'));
     }
 
     /**
@@ -193,16 +227,16 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function flushRemovesOnlyOwnEntries()
     {
-        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $thisCache */
-        $thisCache = $this->createMock(\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface::class);
+        /** @var \PHPUnit_Framework_MockObject_MockObject|FrontendInterface $thisCache */
+        $thisCache = $this->createMock(FrontendInterface::class);
         $thisCache->expects($this->any())->method('getIdentifier')->will($this->returnValue('thisCache'));
-        $thisBackend = new XcacheBackend('Testing');
+        $thisBackend = new ApcuBackend('Testing');
         $thisBackend->setCache($thisCache);
 
-        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $thatCache */
-        $thatCache = $this->createMock(\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface::class);
+        /** @var \PHPUnit_Framework_MockObject_MockObject|FrontendInterface $thatCache */
+        $thatCache = $this->createMock(FrontendInterface::class);
         $thatCache->expects($this->any())->method('getIdentifier')->will($this->returnValue('thatCache'));
-        $thatBackend = new XcacheBackend('Testing');
+        $thatBackend = new ApcuBackend('Testing');
         $thatBackend->setCache($thatCache);
         $thisBackend->set('thisEntry', 'Hello');
         $thatBackend->set('thatEntry', 'World!');
@@ -249,20 +283,20 @@ class XcacheBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
-     * Sets up the xcache backend used for testing
+     * Sets up the APCu backend used for testing
      *
      * @param bool $accessible TRUE if backend should be encapsulated in accessible proxy otherwise FALSE.
-     * @return \TYPO3\CMS\Core\Tests\AccessibleObjectInterface|XcacheBackend
+     * @return AccessibleObjectInterface|ApcuBackend
      */
     protected function setUpBackend($accessible = false)
     {
-        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $cache */
-        $cache = $this->createMock(\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface::class);
+        /** @var \PHPUnit_Framework_MockObject_MockObject|FrontendInterface $cache */
+        $cache = $this->createMock(FrontendInterface::class);
         if ($accessible) {
-            $accessibleClassName = $this->buildAccessibleProxy(XcacheBackend::class);
+            $accessibleClassName = $this->buildAccessibleProxy(ApcuBackend::class);
             $backend = new $accessibleClassName('Testing');
         } else {
-            $backend = new XcacheBackend('Testing');
+            $backend = new ApcuBackend('Testing');
         }
         $backend->setCache($cache);
         return $backend;
