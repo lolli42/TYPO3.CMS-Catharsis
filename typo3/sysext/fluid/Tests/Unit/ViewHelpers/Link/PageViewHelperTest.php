@@ -13,12 +13,13 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Link;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase;
 use TYPO3\CMS\Fluid\ViewHelpers\Link\PageViewHelper;
 
 /**
  * Test-case for Link\PageViewHelper
  */
-class PageViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase
+class PageViewHelperTest extends ViewHelperBaseTestcase
 {
     /**
      * @var PageViewHelper
@@ -34,6 +35,8 @@ class PageViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHel
         $this->viewHelper = $this->getAccessibleMock(\TYPO3\CMS\Fluid\ViewHelpers\Link\PageViewHelper::class, array('renderChildren'));
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
         $this->viewHelper->initializeArguments();
+        $this->tagBuilder = $this->createMock(\TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder::class);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
     }
 
     /**

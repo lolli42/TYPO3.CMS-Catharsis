@@ -13,23 +13,32 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase;
+use TYPO3\CMS\Fluid\ViewHelpers\Format\HtmlentitiesViewHelper;
 
 /**
  * Test case
  */
-class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class HtmlentitiesViewHelperTest extends ViewHelperBaseTestcase
 {
+
     /**
      * @var \TYPO3\CMS\Fluid\ViewHelpers\Format\HtmlentitiesViewHelper
      */
     protected $viewHelper;
 
+    /**
+     * shortcut for default Arguments which would be prepared by initializeArguments()
+     *
+     * @var array
+     */
+    protected $defaultArguments;
+
     protected function setUp()
     {
-        $this->viewHelper = $this->getMockBuilder(\TYPO3\CMS\Fluid\ViewHelpers\Format\HtmlentitiesViewHelper::class)
-            ->setMethods(array('renderChildren', 'resolveDefaultEncoding'))
-            ->getMock();
-        $this->viewHelper->expects($this->any())->method('resolveDefaultEncoding')->will($this->returnValue('UTF-8'));
+        parent::setUp();
+        $this->viewHelper = new HtmlentitiesViewHelper();
+        $this->injectDependenciesIntoViewHelper($this->viewHelper);
     }
 
     /**
@@ -37,8 +46,13 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function renderUsesValueAsSourceIfSpecified()
     {
-        $this->viewHelper->expects($this->never())->method('renderChildren');
-        $actualResult = $this->viewHelper->render('Some string');
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => 'Some string',
+            ]
+        );
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertEquals('Some string', $actualResult);
     }
 
@@ -47,8 +61,13 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function renderUsesChildnodesAsSourceIfSpecified()
     {
-        $this->viewHelper->expects($this->atLeastOnce())->method('renderChildren')->will($this->returnValue('Some string'));
-        $actualResult = $this->viewHelper->render();
+        $this->viewHelper->setRenderChildrenClosure(
+            function () {
+                return 'Some string';
+            }
+        );
+        $this->setArgumentsUnderTest($this->viewHelper);
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertEquals('Some string', $actualResult);
     }
 
@@ -58,7 +77,13 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function renderDoesNotModifyValueIfItDoesNotContainSpecialCharacters()
     {
         $source = 'This is a sample text without special characters.';
-        $actualResult = $this->viewHelper->render($source);
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => $source,
+            ]
+        );
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertSame($source, $actualResult);
     }
 
@@ -68,8 +93,14 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function renderDecodesSimpleString()
     {
         $source = 'Some special characters: &©"\'';
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => $source
+            ]
+        );
         $expectedResult = 'Some special characters: &amp;&copy;&quot;\'';
-        $actualResult = $this->viewHelper->render($source);
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertEquals($expectedResult, $actualResult);
     }
 
@@ -79,8 +110,15 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function renderRespectsKeepQuoteArgument()
     {
         $source = 'Some special characters: &©"\'';
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => $source,
+                'keepQuotes' => true,
+            ]
+        );
         $expectedResult = 'Some special characters: &amp;&copy;"\'';
-        $actualResult = $this->viewHelper->render($source, true);
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertEquals($expectedResult, $actualResult);
     }
 
@@ -90,8 +128,15 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function renderRespectsEncodingArgument()
     {
         $source = utf8_decode('Some special characters: &©"\'');
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => $source,
+                'encoding' => 'ISO-8859-1',
+            ]
+        );
         $expectedResult = 'Some special characters: &amp;&copy;&quot;\'';
-        $actualResult = $this->viewHelper->render($source, false, 'ISO-8859-1');
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertEquals($expectedResult, $actualResult);
     }
 
@@ -101,8 +146,14 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function renderConvertsAlreadyConvertedEntitiesByDefault()
     {
         $source = 'already &quot;encoded&quot;';
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => $source
+            ]
+        );
         $expectedResult = 'already &amp;quot;encoded&amp;quot;';
-        $actualResult = $this->viewHelper->render($source);
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertEquals($expectedResult, $actualResult);
     }
 
@@ -112,18 +163,34 @@ class HtmlentitiesViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function renderDoesNotConvertAlreadyConvertedEntitiesIfDoubleQuoteIsFalse()
     {
         $source = 'already &quot;encoded&quot;';
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => $source,
+                'doubleEncode' => false,
+            ]
+        );
         $expectedResult = 'already &quot;encoded&quot;';
-        $actualResult = $this->viewHelper->render($source, false, 'UTF-8', false);
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
         $this->assertEquals($expectedResult, $actualResult);
     }
 
     /**
+     * This test tests the behaviour of render without relying on the validation of registerArguments
+     * In the normal course of things "value" can't be anything but a string as it is registered that way
+     *
      * @test
      */
     public function renderReturnsUnmodifiedSourceIfItIsNoString()
     {
         $source = new \stdClass();
-        $actualResult = $this->viewHelper->render($source);
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'value' => $source
+            ]
+        );
+        $actualResult = $this->viewHelper->render();
         $this->assertSame($source, $actualResult);
     }
 }

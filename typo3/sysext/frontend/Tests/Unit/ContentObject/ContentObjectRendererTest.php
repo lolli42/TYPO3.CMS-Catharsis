@@ -4107,9 +4107,207 @@ class ContentObjectRendererTest extends UnitTestCase
         $this->assertSame($expect, $this->subject->getFieldVal($fields));
     }
 
-  /***************************************************************************
-   * Tests for stdWrap_ in alphabetical order (all uppercase before lowercase)
-   ***************************************************************************/
+    /**
+     * Data provider for caseshift.
+     *
+     * @return array [$expect, $content, $case]
+     */
+    public function caseshiftDataProvider()
+    {
+        return [
+             'lower' => ['x y', 'X Y', 'lower'],
+             'upper' => ['X Y', 'x y', 'upper'],
+             'capitalize' => ['One Two', 'one two', 'capitalize'],
+             'ucfirst' => ['One two', 'one two', 'ucfirst'],
+             'lcfirst' => ['oNE TWO', 'ONE TWO', 'lcfirst'],
+             'uppercamelcase' => ['CamelCase', 'camel_case', 'uppercamelcase'],
+             'lowercamelcase' => ['camelCase', 'camel_case', 'lowercamelcase'],
+         ];
+    }
+
+     /**
+      * Check if caseshift works properly.
+      *
+      * @test
+      * @dataProvider caseshiftDataProvider
+      * @param string $expect The expected output.
+      * @param string $content The given input.
+      * @param string $case The given type of conversion.
+      */
+     public function caseshift($expect, $content, $case)
+     {
+         $this->assertSame($expect,
+             $this->subject->caseshift($content, $case));
+     }
+
+    /**
+     * Data provider for HTMLcaseshift.
+     *
+     * @return array [$expect, $content, $case, $with, $will]
+     */
+    public function HTMLcaseshiftDataProvider()
+    {
+        $case = $this->getUniqueId('case');
+        return [
+            'simple text' => [
+                'TEXT', 'text', $case,
+                [['text', $case]],
+                ['TEXT']
+            ],
+            'simple tag' => [
+                '<i>TEXT</i>', '<i>text</i>', $case,
+                [['', $case], ['text', $case]],
+                ['', 'TEXT']
+            ],
+            'multiple nested tags with classes' => [
+                NL . '<div class="typo3">' .
+                NL . '<p>A <b>BOLD<\b> WORD.</p>' .
+                NL . '<p>AN <i>ITALIC<\i> WORD.</p>' .
+                NL . '</div>',
+                NL . '<div class="typo3">' .
+                NL . '<p>A <b>bold<\b> word.</p>' .
+                NL . '<p>An <i>italic<\i> word.</p>' .
+                NL . '</div>',
+                $case,
+                [
+                    [NL, $case],
+                    [NL, $case],
+                    ['A ', $case],
+                    ['bold', $case],
+                    [' word.', $case],
+                    [NL, $case],
+                    ['An ', $case],
+                    ['italic', $case],
+                    [' word.', $case],
+                    [NL, $case],
+                ],
+                [NL, NL, 'A ', 'BOLD', ' WORD.',
+                NL, 'AN ', 'ITALIC', ' WORD.', NL]
+            ],
+        ];
+    }
+
+     /**
+      * Check if HTMLcaseshift works properly.
+      *
+      * Show:
+      *
+      * - Only shifts the case of characters not part of tags.
+      * - Delegates to the method caseshift.
+      *
+      * @test
+      * @dataProvider HTMLcaseshiftDataProvider
+      * @param string $expect The expected output.
+      * @param string $content The given input.
+      * @param string $case The given type of conversion.
+      * @param array $with Consecutive args expected by caseshift.
+      * @param array $will Consecutive return values of caseshfit.
+      * @return void
+      */
+    public function HTMLcaseshift($expect, $content, $case, $with, $will)
+    {
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['caseshift'])->getMock();
+        $subject
+            ->expects($this->exactly(count($with)))
+            ->method('caseshift')
+            ->withConsecutive(...$with)
+            ->will($this->onConsecutiveCalls(...$will));
+        $this->assertSame($expect,
+            $subject->HTMLcaseshift($content, $case));
+    }
+
+    /***************************************************************************
+    * General tests for stdWrap_
+    ***************************************************************************/
+
+    /**
+     * Check that all registered stdWrap processors are callable.
+     *
+     * Show:
+     *
+     * - The given invalidProcessor is counted as not callable.
+     * - All stdWrap processors are counted as callable.
+     * - Their amount is 91.
+     *
+     * @test
+     * @return void
+     */
+    public function allStdWrapProcessorsAreCallable()
+    {
+        $callable = 0;
+        $notCallable = 0;
+        $processors = ['invalidProcessor'];
+        foreach (array_keys($this->subject->_get('stdWrapOrder')) as $key) {
+            $processors[] = strtr($key, ['.' => '']);
+        }
+        foreach (array_unique($processors) as $processor) {
+            $method = [$this->subject, 'stdWrap_' . $processor];
+            if (is_callable($method)) {
+                $callable += 1;
+            } else {
+                $notCallable += 1;
+            }
+        }
+        $this->assertSame(1, $notCallable);
+        $this->assertSame(91, $callable);
+    }
+
+    /**
+     * Check which stdWrap functions are callable with empty parameters.
+     *
+     * Show:
+     *
+     * - Almost all stdWrap_[type] are callable if called with 2 parameters:
+     *   - string $content Empty string.
+     *   - array $conf ['type' => '', 'type.' => []].
+     * - Exeptions: stdWrap_numRows, stdWrap_split
+     * - The overall count is 91.
+     *
+     *  Note:
+     *
+     *  The two exceptions break, if the configuration is empty. This test just
+     *  tracks the different behaviour to gain information. It doesn't mean
+     *  that it is an issue.
+     *
+     * @test
+     * @return void
+     */
+    public function notAllStdWrapProcessorsAreCallableWithEmptyConfiguration()
+    {
+        $expectExceptions = ['numRows', 'split'];
+        if (!version_compare(PHP_VERSION, '7.1', '<')) {
+            // PHP >= 7.1 throws "A non-numeric value encountered" in GeneralUtility::formatSize()
+            // @todo: If that is sanitized in a better way in formatSize(), this call needs adaption
+            $expectExceptions[] = 'bytes';
+        }
+        $count = 0;
+        $processors = [];
+        $exceptions = [];
+        foreach (array_keys($this->subject->_get('stdWrapOrder')) as $key) {
+            $processors[] = strtr($key, ['.' => '']);
+        }
+        foreach (array_unique($processors) as $processor) {
+            $count += 1;
+            try {
+                $conf = [$processor => '', $processor . '.' => []];
+                $method = 'stdWrap_' . $processor;
+                $this->subject->$method('', $conf);
+            } catch (\Exception $e) {
+                $exceptions[] = $processor;
+            }
+        }
+        $this->assertSame($expectExceptions, $exceptions);
+        $this->assertSame(91, $count);
+    }
+
+    /***************************************************************************
+    * End general tests for stdWrap_
+    ***************************************************************************/
+
+    /***************************************************************************
+    * Tests for stdWrap_ in alphabetical order (all uppercase before lowercase)
+    ***************************************************************************/
 
     /**
      * Data provider for fourTypesOfStdWrapHookObjectProcessors
@@ -4238,6 +4436,69 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
+     * Data provider ofr stdWrap_TCAselectItem.
+     *
+     * @return array [$expect, $content, $conf, $times, $will]
+     */
+    public function stdWrap_TCAselectItemDataProvider()
+    {
+        $content = $this->getUniqueId('content');
+        $array = [$this->getUniqueId('TCAselectItem.')];
+        $will = $this->getUniqueId('will');
+        return [
+            'empty conf' => [
+                $content, $content, [], 0, $will
+            ],
+            'no array' => [
+                $content, $content, ['TCAselectItem.' => true], 0, $will
+            ],
+            'empty array' => [
+                $will, $content, ['TCAselectItem.' => []], 1, $will
+            ],
+            'array' => [
+                $will, $content, ['TCAselectItem.' => $array], 1, $will
+            ]
+        ];
+    }
+
+    /**
+     * Check that stdWrap_TCAselectItem works properly.
+     *
+     * Show:
+     *
+     * - Checks if $conf['TCAselectItem'] is an array.
+     * - If NO:
+     *   - Returns $content as is.
+     * - If YES:
+     *   - Delegates to method TCAlookup.
+     *   - Parameter 1 is $content.
+     *   - Parameter 2 is $conf['TCAselectItem.'].
+     *   - Returns the return value.
+     *
+     *  @test
+     *  @dataProvider stdWrap_TCAselectItemDataProvider
+     *  @param mixed $expect The expected output.
+     *  @param mixed $content The the given input.
+     *  @param mixed $conf The the given configuration.
+     *  @param int $times Times TCAlookup is called.
+     *  @param string $will Return value of TCAlookup.
+     *  @return void.
+     */
+    public function stdWrap_TCAselectItem(
+        $expect, $content, $conf, $times, $will)
+    {
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['TCAlookup'])->getMock();
+        $subject
+            ->expects($this->exactly($times))
+            ->method('TCAlookup')
+            ->with($content, $conf['TCAselectItem.'])
+            ->willReturn($will);
+        $this->assertSame($expect,
+            $subject->stdWrap_TCAselectItem($content, $conf));
+    }
+
+    /**
      * @return array
      */
     public function stdWrap_addPageCacheTagsAddsPageTagsDataProvider()
@@ -4271,6 +4532,38 @@ class ContentObjectRendererTest extends UnitTestCase
     {
         $this->subject->stdWrap_addPageCacheTags('', $configuration);
         $this->assertEquals($expectedTags, $this->frontendControllerMock->_get('pageCacheTags'));
+    }
+
+    /**
+     * Check that stdWrap_addParams works properly.
+     *
+     * Show:
+     *
+     *  - Delegates to method addParams.
+     *  - Parameter 1 is $content.
+     *  - Parameter 2 is $conf['addParams.'].
+     *  - Returns the return value.
+     *
+     *  @test
+     *  @return void.
+     */
+    public function stdWrap_addParams()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'addParams' => $this->getUniqueId('not used'),
+            'addParams.' => [$this->getUniqueId('addParams.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['addParams'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('addParams')
+            ->with($content, $conf['addParams.'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_addParams($content, $conf));
     }
 
     /**
@@ -4498,10 +4791,10 @@ class ContentObjectRendererTest extends UnitTestCase
      * Show:
      *
      * - Delegates to the method cObjGetSingle().
-     * - First parameter is $conf['cObject'].
-     * - Second parameter is $conf['cObject.'].
-     * - Third parameter is '/stdWrap/.cObject'.
-     * - Returns the return.
+     * - Parameter 1 is $conf['cObject'].
+     * - Parameter 2 is $conf['cObject.'].
+     * - Parameter 3 is '/stdWrap/.cObject'.
+     * - Returns the return value.
      *
      * @test
      * @return void
@@ -4509,6 +4802,7 @@ class ContentObjectRendererTest extends UnitTestCase
     public function stdWrap_cObject()
     {
         $debugKey =  '/stdWrap/.cObject';
+        $content = $this->getUniqueId('content');
         $conf = [
             'cObject' => $this->getUniqueId('cObject'),
             'cObject.' => [$this->getUniqueId('cObject.')],
@@ -4522,7 +4816,75 @@ class ContentObjectRendererTest extends UnitTestCase
             ->with($conf['cObject'], $conf['cObject.'], $debugKey)
             ->willReturn($return);
         $this->assertSame($return,
-            $subject->stdWrap_cObject('discard', $conf));
+            $subject->stdWrap_cObject($content, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_orderedStdWrap.
+     *
+     * @return array [$firstConf, $secondConf, $conf]
+     */
+    public function stdWrap_orderedStdWrapDataProvider()
+    {
+        $confA = [$this->getUniqueId('conf A')];
+        $confB = [$this->getUniqueId('conf B')];
+        return [
+            'standard case: order 1, 2' => [
+                $confA, $confB, ['1.' => $confA, '2.' => $confB]
+            ],
+            'inverted: order 2, 1' => [
+                $confB, $confA, ['2.' => $confA, '1.' => $confB]
+            ],
+            '0 as integer: order 0, 2' => [
+                $confA, $confB, ['0.' => $confA, '2.' => $confB]
+            ],
+            'negative integers: order 2, -2' => [
+                $confB, $confA, ['2.' => $confA, '-2.' => $confB]
+            ],
+            'chars are casted to key 0, that is not in the array' => [
+                null, $confB, ['2.' => $confB, 'xxx.' => $confA]
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_orderedStdWrap works properly.
+     *
+     * Show:
+     *
+     * - For each entry of $conf['orderedStdWrap.'] stdWrap is applied
+     *   to $content.
+     * - The order is defined by the keys, after they have been casted
+     *   to integers.
+     * - Returns the processed $content after all entries have been applied.
+     *
+     * Each test calls stdWrap two times. First $content is processed to
+     * $between, second $between is processed to $expect, the final return
+     * value. It is checked, if the expected parameters are given in the right
+     * consecutive order to stdWrap.
+     *
+     * @test
+     * @dataProvider stdWrap_orderedStdWrapDataProvider
+     * @param array $firstConf Parameter 2 expected by first call to stdWrap.
+     * @param array $secondConf Parameter 2 expected by second call to stdWrap.
+     * @param array $conf The given configuration.
+     * @return void
+     */
+    public function stdWrap_orderedStdWrap($firstConf, $secondConf, $conf)
+    {
+        $content = $this->getUniqueId('content');
+        $between = $this->getUniqueId('between');
+        $expect = $this->getUniqueId('expect');
+        $conf['orderedStdWrap.'] = $conf;
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['stdWrap'])->getMock();
+        $subject
+            ->expects($this->exactly(2))
+            ->method('stdWrap')
+            ->withConsecutive([$content, $firstConf], [$between, $secondConf])
+            ->will($this->onConsecutiveCalls($between, $expect));
+        $this->assertSame($expect,
+            $subject->stdWrap_orderedStdWrap($content, $conf));
     }
 
     /**
@@ -4586,76 +4948,131 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
-     * Data provider for stdWrap_case test
+     * Data provider for stdWrap_cacheStore.
      *
-     * @return array
+     * @return array [$confCache, $timesCCK, $key, $times]
      */
-    public function stdWrap_caseDataProvider()
+    public function stdWrap_cacheStoreDataProvider()
     {
-        return array(
-            'lower case text to upper' => array(
-                '<span>text</span>',
-                array(
-                    'case' => 'upper',
-                ),
-                '<span>TEXT</span>',
-            ),
-            'upper case text to lower' => array(
-                '<span>TEXT</span>',
-                array(
-                    'case' => 'lower',
-                ),
-                '<span>text</span>',
-            ),
-            'capitalize text' => array(
-                '<span>this is a text</span>',
-                array(
-                    'case' => 'capitalize',
-                ),
-                '<span>This Is A Text</span>',
-            ),
-            'ucfirst text' => array(
-                '<span>this is a text</span>',
-                array(
-                    'case' => 'ucfirst',
-                ),
-                '<span>This is a text</span>',
-            ),
-            'lcfirst text' => array(
-                '<span>This is a Text</span>',
-                array(
-                    'case' => 'lcfirst',
-                ),
-                '<span>this is a Text</span>',
-            ),
-            'uppercamelcase text' => array(
-                '<span>this_is_a_text</span>',
-                array(
-                    'case' => 'uppercamelcase',
-                ),
-                '<span>ThisIsAText</span>',
-            ),
-            'lowercamelcase text' => array(
-                '<span>this_is_a_text</span>',
-                array(
-                    'case' => 'lowercamelcase',
-                ),
-                '<span>thisIsAText</span>',
-            ),
-        );
+        $confCache = [$this->getUniqueId('cache.')];
+        $key = [$this->getUniqueId('key')];
+        return [
+            'Return immediate with no conf' => [
+                null, 0, null, 0,
+            ],
+            'Return immediate with empty key' => [
+                $confCache, 1, '0', 0,
+            ],
+            'Call all methods' => [
+                $confCache, 1, $key, 1,
+            ],
+        ];
     }
 
     /**
-     * @param string|NULL $content
-     * @param array $configuration
-     * @param string $expected
-     * @dataProvider stdWrap_caseDataProvider
+     * Check if stdWrap_cacheStore works properly.
+     *
+     * Show:
+     *
+     * - Returns $content as is.
+     * - Returns immediate if $conf['cache.'] is not set.
+     * - Returns immediate if calculateCacheKey returns an empty value.
+     * - Calls calculateCacheKey with $conf['cache.'].
+     * - Calls calculateCacheTags with $conf['cache.'].
+     * - Calls calculateCacheLifetime with $conf['cache.'].
+     * - Calls all configured user functions with $params, $this.
+     * - Calls set on the cache frontent with $key, $content, $tags, $lifetime.
+     *
      * @test
+     * @dataProvider stdWrap_cacheStoreDataProvider
+     * @param array $confCache Configuration of 'cache.'
+     * @param int $timesCCK Times calculateCacheKey is called.
+     * @param string  $key The return value of calculateCacheKey.
+     * @param int $times Times the other methods are called.
+     * @return void
      */
-    public function stdWrap_case($content, array $configuration, $expected)
+    public function stdWrap_cacheStore(
+        $confCache, $timesCCK, $key, $times)
     {
-        $result = $this->subject->stdWrap_case($content, $configuration);
-        $this->assertEquals($expected, $result);
+        $content = $this->getUniqueId('content');
+        $conf['cache.'] = $confCache;
+        $tags = [$this->getUniqueId('tags')];
+        $lifetime = $this->getUniqueId('lifetime');
+        $params = ['key' => $key, 'content' => $content,
+            'lifetime' => $lifetime, 'tags' => $tags];
+        $subject = $this->getAccessibleMock(
+            ContentObjectRenderer::class, ['calculateCacheKey',
+            'calculateCacheTags', 'calculateCacheLifetime']);
+        $subject
+            ->expects($this->exactly($timesCCK))
+            ->method('calculateCacheKey')
+            ->with($confCache)
+            ->willReturn($key);
+        $subject
+            ->expects($this->exactly($times))
+            ->method('calculateCacheTags')
+            ->with($confCache)
+            ->willReturn($tags);
+        $subject
+            ->expects($this->exactly($times))
+            ->method('calculateCacheLifetime')
+            ->with($confCache)
+            ->willReturn($lifetime);
+        $cacheFrontend = $this->createMock(CacheFrontendInterface::class);
+        $cacheFrontend
+            ->expects($this->exactly($times))
+            ->method('set')
+            ->with($key, $content, $tags, $lifetime)
+            ->willReturn($cached);
+        $cacheManager = $this->createMock(CacheManager::class);
+        $cacheManager
+            ->method('getCache')
+            ->willReturn($cacheFrontend);
+        GeneralUtility::setSingletonInstance(
+            CacheManager::class, $cacheManager);
+        list($countCalls, $test) = [0, $this];
+        $closure = function ($par1, $par2) use (
+            $test, $subject, $params, &$countCalls) {
+                $test->assertSame($params, $par1);
+                $test->assertSame($subject, $par2);
+                $countCalls++;
+            };
+        $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap_cacheStore'] = [$closure, $closure, $closure];
+        $this->assertSame($content,
+            $subject->stdWrap_cacheStore($content, $conf));
+        $this->assertSame($times * 3, $countCalls);
+    }
+
+    /**
+     * Check if stdWrap_case works properly.
+     *
+     * Show:
+     *
+     * - Delegates to method HTMLcaseshift.
+     * - Parameter 1 is $content.
+     * - Parameter 2 is $conf['case'].
+     * - Returns the return value.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_case()
+    {
+        $content = $this->getUniqueId();
+        $conf = [
+            'case' => $this->getUniqueId('used'),
+            'case.' => [$this->getUniqueId('discarded')],
+        ];
+        $return = $this->getUniqueId();
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['HTMLcaseshift'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('HTMLcaseshift')
+            ->with($content, $conf['case'])
+            ->willReturn($return);
+        $this->assertSame($return,
+            $subject->stdWrap_case($content, $conf));
     }
 
     /**
@@ -4981,6 +5398,112 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
+     * Check if stdWrap_debug works properly.
+     *
+     * Show:
+     *
+     * - Calls the function debug.
+     * - Parameter 1 is $this->data.
+     * - Parameter 2 is the string '$cObj->data:'.
+     * - If $this->alternativeData is an array the same is repeated with:
+     * - Parameter 1 is $this->alternativeData.
+     * - Parameter 2 is the string '$cObj->alternativeData:'.
+     * - Returns $content as is.
+     *
+     * Note 1:
+     *
+     *   As PHPUnit can't mock PHP function calls, the call to debug can't be
+     *   easily intercepted. The test is done indirectly by catching the
+     *   frontend output of debug.
+     *
+     * Note 2:
+     *
+     *   The second paramter to the debug function isn't used by the current
+     *   implementation at all. It can't even indirectly be tested.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_debugData()
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask'] = '*';
+        $content = $this->getUniqueId('content');
+        $key = $this->getUniqueId('key');
+        $value = $this->getUniqueId('value');
+        $altValue = $this->getUniqueId('value alt');
+        $this->subject->data = [$key => $value];
+        // Without alternative data only data is returned.
+        ob_start();
+        $result = $this->subject->stdWrap_debugData($content);
+        $out = ob_get_clean();
+        $this->assertSame($result, $content);
+        $this->assertNotContains('$cObj->data', $out);
+        $this->assertContains($value, $out);
+        $this->assertNotContains($altValue, $out);
+        // By adding alternative data both are returned together.
+        $this->subject->alternativeData = [$key => $altValue];
+        ob_start();
+        $this->subject->stdWrap_debugData($content);
+        $out = ob_get_clean();
+        $this->assertNotContains('$cObj->alternativeData', $out);
+        $this->assertContains($value, $out);
+        $this->assertContains($altValue, $out);
+    }
+
+    /*
+     * Data provider for stdWrap_debugFunc.
+     *
+     * @return array [$expectArray, $confDebugFunc]
+     */
+    public function stdWrap_debugFuncDataProvider()
+    {
+        return [
+            'expect array by string' => [ true, '2' ],
+            'expect array by integer' => [ true, 2 ],
+            'do not expect array' => [ false, '' ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_debugFunc works properly.
+     *
+     * Show:
+     *
+     * - Calls the function debug with one paramter.
+     * - The parameter is the given $content string.
+     * - The string is casted to array before, if (int)$conf['debugFunc'] is 2.
+     * - Returns $content as is.
+     *
+     * Note 1:
+     *
+     *   As PHPUnit can't mock PHP function calls, the call to debug can't be
+     *   easily intercepted. The test is done indirectly by catching the
+     *   frontend output of debug.
+     *
+     * @test
+     * @dataProvider stdWrap_debugFuncDataProvider
+     * @param bool $expectArray If cast to array is expected.
+     * @param mixed $confDebugFunc The configuration for $conf['debugFunc'].
+     * @return void
+     */
+    public function stdWrap_debugFunc($expectArray, $confDebugFunc)
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask'] = '*';
+        $content = $this->getUniqueId('content');
+        $conf = ['debugFunc' => $confDebugFunc];
+        ob_start();
+        $result = $this->subject->stdWrap_debugFunc($content, $conf);
+        $out = ob_get_clean();
+        $this->assertSame($result, $content);
+        $this->assertContains($content, $out);
+        if ($expectArray) {
+            $this->assertContains('=>', $out);
+        } else {
+            $this->assertNotContains('=>', $out);
+        }
+    }
+
+    /**
      * Data provider for stdWrap_doubleBrTag
      *
      * @return array Order expected, input, config
@@ -5057,6 +5580,93 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
+     * Data provider for stdWrap_editIcons.
+     *
+     * @return [$expect, $content, $conf, $login, $times, $param3, $will]
+     */
+    public function stdWrap_editIconsDataProvider()
+    {
+        $content = $this->getUniqueId('content');
+        $editIcons = $this->getUniqueId('editIcons');
+        $editIconsArray = [$this->getUniqueId('editIcons.')];
+        $will = $this->getUniqueId('will');
+        return [
+            'standard case calls edit icons' => [
+                $will, $content,
+                ['editIcons' => $editIcons, 'editIcons.' => $editIconsArray],
+                true, 1, $editIconsArray, $will
+            ],
+            'null in editIcons. repalaced by []' => [
+                $will, $content,
+                ['editIcons' => $editIcons, 'editIcons.' => null],
+                true, 1, [], $will
+            ],
+            'missing editIcons. replaced by []' => [
+                $will, $content,
+                ['editIcons' => $editIcons],
+                true, 1, [], $will
+            ],
+            'no user login disables call' => [
+                $content, $content,
+                ['editIcons' => $editIcons, 'editIcons.' => $editIconsArray],
+                false, 0, $editIconsArray, $will
+            ],
+            'empty string in editIcons disables call' => [
+                $content, $content,
+                ['editIcons' => '', 'editIcons.' => $editIconsArray],
+                true, 0, $editIconsArray, $will
+            ],
+            'zero string in editIcons disables call' => [
+                $content, $content,
+                ['editIcons' => '0', 'editIcons.' => $editIconsArray],
+                true, 0, $editIconsArray, $will
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_editIcons works properly.
+     *
+     * Show:
+     *
+     * - Returns $content as is if:
+     *   - beUserLogin is not set
+     *   - (bool)$conf['editIcons'] is false
+     * - Otherwise:
+     *   - Delegates to method editIcons.
+     *   - Parameter 1 is $content.
+     *   - Parameter 2 is $conf['editIcons'].
+     *   - Parameter 3 is $conf['editIcons.'].
+     *   - If $conf['editIcons.'] is no array at all, the empty array is used.
+     *   - Returns the return value.
+     *
+     * @test
+     * @dataProvider stdWrap_editIconsDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given content.
+     * @param array $conf The given configuration.
+     * @param bool $login Simulate backend user login.
+     * @param int $times Times editIcons is called (0 or 1).
+     * @param array $param3 The expected third parameter.
+     * @param string $will Return value of editIcons.
+     * @return void
+     */
+    public function stdWrap_editIcons(
+        $expect, $content, $conf, $login, $times, $param3, $will)
+    {
+        $GLOBALS['TSFE']->beUserLogin = $login;
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['editIcons'])->getMock();
+        $subject
+            ->expects($this->exactly($times))
+            ->method('editIcons')
+            ->with($content, $conf['editIcons'], $param3)
+            ->willReturn($will);
+        $this->assertSame($expect,
+            $subject->stdWrap_editIcons($content, $conf));
+    }
+
+    /**
      * Check if stdWrap_encapsLines works properly.
      *
      * Show:
@@ -5087,6 +5697,63 @@ class ContentObjectRendererTest extends UnitTestCase
          $this->assertSame($return,
              $subject->stdWrap_encapsLines($content, $conf));
      }
+
+    /**
+     * Data provider for stdWrap_editPanel.
+     *
+     * @return [$expect, $content, $login, $times, $will]
+     */
+    public function stdWrap_editPanelDataProvider()
+    {
+        $content = $this->getUniqueId('content');
+        $will = $this->getUniqueId('will');
+        return [
+            'standard case calls edit icons' => [
+                $will, $content, true, 1, $will
+            ],
+            'no user login disables call' => [
+                $content, $content, false, 0, $will
+            ],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_editPanel works properly.
+     *
+     * Show:
+     *
+     * - Returns $content as is if:
+     *   - beUserLogin is not set
+     * - Otherwise:
+     *   - Delegates to method editPanel.
+     *   - Parameter 1 is $content.
+     *   - Parameter 2 is $conf['editPanel'].
+     *   - Returns the return value.
+     *
+     * @test
+     * @dataProvider stdWrap_editPanelDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given content.
+     * @param bool $login Simulate backend user login.
+     * @param int $times Times editPanel is called (0 or 1).
+     * @param string $will Return value of editPanel.
+     * @return void
+     */
+    public function stdWrap_editPanel(
+        $expect, $content, $login, $times, $will)
+    {
+        $GLOBALS['TSFE']->beUserLogin = $login;
+        $conf = ['editPanel.' => [$this->getUniqueId('editPanel.')]];
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['editPanel'])->getMock();
+        $subject
+            ->expects($this->exactly($times))
+            ->method('editPanel')
+            ->with($content, $conf['editPanel.'])
+            ->willReturn($will);
+        $this->assertSame($expect,
+            $subject->stdWrap_editPanel($content, $conf));
+    }
 
     /**
      * Data provider for stdWrap_encodeForJavaScriptValue.
@@ -6322,6 +6989,40 @@ class ContentObjectRendererTest extends UnitTestCase
     }
 
     /**
+     * Check if stdWrap_postCObject works properly.
+     *
+     * Show:
+     *
+     * - Delegates to the method cObjGetSingle().
+     * - Parameter 1 is $conf['postCObject'].
+     * - Parameter 2 is $conf['postCObject.'].
+     * - Parameter 3 is '/stdWrap/.postCObject'.
+     * - Returns the return value appended by $content.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_postCObject()
+    {
+        $debugKey =  '/stdWrap/.postCObject';
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'postCObject' => $this->getUniqueId('postCObject'),
+            'postCObject.' => [$this->getUniqueId('postCObject.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['cObjGetSingle'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('cObjGetSingle')
+            ->with($conf['postCObject'], $conf['postCObject.'], $debugKey)
+            ->willReturn($return);
+        $this->assertSame($content . $return,
+            $subject->stdWrap_postCObject($content, $conf));
+    }
+
+    /**
      * Check that stdWrap_postUserFunc works properly.
      *
      * Show:
@@ -6350,6 +7051,90 @@ class ContentObjectRendererTest extends UnitTestCase
             ->willReturn($return);
         $this->assertSame($return,
             $subject->stdWrap_postUserFunc($content, $conf));
+    }
+
+    /**
+     * Check if stdWrap_postUserFuncInt works properly.
+     *
+     * Show:
+     *
+     * - Calls frontend controller method uniqueHash.
+     * - Concatenates "INT_SCRIPT." and the returned hash to $substKey.
+     * - Configures the frontend controller for 'INTincScript.$substKey'.
+     * - The configuration array contains:
+     *   - content: $content
+     *   - postUserFunc: $conf['postUserFuncInt']
+     *   - conf: $conf['postUserFuncInt.']
+     *   - type: 'POSTUSERFUNC'
+     *   - cObj: serialized content renderer object
+     * - Returns "<!-- $substKey -->".
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_postUserFuncInt()
+    {
+        $uniqueHash = $this->getUniqueId('uniqueHash');
+        $substKey = 'INT_SCRIPT.' . $uniqueHash;
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'postUserFuncInt' => $this->getUniqueId('function'),
+            'postUserFuncInt.' => [$this->getUniqueId('function array')],
+        ];
+        $expect = '<!--' . $substKey . '-->';
+        $frontend = $this->getMockBuilder(TypoScriptFrontendController::class)
+            ->disableOriginalConstructor()->setMethods(['uniqueHash'])
+            ->getMock();
+        $frontend->expects($this->once())->method('uniqueHash')
+            ->with()->willReturn($uniqueHash);
+        $frontend->config = [];
+        $subject = $this->getAccessibleMock(
+            ContentObjectRenderer::class, null, [$frontend]);
+        $this->assertSame($expect,
+            $subject->stdWrap_postUserFuncInt($content, $conf));
+        $array = [
+            'content' => $content,
+            'postUserFunc' => $conf['postUserFuncInt'],
+            'conf' => $conf['postUserFuncInt.'],
+            'type' => 'POSTUSERFUNC',
+            'cObj' => serialize($subject)
+        ];
+        $this->assertSame($array,
+            $frontend->config['INTincScript'][$substKey]);
+    }
+
+    /**
+     * Check if stdWrap_preCObject works properly.
+     *
+     * Show:
+     *
+     * - Delegates to the method cObjGetSingle().
+     * - Parameter 1 is $conf['preCObject'].
+     * - Parameter 2 is $conf['preCObject.'].
+     * - Parameter 3 is '/stdWrap/.preCObject'.
+     * - Returns the return value appended by $content.
+     *
+     * @test
+     * @return void
+     */
+    public function stdWrap_preCObject()
+    {
+        $debugKey =  '/stdWrap/.preCObject';
+        $content = $this->getUniqueId('content');
+        $conf = [
+            'preCObject' => $this->getUniqueId('preCObject'),
+            'preCObject.' => [$this->getUniqueId('preCObject.')],
+        ];
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+            ->setMethods(['cObjGetSingle'])->getMock();
+        $subject
+            ->expects($this->once())
+            ->method('cObjGetSingle')
+            ->with($conf['preCObject'], $conf['preCObject.'], $debugKey)
+            ->willReturn($return);
+        $this->assertSame($return . $content,
+            $subject->stdWrap_preCObject($content, $conf));
     }
 
     /**
@@ -7569,7 +8354,53 @@ class ContentObjectRendererTest extends UnitTestCase
         $this->assertSame($expected, $this->subject->stdWrap_wrap3($input, $conf));
     }
 
-  /***************************************************************************
-   * End of tests of stdWrap
-   ***************************************************************************/
+    /**
+     * Data provider for stdWrap_wrapAlign.
+     *
+     * @return array [$expect, $content, $conf]
+     */
+    public function stdWrap_wrapAlignDataProvider()
+    {
+        $format = '<div style="text-align:%s;">%s</div>';
+        $content = $this->getUniqueId('content');
+        $wrapAlign = $this->getUniqueId('wrapAlign');
+        $expect = sprintf($format, $wrapAlign, $content);
+        return [
+            'standard case' => [$expect, $content, $wrapAlign],
+            'empty conf' => [$content, $content, null],
+            'empty string' => [$content, $content, ''],
+            'whitespaced zero string' => [$content, $content, ' 0 '],
+        ];
+    }
+
+    /**
+     * Check if stdWrap_wrapAlign works properly.
+     *
+     * Show:
+     *
+     * - Wraps $content with div and style attribute.
+     * - The style attribute is taken from $conf['wrapAlign'].
+     * - Returns the content as is,
+     * - if $conf['wrapAlign'] evals to false after being trimmed.
+     *
+     * @test
+     * @dataProvider stdWrap_wrapAlignDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given content.
+     * @param mixed $wrapAlignConf The given input.
+     * @return void
+     */
+    public function stdWrap_wrapAlign($expect, $content, $wrapAlignConf)
+    {
+        $conf = [];
+        if ($wrapAlignConf !== null) {
+            $conf['wrapAlign'] = $wrapAlignConf;
+        }
+        $this->assertSame($expect,
+            $this->subject->stdWrap_wrapAlign($content, $conf));
+    }
+
+    /***************************************************************************
+    * End of tests of stdWrap in alphabetical order
+    ***************************************************************************/
 }

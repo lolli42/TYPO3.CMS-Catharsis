@@ -24,7 +24,6 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -41,6 +40,13 @@ class ExtendedTemplateService extends TemplateService
      * @var string
      */
     public $edit_divider = '###MOD_TS:EDITABLE_CONSTANTS###';
+
+    /**
+     * Disabled in backend context
+     *
+     * @var bool
+     */
+    public $tt_track = false;
 
     /**
      * @var array
@@ -143,16 +149,6 @@ class ExtendedTemplateService extends TemplateService
      * @var int
      */
     public $ext_lineNumberOffset = 0;
-
-    /**
-     * @var string
-     */
-    public $ext_localGfxPrefix = '';
-
-    /**
-     * @var string
-     */
-    public $ext_localWebGfxPrefix = '';
 
     /**
      * @var int
@@ -368,13 +364,13 @@ class ExtendedTemplateService extends TemplateService
                     $constants->parse($parts[0], $matchObj);
                 }
                 $this->flatSetup = array();
-                $this->flattenSetup($constants->setup, '', '');
+                $this->flattenSetup($constants->setup, '');
                 $defaultConstants = $this->flatSetup;
             }
             $constants->parse($str, $matchObj);
         }
         $this->flatSetup = array();
-        $this->flattenSetup($constants->setup, '', '');
+        $this->flattenSetup($constants->setup, '');
         $this->setup['constants'] = $constants->setup;
         return $this->ext_compareFlatSetups($defaultConstants);
     }
@@ -1105,9 +1101,6 @@ class ExtendedTemplateService extends TemplateService
         if (is_array($catConf)) {
             foreach ($catConf as $key => $val) {
                 switch ($key) {
-                    case 'image':
-                        $out['imagetag'] = $this->ext_getTSCE_config_image($catConf['image']);
-                        break;
                     case 'description':
                     case 'bulletlist':
                     case 'header':
@@ -1127,30 +1120,6 @@ class ExtendedTemplateService extends TemplateService
             }
         }
         $this->helpConfig = $out;
-    }
-
-    /**
-     * @param string $imgConf
-     * @return string
-     */
-    public function ext_getTSCE_config_image($imgConf)
-    {
-        $iFile = null;
-        $tFile = null;
-        if (substr($imgConf, 0, 4) == 'gfx/') {
-            $iFile = $this->ext_localGfxPrefix . $imgConf;
-            $tFile = $this->ext_localWebGfxPrefix . $imgConf;
-        } elseif (substr($imgConf, 0, 4) == 'EXT:') {
-            $iFile = GeneralUtility::getFileAbsFileName($imgConf);
-            if ($iFile) {
-                $tFile = '../' . PathUtility::stripPathSitePrefix($iFile);
-            }
-        }
-        if ($iFile !== null) {
-            $imageInfo = @getimagesize($iFile);
-            return '<img src="' . $tFile . '" ' . $imageInfo[3] . '>';
-        }
-        return '';
     }
 
     /**
@@ -1368,14 +1337,12 @@ class ExtendedTemplateService extends TemplateService
                             '<div class="input-group defaultTS" id="' . $defaultTyposcriptID . '" ' . $defaultTyposcriptStyle . '>'
                                 . '<span class="input-group-btn">' . $editIconHTML . '</span>'
                                 . '<input class="form-control" type="text" placeholder="' . htmlspecialchars($params['default_value']) . '" readonly>'
-                                . $appendedGroupAddon
                             . '</div>';
                     }
                     $constantEditRow =
                         '<div class="input-group userTS" id="' . $userTyposcriptID . '" ' . $userTyposcriptStyle . '>'
                             . '<span class="input-group-btn">' . $deleteIconHTML . '</span>'
                             . $p_field
-                            . $appendedGroupAddon
                         . '</div>';
                     $constantLabel = '<label class="t3js-formengine-label"><span>' . htmlspecialchars($head) . '</span></label>';
                     $constantName = '<span class="help-block">[' . $params['name'] . ']</span>';
@@ -1573,7 +1540,7 @@ class ExtendedTemplateService extends TemplateService
                                 break;
                             case 'color':
                                 $col = array();
-                                if ($var && !GeneralUtility::inList($this->HTMLcolorList, strtolower($var))) {
+                                if ($var) {
                                     $var = preg_replace('/[^A-Fa-f0-9]*/', '', $var);
                                     $useFulHex = strlen($var) > 3;
                                     $col[] = hexdec($var[0]);

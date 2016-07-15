@@ -13,12 +13,13 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase;
 use TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder;
 
 /**
  * Test for the "Select" Form view helper
  */
-class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\FormFieldViewHelperBaseTestcase
+class SelectViewHelperTest extends ViewHelperBaseTestcase
 {
     /**
      * @var \TYPO3\CMS\Fluid\ViewHelpers\Form\SelectViewHelper
@@ -43,6 +44,8 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['name'] = '';
         $this->arguments['sortByOptionLabel'] = false;
         $this->viewHelper = $this->getAccessibleMock(\TYPO3\CMS\Fluid\ViewHelpers\Form\SelectViewHelper::class, array('setErrorClassAttribute', 'registerFieldNameForFormTokenGeneration'));
+        $this->tagBuilder = $this->createMock(\TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder::class);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
     }
 
     protected function tearDown()
@@ -62,7 +65,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
 
         $this->arguments['options'] = array();
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -85,6 +88,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['name'] = 'myName';
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -122,6 +126,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         );
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -158,6 +163,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['options'] = array($obj1, $obj2, $obj3, $obj4);
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -195,6 +201,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         ));
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -213,7 +220,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['value'] = 'value2';
         $this->arguments['name'] = 'myName';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -238,7 +245,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['name'] = 'myName';
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -264,6 +271,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['sortByOptionLabel'] = true;
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -299,6 +307,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['name'] = 'myName';
         $this->arguments['sortByOptionLabel'] = true;
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -321,7 +330,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['multiple'] = true;
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initializeArguments();
         $this->viewHelper->initialize();
         $result = $this->viewHelper->render();
@@ -358,7 +367,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['optionLabelField'] = 'firstName';
         $this->arguments['name'] = 'myName';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -386,7 +395,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['multiple'] = true;
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initializeArguments();
         $this->viewHelper->initialize();
         $actual = $this->viewHelper->render();
@@ -426,7 +435,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['multiple'] = true;
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initializeArguments();
         $this->viewHelper->initialize();
         $actual = $this->viewHelper->render();
@@ -460,7 +469,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         );
         $this->arguments['name'] = 'myName';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -490,7 +499,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         );
         $this->arguments['name'] = 'myName';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -514,7 +523,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         );
         $this->arguments['name'] = 'myName';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -527,7 +536,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['options'] = array();
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->expects($this->once())->method('setErrorClassAttribute');
         $this->viewHelper->render();
     }
@@ -549,7 +558,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['selectAllByDefault'] = true;
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -572,7 +581,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['selectAllByDefault'] = true;
 
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
-
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -594,6 +603,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['name'] = 'myName';
         $this->arguments['prependOptionLabel'] = 'please choose';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+        $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
@@ -616,6 +626,7 @@ class SelectViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\
         $this->arguments['prependOptionLabel'] = 'please choose';
         $this->arguments['prependOptionValue'] = '-1';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
+
         $this->viewHelper->initialize();
         $this->viewHelper->render();
     }
