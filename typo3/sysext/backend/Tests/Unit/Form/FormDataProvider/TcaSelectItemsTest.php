@@ -14,17 +14,12 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Doctrine\DBAL\Driver\Statement;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Database\Connection;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
-use TYPO3\CMS\Core\Database\Query\QueryBuilder;
-use TYPO3\CMS\Core\Database\Query\Restriction\DefaultRestrictionContainer;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
@@ -40,7 +35,7 @@ use TYPO3\CMS\Lang\LanguageService;
 class TcaSelectItemsTest extends UnitTestCase
 {
     /**
-     * @var TcaSelectItems|\PHPUnit_Framework_MockObject_MockObject
+     * @var TcaSelectItems
      */
     protected $subject;
 
@@ -52,10 +47,6 @@ class TcaSelectItemsTest extends UnitTestCase
     protected function setUp()
     {
         $this->singletonInstances = GeneralUtility::getSingletonInstances();
-        $this->subject = $this->getMockBuilder(TcaSelectItems::class)
-            ->setMethods(['getDatabaseRow'])
-            ->getMock();
-
         $this->subject = new TcaSelectItems();
     }
 
@@ -64,83 +55,6 @@ class TcaSelectItemsTest extends UnitTestCase
         GeneralUtility::purgeInstances();
         GeneralUtility::resetSingletonInstances($this->singletonInstances);
         parent::tearDown();
-    }
-
-    /**
-     * Prepare a mock database setup for a Doctrine connection
-     * and return an array of all prophets to set expectations upon.
-     *
-     * @param string $tableName
-     * @return array
-     */
-    protected function mockDatabaseConnection($tableName = 'fTable')
-    {
-        $connectionProphet = $this->prophesize(Connection::class);
-        $connectionProphet->quote(Argument::cetera())->will(function ($arguments) {
-            return "'" . $arguments[0] . "'";
-        });
-        $connectionProphet->quoteIdentifier(Argument::cetera())->will(function ($arguments) {
-            return '`' . $arguments[0] . '`';
-        });
-
-        $restrictionProphet = $this->prophesize(DefaultRestrictionContainer::class);
-        $restrictionProphet->removeAll()->willReturn($restrictionProphet->reveal());
-        $restrictionProphet->add(Argument::cetera())->willReturn($restrictionProphet->reveal());
-
-        $queryBuilderProphet = $this->prophesize(QueryBuilder::class);
-        $queryBuilderProphet->expr()->willReturn(
-            GeneralUtility::makeInstance(ExpressionBuilder::class, $connectionProphet->reveal())
-        );
-        $queryBuilderProphet->getRestrictions()->willReturn($restrictionProphet->reveal());
-        $queryBuilderProphet->quoteIdentifier(Argument::cetera())->will(function ($arguments) {
-            return '`' . $arguments[0] . '`';
-        });
-
-        $connectionPoolProphet = $this->prophesize(ConnectionPool::class);
-        $connectionPoolProphet->getConnectionForTable($tableName)
-            ->willReturn($connectionProphet->reveal());
-        $connectionPoolProphet->getQueryBuilderForTable($tableName)
-            ->shouldBeCalled()
-            ->willReturn($queryBuilderProphet->reveal());
-
-        return [$queryBuilderProphet, $connectionPoolProphet, $connectionProphet, $restrictionProphet];
-    }
-
-    /**
-     * Mock a doctrine database connection with all expectations
-     * required for the processSelectField* tests.
-     */
-    protected function mockDatabaseConnectionForProcessSelectField()
-    {
-        list($queryBuilderProphet, $connectionPoolProphet) = $this->mockDatabaseConnection('foreignTable');
-
-        /** @var Statement|ObjectProphecy $statementProphet */
-        $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled();
-        $statementProphet->fetch()->shouldBeCalled();
-
-        $queryBuilderProphet->select('foreignTable.uid')
-            ->shouldBeCalled()
-            ->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('foreignTable')
-            ->shouldBeCalled()
-            ->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('pages')
-            ->shouldBeCalled()
-            ->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->where(' 1=1', '')
-            ->shouldBeCalled()
-            ->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->andWhere('`pages.uid` = `foreignTable.pid`')
-            ->shouldBeCalled()
-            ->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->execute()
-            ->shouldBeCalled()
-            ->willReturn($statementProphet->reveal());
-
-        # Two instances are needed due to the push/pop behavior of addInstance()
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
     }
 
     /**
@@ -1360,18 +1274,12 @@ class TcaSelectItemsTest extends UnitTestCase
         return [
             'replace REC_FIELD' => [
                 'AND fTable.title=\'###REC_FIELD_rowField###\'',
-                [
-                    [' 1=1', 'fTable.title=\'rowFieldValue\''],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldValue\'',
                 [],
             ],
             'replace REC_FIELD within FlexForm' => [
                 'AND fTable.title=###REC_FIELD_rowFieldFlexForm###',
-                [
-                    [' 1=1', 'fTable.title=\'rowFieldFlexFormValue\''],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldFlexFormValue\'',
                 [
                     'databaseRow' => [
                         'rowFieldThree' => [
@@ -1387,18 +1295,12 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace REC_FIELD fullQuote' => [
                 'AND fTable.title=###REC_FIELD_rowField###',
-                [
-                    [' 1=1', 'fTable.title=\'rowFieldValue\''],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldValue\'',
                 [],
             ],
             'replace REC_FIELD fullQuoteWithArray' => [
                 'AND fTable.title=###REC_FIELD_rowFieldThree###',
-                [
-                    [' 1=1', 'fTable.title=\'rowFieldThreeValue\''],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldThreeValue\'',
                 [
                     'databaseRow' => [
                         'rowFieldThree' => [
@@ -1409,26 +1311,17 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace REC_FIELD multiple markers' => [
                 'AND fTable.title=\'###REC_FIELD_rowField###\' AND fTable.pid=###REC_FIELD_rowFieldTwo###',
-                [
-                    [' 1=1', 'fTable.title=\'rowFieldValue\' AND fTable.pid=\'rowFieldTwoValue\''],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.title=\'rowFieldValue\' AND fTable.pid=\'rowFieldTwoValue\'',
                 [],
             ],
             'replace CURRENT_PID' => [
                 'AND fTable.uid=###CURRENT_PID###',
-                [
-                    [' 1=1', 'fTable.uid=43'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=43',
                 [],
             ],
             'replace CURRENT_PID within FlexForm' => [
                 'AND fTable.uid=###CURRENT_PID###',
-                [
-                    [' 1=1', 'fTable.uid=77'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=77',
                 [
                     'flexParentDatabaseRow' => [
                         'pid' => '77',
@@ -1437,28 +1330,19 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace CURRENT_PID integer cast' => [
                 'AND fTable.uid=###CURRENT_PID###',
-                [
-                    [' 1=1', 'fTable.uid=431'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=431',
                 [
                     'effectivePid' => '431string',
                 ],
             ],
             'replace THIS_UID' => [
                 'AND fTable.uid=###THIS_UID###',
-                [
-                    [' 1=1', 'fTable.uid=42'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=42',
                 [],
             ],
             'replace THIS_UID integer cast' => [
                 'AND fTable.uid=###THIS_UID###',
-                [
-                    [' 1=1', 'fTable.uid=421'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=421',
                 [
                     'databaseRow' => [
                         'uid' => '421string',
@@ -1467,18 +1351,12 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace SITEROOT' => [
                 'AND fTable.uid=###SITEROOT###',
-                [
-                    [' 1=1', 'fTable.uid=44'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=44',
                 [],
             ],
             'replace SITEROOT integer cast' => [
                 'AND fTable.uid=###SITEROOT###',
-                [
-                    [' 1=1', 'fTable.uid=441'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=441',
                 [
                     'rootline' => [
                         1 => [
@@ -1489,10 +1367,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace PAGE_TSCONFIG_ID' => [
                 'AND fTable.uid=###PAGE_TSCONFIG_ID###',
-                [
-                    [' 1=1', 'fTable.uid=45'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=45',
                 [
                     'pageTsConfig' => [
                         'TCEFORM.' => [
@@ -1507,10 +1382,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace PAGE_TSCONFIG_ID integer cast' => [
                 'AND fTable.uid=###PAGE_TSCONFIG_ID###',
-                [
-                    [' 1=1', 'fTable.uid=451'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=451',
                 [
                     'pageTsConfig' => [
                         'TCEFORM.' => [
@@ -1525,10 +1397,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace PAGE_TSCONFIG_STR' => [
                 'AND fTable.uid=\'###PAGE_TSCONFIG_STR###\'',
-                [
-                    [' 1=1', 'fTable.uid=\'46\''],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=\'46\'',
                 [
                     'pageTsConfig' => [
                         'TCEFORM.' => [
@@ -1543,10 +1412,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace PAGE_TSCONFIG_IDLIST' => [
                 'AND fTable.uid IN (###PAGE_TSCONFIG_IDLIST###)',
-                [
-                    [' 1=1', 'fTable.uid IN (47,48)'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid IN (47,48)',
                 [
                     'pageTsConfig' => [
                         'TCEFORM.' => [
@@ -1561,10 +1427,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'replace PAGE_TSCONFIG_IDLIST cleans list' => [
                 'AND fTable.uid IN (###PAGE_TSCONFIG_IDLIST###)',
-                [
-                    [' 1=1', 'fTable.uid IN (471,481)'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid IN (471,481)',
                 [
                     'pageTsConfig' => [
                         'TCEFORM.' => [
@@ -1579,10 +1442,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'deprecated flexHack PAGE_TSCONFIG_ID is substituted' => [
                 'AND fTable.uid=###PAGE_TSCONFIG_ID###',
-                [
-                    [' 1=1', 'fTable.uid=123'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=123',
                 [
                     'pageTsConfig' => [
                         'flexHack.' => [
@@ -1593,10 +1453,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'deprecated flexHack PAGE_TSCONFIG_IDLIST is substituted' => [
                 'AND fTable.uid IN (###PAGE_TSCONFIG_IDLIST###)',
-                [
-                    [' 1=1', 'fTable.uid IN (123,124)'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid IN (123,124)',
                 [
                     'pageTsConfig' => [
                         'flexHack.' => [
@@ -1607,10 +1464,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ],
             'deprecated flexHack PAGE_TSCONFIG_STR is substituted' => [
                 'AND fTable.uid=\'###PAGE_TSCONFIG_STR###\'',
-                [
-                    [' 1=1', 'fTable.uid=\'aString\''],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
+                'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND fTable.uid=\'aString\'',
                 [
                     'pageTsConfig' => [
                         'flexHack.' => [
@@ -1668,31 +1522,32 @@ class TcaSelectItemsTest extends UnitTestCase
 
         $GLOBALS['TCA']['fTable'] = [];
 
-        list($queryBuilderProphet, $connectionPoolProphet) = $this->mockDatabaseConnection();
-
-        /** @var Statement|ObjectProphecy $statementProphet */
-        $statementProphet = $this->prophesize(Statement::class);
-
-        $queryBuilderProphet->select('fTable.uid')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('pages')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->where(...array_shift($expectedWhere))->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
-
-        while ($constraint = array_shift($expectedWhere)) {
-            $queryBuilderProphet->andWhere(...$constraint)
-                ->shouldBeCalled()
-                ->willReturn($queryBuilderProphet->reveal());
-        }
-
-        # Two instances are needed due to the push/pop behavior of addInstance()
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
+        $expectedQueryArray = [
+            'SELECT' => 'fTable.uid',
+            'FROM' => 'fTable, pages',
+            'WHERE' => $expectedWhere,
+            'GROUPBY' => '',
+            'ORDERBY' => '',
+            'LIMIT' => '',
+        ];
 
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
         $backendUserProphecy = $this->prophesize(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $backendUserProphecy->reveal();
         $backendUserProphecy->getPagePermsClause(1)->shouldBeCalled()->willReturn(' 1=1');
+
+        /** @var DatabaseConnection|ObjectProphecy $databaseProphecy */
+        $databaseProphecy = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $databaseProphecy->reveal();
+        $databaseProphecy->sql_error()->shouldBeCalled()->willReturn(false);
+        $databaseProphecy->quoteStr(Argument::cetera())->willReturnArgument(0);
+        $databaseProphecy->fullQuoteStr(Argument::cetera())->will(function ($args) {
+            return '\'' . $args[0] . '\'';
+        });
+        $databaseProphecy->sql_fetch_assoc(Argument::cetera())->shouldBeCalled()->willReturn(false);
+        $databaseProphecy->sql_free_result(Argument::cetera())->shouldBeCalled()->willReturn(null);
+
+        $databaseProphecy->exec_SELECT_queryArray($expectedQueryArray)->shouldBeCalled()->willReturn(false);
 
         $this->subject->addData($input);
     }
@@ -1748,30 +1603,32 @@ class TcaSelectItemsTest extends UnitTestCase
 
         $GLOBALS['TCA']['fTable'] = [];
 
+        $expectedQueryArray = [
+            'SELECT' => 'fTable.uid',
+            'FROM' => 'fTable, pages',
+            'WHERE' => 'pages.uid=fTable.pid AND pages.deleted=0 AND 1=1 AND ftable.uid=1',
+            'GROUPBY' => 'groupField',
+            'ORDERBY' => 'orderField',
+            'LIMIT' => '1,2',
+        ];
+
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
         $backendUserProphecy = $this->prophesize(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $backendUserProphecy->reveal();
         $backendUserProphecy->getPagePermsClause(1)->shouldBeCalled()->willReturn(' 1=1');
 
-        list($queryBuilderProphet, $connectionPoolProphet) = $this->mockDatabaseConnection();
+        /** @var DatabaseConnection|ObjectProphecy $databaseProphecy */
+        $databaseProphecy = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $databaseProphecy->reveal();
+        $databaseProphecy->sql_error()->shouldBeCalled()->willReturn(false);
+        $databaseProphecy->quoteStr(Argument::cetera())->willReturnArgument(0);
+        $databaseProphecy->fullQuoteStr(Argument::cetera())->will(function ($args) {
+            return '\'' . $args[0] . '\'';
+        });
+        $databaseProphecy->sql_fetch_assoc(Argument::cetera())->shouldBeCalled()->willReturn(false);
+        $databaseProphecy->sql_free_result(Argument::cetera())->shouldBeCalled()->willReturn(null);
 
-        /** @var Statement|ObjectProphecy $statementProphet */
-        $statementProphet = $this->prophesize(Statement::class);
-
-        $queryBuilderProphet->select('fTable.uid')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('pages')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->groupBy(['groupField'])->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->addOrderBy('orderField', null)->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->setFirstResult(1)->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->setMaxResults(2)->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->where(' 1=1', 'ftable.uid=1')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
-
-        # Two instances are needed due to the push/pop behavior of addInstance()
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
+        $databaseProphecy->exec_SELECT_queryArray($expectedQueryArray)->shouldBeCalled()->willReturn(false);
 
         $this->subject->addData($input);
     }
@@ -1821,23 +1678,13 @@ class TcaSelectItemsTest extends UnitTestCase
         $GLOBALS['LANG'] = $languageServiceProphecy->reveal();
         $languageServiceProphecy->sL(Argument::cetera())->willReturnArgument(0);
 
-        list($queryBuilderProphet, $connectionPoolProphet) = $this->mockDatabaseConnection();
+        /** @var DatabaseConnection|ObjectProphecy $databaseProphecy */
+        $databaseProphecy = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $databaseProphecy->reveal();
+        $databaseProphecy->exec_SELECT_queryArray(Argument::cetera())->willReturn(false);
 
-        /** @var Statement|ObjectProphecy $statementProphet */
-        $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled()->willReturn('anError');
-        $statementProphet->closeCursor()->shouldBeCalled();
-
-        $queryBuilderProphet->select('fTable.uid')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('pages')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->where(' 1=1', '')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
-
-        # Two instances are needed due to the push/pop behavior of addInstance()
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
+        $databaseProphecy->sql_error()->shouldBeCalled()->willReturn('anError');
+        $databaseProphecy->sql_free_result(Argument::cetera())->shouldBeCalled()->willReturn(null);
 
         /** @var FlashMessage|ObjectProphecy $flashMessage */
         $flashMessage = $this->prophesize(FlashMessage::class);
@@ -1896,25 +1743,15 @@ class TcaSelectItemsTest extends UnitTestCase
         $GLOBALS['LANG'] = $languageServiceProphecy->reveal();
         $languageServiceProphecy->sL(Argument::cetera())->willReturnArgument(0);
 
-        list($queryBuilderProphet, $connectionPoolProphet) = $this->mockDatabaseConnection();
-
-        /** @var Statement|ObjectProphecy $statementProphet */
-        $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled();
-
-        $queryBuilderProphet->select('fTable.uid')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('pages')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->where(' 1=1', '')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
-
-        # Two instances are needed due to the push/pop behavior of addInstance()
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
+        /** @var DatabaseConnection|ObjectProphecy $databaseProphecy */
+        $databaseProphecy = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $databaseProphecy->reveal();
+        $databaseProphecy->sql_error()->shouldBeCalled()->willReturn(false);
+        $databaseProphecy->sql_free_result(Argument::cetera())->willReturn(null);
+        $databaseProphecy->exec_SELECT_queryArray(Argument::cetera())->willReturn(true);
 
         $counter = 0;
-        $statementProphet->fetch()->shouldBeCalled()->will(function ($args) use (&$counter) {
+        $databaseProphecy->sql_fetch_assoc(Argument::cetera())->shouldBeCalled()->will(function ($args) use (&$counter) {
             $counter++;
             if ($counter >= 3) {
                 return false;
@@ -1993,29 +1830,19 @@ class TcaSelectItemsTest extends UnitTestCase
         $GLOBALS['LANG'] = $languageServiceProphecy->reveal();
         $languageServiceProphecy->sL(Argument::cetera())->willReturnArgument(0);
 
-        list($queryBuilderProphet, $connectionPoolProphet) = $this->mockDatabaseConnection();
-
-        /** @var Statement|ObjectProphecy $statementProphet */
-        $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled();
-
-        $queryBuilderProphet->select('fTable.uid', 'fTable.icon')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->from('pages')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->where(' 1=1', '')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
-
-        # Two instances are needed due to the push/pop behavior of addInstance()
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
-        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
-
+        /** @var DatabaseConnection|ObjectProphecy $databaseProphecy */
+        $databaseProphecy = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $databaseProphecy->reveal();
+        $databaseProphecy->sql_error()->shouldBeCalled()->willReturn(false);
+        $databaseProphecy->sql_free_result(Argument::cetera())->willReturn(null);
+        // Query on foreign table is successful
+        $databaseProphecy->exec_SELECT_queryArray(Argument::cetera())->willReturn(true);
         // Query returns one row, then false on second call
         $foreignTableRowResultOne = [
             'uid' => 1,
             'icon' => 'foo.jpg',
         ];
-        $statementProphet->fetch()->shouldBeCalled()->willReturn($foreignTableRowResultOne, false);
+        $databaseProphecy->sql_fetch_assoc(Argument::cetera())->shouldBeCalled()->willReturn($foreignTableRowResultOne, false);
 
         $expected = $input;
         $expected['processedTca']['columns']['aField']['config']['items'] = [
@@ -2807,9 +2634,10 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
         $backendUserProphecy = $this->prophesize(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $backendUserProphecy->reveal();
-        $backendUserProphecy->getPagePermsClause(1)->shouldBeCalled()->willReturn(' 1=1');
 
-        $this->mockDatabaseConnectionForProcessSelectField();
+        /** @var DatabaseConnection|ObjectProphecy $database */
+        $database = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $database->reveal();
 
         $input = [
             'tableName' => 'aTable',
@@ -2862,9 +2690,10 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
         $backendUserProphecy = $this->prophesize(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $backendUserProphecy->reveal();
-        $backendUserProphecy->getPagePermsClause(1)->shouldBeCalled()->willReturn(' 1=1');
 
-        $this->mockDatabaseConnectionForProcessSelectField();
+        /** @var DatabaseConnection|ObjectProphecy $database */
+        $database = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $database->reveal();
 
         $input = [
             'tableName' => 'aTable',
@@ -2920,9 +2749,10 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
         $backendUserProphecy = $this->prophesize(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $backendUserProphecy->reveal();
-        $backendUserProphecy->getPagePermsClause(1)->shouldBeCalled()->willReturn(' 1=1');
 
-        $this->mockDatabaseConnectionForProcessSelectField();
+        /** @var DatabaseConnection|ObjectProphecy $database */
+        $database = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $database->reveal();
 
         $relationHandlerProphecy = $this->prophesize(RelationHandler::class);
         GeneralUtility::addInstance(RelationHandler::class, $relationHandlerProphecy->reveal());
@@ -3302,9 +3132,10 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
         $backendUserProphecy = $this->prophesize(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $backendUserProphecy->reveal();
-        $backendUserProphecy->getPagePermsClause(Argument::cetera())->willReturn(' 1=1');
 
-        $this->mockDatabaseConnectionForProcessSelectField();
+        /** @var DatabaseConnection|ObjectProphecy $database */
+        $database = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $database->reveal();
 
         /** @var RelationHandler|ObjectProphecy $relationHandlerProphecy */
         $relationHandlerProphecy = $this->prophesize(RelationHandler::class);

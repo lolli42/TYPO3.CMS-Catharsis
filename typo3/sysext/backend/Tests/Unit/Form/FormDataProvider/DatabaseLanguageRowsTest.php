@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class DatabaseLanguageRowsTest extends UnitTestCase
 {
     /**
-     * @var DatabaseLanguageRows|\PHPUnit_Framework_MockObject_MockObject
+     * @var DatabaseLanguageRows
      */
     protected $subject;
 
@@ -45,12 +45,13 @@ class DatabaseLanguageRowsTest extends UnitTestCase
 
     protected function setUp()
     {
+        $this->dbProphecy = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $this->dbProphecy->reveal();
+
         $this->beUserProphecy = $this->prophesize(BackendUserAuthentication::class);
         $GLOBALS['BE_USER'] = $this->beUserProphecy;
 
-        $this->subject = $this->getMockBuilder(DatabaseLanguageRows::class)
-            ->setMethods(['getDatabaseRow'])
-            ->getMock();
+        $this->subject = new DatabaseLanguageRows();
     }
 
     /**
@@ -93,7 +94,9 @@ class DatabaseLanguageRowsTest extends UnitTestCase
             ],
         ];
 
-        $this->subject->expects($this->once())->method('getDatabaseRow')->willReturn([]);
+        // Needed for BackendUtility::getRecord
+        $GLOBALS['TCA']['tt_content'] = array('foo');
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'tt_content', 'uid=23')->shouldBeCalled()->willReturn(null);
 
         $this->expectException(DatabaseDefaultLanguageException::class);
         $this->expectExceptionCode(1438249426);
@@ -128,8 +131,9 @@ class DatabaseLanguageRowsTest extends UnitTestCase
             'text' => 'default language text',
             'sys_language_uid' => 0,
         ];
-
-        $this->subject->expects($this->once())->method('getDatabaseRow')->willReturn($defaultLanguageRow);
+        // Needed for BackendUtility::getRecord
+        $GLOBALS['TCA']['tt_content'] = array('foo');
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'tt_content', 'uid=23')->shouldBeCalled()->willReturn($defaultLanguageRow);
 
         $expected = $input;
         $expected['defaultLanguageRow'] = $defaultLanguageRow;
@@ -172,8 +176,9 @@ class DatabaseLanguageRowsTest extends UnitTestCase
             'text' => 'default language text',
             'sys_language_uid' => 0,
         ];
-
-        $this->subject->expects($this->once())->method('getDatabaseRow')->willReturn($defaultLanguageRow);
+        // Needed for BackendUtility::getRecord
+        $GLOBALS['TCA']['tt_content'] = array('foo');
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'tt_content', 'uid=23')->shouldBeCalled()->willReturn($defaultLanguageRow);
 
         $expected = $input;
         $expected['defaultLanguageRow'] = $defaultLanguageRow;
@@ -244,10 +249,9 @@ class DatabaseLanguageRowsTest extends UnitTestCase
             'text' => 'default language text',
             'sys_language_uid' => 0,
         ];
-        $this->subject->expects($this->at(0))
-            ->method('getDatabaseRow')
-            ->with('tt_content', 23)
-            ->willReturn($defaultLanguageRow);
+        // Needed for BackendUtility::getRecord
+        $GLOBALS['TCA']['tt_content'] = array('foo');
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'tt_content', 'uid=23')->shouldBeCalled()->willReturn($defaultLanguageRow);
 
         /** @var TranslationConfigurationProvider|ObjectProphecy $translationProphecy */
         $translationProphecy = $this->prophesize(TranslationConfigurationProvider::class);
@@ -255,10 +259,7 @@ class DatabaseLanguageRowsTest extends UnitTestCase
         $translationProphecy->translationInfo('tt_content', 23, 3)->shouldBeCalled()->willReturn($translationResult);
 
         // This is the real check: The "additional overlay" should be fetched
-        $this->subject->expects($this->at(1))
-            ->method('getDatabaseRow')
-            ->with('tt_content', 43)
-            ->willReturn($recordWsolResult);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'tt_content', 'uid=43')->shouldBeCalled()->willReturn($recordWsolResult);
 
         $expected = $input;
         $expected['defaultLanguageRow'] = $defaultLanguageRow;
@@ -339,10 +340,9 @@ class DatabaseLanguageRowsTest extends UnitTestCase
             'text' => 'default language text',
             'sys_language_uid' => 0,
         ];
-        $this->subject->expects($this->at(0))
-            ->method('getDatabaseRow')
-            ->with('tt_content', 23)
-            ->willReturn($defaultLanguageRow);
+        // Needed for BackendUtility::getRecord
+        $GLOBALS['TCA']['tt_content'] = array('foo');
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'tt_content', 'uid=23')->shouldBeCalled()->willReturn($defaultLanguageRow);
 
         /** @var TranslationConfigurationProvider|ObjectProphecy $translationProphecy */
         $translationProphecy = $this->prophesize(TranslationConfigurationProvider::class);
@@ -351,10 +351,7 @@ class DatabaseLanguageRowsTest extends UnitTestCase
         $translationProphecy->translationInfo('tt_content', 23, 2)->shouldNotBeCalled();
 
         // This is the real check: The "additional overlay" should be fetched
-        $this->subject->expects($this->at(1))
-            ->method('getDatabaseRow')
-            ->with('tt_content', 43)
-            ->willReturn($recordWsolResult);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'tt_content', 'uid=43')->shouldBeCalled()->willReturn($recordWsolResult);
 
         $expected = $input;
         $expected['defaultLanguageRow'] = $defaultLanguageRow;

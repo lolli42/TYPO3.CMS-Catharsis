@@ -15,10 +15,8 @@ namespace TYPO3\CMS\Backend\Form\FormDataProvider;
  */
 
 use TYPO3\CMS\Backend\Form\FormDataProviderInterface;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 
 /**
  * Fill the "pageLanguageOverlayRows" part of the result array
@@ -38,32 +36,33 @@ class DatabasePageLanguageOverlayRows implements FormDataProviderInterface
             return $result;
         }
 
-        $result['pageLanguageOverlayRows'] = $this->getDatabaseRows((int)$result['effectivePid']);
+        $database = $this->getDatabase();
+
+        $dbRows = $database->exec_SELECTgetRows(
+            '*',
+            'pages_language_overlay',
+            'pid=' . (int)$result['effectivePid']
+                . BackendUtility::deleteClause('pages_language_overlay')
+                . BackendUtility::versioningPlaceholderClause('pages_language_overlay')
+        );
+
+        if ($dbRows === null) {
+            throw new \UnexpectedValueException(
+                'Database query error ' . $database->sql_error(),
+                1440777705
+            );
+        }
+
+        $result['pageLanguageOverlayRows'] = $dbRows;
 
         return $result;
     }
 
     /**
-     * Retrieve the requested overlay row from the database
-     *
-     * @param int $pid
-     * @return array
+     * @return DatabaseConnection
      */
-    protected function getDatabaseRows(int $pid): array
+    protected function getDatabase()
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('pages_language_overlay');
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
-
-        $rows = $queryBuilder->select('*')
-            ->from('pages_language_overlay')
-            ->where($queryBuilder->expr()->eq('pid', $pid))
-            ->execute()
-            ->fetchAll();
-
-        return $rows;
+        return $GLOBALS['TYPO3_DB'];
     }
 }

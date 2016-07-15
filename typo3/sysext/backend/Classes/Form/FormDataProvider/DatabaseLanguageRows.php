@@ -52,11 +52,11 @@ class DatabaseLanguageRows implements FormDataProviderInterface
                 }
 
                 // Default language record of localized record
-                $defaultLanguageRow = $this->getDatabaseRow(
+                $defaultLanguageRow = BackendUtility::getRecordWSOL(
                     $tableNameWithDefaultRecords,
                     (int)$result['databaseRow'][$fieldWithUidOfDefaultRecord]
                 );
-                if (empty($defaultLanguageRow)) {
+                if (!is_array($defaultLanguageRow)) {
                     throw new DatabaseDefaultLanguageException(
                         'Default language record with id ' . (int)$result['databaseRow'][$fieldWithUidOfDefaultRecord]
                         . ' not found in table ' . $result['tableName'] . ' while editing record ' . $result['databaseRow']['uid'],
@@ -95,10 +95,7 @@ class DatabaseLanguageRows implements FormDataProviderInterface
                             $additionalLanguageUid
                         );
                         if (!empty($translationInfo['translations'][$additionalLanguageUid]['uid'])) {
-                            $record = $this->getDatabaseRow(
-                                $result['tableName'],
-                                (int)$translationInfo['translations'][$additionalLanguageUid]['uid']
-                            );
+                            $record = BackendUtility::getRecordWSOL($result['tableName'], (int)$translationInfo['translations'][$additionalLanguageUid]['uid']);
                             $result['additionalLanguageRows'][$additionalLanguageUid] = $record;
                         }
                     }
@@ -107,19 +104,5 @@ class DatabaseLanguageRows implements FormDataProviderInterface
         }
 
         return $result;
-    }
-
-    /**
-     * Retrieve the requested row from the database
-     *
-     * @param string $tableName
-     * @param int $uid
-     * @return array
-     */
-    protected function getDatabaseRow(string $tableName, int $uid): array
-    {
-        $row = BackendUtility::getRecordWSOL($tableName, $uid);
-
-        return $row ?: [];
     }
 }

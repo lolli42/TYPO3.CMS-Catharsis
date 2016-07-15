@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
@@ -25,7 +26,7 @@ use TYPO3\CMS\Core\Tests\UnitTestCase;
 class DatabaseParentPageRowTest extends UnitTestCase
 {
     /**
-     * @var DatabaseParentPageRow|\PHPUnit_Framework_MockObject_MockObject
+     * @var DatabaseParentPageRow
      */
     protected $subject;
 
@@ -36,9 +37,10 @@ class DatabaseParentPageRowTest extends UnitTestCase
 
     protected function setUp()
     {
-        $this->subject = $this->getMockBuilder(DatabaseParentPageRow::class)
-            ->setMethods(['getDatabaseRow'])
-            ->getMock();
+        $this->subject = new DatabaseParentPageRow();
+
+        $this->dbProphecy = $this->prophesize(DatabaseConnection::class);
+        $GLOBALS['TYPO3_DB'] = $this->dbProphecy->reveal();
     }
 
     /**
@@ -55,16 +57,9 @@ class DatabaseParentPageRowTest extends UnitTestCase
             'uid' => 123,
             'pid' => 321
         ];
-
-        $this->subject->expects($this->at(0))
-            ->method('getDatabaseRow')
-            ->with($input['tableName'], 10)
-            ->willReturn(['pid' => 123]);
-
-        $this->subject->expects($this->at(1))
-            ->method('getDatabaseRow')
-            ->with('pages', 123)
-            ->willReturn($parentPageRow);
+        $this->dbProphecy->quoteStr(Argument::cetera())->willReturnArgument(0);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', $input['tableName'], 'uid=10')->willReturn(['pid' => 123]);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'pages', 'uid=123')->willReturn($parentPageRow);
 
         $result = $this->subject->addData($input);
 
@@ -85,19 +80,9 @@ class DatabaseParentPageRowTest extends UnitTestCase
             'uid' => 10,
             'pid' => 321
         ];
-        $parentPageRow = [
-            'uid' => 123,
-            'pid' => 321
-        ];
-        $this->subject->expects($this->at(0))
-            ->method('getDatabaseRow')
-            ->with($input['tableName'], 10)
-            ->willReturn($neigborRow);
-
-        $this->subject->expects($this->at(1))
-            ->method('getDatabaseRow')
-            ->with('pages', 321)
-            ->willReturn($parentPageRow);
+        $this->dbProphecy->quoteStr(Argument::cetera())->willReturnArgument(0);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', $input['tableName'], 'uid=10')->willReturn($neigborRow);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'pages', 'uid=321')->willReturn(array());
 
         $result = $this->subject->addData($input);
 
@@ -114,11 +99,8 @@ class DatabaseParentPageRowTest extends UnitTestCase
             'command' => 'new',
             'vanillaUid' => -10,
         ];
-
-        $this->subject->expects($this->once())
-            ->method('getDatabaseRow')
-            ->with($input['tableName'], 10)
-            ->willReturn(['pid' => 0]);
+        $this->dbProphecy->quoteStr(Argument::cetera())->willReturnArgument(0);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', $input['tableName'], 'uid=10')->willReturn(['pid' => 0]);
 
         $result = $this->subject->addData($input);
 
@@ -139,11 +121,8 @@ class DatabaseParentPageRowTest extends UnitTestCase
             'uid' => 123,
             'pid' => 321
         ];
-
-        $this->subject->expects($this->once())
-            ->method('getDatabaseRow')
-            ->with('pages', 123)
-            ->willReturn($parentPageRow);
+        $this->dbProphecy->quoteStr(Argument::cetera())->willReturnArgument(0);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'pages', 'uid=123')->willReturn($parentPageRow);
 
         $result = $this->subject->addData($input);
 
@@ -168,10 +147,8 @@ class DatabaseParentPageRowTest extends UnitTestCase
             'uid' => 321,
             'pid' => 456
         ];
-        $this->subject->expects($this->once())
-            ->method('getDatabaseRow')
-            ->with('pages', 321)
-            ->willReturn($parentPageRow);
+        $this->dbProphecy->quoteStr(Argument::cetera())->willReturnArgument(0);
+        $this->dbProphecy->exec_SELECTgetSingleRow('*', 'pages', 'uid=321')->willReturn($parentPageRow);
 
         $result = $this->subject->addData($input);
 
