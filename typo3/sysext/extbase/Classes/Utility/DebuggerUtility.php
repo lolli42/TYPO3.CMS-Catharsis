@@ -199,9 +199,9 @@ class DebuggerUtility
     {
         $result = false;
         if ($value instanceof \ReflectionProperty) {
-            $result = in_array($value->getName(), self::$blacklistedPropertyNames, true);
+            $result = (strpos(implode('|', self::$blacklistedPropertyNames), $value->getName()) > 0);
         } elseif (is_object($value)) {
-            $result = in_array(get_class($value), self::$blacklistedClassNames, true);
+            $result = (strpos(implode('|', self::$blacklistedClassNames), get_class($value)) > 0);
         }
         return $result;
     }
