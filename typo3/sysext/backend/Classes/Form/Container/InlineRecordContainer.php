@@ -260,7 +260,7 @@ class InlineRecordContainer extends AbstractContainer
             $markup[] = '            </span>';
             $markup[] = '        </div>';
             $markup[] = '        <div class="media-body">';
-            $markup[] = '            <div class="alert-message">' . htmlspecialchars($message) .  '</div>';
+            $markup[] = '            <div class="alert-message">' . htmlspecialchars($message) . '</div>';
             $markup[] = '        </div>';
             $markup[] = '    </div>';
             $markup[] = '</div>';
@@ -302,8 +302,13 @@ class InlineRecordContainer extends AbstractContainer
         $objectId = $domObjectId . '-' . $foreignTable . '-' . $rec['uid'];
 
         $recordTitle = $data['recordTitle'];
-        if (empty($recordTitle)) {
-            $recordTitle = '<em>[' . $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title', true) . ']</em>';
+        if (!empty($recordTitle)) {
+            // The user function may return HTML, therefore we can't escape it
+            if (empty($data['processedTca']['ctrl']['formattedLabel_userFunc'])) {
+                $recordTitle = BackendUtility::getRecordTitlePrep($recordTitle);
+            }
+        } else {
+            $recordTitle = '<em>[' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title')) . ']</em>';
         }
 
         $altText = BackendUtility::getRecordIconAltText($rec, $foreignTable);
@@ -471,17 +476,12 @@ class InlineRecordContainer extends AbstractContainer
                 );
                 if ($backendUser->check('tables_modify', 'sys_file_metadata')) {
                     $url = BackendUtility::getModuleUrl('record_edit', array(
-                        'edit[sys_file_metadata][' . (int)$recordInDatabase['uid'] . ']' => 'edit'
+                        'edit[sys_file_metadata][' . (int)$recordInDatabase['uid'] . ']' => 'edit',
+                        'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
                     ));
-                    $editOnClick = 'if (top.content.list_frame) {' .
-                        'top.content.list_frame.location.href=' .
-                        GeneralUtility::quoteJSvalue($url . '&returnUrl=') .
-                        '+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search)' .
-                        ';' .
-                    '}';
                     $title = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.editMetadata');
                     $cells['editmetadata'] = '
-						<a class="btn btn-default" href="#" class="btn" onclick="' . htmlspecialchars($editOnClick) . '" title="' . htmlspecialchars($title) . '">
+						<a class="btn btn-default" href="' . htmlspecialchars($url) . '" title="' . htmlspecialchars($title) . '">
 							' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render() . '
 						</a>';
                 }
