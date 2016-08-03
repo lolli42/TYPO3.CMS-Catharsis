@@ -32,13 +32,12 @@
 	],
 	"require": {
 		"php": "^7.0",
-		"ext-fileinfo": "*",
 		"ext-json": "*",
 		"ext-pcre": "*",
 		"ext-session": "*",
 		"ext-xml": "*",
 		"psr/log": "1.0.0",
-		"swiftmailer/swiftmailer": "~5.4.2",
+		"swiftmailer/swiftmailer": "~5.4.3",
 		"symfony/console": ">=2.7 <3.1",
 		"symfony/finder": ">=2.7 <3.1",
 		"doctrine/instantiator": "~1.0.4",
@@ -48,7 +47,7 @@
 		"cogpowered/finediff": "~0.3.1",
 		"mso/idna-convert": "^1.1.0",
 		"typo3fluid/fluid": "^1.0.7",
-		"guzzlehttp/guzzle": "^6.2.0",
+		"guzzlehttp/guzzle": "^6.2.1",
 		"doctrine/dbal": "~2.5.4"
 	},
 	"require-dev": {
@@ -58,11 +57,12 @@
 		"se/selenium-server-standalone": "~2.53",
 		"7elix/styleguide": "~8.0.0",
 		"site5/phantoman": "^1.0",
-		"jakoch/phantomjs-installer": "2.1.1-p03",
+		"jakoch/phantomjs-installer": "2.1.1-p05",
 		"friendsofphp/php-cs-fixer": "^1.11"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
+		"ext-fileinfo": "Used for proper file type detection in the file abstraction layer",
 		"ext-zlib": "TYPO3 uses zlib for amongst others output compression and un/packing t3x extension files",
 		"ext-openssl": "",
 		"ext-soap": "",

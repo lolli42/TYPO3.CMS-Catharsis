@@ -54,29 +54,31 @@ class DebugViewHelper extends AbstractViewHelper
     protected $escapeOutput = false;
 
     /**
+     * Initialize arguments.
+     *
+     * @throws \TYPO3Fluid\Fluid\Core\ViewHelper\Exception
+     */
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('title', 'string', 'optional custom title for the debug output');
+        $this->registerArgument('maxDepth', 'int', 'Sets the max recursion depth of the dump (defaults to 8). De- or increase the number according to your needs and memory limit.', false, 8);
+        $this->registerArgument('plainText', 'bool', 'If TRUE, the dump is in plain text, if FALSE the debug output is in HTML format.', false, false);
+        $this->registerArgument('ansiColors', 'bool', 'If TRUE, ANSI color codes is added to the plaintext output, if FALSE (default) the plaintext debug output not colored.', false, false);
+        $this->registerArgument('inline', 'bool', 'if TRUE, the dump is rendered at the position of the <f:debug> tag. If FALSE (default), the dump is displayed at the top of the page.', false, false);
+        $this->registerArgument('blacklistedClassNames', 'array', 'An array of class names (RegEx) to be filtered. Default is an array of some common class names.');
+        $this->registerArgument('blacklistedPropertyNames', 'array', 'An array of property names and/or array keys (RegEx) to be filtered. Default is an array of some common property names.');
+    }
+
+    /**
      * A wrapper for \TYPO3\CMS\Extbase\Utility\DebuggerUtility::var_dump().
      *
-     * @param string $title optional custom title for the debug output
-     * @param int $maxDepth Sets the max recursion depth of the dump (defaults to 8). De- or increase the number according to your needs and memory limit.
-     * @param bool $plainText If TRUE, the dump is in plain text, if FALSE the debug output is in HTML format.
-     * @param bool $ansiColors If TRUE, ANSI color codes is added to the plaintext output, if FALSE (default) the plaintext debug output not colored.
-     * @param bool $inline if TRUE, the dump is rendered at the position of the <f:debug> tag. If FALSE (default), the dump is displayed at the top of the page.
-     * @param array $blacklistedClassNames An array of class names (RegEx) to be filtered. Default is an array of some common class names.
-     * @param array $blacklistedPropertyNames An array of property names and/or array keys (RegEx) to be filtered. Default is an array of some common property names.
      * @return string
      */
-    public function render($title = null, $maxDepth = 8, $plainText = false, $ansiColors = false, $inline = false, $blacklistedClassNames = null, $blacklistedPropertyNames = null)
+    public function render()
     {
         return static::renderStatic(
-            array(
-                'title' => $title,
-                'maxDepth' => $maxDepth,
-                'plainText' => $plainText,
-                'ansiColors' => $ansiColors,
-                'inline' => $inline,
-                'blacklistedClassNames' => $blacklistedClassNames,
-                'blacklistedPropertyNames' => $blacklistedPropertyNames
-            ),
+            $this->arguments,
             $this->buildRenderChildrenClosure(),
             $this->renderingContext
         );

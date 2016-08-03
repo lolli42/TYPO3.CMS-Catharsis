@@ -226,7 +226,7 @@ $extraContentColumns = array(
                     '21'
                 )
             ),
-            'default' => '0'
+            'default' => 0
         )
     ),
     'spaceAfter' => array(
@@ -234,11 +234,11 @@ $extraContentColumns = array(
         'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:spaceAfter',
         'config' => array(
             'type' => 'input',
-            'size' => '5',
-            'max' => '5',
+            'size' => 5,
+            'max' => 5,
             'eval' => 'int',
             'range' => array(
-                'lower' => '0'
+                'lower' => 0
             ),
             'default' => 0
         )
@@ -248,11 +248,11 @@ $extraContentColumns = array(
         'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:spaceBefore',
         'config' => array(
             'type' => 'input',
-            'size' => '5',
-            'max' => '5',
+            'size' => 5,
+            'max' => 5,
             'eval' => 'int',
             'range' => array(
-                'lower' => '0'
+                'lower' => 0
             ),
             'default' => 0
         )
@@ -305,7 +305,7 @@ $extraContentColumns = array(
                     '244'
                 )
             ),
-            'default' => '0'
+            'default' => 0
         )
     ),
     'table_border' => array(
@@ -313,12 +313,12 @@ $extraContentColumns = array(
         'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:table_border',
         'config' => array(
             'type' => 'input',
-            'size' => '3',
-            'max' => '3',
+            'size' => 3,
+            'max' => 3,
             'eval' => 'int',
             'range' => array(
-                'upper' => '20',
-                'lower' => '0'
+                'upper' => 20,
+                'lower' => 0
             ),
             'default' => 0
         )
@@ -328,12 +328,12 @@ $extraContentColumns = array(
         'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:table_cellpadding',
         'config' => array(
             'type' => 'input',
-            'size' => '3',
-            'max' => '3',
+            'size' => 3,
+            'max' => 3,
             'eval' => 'int',
             'range' => array(
                 'upper' => '200',
-                'lower' => '0'
+                'lower' => 0
             ),
             'default' => 0
         )
@@ -343,12 +343,12 @@ $extraContentColumns = array(
         'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:table_cellspacing',
         'config' => array(
             'type' => 'input',
-            'size' => '3',
-            'max' => '3',
+            'size' => 3,
+            'max' => 3,
             'eval' => 'int',
             'range' => array(
                 'upper' => '200',
-                'lower' => '0'
+                'lower' => 0
             ),
             'default' => 0
         )
@@ -680,8 +680,5 @@ $GLOBALS['TCA']['tt_content']['columns']['section_frame']['config']['items'][0] 
 $GLOBALS['TCA']['tt_content']['columns']['section_frame']['config']['items'][9] = array(
     'LLL:EXT:css_styled_content/Resources/Private/Language/locallang_db.xlf:tt_content.tx_cssstyledcontent_section_frame.I.9', '66'
 );
-
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addStaticFile('css_styled_content', 'static/', 'CSS Styled Content');
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addStaticFile('css_styled_content', 'Configuration/TypoScript/v7/', 'CSS Styled Content TYPO3 v7');
 
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::makeCategorizable('css_styled_content', 'tt_content', 'categories', array(), true);

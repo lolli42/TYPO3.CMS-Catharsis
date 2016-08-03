@@ -79,8 +79,6 @@ use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
  * 1980-12-13
  * (depending on the value of {dateObject})
  * </output>
- *
- * @api
  */
 class DateViewHelper extends AbstractViewHelper
 {
@@ -92,24 +90,26 @@ class DateViewHelper extends AbstractViewHelper
     protected $escapeChildren = false;
 
     /**
+     * Initialize arguments
+     */
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('date', 'mixed', 'Either an object implementing DateTimeInterface or a string that is accepted by DateTime constructor');
+        $this->registerArgument('format', 'string', 'Format String which is taken to format the Date/Time', false, '');
+        $this->registerArgument('base', 'mixed', 'A base time (an object implementing DateTimeInterface or a string) used if $date is a relative date specification. Defaults to current time.');
+    }
+
+    /**
      * Render the supplied DateTime object as a formatted date.
-     *
-     * @param mixed $date either an object implementing DateTimeInterface or a string that is accepted by DateTime constructor
-     * @param string $format Format String which is taken to format the Date/Time
-     * @param mixed $base A base time (an object implementing DateTimeInterface or a string) used if $date is a relative date specification. Defaults to current time.
      *
      * @return string Formatted date
      * @throws Exception
-     * @api
      */
-    public function render($date = null, $format = '', $base = null)
+    public function render()
     {
         return static::renderStatic(
-            array(
-                'date' => $date,
-                'format' => $format,
-                'base' => $base
-            ),
+            $this->arguments,
             $this->buildRenderChildrenClosure(),
             $this->renderingContext
         );

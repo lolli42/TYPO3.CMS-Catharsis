@@ -61,7 +61,7 @@ class TcaMigrationTest extends UnitTestCase
             'aTable' => array(
                 'columns' => array(
                     'bodytext' => array(
-                        'exclude' => 1,
+                        'exclude' => true,
                         'label' => 'aLabel',
                         'config' => array(
                             'type' => 'text',
@@ -90,7 +90,7 @@ class TcaMigrationTest extends UnitTestCase
             'aTable' => array(
                 'columns' => array(
                     'bodytext' => array(
-                        'exclude' => 1,
+                        'exclude' => true,
                         'label' => 'aLabel',
                         'config' => array(
                             'type' => 'text',
@@ -222,7 +222,7 @@ class TcaMigrationTest extends UnitTestCase
             'aTable' => array(
                 'columns' => array(
                     'bodytext' => array(
-                        'exclude' => 1,
+                        'exclude' => true,
                         'label' => 'aLabel',
                         'config' => array(
                             'type' => 'text',
@@ -274,7 +274,7 @@ class TcaMigrationTest extends UnitTestCase
             'aTable' => array(
                 'columns' => array(
                     'bodytext' => array(
-                        'exclude' => 1,
+                        'exclude' => true,
                         'label' => 'aLabel',
                         'config' => array(
                             'type' => 'text',
@@ -323,7 +323,7 @@ class TcaMigrationTest extends UnitTestCase
             'aTable' => array(
                 'columns' => array(
                     'bodytext' => array(
-                        'exclude' => 1,
+                        'exclude' => true,
                         'label' => 'aLabel',
                         'config' => array(
                             'type' => 'text',
@@ -353,7 +353,7 @@ class TcaMigrationTest extends UnitTestCase
             'aTable' => array(
                 'columns' => array(
                     'bodytext' => array(
-                        'exclude' => 1,
+                        'exclude' => true,
                         'label' => 'aLabel',
                         'config' => array(
                             'type' => 'text',
@@ -789,14 +789,14 @@ class TcaMigrationTest extends UnitTestCase
                     'a-maxitems-column-1' => [
                         'config' => [
                             'type' => 'select',
-                            'maxitems' => '1',
+                            'maxitems' => 1,
                             'renderType' => 'selectSingle'
                         ]
                     ],
                     'a-maxitems-column-2' => [
                         'config' => [
                             'type' => 'select',
-                            'maxitems' => '2',
+                            'maxitems' => 2,
                             'renderType' => 'selectMultipleSideBySide'
                         ]
                     ],
@@ -1425,5 +1425,261 @@ class TcaMigrationTest extends UnitTestCase
 
         $subject = new TcaMigration();
         $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @return array
+     */
+    public function migrateSelectTreeOptionsDataProvider()
+    {
+        return [
+            'remove width' => [
+                [
+                    // Given config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'selectTree',
+                                    'treeConfig' => [
+                                        'appearance' => [
+                                            'width' => 200
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    // Expected config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'selectTree',
+                                    'treeConfig' => [
+                                        'appearance' => [
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            'remove allowRecursiveMode' => [
+                [
+                    // Given config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'selectTree',
+                                    'treeConfig' => [
+                                        'appearance' => [
+                                            'someKey' => 'value',
+                                            'allowRecursiveMode' => true
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    // Expected config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'selectTree',
+                                    'treeConfig' => [
+                                        'appearance' => [
+                                            'someKey' => 'value'
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            'move autoSizeMax to size' => [
+                [
+                    // Given config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'selectTree',
+                                    'autoSizeMax' => 20,
+                                    'size' => 10
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    // Expected config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'selectTree',
+                                    'size' => 20
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            'keep settings for non selectTree' => [
+                [
+                    // Given config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'not a select tree',
+                                    'autoSizeMax' => 20,
+                                    'size' => 10,
+                                    'treeConfig' => [
+                                        'appearance' => [
+                                            'someKey' => 'value',
+                                            'allowRecursiveMode' => true,
+                                            'width' => 200
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    // Expected config section
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'renderType' => 'not a select tree',
+                                    'autoSizeMax' => 20,
+                                    'size' => 10,
+                                    'treeConfig' => [
+                                        'appearance' => [
+                                            'someKey' => 'value',
+                                            'allowRecursiveMode' => true,
+                                            'width' => 200
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider migrateSelectTreeOptionsDataProvider
+     * @param array $input
+     * @param array $expected
+     */
+    public function migrateSelectTreeOptions(array $input, array $expected)
+    {
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    public function migrateTsTemplateSoftReferencesDataProvider()
+    {
+        return [
+            'nothing removed' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aCol' => [
+                                'config' => [
+                                    'softref' => 'email,somethingelse'
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aCol' => [
+                                'config' => [
+                                    'softref' => 'email,somethingelse',
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+            'TStemplate only' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aCol' => [
+                                'config' => [
+                                    'softref' => 'TStemplate,somethingelse'
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aCol' => [
+                                'config' => [
+                                    'softref' => 'somethingelse',
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+            'TStemplate and TSconfig' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aCol' => [
+                                'config' => [
+                                    'softref' => 'TStemplate,somethingelse,TSconfig'
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aCol' => [
+                                'config' => [
+                                    'softref' => 'somethingelse',
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider migrateTsTemplateSoftReferencesDataProvider
+     * @param array $givenConfig
+     * @param array $expectedConfig
+     */
+    public function migrateTsTemplateSoftReferences(array $givenConfig, array $expectedConfig)
+    {
+        $subject = new TcaMigration();
+        $this->assertEquals($expectedConfig, $subject->migrate($givenConfig));
     }
 }

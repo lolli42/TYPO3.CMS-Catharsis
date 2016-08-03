@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 use TYPO3\CMS\Backend\Backend\Avatar\Avatar;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
@@ -31,21 +32,25 @@ class AvatarViewHelper extends AbstractViewHelper
     protected $escapeOutput = false;
 
     /**
+     * Initializes the arguments
+     */
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('backendUser', 'int', 'Uid of the user', false, 0);
+        $this->registerArgument('size', 'int', 'width and height of the image', false, 32);
+        $this->registerArgument('showIcon', 'bool', 'show the record icon', false, false);
+    }
+
+    /**
      * Resolve user avatar from backend user id.
      *
-     * @param int $backendUser Uid of the user
-     * @param int $size width and height of the image
-     * @param bool $showIcon show the record icon
      * @return string html image tag
      */
-    public function render($backendUser = 0, $size = 32, $showIcon = false)
+    public function render()
     {
         return static::renderStatic(
-            array(
-                'backendUser' => $backendUser,
-                'size' => $size,
-                'showIcon' => $showIcon
-            ),
+            $this->arguments,
             $this->buildRenderChildrenClosure(),
             $this->renderingContext
         );
@@ -62,7 +67,14 @@ class AvatarViewHelper extends AbstractViewHelper
     public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
     {
         if ($arguments['backendUser'] > 0) {
-            $backendUser = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'be_users', 'uid=' . (int)$arguments['backendUser']);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('be_users');
+            $queryBuilder->getRestrictions()->removeAll();
+            $backendUser = $queryBuilder
+                ->select('*')
+                ->from('be_users')
+                ->where($queryBuilder->expr()->eq('uid', (int)$arguments['backendUser']))
+                ->execute()
+                ->fetch();
         } else {
             $backendUser = $GLOBALS['BE_USER']->user;
         }

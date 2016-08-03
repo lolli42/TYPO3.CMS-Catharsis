@@ -121,7 +121,13 @@ class CleanUp extends Action\AbstractAction
         $tables = array();
         foreach ($tableCandidates as $candidate) {
             if (in_array($candidate['name'], $allTables)) {
-                $candidate['rows'] = $database->exec_SELECTcountRows('*', $candidate['name']);
+                $candidate['rows'] = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getConnectionForTable($candidate['name'])
+                    ->count(
+                        '*',
+                        $candidate['name'],
+                        []
+                    );
                 $tables[] = $candidate;
             }
         }
@@ -166,8 +172,11 @@ class CleanUp extends Action\AbstractAction
      */
     protected function resetBackendUserUc()
     {
-        $database = $this->getDatabaseConnection();
-        $database->exec_UPDATEquery('be_users', '', array('uc' => ''));
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('be_users')
+            ->update('be_users')
+            ->set('uc', '')
+            ->execute();
         /** @var OkStatus $message */
         $message = GeneralUtility::makeInstance(OkStatus::class);
         $message->setTitle('Reset all backend users preferences');

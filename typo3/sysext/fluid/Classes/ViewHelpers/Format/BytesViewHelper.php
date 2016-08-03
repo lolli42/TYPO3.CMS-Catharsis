@@ -33,10 +33,19 @@ use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
  * </output>
  *
  * <code title="Defaults">
- * {fileSize -> f:format.bytes(decimals: 2, decimalSeparator: ',', thousandsSeparator: ',')}
+ * {fileSize -> f:format.bytes(decimals: 2, decimalSeparator: '.', thousandsSeparator: ',')}
  * </code>
  * <output>
  * 1,023.00 B
+ * // depending on the value of {fileSize}
+ * </output>
+ *
+ * You may provide an own set of units, like this: B,KB,MB,GB,TB,PB,EB,ZB,YB
+ * <code title="custom units">
+ * {fileSize -> f:format.bytes(units: '{f:translate(\'viewhelper.format.bytes.units\', \'fluid\')}'
+ * </code>
+ * <output>
+ * 123 KB
  * // depending on the value of {fileSize}
  * </output>
  *
@@ -44,6 +53,7 @@ use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
  */
 class BytesViewHelper extends AbstractViewHelper
 {
+
     /**
      * Output is escaped already. We must not escape children, to avoid double encoding.
      *
@@ -52,29 +62,30 @@ class BytesViewHelper extends AbstractViewHelper
     protected $escapeChildren = false;
 
     /**
-     * @var array
+     * Initialize ViewHelper arguments
+     *
+     * @return void
      */
-    protected static $units = array();
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('value', 'int', 'The incoming data to convert, or NULL if VH children should be used');
+        $this->registerArgument('decimals', 'int', 'The number of digits after the decimal point', false, 0);
+        $this->registerArgument('decimalSeparator', 'string', 'The decimal point character', false, '.');
+        $this->registerArgument('thousandsSeparator', 'string', 'The character for grouping the thousand digits', false, ',');
+        $this->registerArgument('units', 'string', 'comma separated list of available units, default is LocalizationUtility::translate(\'viewhelper.format.bytes.units\', \'fluid\')');
+    }
 
     /**
      * Render the supplied byte count as a human readable string.
      *
-     * @param int $value The incoming data to convert, or NULL if VH children should be used
-     * @param int $decimals The number of digits after the decimal point
-     * @param string $decimalSeparator The decimal point character
-     * @param string $thousandsSeparator The character for grouping the thousand digits
      * @return string Formatted byte count
      * @api
      */
-    public function render($value = null, $decimals = 0, $decimalSeparator = '.', $thousandsSeparator = ',')
+    public function render()
     {
         return static::renderStatic(
-            array(
-                'value' => $value,
-                'decimals' => $decimals,
-                'decimalSeparator' => $decimalSeparator,
-                'thousandsSeparator' => $thousandsSeparator
-            ),
+            $this->arguments,
             $this->buildRenderChildrenClosure(),
             $this->renderingContext
         );
@@ -86,34 +97,39 @@ class BytesViewHelper extends AbstractViewHelper
      * @param array $arguments
      * @param \Closure $renderChildrenClosure
      * @param \TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface $renderingContext
+     *
      * @return string
      */
     public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
     {
+        if ($arguments['units'] !== null) {
+            $units = $arguments['units'];
+        } else {
+            $units = LocalizationUtility::translate('viewhelper.format.bytes.units', 'fluid');
+        }
+        $units = GeneralUtility::trimExplode(',', $units, true);
+
         $value = $arguments['value'];
         if ($value === null) {
             $value = $renderChildrenClosure();
         }
 
-        if (empty(self::$units)) {
-            self::$units = GeneralUtility::trimExplode(',', LocalizationUtility::translate('viewhelper.format.bytes.units', 'fluid'));
+        if (is_numeric($value)) {
+            $value = (float)$value;
         }
-        if (!is_integer($value) && !is_float($value)) {
-            if (is_numeric($value)) {
-                $value = (float)$value;
-            } else {
-                $value = 0;
-            }
+        if (!is_int($value) && !is_float($value)) {
+            $value = 0;
         }
         $bytes = max($value, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count(self::$units) - 1);
-        $bytes /= pow(2, (10 * $pow));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= pow(2, 10 * $pow);
 
         return sprintf(
             '%s %s',
-            number_format(round($bytes, 4 * $arguments['decimals']), $arguments['decimals'], $arguments['decimalSeparator'], $arguments['thousandsSeparator']),
-            self::$units[$pow]
+            number_format(round($bytes, 4 * $arguments['decimals']), $arguments['decimals'],
+                $arguments['decimalSeparator'], $arguments['thousandsSeparator']),
+            $units[$pow]
         );
     }
 }

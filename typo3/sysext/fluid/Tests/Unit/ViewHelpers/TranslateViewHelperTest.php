@@ -13,9 +13,7 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers;
  *
  * The TYPO3 project - inspiring people to share!
  */
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Fixtures\TranslateViewHelperFixtureForEmptyString;
-use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Fixtures\TranslateViewHelperFixtureForTranslatedString;
 use TYPO3\CMS\Fluid\ViewHelpers\TranslateViewHelper;
 
 /**
@@ -26,20 +24,24 @@ class TranslateViewHelperTest extends ViewHelperBaseTestcase
     /**
      * @var TranslateViewHelper
      */
-    protected $subject;
+    protected $viewHelper;
 
     /**
      * @test
      */
     public function renderThrowsExceptionIfNoKeyOrIdParameterIsGiven()
     {
-        $this->subject = GeneralUtility::makeInstance(TranslateViewHelper::class);
-        $this->injectDependenciesIntoViewHelper($this->subject);
+        $this->viewHelper = new TranslateViewHelper();
+        $this->injectDependenciesIntoViewHelper($this->viewHelper);
 
         $this->expectException(\TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException::class);
         $this->expectExceptionCode(1351584844);
 
-        $this->subject->render();
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            []
+        );
+        $this->viewHelper->initializeArgumentsAndRender();
     }
 
     /**
@@ -47,9 +49,22 @@ class TranslateViewHelperTest extends ViewHelperBaseTestcase
      */
     public function renderReturnsStringForGivenKey()
     {
-        $this->subject = GeneralUtility::makeInstance(TranslateViewHelperFixtureForTranslatedString::class);
-        $this->injectDependenciesIntoViewHelper($this->subject);
-        $this->assertEquals('<p>hello world</p>', $this->subject->render('foo'));
+        $this->viewHelper = new TranslateViewHelperFixtureForEmptyString();
+        $this->injectDependenciesIntoViewHelper($this->viewHelper);
+
+        $this->viewHelper->setRenderChildrenClosure(
+            function () {
+                return '<p>hello world</p>';
+            }
+        );
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'key' => 'foo'
+            ]
+        );
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
+        $this->assertEquals('<p>hello world</p>', $actualResult);
     }
 
     /**
@@ -57,9 +72,23 @@ class TranslateViewHelperTest extends ViewHelperBaseTestcase
      */
     public function renderReturnsStringForGivenId()
     {
-        $this->subject = GeneralUtility::makeInstance(TranslateViewHelperFixtureForTranslatedString::class);
-        $this->injectDependenciesIntoViewHelper($this->subject);
-        $this->assertEquals('<p>hello world</p>', $this->subject->render(null, 'bar'));
+        $this->viewHelper = new TranslateViewHelperFixtureForEmptyString();
+        $this->injectDependenciesIntoViewHelper($this->viewHelper);
+
+        $this->viewHelper->setRenderChildrenClosure(
+            function () {
+                return '<p>hello world</p>';
+            }
+        );
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'key' => null,
+                'id' => 'bar'
+            ]
+        );
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
+        $this->assertEquals('<p>hello world</p>', $actualResult);
     }
 
     /**
@@ -67,8 +96,23 @@ class TranslateViewHelperTest extends ViewHelperBaseTestcase
      */
     public function renderReturnsDefaultIfNoTranslationIsFound()
     {
-        $this->subject = GeneralUtility::makeInstance(TranslateViewHelperFixtureForEmptyString::class);
-        $this->injectDependenciesIntoViewHelper($this->subject);
-        $this->assertEquals('default', $this->subject->render(null, 'bar', 'default'));
+        $this->viewHelper = new TranslateViewHelperFixtureForEmptyString();
+        $this->injectDependenciesIntoViewHelper($this->viewHelper);
+
+        $this->viewHelper->setRenderChildrenClosure(
+            function () {
+                return 'default';
+            }
+        );
+        $this->setArgumentsUnderTest(
+            $this->viewHelper,
+            [
+                'key' => null,
+                'id' => 'bar',
+                'default' => 'default'
+            ]
+        );
+        $actualResult = $this->viewHelper->initializeArgumentsAndRender();
+        $this->assertEquals('default', $actualResult);
     }
 }

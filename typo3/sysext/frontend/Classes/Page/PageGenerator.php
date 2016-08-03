@@ -102,7 +102,6 @@ class PageGenerator
         $tsfe->lockFilePath = '' . $tsfe->config['config']['lockFilePath'];
         $tsfe->lockFilePath = $tsfe->lockFilePath ?: $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'];
         $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_allowUpscaling'] = (bool)(isset($tsfe->config['config']['processor_allowUpscaling']) ? $tsfe->config['config']['processor_allowUpscaling'] : $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_allowUpscaling']);
-        $tsfe->TYPO3_CONF_VARS['GFX']['processor_allowUpscaling'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_allowUpscaling'];
         $tsfe->ATagParams = trim($tsfe->config['config']['ATagParams']) ? ' ' . trim($tsfe->config['config']['ATagParams']) : '';
         if ($tsfe->config['config']['setJS_mouseOver']) {
             $tsfe->setJS('mouseOver');
@@ -532,14 +531,6 @@ class PageGenerator
                 }
                 $pageRenderer->loadJquery($version, $source, $namespace);
             }
-            if ($tsfe->pSetup['javascriptLibs.']['ExtJs']) {
-                $css = (bool)$tsfe->pSetup['javascriptLibs.']['ExtJs.']['css'];
-                $theme = (bool)$tsfe->pSetup['javascriptLibs.']['ExtJs.']['theme'];
-                $pageRenderer->loadExtJS($css, $theme);
-                if ($tsfe->pSetup['javascriptLibs.']['ExtJs.']['debug']) {
-                    $pageRenderer->enableExtJsDebug();
-                }
-            }
         }
         // JavaScript library files
         if (is_array($tsfe->pSetup['includeJSLibs.'])) {
@@ -842,15 +833,8 @@ class PageGenerator
                 );
             }
         }
-        // ExtJS specific code
-        if (is_array($tsfe->pSetup['inlineLanguageLabel.'])) {
-            $pageRenderer->addInlineLanguageLabelArray($tsfe->pSetup['inlineLanguageLabel.'], true);
-        }
         if (is_array($tsfe->pSetup['inlineSettings.'])) {
             $pageRenderer->addInlineSettingArray('TS', $tsfe->pSetup['inlineSettings.']);
-        }
-        if (is_array($tsfe->pSetup['extOnReady.'])) {
-            $pageRenderer->addExtOnReadyCode($tsfe->cObj->cObjGet($tsfe->pSetup['extOnReady.'], 'extOnReady.'));
         }
         // Compression and concatenate settings
         if ($tsfe->config['config']['compressCss']) {
@@ -887,10 +871,7 @@ class PageGenerator
         if ($tsfe->config['config']['disableBodyTag']) {
             $bodyTag = '';
         } else {
-            $defBT = $tsfe->pSetup['bodyTagCObject'] ? $tsfe->cObj->cObjGetSingle($tsfe->pSetup['bodyTagCObject'], $tsfe->pSetup['bodyTagCObject.'], 'bodyTagCObject') : '';
-            if (!$defBT) {
-                $defBT = $tsfe->defaultBodyTag;
-            }
+            $defBT = $tsfe->pSetup['bodyTagCObject'] ? $tsfe->cObj->cObjGetSingle($tsfe->pSetup['bodyTagCObject'], $tsfe->pSetup['bodyTagCObject.'], 'bodyTagCObject') : '<body>';
             $bodyTag = $tsfe->pSetup['bodyTag'] ? $tsfe->pSetup['bodyTag'] : $defBT;
             if (isset($tsfe->pSetup['bodyTagMargins'])) {
                 $margins = (int)$tsfe->pSetup['bodyTagMargins'];

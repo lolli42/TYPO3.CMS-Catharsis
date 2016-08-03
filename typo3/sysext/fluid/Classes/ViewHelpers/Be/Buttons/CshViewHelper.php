@@ -50,21 +50,27 @@ class CshViewHelper extends AbstractBackendViewHelper
     protected $escapeOutput = false;
 
     /**
+     * Initialize arguments.
+     *
+     * @throws \TYPO3Fluid\Fluid\Core\ViewHelper\Exception
+     */
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('table', 'string', 'Table name (\'_MOD_\'+module name). If not set, the current module name will be used');
+        $this->registerArgument('field', 'string', 'Field name (CSH locallang main key)', false, '');
+        $this->registerArgument('wrap', 'string', 'Markup to wrap around the CSH, split by "|"', false, '');
+    }
+
+    /**
      * Render context sensitive help (CSH) for the given table
      *
-     * @param string $table Table name ('_MOD_'+module name). If not set, the current module name will be used
-     * @param string $field Field name (CSH locallang main key)
-     * @param string $wrap Markup to wrap around the CSH, split by "|"
      * @return string the rendered CSH icon
      */
-    public function render($table = null, $field = '', $wrap = '')
+    public function render()
     {
         return static::renderStatic(
-            array(
-                'table' => $table,
-                'field' => $field,
-                'wrap' => $wrap
-            ),
+            $this->arguments,
             $this->buildRenderChildrenClosure(),
             $this->renderingContext
         );
