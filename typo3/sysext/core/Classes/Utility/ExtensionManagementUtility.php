@@ -285,7 +285,12 @@ class ExtensionManagementUtility {
 				continue;
 			}
 			// skip if fields were already added
-			if (!isset($typeDetails['showitem']) || strpos($typeDetails['showitem'], $newFieldsString) !== FALSE) {
+			if (!isset($typeDetails['showitem'])) {
+				continue;
+			}
+
+			$fieldArray = GeneralUtility::trimExplode(',', $typeDetails['showitem'], TRUE);
+			if (in_array($newFieldsString, $fieldArray, TRUE)) {
 				continue;
 			}
 
@@ -1095,8 +1100,8 @@ class ExtensionManagementUtility {
 	 * Adds a service to the global services array
 	 *
 	 * @param string $extKey Extension key
-	 * @param string $serviceType Service type, must not be prefixed "tx_" or "Tx_
-	 * @param string $serviceKey Service key, must be prefixed "tx_", "Tx_" or "user_
+	 * @param string $serviceType Service type, must not be prefixed "tx_" or "Tx_"
+	 * @param string $serviceKey Service key, must be prefixed "tx_", "Tx_" or "user_"
 	 * @param array $info Service description array
 	 * @return void
 	 */

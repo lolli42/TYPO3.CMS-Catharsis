@@ -103,7 +103,9 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 */
 	public function authUser(array $user) {
 		$OK = 100;
-		if ($this->login['uident'] && $this->login['uname']) {
+		// This authentication service can only work correctly, if a non empty username along with a non empty password is provided.
+		// Otherwise a different service is allowed to check for other login credentials
+		if ((string)$this->login['uident'] !== '' && (string)$this->login['uname'] !== '') {
 			// Checking password match for user:
 			$OK = $this->compareUident($user, $this->login);
 			if (!$OK) {
@@ -161,7 +163,12 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 				if ($this->writeDevLog) {
 					\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Get usergroups with id: ' . $list, 'TYPO3\\CMS\\Sv\\AuthenticationService');
 				}
-				$lockToDomain_SQL = ' AND (lockToDomain=\'\' OR lockToDomain IS NULL OR lockToDomain=\'' . $this->authInfo['HTTP_HOST'] . '\')';
+				$lockToDomain_SQL =
+					' AND ('
+						. 'lockToDomain=\'\''
+						. ' OR lockToDomain IS NULL'
+						. ' OR lockToDomain=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->authInfo['HTTP_HOST'], $this->db_groups['table'])
+					. ')';
 				if (!$this->authInfo['showHiddenRecords']) {
 					$hiddenP = 'AND hidden=0 ';
 				}
@@ -197,7 +204,12 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 */
 	public function getSubGroups($grList, $idList = '', &$groups) {
 		// Fetching records of the groups in $grList (which are not blocked by lockedToDomain either):
-		$lockToDomain_SQL = ' AND (lockToDomain=\'\' OR lockToDomain IS NULL OR lockToDomain=\'' . $this->authInfo['HTTP_HOST'] . '\')';
+		$lockToDomain_SQL =
+			' AND ('
+				. 'lockToDomain=\'\''
+				. ' OR lockToDomain IS NULL'
+				. ' OR lockToDomain=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->authInfo['HTTP_HOST'], 'fe_groups')
+			. ')';
 		if (!$this->authInfo['showHiddenRecords']) {
 			$hiddenP = 'AND hidden=0 ';
 		}

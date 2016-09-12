@@ -513,7 +513,7 @@ tt_content.image.20 {
 		altText = TEXT
 		altText {
 			field = altText
-			htmlSpecialChars = 1
+			stripHtml = 1
 			split.token.char = 10
 			split.token.if.isTrue = {$styles.content.imgtext.imageTextSplit}
 			split.returnKey.data = register : IMAGE_NUM_CURRENT
@@ -1718,6 +1718,7 @@ tt_content.default = TEXT
 tt_content.default {
 	field = CType
 	wrap = <p style="background-color: yellow;"><b>ERROR:</b> Content Element type "|" has no rendering definition!</p>
+	htmlSpecialChars = 1
 
 	prefixComment = 2 | Unknown element message:
 }
