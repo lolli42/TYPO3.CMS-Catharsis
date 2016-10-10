@@ -14,24 +14,21 @@ namespace TYPO3\CMS\Core\Tests\Unit\Log;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Log\LogRecord;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
-
 /**
  * Test case
  */
-class LogRecordTest extends UnitTestCase
+class LogRecordTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 {
     /**
      * Returns a \TYPO3\CMS\Core\Log\LogRecord
      *
      * @param array $parameters Parameters to set in \TYPO3\CMS\Core\Log\LogRecord constructor.
-     * @return LogRecord
+     * @return \TYPO3\CMS\Core\Log\LogRecord
      */
     protected function getRecord(array $parameters = [])
     {
-        /** @var $record LogRecord */
-        $record = new LogRecord($parameters['component'] ?: 'test.core.log', $parameters['level'] ?: \TYPO3\CMS\Core\Log\LogLevel::DEBUG, $parameters['message'] ?: 'test message', $parameters['data'] ?: []);
+        /** @var $record \TYPO3\CMS\Core\Log\LogRecord */
+        $record = new \TYPO3\CMS\Core\Log\LogRecord($parameters['component'] ?: 'test.core.log', $parameters['level'] ?: \TYPO3\CMS\Core\Log\LogLevel::DEBUG, $parameters['message'] ?: 'test message', $parameters['data'] ?: []);
         return $record;
     }
 
@@ -148,8 +145,8 @@ class LogRecordTest extends UnitTestCase
         $level = \TYPO3\CMS\Core\Log\LogLevel::DEBUG;
         $message = 'test message';
         $data = ['foo' => 'bar'];
-        /** @var $record LogRecord */
-        $record = new LogRecord($component, $level, $message, $data);
+        /** @var $record \TYPO3\CMS\Core\Log\LogRecord */
+        $record = new \TYPO3\CMS\Core\Log\LogRecord($component, $level, $message, $data);
         $recordArray = $record->toArray();
         $this->assertEquals($component, $recordArray['component']);
         $this->assertEquals($level, $recordArray['level']);
@@ -168,11 +165,11 @@ class LogRecordTest extends UnitTestCase
     }
 
     /**
-     * @testL
+     * @test
      */
     public function toStringIncludesExceptionDataAsJson()
     {
-        $dataArray = ['exception' => new \Exception('foo', 1476049451)];
+        $dataArray = ['exception' => new \Exception('foo')];
         $record = $this->getRecord(['data' => $dataArray]);
         $this->assertContains('Exception: foo', (string)$record);
     }

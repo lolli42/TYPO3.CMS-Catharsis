@@ -1297,11 +1297,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase
             ]
         ]);
         $subject = $this->createDriver([], ['createIdentifierMap']);
-        $subject->expects($this->atLeastOnce())->method('createIdentifierMap')->will(
-            $this->throwException(
-                new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException('testing', 1476045666)
-            )
-        );
+        $subject->expects($this->atLeastOnce())->method('createIdentifierMap')->will($this->throwException(new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException()));
         $subject->renameFolder('/sourceFolder/', 'newFolder');
         $this->assertFileExists($this->getUrlInMount('/sourceFolder/file'));
     }

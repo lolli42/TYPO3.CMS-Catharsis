@@ -203,10 +203,8 @@ class FrontendUserImageUpdateWizard extends AbstractUpdate
         $dbQueries[] = $queryBuilder->getSQL();
 
         if ($stmt->errorCode() > 0) {
-            throw new \RuntimeException(
-                'Database query failed. Error was: ' . implode(CRLF, $stmt->errorInfo()),
-                1476050084
-            );
+            throw new \RuntimeException('Database query failed. Error was: ' . implode(CRLF,
+                    $stmt->errorInfo()));
         }
 
         return $stmt->fetchAll();
@@ -231,7 +229,7 @@ class FrontendUserImageUpdateWizard extends AbstractUpdate
         $i = 0;
 
         if (!PATH_site) {
-            throw new \Exception('PATH_site was undefined.', 1476107387);
+            throw new \Exception('PATH_site was undefined.');
         }
 
         $storageUid = (int)$this->storage->getUid();

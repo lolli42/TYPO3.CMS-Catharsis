@@ -46,10 +46,7 @@ class MirrorListUtility implements \SplObserver
         if (is_object($this->parser)) {
             $this->parser->attach($this);
         } else {
-            throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(
-                get_class($this) . ': No XML parser available.',
-                1476108687
-            );
+            throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(get_class($this) . ': No XML parser available.', 1342640390);
         }
     }
 

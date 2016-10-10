@@ -152,10 +152,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
                 }
             }
             if (!$cacheDirectoryInBaseDir) {
-                throw new \TYPO3\CMS\Core\Cache\Exception(
-                    'Open_basedir restriction in effect. The directory "' . $cacheDirectory . '" is not in an allowed path.',
-                    1476045417
-                );
+                throw new \TYPO3\CMS\Core\Cache\Exception('Open_basedir restriction in effect. The directory "' . $cacheDirectory . '" is not in an allowed path.');
             }
         } else {
             if ($cacheDirectory[0] == '/') {

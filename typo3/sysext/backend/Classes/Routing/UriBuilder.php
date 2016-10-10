@@ -70,7 +70,7 @@ class UriBuilder
     {
         $this->loadBackendRoutes();
         if (!isset($this->routes[$name])) {
-            throw new RouteNotFoundException('Unable to generate a URL for the named route "' . $name . '" because this route was not found.', 1476050190);
+            throw new RouteNotFoundException('Unable to generate a URL for the named route "' . $name . '" because this route was not found.');
         }
 
         $route = $this->routes[$name];

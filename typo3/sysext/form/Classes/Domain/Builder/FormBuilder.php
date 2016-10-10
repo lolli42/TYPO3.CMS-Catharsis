@@ -466,7 +466,7 @@ class FormBuilder
                                 }
                             }
                         } else {
-                            throw new \RuntimeException('Class "' . $filterClassName . '" not registered via TypoScript.', 1476048485);
+                            throw new \RuntimeException('Class "' . $filterClassName . '" not registered via TypoScript.');
                         }
                     }
                 }
