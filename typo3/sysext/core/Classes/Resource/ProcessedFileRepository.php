@@ -142,8 +142,8 @@ class ProcessedFileRepository extends AbstractRepository
                 $insertFields
             );
 
-            $uid = $connection->lastInsertId();
-            $processedFile->updateProperties(array('uid' => $uid));
+            $uid = $connection->lastInsertId($this->table);
+            $processedFile->updateProperties(['uid' => $uid]);
         }
     }
 
@@ -222,7 +222,7 @@ class ProcessedFileRepository extends AbstractRepository
             )
             ->execute();
 
-        $itemList = array();
+        $itemList = [];
         while ($row = $result->fetch()) {
             $itemList[] = $this->createDomainObject($row);
         }
@@ -260,9 +260,9 @@ class ProcessedFileRepository extends AbstractRepository
             } catch (\Exception $e) {
                 $logger->error(
                     'Failed to delete file "' . $row['identifier'] . '" in storage uid ' . $row['storage'] . '.',
-                    array(
+                    [
                         'exception' => $e
-                    )
+                    ]
                 );
                 ++$errorCount;
             }
@@ -284,7 +284,11 @@ class ProcessedFileRepository extends AbstractRepository
      */
     protected function cleanUnavailableColumns(array $data)
     {
-        return array_intersect_key($data, $this->databaseConnection->admin_get_fields($this->table));
+        $tableColumns = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable($this->table)
+            ->getSchemaManager()
+            ->listTableColumns($this->table);
+        return array_intersect_key($data, $tableColumns);
     }
 
     /**

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================================
 Important: #70849 - Make search levels in live search and list search consistent
 ================================================================================
+
+See :issue:`70849`
 
 Description
 ===========
@@ -20,3 +25,4 @@ In order to make the searchlevel handling consistent between live and list searc
 
 This makes it possible to add custom search level entries.
 
+.. index:: Backend, TSConfig

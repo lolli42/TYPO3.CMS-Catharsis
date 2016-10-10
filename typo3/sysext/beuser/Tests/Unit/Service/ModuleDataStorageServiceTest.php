@@ -24,17 +24,13 @@ class ModuleDataStorageServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function loadModuleDataReturnsModuleDataObjectForEmptyModuleData()
     {
-        // The test calls several static dependencies that can not be mocked and
-        // call database in the end, so we need to mock the database here.
-        $GLOBALS['TYPO3_DB'] = $this->createMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class);
-
         // Simulate empty module data
         $GLOBALS['BE_USER'] = $this->createMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
-        $GLOBALS['BE_USER']->uc = array();
-        $GLOBALS['BE_USER']->uc['moduleData'] = array();
+        $GLOBALS['BE_USER']->uc = [];
+        $GLOBALS['BE_USER']->uc['moduleData'] = [];
 
         /** @var \TYPO3\CMS\Beuser\Service\ModuleDataStorageService $subject */
-        $subject = $this->getAccessibleMock(\TYPO3\CMS\Beuser\Service\ModuleDataStorageService::class, array('dummy'), array(), '', false);
+        $subject = $this->getAccessibleMock(\TYPO3\CMS\Beuser\Service\ModuleDataStorageService::class, ['dummy'], [], '', false);
         $objectManagerMock = $this->createMock(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
         $moduleDataMock = $this->createMock(\TYPO3\CMS\Beuser\Domain\Model\ModuleData::class);
         $objectManagerMock

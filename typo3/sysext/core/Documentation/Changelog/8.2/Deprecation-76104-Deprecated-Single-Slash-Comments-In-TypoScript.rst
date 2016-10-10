@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================================
 Deprecation: #76104 - Deprecated single slash comments in TypoScript
 ====================================================================
+
+See :issue:`76104`
 
 Description
 ===========
@@ -37,3 +42,5 @@ Migration
 =========
 
 Use double slashes (//) or hash (#) for comments in Typoscript.
+
+.. index:: TypoScript

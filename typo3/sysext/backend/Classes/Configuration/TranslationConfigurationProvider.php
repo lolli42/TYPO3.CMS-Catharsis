@@ -47,28 +47,29 @@ class TranslationConfigurationProvider
         $modSharedTSconfig = BackendUtility::getModTSconfig($pageId, 'mod.SHARED');
 
         // default language and "all languages" are always present
-        $languages = array(
+        $languages = [
             // 0: default language
-            0 => array(
+            0 => [
                 'uid' => 0,
                 'title' => $this->getDefaultLanguageLabel($modSharedTSconfig),
                 'ISOcode' => 'DEF',
                 'flagIcon' => $this->getDefaultLanguageFlag($modSharedTSconfig),
-            ),
+            ],
             // -1: all languages
-            -1 => array(
+            -1 => [
                 'uid' => -1,
                 'title' => $this->getLanguageService()->getLL('multipleLanguages'),
                 'ISOcode' => 'DEF',
                 'flagIcon' => 'flags-multiple',
-            ),
-        );
+            ],
+        ];
 
         // add the additional languages from database records
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_language');
         $languageRecords = $queryBuilder
             ->select('*')
             ->from('sys_language')
+            ->orderBy('sorting')
             ->execute()
             ->fetchAll();
         foreach ($languageRecords as $languageRecord) {
@@ -144,8 +145,8 @@ class TranslationConfigurationProvider
             ->execute()
             ->fetchAll();
 
-        $translations = array();
-        $translationsErrors = array();
+        $translations = [];
+        $translationsErrors = [];
         foreach ($translationRecords as $translationRecord) {
             if (!isset($translations[$translationRecord[$GLOBALS['TCA'][$translationTable]['ctrl']['languageField']]])) {
                 $translations[$translationRecord[$GLOBALS['TCA'][$translationTable]['ctrl']['languageField']]] = $translationRecord;
@@ -153,7 +154,7 @@ class TranslationConfigurationProvider
                 $translationsErrors[$translationRecord[$GLOBALS['TCA'][$translationTable]['ctrl']['languageField']]][] = $translationRecord;
             }
         }
-        return array(
+        return [
             'table' => $table,
             'uid' => $uid,
             'CType' => $row['CType'],
@@ -161,7 +162,7 @@ class TranslationConfigurationProvider
             'translation_table' => $translationTable,
             'translations' => $translations,
             'excessive_translations' => $translationsErrors
-        );
+        ];
     }
 
     /**

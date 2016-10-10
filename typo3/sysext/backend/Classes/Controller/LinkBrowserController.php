@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Service\TypoLinkCodecService;
@@ -39,6 +40,14 @@ class LinkBrowserController extends AbstractLinkBrowserController
         $currentLinkParts['params'] = $currentLinkParts['additionalParams'];
         unset($currentLinkParts['additionalParams']);
 
+        if (!empty($currentLinkParts['url'])) {
+            $linkService = GeneralUtility::makeInstance(LinkService::class);
+            $data = $linkService->resolve($currentLinkParts['url']);
+            $currentLinkParts['type'] = $data['type'];
+            unset($data['type']);
+            $currentLinkParts['url'] = $data;
+        }
+
         $this->currentLinkParts = $currentLinkParts;
 
         parent::initCurrentUrl();
@@ -54,7 +63,7 @@ class LinkBrowserController extends AbstractLinkBrowserController
         parent::initDocumentTemplate();
 
         if (!$this->areFieldChangeFunctionsValid() && !$this->areFieldChangeFunctionsValid(true)) {
-            $this->parameters['fieldChangeFunc'] = array();
+            $this->parameters['fieldChangeFunc'] = [];
         }
         unset($this->parameters['fieldChangeFunc']['alert']);
         $update = [];
@@ -104,7 +113,7 @@ class LinkBrowserController extends AbstractLinkBrowserController
     {
         $result = false;
         if (isset($this->parameters['fieldChangeFunc']) && is_array($this->parameters['fieldChangeFunc']) && isset($this->parameters['fieldChangeFuncHash'])) {
-            $matches = array();
+            $matches = [];
             $pattern = '#\\[el\\]\\[(([^]-]+-[^]-]+-)(idx\\d+-)([^]]+))\\]#i';
             $fieldChangeFunctions = $this->parameters['fieldChangeFunc'];
             // Special handling of flexform sections:

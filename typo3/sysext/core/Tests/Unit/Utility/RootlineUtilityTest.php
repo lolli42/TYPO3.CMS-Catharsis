@@ -34,7 +34,7 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     protected function setUp()
     {
         $this->pageContextMock = $this->createMock(\TYPO3\CMS\Frontend\Page\PageRepository::class);
-        $this->subject = $this->getAccessibleMock(\TYPO3\CMS\Core\Utility\RootlineUtility::class, array('enrichWithRelationFields'), array(1, '', $this->pageContextMock));
+        $this->subject = $this->getAccessibleMock(\TYPO3\CMS\Core\Utility\RootlineUtility::class, ['enrichWithRelationFields'], [1, '', $this->pageContextMock]);
     }
 
     protected function tearDown()
@@ -102,7 +102,7 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->expectExceptionCode(1343464100);
 
         $this->subject->__construct(1, '1-99');
-        $this->subject->_call('processMountedPage', array('uid' => 1), array('uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_DEFAULT));
+        $this->subject->_call('processMountedPage', ['uid' => 1], ['uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_DEFAULT]);
     }
 
     /**
@@ -111,7 +111,7 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function processMountedPageWithMountedPageNotThrowsException()
     {
         $this->subject->__construct(1, '1-99');
-        $this->assertNotEmpty($this->subject->_call('processMountedPage', array('uid' => 1), array('uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1)));
+        $this->assertNotEmpty($this->subject->_call('processMountedPage', ['uid' => 1], ['uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1]));
     }
 
     /**
@@ -120,7 +120,7 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function processMountedPageWithMountedPageAddsMountedFromParameter()
     {
         $this->subject->__construct(1, '1-99');
-        $result = $this->subject->_call('processMountedPage', array('uid' => 1), array('uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1));
+        $result = $this->subject->_call('processMountedPage', ['uid' => 1], ['uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1]);
         $this->assertTrue(isset($result['_MOUNTED_FROM']));
         $this->assertSame(1, $result['_MOUNTED_FROM']);
     }
@@ -131,7 +131,7 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function processMountedPageWithMountedPageAddsMountPointParameterToReturnValue()
     {
         $this->subject->__construct(1, '1-99');
-        $result = $this->subject->_call('processMountedPage', array('uid' => 1), array('uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1));
+        $result = $this->subject->_call('processMountedPage', ['uid' => 1], ['uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1]);
         $this->assertTrue(isset($result['_MP_PARAM']));
         $this->assertSame('1-99', $result['_MP_PARAM']);
     }
@@ -142,7 +142,7 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function processMountedPageForMountPageIsOverlayAddsMountOLParameter()
     {
         $this->subject->__construct(1, '1-99');
-        $result = $this->subject->_call('processMountedPage', array('uid' => 1), array('uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1, 'mount_pid_ol' => 1));
+        $result = $this->subject->_call('processMountedPage', ['uid' => 1], ['uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1, 'mount_pid_ol' => 1]);
         $this->assertTrue(isset($result['_MOUNT_OL']));
         $this->assertSame(true, $result['_MOUNT_OL']);
     }
@@ -153,9 +153,9 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function processMountedPageForMountPageIsOverlayAddsDataInformationAboutMountPage()
     {
         $this->subject->__construct(1, '1-99');
-        $result = $this->subject->_call('processMountedPage', array('uid' => 1), array('uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1, 'mount_pid_ol' => 1, 'pid' => 5, 'title' => 'TestCase'));
+        $result = $this->subject->_call('processMountedPage', ['uid' => 1], ['uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1, 'mount_pid_ol' => 1, 'pid' => 5, 'title' => 'TestCase']);
         $this->assertTrue(isset($result['_MOUNT_PAGE']));
-        $this->assertSame(array('uid' => 99, 'pid' => 5, 'title' => 'TestCase'), $result['_MOUNT_PAGE']);
+        $this->assertSame(['uid' => 99, 'pid' => 5, 'title' => 'TestCase'], $result['_MOUNT_PAGE']);
     }
 
     /**
@@ -163,9 +163,9 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function processMountedPageForMountPageWithoutOverlayReplacesMountedPageWithMountPage()
     {
-        $mountPointPageData = array('uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1, 'mount_pid_ol' => 0);
+        $mountPointPageData = ['uid' => 99, 'doktype' => \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_MOUNTPOINT, 'mount_pid' => 1, 'mount_pid_ol' => 0];
         $this->subject->__construct(1, '1-99');
-        $result = $this->subject->_call('processMountedPage', array('uid' => 1), $mountPointPageData);
+        $result = $this->subject->_call('processMountedPage', ['uid' => 1], $mountPointPageData);
         $this->assertIsSubset($mountPointPageData, $result);
     }
 
@@ -174,9 +174,9 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function columnHasRelationToResolveDetectsGroupFieldAsLocal()
     {
-        $this->assertFalse($this->subject->_call('columnHasRelationToResolve', array(
+        $this->assertFalse($this->subject->_call('columnHasRelationToResolve', [
             'type' => 'group'
-        )));
+        ]));
     }
 
     /**
@@ -184,12 +184,12 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function columnHasRelationToResolveDetectsGroupFieldWithMMAsRemote2()
     {
-        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', array(
-            'config' => array(
+        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', [
+            'config' => [
                 'type' => 'group',
                 'MM' => 'tx_xyz'
-            )
-        )));
+            ]
+        ]));
     }
 
     /**
@@ -197,11 +197,11 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function columnHasRelationToResolveDetectsInlineFieldAsLocal()
     {
-        $this->assertFalse($this->subject->_call('columnHasRelationToResolve', array(
-            'config' => array(
+        $this->assertFalse($this->subject->_call('columnHasRelationToResolve', [
+            'config' => [
                 'type' => 'inline'
-            )
-        )));
+            ]
+        ]));
     }
 
     /**
@@ -209,12 +209,12 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function columnHasRelationToResolveDetectsInlineFieldWithForeignKeyAsRemote()
     {
-        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', array(
-            'config' => array(
+        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', [
+            'config' => [
                 'type' => 'inline',
                 'foreign_field' => 'xyz'
-            )
-        )));
+            ]
+        ]));
     }
 
     /**
@@ -222,12 +222,12 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function columnHasRelationToResolveDetectsInlineFieldWithFMMAsRemote()
     {
-        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', array(
-            'config' => array(
+        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', [
+            'config' => [
                 'type' => 'inline',
                 'MM' => 'xyz'
-            )
-        )));
+            ]
+        ]));
     }
 
     /**
@@ -235,11 +235,11 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function columnHasRelationToResolveDetectsSelectFieldAsLocal()
     {
-        $this->assertFalse($this->subject->_call('columnHasRelationToResolve', array(
-            'config' => array(
+        $this->assertFalse($this->subject->_call('columnHasRelationToResolve', [
+            'config' => [
                 'type' => 'select'
-            )
-        )));
+            ]
+        ]));
     }
 
     /**
@@ -247,12 +247,12 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function columnHasRelationToResolveDetectsSelectFieldWithMMAsRemote()
     {
-        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', array(
-            'config' => array(
+        $this->assertTrue($this->subject->_call('columnHasRelationToResolve', [
+            'config' => [
                 'type' => 'select',
                 'MM' => 'xyz'
-            )
-        )));
+            ]
+        ]));
     }
 
     /**
@@ -279,91 +279,11 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getCacheIdentifierReturnsValidIdentifierWithCommasInMountPointParameter()
     {
         /** @var \TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend $cacheFrontendMock */
-        $cacheFrontendMock = $this->getMockForAbstractClass(\TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend::class, array(), '', false);
+        $cacheFrontendMock = $this->getMockForAbstractClass(\TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend::class, [], '', false);
         $this->pageContextMock->sys_language_uid = 8;
         $this->pageContextMock->versioningWorkspaceId = 15;
         $this->pageContextMock->versioningPreview = true;
         $this->subject->__construct(42, '47-11,48-12', $this->pageContextMock);
         $this->assertTrue($cacheFrontendMock->isValidEntryIdentifier($this->subject->getCacheIdentifier()));
-    }
-
-    /**
-     * @test
-     */
-    public function getRecordArrayFetchesTranslationWhenLanguageIdIsSet()
-    {
-        $pageData = array(
-            'uid' => 1,
-            'title' => 'Original',
-        );
-        $pageDataTranslated = array(
-            'uid' => 1,
-            'title' => 'Translated',
-            '_PAGES_OVERLAY_UID' => '2',
-        );
-
-        $this->subject
-            ->expects($this->any())
-            ->method('enrichWithRelationFields')
-            ->with(2, $pageDataTranslated)
-            ->will($this->returnArgument(1));
-
-        $databaseConnectionMock = $this->createMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class);
-        $databaseConnectionMock
-            ->expects($this->once())
-            ->method('exec_SELECTgetSingleRow')
-            ->will(
-                $this->returnValue($pageData)
-            );
-        $this->subject->_set('databaseConnection',
-            $databaseConnectionMock
-        );
-
-        $this->pageContextMock
-                ->expects($this->any())
-                ->method('getPageOverlay')
-                ->will($this->returnValue($pageDataTranslated));
-
-        $this->subject->_set('languageUid', 1);
-        $this->assertSame($pageDataTranslated, $this->subject->_call('getRecordArray', 1));
-    }
-
-    /**
-     * @test
-     */
-    public function enrichWithRelationFieldsCreatesWhereClauseForDisabledField()
-    {
-        $mockDatabaseConnection = $this->getMockBuilder(\TYPO3\CMS\Core\Database\DatabaseConnection::class)
-            ->setMethods(array('exec_SELECTgetRows'))
-            ->disableOriginalConstructor()
-            ->getMock();
-        $subject = $this->getAccessibleMock(\TYPO3\CMS\Core\Utility\RootlineUtility::class, array('columnHasRelationToResolve'), array(1, '', $this->pageContextMock));
-        $subject->_set('databaseConnection', $mockDatabaseConnection);
-        $GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] = '';
-        $foreign_table = $this->getUniqueId('foreign_table');
-        $foreign_field = $this->getUniqueId('foreign_field');
-        $GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'] = $this->getUniqueId('disabled');
-        $GLOBALS['TCA']['pages']['columns'] = array(
-            'test' => array(
-                'config' => array(
-                    'foreign_table' => $foreign_table,
-                    'foreign_field' => $foreign_field
-                )
-            )
-        );
-        $expected = array(
-            $foreign_field . ' = 0',
-            $foreign_table . '.' . $GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'] . ' = 0'
-        );
-        $this->pageContextMock->expects($this->once())->method('deleteClause')->will($this->returnValue(''));
-        $mockDatabaseConnection->expects(
-            $this->once())->
-            method('exec_SELECTgetRows')->
-            with('uid', $foreign_table, implode(' AND ', $expected), '', '', '', '')->
-            // the return value does not matter much, it is only here to prevent error messages from further code execution
-            will($this->returnValue(array('uid' => 17))
-        );
-        $subject->expects($this->once())->method('columnHasRelationToResolve')->will($this->returnValue(true));
-        $subject->_call('enrichWithRelationFields', 17, array());
     }
 }

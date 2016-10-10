@@ -123,10 +123,10 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Man
     {
         parent::createContentAndCreateRelation();
         $this->actionService->publishRecords(
-            array(
-                self::TABLE_Category => array($this->recordIds['newCategoryId']),
-                self::TABLE_Content => array($this->recordIds['newContentId']),
-            )
+            [
+                self::TABLE_Category => [$this->recordIds['newCategoryId']],
+                self::TABLE_Content => [$this->recordIds['newContentId']],
+            ]
         );
         $this->assertAssertionDataSet('createContentNCreateRelation');
 
@@ -146,13 +146,45 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Man
     {
         parent::createCategoryAndCreateRelation();
         $this->actionService->publishRecords(
-            array(
-                self::TABLE_Content => array($this->recordIds['newContentId']),
-                self::TABLE_Category => array($this->recordIds['newCategoryId']),
-            )
+            [
+                self::TABLE_Content => [$this->recordIds['newContentId']],
+                self::TABLE_Category => [$this->recordIds['newCategoryId']],
+            ]
         );
         $this->actionService->publishWorkspace(self::VALUE_WorkspaceId);
         $this->assertAssertionDataSet('createCategoryNCreateRelation');
+    }
+
+    /**
+     * @test
+     * @see DataSet/createContentWCategoryNAddRelation.csv
+     */
+    public function createContentWithCategoryAndAddRelation()
+    {
+        parent::createContentWithCategoryAndAddRelation();
+        $this->actionService->publishRecords(
+            [
+                self::TABLE_Category => [$this->recordIds['newCategoryId']],
+                self::TABLE_Content => [$this->recordIds['newContentId']],
+            ]
+        );
+        $this->assertAssertionDataSet('createContentWCategoryNAddRelation');
+    }
+
+    /**
+     * @test
+     * @see DataSet/createCategoryWContentNAddRelation.csv
+     */
+    public function createCategoryWithContentAndAddRelation()
+    {
+        parent::createCategoryWithContentAndAddRelation();
+        $this->actionService->publishRecords(
+            [
+                self::TABLE_Content => [$this->recordIds['newContentId']],
+                self::TABLE_Category => [$this->recordIds['newCategoryId']],
+            ]
+        );
+        $this->assertAssertionDataSet('createCategoryWContentNAddRelation');
     }
 
     /**
@@ -194,10 +226,10 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Man
     {
         parent::modifyBothsOfRelation();
         $this->actionService->publishRecords(
-            array(
-                self::TABLE_Content => array(self::VALUE_ContentIdFirst),
-                self::TABLE_Category => array(self::VALUE_CategoryIdFirst),
-            )
+            [
+                self::TABLE_Content => [self::VALUE_ContentIdFirst],
+                self::TABLE_Category => [self::VALUE_CategoryIdFirst],
+            ]
         );
         $this->assertAssertionDataSet('modifyBothsOfRelation');
 
@@ -328,10 +360,10 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Man
     {
         parent::copyPage();
         $this->actionService->publishRecords(
-            array(
-                self::TABLE_Page => array($this->recordIds['newPageId']),
-                self::TABLE_Content => array($this->recordIds['newContentIdFirst'], $this->recordIds['newContentIdLast']),
-            )
+            [
+                self::TABLE_Page => [$this->recordIds['newPageId']],
+                self::TABLE_Content => [$this->recordIds['newContentIdFirst'], $this->recordIds['newContentIdLast']],
+            ]
         );
         $this->assertAssertionDataSet('copyPage');
 

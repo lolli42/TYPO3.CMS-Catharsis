@@ -28,6 +28,7 @@ use TYPO3\CMS\Core\Utility\CommandUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
@@ -69,12 +70,12 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
     /**
      * @var array
      */
-    protected $systemInformation = array();
+    protected $systemInformation = [];
 
     /**
      * @var array
      */
-    protected $systemMessages = array();
+    protected $systemMessages = [];
 
     /**
      * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
@@ -116,6 +117,7 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     protected function collectInformation()
     {
+        $this->getTypo3Version();
         $this->getWebServer();
         $this->getPhpVersion();
         $this->getDatabase();
@@ -153,11 +155,11 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     protected function getPhpVersion()
     {
-        $this->systemInformation[] = array(
+        $this->systemInformation[] = [
             'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.phpversion')),
             'value' => PHP_VERSION,
             'icon' => $this->iconFactory->getIcon('sysinfo-php-version', Icon::SIZE_SMALL)->render()
-        );
+        ];
     }
 
     /**
@@ -167,13 +169,17 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     protected function getDatabase()
     {
-        $this->systemInformation[] = array(
-            'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.database')),
-            'value' => GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME)
-                ->getServerVersion(),
-            'icon' => $this->iconFactory->getIcon('sysinfo-database', Icon::SIZE_SMALL)->render()
-        );
+        foreach (GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionNames() as $connectionName) {
+            $this->systemInformation[] = [
+                'title' => $this->getLanguageService()
+                    ->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.database')
+                    . ' (' . htmlspecialchars($connectionName) . ')',
+                'value' => GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getConnectionByName($connectionName)
+                    ->getServerVersion(),
+                'icon' => $this->iconFactory->getIcon('sysinfo-database', Icon::SIZE_SMALL)->render()
+            ];
+        }
     }
 
     /**
@@ -184,12 +190,12 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
     protected function getApplicationContext()
     {
         $applicationContext = GeneralUtility::getApplicationContext();
-        $this->systemInformation[] = array(
+        $this->systemInformation[] = [
             'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.applicationcontext')),
             'value' => (string)$applicationContext,
             'status' => $applicationContext->isProduction() ? InformationStatus::STATUS_OK : InformationStatus::STATUS_WARNING,
             'icon' => $this->iconFactory->getIcon('sysinfo-application-context', Icon::SIZE_SMALL)->render()
-        );
+        ];
     }
 
     /**
@@ -202,11 +208,11 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
         }
 
         $languageService = $this->getLanguageService();
-        $this->systemInformation[] = array(
+        $this->systemInformation[] = [
             'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.composerMode')),
             'value' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.enabled')),
             'icon' => $this->iconFactory->getIcon('sysinfo-composer-mode', Icon::SIZE_SMALL)->render()
-        );
+        ];
     }
 
     /**
@@ -229,11 +235,11 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
         $revision = trim(CommandUtility::exec('git rev-parse --short HEAD'));
         $branch = trim(CommandUtility::exec('git rev-parse --abbrev-ref HEAD'));
         if (!empty($revision) && !empty($branch)) {
-            $this->systemInformation[] = array(
+            $this->systemInformation[] = [
                 'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.gitrevision')),
                 'value' => sprintf('%s [%s]', $revision, $branch),
                 'icon' => $this->iconFactory->getIcon('sysinfo-git', Icon::SIZE_SMALL)->render()
-            );
+            ];
         }
     }
 
@@ -255,11 +261,11 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
             default:
                 $icon = 'windows';
         }
-        $this->systemInformation[] = array(
+        $this->systemInformation[] = [
             'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.operatingsystem')),
             'value' => $kernelName . ' ' . php_uname('r'),
             'icon' => $this->iconFactory->getIcon('sysinfo-os-' . $icon, Icon::SIZE_SMALL)->render()
-        );
+        ];
     }
 
     /**
@@ -267,11 +273,23 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     protected function getWebServer()
     {
-        $this->systemInformation[] = array(
+        $this->systemInformation[] = [
             'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.webserver')),
             'value' => htmlspecialchars($_SERVER['SERVER_SOFTWARE']),
             'icon' => $this->iconFactory->getIcon('sysinfo-webserver', Icon::SIZE_SMALL)->render()
-        );
+        ];
+    }
+
+    /**
+     * Gets the TYPO3 version
+     */
+    protected function getTypo3Version()
+    {
+        $this->systemInformation[] = [
+            'title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.sysinfo.typo3-version')),
+            'value' => htmlspecialchars(VersionNumberUtility::getCurrentTypo3Version()),
+            'icon' => $this->iconFactory->getIcon('sysinfo-typo3-version', Icon::SIZE_SMALL)->render()
+        ];
     }
 
     /**
@@ -281,7 +299,7 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     protected function emitGetSystemInformation()
     {
-        $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'getSystemInformation', array($this));
+        $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'getSystemInformation', [$this]);
     }
 
     /**
@@ -291,7 +309,7 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     protected function emitLoadMessages()
     {
-        $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'loadMessages', array($this));
+        $this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'loadMessages', [$this]);
     }
 
     /**
@@ -314,12 +332,12 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
             $this->highestSeverity = $messageSeverity;
         }
 
-        $this->systemMessages[] = array(
+        $this->systemMessages[] = [
             'module' => $module,
             'count' => (int)$count,
             'status' => $messageSeverity,
             'text' => $text
-        );
+        ];
     }
 
     /**
@@ -332,11 +350,11 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     public function addSystemInformation($title, $value, $icon)
     {
-        $this->systemInformation[] = array(
+        $this->systemInformation[] = [
             'title' => $title,
             'value' => $value,
             'icon' => $icon
-        );
+        ];
     }
 
     /**
@@ -374,13 +392,13 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
 
         $request = $this->standaloneView->getRequest();
         $request->setControllerExtensionName('backend');
-        $this->standaloneView->assignMultiple(array(
+        $this->standaloneView->assignMultiple([
             'installToolUrl' => BackendUtility::getModuleUrl('system_extinstall'),
             'messages' => $this->systemMessages,
             'count' => $this->totalCount > $this->maximumCountInBadge ? $this->maximumCountInBadge . '+' : $this->totalCount,
             'severityBadgeClass' => $this->severityBadgeClass,
             'systemInformation' => $this->systemInformation
-        ));
+        ]);
         return $this->standaloneView->render();
     }
 
@@ -391,7 +409,7 @@ class SystemInformationToolbarItem implements ToolbarItemInterface
      */
     public function getAdditionalAttributes()
     {
-        return array();
+        return [];
     }
 
     /**

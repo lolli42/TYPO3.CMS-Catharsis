@@ -15,6 +15,8 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
  */
 
 use TYPO3\CMS\Core\Charset\CharsetConverter;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -38,7 +40,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     /**
      * @var array
      */
-    protected $searchWords = array();
+    protected $searchWords = [];
 
     /**
      * @var array
@@ -79,56 +81,56 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * External parser objects
      * @var array
      */
-    protected $externalParsers = array();
+    protected $externalParsers = [];
 
     /**
      * Will hold the first row in result - used to calculate relative hit-ratings.
      *
      * @var array
      */
-    protected $firstRow = array();
+    protected $firstRow = [];
 
     /**
      * sys_domain records
      *
      * @var array
      */
-    protected $domainRecords = array();
+    protected $domainRecords = [];
 
     /**
      * Required fe_groups memberships for display of a result.
      *
      * @var array
      */
-    protected $requiredFrontendUsergroups = array();
+    protected $requiredFrontendUsergroups = [];
 
     /**
      * Page tree sections for search result.
      *
      * @var array
      */
-    protected $resultSections = array();
+    protected $resultSections = [];
 
     /**
      * Caching of page path
      *
      * @var array
      */
-    protected $pathCache = array();
+    protected $pathCache = [];
 
     /**
      * Storage of icons
      *
      * @var array
      */
-    protected $iconFileNameCache = array();
+    protected $iconFileNameCache = [];
 
     /**
      * Indexer configuration, coming from $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search']
      *
      * @var array
      */
-    protected $indexerConfig = array();
+    protected $indexerConfig = [];
 
     /**
      * Flag whether metaphone search should be enabled
@@ -161,11 +163,16 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * @param array $searchData The incoming search parameters
      * @return array Search parameters
      */
-    public function initialize($searchData = array())
+    public function initialize($searchData = [])
     {
         $this->charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
         if (!is_array($searchData)) {
-            $searchData = array();
+            $searchData = [];
+        }
+
+        // check if TypoScript is loaded
+        if (!isset($this->settings['results'])) {
+            $this->redirect('noTypoScript');
         }
 
         $this->loadSettings();
@@ -188,10 +195,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         }
         $searchData['numberOfResults'] = MathUtility::forceIntegerInRange($searchData['numberOfResults'], 1, 100, $this->defaultResultNumber);
         // This gets the search-words into the $searchWordArray
-        $this->sword = $searchData['sword'];
+        $this->setSword($searchData['sword']);
         // Add previous search words to current
         if ($searchData['sword_prev_include'] && $searchData['sword_prev']) {
-            $this->sword = trim($searchData['sword_prev']) . ' ' . $this->sword;
+            $this->setSword(trim($searchData['sword_prev']) . ' ' . $this->getSword());
         }
         $this->searchWords = $this->getSearchWords($searchData['defaultOperand']);
         // This is the id of the site root.
@@ -225,7 +232,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * @return void
      * @ignorevalidation $search
      */
-    public function searchAction($search = array())
+    public function searchAction($search = [])
     {
         $searchData = $this->initialize($search);
         // Find free index uid:
@@ -237,7 +244,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             $freeIndexUid = -1;
         }
         $indexCfgs = GeneralUtility::intExplode(',', $freeIndexUid);
-        $resultsets = array();
+        $resultsets = [];
         foreach ($indexCfgs as $freeIndexUid) {
             // Get result rows
             $tstamp1 = GeneralUtility::milliseconds();
@@ -257,7 +264,15 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             // Create header if we are searching more than one indexing configuration
             if (count($indexCfgs) > 1) {
                 if ($freeIndexUid > 0) {
-                    $indexCfgRec = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('title', 'index_config', 'uid=' . (int)$freeIndexUid . $GLOBALS['TSFE']->cObj->enableFields('index_config'));
+                    $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getQueryBuilderForTable('index_config');
+                    $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+                    $indexCfgRec = $queryBuilder
+                        ->select('*')
+                        ->from('index_config')
+                        ->where($queryBuilder->expr()->eq('uid', (int)$freeIndexUid))
+                        ->execute()
+                        ->fetch();
                     $categoryTitle = $indexCfgRec['title'];
                 } else {
                     $categoryTitle = LocalizationUtility::translate('indexingConfigurationHeader.' . $freeIndexUid, 'IndexedSearch');
@@ -265,7 +280,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                 $resultsets[$freeIndexUid]['categoryTitle'] = $categoryTitle;
             }
             // Write search statistics
-            $this->writeSearchStat($searchData, $this->searchWords, $resultData['count'], array($tstamp1, $tstamp2, $tstamp3));
+            $this->writeSearchStat($searchData, $this->searchWords, $resultData['count'], [$tstamp1, $tstamp2, $tstamp3]);
         }
         $this->view->assign('resultsets', $resultsets);
         $this->view->assign('searchParams', $searchData);
@@ -286,10 +301,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getDisplayResults($searchWords, $resultData, $freeIndexUid = -1)
     {
-        $result = array(
+        $result = [
             'count' => $resultData['count'],
             'searchWords' => $searchWords
-        );
+        ];
         // Perform display of result rows array
         if ($resultData) {
             // Set first selected row (for calculation of ranking later)
@@ -323,10 +338,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function compileResultRows($resultRows, $freeIndexUid = -1)
     {
-        $finalResultRows = array();
+        $finalResultRows = [];
         // Transfer result rows to new variable,
         // performing some mapping of sub-results etc.
-        $newResultRows = array();
+        $newResultRows = [];
         foreach ($resultRows as $row) {
             $id = md5($row['phash_grouping']);
             if (is_array($newResultRows[$id])) {
@@ -347,15 +362,15 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             }
         }
         $resultRows = $newResultRows;
-        $this->resultSections = array();
+        $this->resultSections = [];
         if ($freeIndexUid <= 0 && $this->searchData['group'] == 'sections') {
             $rl2flag = substr($this->searchData['sections'], 0, 2) == 'rl';
-            $sections = array();
+            $sections = [];
             foreach ($resultRows as $row) {
                 $id = $row['rl0'] . '-' . $row['rl1'] . ($rl2flag ? '-' . $row['rl2'] : '');
                 $sections[$id][] = $row;
             }
-            $this->resultSections = array();
+            $this->resultSections = [];
             foreach ($sections as $id => $resultRows) {
                 $rlParts = explode('-', $id);
                 if ($rlParts[2]) {
@@ -377,14 +392,14 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                     $sectionTitleLinked = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . $sectionName . ':</a>';
                 }
                 $resultRowsCount = count($resultRows);
-                $this->resultSections[$id] = array($sectionName, $resultRowsCount);
+                $this->resultSections[$id] = [$sectionName, $resultRowsCount];
                 // Add section header
-                $finalResultRows[] = array(
+                $finalResultRows[] = [
                     'isSectionHeader' => true,
                     'numResultRows' => $resultRowsCount,
                     'sectionId' => $id,
                     'sectionTitle' => $sectionTitleLinked
-                );
+                ];
                 // Render result rows
                 foreach ($resultRows as $row) {
                     $finalResultRows[] = $this->compileSingleResultRow($row);
@@ -441,10 +456,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         } else {
             // Else the page:
             // Prepare search words for markup in content:
-            $markUpSwParams = array();
+            $markUpSwParams = [];
             if ($this->settings['forwardSearchWordsInResultLink']['_typoScriptNodeValue']) {
                 if ($this->settings['forwardSearchWordsInResultLink']['no_cache']) {
-                    $markUpSwParams = array('no_cache' => 1);
+                    $markUpSwParams = ['no_cache' => 1];
                 }
                 foreach ($this->searchWords as $d) {
                     $markUpSwParams['sword_list'][] = $d['sword'];
@@ -475,12 +490,12 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             $pathId = $row['data_page_id'] ?: $row['page_id'];
             $pathMP = $row['data_page_id'] ? $row['data_page_mp'] : '';
             $pathStr = $this->getPathFromPageId($pathId, $pathMP);
-            $resultData['path'] = $this->linkPage($pathId, $pathStr, array(
+            $resultData['path'] = $this->linkPage($pathId, $pathStr, [
                 'cHashParams' => $row['cHashParams'],
                 'data_page_type' => $row['data_page_type'],
                 'data_page_mp' => $pathMP,
                 'sys_language_uid' => $row['sys_language_uid']
-            ));
+            ]);
             // check if the access is restricted
             if (is_array($this->requiredFrontendUsergroups[$pathId]) && !empty($this->requiredFrontendUsergroups[$pathId])) {
                 $resultData['access'] = '<img src="' . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('indexed_search')
@@ -492,7 +507,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         // If there are subrows (eg. subpages in a PDF-file or if a duplicate page
         // is selected due to user-login (phash_grouping))
         if (is_array($row['_sub'])) {
-            $resultData['subresults'] = array();
+            $resultData['subresults'] = [];
             if ($this->multiplePagesType($row['item_type'])) {
                 $resultData['subresults']['header'] = LocalizationUtility::translate('result.otherMatching', 'IndexedSearch');
                 foreach ($row['_sub'] as $subRow) {
@@ -659,13 +674,18 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         if ($row['show_resume']) {
             if (!$noMarkup) {
                 $markedSW = '';
-                $res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'index_fulltext', 'phash=' . (int)$row['phash']);
-                if ($ftdrow = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_fulltext');
+                $ftdrow = $queryBuilder
+                    ->select('*')
+                    ->from('index_fulltext')
+                    ->where($queryBuilder->expr()->eq('phash', (int)$row['phash']))
+                    ->execute()
+                    ->fetch();
+                if ($ftdrow !== false) {
                     // Cut HTTP references after some length
                     $content = preg_replace('/(http:\\/\\/[^ ]{' . $this->settings['results.']['hrefInSummaryCropAfter'] . '})([^ ]+)/i', '$1...', $ftdrow['fulltextdata']);
                     $markedSW = $this->markupSWpartsOfString($content);
                 }
-                $this->getDatabaseConnection()->sql_free_result($res);
             }
             if (!trim($markedSW)) {
                 $outputStr = $this->charsetConverter->crop('utf-8', $row['item_description'], $length, $this->settings['results.']['summaryCropSignifier']);
@@ -690,7 +710,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         // Init:
         $str = str_replace('&nbsp;', ' ', $htmlParser->bidir_htmlspecialchars($str, -1));
         $str = preg_replace('/\\s\\s+/', ' ', $str);
-        $swForReg = array();
+        $swForReg = [];
         // Prepare search words for regex:
         foreach ($this->searchWords as $d) {
             $swForReg[] = preg_quote($d['sword'], '/');
@@ -709,7 +729,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         }
         // Variable:
         $summaryLgd = 0;
-        $output = array();
+        $output = [];
         // Shorten in-between strings:
         foreach ($parts as $k => $strP) {
             if ($k % 2 == 0) {
@@ -759,9 +779,9 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function writeSearchStat($searchParams, $searchWords, $count, $pt)
     {
-        $insertFields = array(
-            'searchstring' => $this->sword,
-            'searchoptions' => serialize(array($searchParams, $searchWords, $pt)),
+        $insertFields = [
+            'searchstring' => $this->getSword(),
+            'searchoptions' => serialize([$searchParams, $searchWords, $pt]),
             'feuser_id' => (int)$GLOBALS['TSFE']->fe_user->user['uid'],
             // cookie as set or retrieved. If people has cookies disabled this will vary all the time
             'cookie' => $GLOBALS['TSFE']->fe_user->id,
@@ -771,20 +791,22 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             'hits' => (int)$count,
             // Time stamp
             'tstamp' => $GLOBALS['EXEC_TIME']
-        );
-        $this->getDatabaseConnection()->exec_INSERTquery('index_stat_search', $insertFields);
-        $newId = $this->getDatabaseConnection()->sql_insert_id();
+        ];
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('index_search_stat');
+        $connection->insert('index_stat_search', $insertFields);
+        $newId = $connection->lastInsertId('index_stat_search');
         if ($newId) {
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('index_stat_word');
             foreach ($searchWords as $val) {
-                $insertFields = array(
+                $insertFields = [
                     'word' => $val['sword'],
                     'index_stat_search_id' => $newId,
                     // Time stamp
                     'tstamp' => $GLOBALS['EXEC_TIME'],
                     // search page id for indexed search stats
                     'pageid' => $GLOBALS['TSFE']->id
-                );
-                $this->getDatabaseConnection()->exec_INSERTquery('index_stat_word', $insertFields);
+                ];
+                $connection->insert('index_stat_word', $insertFields);
             }
         }
     }
@@ -809,7 +831,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     {
         // Shorten search-word string to max 200 bytes (does NOT take multibyte charsets into account - but never mind,
         // shortening the string here is only a run-away feature!)
-        $searchWords = substr($this->sword, 0, 200);
+        $searchWords = substr($this->getSword(), 0, 200);
         // Convert to UTF-8 + conv. entities (was also converted during indexing!)
         $searchWords = $this->charsetConverter->conv($searchWords, $GLOBALS['TSFE']->metaCharset, 'utf-8');
         $searchWords = $this->charsetConverter->entities_to_utf8($searchWords);
@@ -819,25 +841,25 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         } else {
             // sentence
             if ($this->searchData['searchType'] == 20) {
-                $sWordArray = array(
-                    array(
+                $sWordArray = [
+                    [
                         'sword' => trim($searchWords),
                         'oper' => 'AND'
-                    )
-                );
+                    ]
+                ];
             } else {
                 // case-sensitive. Defines the words, which will be
                 // operators between words
-                $operatorTranslateTable = array(
-                    array('+', 'AND'),
-                    array('|', 'OR'),
-                    array('-', 'AND NOT'),
+                $operatorTranslateTable = [
+                    ['+', 'AND'],
+                    ['|', 'OR'],
+                    ['-', 'AND NOT'],
                     // Add operators for various languages
                     // Converts the operators to lowercase
-                    array($this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandAnd', 'IndexedSearch'), 'toLower'), 'AND'),
-                    array($this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandOr', 'IndexedSearch'), 'toLower'), 'OR'),
-                    array($this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandNot', 'IndexedSearch'), 'toLower'), 'AND NOT')
-                );
+                    [$this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandAnd', 'IndexedSearch'), 'toLower'), 'AND'],
+                    [$this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandOr', 'IndexedSearch'), 'toLower'), 'OR'],
+                    [$this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandNot', 'IndexedSearch'), 'toLower'), 'AND NOT']
+                ];
                 $swordArray = \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::getExplodedSearchString($searchWords, $defaultOperator == 1 ? 'OR' : 'AND', $operatorTranslateTable);
                 if (is_array($swordArray)) {
                     $sWordArray = $this->procSearchWordsByLexer($swordArray);
@@ -856,7 +878,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function procSearchWordsByLexer($searchWords)
     {
-        $newSearchWords = array();
+        $newSearchWords = [];
         // Init lexer (used to post-processing of search words)
         $lexerObjRef = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['lexer'] ?: \TYPO3\CMS\IndexedSearch\Lexer::class;
         $this->lexerObj = GeneralUtility::getUserObj($lexerObjRef);
@@ -868,10 +890,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                 $res = $this->lexerObj->split2Words($wordDef['sword']);
                 // Traverse lexer result and add all words again:
                 foreach ($res as $word) {
-                    $newSearchWords[] = array(
+                    $newSearchWords[] = [
                         'sword' => $word,
                         'oper' => $wordDef['oper']
-                    );
+                    ];
                 }
             } else {
                 $newSearchWords[] = $wordDef;
@@ -887,17 +909,11 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * @return void
      * @ignorevalidation $search
      */
-    public function formAction($search = array())
+    public function formAction($search = [])
     {
         $searchData = $this->initialize($search);
         // Adding search field value
-        $this->view->assign('sword', $this->sword);
-        // Additonal keyword => "Add to current search words"
-        $showAdditionalKeywordSearch = $this->settings['clearSearchBox'] && $this->settings['clearSearchBox']['enableSubSearchCheckBox'];
-        if ($showAdditionalKeywordSearch) {
-            $this->view->assign('previousSearchWord', $this->settings['clearSearchBox'] ? '' : $this->sword);
-        }
-        $this->view->assign('showAdditionalKeywordSearch', $showAdditionalKeywordSearch);
+        $this->view->assign('sword', $this->getSword());
         // Extended search
         if ($search['extendedSearch']) {
             // "Search for"
@@ -936,6 +952,13 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         $this->view->assign('searchParams', $searchData);
     }
 
+    /**
+     * TypoScript was not loaded
+     */
+    public function noTypoScriptAction()
+    {
+    }
+
     /****************************************
      * building together the available options for every dropdown
      ***************************************/
@@ -946,8 +969,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableSearchTypeOptions()
     {
-        $allOptions = array();
-        $types = array(0, 1, 2, 3, 10, 20);
+        $allOptions = [];
+        $types = [0, 1, 2, 3, 10, 20];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['searchType']) {
             foreach ($types as $typeNum) {
@@ -970,13 +993,13 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableOperandsOptions()
     {
-        $allOptions = array();
+        $allOptions = [];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['defaultOperand']) {
-            $allOptions = array(
+            $allOptions = [
                 0 => LocalizationUtility::translate('defaultOperands.0', 'IndexedSearch'),
                 1 => LocalizationUtility::translate('defaultOperands.1', 'IndexedSearch')
-            );
+            ];
         }
         // disable single entries by TypoScript
         $allOptions = $this->removeOptionsFromOptionList($allOptions, $blindSettings['defaultOperand']);
@@ -990,8 +1013,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableMediaTypesOptions()
     {
-        $allOptions = array();
-        $mediaTypes = array(-1, 0, -2);
+        $allOptions = [];
+        $mediaTypes = [-1, 0, -2];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['mediaType']) {
             foreach ($mediaTypes as $mediaType) {
@@ -1002,7 +1025,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             if ($additionalMedia !== '') {
                 $additionalMedia = GeneralUtility::trimExplode(',', $additionalMedia, true);
             } else {
-                $additionalMedia = array();
+                $additionalMedia = [];
             }
             foreach ($this->externalParsers as $extension => $obj) {
                 // Skip unwanted extensions
@@ -1027,23 +1050,28 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableLanguageOptions()
     {
-        $allOptions = array(
+        $allOptions = [
             '-1' => LocalizationUtility::translate('languageUids.-1', 'IndexedSearch'),
             '0' => LocalizationUtility::translate('languageUids.0', 'IndexedSearch')
-        );
+        ];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['languageUid']) {
             // Add search languages
-            $res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'sys_language', '1=1' . $GLOBALS['TSFE']->cObj->enableFields('sys_language'));
-            if ($res) {
-                while ($lang = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
-                    $allOptions[$lang['uid']] = $lang['title'];
-                }
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('sys_language');
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            $result = $queryBuilder
+                ->select('uid', 'title')
+                ->from('sys_language')
+                ->execute();
+
+            while ($lang = $result->fetch()) {
+                $allOptions[$lang['uid']] = $lang['title'];
             }
             // disable single entries by TypoScript
             $allOptions = $this->removeOptionsFromOptionList($allOptions, $blindSettings['languageUid']);
         } else {
-            $allOptions = array();
+            $allOptions = [];
         }
         return $allOptions;
     }
@@ -1059,8 +1087,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableSectionsOptions()
     {
-        $allOptions = array();
-        $sections = array(0, -1, -2, -3);
+        $allOptions = [];
+        $sections = [0, -1, -2, -3];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['sections']) {
             foreach ($sections as $section) {
@@ -1105,27 +1133,33 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableIndexConfigurationsOptions()
     {
-        $allOptions = array(
+        $allOptions = [
             '-1' => LocalizationUtility::translate('indexingConfigurations.-1', 'IndexedSearch'),
             '-2' => LocalizationUtility::translate('indexingConfigurations.-2', 'IndexedSearch'),
             '0' => LocalizationUtility::translate('indexingConfigurations.0', 'IndexedSearch')
-        );
+        ];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['indexingConfigurations']) {
             // add an additional index configuration
             if ($this->settings['defaultFreeIndexUidList']) {
                 $uidList = GeneralUtility::intExplode(',', $this->settings['defaultFreeIndexUidList']);
-                $indexCfgRecords = $this->getDatabaseConnection()->exec_SELECTgetRows('uid,title', 'index_config', 'uid IN (' . implode(',', $uidList) . ')' . $GLOBALS['TSFE']->cObj->enableFields('index_config'), '', '', '', 'uid');
-                foreach ($uidList as $uidValue) {
-                    if (is_array($indexCfgRecords[$uidValue])) {
-                        $allOptions[$uidValue] = $indexCfgRecords[$uidValue]['title'];
-                    }
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable('index_config');
+                $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+                $result = $queryBuilder
+                    ->select('uid', 'title')
+                    ->from('index_config')
+                    ->where($queryBuilder->expr()->in('uid', $uidList))
+                    ->execute();
+
+                while ($row = $result->fetch()) {
+                    $allOptions[$row['uid']]= $row['title'];
                 }
             }
             // disable single entries by TypoScript
             $allOptions = $this->removeOptionsFromOptionList($allOptions, $blindSettings['indexingConfigurations']);
         } else {
-            $allOptions = array();
+            $allOptions = [];
         }
         return $allOptions;
     }
@@ -1141,8 +1175,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableSortOrderOptions()
     {
-        $allOptions = array();
-        $sortOrders = array('rank_flag', 'rank_freq', 'rank_first', 'rank_count', 'mtime', 'title', 'crdate');
+        $allOptions = [];
+        $sortOrders = ['rank_flag', 'rank_freq', 'rank_first', 'rank_count', 'mtime', 'title', 'crdate'];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['sortOrder']) {
             foreach ($sortOrders as $order) {
@@ -1161,13 +1195,13 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableGroupOptions()
     {
-        $allOptions = array();
+        $allOptions = [];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['groupBy']) {
-            $allOptions = array(
+            $allOptions = [
                 'sections' => LocalizationUtility::translate('groupBy.sections', 'IndexedSearch'),
                 'flat' => LocalizationUtility::translate('groupBy.flat', 'IndexedSearch')
-            );
+            ];
         }
         // disable single entries by TypoScript
         $allOptions = $this->removeOptionsFromOptionList($allOptions, $blindSettings['groupBy.']);
@@ -1181,13 +1215,13 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableSortDescendingOptions()
     {
-        $allOptions = array();
+        $allOptions = [];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['descending']) {
-            $allOptions = array(
+            $allOptions = [
                 0 => LocalizationUtility::translate('sortOrders.descending', 'IndexedSearch'),
                 1 => LocalizationUtility::translate('sortOrders.ascending', 'IndexedSearch')
-            );
+            ];
         }
         // disable single entries by TypoScript
         $allOptions = $this->removeOptionsFromOptionList($allOptions, $blindSettings['descending.']);
@@ -1201,15 +1235,15 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getAllAvailableNumberOfResultsOptions()
     {
-        $allOptions = array();
+        $allOptions = [];
         $blindSettings = $this->settings['blind'];
         if (!$blindSettings['numberOfResults']) {
-            $allOptions = array(
+            $allOptions = [
                 10 => 10,
                 25 => 25,
                 50 => 50,
                 100 => 100
-            );
+            ];
         }
         // disable single entries by TypoScript
         $allOptions = $this->removeOptionsFromOptionList($allOptions, $blindSettings['numberOfResults']);
@@ -1245,7 +1279,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * @return string <A> tag wrapped title string.
      * @todo make use of the UriBuilder
      */
-    protected function linkPage($pageUid, $linkText, $row = array(), $markUpSwParams = array())
+    protected function linkPage($pageUid, $linkText, $row = [], $markUpSwParams = [])
     {
         // Parameters for link
         $urlParameters = (array)unserialize($row['cHashParams']);
@@ -1290,12 +1324,19 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     protected function getMenuOfPages($pageUid)
     {
         if ($this->settings['displayLevelxAllTypes']) {
-            $menu = array();
-            $res = $this->getDatabaseConnection()->exec_SELECTquery('title,uid', 'pages', 'pid=' . (int)$pageUid . $GLOBALS['TSFE']->cObj->enableFields('pages'), '', 'sorting');
-            while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+            $menu = [];
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            $result = $queryBuilder
+                ->select('uid', 'title')
+                ->from('pages')
+                ->where($queryBuilder->expr()->eq('pid', (int)$pageUid))
+                ->orderBy('sorting')
+                ->execute();
+
+            while ($row = $result->fetch()) {
                 $menu[$row['uid']] = $GLOBALS['TSFE']->sys_page->getPageOverlay($row);
             }
-            $this->getDatabaseConnection()->sql_free_result($res);
         } else {
             $menu = $GLOBALS['TSFE']->sys_page->getMenu($pageUid);
         }
@@ -1313,14 +1354,14 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     {
         $identStr = $id . '|' . $pathMP;
         if (!isset($this->pathCache[$identStr])) {
-            $this->requiredFrontendUsergroups[$id] = array();
-            $this->domainRecords[$id] = array();
+            $this->requiredFrontendUsergroups[$id] = [];
+            $this->domainRecords[$id] = [];
             $rl = $GLOBALS['TSFE']->sys_page->getRootLine($id, $pathMP);
             $path = '';
             $pageCount = count($rl);
             if (is_array($rl) && !empty($rl)) {
                 $breadcrumbWrap = isset($this->settings['breadcrumbWrap']) ? $this->settings['breadcrumbWrap'] : '/';
-                $breadcrumbWraps = $GLOBALS['TSFE']->tmpl->splitConfArray(array('wrap' => $breadcrumbWrap), $pageCount);
+                $breadcrumbWraps = $GLOBALS['TSFE']->tmpl->splitConfArray(['wrap' => $breadcrumbWrap], $pageCount);
                 foreach ($rl as $k => $v) {
                     // Check fe_user
                     if ($v['fe_group'] && ($v['uid'] == $id || $v['extendToSubpages'])) {
@@ -1357,8 +1398,17 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getFirstSysDomainRecordForPage($id)
     {
-        $res = $this->getDatabaseConnection()->exec_SELECTquery('domainName', 'sys_domain', 'pid=' . (int)$id . $GLOBALS['TSFE']->cObj->enableFields('sys_domain'), '', 'sorting');
-        $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_domain');
+        $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+        $row = $queryBuilder
+            ->select('domainName')
+            ->from('sys_domain')
+            ->where($queryBuilder->expr()->eq('pid', (int)$id))
+            ->orderBy('sorting')
+            ->setMaxResults(1)
+            ->execute()
+            ->fetch();
+
         return rtrim($row['domainName'], '/');
     }
 
@@ -1413,22 +1463,12 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     }
 
     /**
-     * Getter for database connection
-     *
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
-    }
-
-    /**
      * Load settings and apply stdWrap to them
      */
     protected function loadSettings()
     {
         if (!is_array($this->settings['results.'])) {
-            $this->settings['results.'] = array();
+            $this->settings['results.'] = [];
         }
         $typoScriptArray = $this->typoScriptService->convertPlainArrayToTypoScriptArray($this->settings['results']);
 
@@ -1460,5 +1500,23 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             10, 400, 60
         );
         $this->settings['results.']['hrefInSummaryCropSignifier'] = $GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['hrefInSummaryCropSignifier'], $typoScriptArray['hrefInSummaryCropSignifier.']);
+    }
+
+    /**
+     * Set the search word
+     * @param string $sword
+     */
+    public function setSword($sword)
+    {
+        $this->sword = $sword;
+    }
+
+    /**
+     * Returns the search word
+     * @return string
+     */
+    public function getSword()
+    {
+        return $this->sword;
     }
 }

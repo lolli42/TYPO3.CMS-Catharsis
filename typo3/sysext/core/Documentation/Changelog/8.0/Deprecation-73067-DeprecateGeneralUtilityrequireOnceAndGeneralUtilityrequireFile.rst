@@ -1,15 +1,20 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================================================
 Deprecation: #73067 - Deprecate GeneralUtility::requireOnce and  GeneralUtility::requireFile
 ============================================================================================
 
+See :issue:`73067`
+
 Description
 ===========
 
-The following methods from ``TYPO3\CMS\Core\Utility\GeneralUtility`` have been
+The following methods from `TYPO3\CMS\Core\Utility\GeneralUtility` have been
 marked as deprecated.
 
-``GeneralUtility::requireOnce()``
-``GeneralUtility::requireFile()``
+`GeneralUtility::requireOnce()`
+`GeneralUtility::requireFile()`
 
 
 Impact
@@ -29,4 +34,4 @@ Migration
 
 Use native require_once if needed, e.g. if autoloading does not work.
 
-.. index:: php
+.. index:: PHP-API

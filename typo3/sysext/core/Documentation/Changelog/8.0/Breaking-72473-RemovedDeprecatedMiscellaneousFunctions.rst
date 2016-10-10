@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Breaking: #72473 - Removed deprecated miscellaneous functions
 =============================================================
+
+See :issue:`72473`
 
 Description
 ===========
@@ -9,25 +14,25 @@ Removed deprecated miscellaneous functions
 
 The following methods have been removed:
 
-``FlexFormTools::getAvailableLanguages``
-``AbstractPlugin::pi_list_searchBox``
-``ImportExportController::printContent``
-``SearchFormController::checkExistance``
-``SearchFormController::checkExistence``
-``SchedulerModuleController::render``
-``SchedulerModuleController::checkDate``
-``SetupModuleController::printContent``
-``TypoScriptTemplateModuleController::printContent``
-``VersionModuleController::printContent``
+`FlexFormTools::getAvailableLanguages`
+`AbstractPlugin::pi_list_searchBox`
+`ImportExportController::printContent`
+`SearchFormController::checkExistance`
+`SearchFormController::checkExistence`
+`SchedulerModuleController::render`
+`SchedulerModuleController::checkDate`
+`SetupModuleController::printContent`
+`TypoScriptTemplateModuleController::printContent`
+`VersionModuleController::printContent`
 
-Last parameter ``addTofeInterface`` for ``ExtensionManagementUtility::addTCAcolumns`` has been removed.
+Last parameter `addTofeInterface` for `ExtensionManagementUtility::addTCAcolumns` has been removed.
 
 The following options in the Install Tool have been removed:
 
-``FE\strictFormmail``
-``FE\secureFormmail``
-``FE\formmailMaxAttachmentSize``
-``SC_OPTIONS\GLOBAL\softRefParser_GL'``
+`FE\strictFormmail`
+`FE\secureFormmail`
+`FE\formmailMaxAttachmentSize`
+`SC_OPTIONS\GLOBAL\softRefParser_GL'`
 
 
 Impact
@@ -43,4 +48,4 @@ Affected Installations
 
 Instances which use one of the methods above or use one of the removed Install Tool options.
 
-.. index:: php
+.. index:: PHP-API

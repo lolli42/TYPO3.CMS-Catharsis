@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================================================================================================================
 Feature: #74319 - check default database character set during Installation and provide Update wizard for fixing default character set other than utf-8
 ======================================================================================================================================================
+
+See :issue:`74319`
 
 Description
 ===========
@@ -25,3 +30,5 @@ If it is not utf-8 the installation will not proceed and the user is notified of
 For existing installations the install tool also provides an environment check and an
 upgrade wizard which changes the default database character set. The update wizard
 will NOT convert any existing tables though!
+
+.. index:: Backend

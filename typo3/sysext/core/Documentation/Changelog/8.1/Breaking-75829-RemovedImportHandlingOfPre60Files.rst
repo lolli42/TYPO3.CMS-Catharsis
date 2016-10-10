@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================================
 Breaking: #75829 - Removed handling of pre 6.0 files when importing
 ===================================================================
+
+See :issue:`75829`
 
 Description
 ===========
@@ -31,3 +36,5 @@ Migration
 
 It is recommended to import files in a 6.x or 7.x installation and export the files from there again to import them
 in TYPO3 v8.
+
+.. index:: PHP-API, Backend

@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Form\View\Wizard\Element;
  */
 
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
@@ -110,7 +109,7 @@ class FormWizardElement extends AbstractFormElement
         $itemName = $parameterArray['itemFormElName'];
         // Resolving script filename and setting URL.
 
-        $params = array();
+        $params = [];
         $params['fieldConfig'] = $parameterArray['fieldConf'];
         $params['table'] = $table;
         $params['uid'] = $row['uid'];
@@ -121,7 +120,7 @@ class FormWizardElement extends AbstractFormElement
         $params['itemName'] = $itemName;
         $params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
 
-        return GeneralUtility::implodeArrayForUrl('', array('P' => $params));
+        return GeneralUtility::implodeArrayForUrl('', ['P' => $params]);
     }
 
     /**
@@ -157,18 +156,11 @@ class FormWizardElement extends AbstractFormElement
     }
 
     /**
-     * @see \TYPO3\CMS\Form\View\Wizard\WizardView::loadCss
+     * Load the wizards css
      */
     protected function resultAddWizardCss()
     {
-        $cssFiles = array(
-            'form.css'
-        );
-        $baseUrl = ExtensionManagementUtility::extRelPath('form') . 'Resources/Public/Css/';
-        // Load the wizards css
-        foreach ($cssFiles as $cssFile) {
-            $this->resultArray['stylesheetFiles'][] = $baseUrl . $cssFile;
-        }
+        $this->resultArray['stylesheetFiles'][] = 'EXT:form/Resources/Public/Css/form.css';
     }
 
     /**
@@ -201,12 +193,12 @@ class FormWizardElement extends AbstractFormElement
         $this->resultArray['additionalInlineLanguageLabelFiles'] += $this->getLocalization();
         $settings = $this->getPlainPageWizardModTsConfigSettingsProperties();
         $settingsCommand = $this->resultAddWizardSettingsJson($settings);
-        $this->resultArray['requireJsModules'][] = array(
+        $this->resultArray['requireJsModules'][] = [
             'TYPO3/CMS/Form/Wizard' => "function(){\n"
                 //. "\t" . 'console.log(this, arguments);' . "\n"
                 . "\t" . $settingsCommand . "\n"
                 . '}'
-        );
+        ];
         $attributes = [];
         $attributes['id'] = StringUtility::getUniqueId('formengine-form-wizard-');
         /**

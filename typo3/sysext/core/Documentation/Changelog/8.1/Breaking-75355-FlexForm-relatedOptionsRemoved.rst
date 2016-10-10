@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================
 Breaking: #75355 - FlexForm-related options removed
 ===================================================
+
+See :issue:`75355`
 
 Description
 ===========
@@ -31,4 +36,4 @@ Any installation having these properties set in their LocalConfiguration.php.
 
 Any extension evaluating these parameters on its own.
 
-.. index:: flexform
+.. index:: LocalConfiguration, Backend, FlexForm

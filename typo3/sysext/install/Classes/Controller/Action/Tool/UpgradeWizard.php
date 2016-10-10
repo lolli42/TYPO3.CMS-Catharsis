@@ -14,6 +14,9 @@ namespace TYPO3\CMS\Install\Controller\Action\Tool;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Cache\DatabaseSchemaService;
+use TYPO3\CMS\Core\Database\Schema\SchemaMigrator;
+use TYPO3\CMS\Core\Database\Schema\SqlReader;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Install\Controller\Action;
@@ -49,14 +52,14 @@ class UpgradeWizard extends Action\AbstractAction
         $databaseCharsetUpdateObject = $this->getUpdateObjectInstance(\TYPO3\CMS\Install\Updates\DatabaseCharsetUpdate::class, 'databaseCharsetUpdate');
         if ($databaseCharsetUpdateObject->shouldRenderWizard()) {
             $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'] = array_merge(
-                array('databaseCharsetUpdate' => \TYPO3\CMS\Install\Updates\DatabaseCharsetUpdate::class),
+                ['databaseCharsetUpdate' => \TYPO3\CMS\Install\Updates\DatabaseCharsetUpdate::class],
                 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update']
             );
         }
         $initialUpdateDatabaseSchemaUpdateObject = $this->getUpdateObjectInstance(\TYPO3\CMS\Install\Updates\InitialDatabaseSchemaUpdate::class, 'initialUpdateDatabaseSchema');
         if ($initialUpdateDatabaseSchemaUpdateObject->shouldRenderWizard()) {
             $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'] = array_merge(
-                array('initialUpdateDatabaseSchema' => \TYPO3\CMS\Install\Updates\InitialDatabaseSchemaUpdate::class),
+                ['initialUpdateDatabaseSchema' => \TYPO3\CMS\Install\Updates\InitialDatabaseSchemaUpdate::class],
                 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update']
             );
             $this->needsInitialUpdateDatabaseSchema = true;
@@ -71,7 +74,7 @@ class UpgradeWizard extends Action\AbstractAction
         // Perform silent cache framework table upgrade
         $this->silentCacheFrameworkTableSchemaMigration();
 
-        $actionMessages = array();
+        $actionMessages = [];
 
         if (isset($this->postValues['set']['getUserInput'])) {
             $actionMessages[] = $this->getUserInputForUpdate();
@@ -103,19 +106,19 @@ class UpgradeWizard extends Action\AbstractAction
             return $message;
         }
 
-        $availableUpdates = array();
+        $availableUpdates = [];
         foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'] as $identifier => $className) {
             $updateObject = $this->getUpdateObjectInstance($className, $identifier);
             if ($updateObject->shouldRenderWizard()) {
                 // $explanation is changed by reference in Update objects!
                 $explanation = '';
                 $updateObject->checkForUpdate($explanation);
-                $availableUpdates[$identifier] = array(
+                $availableUpdates[$identifier] = [
                     'identifier' => $identifier,
                     'title' => $updateObject->getTitle(),
                     'explanation' => $explanation,
                     'renderNext' => false,
-                );
+                ];
                 if ($identifier === 'initialUpdateDatabaseSchema') {
                     $availableUpdates['initialUpdateDatabaseSchema']['renderNext'] = $this->needsInitialUpdateDatabaseSchema;
                     // initialUpdateDatabaseSchema is always the first update
@@ -167,11 +170,11 @@ class UpgradeWizard extends Action\AbstractAction
             $wizardHtml = $updateObject->getUserInput('install[values][' . $wizardIdentifier . ']');
         }
 
-        $updateData = array(
+        $updateData = [
             'identifier' => $wizardIdentifier,
             'title' => $updateObject->getTitle(),
             'wizardHtml' => $wizardHtml,
-        );
+        ];
 
         $this->view->assign('updateData', $updateData);
 
@@ -195,10 +198,10 @@ class UpgradeWizard extends Action\AbstractAction
         $className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$wizardIdentifier];
         $updateObject = $this->getUpdateObjectInstance($className, $wizardIdentifier);
 
-        $wizardData = array(
+        $wizardData = [
             'identifier' => $wizardIdentifier,
             'title' => $updateObject->getTitle(),
-        );
+        ];
 
         // $wizardInputErrorMessage is given as reference to wizard object!
         $wizardInputErrorMessage = '';
@@ -218,7 +221,7 @@ class UpgradeWizard extends Action\AbstractAction
 
             // Both variables are used by reference in performUpdate()
             $customOutput = '';
-            $databaseQueries = array();
+            $databaseQueries = [];
             $performResult = $updateObject->performUpdate($databaseQueries, $customOutput);
 
             if ($performResult) {
@@ -302,29 +305,25 @@ class UpgradeWizard extends Action\AbstractAction
      *
      * @TODO: See also the other remarks on this topic in the abstract class, this whole area needs improvements
      * @return void
+     * @throws \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException
+     * @throws \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException
+     * @throws \TYPO3\CMS\Core\Database\Schema\Exception\UnexpectedSignalReturnValueTypeException
+     * @throws \TYPO3\CMS\Core\Database\Schema\Exception\StatementException
+     * @throws \RuntimeException
+     * @throws \Doctrine\DBAL\Schema\SchemaException
+     * @throws \InvalidArgumentException
+     * @throws \Doctrine\DBAL\DBALException
      */
     protected function silentCacheFrameworkTableSchemaMigration()
     {
-        /** @var $sqlHandler \TYPO3\CMS\Install\Service\SqlSchemaMigrationService */
-        $sqlHandler = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService::class);
+        $sqlReader = GeneralUtility::makeInstance(SqlReader::class);
+        $cachingFrameworkDatabaseSchemaService = GeneralUtility::makeInstance(DatabaseSchemaService::class);
+        $createTableStatements = $sqlReader->getStatementArray(
+            $cachingFrameworkDatabaseSchemaService->getCachingFrameworkRequiredDatabaseSchema()
+        );
 
-        /** @var \TYPO3\CMS\Core\Cache\DatabaseSchemaService $cachingFrameworkDatabaseSchemaService */
-        $cachingFrameworkDatabaseSchemaService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\DatabaseSchemaService::class);
-        $expectedSchemaString = $cachingFrameworkDatabaseSchemaService->getCachingFrameworkRequiredDatabaseSchema();
-        $cleanedExpectedSchemaString = implode(LF, $sqlHandler->getStatementArray($expectedSchemaString, true, '^CREATE TABLE '));
-        $neededTableDefinition = $sqlHandler->getFieldDefinitions_fileContent($cleanedExpectedSchemaString);
-        $currentTableDefinition = $sqlHandler->getFieldDefinitions_database();
-        $updateTableDefinition = $sqlHandler->getDatabaseExtra($neededTableDefinition, $currentTableDefinition);
-        $updateStatements = $sqlHandler->getUpdateSuggestions($updateTableDefinition);
-        if (isset($updateStatements['create_table']) && !empty($updateStatements['create_table'])) {
-            $sqlHandler->performUpdateQueries($updateStatements['create_table'], $updateStatements['create_table']);
-        }
-        if (isset($updateStatements['add']) && !empty($updateStatements['add'])) {
-            $sqlHandler->performUpdateQueries($updateStatements['add'], $updateStatements['add']);
-        }
-        if (isset($updateStatements['change']) && !empty($updateStatements['change'])) {
-            $sqlHandler->performUpdateQueries($updateStatements['change'], $updateStatements['change']);
-        }
+        $schemaMigrationService = GeneralUtility::makeInstance(SchemaMigrator::class);
+        $schemaMigrationService->install($createTableStatements);
     }
 
     /**

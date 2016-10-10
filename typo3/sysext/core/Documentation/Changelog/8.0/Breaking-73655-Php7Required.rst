@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================
 Breaking: #73655 - PHP 7 required
 =================================
+
+See :issue:`73655`
 
 Description
 ===========
@@ -14,4 +19,4 @@ Migration
 
 Upgrade to at least PHP 7.0.0.
 
-.. index:: system requirement
+.. index:: PHP-API

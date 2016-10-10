@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Backend\Tree\Renderer;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider;
 
 /**
  * Renderer for unordered lists
@@ -53,13 +54,29 @@ class ExtJsJsonTreeRenderer extends \TYPO3\CMS\Backend\Tree\Renderer\AbstractTre
      */
     protected function getNodeArray(\TYPO3\CMS\Backend\Tree\TreeRepresentationNode $node)
     {
-        $nodeArray = array(
-            'iconTag' => $node->getIcon(),
+        $overlayIconMarkup  = '';
+        if (is_object($node->getIcon())) {
+            $iconMarkup = $node->getIcon()->getMarkup(SvgIconProvider::MARKUP_IDENTIFIER_INLINE);
+            if (is_object($node->getIcon()->getOverlayIcon())) {
+                $overlayIconMarkup = $node->getIcon()->getOverlayIcon()->getMarkup(SvgIconProvider::MARKUP_IDENTIFIER_INLINE);
+            }
+        } else {
+            $iconMarkup = $node->getIcon();
+        }
+        $nodeArray = [
+            'iconTag' => $iconMarkup,
             'text' => htmlspecialchars($node->getLabel()),
             'leaf' => !$node->hasChildNodes(),
             'id' => htmlspecialchars($node->getId()),
-            'uid' => htmlspecialchars($node->getId())
-        );
+            'uid' => htmlspecialchars($node->getId()),
+
+            //svgtree
+            'icon' => $iconMarkup,
+            'overlayIcon' => $overlayIconMarkup,
+            'identifier' => htmlspecialchars($node->getId()),
+            //no need for htmlspecialhars here as d3 is using 'textContent' property of the HTML DOM node
+            'name' => $node->getLabel(),
+        ];
 
         return $nodeArray;
     }

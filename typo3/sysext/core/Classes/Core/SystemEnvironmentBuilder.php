@@ -44,13 +44,13 @@ class SystemEnvironmentBuilder
      *         and GeneralUtility is not available yet.
      * @var array
      */
-    protected static $supportedCgiServerApis = array(
+    protected static $supportedCgiServerApis = [
         'fpm-fcgi',
         'cgi',
         'isapi',
         'cgi-fcgi',
         'srv', // HHVM with fastcgi
-    );
+    ];
 
     /**
      * An array of disabled methods
@@ -85,8 +85,8 @@ class SystemEnvironmentBuilder
     protected static function defineBaseConstants()
     {
         // This version, branch and copyright
-        define('TYPO3_version', '8.3.0-dev');
-        define('TYPO3_branch', '8.3');
+        define('TYPO3_version', '8.4.0-dev');
+        define('TYPO3_branch', '8.4');
         define('TYPO3_copyright_year', '1998-2016');
 
         // TYPO3 external links
@@ -202,9 +202,9 @@ class SystemEnvironmentBuilder
     {
         // Unset variable(s) in global scope (security issue #13959)
         unset($GLOBALS['error']);
-        $GLOBALS['TYPO3_MISC'] = array();
-        $GLOBALS['T3_VAR'] = array();
-        $GLOBALS['T3_SERVICES'] = array();
+        $GLOBALS['TYPO3_MISC'] = [];
+        $GLOBALS['T3_VAR'] = [];
+        $GLOBALS['T3_SERVICES'] = [];
     }
 
     /**
@@ -404,7 +404,7 @@ class SystemEnvironmentBuilder
     {
         $headers = [
             \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_500,
-            'Content-type: text/plain'
+            'Content-Type: text/plain'
         ];
         if (!headers_sent()) {
             foreach ($headers as $header) {

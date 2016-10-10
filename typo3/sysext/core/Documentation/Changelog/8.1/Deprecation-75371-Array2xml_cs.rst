@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================
 Deprecation: #75371 - array2xml_cs
 ==================================
+
+See :issue:`75371`
 
 Description
 ===========
@@ -33,3 +38,5 @@ Example code:
 
    // Migrated
    $bodyText = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>' . LF . GeneralUtility::array2xml($array, '', 0, 'phparray');
+
+.. index:: PHP-API

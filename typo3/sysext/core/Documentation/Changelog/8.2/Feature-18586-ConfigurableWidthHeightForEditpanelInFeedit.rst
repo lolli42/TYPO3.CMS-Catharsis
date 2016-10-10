@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================================
 Feature: #18586 - Configurable width & height for editpanel in feedit
 =====================================================================
+
+See :issue:`18586`
 
 Description
 ===========
@@ -12,3 +17,5 @@ of EXT:feedit by using User TsConfig:
 
 	options.feedit.popupHeight = 700
 	options.feedit.popupWidth = 900
+
+.. index:: TSConfig

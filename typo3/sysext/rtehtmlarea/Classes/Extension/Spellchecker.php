@@ -43,16 +43,16 @@ class Spellchecker extends RteHtmlAreaApi
      *
      * @var array
      */
-    protected $convertToolbarForHtmlAreaArray = array(
+    protected $convertToolbarForHtmlAreaArray = [
         'spellcheck' => 'SpellCheck'
-    );
+    ];
 
     /**
      * Spell checker modes
      *
      * @var array
      */
-    protected $spellCheckerModes = array('ultra', 'fast', 'normal', 'bad-spellers');
+    protected $spellCheckerModes = ['ultra', 'fast', 'normal', 'bad-spellers'];
 
     /**
      * Returns TRUE if the plugin is available and correctly initialized
@@ -77,7 +77,7 @@ class Spellchecker extends RteHtmlAreaApi
      */
     public function buildJavascriptConfiguration()
     {
-        $jsArray = array();
+        $jsArray = [];
         $button = 'spellcheck';
         // Set the SpellChecker mode
         $spellCheckerMode = isset($GLOBALS['BE_USER']->userTS['options.']['HTMLAreaPspellMode']) ? trim($GLOBALS['BE_USER']->userTS['options.']['HTMLAreaPspellMode']) : 'normal';
@@ -95,14 +95,10 @@ class Spellchecker extends RteHtmlAreaApi
             $jsArray[] = 'RTEarea[editornumber].buttons.' . $button . '.spellCheckerMode = "' . $spellCheckerMode . '";';
             $jsArray[] = 'RTEarea[editornumber].buttons.' . $button . '.enablePersonalDicts = ' . ($enablePersonalDicts ? 'true' : 'false') . ';';
 
-            // Get the eID script or the AJAX path
-            if ($this->isFrontend() || $this->isFrontendEditActive()) {
-                $path = ($GLOBALS['TSFE']->absRefPrefix ?: '') . 'index.php?eID=rtehtmlarea_spellchecker';
-            } else {
-                /** @var UriBuilder $uriBuilder */
-                $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-                $path = $uriBuilder->buildUriFromRoute('ajax_rtehtmlarea_spellchecker');
-            }
+            // Get the AJAX path (calling the Backend AJAX)
+            /** @var UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+            $path = $uriBuilder->buildUriFromRoute('ajax_rtehtmlarea_spellchecker');
             $jsArray[] = 'RTEarea[editornumber].buttons.' . $button . '.path = "' . $path . '";';
         }
         return implode(LF, $jsArray);

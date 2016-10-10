@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================
 Breaking: #75357 - $TYPO3_CONF_VARS[BE][lockSSL] option is boolean
 ==================================================================
 
+See :issue:`75357`
+
 Description
 ===========
 
-The setting ``$TYPO3_CONF_VARS[BE][lockSSL]`` which forces requests to the TYPO3 Backend to be transferred
+The setting `$TYPO3_CONF_VARS[BE][lockSSL]` which forces requests to the TYPO3 Backend to be transferred
 via SSL, has been changed to only allow boolean values.
 
 The settings previously allowed three options:
@@ -30,4 +35,4 @@ Affected Installations
 
 TYPO3 instances having the option above set to "1".
 
-.. index:: setting
+.. index:: LocalConfiguration, Backend

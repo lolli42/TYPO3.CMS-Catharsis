@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare(strict_types=1);
 namespace TYPO3\CMS\Core\Tests\Unit\Database\Query;
 
 /*
@@ -260,6 +260,7 @@ class ExpressionBuilderTest extends UnitTestCase
         $databasePlatform->getName()->willReturn('postgresql');
 
         $this->connectionProphet->quote(',', Argument::cetera())->shouldBeCalled()->willReturn("','");
+        $this->connectionProphet->quote('\'1\'', Argument::cetera())->shouldBeCalled()->willReturn("'1'");
         $this->connectionProphet->quoteIdentifier(Argument::cetera())->will(function ($args) {
             return '"' . $args[0] . '"';
         });
@@ -268,7 +269,86 @@ class ExpressionBuilderTest extends UnitTestCase
 
         $result = $this->subject->inSet('aField', "'1'");
 
-        $this->assertSame('any(string_to_array("aField", \',\')) = \'1\'', $result);
+        $this->assertSame('\'1\' = ANY(string_to_array("aField"::text, \',\'))', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function inSetForSQLite()
+    {
+        $databasePlatform = $this->prophesize(MockPlatform::class);
+        $databasePlatform->getName()->willReturn('sqlite');
+        $databasePlatform->getStringLiteralQuoteCharacter()->willReturn("'");
+
+        $this->connectionProphet->quote(',', Argument::cetera())->shouldBeCalled()->willReturn("','");
+        $this->connectionProphet->quote('%,1,%', Argument::cetera())->shouldBeCalled()->willReturn("'%,1,%'");
+        $this->connectionProphet->quoteIdentifier(Argument::cetera())->will(function ($args) {
+            return '"' . $args[0] . '"';
+        });
+
+        $this->connectionProphet->getDatabasePlatform()->willReturn($databasePlatform->reveal());
+
+        $result = $this->subject->inSet('aField', "'1'");
+
+        $this->assertSame('\',\'||"aField"||\',\' LIKE \'%,1,%\'', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function inSetForSQLiteWithQuoteCharactersInValue()
+    {
+        $databasePlatform = $this->prophesize(MockPlatform::class);
+        $databasePlatform->getName()->willReturn('sqlite');
+        $databasePlatform->getStringLiteralQuoteCharacter()->willReturn("'");
+
+        $this->connectionProphet->quote(',', Argument::cetera())->shouldBeCalled()->willReturn("','");
+        $this->connectionProphet->quote('%,\'Some\'Value,%', Argument::cetera())->shouldBeCalled()
+            ->willReturn("'%,''Some''Value,%'");
+        $this->connectionProphet->quoteIdentifier(Argument::cetera())->will(function ($args) {
+            return '"' . $args[0] . '"';
+        });
+
+        $this->connectionProphet->getDatabasePlatform()->willReturn($databasePlatform->reveal());
+
+        $result = $this->subject->inSet('aField', "'''Some''Value'");
+
+        $this->assertSame('\',\'||"aField"||\',\' LIKE \'%,\'\'Some\'\'Value,%\'', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function inSetForSQLiteThrowsExceptionOnPositionalPlaceholder()
+    {
+        $databasePlatform = $this->prophesize(MockPlatform::class);
+        $databasePlatform->getName()->willReturn('sqlite');
+        $databasePlatform->getStringLiteralQuoteCharacter()->willReturn("'");
+
+        $this->connectionProphet->getDatabasePlatform()->willReturn($databasePlatform->reveal());
+
+        $this->expectException('InvalidArgumentException');
+        $this->expectExceptionCode(1476029421);
+
+        $this->subject->inSet('aField', '?');
+    }
+
+    /**
+     * @test
+     */
+    public function inSetForSQLiteThrowsExceptionOnNamedPlaceholder()
+    {
+        $databasePlatform = $this->prophesize(MockPlatform::class);
+        $databasePlatform->getName()->willReturn('sqlite');
+        $databasePlatform->getStringLiteralQuoteCharacter()->willReturn("'");
+
+        $this->connectionProphet->getDatabasePlatform()->willReturn($databasePlatform->reveal());
+
+        $this->expectException('InvalidArgumentException');
+        $this->expectExceptionCode(1476029421);
+
+        $this->subject->inSet('aField', ':dcValue1');
     }
 
     /**

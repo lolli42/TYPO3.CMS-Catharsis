@@ -51,6 +51,7 @@ class SqlExpectedSchemaService
         // Remove comments
         $cleanedExpectedSchemaString = implode(LF, $schemaMigrationService->getStatementArray($expectedSchemaString, true, '^CREATE TABLE '));
         $expectedSchema = $schemaMigrationService->getFieldDefinitions_fileContent($cleanedExpectedSchemaString);
+
         return $expectedSchema;
     }
 
@@ -62,7 +63,7 @@ class SqlExpectedSchemaService
      */
     public function getTablesDefinitionString($withStatic = false)
     {
-        $sqlString = array();
+        $sqlString = [];
 
         // Find all ext_tables.sql of loaded extensions
         $loadedExtensionInformation = $GLOBALS['TYPO3_LOADED_EXT'];
@@ -91,7 +92,7 @@ class SqlExpectedSchemaService
      */
     protected function emitTablesDefinitionIsBeingBuiltSignal(array $sqlString)
     {
-        $signalReturn = $this->signalSlotDispatcher->dispatch(__CLASS__, 'tablesDefinitionIsBeingBuilt', array($sqlString));
+        $signalReturn = $this->signalSlotDispatcher->dispatch(__CLASS__, 'tablesDefinitionIsBeingBuilt', [$sqlString]);
         // This is important to support old associated returns
         $signalReturn = array_values($signalReturn);
         $sqlString = $signalReturn[0];

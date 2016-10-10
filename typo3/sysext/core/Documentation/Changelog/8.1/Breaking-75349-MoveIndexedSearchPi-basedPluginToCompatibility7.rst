@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ========================================================================
 Breaking: #75349 - Move Indexed Search pi-based plugin to compatibility7
 ========================================================================
+
+See :issue:`75349`
 
 Description
 ===========
@@ -26,4 +31,4 @@ Migration
 
 Installations using pi1 should migrate to the Extbase plugin or install EXT:compatibility7.
 
-.. index:: php
+.. index:: PHP-API

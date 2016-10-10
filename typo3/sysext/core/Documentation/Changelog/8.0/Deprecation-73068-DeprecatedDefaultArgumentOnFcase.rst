@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Deprecation: #73068 - Deprecated "default" argument on f:case
 =============================================================
+
+See :issue:`73068`
 
 Description
 ===========
@@ -35,6 +40,6 @@ Any TYPO3 site which uses f:case with argument "default" regardless of the argum
 Migration
 =========
 
-Switch ``f:case`` to ``f:defaultCase`` for the case node that is your default case.
+Switch `f:case` to `f:defaultCase` for the case node that is your default case.
 
-.. index:: fluid
+.. index:: Fluid

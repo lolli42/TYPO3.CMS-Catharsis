@@ -14,8 +14,6 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Cache\CacheManager;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -33,7 +31,7 @@ class TypoScriptFrontendControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCas
     protected function setUp()
     {
         GeneralUtility::flushInternalRuntimeCaches();
-        $this->subject = $this->getAccessibleMock(TypoScriptFrontendController::class, array('dummy'), array(), '', false);
+        $this->subject = $this->getAccessibleMock(TypoScriptFrontendController::class, ['dummy'], [], '', false);
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] = '170928423746123078941623042360abceb12341234231';
 
         $pageRepository = $this->getMockBuilder(PageRepository::class)->getMock();
@@ -74,14 +72,14 @@ class TypoScriptFrontendControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCas
     {
         /** @var \PHPUnit_Framework_MockObject_MockObject|TypoScriptFrontendController $tsfe */
         $tsfe = $this->getMockBuilder(TypoScriptFrontendController::class)
-            ->setMethods(array(
+            ->setMethods([
                 'INTincScript_process',
                 'INTincScript_loadJSCode',
                 'setAbsRefPrefix',
                 'regeneratePageTitle'
-            ))->disableOriginalConstructor()
+            ])->disableOriginalConstructor()
             ->getMock();
-        $tsfe->expects($this->exactly(2))->method('INTincScript_process')->will($this->returnCallback(array($this, 'INTincScript_processCallback')));
+        $tsfe->expects($this->exactly(2))->method('INTincScript_process')->will($this->returnCallback([$this, 'INTincScript_processCallback']));
         $tsfe->content = file_get_contents(__DIR__ . '/Fixtures/renderedPage.html');
         $config = [
             'INTincScript_ext' => [
@@ -118,95 +116,17 @@ class TypoScriptFrontendControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCas
      */
     public function getSysDomainCacheDataProvider()
     {
-        return array(
-            'typo3.org' => array(
+        return [
+            'typo3.org' => [
                 'typo3.org',
-            ),
-            'foo.bar' => array(
+            ],
+            'foo.bar' => [
                 'foo.bar',
-            ),
-            'example.com' => array(
+            ],
+            'example.com' => [
                 'example.com',
-            ),
-        );
-    }
-
-    /**
-     * @param string $currentDomain
-     * @test
-     * @dataProvider getSysDomainCacheDataProvider
-     */
-    public function getSysDomainCacheReturnsCurrentDomainRecord($currentDomain)
-    {
-        $_SERVER['HTTP_HOST'] = $currentDomain;
-        $domainRecords = array(
-            'typo3.org' => array(
-                'uid' => '1',
-                'pid' => '1',
-                'domainName' => 'typo3.org',
-                'forced' => 0,
-            ),
-            'foo.bar' => array(
-                'uid' => '2',
-                'pid' => '1',
-                'domainName' => 'foo.bar',
-                'forced' => 0,
-            ),
-            'example.com' => array(
-                'uid' => '3',
-                'pid' => '1',
-                'domainName' => 'example.com',
-                'forced' => 0,
-            ),
-        );
-        $GLOBALS['TYPO3_DB'] = $this->getMockBuilder(DatabaseConnection::class)
-            ->setMethods(array('exec_SELECTgetRows'))
-            ->getMock();
-        $GLOBALS['TYPO3_DB']->expects($this->any())->method('exec_SELECTgetRows')->willReturn($domainRecords);
-        GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_runtime')->flush();
-        $expectedResult = array(
-            $domainRecords[$currentDomain]['pid'] => $domainRecords[$currentDomain],
-        );
-        $this->assertEquals($expectedResult, $this->subject->_call('getSysDomainCache'));
-    }
-
-    /**
-     * @param string $currentDomain
-     * @test
-     * @dataProvider getSysDomainCacheDataProvider
-     */
-    public function getSysDomainCacheReturnsForcedDomainRecord($currentDomain)
-    {
-        $_SERVER['HTTP_HOST'] = $currentDomain;
-        $domainRecords = array(
-            'typo3.org' => array(
-                'uid' => '1',
-                'pid' => '1',
-                'domainName' => 'typo3.org',
-                'forced' => 0,
-            ),
-            'foo.bar' => array(
-                'uid' => '2',
-                'pid' => '1',
-                'domainName' => 'foo.bar',
-                'forced' => 1,
-            ),
-            'example.com' => array(
-                'uid' => '3',
-                'pid' => '1',
-                'domainName' => 'example.com',
-                'forced' => 0,
-            ),
-        );
-        $GLOBALS['TYPO3_DB'] = $this->getMockBuilder(DatabaseConnection::class)
-            ->setMethods(array('exec_SELECTgetRows'))
-            ->getMock();
-        $GLOBALS['TYPO3_DB']->expects($this->any())->method('exec_SELECTgetRows')->willReturn($domainRecords);
-        GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_runtime')->flush();
-        $expectedResult = array(
-            $domainRecords[$currentDomain]['pid'] => $domainRecords['foo.bar'],
-        );
-        $this->assertEquals($expectedResult, $this->subject->_call('getSysDomainCache'));
+            ],
+        ];
     }
 
     /**
@@ -218,38 +138,38 @@ class TypoScriptFrontendControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCas
      */
     public function domainNameMatchesCurrentRequestDataProvider()
     {
-        return array(
-            'same domains' => array(
+        return [
+            'same domains' => [
                 'typo3.org',
                 'typo3.org',
                 '/index.php',
                 true,
-            ),
-            'same domains with subdomain' => array(
+            ],
+            'same domains with subdomain' => [
                 'www.typo3.org',
                 'www.typo3.org',
                 '/index.php',
                 true,
-            ),
-            'different domains' => array(
+            ],
+            'different domains' => [
                 'foo.bar',
                 'typo3.org',
                 '/index.php',
                 false,
-            ),
-            'domain record with script name' => array(
+            ],
+            'domain record with script name' => [
                 'typo3.org',
                 'typo3.org/foo/bar',
                 '/foo/bar/index.php',
                 true,
-            ),
-            'domain record with wrong script name' => array(
+            ],
+            'domain record with wrong script name' => [
                 'typo3.org',
                 'typo3.org/foo/bar',
                 '/bar/foo/index.php',
                 false,
-            ),
-        );
+            ],
+        ];
     }
 
     /**

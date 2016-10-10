@@ -97,7 +97,7 @@ class DataHandlerHook
      */
     protected function flushWorkspaceElements($workspaceId)
     {
-        $command = array();
+        $command = [];
         foreach ($this->getTcaTables() as $tcaTable) {
             if (BackendUtility::isTableWorkspaceEnabled($tcaTable)) {
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -105,7 +105,7 @@ class DataHandlerHook
                 $queryBuilder->getRestrictions()
                     ->removeAll()
                     ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-                    ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+                    ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class, $workspaceId, false));
 
                 $result = $queryBuilder
                     ->select('uid')
@@ -120,7 +120,7 @@ class DataHandlerHook
         }
         if (!empty($command)) {
             $tceMain = $this->getTceMain();
-            $tceMain->start(array(), $command);
+            $tceMain->start([], $command);
             $tceMain->process_cmdmap();
         }
     }

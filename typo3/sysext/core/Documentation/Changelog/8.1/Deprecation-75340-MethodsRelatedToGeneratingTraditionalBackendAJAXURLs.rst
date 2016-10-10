@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================================
 Deprecation: #75340 - Methods related to generating traditional Backend AJAX URLs
 =================================================================================
+
+See :issue:`75340`
 
 Description
 ===========
@@ -36,3 +41,5 @@ and can be linked to like this:
 	$path = $uriBuilder->buildUriFromRoute('ajax_myroute');
 
 Keep in mind that the newly created Ajax routes need to implement PSR-7 as well.
+
+.. index:: PHP-API, Backend

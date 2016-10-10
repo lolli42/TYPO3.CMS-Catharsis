@@ -83,7 +83,7 @@ class SetupCheck
     protected function checkDownloadsPossible()
     {
         $allowUrlFopen = (bool)ini_get('allow_url_fopen');
-        $curlEnabled = !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlUse']);
+        $curlEnabled = function_exists('curl_version');
         if ($allowUrlFopen || $curlEnabled) {
             $status = new Status\OkStatus();
             $status->setTitle('Fetching external URLs is allowed');
@@ -91,7 +91,7 @@ class SetupCheck
             $status = new Status\WarningStatus();
             $status->setTitle('Fetching external URLs is not allowed');
             $status->setMessage(
-                'Either enable PHP runtime setting "allow_url_fopen"' . LF . 'or enable curl by setting [SYS][curlUse] accordingly.'
+                'Either enable PHP runtime setting "allow_url_fopen"' . LF . 'or compile curl into your PHP with --with-curl.'
             );
         }
 
@@ -287,7 +287,7 @@ class SetupCheck
      */
     protected function checkLibXmlBug()
     {
-        $sampleArray = array('Test>><<Data');
+        $sampleArray = ['Test>><<Data'];
         $xmlContent = '<numIndex index="0">Test&gt;&gt;&lt;&lt;Data</numIndex>' . LF;
         $xml = GeneralUtility::array2xml($sampleArray, '', -1);
 

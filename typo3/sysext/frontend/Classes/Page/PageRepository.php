@@ -15,6 +15,11 @@ namespace TYPO3\CMS\Frontend\Page;
  */
 
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendWorkspaceRestriction;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\FileRepository;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -36,7 +41,7 @@ class PageRepository
     /**
      * @var array
      */
-    public $urltypes = array('', 'http://', 'ftp://', 'mailto:', 'https://');
+    public $urltypes = ['', 'http://', 'ftp://', 'mailto:', 'https://'];
 
     /**
      * This is not the final clauses. There will normally be conditions for the
@@ -83,7 +88,7 @@ class PageRepository
     /**
      * @var array
      */
-    public $workspaceCache = array();
+    public $workspaceCache = [];
 
     /**
      * Error string set by getRootLine()
@@ -102,42 +107,42 @@ class PageRepository
     /**
      * @var array
      */
-    protected $cache_getRootLine = array();
+    protected $cache_getRootLine = [];
 
     /**
      * @var array
      */
-    protected $cache_getPage = array();
+    protected $cache_getPage = [];
 
     /**
      * @var array
      */
-    protected $cache_getPage_noCheck = array();
+    protected $cache_getPage_noCheck = [];
 
     /**
      * @var array
      */
-    protected $cache_getPageIdFromAlias = array();
+    protected $cache_getPageIdFromAlias = [];
 
     /**
      * @var array
      */
-    protected $cache_getMountPointInfo = array();
+    protected $cache_getMountPointInfo = [];
 
     /**
      * @var array
      */
-    protected $tableNamesAllowedOnRootLevel = array(
+    protected $tableNamesAllowedOnRootLevel = [
         'sys_file_metadata',
         'sys_category',
-    );
+    ];
 
     /**
      * Computed properties that are added to database rows.
      *
      * @var array
      */
-    protected $computedPropertyNames = array(
+    protected $computedPropertyNames = [
         '_LOCALIZED_UID',
         '_MP_PARAM',
         '_ORIG_uid',
@@ -145,7 +150,7 @@ class PageRepository
         '_PAGES_OVERLAY',
         '_PAGES_OVERLAY_UID',
         '_PAGES_OVERLAY_LANGUAGE',
-    );
+    ];
 
     /**
      * Named constants for "magic numbers" of the field doktype
@@ -186,15 +191,24 @@ class PageRepository
             // de-selecting hidden pages - we need versionOL() to unset them only
             // if the overlay record instructs us to.
             // Clear where_hid_del and restrict to live and current workspaces
-            $this->where_hid_del = ' AND pages.deleted=0 AND (pages.t3ver_wsid=0 OR pages.t3ver_wsid=' . (int)$this->versioningWorkspaceId . ')';
+            $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('pages')
+                ->expr();
+            $this->where_hid_del = ' AND ' . $expressionBuilder->andX(
+                $expressionBuilder->eq('pages.deleted', 0),
+                $expressionBuilder->orX(
+                    $expressionBuilder->eq('pages.t3ver_wsid', 0),
+                    $expressionBuilder->eq('pages.t3ver_wsid', (int)$this->versioningWorkspaceId)
+                )
+            );
         } else {
             // add starttime / endtime, and check for hidden/deleted
             // Filter out new/deleted place-holder pages in case we are NOT in a
             // versioning preview (that means we are online!)
-            $this->where_hid_del = $this->enableFields('pages', $show_hidden, array('fe_group' => true), true);
+            $this->where_hid_del = $this->enableFields('pages', $show_hidden, ['fe_group' => true], true);
         }
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][PageRepository::class]['init'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][PageRepository::class]['init'] as $classRef) {
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['init'])) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['init'] as $classRef) {
                 $hookObject = GeneralUtility::makeInstance($classRef);
                 if (!$hookObject instanceof PageRepositoryInitHookInterface) {
                     throw new \UnexpectedValueException($hookObject . ' must implement interface ' . PageRepositoryInitHookInterface::class, 1379579812);
@@ -233,13 +247,34 @@ class PageRepository
                 $hookObject->getPage_preProcess($uid, $disableGroupAccessCheck, $this);
             }
         }
-        $accessCheck = $disableGroupAccessCheck ? '' : $this->where_groupAccess;
-        $cacheKey = md5($accessCheck . '-' . $this->where_hid_del . '-' . $this->sys_language_uid);
+        $cacheKey = md5(
+            implode(
+                '-',
+                [
+                    ($disableGroupAccessCheck ? '' : $this->where_groupAccess),
+                    $this->where_hid_del,
+                    $this->sys_language_uid
+                ]
+            )
+        );
         if (is_array($this->cache_getPage[$uid][$cacheKey])) {
             return $this->cache_getPage[$uid][$cacheKey];
         }
-        $result = array();
-        $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'pages', 'uid=' . (int)$uid . $this->where_hid_del . $accessCheck);
+        $result = [];
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll();
+        $queryBuilder->select('*')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('uid', (int)$uid),
+                QueryHelper::stripLogicalOperatorPrefix($this->where_hid_del)
+            );
+
+        if (!$disableGroupAccessCheck) {
+            $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($this->where_groupAccess));
+        }
+
+        $row = $queryBuilder->execute()->fetch();
         if ($row) {
             $this->versionOL('pages', $row);
             if (is_array($row)) {
@@ -263,10 +298,18 @@ class PageRepository
         if ($this->cache_getPage_noCheck[$uid]) {
             return $this->cache_getPage_noCheck[$uid];
         }
-        $res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'pages', 'uid=' . (int)$uid . $this->deleteClause('pages'));
-        $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-        $this->getDatabaseConnection()->sql_free_result($res);
-        $result = array();
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $row = $queryBuilder->select('*')
+            ->from('pages')
+            ->where($queryBuilder->expr()->eq('uid', (int)$uid))
+            ->execute()
+            ->fetch();
+
+        $result = [];
         if ($row) {
             $this->versionOL('pages', $row);
             if (is_array($row)) {
@@ -287,9 +330,20 @@ class PageRepository
     public function getFirstWebPage($uid)
     {
         $output = '';
-        $res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'pages', 'pid=' . (int)$uid . $this->where_hid_del . $this->where_groupAccess, '', 'sorting', '1');
-        $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-        $this->getDatabaseConnection()->sql_free_result($res);
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll();
+        $row = $queryBuilder->select('*')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('pid', (int)$uid),
+                QueryHelper::stripLogicalOperatorPrefix($this->where_hid_del),
+                QueryHelper::stripLogicalOperatorPrefix($this->where_groupAccess)
+            )
+            ->orderBy('sorting')
+            ->setMaxResults(1)
+            ->execute()
+            ->fetch();
+
         if ($row) {
             $this->versionOL('pages', $row);
             if (is_array($row)) {
@@ -312,9 +366,22 @@ class PageRepository
         if ($this->cache_getPageIdFromAlias[$alias]) {
             return $this->cache_getPageIdFromAlias[$alias];
         }
-        $db = $this->getDatabaseConnection();
-        $row = $db->exec_SELECTgetSingleRow('uid', 'pages', 'alias=' . $db->fullQuoteStr($alias, 'pages') . ' AND pid>=0 AND pages.deleted=0');
-        // "AND pid>=0" because of versioning (means that aliases sent MUST be online!)
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+        $row = $queryBuilder->select('uid')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('alias', $queryBuilder->createNamedParameter($alias)),
+                // "AND pid>=0" because of versioning (means that aliases sent MUST be online!)
+                $queryBuilder->expr()->gte('pid', 0)
+            )
+            ->setMaxResults(1)
+            ->execute()
+            ->fetch();
+
         if ($row) {
             $this->cache_getPageIdFromAlias[$alias] = $row['uid'];
             return $row['uid'];
@@ -333,9 +400,9 @@ class PageRepository
      */
     public function getPageOverlay($pageInput, $lUid = -1)
     {
-        $rows = $this->getPagesOverlay(array($pageInput), $lUid);
+        $rows = $this->getPagesOverlay([$pageInput], $lUid);
         // Always an array in return
-        return isset($rows[0]) ? $rows[0] : array();
+        return isset($rows[0]) ? $rows[0] : [];
     }
 
     /**
@@ -352,7 +419,7 @@ class PageRepository
     public function getPagesOverlay(array $pagesInput, $lUid = -1)
     {
         if (empty($pagesInput)) {
-            return array();
+            return [];
         }
         // Initialize:
         if ($lUid < 0) {
@@ -374,7 +441,7 @@ class PageRepository
         // If language UID is different from zero, do overlay:
         if ($lUid) {
             $fieldArr = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'], true);
-            $page_ids = array();
+            $page_ids = [];
 
             $origPage = reset($pagesInput);
             if (is_array($origPage)) {
@@ -394,22 +461,26 @@ class PageRepository
                 if (!in_array('pid', $fieldArr, true)) {
                     $fieldArr[] = 'pid';
                 }
-                // NOTE to enabledFields('pages_language_overlay'):
+                // NOTE regarding the query restrictions
                 // Currently the showHiddenRecords of TSFE set will allow
                 // pages_language_overlay records to be selected as they are
                 // child-records of a page.
                 // However you may argue that the showHiddenField flag should
                 // determine this. But that's not how it's done right now.
                 // Selecting overlay record:
-                $db = $this->getDatabaseConnection();
-                $res = $db->exec_SELECTquery(
-                    implode(',', $fieldArr),
-                    'pages_language_overlay',
-                    'pid IN(' . implode(',', $db->cleanIntArray($page_ids)) . ')'
-                    . ' AND sys_language_uid=' . (int)$lUid . $this->enableFields('pages_language_overlay')
-                );
-                $overlays = array();
-                while ($row = $db->sql_fetch_assoc($res)) {
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable('pages_language_overlay');
+                $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+                $result = $queryBuilder->select(...$fieldArr)
+                    ->from('pages_language_overlay')
+                    ->where(
+                        $queryBuilder->expr()->in('pid', array_map('intval', $page_ids)),
+                        $queryBuilder->expr()->eq('sys_language_uid', (int)$lUid)
+                    )
+                    ->execute();
+
+                $overlays = [];
+                while ($row = $result->fetch()) {
                     $this->versionOL('pages_language_overlay', $row);
                     if (is_array($row)) {
                         $row['_PAGES_OVERLAY'] = true;
@@ -422,11 +493,10 @@ class PageRepository
                         $overlays[$origUid] = $row;
                     }
                 }
-                $db->sql_free_result($res);
             }
         }
         // Create output:
-        $pagesOutput = array();
+        $pagesOutput = [];
         foreach ($pagesInput as $key => $origPage) {
             if (is_array($origPage)) {
                 $pagesOutput[$key] = $origPage;
@@ -486,9 +556,28 @@ class PageRepository
                         // Must be default language, otherwise no overlaying
                         if ((int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] === 0) {
                             // Select overlay record:
-                            $res = $this->getDatabaseConnection()->exec_SELECTquery('*', $table, 'pid=' . (int)$row['pid'] . ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['languageField'] . '=' . (int)$sys_language_content . ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . '=' . (int)$row['uid'] . $this->enableFields($table), '', '', '1');
-                            $olrow = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-                            $this->getDatabaseConnection()->sql_free_result($res);
+                            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                                ->getQueryBuilderForTable($table);
+                            $queryBuilder->setRestrictions(
+                                GeneralUtility::makeInstance(FrontendRestrictionContainer::class)
+                            );
+                            $olrow = $queryBuilder->select('*')
+                                ->from($table)
+                                ->where(
+                                    $queryBuilder->expr()->eq('pid', (int)$row['pid']),
+                                    $queryBuilder->expr()->eq(
+                                        $GLOBALS['TCA'][$table]['ctrl']['languageField'],
+                                        (int)$sys_language_content
+                                    ),
+                                    $queryBuilder->expr()->eq(
+                                        $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'],
+                                        (int)$row['uid']
+                                    )
+                                )
+                                ->setMaxResults(1)
+                                ->execute()
+                                ->fetch();
+
                             $this->versionOL($table, $olrow);
                             // Merge record content by traversing all fields:
                             if (is_array($olrow)) {
@@ -605,24 +694,24 @@ class PageRepository
     {
         $pages = [];
         $relationField = $parentPages ? 'pid' : 'uid';
-        $db = $this->getDatabaseConnection();
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll();
 
-        $whereStatement = $relationField . ' IN ('
-            . implode(',', $db->cleanIntArray($pageIds)) . ')'
-            . $this->where_hid_del
-            . $this->where_groupAccess
-            . ' '
-            . $additionalWhereClause;
+        $res = $queryBuilder->select(...GeneralUtility::trimExplode(',', $fields, true))
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->in($relationField, array_map('intval', $pageIds)),
+                QueryHelper::stripLogicalOperatorPrefix($this->where_hid_del),
+                QueryHelper::stripLogicalOperatorPrefix($this->where_groupAccess),
+                QueryHelper::stripLogicalOperatorPrefix($additionalWhereClause)
+            );
 
-        $databaseResource = $db->exec_SELECTquery(
-            $fields,
-            'pages',
-            $whereStatement,
-            '',
-            $sortField
-        );
+        if (!empty($sortField)) {
+            $res->orderBy($sortField);
+        }
+        $result = $res->execute();
 
-        while (($page = $db->sql_fetch_assoc($databaseResource))) {
+        while ($page = $result->fetch()) {
             $originalUid = $page['uid'];
 
             // Versioning Preview Overlay
@@ -646,8 +735,6 @@ class PageRepository
                 $pages[$originalUid] = $page;
             }
         }
-
-        $db->sql_free_result($databaseResource);
 
         // Finally load language overlays
         return $this->getPagesOverlay($pages);
@@ -721,16 +808,18 @@ class PageRepository
                 $searchUid = 0;
             }
 
-            $whereStatement = $searchField . '=' . $searchUid
-                . $this->where_hid_del
-                . $this->where_groupAccess
-                . ' ' . $additionalWhereClause;
-
-            $count = $this->getDatabaseConnection()->exec_SELECTcountRows(
-                'uid',
-                'pages',
-                $whereStatement
-            );
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+            $queryBuilder->getRestrictions()->removeAll();
+            $count = $queryBuilder->count('uid')
+                ->from('pages')
+                ->where(
+                    $queryBuilder->expr()->eq($searchField, (int)$searchUid),
+                    QueryHelper::stripLogicalOperatorPrefix($this->where_hid_del),
+                    QueryHelper::stripLogicalOperatorPrefix($this->where_groupAccess),
+                    QueryHelper::stripLogicalOperatorPrefix($additionalWhereClause)
+                )
+                ->execute()
+                ->fetchColumn();
 
             if (!$count) {
                 $page = [];
@@ -761,31 +850,58 @@ class PageRepository
         // Appending to domain string
         $domain .= $path;
         $domain = preg_replace('/\\/*$/', '', $domain);
-        $res = $this->getDatabaseConnection()->exec_SELECTquery('pages.uid,sys_domain.redirectTo,sys_domain.redirectHttpStatusCode,sys_domain.prepend_params', 'pages,sys_domain', 'pages.uid=sys_domain.pid
-						AND sys_domain.hidden=0
-						AND (sys_domain.domainName=' . $this->getDatabaseConnection()->fullQuoteStr($domain, 'sys_domain') . ' OR sys_domain.domainName=' . $this->getDatabaseConnection()->fullQuoteStr(($domain . '/'), 'sys_domain') . ') ' . $this->where_hid_del . $this->where_groupAccess, '', '', 1);
-        $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-        $this->getDatabaseConnection()->sql_free_result($res);
-        if ($row) {
-            if ($row['redirectTo']) {
-                $redirectUrl = $row['redirectTo'];
-                if ($row['prepend_params']) {
-                    $redirectUrl = rtrim($redirectUrl, '/');
-                    $prependStr = ltrim(substr($request_uri, strlen($path)), '/');
-                    $redirectUrl .= '/' . $prependStr;
-                }
-                $statusCode = (int)$row['redirectHttpStatusCode'];
-                if ($statusCode && defined(HttpUtility::class . '::HTTP_STATUS_' . $statusCode)) {
-                    HttpUtility::redirect($redirectUrl, constant(HttpUtility::class . '::HTTP_STATUS_' . $statusCode));
-                } else {
-                    HttpUtility::redirect($redirectUrl, HttpUtility::HTTP_STATUS_301);
-                }
-                die;
-            } else {
-                return $row['uid'];
-            }
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll();
+        $row = $queryBuilder
+            ->select(
+                'pages.uid',
+                'sys_domain.redirectTo',
+                'sys_domain.redirectHttpStatusCode',
+                'sys_domain.prepend_params'
+            )
+            ->from('pages')
+            ->from('sys_domain')
+            ->where(
+                $queryBuilder->expr()->eq('pages.uid', $queryBuilder->quoteIdentifier('sys_domain.pid')),
+                $queryBuilder->expr()->eq('sys_domain.hidden', 0),
+                $queryBuilder->expr()->orX(
+                    $queryBuilder->expr()->eq(
+                        'sys_domain.domainName',
+                        $queryBuilder->createNamedParameter($domain)
+                    ),
+                    $queryBuilder->expr()->eq(
+                        'sys_domain.domainName',
+                        $queryBuilder->createNamedParameter($domain . '/')
+                    )
+                ),
+                QueryHelper::stripLogicalOperatorPrefix($this->where_hid_del),
+                QueryHelper::stripLogicalOperatorPrefix($this->where_groupAccess)
+            )
+            ->setMaxResults(1)
+            ->execute()
+            ->fetch();
+
+        if (!$row) {
+            return '';
         }
-        return '';
+
+        if ($row['redirectTo']) {
+            $redirectUrl = $row['redirectTo'];
+            if ($row['prepend_params']) {
+                $redirectUrl = rtrim($redirectUrl, '/');
+                $prependStr = ltrim(substr($request_uri, strlen($path)), '/');
+                $redirectUrl .= '/' . $prependStr;
+            }
+            $statusCode = (int)$row['redirectHttpStatusCode'];
+            if ($statusCode && defined(HttpUtility::class . '::HTTP_STATUS_' . $statusCode)) {
+                HttpUtility::redirect($redirectUrl, constant(HttpUtility::class . '::HTTP_STATUS_' . $statusCode));
+            } else {
+                HttpUtility::redirect($redirectUrl, HttpUtility::HTTP_STATUS_301);
+            }
+            die;
+        } else {
+            return $row['uid'];
+        }
     }
 
     /**
@@ -819,10 +935,10 @@ class PageRepository
                 if (substr($this->error_getRootLine, -7) === 'uid -1.') {
                     $this->error_getRootLine_failPid = -1;
                 }
-                return array();
+                return [];
             /** @see \TYPO3\CMS\Core\Utility\RootlineUtility::getRecordArray */
             } elseif ($ex->getCode() === 1343589451) {
-                return array();
+                return [];
             }
             throw $ex;
         }
@@ -836,9 +952,11 @@ class PageRepository
      * @param int $len The max length of each title from the rootline.
      * @return string The path in the form "/page title/This is another pageti.../Another page
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getConfigArray()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function getPathFromRootline($rl, $len = 20)
     {
+        GeneralUtility::logDeprecatedFunction();
         $path = '';
         if (is_array($rl)) {
             $c = count($rl);
@@ -886,7 +1004,7 @@ class PageRepository
      * @return mixed Returns FALSE if no mount point was found, "-1" if there should have been one, but no connection to it, otherwise an array with information about mount pid and modes.
      * @see \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject
      */
-    public function getMountPointInfo($pageId, $pageRec = false, $prevMountPids = array(), $firstPageUid = 0)
+    public function getMountPointInfo($pageId, $pageRec = false, $prevMountPids = [], $firstPageUid = 0)
     {
         $result = false;
         if ($GLOBALS['TYPO3_CONF_VARS']['FE']['enable_mount_pids']) {
@@ -895,9 +1013,20 @@ class PageRepository
             }
             // Get pageRec if not supplied:
             if (!is_array($pageRec)) {
-                $res = $this->getDatabaseConnection()->exec_SELECTquery('uid,pid,doktype,mount_pid,mount_pid_ol,t3ver_state', 'pages', 'uid=' . (int)$pageId . ' AND pages.deleted=0 AND pages.doktype<>255');
-                $pageRec = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-                $this->getDatabaseConnection()->sql_free_result($res);
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+                $queryBuilder->getRestrictions()
+                    ->removeAll()
+                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+                $pageRec = $queryBuilder->select('uid', 'pid', 'doktype', 'mount_pid', 'mount_pid_ol', 't3ver_state')
+                    ->from('pages')
+                    ->where(
+                        $queryBuilder->expr()->eq('uid', (int)$pageId),
+                        $queryBuilder->expr()->neq('doktype', 255)
+                    )
+                    ->execute()
+                    ->fetch();
+
                 // Only look for version overlay if page record is not supplied; This assumes
                 // that the input record is overlaid with preview version, if any!
                 $this->versionOL('pages', $pageRec);
@@ -910,22 +1039,33 @@ class PageRepository
             $mount_pid = (int)$pageRec['mount_pid'];
             if (is_array($pageRec) && (int)$pageRec['doktype'] === self::DOKTYPE_MOUNTPOINT && $mount_pid > 0 && !in_array($mount_pid, $prevMountPids, true)) {
                 // Get the mount point record (to verify its general existence):
-                $res = $this->getDatabaseConnection()->exec_SELECTquery('uid,pid,doktype,mount_pid,mount_pid_ol,t3ver_state', 'pages', 'uid=' . $mount_pid . ' AND pages.deleted=0 AND pages.doktype<>255');
-                $mountRec = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-                $this->getDatabaseConnection()->sql_free_result($res);
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+                $queryBuilder->getRestrictions()
+                    ->removeAll()
+                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+                $mountRec = $queryBuilder->select('uid', 'pid', 'doktype', 'mount_pid', 'mount_pid_ol', 't3ver_state')
+                    ->from('pages')
+                    ->where(
+                        $queryBuilder->expr()->eq('uid', $mount_pid),
+                        $queryBuilder->expr()->neq('doktype', 255)
+                    )
+                    ->execute()
+                    ->fetch();
+
                 $this->versionOL('pages', $mountRec);
                 if (is_array($mountRec)) {
                     // Look for recursive mount point:
                     $prevMountPids[] = $mount_pid;
                     $recursiveMountPid = $this->getMountPointInfo($mount_pid, $mountRec, $prevMountPids, $firstPageUid);
                     // Return mount point information:
-                    $result = $recursiveMountPid ?: array(
+                    $result = $recursiveMountPid ?: [
                         'mount_pid' => $mount_pid,
                         'overlay' => $pageRec['mount_pid_ol'],
                         'MPvar' => $mount_pid . '-' . $firstPageUid,
                         'mount_point_rec' => $pageRec,
                         'mount_pid_rec' => $mountRec
-                    );
+                    ];
                 } else {
                     // Means, there SHOULD have been a mount point, but there was none!
                     $result = -1;
@@ -955,16 +1095,26 @@ class PageRepository
     {
         $uid = (int)$uid;
         if (is_array($GLOBALS['TCA'][$table]) && $uid > 0) {
-            $res = $this->getDatabaseConnection()->exec_SELECTquery('*', $table, 'uid = ' . $uid . $this->enableFields($table));
-            $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-            $this->getDatabaseConnection()->sql_free_result($res);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            $row = $queryBuilder->select('*')
+                ->from($table)
+                ->where($queryBuilder->expr()->eq('uid', $uid))
+                ->execute()
+                ->fetch();
+
             if ($row) {
                 $this->versionOL($table, $row);
                 if (is_array($row)) {
                     if ($checkPage) {
-                        $res = $this->getDatabaseConnection()->exec_SELECTquery('uid', 'pages', 'uid=' . (int)$row['pid'] . $this->enableFields('pages'));
-                        $numRows = $this->getDatabaseConnection()->sql_num_rows($res);
-                        $this->getDatabaseConnection()->sql_free_result($res);
+                        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                            ->getQueryBuilderForTable('pages');
+                        $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+                        $numRows = (int)$queryBuilder->count('*')
+                            ->from('pages')
+                            ->where($queryBuilder->expr()->eq('uid', (int)$row['pid']))
+                            ->execute()
+                            ->fetchColumn();
                         if ($numRows > 0) {
                             return $row;
                         } else {
@@ -993,9 +1143,16 @@ class PageRepository
     {
         $uid = (int)$uid;
         if (isset($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]) && $uid > 0) {
-            $res = $this->getDatabaseConnection()->exec_SELECTquery($fields, $table, 'uid = ' . $uid . $this->deleteClause($table));
-            $row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-            $this->getDatabaseConnection()->sql_free_result($res);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            $row = $queryBuilder->select(...GeneralUtility::trimExplode(',', $fields, true))
+                ->from($table)
+                ->where($queryBuilder->expr()->eq('uid', $uid))
+                ->execute()
+                ->fetch();
+
             if ($row) {
                 if (!$noWSOL) {
                     $this->versionOL($table, $row);
@@ -1023,14 +1180,42 @@ class PageRepository
     public function getRecordsByField($theTable, $theField, $theValue, $whereClause = '', $groupBy = '', $orderBy = '', $limit = '')
     {
         if (is_array($GLOBALS['TCA'][$theTable])) {
-            $res = $this->getDatabaseConnection()->exec_SELECTquery('*', $theTable, $theField . '=' . $this->getDatabaseConnection()->fullQuoteStr($theValue, $theTable) . $this->deleteClause($theTable) . ' ' . $whereClause, $groupBy, $orderBy, $limit);
-            $rows = array();
-            while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
-                if (is_array($row)) {
-                    $rows[] = $row;
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($theTable);
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+            $queryBuilder->select('*')
+                ->from($theTable)
+                ->where($queryBuilder->expr()->eq($theField, $queryBuilder->createNamedParameter($theValue)));
+
+            if ($whereClause !== '') {
+                $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($whereClause));
+            }
+
+            if ($groupBy !== '') {
+                $queryBuilder->groupBy(QueryHelper::parseGroupBy($groupBy));
+            }
+
+            if ($orderBy !== '') {
+                foreach (QueryHelper::parseOrderBy($orderBy) as $orderPair) {
+                    list($fieldName, $order) = $orderPair;
+                    $queryBuilder->addOrderBy($fieldName, $order);
                 }
             }
-            $this->getDatabaseConnection()->sql_free_result($res);
+
+            if ($limit !== '') {
+                if (strpos($limit, ',')) {
+                    $limitOffsetAndMax = GeneralUtility::intExplode(',', $limit);
+                    $queryBuilder->setFirstResult((int)$limitOffsetAndMax[0]);
+                    $queryBuilder->setMaxResults((int)$limitOffsetAndMax[1]);
+                } else {
+                    $queryBuilder->setMaxResults((int)$limit);
+                }
+            }
+
+            $rows = $queryBuilder->execute()->fetchAll();
+
             if (!empty($rows)) {
                 return $rows;
             }
@@ -1083,7 +1268,7 @@ class PageRepository
      */
     public static function storeHash($hash, $data, $ident, $lifetime = 0)
     {
-        GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), (int)$lifetime);
+        GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash')->set($hash, $data, ['ident_' . $ident], (int)$lifetime);
     }
 
     /**
@@ -1116,7 +1301,7 @@ class PageRepository
      * @return string The clause starting like " AND ...=... AND ...=...
      * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::enableFields(), deleteClause()
      */
-    public function enableFields($table, $show_hidden = -1, $ignore_array = array(), $noVersionPreview = false)
+    public function enableFields($table, $show_hidden = -1, $ignore_array = [], $noVersionPreview = false)
     {
         if ($show_hidden === -1 && is_object($this->getTypoScriptFrontendController())) {
             // If show_hidden was not set from outside and if TSFE is an object, set it
@@ -1130,29 +1315,35 @@ class PageRepository
         }
         // If show_hidden was not changed during the previous evaluation, do it here.
         $ctrl = $GLOBALS['TCA'][$table]['ctrl'];
-        $query = '';
+        $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('pages')
+            ->expr();
+        $constraints = [];
         if (is_array($ctrl)) {
             // Delete field check:
             if ($ctrl['delete']) {
-                $query .= ' AND ' . $table . '.' . $ctrl['delete'] . '=0';
+                $constraints[] = $expressionBuilder->eq($table . '.' . $ctrl['delete'], 0);
             }
             if ($ctrl['versioningWS']) {
                 if (!$this->versioningPreview) {
                     // Filter out placeholder records (new/moved/deleted items)
                     // in case we are NOT in a versioning preview (that means we are online!)
-                    $query .= ' AND ' . $table . '.t3ver_state<=' . new VersionState(VersionState::DEFAULT_STATE);
+                    $constraints[] = $expressionBuilder->lte(
+                        $table . '.t3ver_state',
+                        new VersionState(VersionState::DEFAULT_STATE)
+                    );
                 } elseif ($table !== 'pages') {
                     // show only records of live and of the current workspace
                     // in case we are in a versioning preview
-                    $query .= ' AND (' .
-                                $table . '.t3ver_wsid=0 OR ' .
-                                $table . '.t3ver_wsid=' . (int)$this->versioningWorkspaceId .
-                                ')';
+                    $constraints[] = $expressionBuilder->orX(
+                        $expressionBuilder->eq($table . '.t3ver_wsid', 0),
+                        $expressionBuilder->eq($table . '.t3ver_wsid', (int)$this->versioningWorkspaceId)
+                    );
                 }
 
                 // Filter out versioned records
                 if (!$noVersionPreview && empty($ignore_array['pid'])) {
-                    $query .= ' AND ' . $table . '.pid<>-1';
+                    $constraints[] = $expressionBuilder->neq($table . '.pid', -1);
                 }
             }
 
@@ -1163,32 +1354,39 @@ class PageRepository
                 if (!$this->versioningPreview || !$ctrl['versioningWS'] || $noVersionPreview) {
                     if ($ctrl['enablecolumns']['disabled'] && !$show_hidden && !$ignore_array['disabled']) {
                         $field = $table . '.' . $ctrl['enablecolumns']['disabled'];
-                        $query .= ' AND ' . $field . '=0';
+                        $constraints[] = $expressionBuilder->eq($field, 0);
                     }
                     if ($ctrl['enablecolumns']['starttime'] && !$ignore_array['starttime']) {
                         $field = $table . '.' . $ctrl['enablecolumns']['starttime'];
-                        $query .= ' AND ' . $field . '<=' . $GLOBALS['SIM_ACCESS_TIME'];
+                        $constraints[] = $expressionBuilder->lte($field, (int)$GLOBALS['SIM_ACCESS_TIME']);
                     }
                     if ($ctrl['enablecolumns']['endtime'] && !$ignore_array['endtime']) {
                         $field = $table . '.' . $ctrl['enablecolumns']['endtime'];
-                        $query .= ' AND (' . $field . '=0 OR ' . $field . '>' . $GLOBALS['SIM_ACCESS_TIME'] . ')';
+                        $constraints[] = $expressionBuilder->orX(
+                            $expressionBuilder->eq($field, 0),
+                            $expressionBuilder->gt($field, (int)$GLOBALS['SIM_ACCESS_TIME'])
+                        );
                     }
                     if ($ctrl['enablecolumns']['fe_group'] && !$ignore_array['fe_group']) {
                         $field = $table . '.' . $ctrl['enablecolumns']['fe_group'];
-                        $query .= $this->getMultipleGroupsWhereClause($field, $table);
+                        $constraints[] = QueryHelper::stripLogicalOperatorPrefix(
+                            $this->getMultipleGroupsWhereClause($field, $table)
+                        );
                     }
                     // Call hook functions for additional enableColumns
                     // It is used by the extension ingmar_accessctrl which enables assigning more
                     // than one usergroup to content and page records
                     if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['addEnableColumns'])) {
-                        $_params = array(
+                        $_params = [
                             'table' => $table,
                             'show_hidden' => $show_hidden,
                             'ignore_array' => $ignore_array,
                             'ctrl' => $ctrl
-                        );
+                        ];
                         foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['addEnableColumns'] as $_funcRef) {
-                            $query .= GeneralUtility::callUserFunction($_funcRef, $_params, $this);
+                            $constraints[] = QueryHelper::stripLogicalOperatorPrefix(
+                                GeneralUtility::callUserFunction($_funcRef, $_params, $this)
+                            );
                         }
                     }
                 }
@@ -1196,7 +1394,8 @@ class PageRepository
         } else {
             throw new \InvalidArgumentException('There is no entry in the $TCA array for the table "' . $table . '". This means that the function enableFields() is ' . 'called with an invalid table name as argument.', 1283790586);
         }
-        return $query;
+
+        return empty($constraints) ? '' : ' AND ' . $expressionBuilder->andX(...$constraints);
     }
 
     /**
@@ -1210,18 +1409,22 @@ class PageRepository
      */
     public function getMultipleGroupsWhereClause($field, $table)
     {
+        $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($table)
+            ->expr();
         $memberGroups = GeneralUtility::intExplode(',', $this->getTypoScriptFrontendController()->gr_list);
-        $orChecks = array();
+        $orChecks = [];
         // If the field is empty, then OK
-        $orChecks[] = $field . '=\'\'';
+        $orChecks[] = $expressionBuilder->eq($field, $expressionBuilder->literal(''));
         // If the field is NULL, then OK
-        $orChecks[] = $field . ' IS NULL';
-        // If the field contsains zero, then OK
-        $orChecks[] = $field . '=\'0\'';
+        $orChecks[] = $expressionBuilder->isNull($field);
+        // If the field contains zero, then OK
+        $orChecks[] = $expressionBuilder->eq($field, 0);
         foreach ($memberGroups as $value) {
-            $orChecks[] = $this->getDatabaseConnection()->listQuery($field, $value, $table);
+            $orChecks[] = $expressionBuilder->inSet($field, $expressionBuilder->literal($value));
         }
-        return ' AND (' . implode(' OR ', $orChecks) . ')';
+
+        return' AND (' . $expressionBuilder->orX(...$orChecks) . ')';
     }
 
     /**********************
@@ -1403,9 +1606,15 @@ class PageRepository
             }
             // Find pointed-to record.
             if ($moveID) {
-                $res = $this->getDatabaseConnection()->exec_SELECTquery(implode(',', array_keys($this->purgeComputedProperties($row))), $table, 'uid=' . (int)$moveID . $this->enableFields($table));
-                $origRow = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-                $this->getDatabaseConnection()->sql_free_result($res);
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+                $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+                $origRow = $queryBuilder->select(...array_keys($this->purgeComputedProperties($row)))
+                    ->from($table)
+                    ->where($queryBuilder->expr()->eq('uid', (int)$moveID))
+                    ->setMaxResults(1)
+                    ->execute()
+                    ->fetch();
+
                 if ($origRow) {
                     $row = $origRow;
                     return true;
@@ -1430,10 +1639,23 @@ class PageRepository
             $workspace = (int)$this->versioningWorkspaceId;
             if (!empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) && $workspace !== 0) {
                 // Select workspace version of record:
-                $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow($fields, $table, 'pid<>-1 AND
-						t3ver_state=' . new VersionState(VersionState::MOVE_PLACEHOLDER) . ' AND
-						t3ver_move_id=' . (int)$uid . ' AND
-						t3ver_wsid=' . (int)$workspace . $this->deleteClause($table));
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+                $queryBuilder->getRestrictions()
+                    ->removeAll()
+                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+                $row = $queryBuilder->select(...GeneralUtility::trimExplode(',', $fields, true))
+                    ->from($table)
+                    ->where(
+                        $queryBuilder->expr()->neq('pid', -1),
+                        $queryBuilder->expr()->eq('t3ver_state', new VersionState(VersionState::MOVE_PLACEHOLDER)),
+                        $queryBuilder->expr()->eq('t3ver_move_id', (int)$uid),
+                        $queryBuilder->expr()->eq('t3ver_wsid', (int)$workspace)
+                    )
+                    ->setMaxResults(1)
+                    ->execute()
+                    ->fetch();
+
                 if (is_array($row)) {
                     return $row;
                 }
@@ -1458,18 +1680,40 @@ class PageRepository
         if ($workspace !== 0 && !empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS'])) {
             $workspace = (int)$workspace;
             $uid = (int)$uid;
-            // Setting up enableFields for version record
-            $enFields = $this->enableFields($table, -1, array(), true);
             // Select workspace version of record, only testing for deleted.
-            $newrow = $this->getDatabaseConnection()->exec_SELECTgetSingleRow($fields, $table, 'pid=-1 AND
-					t3ver_oid=' . $uid . ' AND
-					t3ver_wsid=' . $workspace . $this->deleteClause($table));
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+            $newrow = $queryBuilder->select(...GeneralUtility::trimExplode(',', $fields, true))
+                ->from($table)
+                ->where(
+                    $queryBuilder->expr()->eq('pid', -1),
+                    $queryBuilder->expr()->eq('t3ver_oid', $uid),
+                    $queryBuilder->expr()->eq('t3ver_wsid', $workspace)
+                )
+                ->setMaxResults(1)
+                ->execute()
+                ->fetch();
+
             // If version found, check if it could have been selected with enableFields on
             // as well:
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            // Remove the frontend workspace restriction because we are testing a version record
+            $queryBuilder->getRestrictions()->removeByType(FrontendWorkspaceRestriction::class);
+            $queryBuilder->select('uid')
+                ->from($table)
+                ->setMaxResults(1);
+
             if (is_array($newrow)) {
-                if ($bypassEnableFieldsCheck || $this->getDatabaseConnection()->exec_SELECTgetSingleRow('uid', $table, 'pid=-1 AND
-						t3ver_oid=' . $uid . ' AND
-						t3ver_wsid=' . $workspace . $enFields)) {
+                $queryBuilder->where(
+                    $queryBuilder->expr()->eq('pid', -1),
+                    $queryBuilder->expr()->eq('t3ver_oid', $uid),
+                    $queryBuilder->expr()->eq('t3ver_wsid', $workspace)
+                );
+                if ($bypassEnableFieldsCheck || $queryBuilder->execute()->fetchColumn()) {
                     // Return offline version, tested for its enableFields.
                     return $newrow;
                 } else {
@@ -1479,7 +1723,8 @@ class PageRepository
             } else {
                 // OK, so no workspace version was found. Then check if online version can be
                 // selected with full enable fields and if so, return 1:
-                if ($bypassEnableFieldsCheck || $this->getDatabaseConnection()->exec_SELECTgetSingleRow('uid', $table, 'uid=' . $uid . $enFields)) {
+                $queryBuilder->where($queryBuilder->expr()->eq('uid', $uid));
+                if ($bypassEnableFieldsCheck || $queryBuilder->execute()->fetchColumn()) {
                     // Means search was done, but no version found.
                     return 1;
                 } else {
@@ -1509,7 +1754,17 @@ class PageRepository
         } else {
             if ($wsid > 0) {
                 // No $GLOBALS['TCA'] yet!
-                $ws = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', 'sys_workspace', 'uid=' . (int)$wsid . ' AND deleted=0');
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable('sys_workspace');
+                $queryBuilder->getRestrictions()->removeAll();
+                $ws = $queryBuilder->select('*')
+                    ->from('sys_workspace')
+                    ->where(
+                        $queryBuilder->expr()->eq('uid', (int)$wsid),
+                        $queryBuilder->expr()->eq('deleted', 0)
+                    )
+                    ->execute()
+                    ->fetch();
                 if (!is_array($ws)) {
                     return false;
                 }
@@ -1544,7 +1799,7 @@ class PageRepository
              * We just catch the exception here
              * Reasoning: There is nothing an editor or even admin could do
              */
-            return array();
+            return [];
         } catch (\InvalidArgumentException $e) {
             /**
              * The storage does not exist anymore
@@ -1552,7 +1807,7 @@ class PageRepository
              */
             $logMessage = $e->getMessage() . ' (table: "' . $tableName . '", fieldName: "' . $fieldName . '", currentId: ' . $currentId . ')';
             GeneralUtility::sysLog($logMessage, 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
-            return array();
+            return [];
         }
 
         $localizedId = null;
@@ -1624,22 +1879,12 @@ class PageRepository
                 $checkValue = '';
             }
 
-            if ($checkValue === array() || !is_array($checkValue) && trim($checkValue) === '') {
+            if ($checkValue === [] || !is_array($checkValue) && trim($checkValue) === '') {
                 $shouldFieldBeOverlaid = false;
             }
         }
 
         return $shouldFieldBeOverlaid;
-    }
-
-    /**
-     * Returns the database connection
-     *
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 
     /**

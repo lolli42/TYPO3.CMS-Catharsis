@@ -1,5 +1,5 @@
 <?php
-$EM_CONF[$_EXTKEY] = array(
+$EM_CONF[$_EXTKEY] = [
     'title' => 'Recycler',
     'description' => 'The recycler offers the possibility to restore deleted records or remove them from the database permanently. These actions can be applied to a single record, multiple records, and recursively to child records (ex. restoring a page can restore all content elements on that page). Filtering by page and by table provides a quick overview of deleted records before taking action on them.',
     'category' => 'module',
@@ -10,12 +10,12 @@ $EM_CONF[$_EXTKEY] = array(
     'createDirs' => '',
     'clearCacheOnLoad' => 0,
     'author_company' => '',
-    'version' => '8.3.0',
-    'constraints' => array(
-        'depends' => array(
-            'typo3' => '8.3.0-8.3.99',
-        ),
-        'conflicts' => array(),
-        'suggests' => array(),
-    ),
-);
+    'version' => '8.4.0',
+    'constraints' => [
+        'depends' => [
+            'typo3' => '8.4.0-8.4.99',
+        ],
+        'conflicts' => [],
+        'suggests' => [],
+    ],
+];

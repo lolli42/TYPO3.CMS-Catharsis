@@ -14,7 +14,11 @@ namespace TYPO3\CMS\Core\Collection;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
+use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Implements the repository for record collections.
@@ -52,11 +56,24 @@ class RecordCollectionRepository
     public function findByUid($uid)
     {
         $result = null;
-        $data = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
-            '*',
-            $this->table,
-            'uid=' . (int)$uid . BackendUtility::deleteClause($this->table)
-        );
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->table);
+
+        if ($this->getEnvironmentMode() === 'FE') {
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            if ($GLOBALS['TSFE']->showHiddenRecords) {
+                $queryBuilder->getRestrictions()->removeByType(HiddenRestriction::class);
+            }
+        } else {
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        }
+
+        $data = $queryBuilder->select('*')
+            ->from($this->table)
+            ->where($queryBuilder->expr()->eq('uid', (int)$uid))
+            ->execute()
+            ->fetch();
         if (is_array($data)) {
             $result = $this->createDomainObject($data);
         }
@@ -81,10 +98,13 @@ class RecordCollectionRepository
      */
     public function findByTableName($tableName)
     {
-        $conditions = array(
-            $this->tableField . '=' . $this->getDatabaseConnection()->fullQuoteStr($tableName, $this->table)
-        );
-        return $this->queryMultipleRecords($conditions);
+        $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($tableName)
+            ->expr();
+
+        return $this->queryMultipleRecords([
+            $expressionBuilder->eq($this->tableField, $expressionBuilder->literal($tableName))
+        ]);
     }
 
     /**
@@ -95,10 +115,13 @@ class RecordCollectionRepository
      */
     public function findByType($type)
     {
-        $conditions = array(
-            $this->typeField . '=' . $this->getDatabaseConnection()->fullQuoteStr($type, $this->table)
-        );
-        return $this->queryMultipleRecords($conditions);
+        $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($this->table)
+            ->expr();
+
+        return $this->queryMultipleRecords([
+            $expressionBuilder->eq($this->typeField, $expressionBuilder->literal($type))
+        ]);
     }
 
     /**
@@ -110,11 +133,14 @@ class RecordCollectionRepository
      */
     public function findByTypeAndTableName($type, $tableName)
     {
-        $conditions = array(
-            $this->typeField . '=' . $this->getDatabaseConnection()->fullQuoteStr($type, $this->table),
-            $this->tableField . '=' . $this->getDatabaseConnection()->fullQuoteStr($tableName, $this->table)
-        );
-        return $this->queryMultipleRecords($conditions);
+        $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($this->table)
+            ->expr();
+
+        return $this->queryMultipleRecords([
+            $expressionBuilder->eq($this->typeField, $expressionBuilder->literal($type)),
+            $expressionBuilder->eq($this->tableField, $expressionBuilder->literal($tableName))
+        ]);
     }
 
     /**
@@ -125,7 +151,13 @@ class RecordCollectionRepository
      */
     public function deleteByUid($uid)
     {
-        $this->getDatabaseConnection()->exec_UPDATEquery($this->table, 'uid=' . (int)$uid, array('deleted' => 1, 'tstamp' => $GLOBALS['EXEC_TIME']));
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable($this->table)
+            ->update(
+                $this->table,
+                ['deleted' => 1, 'tstamp' => (int)$GLOBALS['EXEC_TIME']],
+                ['uid' => (int)$uid]
+            );
     }
 
     /**
@@ -134,22 +166,27 @@ class RecordCollectionRepository
      * @param array $conditions Conditions concatenated with AND for query
      * @return NULL|\TYPO3\CMS\Core\Collection\AbstractRecordCollection[]
      */
-    protected function queryMultipleRecords(array $conditions = array())
+    protected function queryMultipleRecords(array $conditions = [])
     {
         $result = null;
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->table);
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+        $queryBuilder->select('*')
+            ->from($this->table);
+
         if (!empty($conditions)) {
-            $conditionsWhereClause = implode(' AND ', $conditions);
-        } else {
-            $conditionsWhereClause = '1=1';
+            $queryBuilder->where(...$conditions);
         }
-        $data = $this->getDatabaseConnection()->exec_SELECTgetRows(
-            '*',
-            $this->table,
-            $conditionsWhereClause . BackendUtility::deleteClause($this->table)
-        );
-        if ($data !== null) {
+
+        $data = $queryBuilder->execute()->fetchAll();
+        if (!empty($data)) {
             $result = $this->createMultipleDomainObjects($data);
         }
+
         return $result;
     }
 
@@ -180,7 +217,7 @@ class RecordCollectionRepository
      */
     protected function createMultipleDomainObjects(array $data)
     {
-        $collections = array();
+        $collections = [];
         foreach ($data as $collection) {
             $collections[] = $this->createDomainObject($collection);
         }
@@ -188,12 +225,13 @@ class RecordCollectionRepository
     }
 
     /**
-     * Gets the database object.
+     * Function to return the current TYPO3_MODE.
+     * This function can be mocked in unit tests to be able to test frontend behaviour.
      *
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+     * @return string
      */
-    protected function getDatabaseConnection()
+    protected function getEnvironmentMode()
     {
-        return $GLOBALS['TYPO3_DB'];
+        return TYPO3_MODE;
     }
 }

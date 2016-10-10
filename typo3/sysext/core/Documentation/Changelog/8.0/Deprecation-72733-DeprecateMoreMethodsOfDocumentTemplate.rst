@@ -1,18 +1,23 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================
 Deprecation: #72733 - Deprecate more methods of DocumentTemplate
 ================================================================
 
+See :issue:`72733`
+
 Description
 ===========
 
-The following methods from ``TYPO3\CMS\Backend\Template\DocumentTemplate`` have
+The following methods from `TYPO3\CMS\Backend\Template\DocumentTemplate` have
 been marked as deprecated:
 
-* ``wrapInCData``
-* ``funcMenu``
-* ``getDragDropCode``
-* ``getTabMenu``
-* ``getVersionSelector``
+* `wrapInCData`
+* `funcMenu`
+* `getDragDropCode`
+* `getTabMenu`
+* `getVersionSelector`
 
 
 Impact
@@ -30,6 +35,6 @@ Instances with custom backend modules that use one of the aforementioned methods
 Migration
 =========
 
-Some replacements are available in the ``\TYPO3\CMS\Backend\Template\ModuleTemplate`` class.
+Some replacements are available in the `\TYPO3\CMS\Backend\Template\ModuleTemplate` class.
 
-.. index:: php
+.. index:: PHP-API, Backend

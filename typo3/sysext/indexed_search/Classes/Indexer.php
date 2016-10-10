@@ -29,14 +29,14 @@ class Indexer
     /**
      * @var array
      */
-    public $reasons = array(
+    public $reasons = [
         -1 => 'mtime matched the document, so no changes detected and no content updated',
         -2 => 'The minimum age was not exceeded',
         1 => 'The configured max-age was exceeded for the document and thus it\'s indexed.',
         2 => 'The minimum age was exceed and mtime was set and the mtime was different, so the page was indexed.',
         3 => 'The minimum age was exceed, but mtime was not set, so the page was indexed.',
         4 => 'Page has never been indexed (is not represented in the index_phash table).'
-    );
+    ];
 
     /**
      * HTML code blocks to exclude from indexing
@@ -50,7 +50,7 @@ class Indexer
      *
      * @var array
      */
-    public $external_parsers = array();
+    public $external_parsers = [];
 
     /**
      * External parser objects, keys are file extension names. Values are objects with certain methods.
@@ -102,12 +102,12 @@ class Indexer
      *
      * @var array
      */
-    public $defaultContentArray = array(
+    public $defaultContentArray = [
         'title' => '',
         'description' => '',
         'keywords' => '',
         'body' => ''
-    );
+    ];
 
     /**
      * @var int
@@ -122,35 +122,35 @@ class Indexer
     /**
      * @var array
      */
-    public $conf = array();
+    public $conf = [];
 
     /**
      * Configuration set internally (see init functions for required keys and their meaning)
      *
      * @var array
      */
-    public $indexerConfig = array();
+    public $indexerConfig = [];
 
     /**
      * Indexer configuration, coming from $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search']
      *
      * @var array
      */
-    public $hash = array();
+    public $hash = [];
 
     /**
      * Hash array, contains phash and phash_grouping
      *
      * @var array
      */
-    public $file_phash_arr = array();
+    public $file_phash_arr = [];
 
     /**
      * Hash array for files
      *
      * @var array
      */
-    public $contentParts = array();
+    public $contentParts = [];
 
     /**
      * Content of TYPO3 page
@@ -162,7 +162,7 @@ class Indexer
     /**
      * @var array
      */
-    public $internal_log = array();
+    public $internal_log = [];
 
     /**
      * Internal log
@@ -174,7 +174,7 @@ class Indexer
     /**
      * @var array
      */
-    public $cHashParams = array();
+    public $cHashParams = [];
 
     /**
      * cHashparams array
@@ -270,7 +270,7 @@ class Indexer
                     if (!$pObj->no_cache) {
                         if ((int)$pObj->sys_language_uid === (int)$pObj->sys_language_content) {
                             // Setting up internal configuration from config array:
-                            $this->conf = array();
+                            $this->conf = [];
                             // Information about page for which the indexing takes place
                             $this->conf['id'] = $pObj->id;
                             // Page id
@@ -291,7 +291,7 @@ class Indexer
                             $this->conf['page_cache_reg1'] = $pObj->page_cache_reg1;
                             // reg1 of the caching table. Not known what practical use this has.
                             // Root line uids
-                            $this->conf['rootline_uids'] = array();
+                            $this->conf['rootline_uids'] = [];
                             foreach ($pObj->config['rootLine'] as $rlkey => $rldat) {
                                 $this->conf['rootline_uids'][$rlkey] = $rldat['uid'];
                             }
@@ -350,10 +350,10 @@ class Indexer
      * @param bool $createCHash If set, calculates a cHash value from the $cHash_array. Probably you will not do that since such cases are indexed through the frontend and the idea of this interface is to index non-cacheable pages from the backend!
      * @return void
      */
-    public function backend_initIndexer($id, $type, $sys_language_uid, $MP, $uidRL, $cHash_array = array(), $createCHash = false)
+    public function backend_initIndexer($id, $type, $sys_language_uid, $MP, $uidRL, $cHash_array = [], $createCHash = false)
     {
         // Setting up internal configuration from config array:
-        $this->conf = array();
+        $this->conf = [];
         // Information about page for which the indexing takes place
         $this->conf['id'] = $id;
         // Page id	(int)
@@ -623,7 +623,7 @@ class Indexer
         $contentArr['title'] = trim(isset($titleParts[1]) ? $titleParts[1] : $titleParts[0]);
         // get keywords and description metatags
         if ($this->conf['index_metatags']) {
-            $meta = array();
+            $meta = [];
             $i = 0;
             while ($this->embracingTags($headPart, 'meta', $dummy, $headPart, $meta[$i])) {
                 $i++;
@@ -803,11 +803,11 @@ class Indexer
                         $fI = pathinfo($linkSource);
                         $ext = strtolower($fI['extension']);
                         if (is_object($crawler)) {
-                            $params = array(
+                            $params = [
                                 'document' => $linkSource,
                                 'alturl' => $linkInfo['href'],
                                 'conf' => $this->conf
-                            );
+                            ];
                             unset($params['conf']['content']);
                             $crawler->addQueueEntry_callBack(0, $params, Hook\CrawlerFilesHook::class, $this->conf['id']);
                             $this->log_setTSlogMessage('media "' . $params['document'] . '" added to "crawler" queue.', 1);
@@ -816,10 +816,10 @@ class Indexer
                         }
                     } else {
                         if (is_object($crawler)) {
-                            $params = array(
+                            $params = [
                                 'document' => $linkSource,
                                 'conf' => $this->conf
-                            );
+                            ];
                             unset($params['conf']['content']);
                             $crawler->addQueueEntry_callBack(0, $params, Hook\CrawlerFilesHook::class, $this->conf['id']);
                             $this->log_setTSlogMessage('media "' . $params['document'] . '" added to "crawler" queue.', 1);
@@ -843,18 +843,18 @@ class Indexer
     {
         $htmlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\HtmlParser::class);
         $htmlParts = $htmlParser->splitTags('a', $html);
-        $hyperLinksData = array();
+        $hyperLinksData = [];
         foreach ($htmlParts as $index => $tagData) {
             if ($index % 2 !== 0) {
                 $tagAttributes = $htmlParser->get_tag_attributes($tagData, true);
                 $firstTagName = $htmlParser->getFirstTagName($tagData);
                 if (strtolower($firstTagName) === 'a') {
                     if ($tagAttributes[0]['href'] && $tagAttributes[0]['href'][0] != '#') {
-                        $hyperLinksData[] = array(
+                        $hyperLinksData[] = [
                             'tag' => $tagData,
                             'href' => $tagAttributes[0]['href'],
                             'localPath' => $this->createLocalPath($tagAttributes[0]['href'])
-                        );
+                        ];
                     }
                 }
             }
@@ -902,10 +902,6 @@ class Indexer
      */
     public function indexExternalUrl($externalUrl)
     {
-        // Parse External URL:
-        $qParts = parse_url($externalUrl);
-        $fI = pathinfo($qParts['path']);
-        $ext = strtolower($fI['extension']);
         // Get headers:
         $urlHeaders = $this->getUrlHeaders($externalUrl);
         if (stristr($urlHeaders['Content-Type'], 'text/html')) {
@@ -937,7 +933,7 @@ class Indexer
         if ((string)$content !== '') {
             // Compile headers:
             $headers = GeneralUtility::trimExplode(LF, $content, true);
-            $retVal = array();
+            $retVal = [];
             foreach ($headers as $line) {
                 if (trim($line) === '') {
                     break;
@@ -958,13 +954,13 @@ class Indexer
     protected function createLocalPath($sourcePath)
     {
         $localPath = '';
-        static $pathFunctions = array(
+        static $pathFunctions = [
             'createLocalPathFromT3vars',
             'createLocalPathUsingAbsRefPrefix',
             'createLocalPathUsingDomainURL',
             'createLocalPathFromAbsoluteURL',
             'createLocalPathFromRelativeURL'
-        );
+        ];
         foreach ($pathFunctions as $functionName) {
             $localPath = $this->{$functionName}($sourcePath);
             if ($localPath != '') {
@@ -1145,10 +1141,10 @@ class Indexer
                 $fileInfo = stat($absFile);
                 $cParts = $this->fileContentParts($ext, $absFile);
                 foreach ($cParts as $cPKey) {
-                    $this->internal_log = array();
+                    $this->internal_log = [];
                     $this->log_push('Index: ' . str_replace('.', '_', basename($file)) . ($cPKey ? '#' . $cPKey : ''), '');
                     $Pstart = GeneralUtility::milliseconds();
-                    $subinfo = array('key' => $cPKey);
+                    $subinfo = ['key' => $cPKey];
                     // Setting page range. This is "0" (zero) when no division is made, otherwise a range like "1-3"
                     $phash_arr = ($this->file_phash_arr = $this->setExtHashes($file, $subinfo));
                     $check = $this->checkMtimeTstamp($fileInfo['mtime'], $phash_arr['phash']);
@@ -1247,7 +1243,7 @@ class Indexer
      */
     public function fileContentParts($ext, $absFile)
     {
-        $cParts = array(0);
+        $cParts = [0];
         // Consult relevant external document parser:
         if (is_object($this->external_parsers[$ext])) {
             $cParts = $this->external_parsers[$ext]->fileContentParts($ext, $absFile);
@@ -1341,8 +1337,7 @@ class Indexer
      */
     public function indexAnalyze($content)
     {
-        $indexArr = array();
-        $counter = 0;
+        $indexArr = [];
         $this->analyzeHeaderinfo($indexArr, $content, 'title', 7);
         $this->analyzeHeaderinfo($indexArr, $content, 'keywords', 6);
         $this->analyzeHeaderinfo($indexArr, $content, 'description', 5);
@@ -1455,7 +1450,7 @@ class Indexer
         // Remove any current data for this phash:
         $this->removeOldIndexedPages($this->hash['phash']);
         // setting new phash_row
-        $fields = array(
+        $fields = [
             'phash' => $this->hash['phash'],
             'phash_grouping' => $this->hash['phash_grouping'],
             'cHashParams' => serialize($this->cHashParams),
@@ -1481,41 +1476,47 @@ class Indexer
             'recordUid' => (int)$this->conf['recordUid'],
             'freeIndexUid' => (int)$this->conf['freeIndexUid'],
             'freeIndexSetId' => (int)$this->conf['freeIndexSetId']
-        );
+        ];
         if (IndexedSearchUtility::isTableUsed('index_phash')) {
-            $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_phash', $fields);
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_phash');
+            $connection->insert('index_phash', $fields);
         }
         // PROCESSING index_section
         $this->submit_section($this->hash['phash'], $this->hash['phash']);
         // PROCESSING index_grlist
         $this->submit_grlist($this->hash['phash'], $this->hash['phash']);
         // PROCESSING index_fulltext
-        $fields = array(
+        $fields = [
             'phash' => $this->hash['phash'],
             'fulltextdata' => implode(' ', $this->contentParts),
             'metaphonedata' => $this->metaphoneContent
-        );
+        ];
         if ($this->indexerConfig['fullTextDataLength'] > 0) {
             $fields['fulltextdata'] = substr($fields['fulltextdata'], 0, $this->indexerConfig['fullTextDataLength']);
         }
         if (IndexedSearchUtility::isTableUsed('index_fulltext')) {
-            $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_fulltext', $fields);
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_fulltext');
+            $connection->insert('index_fulltext', $fields);
         }
         // PROCESSING index_debug
         if ($this->indexerConfig['debugMode']) {
-            $fields = array(
+            $fields = [
                 'phash' => $this->hash['phash'],
-                'debuginfo' => serialize(array(
+                'debuginfo' => serialize([
                     'cHashParams' => $this->cHashParams,
                     'external_parsers initialized' => array_keys($this->external_parsers),
-                    'conf' => array_merge($this->conf, array('content' => substr($this->conf['content'], 0, 1000))),
-                    'contentParts' => array_merge($this->contentParts, array('body' => substr($this->contentParts['body'], 0, 1000))),
+                    'conf' => array_merge($this->conf, ['content' => substr($this->conf['content'], 0, 1000)]),
+                    'contentParts' => array_merge($this->contentParts, ['body' => substr($this->contentParts['body'], 0, 1000)]),
                     'logs' => $this->internal_log,
                     'lexer' => $this->lexerObj->debugString
-                ))
-            );
+                ])
+            ];
             if (IndexedSearchUtility::isTableUsed('index_debug')) {
-                $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_debug', $fields);
+                $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getConnectionForTable('index_debug');
+                $connection->insert('index_debug', $fields);
             }
         }
     }
@@ -1531,14 +1532,16 @@ class Indexer
     public function submit_grlist($hash, $phash_x)
     {
         // Setting the gr_list record
-        $fields = array(
+        $fields = [
             'phash' => $hash,
             'phash_x' => $phash_x,
             'hash_gr_list' => IndexedSearchUtility::md5inthash($this->conf['gr_list']),
             'gr_list' => $this->conf['gr_list']
-        );
+        ];
         if (IndexedSearchUtility::isTableUsed('index_grlist')) {
-            $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_grlist', $fields);
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_grlist');
+            $connection->insert('index_grlist', $fields);
         }
     }
 
@@ -1552,14 +1555,16 @@ class Indexer
      */
     public function submit_section($hash, $hash_t3)
     {
-        $fields = array(
+        $fields = [
             'phash' => $hash,
             'phash_t3' => $hash_t3,
             'page_id' => (int)$this->conf['id']
-        );
+        ];
         $this->getRootLineFields($fields);
         if (IndexedSearchUtility::isTableUsed('index_section')) {
-            $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_section', $fields);
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_section');
+            $connection->insert('index_section', $fields);
         }
     }
 
@@ -1571,16 +1576,22 @@ class Indexer
      */
     public function removeOldIndexedPages($phash)
     {
-        // Removing old registrations for all tables. Because the pages are TYPO3 pages there can be nothing else than 1-1 relations here.
-        $tableArray = explode(',', 'index_phash,index_section,index_grlist,index_fulltext,index_debug');
+        // Removing old registrations for all tables. Because the pages are TYPO3 pages
+        // there can be nothing else than 1-1 relations here.
+        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $tableArray = ['index_phash', 'index_section', 'index_grlist', 'index_fulltext', 'index_debug'];
         foreach ($tableArray as $table) {
             if (IndexedSearchUtility::isTableUsed($table)) {
-                $GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'phash=' . (int)$phash);
+                $connectionPool->getConnectionForTable($table)->delete($table, ['phash' => (int)$phash]);
             }
         }
-        // Removing all index_section records with hash_t3 set to this hash (this includes such records set for external media on the page as well!). The re-insert of these records are done in indexRegularDocument($file).
+
+        // Removing all index_section records with hash_t3 set to this hash (this includes such
+        // records set for external media on the page as well!). The re-insert of these records
+        // are done in indexRegularDocument($file).
         if (IndexedSearchUtility::isTableUsed('index_section')) {
-            $GLOBALS['TYPO3_DB']->exec_DELETEquery('index_section', 'phash_t3=' . (int)$phash);
+            $connectionPool->getConnectionForTable('index_section')
+                ->delete('index_section', ['phash_t3' => (int)$phash]);
         }
     }
 
@@ -1613,7 +1624,7 @@ class Indexer
         // Split filename:
         $fileParts = parse_url($file);
         // Setting new
-        $fields = array(
+        $fields = [
             'phash' => $hash['phash'],
             'phash_grouping' => $hash['phash_grouping'],
             'cHashParams' => serialize($subinfo),
@@ -1633,35 +1644,41 @@ class Indexer
             'freeIndexUid' => (int)$this->conf['freeIndexUid'],
             'freeIndexSetId' => (int)$this->conf['freeIndexSetId'],
             'sys_language_uid' => (int)$this->conf['sys_language_uid']
-        );
+        ];
         if (IndexedSearchUtility::isTableUsed('index_phash')) {
-            $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_phash', $fields);
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_phash');
+            $connection->insert('index_phash', $fields);
         }
         // PROCESSING index_fulltext
-        $fields = array(
+        $fields = [
             'phash' => $hash['phash'],
             'fulltextdata' => implode(' ', $contentParts),
             'metaphonedata' => $this->metaphoneContent
-        );
+        ];
         if ($this->indexerConfig['fullTextDataLength'] > 0) {
             $fields['fulltextdata'] = substr($fields['fulltextdata'], 0, $this->indexerConfig['fullTextDataLength']);
         }
         if (IndexedSearchUtility::isTableUsed('index_fulltext')) {
-            $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_fulltext', $fields);
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_fulltext');
+            $connection->insert('index_fulltext', $fields);
         }
         // PROCESSING index_debug
         if ($this->indexerConfig['debugMode']) {
-            $fields = array(
+            $fields = [
                 'phash' => $hash['phash'],
-                'debuginfo' => serialize(array(
+                'debuginfo' => serialize([
                     'cHashParams' => $subinfo,
-                    'contentParts' => array_merge($contentParts, array('body' => substr($contentParts['body'], 0, 1000))),
+                    'contentParts' => array_merge($contentParts, ['body' => substr($contentParts['body'], 0, 1000)]),
                     'logs' => $this->internal_log,
                     'lexer' => $this->lexerObj->debugString
-                ))
-            );
+                ])
+            ];
             if (IndexedSearchUtility::isTableUsed('index_debug')) {
-                $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_debug', $fields);
+                $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getConnectionForTable('index_debug');
+                $connection->insert('index_debug', $fields);
             }
         }
     }
@@ -1675,11 +1692,32 @@ class Indexer
     public function submitFile_grlist($hash)
     {
         // Testing if there is a gr_list record for a non-logged in user and if so, there is no need to place another one.
-        if (IndexedSearchUtility::isTableUsed('index_grlist')) {
-            $count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash', 'index_grlist', 'phash=' . (int)$hash . ' AND (hash_gr_list=' . IndexedSearchUtility::md5inthash($this->defaultGrList) . ' OR hash_gr_list=' . IndexedSearchUtility::md5inthash($this->conf['gr_list']) . ')');
-            if ($count == 0) {
-                $this->submit_grlist($hash, $hash);
-            }
+        if (!IndexedSearchUtility::isTableUsed('index_grlist')) {
+            return;
+        }
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('index_grlist');
+        $count = (int)$queryBuilder->count('*')
+            ->from('index_grlist')
+            ->where(
+                $queryBuilder->expr()->eq('phash', (int)$hash),
+                $queryBuilder->expr()->orX(
+                    $queryBuilder->expr()->eq(
+                        'hash_gr_list',
+                        IndexedSearchUtility::md5inthash($this->defaultGrList)
+                    ),
+                    $queryBuilder->expr()->eq(
+                        'hash_gr_list',
+                        IndexedSearchUtility::md5inthash($this->conf['gr_list'])
+                    )
+                )
+            )
+            ->execute()
+            ->fetchColumn();
+
+        if ($count === 0) {
+            $this->submit_grlist($hash, $hash);
         }
     }
 
@@ -1692,11 +1730,23 @@ class Indexer
     public function submitFile_section($hash)
     {
         // Testing if there is already a section
-        if (IndexedSearchUtility::isTableUsed('index_section')) {
-            $count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash', 'index_section', 'phash=' . (int)$hash . ' AND page_id=' . (int)$this->conf['id']);
-            if ($count == 0) {
-                $this->submit_section($hash, $this->hash['phash']);
-            }
+        if (!IndexedSearchUtility::isTableUsed('index_section')) {
+            return;
+        }
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('index_section');
+        $count = (int)$queryBuilder->count('phash')
+            ->from('index_section')
+            ->where(
+                $queryBuilder->expr()->eq('phash', (int)$hash),
+                $queryBuilder->expr()->eq('page_id', (int)$this->conf['id'])
+            )
+            ->execute()
+            ->fetchColumn();
+
+        if ($count === 0) {
+            $this->submit_section($hash, $this->hash['phash']);
         }
     }
 
@@ -1708,12 +1758,14 @@ class Indexer
      */
     public function removeOldIndexedFiles($phash)
     {
+        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         // Removing old registrations for tables.
-        $tableArray = explode(',', 'index_phash,index_grlist,index_fulltext,index_debug');
+        $tableArray = ['index_phash', 'index_grlist', 'index_fulltext', 'index_debug'];
         foreach ($tableArray as $table) {
-            if (IndexedSearchUtility::isTableUsed($table)) {
-                $GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'phash=' . (int)$phash);
+            if (!IndexedSearchUtility::isTableUsed($table)) {
+                continue;
             }
+            $connectionPool->getConnectionForTable($table)->delete($table, ['phash' => (int)$phash]);
         }
     }
 
@@ -1736,9 +1788,18 @@ class Indexer
             // Not indexed (not in index_phash)
             $result = 4;
         } else {
-            $row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('item_mtime,tstamp', 'index_phash', 'phash=' . (int)$phash);
+            $row = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('index_phash')
+                ->select(
+                    ['item_mtime', 'tstamp'],
+                    'index_phash',
+                    ['phash' => (int)$phash],
+                    [],
+                    [],
+                    1
+                )
+                ->fetch();
             // If there was an indexing of the page...:
-            if ($row) {
+            if (!empty($row)) {
                 if ($this->tstamp_maxAge && $row['tstamp'] + $this->tstamp_maxAge < $GLOBALS['EXEC_TIME']) {
                     // If max age is exceeded, index the page
                     // The configured max-age was exceeded for the document and thus it's indexed.
@@ -1789,8 +1850,21 @@ class Indexer
         // With this query the page will only be indexed if it's content is different from the same "phash_grouping" -page.
         $result = true;
         if (IndexedSearchUtility::isTableUsed('index_phash')) {
-            $row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('phash', 'index_phash', 'phash_grouping=' . (int)$this->hash['phash_grouping'] . ' AND contentHash=' . (int)$this->content_md5h);
-            if ($row) {
+            $row = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('index_phash')
+                ->select(
+                    ['item_mtime', 'tstamp'],
+                    'index_phash',
+                    [
+                        'phash_grouping' => (int)$this->hash['phash_grouping'],
+                        'contentHash' => (int)$this->content_md5h
+                    ],
+                    [],
+                    [],
+                    1
+                )
+                ->fetch();
+
+            if (!empty($row)) {
                 $result = $row;
             }
         }
@@ -1809,8 +1883,18 @@ class Indexer
     {
         $result = true;
         if (IndexedSearchUtility::isTableUsed('index_phash')) {
-            $count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', 'index_phash', 'phash_grouping=' . (int)$hashGr . ' AND contentHash=' . (int)$content_md5h);
-            $result = $count == 0;
+            $count = (int)GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_phash')
+                ->count(
+                    '*',
+                    'index_phash',
+                    [
+                        'phash_grouping' => (int)$hashGr,
+                        'contentHash' => (int)$content_md5h
+                    ]
+                );
+
+            $result = $count === 0;
         }
         return $result;
     }
@@ -1825,7 +1909,14 @@ class Indexer
     {
         $result = false;
         if (IndexedSearchUtility::isTableUsed('index_grlist')) {
-            $count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash_x', 'index_grlist', 'phash_x=' . (int)$phash_x);
+            $count = (int)GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_grlist')
+                ->count(
+                    'phash_x',
+                    'index_grlist',
+                    ['phash_x' => (int)$phash_x]
+                );
+
             $result = $count > 0;
         }
         return $result;
@@ -1842,8 +1933,18 @@ class Indexer
     public function update_grlist($phash, $phash_x)
     {
         if (IndexedSearchUtility::isTableUsed('index_grlist')) {
-            $count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('phash', 'index_grlist', 'phash=' . (int)$phash . ' AND hash_gr_list=' . IndexedSearchUtility::md5inthash($this->conf['gr_list']));
-            if ($count == 0) {
+            $count = (int)GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('index_grlist')
+                ->count(
+                    'phash',
+                    'index_grlist',
+                    [
+                        'phash' => (int)$phash,
+                        'hash_gr_list' => IndexedSearchUtility::md5inthash($this->conf['gr_list'])
+                    ]
+                );
+
+            if ($count === 0) {
                 $this->submit_grlist($phash, $phash_x);
                 $this->log_setTSlogMessage('Inserted gr_list \'' . $this->conf['gr_list'] . '\' for phash \'' . $phash . '\'', 1);
             }
@@ -1859,15 +1960,27 @@ class Indexer
      */
     public function updateTstamp($phash, $mtime = 0)
     {
-        if (IndexedSearchUtility::isTableUsed('index_phash')) {
-            $updateFields = array(
-                'tstamp' => $GLOBALS['EXEC_TIME']
-            );
-            if ($mtime) {
-                $updateFields['item_mtime'] = (int)$mtime;
-            }
-            $GLOBALS['TYPO3_DB']->exec_UPDATEquery('index_phash', 'phash=' . (int)$phash, $updateFields);
+        if (!IndexedSearchUtility::isTableUsed('index_phash')) {
+            return;
         }
+
+        $updateFields = [
+            'tstamp' => $GLOBALS['EXEC_TIME']
+        ];
+
+        if ($mtime) {
+            $updateFields['item_mtime'] = (int)$mtime;
+        }
+
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('index_phash')
+            ->update(
+                'index_phash',
+                $updateFields,
+                [
+                    'phash' => (int)$phash
+                ]
+            );
     }
 
     /**
@@ -1878,12 +1991,21 @@ class Indexer
      */
     public function updateSetId($phash)
     {
-        if (IndexedSearchUtility::isTableUsed('index_phash')) {
-            $updateFields = array(
-                'freeIndexSetId' => (int)$this->conf['freeIndexSetId']
-            );
-            $GLOBALS['TYPO3_DB']->exec_UPDATEquery('index_phash', 'phash=' . (int)$phash, $updateFields);
+        if (!IndexedSearchUtility::isTableUsed('index_phash')) {
+            return;
         }
+
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('index_phash')
+            ->update(
+                'index_phash',
+                [
+                    'freeIndexSetId' => (int)$this->conf['freeIndexSetId']
+                ],
+                [
+                    'phash' => (int)$phash
+                ]
+            );
     }
 
     /**
@@ -1895,12 +2017,21 @@ class Indexer
      */
     public function updateParsetime($phash, $parsetime)
     {
-        if (IndexedSearchUtility::isTableUsed('index_phash')) {
-            $updateFields = array(
-                'parsetime' => (int)$parsetime
-            );
-            $GLOBALS['TYPO3_DB']->exec_UPDATEquery('index_phash', 'phash=' . (int)$phash, $updateFields);
+        if (!IndexedSearchUtility::isTableUsed('index_phash')) {
+            return;
         }
+
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('index_phash')
+            ->update(
+                'index_phash',
+                [
+                    'parsetime' => (int)$parsetime
+                ],
+                [
+                    'phash' => (int)$phash
+                ]
+            );
     }
 
     /**
@@ -1910,11 +2041,22 @@ class Indexer
      */
     public function updateRootline()
     {
-        if (IndexedSearchUtility::isTableUsed('index_section')) {
-            $updateFields = array();
-            $this->getRootLineFields($updateFields);
-            $GLOBALS['TYPO3_DB']->exec_UPDATEquery('index_section', 'page_id=' . (int)$this->conf['id'], $updateFields);
+        if (!IndexedSearchUtility::isTableUsed('index_section')) {
+            return;
         }
+
+        $updateFields = [];
+        $this->getRootLineFields($updateFields);
+
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('index_section')
+            ->update(
+                'index_section',
+                $updateFields,
+                [
+                    'page_id' => (int)$this->conf['id']
+                ]
+            );
     }
 
     /**
@@ -1959,32 +2101,50 @@ class Indexer
      */
     public function checkWordList($wordListArray)
     {
-        if (IndexedSearchUtility::isTableUsed('index_words')) {
-            if (!empty($wordListArray)) {
-                $phashArray = array();
-                foreach ($wordListArray as $value) {
-                    $phashArray[] = (int)$value['hash'];
-                }
-                $cwl = implode(',', $phashArray);
-                $count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('baseword', 'index_words', 'wid IN (' . $cwl . ')');
-                $wordListArrayCount = count($wordListArray);
-                if ($count !== $wordListArrayCount) {
-                    $res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('baseword', 'index_words', 'wid IN (' . $cwl . ')');
-                    $this->log_setTSlogMessage('Inserting words: ' . ($wordListArrayCount - $count), 1);
-                    while (false != ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
-                        unset($wordListArray[$row['baseword']]);
-                    }
-                    $GLOBALS['TYPO3_DB']->sql_free_result($res);
-                    foreach ($wordListArray as $key => $val) {
-                        $insertFields = array(
-                            'wid' => $val['hash'],
-                            'baseword' => $key,
-                            'metaphone' => $val['metaphone']
-                        );
-                        // A duplicate-key error will occur here if a word is NOT unset in the unset() line. However as long as the words in $wl are NOT longer as 60 chars (the baseword varchar is 60 characters...) this is not a problem.
-                        $GLOBALS['TYPO3_DB']->exec_INSERTquery('index_words', $insertFields);
-                    }
-                }
+        if (!IndexedSearchUtility::isTableUsed('index_words') || empty($wordListArray)) {
+            return;
+        }
+
+        $wordListArrayCount = count($wordListArray);
+        $phashArray = array_map('intval', array_column($wordListArray, 'hash'));
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_words');
+        $count = (int)$queryBuilder->count('baseword')
+            ->from('index_words')
+            ->where(
+                $queryBuilder->expr()->in('wid', $phashArray)
+            )
+            ->execute()
+            ->fetchColumn();
+
+        if ($count !== $wordListArrayCount) {
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('index_words');
+            $queryBuilder = $connection->createQueryBuilder();
+
+            $result = $queryBuilder->select('baseword')
+                ->from('index_words')
+                ->where(
+                    $queryBuilder->expr()->in('wid', $phashArray)
+                )
+                ->execute();
+
+            $this->log_setTSlogMessage('Inserting words: ' . ($wordListArrayCount - $count), 1);
+            while ($row = $result->fetch()) {
+                unset($wordListArray[$row['baseword']]);
+            }
+
+            foreach ($wordListArray as $key => $val) {
+                // A duplicate-key error will occur here if a word is NOT unset in the unset() line. However as
+                // long as the words in $wl are NOT longer as 60 chars (the baseword varchar is 60 characters...)
+                // this is not a problem.
+                $connection->insert(
+                    'index_words',
+                    [
+                        'wid' => $val['hash'],
+                        'baseword' => $key,
+                        'metaphone' => $val['metaphone']
+                    ]
+                );
             }
         }
     }
@@ -1998,29 +2158,43 @@ class Indexer
      */
     public function submitWords($wordList, $phash)
     {
-        if (IndexedSearchUtility::isTableUsed('index_rel')) {
-            $stopWords = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('wid', 'index_words', 'is_stopword != 0', '', '', '', 'wid');
-
-            $GLOBALS['TYPO3_DB']->exec_DELETEquery('index_rel', 'phash=' . (int)$phash);
-            $fields = array('phash', 'wid', 'count', 'first', 'freq', 'flags');
-            $rows = array();
-            foreach ($wordList as $val) {
-                if (isset($stopWords[$val['hash']])) {
-                    continue;
-                }
-                $rows[] = array(
-                    (int)$phash,
-                    (int)$val['hash'],
-                    (int)$val['count'],
-                    (int)$val['first'],
-                    $this->freqMap($val['count'] / $this->wordcount),
-                    $val['cmp'] & $this->flagBitMask
-                );
-            }
-            GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getConnectionForTable('index_rel')
-                ->bulkInsert('index_rel', $rows, $fields);
+        if (!IndexedSearchUtility::isTableUsed('index_rel')) {
+            return;
         }
+        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $queryBuilder = $connectionPool->getQueryBuilderForTable('index_words');
+        $result = $queryBuilder->select('wid')
+            ->from('index_words')
+            ->where(
+                $queryBuilder->expr()->neq('is_stopword', 0)
+            )
+            ->groupBy('wid')
+            ->execute();
+
+        $stopWords = [];
+        while ($row = $result->fetch()) {
+            $stopWords[$row['wid']] = $row;
+        }
+
+        $connectionPool->getConnectionForTable('index_rel')->delete('index_rel', ['phash' => (int)$phash]);
+
+        $fields = ['phash', 'wid', 'count', 'first', 'freq', 'flags'];
+        $rows = [];
+        foreach ($wordList as $val) {
+            if (isset($stopWords[$val['hash']])) {
+                continue;
+            }
+            $rows[] = [
+                (int)$phash,
+                (int)$val['hash'],
+                (int)$val['count'],
+                (int)$val['first'],
+                $this->freqMap($val['count'] / $this->wordcount),
+                $val['cmp'] & $this->flagBitMask
+            ];
+        }
+
+        $connectionPool->getConnectionForTable('index_rel')->bulkInsert('index_rel', $rows, $fields);
     }
 
     /**
@@ -2055,13 +2229,13 @@ class Indexer
     public function setT3Hashes()
     {
         //  Set main array:
-        $hArray = array(
+        $hArray = [
             'id' => (int)$this->conf['id'],
             'type' => (int)$this->conf['type'],
             'sys_lang' => (int)$this->conf['sys_language_uid'],
             'MP' => (string)$this->conf['MP'],
             'cHash' => $this->cHashParams
-        );
+        ];
         // Set grouping hash (Identifies a "page" combined of id, type, language, mountpoint and cHash parameters):
         $this->hash['phash_grouping'] = IndexedSearchUtility::md5inthash(serialize($hArray));
         // Add gr_list and set plain phash (Subdivision where special page composition based on login is taken into account as well. It is expected that such pages are normally similar regardless of the login.)
@@ -2076,13 +2250,13 @@ class Indexer
      * @param array $subinfo Additional content identifying the (subpart of) content. For instance; PDF files are divided into groups of pages for indexing.
      * @return array Array with "phash_grouping" and "phash" inside.
      */
-    public function setExtHashes($file, $subinfo = array())
+    public function setExtHashes($file, $subinfo = [])
     {
         //  Set main array:
-        $hash = array();
-        $hArray = array(
+        $hash = [];
+        $hArray = [
             'file' => $file
-        );
+        ];
         // Set grouping hash:
         $hash['phash_grouping'] = IndexedSearchUtility::md5inthash(serialize($hArray));
         // Add subinfo

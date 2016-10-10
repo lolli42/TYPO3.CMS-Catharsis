@@ -17,12 +17,11 @@ namespace TYPO3\CMS\Tstemplate\Controller;
 use TYPO3\CMS\Backend\Module\AbstractFunctionModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -43,30 +42,16 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
     public $pObj;
 
     /**
-     * @var IconFactory
-     */
-    protected $iconFactory;
-
-    /**
-     * Constructor
-     */
-    public function __construct()
-    {
-        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-    }
-
-    /**
-     * Creates a row for a HTML table
+     * Gets the data for a row of a HTML table in the fluid template
      *
      * @param string $label The label to be shown (e.g. 'Title:', 'Sitetitle:')
      * @param string $data The data/information to be shown (e.g. 'Template for my site')
      * @param string $field The field/variable to be sent on clicking the edit icon (e.g. 'title', 'sitetitle')
      * @param int $id The field/variable to be sent on clicking the edit icon (e.g. 'title', 'sitetitle')
-     * @return string A row for a HTML table
+     * @return array Data for a row of a HTML table
      */
-    public function tableRow($label, $data, $field, $id)
+    public function tableRowData($label, $data, $field, $id)
     {
-        $lang = $this->getLanguageService();
         if ($field === 'config' || $field === 'constants') {
             $urlParameters = [
                 'id' => $this->pObj->id,
@@ -88,13 +73,11 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
             ];
             $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
         }
-        $title = $lang->sL('LLL:EXT:lang/locallang_common.xlf:editField');
-        $startAnchor = '<a href="' . htmlspecialchars($url) . '" title="' . htmlspecialchars($title) . '">';
-        $icon = $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render();
-        $ret = '<tr><td>';
-        $ret .= $startAnchor . '<strong>' . $label . '</strong></a>';
-        $ret .= '</td><td width="80%">' . $data . '</td><td>' . $startAnchor . '<span class="btn btn-default">' . $icon . '</span></a></td></tr>';
-        return $ret;
+        $row = [];
+        $row['url'] = $url;
+        $row['data'] = $data;
+        $row['label'] = $label;
+        return $row;
     }
 
     /**
@@ -170,8 +153,6 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
      */
     public function main()
     {
-        $lang = $this->getLanguageService();
-        $lang->includeLLFile('EXT:tstemplate/Resources/Private/Language/locallang_info.xlf');
         $this->pObj->MOD_MENU['includeTypoScriptFileContent'] = true;
         $e = $this->pObj->e;
         // Checking for more than one template an if, set a menu...
@@ -199,8 +180,11 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
             HttpUtility::redirect($url);
         }
         $tce = null;
-        $theOutput = '';
         if ($existTemplate) {
+            $lang = $this->getLanguageService();
+            $lang->includeLLFile('EXT:tstemplate/Resources/Private/Language/locallang_info.xlf');
+            $assigns = [];
+            $assigns['LLPrefix'] = 'LLL:EXT:tstemplate/Resources/Private/Language/locallang_info.xlf:';
             // Update template ?
             $POST = GeneralUtility::_POST();
             if (
@@ -208,8 +192,8 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
                 || isset($POST['_saveandclosedok'])
             ) {
                 // Set the data to be saved
-                $recData = array();
-                $alternativeFileName = array();
+                $recData = [];
+                $alternativeFileName = [];
                 if (is_array($POST['data'])) {
                     foreach ($POST['data'] as $field => $val) {
                         switch ($field) {
@@ -226,7 +210,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
                     $tce = GeneralUtility::makeInstance(DataHandler::class);
                     $tce->alternativeFileName = $alternativeFileName;
                     // Initialize
-                    $tce->start($recData, array());
+                    $tce->start($recData, []);
                     // Saved the stuff
                     $tce->process_datamap();
                     // Clear the cache (note: currently only admin-users can clear the cache in tce_main.php)
@@ -244,55 +228,46 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
             if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/tstemplate_info/class.tx_tstemplateinfo.php']['postTCEProcessingHook'])) {
                 $postTCEProcessingHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/tstemplate_info/class.tx_tstemplateinfo.php']['postTCEProcessingHook'];
                 if (is_array($postTCEProcessingHook)) {
-                    $hookParameters = array(
+                    $hookParameters = [
                         'POST' => $POST,
                         'tce' => $tce
-                    );
+                    ];
                     foreach ($postTCEProcessingHook as $hookFunction) {
                         GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
                     }
                 }
             }
-            $content = '<a href="#" class="t3-js-clickmenutrigger" data-table="sys_template" data-uid="' . $tplRow['uid'] . '" data-listframe="1">' . $this->iconFactory->getIconForRecord('sys_template', $tplRow, Icon::SIZE_SMALL)->render() . '</a><strong>&nbsp;' . htmlspecialchars($tplRow['title']) . '</strong>' . (trim($tplRow['sitetitle']) ? htmlspecialchars(' (' . $tplRow['sitetitle'] . ')') : '');
-            $theOutput .= '<h3>' . htmlspecialchars($lang->getLL('templateInformation')) . '</h3><div>' . $content . '</div>';
+            $assigns['title'] = trim($tplRow['title']);
+            $assigns['siteTitle'] = trim($tplRow['sitetitle']);
+            $assigns['templateRecord'] = $tplRow;
             if ($manyTemplatesMenu) {
-                $theOutput .= '<div>' . $manyTemplatesMenu . '</div>';
+                $assigns['manyTemplatesMenu'] = $manyTemplatesMenu;
             }
-            $theOutput .= '<div style="padding-top: 10px;"></div>';
             $numberOfRows = 35;
+            $assigns['numberOfRows'] = $numberOfRows;
             // If abort pressed, nothing should be edited:
             if (isset($POST['_saveandclosedok'])) {
                 unset($e);
             }
             if (isset($e['constants'])) {
-                $outCode = '<textarea name="data[constants]" rows="' . $numberOfRows . '" wrap="off" class="text-monospace enable-tab" style="width:98%;height:70%" class="text-monospace">' . htmlspecialchars($tplRow['constants']) . '</textarea>';
-                $outCode .= '<input type="hidden" name="e[constants]" value="1">';
-                // Display "Include TypoScript file content?" checkbox
-                $outCode .= '<div class="checkbox"><label for="checkIncludeTypoScriptFileContent">' . BackendUtility::getFuncCheck($this->pObj->id, 'SET[includeTypoScriptFileContent]', $this->pObj->MOD_SETTINGS['includeTypoScriptFileContent'], '', '&e[constants]=1', 'id="checkIncludeTypoScriptFileContent"');
-                $outCode .= $lang->getLL('includeTypoScriptFileContent') . '</label></div><br />';
-                $theOutput .= '<div style="padding-top: 15px;"></div>';
-                $theOutput .= '<h3>' . htmlspecialchars($lang->getLL('constants')) . '</h3>';
-                $theOutput .= $outCode;
+                $assigns['showConstantsEditor'] = true;
+                $assigns['constants'] = $tplRow['constants'];
+                $assigns['constantsLabel'] = BackendUtility::getFuncCheck($this->pObj->id, 'SET[includeTypoScriptFileContent]', $this->pObj->MOD_SETTINGS['includeTypoScriptFileContent'], '', '&e[constants]=1', 'id="checkIncludeTypoScriptFileContent"');
             }
             if (isset($e['config'])) {
-                $outCode = '<textarea name="data[config]" rows="' . $numberOfRows . '" wrap="off" class="text-monospace enable-tab" style="width:98%;height:70%" class="text-monospace">' . htmlspecialchars($tplRow['config']) . '</textarea>';
-                $outCode .= '<input type="hidden" name="e[config]" value="1">';
-                // Display "Include TypoScript file content?" checkbox
-                $outCode .= '<div class="checkbox"><label for="checkIncludeTypoScriptFileContent">' . BackendUtility::getFuncCheck($this->pObj->id, 'SET[includeTypoScriptFileContent]', $this->pObj->MOD_SETTINGS['includeTypoScriptFileContent'], '', '&e[config]=1', 'id="checkIncludeTypoScriptFileContent"');
-                $outCode .= $lang->getLL('includeTypoScriptFileContent') . '</label></div><br />';
-                $theOutput .= '<div style="padding-top: 15px;"></div>';
-                $theOutput .= '<h3>' . htmlspecialchars($lang->getLL('setup')) . '</h3>';
-                $theOutput .= $outCode;
+                $assigns['showConfigEditor'] = true;
+                $assigns['config'] = $tplRow['config'];
+                $assigns['configLabel'] = BackendUtility::getFuncCheck($this->pObj->id, 'SET[includeTypoScriptFileContent]', $this->pObj->MOD_SETTINGS['includeTypoScriptFileContent'], '', '&e[config]=1', 'id="checkIncludeTypoScriptFileContent"');
             }
 
             // Processing:
-            $outCode = '';
-            $outCode .= $this->tableRow($lang->getLL('title'), htmlspecialchars($tplRow['title']), 'title', $tplRow['uid']);
-            $outCode .= $this->tableRow($lang->getLL('sitetitle'), htmlspecialchars($tplRow['sitetitle']), 'sitetitle', $tplRow['uid']);
-            $outCode .= $this->tableRow($lang->getLL('description'), nl2br(htmlspecialchars($tplRow['description'])), 'description', $tplRow['uid']);
-            $outCode .= $this->tableRow($lang->getLL('constants'), sprintf($lang->getLL('editToView'), trim($tplRow['constants']) ? count(explode(LF, $tplRow['constants'])) : 0), 'constants', $tplRow['uid']);
-            $outCode .= $this->tableRow($lang->getLL('setup'), sprintf($lang->getLL('editToView'), trim($tplRow['config']) ? count(explode(LF, $tplRow['config'])) : 0), 'config', $tplRow['uid']);
-            $outCode = '<div class="table-fit"><table class="table table-striped table-hover">' . $outCode . '</table></div>';
+            $tableRows = [];
+            $tableRows[] = $this->tableRowData($lang->getLL('title'), htmlspecialchars($tplRow['title']), 'title', $tplRow['uid']);
+            $tableRows[] = $this->tableRowData($lang->getLL('sitetitle'), htmlspecialchars($tplRow['sitetitle']), 'sitetitle', $tplRow['uid']);
+            $tableRows[] = $this->tableRowData($lang->getLL('description'), nl2br(htmlspecialchars($tplRow['description'])), 'description', $tplRow['uid']);
+            $tableRows[] = $this->tableRowData($lang->getLL('constants'), sprintf($lang->getLL('editToView'), trim($tplRow['constants']) ? count(explode(LF, $tplRow['constants'])) : 0), 'constants', $tplRow['uid']);
+            $tableRows[] = $this->tableRowData($lang->getLL('setup'), sprintf($lang->getLL('editToView'), trim($tplRow['config']) ? count(explode(LF, $tplRow['config'])) : 0), 'config', $tplRow['uid']);
+            $assigns['tableRows'] = $tableRows;
 
             // Edit all icon:
             $urlParameters = [
@@ -304,31 +279,34 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
                 'createExtension' => 0,
                 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
             ];
-            $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
-            $title = htmlspecialchars($lang->getLL('editTemplateRecord'));
-            $icon = $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render();
-            $outCode .= '<br /><a class="btn btn-default" href="' . htmlspecialchars($url)
-                . '"><strong>' . $icon . '&nbsp;' . $title . '</strong></a>';
-            $theOutput .= '<div>' . $outCode . '</div>';
+            $assigns['editAllUrl'] = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 
-                // hook	after compiling the output
+            // Rendering of the output via fluid
+            $view = GeneralUtility::makeInstance(StandaloneView::class);
+            $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName(
+                'EXT:tstemplate/Resources/Private/Templates/InformationModule.html'
+            ));
+            $view->assignMultiple($assigns);
+            $theOutput = $view->render();
+
+            // hook after compiling the output
             if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/tstemplate_info/class.tx_tstemplateinfo.php']['postOutputProcessingHook'])) {
                 $postOutputProcessingHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/tstemplate_info/class.tx_tstemplateinfo.php']['postOutputProcessingHook'];
                 if (is_array($postOutputProcessingHook)) {
-                    $hookParameters = array(
+                    $hookParameters = [
                         'theOutput' => &$theOutput,
                         'POST' => $POST,
                         'e' => $e,
                         'tplRow' => $tplRow,
                         'numberOfRows' => $numberOfRows
-                    );
+                    ];
                     foreach ($postOutputProcessingHook as $hookFunction) {
                         GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
                     }
                 }
             }
         } else {
-            $theOutput .= $this->pObj->noTemplate(1);
+            $theOutput = $this->pObj->noTemplate(1);
         }
         return $theOutput;
     }

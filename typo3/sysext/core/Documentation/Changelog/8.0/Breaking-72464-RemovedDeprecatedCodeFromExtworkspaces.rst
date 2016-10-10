@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==============================================================
 Breaking: #72464 - Removed deprecated code from EXT:workspaces
 ==============================================================
+
+See :issue:`72464`
 
 Description
 ===========
@@ -15,7 +20,7 @@ and lead to deprecated code which is removed in TYPO3 CMS 8.
 Impact
 ======
 
-Using or extending ``\TYPO3\CMS\Workspaces\ExtDirect\ToolbarMenu`` will fail since
+Using or extending `\TYPO3\CMS\Workspaces\ExtDirect\ToolbarMenu` will fail since
 it has been removed.
 
 Using \TYPO3\CMS\Workspaces\Service\StagesService::getNotificationMode($stageId)
@@ -42,4 +47,4 @@ Migration
 First migrate to TYPO3 CMS 7 and use the accordant upgrade wizard
 (WorkspacesNotificationSettingsUpdate) and then upgrade to TYPO3 CMS 8.
 
-.. index:: php
+.. index:: PHP-API, Backend

@@ -1,5 +1,5 @@
 <?php
-$EM_CONF[$_EXTKEY] = array(
+$EM_CONF[$_EXTKEY] = [
     'title' => 'Import/Export',
     'description' => 'Import and Export of records from TYPO3 in a custom serialized format (.T3D) for data exchange with other TYPO3 systems.',
     'category' => 'be',
@@ -10,12 +10,12 @@ $EM_CONF[$_EXTKEY] = array(
     'author' => 'Kasper Skaarhoj',
     'author_email' => 'kasperYYYY@typo3.com',
     'author_company' => 'Curby Soft Multimedia',
-    'version' => '8.3.0',
-    'constraints' => array(
-        'depends' => array(
-            'typo3' => '8.3.0-8.3.99',
-        ),
-        'conflicts' => array(),
-        'suggests' => array(),
-    ),
-);
+    'version' => '8.4.0',
+    'constraints' => [
+        'depends' => [
+            'typo3' => '8.4.0-8.4.99',
+        ],
+        'conflicts' => [],
+        'suggests' => [],
+    ],
+];

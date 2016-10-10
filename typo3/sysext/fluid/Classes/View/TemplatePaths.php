@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Extbase\Utility\ArrayUtility;
 
 /**
  * Class TemplatePaths
@@ -32,7 +33,7 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
     /**
      * @var array
      */
-    protected $typoScript = array();
+    protected $typoScript = [];
 
     /**
      * @var string
@@ -74,29 +75,44 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
     protected function getContextSpecificViewConfiguration($extensionKey)
     {
         if (empty($extensionKey)) {
-            return array();
+            return [];
         }
-        if (empty($this->typoScript)) {
-            $this->typoScript = GeneralUtility::removeDotsFromTS(
-                $this->getConfigurationManager()->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT)
-            );
-        }
-        $signature = str_replace('_', '', $extensionKey);
+
         $resources = $this->getExtensionPrivateResourcesPath($extensionKey);
-        $configuration = array();
-        $paths = array(
-            self::CONFIG_TEMPLATEROOTPATHS => array($resources . 'Templates/'),
-            self::CONFIG_PARTIALROOTPATHS => array($resources . 'Partials/'),
-            self::CONFIG_LAYOUTROOTPATHS => array($resources . 'Layouts/')
-        );
-        if (TYPO3_MODE === 'BE' && isset($this->typoScript['module']['tx_' . $signature]['view'])) {
-            $configuration = (array) $this->typoScript['module']['tx_' . $signature]['view'];
-        } elseif (TYPO3_MODE === 'FE' && isset($this->typoScript['plugin']['tx_' . $signature]['view'])) {
-            $configuration = (array) $this->typoScript['plugin']['tx_' . $signature]['view'];
+        $paths = [
+            self::CONFIG_TEMPLATEROOTPATHS => [$resources . 'Templates/'],
+            self::CONFIG_PARTIALROOTPATHS => [$resources . 'Partials/'],
+            self::CONFIG_LAYOUTROOTPATHS => [$resources . 'Layouts/']
+        ];
+
+        $configuredPaths = [];
+        if (!empty($this->templateRootPaths) || !empty($this->partialRootPaths) || !empty($this->layoutRootPaths)) {
+            // The view was configured already
+            $configuredPaths = [
+                self::CONFIG_TEMPLATEROOTPATHS => $this->templateRootPaths,
+                self::CONFIG_PARTIALROOTPATHS => $this->partialRootPaths,
+                self::CONFIG_LAYOUTROOTPATHS => $this->layoutRootPaths,
+            ];
+        } else {
+            if (empty($this->typoScript)) {
+                $this->typoScript = GeneralUtility::removeDotsFromTS(
+                    $this->getConfigurationManager()->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT)
+                );
+            }
+            $signature = str_replace('_', '', $extensionKey);
+            if (TYPO3_MODE === 'BE' && isset($this->typoScript['module']['tx_' . $signature]['view'])) {
+                $configuredPaths = (array)$this->typoScript['module']['tx_' . $signature]['view'];
+            } elseif (TYPO3_MODE === 'FE' && isset($this->typoScript['plugin']['tx_' . $signature]['view'])) {
+                $configuredPaths = (array)$this->typoScript['plugin']['tx_' . $signature]['view'];
+            }
         }
-        foreach ($paths as $name => $values) {
-            $paths[$name] = $values + (array) $configuration[$name];
+
+        foreach ($paths as $name => $defaultPaths) {
+            if (!empty($configuredPaths[$name])) {
+                $paths[$name] = (array)$configuredPaths[$name] + $defaultPaths;
+            }
         }
+
         return $paths;
     }
 
@@ -107,7 +123,7 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
     protected function sanitizePath($path)
     {
         if (is_array($path)) {
-            $paths = array_map(array($this, 'sanitizePath'), $path);
+            $paths = array_map([$this, 'sanitizePath'], $path);
             return array_unique($paths);
         }
         $path = $this->ensureAbsolutePath($path);
@@ -152,5 +168,44 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
     public function fillDefaultsByPackageName($packageName)
     {
         $this->fillFromConfigurationArray($this->getContextSpecificViewConfiguration($packageName));
+    }
+
+    /**
+     * Overridden setter with enforced sorting behavior
+     *
+     * @param array $templateRootPaths
+     * @return void
+     */
+    public function setTemplateRootPaths(array $templateRootPaths)
+    {
+        parent::setTemplateRootPaths(
+            ArrayUtility::sortArrayWithIntegerKeys($templateRootPaths)
+        );
+    }
+
+    /**
+     * Overridden setter with enforced sorting behavior
+     *
+     * @param array $layoutRootPaths
+     * @return void
+     */
+    public function setLayoutRootPaths(array $layoutRootPaths)
+    {
+        parent::setLayoutRootPaths(
+            ArrayUtility::sortArrayWithIntegerKeys($layoutRootPaths)
+        );
+    }
+
+    /**
+     * Overridden setter with enforced sorting behavior
+     *
+     * @param array $partialRootPaths
+     * @return void
+     */
+    public function setPartialRootPaths(array $partialRootPaths)
+    {
+        parent::setPartialRootPaths(
+            ArrayUtility::sortArrayWithIntegerKeys($partialRootPaths)
+        );
     }
 }

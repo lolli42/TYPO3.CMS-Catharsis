@@ -14,7 +14,9 @@ namespace TYPO3\CMS\Core\Tests\Functional\DataHandling\Framework;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
@@ -43,7 +45,7 @@ class ActionService
      */
     public function createNewRecord($tableName, $pageId, array $recordData)
     {
-        return $this->createNewRecords($pageId, array($tableName => $recordData));
+        return $this->createNewRecords($pageId, [$tableName => $recordData]);
     }
 
     /**
@@ -53,8 +55,8 @@ class ActionService
      */
     public function createNewRecords($pageId, array $tableRecordData)
     {
-        $dataMap = array();
-        $newTableIds = array();
+        $dataMap = [];
+        $newTableIds = [];
         $currentUid = null;
         $previousTableName = null;
         $previousUid = null;
@@ -76,7 +78,7 @@ class ActionService
             $previousUid = $currentUid;
         }
         $this->createDataHandler();
-        $this->dataHandler->start($dataMap, array());
+        $this->dataHandler->start($dataMap, []);
         $this->dataHandler->process_datamap();
 
         foreach ($newTableIds as $tableName => &$ids) {
@@ -98,12 +100,12 @@ class ActionService
      */
     public function modifyRecord($tableName, $uid, array $recordData, array $deleteTableRecordIds = null)
     {
-        $dataMap = array(
-            $tableName => array(
+        $dataMap = [
+            $tableName => [
                 $uid => $recordData,
-            ),
-        );
-        $commandMap = array();
+            ],
+        ];
+        $commandMap = [];
         if (!empty($deleteTableRecordIds)) {
             foreach ($deleteTableRecordIds as $tableName => $recordIds) {
                 foreach ($recordIds as $recordId) {
@@ -125,7 +127,7 @@ class ActionService
      */
     public function modifyRecords($pageId, array $tableRecordData)
     {
-        $dataMap = array();
+        $dataMap = [];
         $currentUid = null;
         $previousTableName = null;
         $previousUid = null;
@@ -151,7 +153,7 @@ class ActionService
             $previousUid = $currentUid;
         }
         $this->createDataHandler();
-        $this->dataHandler->start($dataMap, array());
+        $this->dataHandler->start($dataMap, []);
         $this->dataHandler->process_datamap();
     }
 
@@ -163,9 +165,9 @@ class ActionService
     public function deleteRecord($tableName, $uid)
     {
         return $this->deleteRecords(
-            array(
-                $tableName => array($uid),
-            )
+            [
+                $tableName => [$uid],
+            ]
         );
     }
 
@@ -175,16 +177,16 @@ class ActionService
      */
     public function deleteRecords(array $tableRecordIds)
     {
-        $commandMap = array();
+        $commandMap = [];
         foreach ($tableRecordIds as $tableName => $ids) {
             foreach ($ids as $uid) {
-                $commandMap[$tableName][$uid] = array(
+                $commandMap[$tableName][$uid] = [
                     'delete' => true,
-                );
+                ];
             }
         }
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
         // Deleting workspace records is actually a copy(!)
         return $this->dataHandler->copyMappingArray;
@@ -197,9 +199,9 @@ class ActionService
     public function clearWorkspaceRecord($tableName, $uid)
     {
         $this->clearWorkspaceRecords(
-            array(
-                $tableName => array($uid),
-            )
+            [
+                $tableName => [$uid],
+            ]
         );
     }
 
@@ -208,18 +210,18 @@ class ActionService
      */
     public function clearWorkspaceRecords(array $tableRecordIds)
     {
-        $commandMap = array();
+        $commandMap = [];
         foreach ($tableRecordIds as $tableName => $ids) {
             foreach ($ids as $uid) {
-                $commandMap[$tableName][$uid] = array(
-                    'version' => array(
+                $commandMap[$tableName][$uid] = [
+                    'version' => [
                         'action' => 'clearWSID',
-                    )
-                );
+                    ]
+                ];
             }
         }
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
     }
 
@@ -232,22 +234,22 @@ class ActionService
      */
     public function copyRecord($tableName, $uid, $pageId, array $recordData = null)
     {
-        $commandMap = array(
-            $tableName => array(
-                $uid => array(
+        $commandMap = [
+            $tableName => [
+                $uid => [
                     'copy' => $pageId,
-                ),
-            ),
-        );
+                ],
+            ],
+        ];
         if ($recordData !== null) {
-            $commandMap[$tableName][$uid]['copy'] = array(
+            $commandMap[$tableName][$uid]['copy'] = [
                 'action' => 'paste',
                 'target' => $pageId,
                 'update' => $recordData,
-            );
+            ];
         }
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
         return $this->dataHandler->copyMappingArray;
     }
@@ -261,22 +263,22 @@ class ActionService
      */
     public function moveRecord($tableName, $uid, $pageId, array $recordData = null)
     {
-        $commandMap = array(
-            $tableName => array(
-                $uid => array(
+        $commandMap = [
+            $tableName => [
+                $uid => [
                     'move' => $pageId,
-                ),
-            ),
-        );
+                ],
+            ],
+        ];
         if ($recordData !== null) {
-            $commandMap[$tableName][$uid]['move'] = array(
+            $commandMap[$tableName][$uid]['move'] = [
                 'action' => 'paste',
                 'target' => $pageId,
                 'update' => $recordData,
-            );
+            ];
         }
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
         return $this->dataHandler->copyMappingArray;
     }
@@ -289,15 +291,15 @@ class ActionService
      */
     public function localizeRecord($tableName, $uid, $languageId)
     {
-        $commandMap = array(
-            $tableName => array(
-                $uid => array(
+        $commandMap = [
+            $tableName => [
+                $uid => [
                     'localize' => $languageId,
-                ),
-            ),
-        );
+                ],
+            ],
+        ];
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
         return $this->dataHandler->copyMappingArray;
     }
@@ -310,15 +312,15 @@ class ActionService
      */
     public function modifyReferences($tableName, $uid, $fieldName, array $referenceIds)
     {
-        $dataMap = array(
-            $tableName => array(
-                $uid => array(
+        $dataMap = [
+            $tableName => [
+                $uid => [
                     $fieldName => implode(',', $referenceIds),
-                ),
-            )
-        );
+                ],
+            ]
+        ];
         $this->createDataHandler();
-        $this->dataHandler->start($dataMap, array());
+        $this->dataHandler->start($dataMap, []);
         $this->dataHandler->process_datamap();
     }
 
@@ -329,7 +331,7 @@ class ActionService
      */
     public function publishRecord($tableName, $liveUid, $throwException = true)
     {
-        $this->publishRecords(array($tableName => array($liveUid)), $throwException);
+        $this->publishRecords([$tableName => [$liveUid]], $throwException);
     }
 
     /**
@@ -339,7 +341,7 @@ class ActionService
      */
     public function publishRecords(array $tableLiveUids, $throwException = true)
     {
-        $commandMap = array();
+        $commandMap = [];
         foreach ($tableLiveUids as $tableName => $liveUids) {
             foreach ($liveUids as $liveUid) {
                 $versionedUid = $this->getVersionedId($tableName, $liveUid);
@@ -351,17 +353,17 @@ class ActionService
                     }
                 }
 
-                $commandMap[$tableName][$liveUid] = array(
-                    'version' => array(
+                $commandMap[$tableName][$liveUid] = [
+                    'version' => [
                         'action' => 'swap',
                         'swapWith' => $versionedUid,
-                        'notificationAlternativeRecipients' => array(),
-                    ),
-                );
+                        'notificationAlternativeRecipients' => [],
+                    ],
+                ];
             }
         }
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
     }
 
@@ -372,7 +374,7 @@ class ActionService
     {
         $commandMap = $this->getWorkspaceService()->getCmdArrayForPublishWS($workspaceId, false);
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
     }
 
@@ -383,7 +385,7 @@ class ActionService
     {
         $commandMap = $this->getWorkspaceService()->getCmdArrayForPublishWS($workspaceId, true);
         $this->createDataHandler();
-        $this->dataHandler->start(array(), $commandMap);
+        $this->dataHandler->start([], $commandMap);
         $this->dataHandler->process_cmdmap();
     }
 
@@ -436,12 +438,21 @@ class ActionService
         $versionedId = null;
         $liveUid = (int)$liveUid;
         $workspaceId = (int)$this->getBackendUser()->workspace;
-        $row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
-            'uid',
-            $tableName,
-            'pid=-1 AND t3ver_oid=' . $liveUid . ' AND t3ver_wsid=' . $workspaceId .
-            ($useDeleteClause ? \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tableName) : '')
-        );
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($tableName);
+        $queryBuilder->getRestrictions()->removeAll();
+        $statement = $queryBuilder
+            ->select('uid')
+            ->from($tableName)
+            ->where(
+                $queryBuilder->expr()->eq('pid', -1),
+                $queryBuilder->expr()->eq('t3ver_oid', $liveUid),
+                $queryBuilder->expr()->eq('t3ver_wsid', $workspaceId)
+            )
+            ->execute();
+
+        $row = $statement->fetch();
         if (!empty($row['uid'])) {
             $versionedId = (int)$row['uid'];
         }
@@ -453,7 +464,7 @@ class ActionService
      */
     protected function createDataHandler()
     {
-        $this->dataHandler = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(DataHandler::class);
+        $this->dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $backendUser = $this->getBackendUser();
         if (isset($backendUser->uc['copyLevels'])) {
             $this->dataHandler->copyTree = $backendUser->uc['copyLevels'];
@@ -466,7 +477,7 @@ class ActionService
      */
     protected function getWorkspaceService()
     {
-        return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+        return GeneralUtility::makeInstance(
             \TYPO3\CMS\Workspaces\Service\WorkspaceService::class
         );
     }
@@ -477,13 +488,5 @@ class ActionService
     protected function getBackendUser()
     {
         return $GLOBALS['BE_USER'];
-    }
-
-    /**
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 }

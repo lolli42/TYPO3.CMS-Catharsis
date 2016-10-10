@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Statement;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -116,7 +117,6 @@ class TcaSelectItemsTest extends UnitTestCase
 
         /** @var Statement|ObjectProphecy $statementProphet */
         $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled();
         $statementProphet->fetch()->shouldBeCalled();
 
         $queryBuilderProphet->select('foreignTable.uid')
@@ -141,7 +141,7 @@ class TcaSelectItemsTest extends UnitTestCase
             ->shouldBeCalled()
             ->willReturn($statementProphet->reveal());
 
-        # Two instances are needed due to the push/pop behavior of addInstance()
+        // Two instances are needed due to the push/pop behavior of addInstance()
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
     }
@@ -1708,7 +1708,7 @@ class TcaSelectItemsTest extends UnitTestCase
                 ->willReturn($queryBuilderProphet->reveal());
         }
 
-        # Two instances are needed due to the push/pop behavior of addInstance()
+        // Two instances are needed due to the push/pop behavior of addInstance()
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
 
@@ -1793,7 +1793,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
 
-        # Two instances are needed due to the push/pop behavior of addInstance()
+        // Two instances are needed due to the push/pop behavior of addInstance()
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
 
@@ -1849,8 +1849,6 @@ class TcaSelectItemsTest extends UnitTestCase
 
         /** @var Statement|ObjectProphecy $statementProphet */
         $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled()->willReturn('anError');
-        $statementProphet->closeCursor()->shouldBeCalled();
 
         $queryBuilderProphet->select('fTable.uid')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
@@ -1858,9 +1856,13 @@ class TcaSelectItemsTest extends UnitTestCase
         $queryBuilderProphet->where('')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->andWhere(' 1=1')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
-        $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
 
-        # Two instances are needed due to the push/pop behavior of addInstance()
+        $prevException = new DBALException('Invalid table name', 400);
+        $exception = new DBALException('Driver error', 500, $prevException);
+
+        $queryBuilderProphet->execute()->shouldBeCalled()->willThrow($exception);
+
+        // Two instances are needed due to the push/pop behavior of addInstance()
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
 
@@ -1925,7 +1927,6 @@ class TcaSelectItemsTest extends UnitTestCase
 
         /** @var Statement|ObjectProphecy $statementProphet */
         $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled();
 
         $queryBuilderProphet->select('fTable.uid')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
@@ -1935,7 +1936,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
 
-        # Two instances are needed due to the push/pop behavior of addInstance()
+        // Two instances are needed due to the push/pop behavior of addInstance()
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
 
@@ -2023,7 +2024,6 @@ class TcaSelectItemsTest extends UnitTestCase
 
         /** @var Statement|ObjectProphecy $statementProphet */
         $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled();
 
         $queryBuilderProphet->select('fTable.uid', 'fTable.icon')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->from('fTable')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
@@ -2033,7 +2033,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $queryBuilderProphet->andWhere('`pages.uid` = `fTable.pid`')->shouldBeCalled()->willReturn($queryBuilderProphet->reveal());
         $queryBuilderProphet->execute()->shouldBeCalled()->willReturn($statementProphet->reveal());
 
-        # Two instances are needed due to the push/pop behavior of addInstance()
+        // Two instances are needed due to the push/pop behavior of addInstance()
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
 
@@ -3188,13 +3188,104 @@ class TcaSelectItemsTest extends UnitTestCase
     }
 
     /**
+     * @test
+     */
+    public function processSelectFieldValueReturnsDuplicateValuesForMultipleSelect()
+    {
+        $languageService = $this->prophesize(LanguageService::class);
+        $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL(Argument::cetera())->willReturnArgument(0);
+
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'aField' => '1,foo,foo,2,bar',
+            ],
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'multiple' => true,
+                            'maxitems' => 999,
+                            'items' => [
+                                ['1', '1', null, null],
+                                ['foo', 'foo', null, null],
+                                ['bar', 'bar', null, null],
+                                ['2', '2', null, null],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = [
+            '1',
+            'foo',
+            'foo',
+            '2',
+            'bar'
+        ];
+
+        $this->assertEquals($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function processSelectFieldValueReturnsUniqueValuesForMultipleSelect()
+    {
+        $languageService = $this->prophesize(LanguageService::class);
+        $GLOBALS['LANG'] = $languageService->reveal();
+        $languageService->sL(Argument::cetera())->willReturnArgument(0);
+
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'aField' => '1,foo,foo,2,bar',
+            ],
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'multiple' => false,
+                            'maxitems' => 999,
+                            'items' => [
+                                ['1', '1', null, null],
+                                ['foo', 'foo', null, null],
+                                ['bar', 'bar', null, null],
+                                ['2', '2', null, null],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = $input;
+        $expected['databaseRow']['aField'] = [
+            0 => '1',
+            1 => 'foo',
+            3 => '2',
+            4 => 'bar',
+        ];
+
+        $this->assertEquals($expected, $this->subject->addData($input));
+    }
+
+    /**
      * Data Provider
      *
      * @return array
      */
     public function processSelectFieldSetsCorrectValuesForMmRelationsDataProvider()
     {
-        return array(
+        return [
             'Relation with MM table and new status with default values' => [
                 [
                     'tableName' => 'aTable',
@@ -3304,7 +3395,7 @@ class TcaSelectItemsTest extends UnitTestCase
                 [],
                 []
             ]
-        );
+        ];
     }
 
     /**

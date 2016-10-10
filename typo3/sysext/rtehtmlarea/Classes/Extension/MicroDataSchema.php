@@ -41,9 +41,9 @@ class MicroDataSchema extends RteHtmlAreaApi
      *
      * @var array
      */
-    protected $convertToolbarForHtmlAreaArray = array(
+    protected $convertToolbarForHtmlAreaArray = [
         'showmicrodata' => 'ShowMicrodata'
-    );
+    ];
 
     /**
      * Return JS configuration of the htmlArea plugins registered by the extension
@@ -52,10 +52,10 @@ class MicroDataSchema extends RteHtmlAreaApi
      */
     public function buildJavascriptConfiguration()
     {
-        $schema = array(
-            'types' => array(),
-            'properties' => array()
-        );
+        $schema = [
+            'types' => [],
+            'properties' => []
+        ];
         // Parse configured schemas
         if (is_array($this->configuration['thisConfig']['schema.']) && is_array($this->configuration['thisConfig']['schema.']['sources.'])) {
             foreach ($this->configuration['thisConfig']['schema.']['sources.'] as $source) {
@@ -64,22 +64,22 @@ class MicroDataSchema extends RteHtmlAreaApi
                 // Fallback to default schema file if configured file does not exists or is of zero size
                 if (!$fileName || !file_exists($absolutePath) || !filesize($absolutePath)) {
                     $fileName = 'EXT:' . $this->extensionKey . '/Resources/Public/Rdf/MicrodataSchema/SchemaOrgAll.rdf';
+                    $fileName = GeneralUtility::getFileAbsFileName($fileName);
                 }
-                $fileName = $this->getFullFileName($fileName);
                 $rdf = file_get_contents($fileName);
                 if ($rdf) {
                     $this->parseSchema($rdf, $schema);
                 }
             }
         }
-        uasort($schema['types'], array($this, 'compareLabels'));
-        uasort($schema['properties'], array($this, 'compareLabels'));
+        uasort($schema['types'], [$this, 'compareLabels']);
+        uasort($schema['properties'], [$this, 'compareLabels']);
         // Insert no type and no property entries
         $languageService = $this->getLanguageService();
         $noSchema = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/MicrodataSchema/locallang.xlf:No type');
         $noProperty = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/MicrodataSchema/locallang.xlf:No property');
-        array_unshift($schema['types'], array('name' => 'none', 'label' => $noSchema));
-        array_unshift($schema['properties'], array('name' => 'none', 'label' => $noProperty));
+        array_unshift($schema['types'], ['name' => 'none', 'label' => $noSchema]);
+        array_unshift($schema['properties'], ['name' => 'none', 'label' => $noProperty]);
         // Store json encoded array in temporary file
         return 'RTEarea[editornumber].schemaUrl = "' . $this->writeTemporaryFile('schema_' . $this->configuration['language'], 'js', json_encode($schema)) . '";';
     }
@@ -105,8 +105,8 @@ class MicroDataSchema extends RteHtmlAreaApi
      */
     protected function parseSchema($string, &$schema)
     {
-        $types = array();
-        $properties = array();
+        $types = [];
+        $properties = [];
         // Disables the functionality to allow external entities to be loaded when parsing the XML, must be kept
         $previousValueOfEntityLoader = libxml_disable_entity_loader(true);
         // Load the document
@@ -121,7 +121,7 @@ class MicroDataSchema extends RteHtmlAreaApi
                 $type = $item->getElementsByTagName('type');
                 if ($name && $type->length) {
                     $type = $type->item(0)->getAttribute('rdf:resource');
-                    $resource = array();
+                    $resource = [];
                     $resource['name'] = $name;
                     $labels = $item->getElementsByTagName('label');
                     if ($labels->length) {

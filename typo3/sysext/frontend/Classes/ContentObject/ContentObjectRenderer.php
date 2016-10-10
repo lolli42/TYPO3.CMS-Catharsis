@@ -14,10 +14,18 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Driver\Statement;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Charset\CharsetConverter;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\FrontendEditing\FrontendEditingController;
 use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Mail\MailMessage;
 use TYPO3\CMS\Core\Resource\Exception;
@@ -41,6 +49,7 @@ use TYPO3\CMS\Core\Utility\MailUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
+use TYPO3\CMS\Extbase\Service\FlexFormService;
 use TYPO3\CMS\Frontend\ContentObject\Exception\ContentRenderingException;
 use TYPO3\CMS\Frontend\ContentObject\Exception\ExceptionHandlerInterface;
 use TYPO3\CMS\Frontend\ContentObject\Exception\ProductionExceptionHandler;
@@ -1063,7 +1072,7 @@ class ContentObjectRenderer
     public function convertToUserIntObject()
     {
         if ($this->userObjectType !== self::OBJECTTYPE_USER) {
-            $this->getTimeTracker()->setTSlogMessage(ContentObjectRenderer::class . '::convertToUserIntObject() is called in the wrong context or for the wrong object type', 2);
+            $this->getTimeTracker()->setTSlogMessage(self::class . '::convertToUserIntObject() is called in the wrong context or for the wrong object type', 2);
         } else {
             $this->doConvertToUserIntObject = true;
         }
@@ -1499,7 +1508,7 @@ class ContentObjectRenderer
                 $imgInfo = @getimagesize($imgFile);
                 return '<img src="' . htmlspecialchars($tsfe->absRefPrefix . $imgFile) . '" width="' . (int)$imgInfo[0] . '" height="' . (int)$imgInfo[1] . '"' . $this->getBorderAttr(' border="0"') . ' ' . $addParams . ' />';
             } elseif (filesize($incFile) < 1024 * 1024) {
-                return $tsfe->tmpl->fileContent($incFile);
+                return file_get_contents($incFile);
             }
         }
         return '';
@@ -2914,11 +2923,7 @@ class ContentObjectRenderer
      */
     public function stdWrap_doubleBrTag($content = '', $conf = [])
     {
-        return preg_replace('/
-?
-[	 ]*
-?
-/', $conf['doubleBrTag'], $content);
+        return preg_replace('/\R{1,2}[\t\x20]*\R{1,2}/', $conf['doubleBrTag'], $content);
     }
 
     /**
@@ -3502,24 +3507,16 @@ class ContentObjectRenderer
      * Implements the stdWrap "numRows" property
      *
      * @param array $conf TypoScript properties for the property (see link to "numRows")
-     * @return int|bool The number of rows found by the select (FALSE on error)
+     * @return int The number of rows found by the select
      * @access private
      * @see stdWrap()
      */
     public function numRows($conf)
     {
-        $result = false;
         $conf['select.']['selectFields'] = 'count(*)';
-        $res = $this->exec_getQuery($conf['table'], $conf['select.']);
-        $db = $this->getDatabaseConnection();
-        if ($error = $db->sql_error()) {
-            $this->getTimeTracker()->setTSlogMessage($error, 3);
-        } else {
-            $row = $db->sql_fetch_row($res);
-            $result = (int)$row[0];
-        }
-        $db->sql_free_result($res);
-        return $result;
+        $statement = $this->exec_getQuery($conf['table'], $conf['select.']);
+
+        return (int)$statement->fetchColumn(0);
     }
 
     /**
@@ -5466,6 +5463,18 @@ class ContentObjectRenderer
                                 break;
                         }
                         break;
+                    case 'flexform':
+                        $keyParts = GeneralUtility::trimExplode(':', $key, true);
+                        if (count($keyParts) === 2 && isset($this->data[$keyParts[0]])) {
+                            $flexFormContent = $this->data[$keyParts[0]];
+                            if (!empty($flexFormContent)) {
+                                $flexFormService = GeneralUtility::makeInstance(FlexFormService::class);
+                                $flexFormKey = str_replace('.', '|', $keyParts[1]);
+                                $settings = $flexFormService->convertFlexFormContentToArray($flexFormContent);
+                                $retVal = $this->getGlobal($flexFormKey, $settings);
+                            }
+                        }
+                        break;
                 }
             }
             if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['getData'])) {
@@ -5716,7 +5725,7 @@ class ContentObjectRenderer
                 return $linkText;
             }
         // Disallow direct javascript: or data: links
-        } elseif (in_array(strtolower(trim($linkHandlerKeyword)), array('javascript', 'data'), true)) {
+        } elseif (in_array(strtolower(trim($linkHandlerKeyword)), ['javascript', 'data'], true)) {
             return $linkText;
         } else {
             $linkParameter = $linkParameterParts['url'];
@@ -5735,64 +5744,6 @@ class ContentObjectRenderer
             'class'  => $linkParameterParts['class'],
             'title'  => $linkParameterParts['title']
         ];
-    }
-
-    /**
-     * part of the typolink construction functionality, called by typoLink()
-     *
-     * tries to get the type of the link from the link parameter
-     * could be
-     *  - "mailto" an email address
-     *  - "url" external URL
-     *  - "file" a local file (checked AFTER getPublicUrl() is called)
-     *  - "page" a page (integer or alias)
-     *
-     * @param string $linkParameter could be "fileadmin/myfile.jpg" or "info@typo3.org" or "13" or "http://www.typo3.org"
-     * @return string the keyword
-     * @see typoLink()
-     */
-    protected function detectLinkTypeFromLinkParameter($linkParameter)
-    {
-        // Parse URL:
-        $scheme = parse_url($linkParameter, PHP_URL_SCHEME);
-        // Detecting kind of link:
-        // If it's a mail address:
-        if (strpos($linkParameter, '@') > 0 && (!$scheme || $scheme === 'mailto')) {
-            return 'mailto';
-        }
-
-        $isLocalFile = 0;
-        $fileChar = intval(strpos($linkParameter, '/'));
-        $urlChar = intval(strpos($linkParameter, '.'));
-
-        $containsSlash = false;
-        // Firsts, test if $linkParameter is numeric and page with such id exists. If yes, do not attempt to link to file
-        if (!MathUtility::canBeInterpretedAsInteger($linkParameter) || empty($this->getTypoScriptFrontendController()->sys_page->getPage_noCheck($linkParameter))) {
-            // Detects if a file is found in site-root and if so it will be treated like a normal file.
-            list($rootFileDat) = explode('?', rawurldecode($linkParameter));
-            $containsSlash = strpos($rootFileDat, '/') !== false;
-            $rFD_fI = pathinfo($rootFileDat);
-            $fileExtension = strtolower($rFD_fI['extension']);
-            if (!$containsSlash && trim($rootFileDat) && (@is_file(PATH_site . $rootFileDat) || $fileExtension === 'php' || $fileExtension === 'html' || $fileExtension === 'htm')) {
-                $isLocalFile = 1;
-            } elseif ($containsSlash) {
-                // Adding this so realurl directories are linked right (non-existing).
-                $isLocalFile = 2;
-            }
-        }
-
-        // url (external): If doubleSlash or if a '.' comes before a '/'.
-        if ($scheme || $isLocalFile !== 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar)) {
-            return 'url';
-
-        // file (internal)
-        } elseif ($containsSlash || $isLocalFile) {
-            return 'file';
-        }
-
-        // Integer or alias (alias is without slashes or periods or commas, that is
-        // 'nospace,alphanum_x,lower,unique' according to definition in $GLOBALS['TCA']!)
-        return 'page';
     }
 
     /**
@@ -5830,7 +5781,7 @@ class ContentObjectRenderer
         $linkParameter = $resolvedLinkParameters['href'];
         $target = $resolvedLinkParameters['target'];
         $linkClass = $resolvedLinkParameters['class'];
-        $forceTitle = $resolvedLinkParameters['title'];
+        $title = $resolvedLinkParameters['title'];
 
         if (!$linkParameter) {
             return $linkText;
@@ -5856,25 +5807,19 @@ class ContentObjectRenderer
             $target = '';
         }
 
-        // Title tag
-        $title = $conf['title'];
-        if ($conf['title.']) {
-            $title = $this->stdWrap($title, $conf['title.']);
-        }
-
-        $theTypeP = '';
-        // Detecting kind of link
-        $linkType = $this->detectLinkTypeFromLinkParameter($linkParameter);
-        switch ($linkType) {
+        // Detecting kind of link and resolve all necessary parameters
+        /** @var LinkService $linkService */
+        $linkService = GeneralUtility::makeInstance(LinkService::class);
+        $linkDetails = $linkService->resolve($linkParameter);
+        switch ($linkDetails['type']) {
             // If it's a mail address
-            case 'mailto':
-                $linkParameter = preg_replace('/^mailto:/i', '', $linkParameter);
-                list($this->lastTypoLinkUrl, $linkText) = $this->getMailTo($linkParameter, $linkText);
+            case LinkService::TYPE_EMAIL:
+                list($this->lastTypoLinkUrl, $linkText) = $this->getMailTo($linkDetails['email'], $linkText);
                 $finalTagParts['url'] = $this->lastTypoLinkUrl;
             break;
 
-            // url (external): If doubleSlash or if a '.' comes before a '/'.
-            case 'url':
+            // URL (external)
+            case LinkService::TYPE_URL:
                 if (empty($target)) {
                     if (isset($conf['extTarget'])) {
                         $target = $conf['extTarget'];
@@ -5885,35 +5830,28 @@ class ContentObjectRenderer
                         $target = $this->stdWrap($target, $conf['extTarget.']);
                     }
                 }
-                $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, $linkParameter);
-                // Parse URL:
-                $urlParts = parse_url($linkParameter);
-                if (!$urlParts['scheme']) {
-                    $scheme = 'http://';
-                } else {
-                    $scheme = '';
-                }
+                $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, $linkDetails['url']);
 
-                $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_EXTERNAL, $scheme . $linkParameter, $conf);
-
+                $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_EXTERNAL, $linkDetails['url'], $conf);
                 $this->lastTypoLinkTarget = $target;
                 $finalTagParts['url'] = $this->lastTypoLinkUrl;
                 $finalTagParts['targetParams'] = $target ? ' target="' . htmlspecialchars($target) . '"' : '';
-                $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], $linkType);
+                $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_URL);
             break;
 
-            // file (internal)
-            case 'file':
-
-                $splitLinkParam = explode('?', $linkParameter);
-
+            // File (internal)
+            case LinkService::TYPE_FILE:
+            case LinkService::TYPE_FOLDER:
+                $fileOrFolderObject = $linkDetails['file'] ? $linkDetails['file'] : $linkDetails['folder'];
                 // check if the file exists or if a / is contained (same check as in detectLinkType)
-                if (file_exists(rawurldecode($splitLinkParam[0])) || strpos($linkParameter, '/') !== false) {
+                if ($fileOrFolderObject instanceof FileInterface || $fileOrFolderObject instanceof Folder) {
+                    $linkLocation = $fileOrFolderObject->getPublicUrl();
                     // Setting title if blank value to link
-                    $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, rawurldecode($linkParameter));
-                    $fileUri = (!StringUtility::beginsWith($linkParameter, '/') ? $GLOBALS['TSFE']->absRefPrefix : '') . $linkParameter;
-                    $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_FILE, $fileUri, $conf);
+                    $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, rawurldecode($linkLocation));
+                    $linkLocation = (!StringUtility::beginsWith($linkLocation, '/') ? $tsfe->absRefPrefix : '') . $linkLocation;
+                    $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_FILE, $linkLocation, $conf);
                     $this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
+
                     if (empty($target)) {
                         $target = isset($conf['fileTarget']) ? $conf['fileTarget'] : $tsfe->fileTarget;
                         if ($conf['fileTarget.']) {
@@ -5923,50 +5861,40 @@ class ContentObjectRenderer
                     $this->lastTypoLinkTarget = $target;
                     $finalTagParts['url'] = $this->lastTypoLinkUrl;
                     $finalTagParts['targetParams'] = $target ? ' target="' . htmlspecialchars($target) . '"' : '';
-                    $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], $linkType);
+                    $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_FILE);
                 } else {
-                    $this->getTimeTracker()->setTSlogMessage('typolink(): File "' . $splitLinkParam[0] . '" did not exist, so "' . $linkText . '" was not linked.', 1);
+                    $this->getTimeTracker()->setTSlogMessage('typolink(): File "' . $linkParameter . '" did not exist, so "' . $linkText . '" was not linked.', 1);
                     return $linkText;
                 }
             break;
 
-            // Integer or alias (alias is without slashes or periods or commas, that is
-            // 'nospace,alphanum_x,lower,unique' according to definition in $GLOBALS['TCA']!)
-            case 'page':
+            // Link to a page
+            case LinkService::TYPE_PAGE:
                 $enableLinksAcrossDomains = $tsfe->config['config']['typolinkEnableLinksAcrossDomains'];
-
                 if ($conf['no_cache.']) {
                     $conf['no_cache'] = $this->stdWrap($conf['no_cache'], $conf['no_cache.']);
                 }
-                // Splitting the parameter by ',' and if the array counts more than 1 element it's an id/type/parameters triplet
-                $pairParts = GeneralUtility::trimExplode(',', $linkParameter, true);
-                $linkParameter = $pairParts[0];
-                $link_params_parts = explode('#', $linkParameter);
-                // Link-data del
-                $linkParameter = trim($link_params_parts[0]);
-                // If no id or alias is given
-                if ($linkParameter === '') {
-                    $linkParameter = $tsfe->id;
+                // Checking if the id-parameter is an alias.
+                if (!empty($linkDetails['pagealias'])) {
+                    $linkDetails['pageuid'] = $tsfe->sys_page->getPageIdFromAlias($linkDetails['pagealias']);
+                } elseif (empty($linkDetails['pageuid']) || $linkDetails['pageuid'] === 'current') {
+                    // If no id or alias is given
+                    $linkDetails['pageuid'] = $tsfe->id;
                 }
-
                 $sectionMark = trim(isset($conf['section.']) ? $this->stdWrap($conf['section'], $conf['section.']) : $conf['section']);
+                if ($sectionMark === '' && isset($linkDetails['fragment'])) {
+                    $sectionMark = $linkDetails['fragment'];
+                }
                 if ($sectionMark !== '') {
                     $sectionMark = '#' . (MathUtility::canBeInterpretedAsInteger($sectionMark) ? 'c' : '') . $sectionMark;
                 }
+                // Overruling 'type'
+                $pageType = $linkDetails['pagetype'] ?? 0;
 
-                if ($link_params_parts[1] && $sectionMark === '') {
-                    $sectionMark = trim($link_params_parts[1]);
-                    $sectionMark = '#' . (MathUtility::canBeInterpretedAsInteger($sectionMark) ? 'c' : '') . $sectionMark;
+                if (isset($linkDetails['parameters'])) {
+                    $conf['additionalParams'] .= '&' . ltrim($linkDetails['parameters'], '&');
                 }
-                if (count($pairParts) > 1) {
-                    // Overruling 'type'
-                    $theTypeP = isset($pairParts[1]) ? $pairParts[1] : 0;
-                    $conf['additionalParams'] .= isset($pairParts[2]) ? $pairParts[2] : '';
-                }
-                // Checking if the id-parameter is an alias.
-                if (!MathUtility::canBeInterpretedAsInteger($linkParameter)) {
-                    $linkParameter = $tsfe->sys_page->getPageIdFromAlias($linkParameter);
-                }
+
                 // Link to page even if access is missing?
                 if (isset($conf['linkAccessRestrictedPages'])) {
                     $disableGroupAccessCheck = (bool)$conf['linkAccessRestrictedPages'];
@@ -5974,7 +5902,7 @@ class ContentObjectRenderer
                     $disableGroupAccessCheck = (bool)$tsfe->config['config']['typolinkLinkAccessRestrictedPages'];
                 }
                 // Looking up the page record to verify its existence:
-                $page = $tsfe->sys_page->getPage($linkParameter, $disableGroupAccessCheck);
+                $page = $tsfe->sys_page->getPage($linkDetails['pageuid'], $disableGroupAccessCheck);
                 if (!empty($page)) {
                     // MointPoints, look for closest MPvar:
                     $MPvarAcc = [];
@@ -6003,8 +5931,7 @@ class ContentObjectRenderer
                         $addQueryParams = '';
                     }
                     if ($conf['useCacheHash']) {
-                        // Mind the order below! See http://forge.typo3.org/issues/17070
-                        $params = $tsfe->linkVars . $addQueryParams;
+                        $params = $tsfe->linkVars . $addQueryParams . '&id=' . $linkDetails['pageuid'];
                         if (trim($params, '& ') != '') {
                             /** @var $cacheHash CacheHashCalculator */
                             $cacheHash = GeneralUtility::makeInstance(CacheHashCalculator::class);
@@ -6102,7 +6029,7 @@ class ContentObjectRenderer
                                 $target = $this->stdWrap($target, $conf['target.']);
                             }
                         }
-                        $LD = $tsfe->tmpl->linkData($page, $target, $conf['no_cache'], '', '', $addQueryParams, $theTypeP, $targetDomain);
+                        $LD = $tsfe->tmpl->linkData($page, $target, $conf['no_cache'], '', '', $addQueryParams, $pageType, $targetDomain);
                         if ($targetDomain !== '') {
                             // We will add domain only if URL does not have it already.
                             if ($enableLinksAcrossDomains && $targetDomain !== $currentDomain) {
@@ -6120,7 +6047,7 @@ class ContentObjectRenderer
                                 $LD['totalURL'] = $absoluteUrlScheme . '://' . $targetDomain . ($LD['totalURL'][0] === '/' ? '' : '/') . $LD['totalURL'];
                             }
                         }
-                        $this->lastTypoLinkUrl = $this->URLqMark($LD['totalURL'], '') . $sectionMark;
+                        $this->lastTypoLinkUrl = $LD['totalURL'] . $sectionMark;
                     }
                     $this->lastTypoLinkTarget = $LD['target'];
                     // If sectionMark is set, there is no baseURL AND the current page is the page the link is to, check if there are any additional parameters or addQueryString parameters and if not, drop the url.
@@ -6164,7 +6091,7 @@ class ContentObjectRenderer
                             ],
                             $tsfe->config['config']['typolinkLinkAccessRestrictedPages_addParams']
                         );
-                        $this->lastTypoLinkUrl = $this->getTypoLink_URL($thePage['uid'] . ($theTypeP ? ',' . $theTypeP : ''), $addParams, $target);
+                        $this->lastTypoLinkUrl = $this->getTypoLink_URL($thePage['uid'] . ($pageType ? ',' . $pageType : ''), $addParams, $target);
                         $this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
                         $this->lastTypoLinkLD['totalUrl'] = $this->lastTypoLinkUrl;
                         $LD = $this->lastTypoLinkLD;
@@ -6177,13 +6104,57 @@ class ContentObjectRenderer
                     return $linkText;
                 }
             break;
+
+            // Legacy files or something else
+            case LinkService::TYPE_UNKNOWN:
+                if ($linkDetails['file']) {
+                    $linkLocation = $linkDetails['file'];
+                    // Setting title if blank value to link
+                    $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, rawurldecode($linkLocation));
+                    $linkLocation = (!StringUtility::beginsWith($linkLocation, '/') ? $tsfe->absRefPrefix : '') . $linkLocation;
+                    $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_FILE, $linkLocation, $conf);
+                    $this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
+                    if (empty($target)) {
+                        $target = isset($conf['fileTarget']) ? $conf['fileTarget'] : $tsfe->fileTarget;
+                        if ($conf['fileTarget.']) {
+                            $target = $this->stdWrap($target, $conf['fileTarget.']);
+                        }
+                    }
+                    $this->lastTypoLinkTarget = $target;
+                    $finalTagParts['url'] = $this->lastTypoLinkUrl;
+                    $finalTagParts['targetParams'] = $target ? ' target="' . $target . '"' : '';
+                    $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_FILE);
+                } elseif ($linkDetails['url']) {
+                    if (empty($target)) {
+                        if (isset($conf['extTarget'])) {
+                            $target = $conf['extTarget'];
+                        } elseif ($tsfe->dtdAllowsFrames) {
+                            $target = $tsfe->extTarget;
+                        }
+                        if ($conf['extTarget.']) {
+                            $target = $this->stdWrap($target, $conf['extTarget.']);
+                        }
+                    }
+                    $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, $linkDetails['url']);
+
+                    $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_EXTERNAL, $linkDetails['url'], $conf);
+                    $this->lastTypoLinkTarget = $target;
+                    $finalTagParts['url'] = $this->lastTypoLinkUrl;
+                    $finalTagParts['targetParams'] = $target ? ' target="' . $target . '"' : '';
+                    $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_URL);
+                }
+            break;
         }
 
-        $finalTagParts['TYPE'] = $linkType;
+        $finalTagParts['TYPE'] = $linkDetails['type'];
         $this->lastTypoLinkLD = $LD;
 
-        if ($forceTitle) {
-            $title = $forceTitle;
+        // Title tag
+        if (empty($title)) {
+            $title = $conf['title'];
+            if ($conf['title.']) {
+                $title = $this->stdWrap($title, $conf['title.']);
+            }
         }
 
         if ($JSwindowParams) {
@@ -6203,7 +6174,7 @@ class ContentObjectRenderer
                 . $finalTagParts['aTagParams']
                 . '>';
         } else {
-            if ($tsfe->spamProtectEmailAddresses === 'ascii' && $linkType === 'mailto') {
+            if ($tsfe->spamProtectEmailAddresses === 'ascii' && $linkDetails['type'] === LinkService::TYPE_EMAIL) {
                 $finalAnchorTag = '<a href="' . $finalTagParts['url'] . '"';
             } else {
                 $finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"';
@@ -6785,7 +6756,6 @@ class ContentObjectRenderer
      */
     public function caseshift($theValue, $case)
     {
-        /** @var CharsetConverter $charsetConverter */
         $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
         switch (strtolower($case)) {
             case 'upper':
@@ -6795,7 +6765,7 @@ class ContentObjectRenderer
                 $theValue = $charsetConverter->conv_case('utf-8', $theValue, 'toLower');
                 break;
             case 'capitalize':
-                $theValue = ucwords($theValue);
+                $theValue = $charsetConverter->convCapitalize('utf-8', $theValue);
                 break;
             case 'ucfirst':
                 $theValue = $charsetConverter->convCaseFirst('utf-8', $theValue, 'toUpper');
@@ -7165,7 +7135,6 @@ class ContentObjectRenderer
         $requestHash = '';
 
         // First level, check id (second level, this is done BEFORE the recursive call)
-        $db = $this->getDatabaseConnection();
         $tsfe = $this->getTypoScriptFrontendController();
         if (!$recursionLevel) {
             // Check tree list cache
@@ -7181,11 +7150,21 @@ class ContentObjectRenderer
                 $tsfe->gr_list
             ];
             $requestHash = md5(serialize($parameters));
-            $cacheEntry = $db->exec_SELECTgetSingleRow(
-                'treelist',
-                'cache_treelist',
-                'md5hash = \'' . $requestHash . '\' AND ( expires > ' . (int)$GLOBALS['EXEC_TIME'] . ' OR expires = 0 )'
-            );
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('cache_treelist');
+            $cacheEntry = $queryBuilder->select('treelist')
+                ->from('cache_treelist')
+                ->where(
+                    $queryBuilder->expr()->eq('md5hash', $queryBuilder->createNamedParameter($requestHash)),
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->gt('expires', (int)$GLOBALS['EXEC_TIME']),
+                        $queryBuilder->expr()->eq('expires', 0)
+                    )
+                )
+                ->setMaxResults(1)
+                ->execute()
+                ->fetch();
+
             if (is_array($cacheEntry)) {
                 // Cache hit
                 return $cacheEntry['treelist'];
@@ -7216,79 +7195,93 @@ class ContentObjectRenderer
         }
         // Select sublevel:
         if ($depth > 0) {
-            $rows = $db->exec_SELECTgetRows(
-                $allFields,
-                'pages',
-                'pid = ' . (int)$id . ' AND deleted = 0 ' . $moreWhereClauses,
-                '',
-                'sorting'
-            );
-            if (is_array($rows)) {
-                foreach ($rows as $row) {
-                    /** @var VersionState $versionState */
-                    $versionState = VersionState::cast($row['t3ver_state']);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            $queryBuilder->select(...GeneralUtility::trimExplode(',', $allFields, true))
+                ->from('pages')
+                ->where($queryBuilder->expr()->eq('pid', (int)$id))
+                ->orderBy('sorting');
+
+            if (!empty($moreWhereClauses)) {
+                $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($moreWhereClauses));
+            }
+
+            $result = $queryBuilder->execute();
+            while ($row = $result->fetch()) {
+                /** @var VersionState $versionState */
+                $versionState = VersionState::cast($row['t3ver_state']);
+                $tsfe->sys_page->versionOL('pages', $row);
+                if ((int)$row['doktype'] === PageRepository::DOKTYPE_RECYCLER
+                    || (int)$row['doktype'] === PageRepository::DOKTYPE_BE_USER_SECTION
+                    || $versionState->indicatesPlaceholder()
+                ) {
+                    // Doing this after the overlay to make sure changes
+                    // in the overlay are respected.
+                    // However, we do not process pages below of and
+                    // including of type recycler and BE user section
+                    continue;
+                }
+                // Find mount point if any:
+                $next_id = $row['uid'];
+                $mount_info = $tsfe->sys_page->getMountPointInfo($next_id, $row);
+                // Overlay mode:
+                if (is_array($mount_info) && $mount_info['overlay']) {
+                    $next_id = $mount_info['mount_pid'];
+                    $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getQueryBuilderForTable('pages');
+                    $queryBuilder->getRestrictions()
+                        ->removeAll()
+                        ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+                    $queryBuilder->select(...GeneralUtility::trimExplode(',', $allFields, true))
+                        ->from('pages')
+                        ->where($queryBuilder->expr()->eq('uid', (int)$next_id))
+                        ->orderBy('sorting')
+                        ->setMaxResults(1);
+
+                    if (!empty($moreWhereClauses)) {
+                        $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($moreWhereClauses));
+                    }
+
+                    $row = $queryBuilder->execute()->fetch();
                     $tsfe->sys_page->versionOL('pages', $row);
                     if ((int)$row['doktype'] === PageRepository::DOKTYPE_RECYCLER
                         || (int)$row['doktype'] === PageRepository::DOKTYPE_BE_USER_SECTION
                         || $versionState->indicatesPlaceholder()
                     ) {
-                        // Doing this after the overlay to make sure changes
-                        // in the overlay are respected.
-                        // However, we do not process pages below of and
-                        // including of type recycler and BE user section
+                        // Doing this after the overlay to make sure
+                        // changes in the overlay are respected.
+                        // see above
                         continue;
                     }
-                    // Find mount point if any:
-                    $next_id = $row['uid'];
-                    $mount_info = $tsfe->sys_page->getMountPointInfo($next_id, $row);
-                    // Overlay mode:
-                    if (is_array($mount_info) && $mount_info['overlay']) {
-                        $next_id = $mount_info['mount_pid'];
-                        $row = $db->exec_SELECTgetSingleRow(
-                            $allFields,
-                            'pages',
-                            'uid = ' . (int)$next_id . ' AND deleted = 0 ' . $moreWhereClauses,
-                            '',
-                            'sorting'
-                        );
-                        $tsfe->sys_page->versionOL('pages', $row);
-                        if ((int)$row['doktype'] === PageRepository::DOKTYPE_RECYCLER
-                            || (int)$row['doktype'] === PageRepository::DOKTYPE_BE_USER_SECTION
-                            || $versionState->indicatesPlaceholder()
-                        ) {
-                            // Doing this after the overlay to make sure
-                            // changes in the overlay are respected.
-                            // see above
-                            continue;
+                }
+                // Add record:
+                if ($dontCheckEnableFields || $tsfe->checkPagerecordForIncludeSection($row)) {
+                    // Add ID to list:
+                    if ($begin <= 0) {
+                        if ($dontCheckEnableFields || $tsfe->checkEnableFields($row)) {
+                            $theList[] = $next_id;
                         }
                     }
-                    // Add record:
-                    if ($dontCheckEnableFields || $tsfe->checkPagerecordForIncludeSection($row)) {
-                        // Add ID to list:
-                        if ($begin <= 0) {
-                            if ($dontCheckEnableFields || $tsfe->checkEnableFields($row)) {
-                                $theList[] = $next_id;
-                            }
+                    // Next level:
+                    if ($depth > 1 && !$row['php_tree_stop']) {
+                        // Normal mode:
+                        if (is_array($mount_info) && !$mount_info['overlay']) {
+                            $next_id = $mount_info['mount_pid'];
                         }
-                        // Next level:
-                        if ($depth > 1 && !$row['php_tree_stop']) {
-                            // Normal mode:
-                            if (is_array($mount_info) && !$mount_info['overlay']) {
-                                $next_id = $mount_info['mount_pid'];
-                            }
-                            // Call recursively, if the id is not in prevID_array:
-                            if (!in_array($next_id, $prevId_array)) {
-                                $theList = array_merge(
-                                    GeneralUtility::intExplode(
-                                        ',',
-                                        $this->getTreeList($next_id, $depth - 1, $begin - 1,
-                                            $dontCheckEnableFields, $addSelectFields, $moreWhereClauses,
-                                            $prevId_array, $recursionLevel + 1),
-                                        true
-                                    ),
-                                    $theList
-                                );
-                            }
+                        // Call recursively, if the id is not in prevID_array:
+                        if (!in_array($next_id, $prevId_array)) {
+                            $theList = array_merge(
+                                GeneralUtility::intExplode(
+                                    ',',
+                                    $this->getTreeList($next_id, $depth - 1, $begin - 1,
+                                        $dontCheckEnableFields, $addSelectFields, $moreWhereClauses,
+                                        $prevId_array, $recursionLevel + 1),
+                                    true
+                                ),
+                                $theList
+                            );
                         }
                     }
                 }
@@ -7303,12 +7296,15 @@ class ContentObjectRenderer
                     $theList[] = $addId;
                 }
             }
-            $db->exec_INSERTquery('cache_treelist', [
-                'md5hash' => $requestHash,
-                'pid' => $id,
-                'treelist' => implode(',', $theList),
-                'tstamp' => $GLOBALS['EXEC_TIME']
-            ]);
+            GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('cache_treelist')->insert(
+                'cache_treelist',
+                [
+                    'md5hash' => $requestHash,
+                    'pid' => $id,
+                    'treelist' => implode(',', $theList),
+                    'tstamp' => $GLOBALS['EXEC_TIME']
+                ]
+            );
         }
 
         return implode(',', $theList);
@@ -7318,34 +7314,53 @@ class ContentObjectRenderer
      * Generates a search where clause based on the input search words (AND operation - all search words must be found in record.)
      * Example: The $sw is "content management, system" (from an input form) and the $searchFieldList is "bodytext,header" then the output will be ' AND (bodytext LIKE "%content%" OR header LIKE "%content%") AND (bodytext LIKE "%management%" OR header LIKE "%management%") AND (bodytext LIKE "%system%" OR header LIKE "%system%")'
      *
-     * @param string $sw The search words. These will be separated by space and comma.
+     * @param string $searchWords The search words. These will be separated by space and comma.
      * @param string $searchFieldList The fields to search in
      * @param string $searchTable The table name you search in (recommended for DBAL compliance. Will be prepended field names as well)
      * @return string The WHERE clause.
      */
-    public function searchWhere($sw, $searchFieldList, $searchTable = '')
+    public function searchWhere($searchWords, $searchFieldList, $searchTable = '')
     {
+        if (!$searchWords) {
+            return ' AND 1=1';
+        }
+
+        if (empty($searchTable)) {
+            GeneralUtility::deprecationLog(
+                'Parameter 3 of ContentObjectRenderer::searchWhere() is required can not be omitted anymore. Using Default connection!'
+            );
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME)
+                ->createQueryBuilder();
+        } else {
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable($searchTable);
+        }
+
         $prefixTableName = $searchTable ? $searchTable . '.' : '';
-        $where = '';
-        if ($sw) {
-            $searchFields = explode(',', $searchFieldList);
-            $kw = preg_split('/[ ,]/', $sw);
-            $db = $this->getDatabaseConnection();
-            foreach ($kw as $val) {
-                $val = trim($val);
-                $where_p = [];
-                if (strlen($val) >= 2) {
-                    $val = $db->escapeStrForLike($db->quoteStr($val, $searchTable), $searchTable);
-                    foreach ($searchFields as $field) {
-                        $where_p[] = $prefixTableName . $field . ' LIKE \'%' . $val . '%\'';
-                    }
-                }
-                if (!empty($where_p)) {
-                    $where .= ' AND (' . implode(' OR ', $where_p) . ')';
-                }
+
+        $where = $queryBuilder->expr()->andX();
+        $searchFields = explode(',', $searchFieldList);
+        $searchWords = preg_split('/[ ,]/', $searchWords);
+        foreach ($searchWords as $searchWord) {
+            $searchWord = trim($searchWord);
+            if (strlen($searchWord) < 3) {
+                continue;
+            }
+            $searchWordConstraint = $queryBuilder->expr()->orX();
+            $searchWord = $queryBuilder->escapeLikeWildcards($searchWord);
+            foreach ($searchFields as $field) {
+                $searchWordConstraint->add(
+                    $queryBuilder->expr()->like($prefixTableName . $field, $queryBuilder->quote('%' . $searchWord . '%'))
+                );
+            }
+
+            if ($searchWordConstraint->count()) {
+                $where->add($searchWordConstraint);
             }
         }
-        return $where;
+
+        return ' AND ' . (string)$where;
     }
 
     /**
@@ -7354,13 +7369,15 @@ class ContentObjectRenderer
      *
      * @param string $table The table name
      * @param array $conf The TypoScript configuration properties
-     * @return bool|\mysqli_result|object MySQLi result object / DBAL object
+     * @return Statement
      * @see getQuery()
      */
     public function exec_getQuery($table, $conf)
     {
-        $queryParts = $this->getQuery($table, $conf, true);
-        return $this->getDatabaseConnection()->exec_SELECT_queryArray($queryParts);
+        $statement = $this->getQuery($table, $conf);
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($table);
+
+        return $connection->executeQuery($statement);
     }
 
     /**
@@ -7370,43 +7387,37 @@ class ContentObjectRenderer
      * @param string $tableName the name of the TCA database table
      * @param array $queryConfiguration The TypoScript configuration properties, see .select in TypoScript reference
      * @return array The records
+     * @throws \UnexpectedValueException
      */
     public function getRecords($tableName, array $queryConfiguration)
     {
         $records = [];
 
-        $res = $this->exec_getQuery($tableName, $queryConfiguration);
+        $statement = $this->exec_getQuery($tableName, $queryConfiguration);
 
-        $db = $this->getDatabaseConnection();
-        if ($error = $db->sql_error()) {
-            $this->getTimeTracker()->setTSlogMessage($error, 3);
-        } else {
-            $tsfe = $this->getTypoScriptFrontendController();
-            while (($row = $db->sql_fetch_assoc($res)) !== false) {
+        $tsfe = $this->getTypoScriptFrontendController();
+        while ($row = $statement->fetch()) {
+            // Versioning preview:
+            $tsfe->sys_page->versionOL($tableName, $row, true);
 
-                // Versioning preview:
-                $tsfe->sys_page->versionOL($tableName, $row, true);
-
-                // Language overlay:
-                if (is_array($row) && $tsfe->sys_language_contentOL) {
-                    if ($tableName === 'pages') {
-                        $row = $tsfe->sys_page->getPageOverlay($row);
-                    } else {
-                        $row = $tsfe->sys_page->getRecordOverlay(
-                            $tableName,
-                            $row,
-                            $tsfe->sys_language_content,
-                            $tsfe->sys_language_contentOL
-                        );
-                    }
-                }
-
-                // Might be unset in the sys_language_contentOL
-                if (is_array($row)) {
-                    $records[] = $row;
+            // Language overlay:
+            if (is_array($row) && $tsfe->sys_language_contentOL) {
+                if ($tableName === 'pages') {
+                    $row = $tsfe->sys_page->getPageOverlay($row);
+                } else {
+                    $row = $tsfe->sys_page->getRecordOverlay(
+                        $tableName,
+                        $row,
+                        $tsfe->sys_language_content,
+                        $tsfe->sys_language_contentOL
+                    );
                 }
             }
-            $db->sql_free_result($res);
+
+            // Might be unset in the sys_language_contentOL
+            if (is_array($row)) {
+                $records[] = $row;
+            }
         }
 
         return $records;
@@ -7420,6 +7431,8 @@ class ContentObjectRenderer
      * @param array $conf See ->exec_getQuery()
      * @param bool $returnQueryArray If set, the function will return the query not as a string but array with the various parts. RECOMMENDED!
      * @return mixed A SELECT query if $returnQueryArray is FALSE, otherwise the SELECT query in an array as parts.
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      * @access private
      * @see CONTENT(), numRows()
      */
@@ -7476,6 +7489,7 @@ class ContentObjectRenderer
                 }
             }
         }
+
         // Construct WHERE clause:
         // Handle recursive function for the pidInList
         if (isset($conf['recursive'])) {
@@ -7505,117 +7519,247 @@ class ContentObjectRenderer
         if ((string)$conf['pidInList'] === '') {
             $conf['pidInList'] = 'this';
         }
-        $queryParts = $this->getWhere($table, $conf, true);
+
+        $queryParts = $this->getQueryConstraints($table, $conf);
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        // @todo Check against getQueryConstraints, can probably use FrontendRestrictions
+        // @todo here and remove enableFields there.
+        $queryBuilder->getRestrictions()->removeAll();
+        $queryBuilder->select('*')->from($table);
+
+        if ($queryParts['where']) {
+            $queryBuilder->where($queryParts['where']);
+        }
+
+        if ($queryParts['groupBy']) {
+            $queryBuilder->groupBy(...$queryParts['groupBy']);
+        }
+
         // Fields:
         if ($conf['selectFields']) {
-            $queryParts['SELECT'] = $this->sanitizeSelectPart($conf['selectFields'], $table);
-        } else {
-            $queryParts['SELECT'] = '*';
+            $queryBuilder->selectLiteral($this->sanitizeSelectPart($conf['selectFields'], $table));
         }
+
         // Setting LIMIT:
-        $db = $this->getDatabaseConnection();
-        $error = 0;
+        $error = false;
         if ($conf['max'] || $conf['begin']) {
             // Finding the total number of records, if used:
-            if (strstr(strtolower($conf['begin'] . $conf['max']), 'total')) {
-                $res = $db->exec_SELECTquery('count(*)', $table, $queryParts['WHERE'], $queryParts['GROUPBY']);
-                if ($error = $db->sql_error()) {
-                    $this->getTimeTracker()->setTSlogMessage($error);
-                } else {
-                    $row = $db->sql_fetch_row($res);
-                    $conf['max'] = str_ireplace('total', $row[0], $conf['max']);
-                    $conf['begin'] = str_ireplace('total', $row[0], $conf['begin']);
+            if (strpos(strtolower($conf['begin'] . $conf['max']), 'total') !== false) {
+                $countQueryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+                $countQueryBuilder->getRestrictions()->removeAll();
+                $countQueryBuilder->count('*')
+                    ->from($table)
+                    ->where($queryParts['where']);
+
+                if ($queryParts['groupBy']) {
+                    $countQueryBuilder->groupBy(...$queryParts['groupBy']);
                 }
-                $db->sql_free_result($res);
+
+                try {
+                    $count = $countQueryBuilder->execute()->fetchColumn(0);
+                    $conf['max'] = str_ireplace('total', $count, $conf['max']);
+                    $conf['begin'] = str_ireplace('total', $count, $conf['begin']);
+                } catch (DBALException $e) {
+                    $this->getTimeTracker()->setTSlogMessage($e->getPrevious()->getMessage());
+                    $error = true;
+                }
             }
+
             if (!$error) {
                 $conf['begin'] = MathUtility::forceIntegerInRange(ceil($this->calc($conf['begin'])), 0);
                 $conf['max'] = MathUtility::forceIntegerInRange(ceil($this->calc($conf['max'])), 0);
-                if ($conf['begin'] && !$conf['max']) {
-                    $conf['max'] = 100000;
+                if ($conf['begin'] > 0) {
+                    $queryBuilder->setFirstResult($conf['begin']);
                 }
-                if ($conf['begin'] && $conf['max']) {
-                    $queryParts['LIMIT'] = $conf['begin'] . ',' . $conf['max'];
-                } elseif (!$conf['begin'] && $conf['max']) {
-                    $queryParts['LIMIT'] = $conf['max'];
-                }
+                $queryBuilder->setMaxResults($conf['max'] ?: 100000);
             }
         }
+
         if (!$error) {
             // Setting up tablejoins:
-            $joinPart = '';
             if ($conf['join']) {
-                $joinPart = 'JOIN ' . $conf['join'];
+                $joinParts = QueryHelper::parseJoin($conf['join']);
+                $queryBuilder->join(
+                    $table,
+                    $joinParts['tableName'],
+                    $joinParts['tableAlias'],
+                    $joinParts['joinCondition']
+                );
             } elseif ($conf['leftjoin']) {
-                $joinPart = 'LEFT OUTER JOIN ' . $conf['leftjoin'];
+                $joinParts = QueryHelper::parseJoin($conf['leftjoin']);
+                $queryBuilder->leftJoin(
+                    $table,
+                    $joinParts['tableName'],
+                    $joinParts['tableAlias'],
+                    $joinParts['joinCondition']
+                );
             } elseif ($conf['rightjoin']) {
-                $joinPart = 'RIGHT OUTER JOIN ' . $conf['rightjoin'];
+                $joinParts = QueryHelper::parseJoin($conf['rightjoin']);
+                $queryBuilder->rightJoin(
+                    $table,
+                    $joinParts['tableName'],
+                    $joinParts['tableAlias'],
+                    $joinParts['joinCondition']
+                );
             }
-            // Compile and return query:
-            $queryParts['FROM'] = trim($table . ' ' . $joinPart);
-            // Replace the markers in the queryParts to handle stdWrap
-            // enabled properties
+
+            // Convert the QueryBuilder object into a SQL statement.
+            $query = $queryBuilder->getSQL();
+
+            // Replace the markers in the queryParts to handle stdWrap enabled properties
             foreach ($queryMarkers as $marker => $markerValue) {
+                // @todo Ugly hack that needs to be cleaned up, with the current architecture
+                // @todo for exec_Query / getQuery it's the best we can do.
+                $query = str_replace('###' . $marker . '###', $markerValue, $query);
                 foreach ($queryParts as $queryPartKey => &$queryPartValue) {
                     $queryPartValue = str_replace('###' . $marker . '###', $markerValue, $queryPartValue);
                 }
                 unset($queryPartValue);
             }
-            $query = $db->SELECTquery($queryParts['SELECT'], $queryParts['FROM'], $queryParts['WHERE'], $queryParts['GROUPBY'], $queryParts['ORDERBY'], $queryParts['LIMIT']);
-            return $returnQueryArray ? $queryParts : $query;
+
+            return $returnQueryArray ? $this->getQueryArray($queryBuilder) : $query;
         }
+
         return '';
     }
 
+    /**
+     * Helper to transform a QueryBuilder object into a queryParts array that can be used
+     * with exec_SELECT_queryArray
+     *
+     * @param \TYPO3\CMS\Core\Database\Query\QueryBuilder $queryBuilder
+     * @return array
+     * @throws \RuntimeException
+     */
+    protected function getQueryArray(QueryBuilder $queryBuilder)
+    {
+        $fromClauses = [];
+        $knownAliases = [];
+        $queryParts = [];
+
+        // Loop through all FROM clauses
+        foreach ($queryBuilder->getQueryPart('from') as $from) {
+            if ($from['alias'] === null) {
+                $tableSql = $from['table'];
+                $tableReference = $from['table'];
+            } else {
+                $tableSql = $from['table'] . ' ' . $from['alias'];
+                $tableReference = $from['alias'];
+            }
+
+            $knownAliases[$tableReference] = true;
+
+            $fromClauses[$tableReference] = $tableSql . $this->getQueryArrayJoinHelper(
+                $tableReference,
+                $queryBuilder->getQueryPart('join'),
+                $knownAliases
+            );
+        }
+
+        $queryParts['SELECT'] = implode(', ', $queryBuilder->getQueryPart('select'));
+        $queryParts['FROM'] = implode(', ', $fromClauses);
+        $queryParts['WHERE'] = (string)$queryBuilder->getQueryPart('where') ?: '';
+        $queryParts['GROUPBY'] = implode(', ', $queryBuilder->getQueryPart('groupBy'));
+        $queryParts['ORDERBY'] = implode(', ', $queryBuilder->getQueryPart('orderBy'));
+        if ($queryBuilder->getFirstResult() > 0) {
+            $queryParts['LIMIT'] = $queryBuilder->getFirstResult() . ',' . $queryBuilder->getMaxResults();
+        } elseif ($queryBuilder->getMaxResults() > 0) {
+            $queryParts['LIMIT'] = $queryBuilder->getMaxResults();
+        }
+
+        return $queryParts;
+    }
+
+    /**
+     * Helper to transform the QueryBuilder join part into a SQL fragment.
+     *
+     * @param string $fromAlias
+     * @param array $joinParts
+     * @param array $knownAliases
+     * @return string
+     * @throws \RuntimeException
+     */
+    protected function getQueryArrayJoinHelper(string $fromAlias, array $joinParts, array &$knownAliases): string
+    {
+        $sql = '';
+
+        if (isset($joinParts['join'][$fromAlias])) {
+            foreach ($joinParts['join'][$fromAlias] as $join) {
+                if (array_key_exists($join['joinAlias'], $knownAliases)) {
+                    throw new \RuntimeException(
+                        'Non unique join alias: "' . $join['joinAlias'] . '" found.',
+                        1472748872
+                    );
+                }
+                $sql .= ' ' . strtoupper($join['joinType'])
+                    . ' JOIN ' . $join['joinTable'] . ' ' . $join['joinAlias']
+                    . ' ON ' . ((string)$join['joinCondition']);
+                $knownAliases[$join['joinAlias']] = true;
+            }
+
+            foreach ($joinParts['join'][$fromAlias] as $join) {
+                $sql .= $this->getQueryArrayJoinHelper($join['joinAlias'], $joinParts, $knownAliases);
+            }
+        }
+
+        return $sql;
+    }
     /**
      * Helper function for getQuery(), creating the WHERE clause of the SELECT query
      *
      * @param string $table The table name
      * @param array $conf The TypoScript configuration properties
-     * @param bool $returnQueryArray If set, the function will return the query not as a string but array with the various parts. RECOMMENDED!
-     * @return mixed A WHERE clause based on the relevant parts of the TypoScript properties for a "select" function in TypoScript, see link. If $returnQueryArray is FALSE the where clause is returned as a string with WHERE, GROUP BY and ORDER BY parts, otherwise as an array with these parts.
-     * @access private
+     * @return array Associative array containing the prepared data for WHERE, ORDER BY and GROUP BY fragments
+     * @throws \InvalidArgumentException
      * @see getQuery()
      */
-    public function getWhere($table, $conf, $returnQueryArray = false)
+    protected function getQueryConstraints(string $table, array $conf): array
     {
         // Init:
-        $query = '';
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $expressionBuilder = $queryBuilder->expr();
+        $tsfe = $this->getTypoScriptFrontendController();
+        $constraints = [];
         $pid_uid_flag = 0;
         $enableFieldsIgnore = [];
         $queryParts = [
-            'SELECT' => '',
-            'FROM' => '',
-            'WHERE' => '',
-            'GROUPBY' => '',
-            'ORDERBY' => '',
-            'LIMIT' => ''
+            'where' => null,
+            'groupBy' => null,
+            'orderBy' => null,
         ];
-        $tsfe = $this->getTypoScriptFrontendController();
+
         $considerMovePlaceholders = (
             $tsfe->sys_page->versioningPreview && $table !== 'pages'
             && !empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS'])
         );
+
         if (trim($conf['uidInList'])) {
             $listArr = GeneralUtility::intExplode(',', str_replace('this', $tsfe->contentPid, $conf['uidInList']));
-            if (count($listArr) === 1) {
-                $comparison = '=' . (int)$listArr[0];
-            } else {
-                $comparison = ' IN (' . implode(',', $this->getDatabaseConnection()->cleanIntArray($listArr)) . ')';
-            }
+
             // If move placeholder shall be considered, select via t3ver_move_id
             if ($considerMovePlaceholders) {
-                $movePlaceholderComparison = $table . '.t3ver_state=' . VersionState::cast(VersionState::MOVE_PLACEHOLDER) . ' AND ' . $table . '.t3ver_move_id' . $comparison;
-                $query .= ' AND (' . $table . '.uid' . $comparison . ' OR ' . $movePlaceholderComparison . ')';
+                $constraints[] = (string)$expressionBuilder->orX(
+                    $expressionBuilder->in($table . '.uid', $listArr),
+                    $expressionBuilder->andX(
+                        $expressionBuilder->eq(
+                            $table . '.t3ver_state',
+                            VersionState::cast(VersionState::MOVE_PLACEHOLDER)
+                        ),
+                        $expressionBuilder->in($table . '.t3ver_move_id', $listArr)
+                    )
+                );
             } else {
-                $query .= ' AND ' . $table . '.uid' . $comparison;
+                $constraints[] = (string)$expressionBuilder->in($table . '.uid', $listArr);
             }
             $pid_uid_flag++;
         }
+
         // Static_* tables are allowed to be fetched from root page
-        if (substr($table, 0, 7) === 'static_') {
+        if (StringUtility::beginsWith($table, 'static_')) {
             $pid_uid_flag++;
         }
+
         if (trim($conf['pidInList'])) {
             $listArr = GeneralUtility::intExplode(',', str_replace('this', $tsfe->contentPid, $conf['pidInList']));
             // Removes all pages which are not visible for the user!
@@ -7628,20 +7772,22 @@ class ContentObjectRenderer
                 $enableFieldsIgnore['pid'] = true;
             }
             if (!empty($listArr)) {
-                $query .= ' AND ' . $table . '.pid IN (' . implode(',', array_map('intval', $listArr)) . ')';
+                $constraints[] = $expressionBuilder->in($table . '.pid', array_map('intval', $listArr));
                 $pid_uid_flag++;
             } else {
                 // If not uid and not pid then uid is set to 0 - which results in nothing!!
                 $pid_uid_flag = 0;
             }
         }
+
         // If not uid and not pid then uid is set to 0 - which results in nothing!!
         if (!$pid_uid_flag) {
-            $query .= ' AND ' . $table . '.uid=0';
+            $constraints[] = $expressionBuilder->eq($table . '.uid', 0);
         }
+
         $where = isset($conf['where.']) ? trim($this->stdWrap($conf['where'], $conf['where.'])) : trim($conf['where']);
         if ($where) {
-            $query .= ' AND ' . $where;
+            $constraints[] = QueryHelper::stripLogicalOperatorPrefix($where);
         }
 
         // Check if the table is translatable, and set the language field by default from the TCA information
@@ -7661,44 +7807,113 @@ class ContentObjectRenderer
             if ($tsfe->sys_language_contentOL && !empty($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])) {
                 // Sys language content is set to zero/-1 - and it is expected that whatever routine processes the output will
                 // OVERLAY the records with localized versions!
-                $languageQuery = $languageField . ' IN (0,-1)';
+                $languageQuery = $expressionBuilder->in($languageField, [0, -1]);
                 // Use this option to include records that don't have a default translation
                 // (originalpointerfield is 0 and the language field contains the requested language)
                 $includeRecordsWithoutDefaultTranslation = isset($conf['includeRecordsWithoutDefaultTranslation.']) ?
                     $this->stdWrap($conf['includeRecordsWithoutDefaultTranslation'], $conf['includeRecordsWithoutDefaultTranslation.']) :
                     $conf['includeRecordsWithoutDefaultTranslation'];
-                if (!empty(trim($includeRecordsWithoutDefaultTranslation))) {
-                    $languageQuery .= ' OR (' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . ' = 0 AND ' .
-                        $languageField . ' = ' . $sys_language_content . ')';
+                if (trim($includeRecordsWithoutDefaultTranslation) !== '') {
+                    $languageQuery = $expressionBuilder->orX(
+                        $languageQuery,
+                        $expressionBuilder->andX(
+                            $expressionBuilder->eq($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'], 0),
+                            $expressionBuilder->eq($languageField, $sys_language_content)
+                        )
+                    );
                 }
             } else {
-                $languageQuery = $languageField . ' = ' . $sys_language_content;
+                $languageQuery = $expressionBuilder->eq($languageField, $sys_language_content);
             }
-            $query .= ' AND (' . $languageQuery . ')';
+            $constraints[] = $languageQuery;
         }
 
         // Enablefields
         if ($table === 'pages') {
-            $query .= ' ' . $tsfe->sys_page->where_hid_del . $tsfe->sys_page->where_groupAccess;
+            $constraints[] = QueryHelper::stripLogicalOperatorPrefix($tsfe->sys_page->where_hid_del);
+            $constraints[] = QueryHelper::stripLogicalOperatorPrefix($tsfe->sys_page->where_groupAccess);
         } else {
-            $query .= $this->enableFields($table, false, $enableFieldsIgnore);
+            $constraints[] = QueryHelper::stripLogicalOperatorPrefix($this->enableFields($table, false, $enableFieldsIgnore));
         }
+
         // MAKE WHERE:
-        if ($query) {
-            // Stripping of " AND"...
-            $queryParts['WHERE'] = trim(substr($query, 4));
-            $query = 'WHERE ' . $queryParts['WHERE'];
+        if (count($constraints) !== 0) {
+            $queryParts['where'] = $expressionBuilder->andX(...$constraints);
         }
         // GROUP BY
         if (trim($conf['groupBy'])) {
-            $queryParts['GROUPBY'] = isset($conf['groupBy.']) ? trim($this->stdWrap($conf['groupBy'], $conf['groupBy.'])) : trim($conf['groupBy']);
-            $query .= ' GROUP BY ' . $queryParts['GROUPBY'];
+            $groupBy = isset($conf['groupBy.'])
+                ? trim($this->stdWrap($conf['groupBy'], $conf['groupBy.']))
+                : trim($conf['groupBy']);
+            $queryParts['groupBy'] = QueryHelper::parseGroupBy($groupBy);
         }
+
         // ORDER BY
         if (trim($conf['orderBy'])) {
-            $queryParts['ORDERBY'] = isset($conf['orderBy.']) ? trim($this->stdWrap($conf['orderBy'], $conf['orderBy.'])) : trim($conf['orderBy']);
+            $orderByString = isset($conf['orderBy.'])
+                ? trim($this->stdWrap($conf['orderBy'], $conf['orderBy.']))
+                : trim($conf['orderBy']);
+
+            $queryParts['orderBy'] = QueryHelper::parseOrderBy($orderByString);
+        }
+
+        // Return result:
+        return $queryParts;
+    }
+
+    /**
+     * Helper function for getQuery(), creating the WHERE clause of the SELECT query
+     *
+     * @param string $table The table name
+     * @param array $conf The TypoScript configuration properties
+     * @param bool $returnQueryArray If set, the function will return the query not as a string but array with the various parts. RECOMMENDED!
+     * @return mixed A WHERE clause based on the relevant parts of the TypoScript properties for a "select" function in TypoScript, see link. If $returnQueryArray is FALSE the where clause is returned as a string with WHERE, GROUP BY and ORDER BY parts, otherwise as an array with these parts.
+     * @access private
+     * @see getQuery()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
+     */
+    public function getWhere($table, $conf, $returnQueryArray = false)
+    {
+        // Init:
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryConstraints = $this->getQueryConstraints($table, $conf);
+        $query = '';
+
+        $queryParts = [
+            'SELECT' => '',
+            'FROM' => '',
+            'WHERE' => '',
+            'GROUPBY' => '',
+            'ORDERBY' => '',
+            'LIMIT' => ''
+        ];
+
+        // MAKE WHERE:
+        if (!empty($queryConstraints['where'])) {
+            $queryParts['WHERE'] = (string)$queryConstraints['where'];
+            $query = 'WHERE ' . $queryParts['WHERE'];
+        }
+
+        // GROUP BY
+        if (!empty($queryConstraints['groupBy'])) {
+            $queryParts['GROUPBY'] = implode(
+                ', ',
+                array_map([$queryBuilder, 'quoteIdentifier'], $queryConstraints['groupBy'])
+            );
+            $query .= ' GROUP BY ' . $queryParts['GROUPBY'];
+        }
+
+        // ORDER BY
+        if (!empty($queryConstraints['orderBy'])) {
+            $orderBy = [];
+            foreach ($queryConstraints['orderBy'] as $orderPair) {
+                list($fieldName, $direction) = $orderPair;
+                $orderBy[] = trim($queryBuilder->quoteIdentifier($fieldName) . ' ' . $direction);
+            }
+            $queryParts['ORDERBY'] = implode(', ', $orderBy);
             $query .= ' ORDER BY ' . $queryParts['ORDERBY'];
         }
+
         // Return result:
         return $returnQueryArray ? $queryParts : $query;
     }
@@ -7717,6 +7932,8 @@ class ContentObjectRenderer
      */
     protected function sanitizeSelectPart($selectPart, $table)
     {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($table);
+
         // Pattern matching parts
         $matchStart = '/(^\\s*|,\\s*|' . $table . '\\.)';
         $matchEnd = '(\\s*,|\\s*$)/';
@@ -7726,14 +7943,14 @@ class ContentObjectRenderer
             foreach ($necessaryFields as $field) {
                 $match = $matchStart . $field . $matchEnd;
                 if (!preg_match($match, $selectPart)) {
-                    $selectPart .= ', ' . $table . '.' . $field . ' as ' . $field;
+                    $selectPart .= ', ' . $connection->quoteIdentifier($table . '.' . $field) . ' AS ' . $connection->quoteIdentifier($field);
                 }
             }
             if ($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
                 foreach ($wsFields as $field) {
                     $match = $matchStart . $field . $matchEnd;
                     if (!preg_match($match, $selectPart)) {
-                        $selectPart .= ', ' . $table . '.' . $field . ' as ' . $field;
+                        $selectPart .= ', ' . $connection->quoteIdentifier($table . '.' . $field) . ' AS ' . $connection->quoteIdentifier($field);
                     }
                 }
             }
@@ -7755,16 +7972,26 @@ class ContentObjectRenderer
             return [];
         }
         $outArr = [];
-        $db = $this->getDatabaseConnection();
-        $res = $db->exec_SELECTquery('uid', 'pages', 'uid IN (' . implode(',', $listArr) . ')' . $this->enableFields('pages') . ' AND doktype NOT IN (' . $this->checkPid_badDoktypeList . ')');
-        if ($error = $db->sql_error()) {
-            $this->getTimeTracker()->setTSlogMessage($error . ': ' . $db->debug_lastBuiltQuery, 3);
-        } else {
-            while ($row = $db->sql_fetch_assoc($res)) {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+        $queryBuilder->select('uid')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->in('uid', array_map('intval', $listArr)),
+                $queryBuilder->expr()->notIn(
+                    'doktype',
+                    GeneralUtility::intExplode(',', $this->checkPid_badDoktypeList, true)
+                )
+            );
+        try {
+            $result = $queryBuilder->execute();
+            while ($row = $result->fetch()) {
                 $outArr[] = $row['uid'];
             }
+        } catch (DBALException $e) {
+            $this->getTimeTracker()->setTSlogMessage($e->getMessage() . ': ' . $queryBuilder->getSQL(), 3);
         }
-        $db->sql_free_result($res);
+
         return $outArr;
     }
 
@@ -7780,7 +8007,20 @@ class ContentObjectRenderer
     {
         $uid = (int)$uid;
         if (!isset($this->checkPid_cache[$uid])) {
-            $count = $this->getDatabaseConnection()->exec_SELECTcountRows('uid', 'pages', 'uid=' . $uid . $this->enableFields('pages') . ' AND doktype NOT IN (' . $this->checkPid_badDoktypeList . ')');
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            $count = $queryBuilder->count('*')
+                ->from('pages')
+                ->where(
+                    $queryBuilder->expr()->eq('uid', $uid),
+                    $queryBuilder->expr()->notIn(
+                        'doktype',
+                        GeneralUtility::intExplode(',', $this->checkPid_badDoktypeList, true)
+                    )
+                )
+                ->execute()
+                ->fetchColumn(0);
+
             $this->checkPid_cache[$uid] = (bool)$count;
         }
         return $this->checkPid_cache[$uid];
@@ -7802,7 +8042,7 @@ class ContentObjectRenderer
             return [];
         }
         // Parse markers and prepare their values
-        $db = $this->getDatabaseConnection();
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($table);
         $markerValues = [];
         foreach ($conf['markers.'] as $dottedMarker => $dummy) {
             $marker = rtrim($dottedMarker, '.');
@@ -7846,17 +8086,17 @@ class ContentObjectRenderer
                             } elseif (preg_match('/^\\"([^\\"]*)\\"$/', $listValue, $matches)) {
                                 $listValue = $matches[1];
                             }
-                            $tempArray[] = $db->fullQuoteStr($listValue, $table);
+                            $tempArray[] = $connection->quote($listValue);
                         }
                     }
                     $markerValues[$marker] = implode(',', $tempArray);
                 } else {
                     // Handle remaining values as string
-                    $markerValues[$marker] = $db->fullQuoteStr($tempValue, $table);
+                    $markerValues[$marker] = $connection->quote($tempValue);
                 }
             } else {
                 // Handle remaining values as string
-                $markerValues[$marker] = $db->fullQuoteStr($tempValue, $table);
+                $markerValues[$marker] = $connection->quote($tempValue);
             }
         }
         return $markerValues;
@@ -8043,16 +8283,6 @@ class ContentObjectRenderer
     protected function getFrontendBackendUser()
     {
         return $GLOBALS['BE_USER'];
-    }
-
-    /**
-     * Returns the database connection
-     *
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 
     /**

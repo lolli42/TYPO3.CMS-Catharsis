@@ -16,6 +16,11 @@ namespace TYPO3\CMS\Backend\Form\Wizard;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Charset\CharsetConverter;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -45,14 +50,6 @@ class SuggestWizardDefaultReceiver
     protected $mmForeignTable = '';
 
     /**
-     * The select-clause to use when selecting the records (is manipulated and used by different functions, so it has to
-     * be a global var)
-     *
-     * @var string
-     */
-    protected $selectClause = '';
-
-    /**
      * The statement by which records will be ordered
      *
      * @var string
@@ -60,25 +57,18 @@ class SuggestWizardDefaultReceiver
     protected $orderByStatement = '';
 
     /**
-     * Additional WHERE clause to be appended to the SQL
-     *
-     * @var string
-     */
-    protected $addWhere = '';
-
-    /**
      * Configuration for this selector from TSconfig
      *
      * @var array
      */
-    protected $config = array();
+    protected $config = [];
 
     /**
      * The list of pages that are allowed to perform the search for records on
      *
      * @var array Array of PIDs
      */
-    protected $allowedPages = array();
+    protected $allowedPages = [];
 
     /**
      * The maximum number of items to select.
@@ -90,12 +80,17 @@ class SuggestWizardDefaultReceiver
     /**
      * @var array
      */
-    protected $params = array();
+    protected $params = [];
 
     /**
      * @var IconFactory
      */
     protected $iconFactory;
+
+    /**
+     * @var QueryBuilder
+     */
+    protected $queryBuilder;
 
     /**
      * The constructor of this class
@@ -106,6 +101,13 @@ class SuggestWizardDefaultReceiver
     public function __construct($table, $config)
     {
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        $this->queryBuilder = $this->getQueryBuilderForTable($table);
+        $this->queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            // if table is versionized, only get the records from the Live Workspace
+            // the overlay itself of WS-records is done below
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class, 0));
         $this->table = $table;
         $this->config = $config;
         // get a list of all the pages that should be looked on
@@ -123,15 +125,14 @@ class SuggestWizardDefaultReceiver
             $this->maxItems = $config['maxItemsInResultList'];
         }
         if ($this->table == 'pages') {
-            $this->addWhere = ' AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1);
-        }
-        // if table is versionized, only get the records from the Live Workspace
-        // the overlay itself of WS-records is done below
-        if ($GLOBALS['TCA'][$this->table]['ctrl']['versioningWS'] == true) {
-            $this->addWhere .= ' AND t3ver_wsid = 0';
+            $this->queryBuilder->andWhere(
+                QueryHelper::stripLogicalOperatorPrefix($GLOBALS['BE_USER']->getPagePermsClause(1))
+            );
         }
         if (isset($config['addWhere'])) {
-            $this->addWhere .= ' ' . $config['addWhere'];
+            $this->queryBuilder->andWhere(
+                QueryHelper::stripLogicalOperatorPrefix($config['addWhere'])
+            );
         }
     }
 
@@ -149,17 +150,22 @@ class SuggestWizardDefaultReceiver
      */
     public function queryTable(&$params, $recursionCounter = 0)
     {
-        $rows = array();
+        $rows = [];
         $this->params = &$params;
         $start = $recursionCounter * 50;
         $this->prepareSelectStatement();
         $this->prepareOrderByStatement();
-        $res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $this->table, $this->selectClause, '', $this->orderByStatement, $start . ', 50');
-        $allRowsCount = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
+        $result = $this->queryBuilder->select('*')
+            ->from($this->table)
+            ->orderBy($this->orderByStatement)
+            ->setFirstResult($start)
+            ->setMaxResults(50)
+            ->execute();
+        $allRowsCount = $result->rowCount();
         if ($allRowsCount) {
             /** @var CharsetConverter $charsetConverter */
             $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
-            while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+            while ($row = $result->fetch()) {
                 // check if we already have collected the maximum number of records
                 if (count($rows) > $this->maxItems) {
                     break;
@@ -185,7 +191,7 @@ class SuggestWizardDefaultReceiver
                     $croppedPath = htmlspecialchars($path);
                 }
                 $label = $this->getLabel($row);
-                $entry = array(
+                $entry = [
                     'text' => '<span class="suggest-label">' . $label . '</span><span class="suggest-uid">[' . $uid . ']</span><br />
 								<span class="suggest-path">' . $croppedPath . '</span>',
                     'table' => $this->mmForeignTable ? $this->mmForeignTable : $this->table,
@@ -195,10 +201,10 @@ class SuggestWizardDefaultReceiver
                     'style' => '',
                     'class' => isset($this->config['cssClass']) ? $this->config['cssClass'] : '',
                     'sprite' => $spriteIcon
-                );
+                ];
                 $rows[$this->table . '_' . $uid] = $this->renderRecord($row, $entry);
             }
-            $GLOBALS['TYPO3_DB']->sql_free_result($res);
+
             // if there are less records than we need, call this function again to get more records
             if (count($rows) < $this->maxItems && $allRowsCount >= 50 && $recursionCounter < $this->maxItems) {
                 $tmp = self::queryTable($params, ++$recursionCounter);
@@ -216,40 +222,40 @@ class SuggestWizardDefaultReceiver
      */
     protected function prepareSelectStatement()
     {
+        $expressionBuilder = $this->queryBuilder->expr();
         $searchWholePhrase = !isset($this->config['searchWholePhrase']) || $this->config['searchWholePhrase'];
         $searchString = $this->params['value'];
         $searchUid = (int)$searchString;
         if ($searchString !== '') {
-            $searchString = $GLOBALS['TYPO3_DB']->quoteStr($searchString, $this->table);
-            $likeCondition = ' LIKE \'' . ($searchWholePhrase ? '%' : '') . $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString, $this->table) . '%\'';
+            $likeCondition = ($searchWholePhrase ? '%' : '') . $searchString . '%';
             // Search in all fields given by label or label_alt
             $selectFieldsList = $GLOBALS['TCA'][$this->table]['ctrl']['label'] . ',' . $GLOBALS['TCA'][$this->table]['ctrl']['label_alt'] . ',' . $this->config['additionalSearchFields'];
             $selectFields = GeneralUtility::trimExplode(',', $selectFieldsList, true);
             $selectFields = array_unique($selectFields);
-            $selectParts = array();
+            $selectParts = $expressionBuilder->orX();
             foreach ($selectFields as $field) {
-                $selectParts[] = $field . $likeCondition;
+                $selectParts->add($expressionBuilder->like($field, $this->queryBuilder->createPositionalParameter($likeCondition)));
             }
-            $this->selectClause = '(' . implode(' OR ', $selectParts) . ')';
+
+            $searchClause = $expressionBuilder->orX($selectParts);
             if ($searchUid > 0 && $searchUid == $searchString) {
-                $this->selectClause = '(' . $this->selectClause . ' OR uid = ' . $searchUid . ')';
+                $searchClause->add($expressionBuilder->eq('uid', $searchUid));
             }
-        }
-        if (isset($GLOBALS['TCA'][$this->table]['ctrl']['delete'])) {
-            $this->selectClause .= ' AND ' . $GLOBALS['TCA'][$this->table]['ctrl']['delete'] . ' = 0';
+
+            $this->queryBuilder->andWhere($expressionBuilder->orX($searchClause));
         }
         if (!empty($this->allowedPages)) {
-            $pidList = $GLOBALS['TYPO3_DB']->cleanIntArray($this->allowedPages);
+            $pidList = array_map('intval', $this->allowedPages);
             if (!empty($pidList)) {
-                $this->selectClause .= ' AND pid IN (' . implode(', ', $pidList) . ') ';
+                $this->queryBuilder->andWhere(
+                    $expressionBuilder->in('pid', $pidList)
+                );
             }
         }
         // add an additional search condition comment
         if (isset($this->config['searchCondition']) && $this->config['searchCondition'] !== '') {
-            $this->selectClause .= ' AND ' . $this->config['searchCondition'];
+            $this->queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($this->config['searchCondition']));
         }
-        // add the global clauses to the where-statement
-        $this->selectClause .= $this->addWhere;
     }
 
     /**
@@ -261,15 +267,22 @@ class SuggestWizardDefaultReceiver
      */
     protected function getAllSubpagesOfPage($uid, $depth = 99)
     {
-        $pageIds = array($uid);
+        $pageIds = [$uid];
         $level = 0;
-        $pages = array($uid);
+        $pages = [$uid];
+        $queryBuilder = $this->getQueryBuilderForTable('pages');
+        $queryBuilder->select('uid')
+            ->from('pages');
         // fetch all
         while ($depth - $level > 0 && !empty($pageIds)) {
             ++$level;
-            $pidList = $GLOBALS['TYPO3_DB']->cleanIntArray($pageIds);
-            $rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages', 'pid IN (' . implode(', ', $pidList) . ')', '', '', '', 'uid');
-            if (!empty($rows)) {
+            $pidList = array_map('intval', $pageIds);
+            $rows = $queryBuilder->where($queryBuilder->expr()->in('pid', $pidList))
+                ->execute()
+                ->fetchAll();
+
+            $rows = array_column(($rows ?: []), 'uid', 'uid');
+            if (!count($rows)) {
                 $pageIds = array_keys($rows);
                 $pages = array_merge($pages, $pageIds);
             } else {
@@ -329,7 +342,7 @@ class SuggestWizardDefaultReceiver
     /**
      * Overlay the given record with its workspace-version, if any
      *
-     * @param array The record to get the workspace version for
+     * @param array $row The record to get the workspace version for
      * @return void (passed by reference)
      */
     protected function makeWorkspaceOverlay(&$row)
@@ -388,12 +401,12 @@ class SuggestWizardDefaultReceiver
     {
         // Call renderlet if available (normal pages etc. usually don't have one)
         if ($this->config['renderFunc'] != '') {
-            $params = array(
+            $params = [
                 'table' => $this->table,
                 'uid' => $row['uid'],
                 'row' => $row,
                 'entry' => &$entry
-            );
+            ];
             GeneralUtility::callUserFunction($this->config['renderFunc'], $params, $this);
         }
         return $entry;
@@ -405,5 +418,14 @@ class SuggestWizardDefaultReceiver
     protected function getLanguageService()
     {
         return $GLOBALS['LANG'];
+    }
+
+    /**
+     * @param string $table
+     * @return QueryBuilder
+     */
+    protected function getQueryBuilderForTable($table)
+    {
+        return GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
     }
 }

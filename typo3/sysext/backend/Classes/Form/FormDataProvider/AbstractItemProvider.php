@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Form\FormDataProvider;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\DBALException;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -131,7 +132,7 @@ abstract class AbstractItemProvider
                 ) {
                     $icon = $addItemsArray[$value . '.']['icon'];
                 }
-                $items[] = array($label, $value, $icon);
+                $items[] = [$label, $value, $icon];
             }
         }
         return $items;
@@ -162,7 +163,7 @@ abstract class AbstractItemProvider
 
         $special = $result['processedTca']['columns'][$fieldName]['config']['special'];
         switch (true) {
-            case ($special === 'tables'):
+            case $special === 'tables':
                 foreach ($GLOBALS['TCA'] as $currentTable => $_) {
                     if (!empty($GLOBALS['TCA'][$currentTable]['ctrl']['adminOnly'])) {
                         // Hide "admin only" tables
@@ -180,7 +181,7 @@ abstract class AbstractItemProvider
                     $items[] = [$label, $currentTable, $icon, $helpText];
                 }
                 break;
-            case ($special === 'pagetypes'):
+            case $special === 'pagetypes':
                 if (isset($GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'])
                     && is_array($GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'])
                 ) {
@@ -197,7 +198,7 @@ abstract class AbstractItemProvider
                     }
                 }
                 break;
-            case ($special === 'exclude'):
+            case $special === 'exclude':
                 $excludeArrays = $this->getExcludeFields();
                 foreach ($excludeArrays as $excludeArray) {
                     // If the field comes from a FlexForm, the syntax is more complex
@@ -206,7 +207,7 @@ abstract class AbstractItemProvider
                         // Add header if not yet set for plugin section
                         if (!isset($items[$excludeArray['sectionHeader']])) {
                             // there is no icon handling for plugins - we take the icon from the table
-                            $icon = $iconFactory->mapRecordTypeToIconIdentifier($excludeArray['table'], array());
+                            $icon = $iconFactory->mapRecordTypeToIconIdentifier($excludeArray['table'], []);
                             $items[$excludeArray['sectionHeader']] = [
                                 $excludeArray['sectionHeader'],
                                 '--div--',
@@ -216,7 +217,7 @@ abstract class AbstractItemProvider
                     } else {
                         // Add header if not yet set for table
                         if (!isset($items[$excludeArray['table']])) {
-                            $icon = $iconFactory->mapRecordTypeToIconIdentifier($excludeArray['table'], array());
+                            $icon = $iconFactory->mapRecordTypeToIconIdentifier($excludeArray['table'], []);
                             $items[$excludeArray['table']] = [
                                 $GLOBALS['TCA'][$excludeArray['table']]['ctrl']['title'],
                                 '--div--',
@@ -232,15 +233,15 @@ abstract class AbstractItemProvider
                         $helpText['description'] = $helpTextArray['description'];
                     }
                     // Item configuration:
-                    $items[] = array(
+                    $items[] = [
                         rtrim($excludeArray['origin'] === 'flexForm' ? $excludeArray['fieldLabel'] : $languageService->sL($GLOBALS['TCA'][$excludeArray['table']]['columns'][$excludeArray['fieldName']]['label']), ':') . ' (' . $excludeArray['fieldName'] . ')',
                         $excludeArray['table'] . ':' . $excludeArray['fullField'] ,
                         'empty-empty',
                         $helpText
-                    );
+                    ];
                 }
                 break;
-            case ($special === 'explicitValues'):
+            case $special === 'explicitValues':
                 $theTypes = $this->getExplicitAuthFieldValues();
                 $icons = [
                     'ALLOW' => 'status-status-permission-granted',
@@ -266,7 +267,7 @@ abstract class AbstractItemProvider
                     }
                 }
                 break;
-            case ($special === 'languages'):
+            case $special === 'languages':
                 foreach ($result['systemLanguageRows'] as $language) {
                     if ($language['uid'] !== -1) {
                         $items[] = [
@@ -277,7 +278,7 @@ abstract class AbstractItemProvider
                     }
                 }
                 break;
-            case ($special === 'custom'):
+            case $special === 'custom':
                 $customOptions = $GLOBALS['TYPO3_CONF_VARS']['BE']['customPermOptions'];
                 if (is_array($customOptions)) {
                     foreach ($customOptions as $coKey => $coValue) {
@@ -305,7 +306,7 @@ abstract class AbstractItemProvider
                     }
                 }
                 break;
-            case ($special === 'modListGroup' || $special === 'modListUser'):
+            case $special === 'modListGroup' || $special === 'modListUser':
                 /** @var ModuleLoader $loadModules */
                 $loadModules = GeneralUtility::makeInstance(ModuleLoader::class);
                 $loadModules->load($GLOBALS['TBE_MODULES']);
@@ -432,10 +433,13 @@ abstract class AbstractItemProvider
         }
 
         $queryBuilder = $this->buildForeignTableQueryBuilder($result, $fieldName);
-        $queryResult = $queryBuilder->execute();
+        try {
+            $queryResult = $queryBuilder->execute();
+        } catch (DBALException $e) {
+            $databaseError = $e->getPrevious()->getMessage();
+        }
 
         // Early return on error with flash message
-        $databaseError = $queryResult->errorInfo();
         if (!empty($databaseError)) {
             $msg = $databaseError . '. ';
             $msg .= $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
@@ -447,7 +451,6 @@ abstract class AbstractItemProvider
             /** @var $defaultFlashMessageQueue FlashMessageQueue */
             $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
             $defaultFlashMessageQueue->enqueue($flashMessage);
-            $queryResult->closeCursor();
             return $items;
         }
 
@@ -706,7 +709,6 @@ abstract class AbstractItemProvider
                 }
                 // Get all sheets and title
                 foreach ($flexForms as $extIdent => $extConf) {
-                    $extTitle = $languageService->sL(trim($extConf['title']));
                     // Get all fields in sheet
                     foreach ($extConf['ds']['sheets'] as $sheetName => $sheet) {
                         if (empty($sheet['ROOT']['el']) || !is_array($sheet['ROOT']['el'])) {
@@ -1199,6 +1201,9 @@ abstract class AbstractItemProvider
             $newDatabaseValueArray = array_merge($newDatabaseValueArray, $relationHandler->getValueArray());
         }
 
+        if ($fieldConfig['config']['multiple']) {
+            return $newDatabaseValueArray;
+        }
         return array_unique($newDatabaseValueArray);
     }
 

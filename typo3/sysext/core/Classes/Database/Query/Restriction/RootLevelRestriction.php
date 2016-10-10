@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare(strict_types=1);
 namespace TYPO3\CMS\Core\Database\Query\Restriction;
 
 /*
@@ -31,7 +31,7 @@ class RootLevelRestriction implements QueryRestrictionInterface
     /**
      * @param array $tableNames
      */
-    public function __construct(array $tableNames = array())
+    public function __construct(array $tableNames = [])
     {
         $this->tableNames = $tableNames;
     }

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================================
 Breaking: #72310 - EXT:form - Outsource labels and legends to own partials
 ==========================================================================
+
+See :issue:`72310`
 
 Description
 ===========
@@ -13,7 +18,7 @@ With this change the duplication of code can be avoided. This helps the integrat
 Impact
 ======
 
-No deep impact. If an EXT:form template was overridden, it mostly contains the ``label`` and/or ``legend`` tags and acts like it used to do.
+No deep impact. If an EXT:form template was overridden, it mostly contains the `label` and/or `legend` tags and acts like it used to do.
 
 
 Affected Installations
@@ -27,7 +32,7 @@ Migration
 
 Overridden EXT:form partials could be migrated to use the new central label/ legend partials.
 
-Example changes for ``Resources/Private/Partials/Default/Show/FlatElements/Checkbox.html``.
+Example changes for `Resources/Private/Partials/Default/Show/FlatElements/Checkbox.html`.
 
 Old:
 
@@ -49,4 +54,4 @@ New:
 
         {f:render(partial: '{themeName}/Show/AdditionalElements/Label', arguments: {model: model, themeName: themeName})}
 
-.. index:: fluid
+.. index:: Fluid, ext:form

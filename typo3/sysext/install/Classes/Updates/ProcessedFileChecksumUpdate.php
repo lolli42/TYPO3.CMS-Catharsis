@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Install\Updates;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -40,18 +42,40 @@ class ProcessedFileChecksumUpdate extends AbstractUpdate
             return false;
         }
 
-        $join = 'sys_file_processedfile LEFT JOIN sys_registry ON CAST(entry_key AS CHAR) = CAST(sys_file_processedfile.uid AS CHAR) AND entry_namespace = \'ProcessedFileChecksumUpdate\'';
-        $count = $this->getDatabaseConnection()->exec_SELECTcountRows('*', $join, '(entry_key IS NULL AND sys_file_processedfile.identifier <> \'\') OR sys_file_processedfile.width IS NULL');
-        if (!$count) {
-            return false;
+        $execute = false;
+
+        // Check if there is a registry entry from a former run that may have been stopped
+        $registry = GeneralUtility::makeInstance(Registry::class);
+        $registryEntry = $registry->get('core', 'ProcessedFileChecksumUpdate');
+        if ($registryEntry !== null) {
+            $execute = true;
         }
 
-        $description = 'The checksum calculation for processed files (image thumbnails) has been changed with TYPO3 CMS 7.3 and 6.2.13.
-This means that your processed files need to be updated, if you update from versions <strong>below TYPO3 CMS 7.3 or 6.2.13</strong>.<br />
-This can either happen on demand, when the processed file is first needed, or by executing this wizard, which updates all processed images at once.<br />
-<strong>Important:</strong> If you have lots of processed files, you should prefer using this wizard, otherwise this might cause a lot of work for your server.';
+        // Enable if there are non empty sys_file_processedfile entries
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('sys_file_processedfile');
+        $incompleteCount = $queryBuilder->count('uid')
+            ->from('sys_file_processedfile')
+            ->orWhere(
+                $queryBuilder->expr()->notIn('identifier', $queryBuilder->createNamedParameter('')),
+                $queryBuilder->expr()->isNull('width'),
+                $queryBuilder->expr()->isNull('height')
+            )->execute()->fetchColumn(0);
+        if ((bool)$incompleteCount) {
+            $execute = true;
+        }
 
-        return true;
+        if ($execute) {
+            $description = 'The checksum calculation for processed files (image thumbnails) has been changed with'
+                . ' TYPO3 CMS 7.3 and 6.2.13. This means that your processed files need to be updated, if you update'
+                . ' from versions <strong>below TYPO3 CMS 7.3 or 6.2.13</strong>.<br />'
+                . 'This can either happen on demand, when the processed file is first needed, or by executing this'
+                . ' wizard, which updates all processed images at once.<br />'
+                . '<strong>Important:</strong> If you have lots of processed files, you should prefer using this'
+                . ' wizard, otherwise this might cause a lot of work for your server.';
+        }
+
+        return $execute;
     }
 
     /**
@@ -63,30 +87,48 @@ This can either happen on demand, when the processed file is first needed, or by
      */
     public function performUpdate(array &$databaseQueries, &$customMessages)
     {
-        $db = $this->getDatabaseConnection();
-
-        // remove all invalid records which hold NULL values
-        $db->exec_DELETEquery('sys_file_processedfile', 'width IS NULL or height IS NULL');
-
+        $registry = GeneralUtility::makeInstance(Registry::class);
         $factory = GeneralUtility::makeInstance(ResourceFactory::class);
+        $fileConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('sys_file_processedfile');
 
-        $join = 'sys_file_processedfile LEFT JOIN sys_registry ON entry_key = CAST(sys_file_processedfile.uid AS CHAR) AND entry_namespace = \'ProcessedFileChecksumUpdate\'';
-        $res = $db->exec_SELECTquery('sys_file_processedfile.*', $join, 'entry_key IS NULL AND sys_file_processedfile.identifier <> \'\'');
-        while ($processedFileRow = $db->sql_fetch_assoc($res)) {
+        $firstUid = $registry->get('core', 'ProcessedFileChecksumUpdate');
+
+        // Remove all invalid records which hold NULL values
+        $queryBuilder = $fileConnection->createQueryBuilder();
+        $queryBuilder->delete('sys_file_processedfile')
+            ->orWhere(
+                $queryBuilder->expr()->isNull('width'),
+                $queryBuilder->expr()->isNull('height')
+            )
+            ->execute();
+
+        // Get all other rows
+        $queryBuilder = $fileConnection->createQueryBuilder();
+        $queryBuilder = $queryBuilder->select('*')
+            ->from('sys_file_processedfile')
+            ->orderBy('uid');
+        // If there was a start trigger, use it
+        if ($firstUid !== null && (int)$firstUid > 0) {
+            $queryBuilder->where($queryBuilder->expr()->gt('uid', (int)$firstUid));
+        }
+        $statement = $queryBuilder->execute();
+        while ($processedFileRow = $statement->fetch()) {
             try {
                 $storage = $factory->getStorageObject($processedFileRow['storage']);
             } catch (\InvalidArgumentException $e) {
                 $storage = null;
             }
             if (!$storage) {
-                // invalid storage, delete record, we can't take care of the associated file
-                $db->exec_DELETEquery('sys_file_processedfile', 'uid=' . $processedFileRow['uid']);
+                // Invalid storage, delete record, we can't take care of the associated file
+                $fileConnection->delete('sys_file_processedfile', ['uid' => (int)$processedFileRow['uid']]);
+                $registry->set('core', 'ProcessedFileChecksumUpdate', (int)$processedFileRow['uid']);
                 continue;
             }
 
             if ($storage->getDriverType() !== 'Local') {
-                // non-local storage, we can't treat this, skip the record and mark it done
-                $db->exec_INSERTquery('sys_registry', array('entry_namespace' => 'ProcessedFileChecksumUpdate', 'entry_key' => $processedFileRow['uid']));
+                // Non-local storage, we can't treat this, skip the record and mark it done
+                $registry->set('core', 'ProcessedFileChecksumUpdate', (int)$processedFileRow['uid']);
                 continue;
             }
 
@@ -101,13 +143,14 @@ This can either happen on demand, when the processed file is first needed, or by
             try {
                 $originalFile = $factory->getFileObject($processedFileRow['original']);
             } catch (\Exception $e) {
-                // no original file there anymore, delete local file
+                // No original file there anymore, delete local file
                 @unlink($filePath);
-                $db->exec_DELETEquery('sys_file_processedfile', 'uid=' . $processedFileRow['uid']);
+                $fileConnection->delete('sys_file_processedfile', ['uid' => (int)$processedFileRow['uid']]);
+                $registry->set('core', 'ProcessedFileChecksumUpdate', (int)$processedFileRow['uid']);
                 continue;
             }
 
-            $processedFileObject = new ProcessedFile($originalFile, '', array(), $processedFileRow);
+            $processedFileObject = new ProcessedFile($originalFile, '', [], $processedFileRow);
 
             // calculate new checksum and name
             $newChecksum = $processedFileObject->calculateChecksum();
@@ -115,28 +158,34 @@ This can either happen on demand, when the processed file is first needed, or by
             // if the checksum already matches, there is nothing to do
             if ($newChecksum !== $processedFileRow['checksum']) {
                 $newName = str_replace($processedFileRow['checksum'], $newChecksum, $processedFileRow['name']);
-                $newIdentifier = str_replace($processedFileRow['checksum'], $newChecksum, $processedFileRow['identifier']);
+                $newIdentifier = str_replace(
+                    $processedFileRow['checksum'],
+                    $newChecksum,
+                    $processedFileRow['identifier']
+                );
                 $newFilePath = str_replace($processedFileRow['checksum'], $newChecksum, $filePath);
 
                 // rename file
                 if (@rename($filePath, $newFilePath)) {
                     // save result back into database
-                    $fields = array(
+                    $fields = [
                         'tstamp' => time(),
                         'identifier' => $newIdentifier,
                         'name' => $newName,
                         'checksum' => $newChecksum
+                    ];
+                    $fileConnection->update(
+                        'sys_file_processedfile',
+                        $fields,
+                        ['uid' => (int)$processedFileRow['uid']]
                     );
-                    $db->exec_UPDATEquery('sys_file_processedfile', 'uid=' . $processedFileRow['uid'], $fields);
                 }
                 // if the rename of the file failed, keep the record, but do not bother with it again
             }
-
-            // remember we finished this record
-            $db->exec_INSERTquery('sys_registry', array('entry_namespace' => 'ProcessedFileChecksumUpdate', 'entry_key' => $processedFileRow['uid']));
+            $registry->set('core', 'ProcessedFileChecksumUpdate', (int)$processedFileRow['uid']);
         }
 
-        $db->exec_DELETEquery('sys_registry', 'entry_namespace = \'ProcessedFileChecksumUpdate\'');
+        $registry->remove('core', 'ProcessedFileChecksumUpdate');
         $this->markWizardAsDone();
         return true;
     }

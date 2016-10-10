@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
 
 /**
@@ -42,10 +43,10 @@ class Typo3Link extends RteHtmlAreaApi
      *
      * @var array
      */
-    protected $convertToolbarForHtmlAreaArray = array(
+    protected $convertToolbarForHtmlAreaArray = [
         'link' => 'CreateLink',
         'unlink' => 'UnLink'
-    );
+    ];
 
     /**
      * Returns TRUE if the plugin is available and correctly initialized
@@ -67,7 +68,7 @@ class Typo3Link extends RteHtmlAreaApi
      */
     public function buildJavascriptConfiguration()
     {
-        $jsArray = array();
+        $jsArray = [];
         $button = 'link';
         if (in_array($button, $this->toolbar)) {
             if (!is_array($this->configuration['thisConfig']['buttons.']) || !is_array($this->configuration['thisConfig']['buttons.'][$button . '.'])) {
@@ -100,7 +101,7 @@ class Typo3Link extends RteHtmlAreaApi
                     $JSClassesAnchorArray .= ($index++ ? ',' : '') . 'type : "' . str_replace('"', '', str_replace('\'', '', $conf['type'])) . '"' . LF;
                 }
                 if (trim(str_replace('\'', '', str_replace('"', '', $conf['image'])))) {
-                    $JSClassesAnchorArray .= ($index++ ? ',' : '') . 'image : "' . GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . GeneralUtility::resolveBackPath((TYPO3_mainDir . $this->getFullFileName(trim(str_replace('\'', '', str_replace('"', '', $conf['image'])))))) . '"' . LF;
+                    $JSClassesAnchorArray .= ($index++ ? ',' : '') . 'image : "' . GeneralUtility::locationHeaderUrl(PathUtility::getAbsoluteWebPath(GeneralUtility::getFileAbsFileName(trim(str_replace('\'', '', str_replace('"', '', $conf['image'])))))) . '"' . LF;
                 }
                 $JSClassesAnchorArray .= ($index++ ? ',' : '') . 'addIconAfterLink : ' . ($conf['addIconAfterLink'] ? 'true' : 'false') . LF;
                 if (trim($conf['altText'])) {

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================================
 Deprecation: #73050 - Deprecated random generator methods in GeneralUtility
 ===========================================================================
+
+See :issue:`73050`
 
 Description
 ===========
@@ -29,4 +34,4 @@ Replace calls to :php:`GeneralUtility::generateRandomBytes()` with :php:`General
 
 Also replace calls to :php:`GeneralUtility::getRandomHexString()` with :php:`GeneralUtility::makeInstance(Random::class)->generateRandomHexString()`.
 
-.. index:: php
+.. index:: PHP-API

@@ -1,15 +1,20 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================
 Breaking: #72373 - Removed deprecated code from css_styled_content
 ==================================================================
 
+See :issue:`72373`
+
 Description
 ===========
 
-The following methods have been removed from ``CssStyledContentController``
+The following methods have been removed from `CssStyledContentController`
 
-``render_bullets``
-``render_uploads``
-``beautifyFileLink``
+`render_bullets`
+`render_uploads`
+`beautifyFileLink`
 
 
 Impact
@@ -29,4 +34,4 @@ Migration
 
 Use default TypoScript from CSS Styled Content derived from the current version.
 
-.. index:: php
+.. index:: PHP-API, Frontend

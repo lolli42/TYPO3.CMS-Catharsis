@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare(strict_types=1);
 namespace TYPO3\CMS\Core\Tests\Unit\Database\Query;
 
 /*
@@ -67,6 +67,10 @@ class QueryHelperTest extends UnitTestCase
     public function parseOrderByDataProvider(): array
     {
         return [
+            'empty string' => [
+                '',
+                [],
+            ],
             'single field' => [
                 'aField',
                 [
@@ -142,6 +146,82 @@ class QueryHelperTest extends UnitTestCase
     }
 
     /**
+     * Test cases for parsing FROM tableList SQL fragments
+     *
+     * @return array
+     */
+    public function parseTableListDataProvider(): array
+    {
+        return [
+            'single table' => [
+                'aTable',
+                [
+                    ['aTable', null],
+                ],
+            ],
+            'single table with leading whitespace' => [
+                ' aTable',
+                [
+                    ['aTable', null],
+                ],
+            ],
+            'prefixed single table' => [
+                'FROM aTable',
+                [
+                    ['aTable', null],
+                ],
+            ],
+            'prefixed single table with leading whitespace' => [
+                ' FROM aTable',
+                [
+                    ['aTable', null],
+                ],
+            ],
+            'single table with alias' => [
+                'aTable a',
+                [
+                    ['aTable', 'a'],
+                ],
+            ],
+            'multiple tables' => [
+                'aTable,anotherTable, aThirdTable',
+                [
+                    ['aTable', null],
+                    ['anotherTable', null],
+                    ['aThirdTable', null]
+                ],
+            ],
+            'multiple tables with aliases' => [
+                'aTable a,anotherTable, aThirdTable AS c',
+                [
+                    ['aTable', 'a'],
+                    ['anotherTable', null],
+                    ['aThirdTable', 'c']
+                ],
+            ],
+            'prefixed multiple tables with aliases' => [
+                'FROM aTable a,anotherTable, aThirdTable AS c',
+                [
+                    ['aTable', 'a'],
+                    ['anotherTable', null],
+                    ['aThirdTable', 'c']
+                ],
+            ]
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider parseTableListDataProvider
+     * @param string $input
+     * @param array $expectedResult
+     */
+    public function parseTableListTest(string $input, array $expectedResult)
+    {
+        $this->assertSame($expectedResult, QueryHelper::parseTableList($input));
+    }
+
+    /**
      * Test cases for parsing ORDER BY SQL fragments
      *
      * @return array
@@ -189,5 +269,83 @@ class QueryHelperTest extends UnitTestCase
     public function parseGroupByTest(string $input, array $expectedResult)
     {
         $this->assertSame($expectedResult, QueryHelper::parseGroupBy($input));
+    }
+
+    /**
+     * Test cases for parsing JOIN fragments into table name, alias and conditions
+     *
+     * @return array
+     */
+    public function parseJoinDataProvider(): array
+    {
+        return [
+            'unquoted tableName' => [
+                'aTable ON aTable.uid = anotherTable.uid_foreign',
+                [
+                    'tableName' => 'aTable',
+                    'tableAlias' => 'aTable',
+                    'joinCondition' => 'aTable.uid = anotherTable.uid_foreign'
+                ],
+            ],
+            'quoted tableName' => [
+                '`aTable` ON aTable.uid = anotherTable.uid_foreign',
+                [
+                    'tableName' => 'aTable',
+                    'tableAlias' => 'aTable',
+                    'joinCondition' => 'aTable.uid = anotherTable.uid_foreign'
+                ],
+            ],
+            'quoted tableName with alias' => [
+                '`aTable` a ON a.uid = anotherTable.uid_foreign',
+                [
+                    'tableName' => 'aTable',
+                    'tableAlias' => 'a',
+                    'joinCondition' => 'a.uid = anotherTable.uid_foreign'
+                ],
+            ],
+            'quoted tableName with quoted alias' => [
+                '`aTable` `a` ON a.uid = anotherTable.uid_foreign',
+                [
+                    'tableName' => 'aTable',
+                    'tableAlias' => 'a',
+                    'joinCondition' => 'a.uid = anotherTable.uid_foreign'
+                ],
+            ],
+            'quoted tableName with AS alias' => [
+                '`aTable` AS anAlias ON anAlias.uid = anotherTable.uid_foreign',
+                [
+                    'tableName' => 'aTable',
+                    'tableAlias' => 'anAlias',
+                    'joinCondition' => 'anAlias.uid = anotherTable.uid_foreign'
+                ],
+            ],
+            'quoted tableName with AS quoted alias' => [
+                '`aTable` AS `anAlias` ON anAlias.uid = anotherTable.uid_foreign',
+                [
+                    'tableName' => 'aTable',
+                    'tableAlias' => 'anAlias',
+                    'joinCondition' => 'anAlias.uid = anotherTable.uid_foreign'
+                ],
+            ],
+            'unquoted tableName with AS quoted alias' => [
+                'aTable AS `anAlias` ON anAlias.uid = anotherTable.uid_foreign',
+                [
+                    'tableName' => 'aTable',
+                    'tableAlias' => 'anAlias',
+                    'joinCondition' => 'anAlias.uid = anotherTable.uid_foreign'
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider parseJoinDataProvider
+     * @param string $input
+     * @param array $expected
+     */
+    public function parseJoinSplitsStatement(string $input, array $expected)
+    {
+        $this->assertSame($expected, QueryHelper::parseJoin($input));
     }
 }

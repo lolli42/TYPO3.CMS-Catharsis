@@ -335,8 +335,8 @@ class RequestTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getRequestTargetIsResetWithNewUri()
     {
         $request = (new Request())->withUri(new Uri('https://example.com/foo/bar'));
-        $original = $request->getRequestTarget();
-        $newRequest = $request->withUri(new Uri('http://mwop.net/bar/baz'));
+        $request->getRequestTarget();
+        $request->withUri(new Uri('http://mwop.net/bar/baz'));
     }
 
     /**
@@ -377,7 +377,7 @@ class RequestTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $request = new Request('http://example.com');
         $header = $request->getHeader('host');
-        $this->assertEquals(array('example.com'), $header);
+        $this->assertEquals(['example.com'], $header);
     }
 
     /**
@@ -523,6 +523,6 @@ class RequestTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function constructorRaisesExceptionForHeadersWithCRLFVectors($name, $value)
     {
         $this->expectException(\InvalidArgumentException::class);
-        $request = new Request(null, null, 'php://memory', [$name => $value]);
+        new Request(null, null, 'php://memory', [$name => $value]);
     }
 }

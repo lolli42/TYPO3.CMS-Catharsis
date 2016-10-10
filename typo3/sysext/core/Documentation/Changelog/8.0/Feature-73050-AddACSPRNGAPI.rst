@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================
 Feature: #73050 - Add a CSPRNG API
 ==================================
+
+See :issue:`73050`
 
 Description
 ===========
@@ -54,3 +59,5 @@ Impact
 ======
 
 None, you can start to use the CSPRNG in your code by now.
+
+.. index:: PHP-API

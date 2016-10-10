@@ -123,7 +123,7 @@ class LocalizationRepository
             ->from('sys_language')
             ->where(...$constraints)
             ->groupBy('sys_language.uid')
-            ->orderBy('sys_language.title');
+            ->orderBy('sys_language.sorting');
 
         $result = $queryBuilder->execute()->fetchAll();
 
@@ -160,7 +160,7 @@ class LocalizationRepository
             $additionalWhere .= ' AND sys_language.hidden=0';
 
             if (!empty($backendUser->user['allowed_languages'])) {
-                $additionalWhere .= ' AND sys_language.uid IN(' . $this->getDatabaseConnection()->cleanIntList($backendUser->user['allowed_languages']) . ')';
+                $additionalWhere .= ' AND sys_language.uid IN(' . implode(',', GeneralUtility::intExplode(',', $backendUser->user['allowed_languages'])) . ')';
             }
         }
 

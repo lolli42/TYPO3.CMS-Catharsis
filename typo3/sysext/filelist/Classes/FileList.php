@@ -123,12 +123,12 @@ class FileList extends AbstractRecordList
     /**
      * @var array
      */
-    public $dirs = array();
+    public $dirs = [];
 
     /**
      * @var array
      */
-    public $files = array();
+    public $files = [];
 
     /**
      * @var string
@@ -155,7 +155,7 @@ class FileList extends AbstractRecordList
     /**
      * @var array
      */
-    public $CBnames = array();
+    public $CBnames = [];
 
     /**
      * @var Clipboard $clipObj
@@ -349,7 +349,7 @@ class FileList extends AbstractRecordList
             $this->fieldArray = explode(',', $rowlist);
 
             // Add classes to table cells
-            $this->addElement_tdCssClass[$titleCol] = 'col-title';
+            $this->addElement_tdCssClass[$titleCol] = 'col-title col-responsive';
             $this->addElement_tdCssClass['_LOCALIZATION_'] = 'col-localizationa';
 
             $folders = ListUtility::resolveSpecialFolderNames($folders);
@@ -371,15 +371,15 @@ class FileList extends AbstractRecordList
             $iOut .= $code;
 
             // Header line is drawn
-            $theData = array();
+            $theData = [];
             foreach ($this->fieldArray as $v) {
                 if ($v == '_CLIPBOARD_' && $this->clipBoard) {
-                    $cells = array();
+                    $cells = [];
                     $table = '_FILE';
                     $elFromTable = $this->clipObj->elFromTable($table);
                     if (!empty($elFromTable) && $this->folderObject->checkActionPermission('write')) {
                         $addPasteButton = true;
-                        $elToConfirm = array();
+                        $elToConfirm = [];
                         foreach ($elFromTable as $key => $element) {
                             $clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
                             if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $this->folderObject)) {
@@ -522,7 +522,7 @@ class FileList extends AbstractRecordList
             }
 
             // Preparing and getting the data-array
-            $theData = array();
+            $theData = [];
             if ($isLocked) {
                 foreach ($this->fieldArray as $field) {
                     $theData[$field] = '';
@@ -584,7 +584,7 @@ class FileList extends AbstractRecordList
         $onclick = ' onclick="' . htmlspecialchars(('top.document.getElementsByName("navigation")[0].contentWindow.Tree.highlightActiveItem("file","folder' . GeneralUtility::md5int($folderObject->getCombinedIdentifier()) . '_"+top.fsMod.currentBank)')) . '"';
         // Sometimes $code contains plain HTML tags. In such a case the string should not be modified!
         if ((string)$title === strip_tags($title)) {
-            return '<a href="' . htmlspecialchars($href) . '"' . $onclick . ' title="' . htmlspecialchars($title) . '">' . GeneralUtility::fixed_lgd_cs($title, $this->fixedL) . '</a>';
+            return '<a href="' . htmlspecialchars($href) . '"' . $onclick . ' title="' . htmlspecialchars($title) . '">' . $title . '</a>';
         } else {
             return '<a href="' . htmlspecialchars($href) . '"' . $onclick . '>' . $title . '</a>';
         }
@@ -612,7 +612,7 @@ class FileList extends AbstractRecordList
                 ];
                 $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
                 $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editMetadata'));
-                $code = '<a href="' . htmlspecialchars($url) . '" title="' . $title . '">' . GeneralUtility::fixed_lgd_cs($code, $this->fixedL) . '</a>';
+                $code = '<a class="responsive-title" href="' . htmlspecialchars($url) . '" title="' . $title . '">' . $code . '</a>';
             }
         } catch (\Exception $e) {
             // intentional fall-through
@@ -633,10 +633,10 @@ class FileList extends AbstractRecordList
      */
     public function listURL($altId = '', $table = '-1', $exclList = '')
     {
-        return GeneralUtility::linkThisScript(array(
+        return GeneralUtility::linkThisScript([
             'target' => rawurlencode($this->folderObject->getCombinedIdentifier()),
             'imagemode' => $this->thumbs
-        ));
+        ]);
     }
 
     /**
@@ -671,7 +671,7 @@ class FileList extends AbstractRecordList
                 $theIcon = BackendUtility::wrapClickMenuOnIcon($theIcon, $fileObject->getCombinedIdentifier());
             }
             // Preparing and getting the data-array
-            $theData = array();
+            $theData = [];
             foreach ($this->fieldArray as $field) {
                 switch ($field) {
                     case 'size':
@@ -753,7 +753,7 @@ class FileList extends AbstractRecordList
                                 . '</span>';
                             // Thumbnails?
                         } elseif ($this->thumbs && ($this->isImage($ext) || $this->isMediaFile($ext))) {
-                            $processedFile = $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, array());
+                            $processedFile = $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, []);
                             if ($processedFile) {
                                 $thumbUrl = $processedFile->getPublicUrl(true);
                                 $theData[$field] .= '<br /><img src="' . $thumbUrl . '" ' .
@@ -794,7 +794,7 @@ class FileList extends AbstractRecordList
             ->execute()
             ->fetchAll();
 
-        $translations = array();
+        $translations = [];
         foreach ($translationRecords as $record) {
             $translations[$record[$GLOBALS['TCA']['sys_file_metadata']['ctrl']['languageField']]] = $record;
         }
@@ -858,7 +858,7 @@ class FileList extends AbstractRecordList
         if (!$fileOrFolderObject->checkActionPermission('read')) {
             return '';
         }
-        $cells = array();
+        $cells = [];
         $fullIdentifier = $fileOrFolderObject->getCombinedIdentifier();
         $fullName = $fileOrFolderObject->getName();
         $md5 = GeneralUtility::shortMD5($fullIdentifier);
@@ -894,7 +894,7 @@ class FileList extends AbstractRecordList
         $elFromTable = $this->clipObj->elFromTable('_FILE');
         if ($fileOrFolderObject instanceof Folder && !empty($elFromTable) && $fileOrFolderObject->checkActionPermission('write')) {
             $addPasteButton = true;
-            $elToConfirm = array();
+            $elToConfirm = [];
             foreach ($elFromTable as $key => $element) {
                 $clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
                 if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $fileOrFolderObject)) {
@@ -926,12 +926,12 @@ class FileList extends AbstractRecordList
      */
     public function makeEdit($fileOrFolderObject)
     {
-        $cells = array();
+        $cells = [];
         $fullIdentifier = $fileOrFolderObject->getCombinedIdentifier();
 
         // Edit file content (if editable)
         if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('write') && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'], $fileOrFolderObject->getExtension())) {
-            $url = BackendUtility::getModuleUrl('file_edit', array('target' => $fullIdentifier));
+            $url = BackendUtility::getModuleUrl('file_edit', ['target' => $fullIdentifier]);
             $editOnClick = 'top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
             $cells['edit'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($editOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editcontent') . '">'
                 . $this->iconFactory->getIcon('actions-page-open', Icon::SIZE_SMALL)->render()
@@ -953,14 +953,14 @@ class FileList extends AbstractRecordList
 
         // replace file
         if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('replace')) {
-            $url = BackendUtility::getModuleUrl('file_replace', array('target' => $fullIdentifier, 'uid' => $fileOrFolderObject->getUid()));
+            $url = BackendUtility::getModuleUrl('file_replace', ['target' => $fullIdentifier, 'uid' => $fileOrFolderObject->getUid()]);
             $replaceOnClick = 'top.content.list_frame.location.href = ' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
             $cells['replace'] = '<a href="#" class="btn btn-default" onclick="' . $replaceOnClick . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.replace') . '">' . $this->iconFactory->getIcon('actions-edit-replace', Icon::SIZE_SMALL)->render() . '</a>';
         }
 
         // rename the file
         if ($fileOrFolderObject->checkActionPermission('rename')) {
-            $url = BackendUtility::getModuleUrl('file_rename', array('target' => $fullIdentifier));
+            $url = BackendUtility::getModuleUrl('file_rename', ['target' => $fullIdentifier]);
             $renameOnClick = 'top.content.list_frame.location.href = ' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
             $cells['rename'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($renameOnClick) . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.rename') . '">' . $this->iconFactory->getIcon('actions-edit-rename', Icon::SIZE_SMALL)->render() . '</a>';
         } else {

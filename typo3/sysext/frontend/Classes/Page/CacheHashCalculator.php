@@ -22,27 +22,32 @@ class CacheHashCalculator implements \TYPO3\CMS\Core\SingletonInterface
     /**
      * @var array Parameters that are relevant for cacheHash calculation. Optional.
      */
-    protected $cachedParametersWhiteList = array();
+    protected $cachedParametersWhiteList = [];
 
     /**
      * @var array Parameters that are not relevant for cacheHash calculation.
      */
-    protected $excludedParameters = array();
+    protected $excludedParameters = [];
 
     /**
      * @var array Parameters that forces a presence of a valid cacheHash.
      */
-    protected $requireCacheHashPresenceParameters = array();
+    protected $requireCacheHashPresenceParameters = [];
 
     /**
      * @var array Parameters that need a value to be relevant for cacheHash calculation
      */
-    protected $excludedParametersIfEmpty = array();
+    protected $excludedParametersIfEmpty = [];
 
     /**
      * @var bool Whether to exclude all empty parameters for cacheHash calculation
      */
     protected $excludeAllEmptyParameters = false;
+
+    /**
+     * @var bool
+     */
+    protected $includePageId = false;
 
     /**
      * Initialise class properties by using the relevant TYPO3 configuration
@@ -107,7 +112,7 @@ class CacheHashCalculator implements \TYPO3\CMS\Core\SingletonInterface
     public function getRelevantParameters($queryString)
     {
         $parameters = $this->splitQueryStringToArray($queryString);
-        $relevantParameters = array();
+        $relevantParameters = [];
         foreach ($parameters as $parameterName => $parameterValue) {
             if ($this->isAdminPanelParameter($parameterName) || $this->isExcludedParameter($parameterName) || $this->isCoreParameter($parameterName)) {
                 continue;
@@ -121,6 +126,12 @@ class CacheHashCalculator implements \TYPO3\CMS\Core\SingletonInterface
             $relevantParameters[$parameterName] = $parameterValue;
         }
         if (!empty($relevantParameters)) {
+            if ($this->includePageId) {
+                if (empty($parameters['id'])) {
+                    throw new \RuntimeException('ID parameter needs to be passed for the cHash calculation! As a temporary not recommended workaround, you can set $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'cHashIncludePageId\'] to false to avoid this error.', 1467983513);
+                }
+                $relevantParameters['id'] = $parameters['id'];
+            }
             // Finish and sort parameters array by keys:
             $relevantParameters['encryptionKey'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'];
             ksort($relevantParameters);
@@ -140,9 +151,13 @@ class CacheHashCalculator implements \TYPO3\CMS\Core\SingletonInterface
     protected function splitQueryStringToArray($queryString)
     {
         $parameters = array_filter(explode('&', ltrim($queryString, '?')));
-        $parameterArray = array();
+        $parameterArray = [];
         foreach ($parameters as $parameter) {
             list($parameterName, $parameterValue) = explode('=', $parameter);
+            if (trim($parameterName) === '') {
+                // This parameter cannot appear in $_GET in PHP even if its value is not empty, so it should be ignored!
+                continue;
+            }
             $parameterArray[rawurldecode($parameterName)] = rawurldecode($parameterValue);
         }
         return $parameterArray;
@@ -218,9 +233,9 @@ class CacheHashCalculator implements \TYPO3\CMS\Core\SingletonInterface
      * Loops through the configuration array and calls the accordant
      * getters with the value.
      *
-     * @param $configuration
+     * @param array $configuration
      */
-    public function setConfiguration($configuration)
+    public function setConfiguration(array $configuration)
     {
         foreach ($configuration as $name => $value) {
             $setterName = 'set' . ucfirst($name);
@@ -236,6 +251,14 @@ class CacheHashCalculator implements \TYPO3\CMS\Core\SingletonInterface
     protected function setCachedParametersWhiteList(array $cachedParametersWhiteList)
     {
         $this->cachedParametersWhiteList = $cachedParametersWhiteList;
+    }
+
+    /**
+     * @param bool $includePageId
+     */
+    protected function setIncludePageId($includePageId)
+    {
+        $this->includePageId = $includePageId;
     }
 
     /**

@@ -31,7 +31,7 @@ class ElementBuilder
     public static function create(FormBuilder $formBuilder, Element $element, array $userDefinedTypoScript)
     {
         /** @var ElementBuilder $elementBuilder */
-        $elementBuilder = \TYPO3\CMS\Form\Utility\FormUtility::getObjectManager()->get(ElementBuilder::class);
+        $elementBuilder = \TYPO3\CMS\Form\Utility\FormUtility::getObjectManager()->get(self::class);
         $elementBuilder->setFormBuilder($formBuilder);
         $elementBuilder->setElement($element);
         $elementBuilder->setUserConfiguredElementTyposcript($userDefinedTypoScript);
@@ -51,22 +51,22 @@ class ElementBuilder
     /**
      * @var array
      */
-    protected $userConfiguredElementTyposcript = array();
+    protected $userConfiguredElementTyposcript = [];
 
     /**
      * @var array
      */
-    protected $htmlAttributes = array();
+    protected $htmlAttributes = [];
 
     /**
      * @var array
      */
-    protected $additionalArguments = array();
+    protected $additionalArguments = [];
 
     /**
      * @var array
      */
-    protected $wildcardPrefixes = array();
+    protected $wildcardPrefixes = [];
 
     /**
      * @var FormBuilder
@@ -212,7 +212,7 @@ class ElementBuilder
         }
 
             // the prefix-* magic
-        $ignoreKeys = array();
+        $ignoreKeys = [];
         foreach ($this->userConfiguredElementTyposcript as $attributeName => $attributeValue) {
             // ignore child elements
             if (
@@ -302,7 +302,7 @@ class ElementBuilder
     public function moveAllOtherUserdefinedPropertiesToAdditionalArguments()
     {
         $viewHelperDefaultArguments = $this->typoScriptRepository->getModelConfigurationByScope($this->element->getElementType(), 'viewHelperDefaultArguments.');
-        $ignoreKeys = array();
+        $ignoreKeys = [];
 
         foreach ($this->userConfiguredElementTyposcript as $attributeName => $attributeValue) {
             // ignore child elements
@@ -421,11 +421,11 @@ class ElementBuilder
      * @param array $haystack
      * @return bool TRUE if found
      */
-    protected function arrayKeyExists($needle, array $haystack = array())
+    protected function arrayKeyExists($needle, array $haystack = [])
     {
-        return (
+        return
             isset($haystack[$needle]) || isset($haystack[$needle . '.'])
-        );
+        ;
     }
 
     /**

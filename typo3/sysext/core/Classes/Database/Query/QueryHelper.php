@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare(strict_types=1);
 namespace TYPO3\CMS\Core\Database\Query;
 
 /*
@@ -54,6 +54,38 @@ class QueryHelper
     }
 
     /**
+     * Takes an input, possibly prefixed with FROM, and explodes it into
+     * and array of arrays where each item consists of a tableName and an
+     * optional alias name.
+     *
+     * Each of the resulting pairs can be used with QueryBuilder::from()
+     * to select from one or more tables.
+     *
+     * @param string $input eg . "FROM aTable, anotherTable AS b, aThirdTable c"
+     * @return array|array[] Array of arrays containing tableName/alias pairs
+     */
+    public static function parseTableList(string $input): array
+    {
+        $input = preg_replace('/^(?:FROM[[:space:]]+)+/i', '', trim($input)) ?: '';
+        $tableExpressions = GeneralUtility::trimExplode(',', $input, true);
+
+        return array_map(
+            function ($expression) {
+                list($tableName, $as, $alias) = GeneralUtility::trimExplode(' ', $expression, true);
+
+                if (!empty($as) && strtolower($as) === 'as' && !empty($alias)) {
+                    return [$tableName, $alias];
+                } elseif (!empty($as) && empty($alias)) {
+                    return [$tableName, $as];
+                } else {
+                    return [$tableName, null];
+                }
+            },
+            $tableExpressions
+        );
+    }
+
+    /**
      * Removes the prefix "GROUP BY" from the input string.
      *
      * This function should be used when you can't guarantee that the string
@@ -70,6 +102,52 @@ class QueryHelper
     }
 
     /**
+     * Split a JOIN SQL fragment into table name, alias and join conditions.
+     *
+     * @param string $input eg. "JOIN tableName AS a ON a.uid = anotherTable.uid_foreign"
+     * @return array assoc array consisting of the keys tableName, tableAlias and joinCondition
+     */
+    public static function parseJoin(string $input): array
+    {
+        $input = trim($input);
+        $quoteCharacter = ' ';
+        // Check if the tableName is quoted
+        if ($input[0] === '`' || $input[0] === '"') {
+            $quoteCharacter .= $input[0];
+            $input = substr($input, 1);
+            $tableName = strtok($input, $quoteCharacter);
+        } else {
+            $tableName = strtok($input, $quoteCharacter);
+        }
+
+        $tableAlias = strtok($quoteCharacter);
+        if (strtolower($tableAlias) === 'as') {
+            $tableAlias = strtok($quoteCharacter);
+            // Skip the next token which must be ON
+            strtok(' ');
+            $joinCondition = strtok('');
+        } elseif (strtolower($tableAlias) === 'on') {
+            $tableAlias = null;
+            $joinCondition = strtok('');
+        } else {
+            // Skip the next token which must be ON
+            strtok(' ');
+            $joinCondition = strtok('');
+        }
+
+        // Catch the edge case that the table name is unquoted and the
+        // table alias is actually quoted. This will not work in the case
+        // that the quoted table alias contains whitespace.
+        if ($tableAlias[0] === '`' || $tableAlias[0] === '"') {
+            $tableAlias = substr($tableAlias, 1, -1);
+        }
+
+        $tableAlias = $tableAlias ?: $tableName;
+
+        return ['tableName' => $tableName, 'tableAlias' => $tableAlias, 'joinCondition' => $joinCondition];
+    }
+
+    /**
      * Removes the prefixes AND/OR from the input string.
      *
      * This function should be used when you can't guarantee that the string
@@ -81,5 +159,26 @@ class QueryHelper
     public static function stripLogicalOperatorPrefix(string $constraint): string
     {
         return preg_replace('/^(?:(AND|OR)[[:space:]]*)+/i', '', trim($constraint)) ?: '';
+    }
+
+    /**
+     * Returns the date and time formats compatible with the given database.
+     *
+     * This simple method should probably be deprecated and removed later.
+     *
+     * @return array
+     */
+    public static function getDateTimeFormats()
+    {
+        return [
+            'date' => [
+                'empty' => '0000-00-00',
+                'format' => 'Y-m-d'
+            ],
+            'datetime' => [
+                'empty' => '0000-00-00 00:00:00',
+                'format' => 'Y-m-d H:i:s'
+            ]
+        ];
     }
 }

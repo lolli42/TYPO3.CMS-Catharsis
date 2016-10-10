@@ -19,7 +19,6 @@ use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
@@ -65,16 +64,15 @@ class PreviewController extends AbstractController
     protected function initializeAction()
     {
         parent::initializeAction();
-        $backendRelPath = ExtensionManagementUtility::extRelPath('backend');
         $this->stageService = GeneralUtility::makeInstance(StagesService::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceService::class);
-        $this->pageRenderer->addJsFile($backendRelPath . 'Resources/Public/JavaScript/ExtDirect.StateProvider.js');
+        $this->pageRenderer->addJsFile('EXT:backend/Resources/Public/JavaScript/ExtDirect.StateProvider.js');
         $this->pageRenderer->loadExtJS(false, false);
         // Load  JavaScript:
-        $this->pageRenderer->addExtDirectCode(array(
+        $this->pageRenderer->addExtDirectCode([
             'TYPO3.Workspaces',
             'TYPO3.ExtDirectStateProvider'
-        ));
+        ]);
         $states = $this->getBackendUser()->uc['moduleData']['Workspaces']['States'];
         $this->pageRenderer->addInlineSetting('Workspaces', 'States', $states);
         $this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', BackendUtility::getModuleUrl('record_edit'));
@@ -124,7 +122,7 @@ class PreviewController extends AbstractController
         /** @var $uriBuilder UriBuilder */
         $uriBuilder = $this->objectManager->get(UriBuilder::class);
         $wsSettingsPath = GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
-        $wsSettingsUri = $uriBuilder->uriFor('singleIndex', array(), ReviewController::class, 'workspaces', 'web_workspacesworkspaces');
+        $wsSettingsUri = $uriBuilder->uriFor('singleIndex', [], ReviewController::class, 'workspaces', 'web_workspacesworkspaces');
         $wsSettingsParams = '&tx_workspaces_web_workspacesworkspaces[controller]=Review';
         $wsSettingsUrl = $wsSettingsPath . $wsSettingsUri . $wsSettingsParams;
         $viewDomain = BackendUtility::getViewDomain($this->pageId);
@@ -132,7 +130,7 @@ class PreviewController extends AbstractController
         // @todo - handle new pages here
         // branchpoints are not handled anymore because this feature is not supposed anymore
         if (WorkspaceService::isNewPage($this->pageId)) {
-            $wsNewPageUri = $uriBuilder->uriFor('newPage', array(), PreviewController::class, 'workspaces', 'web_workspacesworkspaces');
+            $wsNewPageUri = $uriBuilder->uriFor('newPage', [], self::class, 'workspaces', 'web_workspacesworkspaces');
             $wsNewPageParams = '&tx_workspaces_web_workspacesworkspaces[controller]=Preview';
             $liveUrl = $wsSettingsPath . $wsNewPageUri . $wsNewPageParams . '&ADMCMD_prev=IGNORE';
         } else {
@@ -142,7 +140,7 @@ class PreviewController extends AbstractController
         $backendDomain = GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY');
         $splitPreviewTsConfig = BackendUtility::getModTSconfig($this->pageId, 'workspaces.splitPreviewModes');
         $splitPreviewModes = GeneralUtility::trimExplode(',', $splitPreviewTsConfig['value']);
-        $allPreviewModes = array('slider', 'vbox', 'hbox');
+        $allPreviewModes = ['slider', 'vbox', 'hbox'];
         if (!array_intersect($splitPreviewModes, $allPreviewModes)) {
             $splitPreviewModes = $allPreviewModes;
         }
@@ -227,28 +225,26 @@ class PreviewController extends AbstractController
     protected function generateJavascript()
     {
         $backendUser = $this->getBackendUser();
-        $lang = $this->getLanguageService();
         // If another page module was specified, replace the default Page module with the new one
         $newPageModule = trim($backendUser->getTSConfigVal('options.overridePageModule'));
         $pageModule = BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
         if (!$backendUser->check('modules', $pageModule)) {
             $pageModule = '';
         }
-        $t3Configuration = array(
+        $t3Configuration = [
             'siteUrl' => GeneralUtility::getIndpEnv('TYPO3_SITE_URL'),
             'username' => htmlspecialchars($backendUser->user['username']),
             'uniqueID' => GeneralUtility::shortMD5(uniqid('', true)),
             'pageModule' => $pageModule,
             'inWorkspace' => $backendUser->workspace !== 0,
-            'workspaceFrontendPreviewEnabled' => $backendUser->user['workspace_preview'] ? 1 : 0,
             'topBarHeight' => isset($GLOBALS['TBE_STYLES']['dims']['topFrameH']) ? (int)$GLOBALS['TBE_STYLES']['dims']['topFrameH'] : 30,
             'showRefreshLoginPopup' => isset($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) ? (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup'] : false,
             'debugInWindow' => $backendUser->uc['debugInWindow'] ? 1 : 0,
-            'ContextHelpWindows' => array(
+            'ContextHelpWindows' => [
                 'width' => 600,
                 'height' => 400
-            )
-        );
+            ]
+        ];
 
         return '
 		TYPO3.configuration = ' . json_encode($t3Configuration) . ';

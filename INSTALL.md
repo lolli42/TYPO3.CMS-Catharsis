@@ -41,7 +41,8 @@ therefore only experienced server administrators should create such configuratio
 ### MySQL environment
 
 TYPO3 works with MySQL in the above mentioned versions. It will also work on
-compatible "drop-in" replacements like MariaDB or Percona.
+compatible "drop-in" replacements like MariaDB or Percona. The InnoDB engine
+is required to be enabled.
 
 ### MySQL required privileges
 
@@ -59,7 +60,6 @@ It is recommended to also grant the following privileges:
 
 * memory_limit set to at least 64M
 * max_execution_time set to at least 30s (240s recommended)
-* register_globals disabled
 * AllowOverride in the Apache configuration includes "Indexes" and "FileInfo"
   (see FAQ below)
 

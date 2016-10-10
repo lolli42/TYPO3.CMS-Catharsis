@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Core\Tests\Functional\DataHandling;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\DBALException;
 use TYPO3\CMS\Core\Tests\Functional\DataHandling\Framework\DataSet;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -45,21 +46,21 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
     /**
      * @var array
      */
-    protected $testExtensionsToLoad = array(
+    protected $testExtensionsToLoad = [
         'typo3/sysext/core/Tests/Functional/Fixtures/Extensions/irre_tutorial',
-    );
+    ];
 
     /**
      * @var array
      */
-    protected $pathsToLinkInTestInstance = array(
+    protected $pathsToLinkInTestInstance = [
         'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/AdditionalConfiguration.php' => 'typo3conf/AdditionalConfiguration.php',
-    );
+    ];
 
     /**
      * @var array
      */
-    protected $recordIds = array();
+    protected $recordIds = [];
 
     /**
      * @var \TYPO3\CMS\Core\Tests\Functional\DataHandling\Framework\ActionService
@@ -113,13 +114,12 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 
         foreach ($dataSet->getTableNames() as $tableName) {
             foreach ($dataSet->getElements($tableName) as $element) {
-                $this->getDatabaseConnection()->exec_INSERTquery(
-                    $tableName,
-                    $element
-                );
-                $sqlError = $this->getDatabaseConnection()->sql_error();
-                if (!empty($sqlError)) {
-                    $this->fail('SQL Error for table "' . $tableName . '": ' . LF . $sqlError);
+                $connection = $this->getConnectionPool()
+                    ->getConnectionForTable($tableName);
+                try {
+                    $connection->insert($tableName, $element);
+                } catch (DBALException $e) {
+                    $this->fail('SQL Error for table "' . $tableName . '": ' . LF . $e->getMessage());
                 }
             }
         }
@@ -131,7 +131,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
         $fileName = GeneralUtility::getFileAbsFileName($fileName);
 
         $dataSet = DataSet::read($fileName);
-        $failMessages = array();
+        $failMessages = [];
 
         foreach ($dataSet->getTableNames() as $tableName) {
             $hasUidField = ($dataSet->getIdIndex($tableName) !== null);
@@ -201,13 +201,22 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
         if ($this->expectedErrorLogEntries === null) {
             return;
         }
-        $errorLogEntries = $this->getDatabaseConnection()->exec_SELECTgetRows('*', 'sys_log', 'error IN (1,2)');
-        $actualErrorLogEntries = count($errorLogEntries);
+
+        $queryBuilder = $this->getConnectionPool()
+            ->getQueryBuilderForTable('sys_log');
+        $queryBuilder->getRestrictions()->removeAll();
+        $statement = $queryBuilder
+            ->select('*')
+            ->from('sys_log')
+            ->where($queryBuilder->expr()->in('error', [1, 2]))
+            ->execute();
+
+        $actualErrorLogEntries = $statement->rowCount();
         if ($actualErrorLogEntries === $this->expectedErrorLogEntries) {
             $this->assertSame($this->expectedErrorLogEntries, $actualErrorLogEntries);
         } else {
             $failureMessage = 'Expected ' . $this->expectedErrorLogEntries . ' entries in sys_log, but got ' . $actualErrorLogEntries . LF;
-            foreach ($errorLogEntries as $entry) {
+            while ($entry = $statement->fetch()) {
                 $entryData = unserialize($entry['log_data']);
                 $entryMessage = vsprintf($entry['details'], $entryData);
                 $failureMessage .= '* ' . $entryMessage . LF;
@@ -223,20 +232,22 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
      */
     protected function getAllRecords($tableName, $hasUidField = false)
     {
-        $allRecords = array();
+        $queryBuilder = $this->getConnectionPool()
+            ->getQueryBuilderForTable($tableName);
+        $queryBuilder->getRestrictions()->removeAll();
+        $statement = $queryBuilder
+            ->select('*')
+            ->from($tableName)
+            ->execute();
 
-        $records = $this->getDatabaseConnection()->exec_SELECTgetRows(
-            '*',
-            $tableName,
-            '1=1',
-            '',
-            '',
-            '',
-            ($hasUidField ? 'uid' : '')
-        );
+        if (!$hasUidField) {
+            return $statement->fetchAll();
+        }
 
-        if (!empty($records)) {
-            $allRecords = $records;
+        $allRecords = [];
+        while ($record = $statement->fetch()) {
+            $index = $record['uid'];
+            $allRecords[$index] = $record;
         }
 
         return $allRecords;
@@ -248,7 +259,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
      */
     protected function arrayToString(array $array)
     {
-        $elements = array();
+        $elements = [];
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $value = $this->arrayToString($value);
@@ -266,13 +277,13 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
     protected function renderRecords(array $assertion, array $record)
     {
         $differentFields = $this->getDifferentFields($assertion, $record);
-        $columns = array(
-            'fields' => array('Fields'),
-            'assertion' => array('Assertion'),
-            'record' => array('Record'),
-        );
-        $lines = array();
-        $linesFromXmlValues = array();
+        $columns = [
+            'fields' => ['Fields'],
+            'assertion' => ['Assertion'],
+            'record' => ['Record'],
+        ];
+        $lines = [];
+        $linesFromXmlValues = [];
         $result = '';
 
         foreach ($differentFields as $differentField) {
@@ -325,7 +336,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
      */
     protected function getDifferentFields(array $assertion, array $record)
     {
-        $differentFields = array();
+        $differentFields = [];
 
         foreach ($assertion as $field => $value) {
             if (strpos($value, '\\*') === 0) {

@@ -1,13 +1,18 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================================================
 Breaking: #75760 - Return type of LocalizationRepository::getRecordsToCopyDatabaseResult changed
 ================================================================================================
 
+See :issue:`75760`
+
 Description
 ===========
 
-The return type of :php:``LocalizationRepository::getRecordsToCopyDatabaseResult()``
-has changed. Instead of returning either :php:``bool``, :php:``\mysqli_result``
-or :php:``object`` the return value always is a :php:``\Doctrine\DBAL\Driver\Statement``.
+The return type of :php:`LocalizationRepository::getRecordsToCopyDatabaseResult()`
+has changed. Instead of returning either :php:`bool`, :php:`\mysqli_result`
+or :php:`object` the return value always is a :php:`\Doctrine\DBAL\Driver\Statement`.
 
 
 Impact
@@ -33,3 +38,5 @@ Change the way the result is being used to conform to the Doctrine API:
     while ($row = $result->fetch()) {
         // Do something here
     }
+
+.. index:: Database, Frontend, Backend, PHP-API

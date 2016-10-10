@@ -53,21 +53,27 @@ class ShortcutViewHelper extends AbstractBackendViewHelper
     protected $escapeOutput = false;
 
     /**
-     * Renders a shortcut button as known from the TYPO3 backend
+     * Initialize arguments.
      *
-     * @param array $getVars list of GET variables to store. By default the current id, module and all module arguments will be stored
-     * @param array $setVars list of SET[] variables to store. See DocumentTemplate::makeShortcutIcon(). Normally won't be used by Extbase modules
+     * @throws \TYPO3Fluid\Fluid\Core\ViewHelper\Exception
+     */
+    public function initializeArguments()
+    {
+        parent::initializeArguments();
+        $this->registerArgument('getVars', 'array', 'List of GET variables to store. By default the current id, module and all module arguments will be stored', false, []);
+        $this->registerArgument('setVars', 'array', 'List of SET[] variables to store. See DocumentTemplate::makeShortcutIcon(). Normally won\'t be used by Extbase modules', false, []);
+    }
+
+    /**
+     * Renders a shortcut button as known from the TYPO3 backend
      *
      * @return string the rendered shortcut button
      * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::makeShortcutIcon()
      */
-    public function render(array $getVars = array(), array $setVars = array())
+    public function render()
     {
         return static::renderStatic(
-            array(
-                'getVars' => $getVars,
-                'setVars' => $setVars
-            ),
+            $this->arguments,
             $this->buildRenderChildrenClosure(),
             $this->renderingContext
         );
@@ -93,7 +99,7 @@ class ShortcutViewHelper extends AbstractBackendViewHelper
             $moduleName = $currentRequest->getPluginName();
             if (count($getVars) === 0) {
                 $modulePrefix = strtolower('tx_' . $extensionName . '_' . $moduleName);
-                $getVars = array('id', 'M', $modulePrefix);
+                $getVars = ['id', 'M', $modulePrefix];
             }
             $getList = implode(',', $getVars);
             $setList = implode(',', $setVars);

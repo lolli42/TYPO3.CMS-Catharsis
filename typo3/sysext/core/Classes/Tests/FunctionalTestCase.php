@@ -235,6 +235,7 @@ abstract class FunctionalTestCase extends BaseTestCase
             $localConfiguration['SYS']['displayErrors'] = '1';
             $localConfiguration['SYS']['debugExceptionHandler'] = '';
             $localConfiguration['SYS']['trustedHostsPattern'] = '.*';
+            // @todo: This should be moved over to DB/Connections/Default/initCommands
             $localConfiguration['SYS']['setDBinit'] = 'SET SESSION sql_mode = \'STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_VALUE_ON_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,ONLY_FULL_GROUP_BY\';';
             $localConfiguration['SYS']['caching']['cacheConfigurations']['extbase_object']['backend'] = NullBackend::class;
             $testbase->setUpLocalConfiguration($this->instancePath, $localConfiguration, $this->configurationToUseInTestInstance);
@@ -267,6 +268,14 @@ abstract class FunctionalTestCase extends BaseTestCase
     {
         GeneralUtility::logDeprecatedFunction();
         return $GLOBALS['TYPO3_DB'];
+    }
+
+    /**
+     * @return ConnectionPool
+     */
+    protected function getConnectionPool()
+    {
+        return GeneralUtility::makeInstance(ConnectionPool::class);
     }
 
     /**
@@ -328,7 +337,7 @@ abstract class FunctionalTestCase extends BaseTestCase
      * @param int $pageId
      * @param array $typoScriptFiles
      */
-    protected function setUpFrontendRootPage($pageId, array $typoScriptFiles = array())
+    protected function setUpFrontendRootPage($pageId, array $typoScriptFiles = [])
     {
         $pageId = (int)$pageId;
 
@@ -389,17 +398,17 @@ abstract class FunctionalTestCase extends BaseTestCase
             $additionalParameter .= '&workspaceId=' . (int)$workspaceId;
         }
 
-        $arguments = array(
+        $arguments = [
             'documentRoot' => $this->instancePath,
             'requestUrl' => 'http://localhost/?id=' . $pageId . '&L=' . $languageId . $additionalParameter,
-        );
+        ];
 
         $template = new \Text_Template(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/request.tpl');
         $template->setVar(
-            array(
+            [
                 'arguments' => var_export($arguments, true),
                 'originalRoot' => ORIGINAL_ROOT,
-            )
+            ]
         );
 
         $php = \PHPUnit_Util_PHP::factory();

@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -79,12 +80,12 @@ class PagePositionMap
     /**
      * @var array
      */
-    public $getModConfigCache = array();
+    public $getModConfigCache = [];
 
     /**
      * @var array
      */
-    public $checkNewPageCache = array();
+    public $checkNewPageCache = [];
 
     // Label keys:
     /**
@@ -154,10 +155,10 @@ class PagePositionMap
         // Create page tree, in $this->depth levels.
         $pageTree->getTree($pageinfo['pid'], $this->depth);
         // Initialize variables:
-        $saveLatestUid = array();
+        $saveLatestUid = [];
         $latestInvDepth = $this->depth;
         // Traverse the tree:
-        $lines = array();
+        $lines = [];
         foreach ($pageTree->tree as $cc => $dat) {
             // Make link + parameters.
             $latestInvDepth = $dat['invertedDepth'];
@@ -259,7 +260,7 @@ class PagePositionMap
         $TSconfigProp = $this->getModConfig($newPagePID);
         if ($TSconfigProp['overrideWithExtension']) {
             if (ExtensionManagementUtility::isLoaded($TSconfigProp['overrideWithExtension'])) {
-                $onclick = 'window.location.href=' . GeneralUtility::quoteJSvalue(ExtensionManagementUtility::extRelPath($TSconfigProp['overrideWithExtension']) . 'mod1/index.php?cmd=crPage&positionPid=' . $pid) . ';';
+                $onclick = 'window.location.href=' . GeneralUtility::quoteJSvalue(PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath($TSconfigProp['overrideWithExtension'])) . 'mod1/index.php?cmd=crPage&positionPid=' . $pid) . ';';
                 return $onclick;
             }
         }
@@ -341,7 +342,7 @@ class PagePositionMap
         $this->R_URI = $R_URI;
         $this->moveUid = $moveUid;
         $colPosArray = GeneralUtility::trimExplode(',', $colPosList, true);
-        $lines = array();
+        $lines = [];
         foreach ($colPosArray as $kk => $vv) {
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
             $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
@@ -365,7 +366,7 @@ class PagePositionMap
             }
 
             $res = $queryBuilder->execute();
-            $lines[$vv] = array();
+            $lines[$vv] = [];
             $lines[$vv][] = $this->insertPositionIcon('', $vv, $kk, $moveUid, $pid);
 
             while ($row = $res->fetch()) {
@@ -582,7 +583,7 @@ class PagePositionMap
      */
     public function wrapRecordTitle($str, $row)
     {
-        return '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('uid' => (int)$row['uid'], 'moveUid' => ''))) . '">' . $str . '</a>';
+        return '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(['uid' => (int)$row['uid'], 'moveUid' => ''])) . '">' . $str . '</a>';
     }
 
     /**

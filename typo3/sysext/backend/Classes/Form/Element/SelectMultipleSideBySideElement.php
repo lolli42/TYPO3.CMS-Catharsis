@@ -39,11 +39,6 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
         // Field configuration from TCA:
         $config = $parameterArray['fieldConf']['config'];
 
-        // Creating the label for the "No Matching Value" entry.
-        $noMatchingLabel = isset($parameterArray['fieldTSConfig']['noMatchingValue_label'])
-            ? $this->getLanguageService()->sL(trim($parameterArray['fieldTSConfig']['noMatchingValue_label']))
-            : '[ ' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue') . ' ]';
-
         $selItems = $config['items'];
         $html = '';
         $disabled = '';
@@ -64,10 +59,10 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
 
         // Perform modification of the selected items array:
         foreach ($itemsArray as $itemNumber => $itemValue) {
-            $itemArray = array(
+            $itemArray = [
                 0 => $itemValue,
                 1 => '',
-            );
+            ];
 
             if (isset($parameterArray['fieldTSConfig']['altIcons.'][$itemValue])) {
                 $itemArray[2] = $parameterArray['fieldTSConfig']['altIcons.'][$itemValue];
@@ -96,7 +91,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
         $filterSelectbox = '';
         if (!$disabled) {
             // Create option tags:
-            $opt = array();
+            $opt = [];
             foreach ($selItems as $p) {
                 $disabledAttr = '';
                 $classAttr = '';
@@ -118,7 +113,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
                 . 'id="' . $multiSelectId . '" '
                 . 'data-formengine-input-name="' . htmlspecialchars($parameterArray['itemFormElName']) . '" '
                 . 'class="form-control t3js-formengine-select-itemstoselect" '
-                . ($size ? ' size="' . $size . '" ' : '')
+                . ($size > 1 ? ' size="' . $size . '" ' : '')
                 . 'onchange="' . htmlspecialchars($sOnChange) . '" '
                 . $this->getValidationDataAsDataAttribute($config)
                 . $selector_itemListStyle
@@ -138,7 +133,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
 
             // enable filter functionality via a select
             if (isset($config['multiSelectFilterItems']) && is_array($config['multiSelectFilterItems']) && count($config['multiSelectFilterItems']) > 1) {
-                $filterDropDownOptions = array();
+                $filterDropDownOptions = [];
                 foreach ($config['multiSelectFilterItems'] as $optionElement) {
                     $optionValue = $this->getLanguageService()->sL(isset($optionElement[1]) && trim($optionElement[1]) !== '' ? trim($optionElement[1])
                         : trim($optionElement[0]));
@@ -159,7 +154,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
         }
 
         // Pass to "dbFileIcons" function:
-        $params = array(
+        $params = [
             'size' => $size,
             'autoSizeMax' => MathUtility::forceIntegerInRange($config['autoSizeMax'], 0),
             'style' => isset($config['selectedListStyle'])
@@ -168,21 +163,21 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
             'dontShowMoveIcons' => $maxitems <= 1,
             'maxitems' => $maxitems,
             'info' => '',
-            'headers' => array(
+            'headers' => [
                 'selector' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.selected'),
                 'items' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.items'),
                 'selectorbox' => $selectBoxFilterContents,
-            ),
+            ],
             'noBrowser' => 1,
             'rightbox' => implode(LF, $itemsToSelect),
             'readOnly' => $disabled
-        );
+        ];
         $html .= $this->dbFileIcons($parameterArray['itemFormElName'], '', '', $itemsArray, '', $params);
 
         // Wizards:
         if (!$disabled) {
             $html = $this->renderWizards(
-                array($html),
+                [$html],
                 $config['wizards'],
                 $table,
                 $this->data['databaseRow'],

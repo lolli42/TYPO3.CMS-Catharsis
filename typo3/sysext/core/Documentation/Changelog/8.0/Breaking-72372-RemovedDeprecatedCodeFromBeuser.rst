@@ -1,15 +1,20 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================
 Breaking: #72372 - Removed deprecated code from beuser
 ======================================================
 
+See :issue:`72372`
+
 Description
 ===========
 
-The following methods have been removed from ``PermissionAjaxController``
+The following methods have been removed from `PermissionAjaxController`
 
-``renderOwnername``
-``renderPermissions``
-``renderGroupname``
+`renderOwnername`
+`renderPermissions`
+`renderGroupname`
 
 
 Impact
@@ -29,4 +34,4 @@ Migration
 
 Migrate your code that calls one of the methods to Fluid templates.
 
-.. index:: php
+.. index:: PHP-API

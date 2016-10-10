@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =========================================================
 Breaking: #72416 - Remove EXT:t3skin/stylesheets/sprites/
 =========================================================
+
+See :issue:`72416`
 
 Description
 ===========
@@ -25,4 +30,4 @@ Migration
 
 No migration, remove all references and use the IconFactory for all icon related stuff.
 
-.. index:: php, icons
+.. index:: PHP-API, Backend, Frontend

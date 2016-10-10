@@ -30,7 +30,7 @@ class MiscUtility
     public static function getExtensionMetaData($extensionKey)
     {
         $_EXTKEY = $extensionKey;
-        $EM_CONF = array();
+        $EM_CONF = [];
         $extPath = ExtensionManagementUtility::extPath($extensionKey);
         include($extPath . 'ext_emconf.php');
 
@@ -59,7 +59,8 @@ class MiscUtility
         $documentPath = $basePath . $documentKey . '/';
 
         // Fallback icon
-        $icon = ExtensionManagementUtility::siteRelPath('documentation') . 'ext_icon.png';
+        $icon = ExtensionManagementUtility::getExtensionIcon(ExtensionManagementUtility::extPath('documentation'));
+        $icon = ExtensionManagementUtility::siteRelPath('documentation') . $icon;
 
         if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($documentKey, 'typo3cms.extensions.')) {
             // Standard extension icon

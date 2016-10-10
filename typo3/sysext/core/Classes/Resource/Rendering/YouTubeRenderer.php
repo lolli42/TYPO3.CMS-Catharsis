@@ -97,21 +97,6 @@ class YouTubeRenderer implements FileRendererInterface
             }
         }
 
-        $urlParams = array('autohide=1');
-        if (!isset($options['controls']) || !empty($options['controls'])) {
-            $urlParams[] = 'controls=2';
-        }
-        if (!empty($options['autoplay'])) {
-            $urlParams[] = 'autoplay=1';
-        }
-        if (!empty($options['loop'])) {
-            $urlParams[] = 'loop=1';
-        }
-        if (!isset($options['enablejsapi']) || !empty($options['enablejsapi'])) {
-            $urlParams[] = 'enablejsapi=1&amp;origin=' . GeneralUtility::getIndpEnv('HTTP_HOST');
-        }
-        $urlParams[] = 'showinfo=' . (int)!empty($options['showinfo']);
-
         if ($file instanceof FileReference) {
             $orgFile = $file->getOriginalFile();
         } else {
@@ -119,8 +104,24 @@ class YouTubeRenderer implements FileRendererInterface
         }
 
         $videoId = $this->getOnlineMediaHelper($file)->getOnlineMediaId($orgFile);
+
+        $urlParams = ['autohide=1'];
+        if (!isset($options['controls']) || !empty($options['controls'])) {
+            $urlParams[] = 'controls=2';
+        }
+        if (!empty($options['autoplay'])) {
+            $urlParams[] = 'autoplay=1';
+        }
+        if (!empty($options['loop'])) {
+            $urlParams[] = 'loop=1&amp;playlist=' . $videoId;
+        }
+        if (!isset($options['enablejsapi']) || !empty($options['enablejsapi'])) {
+            $urlParams[] = 'enablejsapi=1&amp;origin=' . GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST');
+        }
+        $urlParams[] = 'showinfo=' . (int)!empty($options['showinfo']);
+
         $src = sprintf(
-            '//www.youtube%s.com/embed/%s?%s',
+            'https://www.youtube%s.com/embed/%s?%s',
             !empty($options['no-cookie']) ? '-nocookie' : '',
             $videoId,
             implode('&amp;', $urlParams)

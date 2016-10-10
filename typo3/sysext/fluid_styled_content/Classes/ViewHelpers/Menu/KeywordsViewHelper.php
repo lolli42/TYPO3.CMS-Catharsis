@@ -13,7 +13,9 @@ namespace TYPO3\CMS\FluidStyledContent\ViewHelpers\Menu;
  *
  * The TYPO3 project - inspiring people to share!
  */
-use TYPO3\CMS\Core\Database\DatabaseConnection;
+
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * A view helper which returns pages with one of the same keywords as the given pages
@@ -55,8 +57,8 @@ class KeywordsViewHelper extends AbstractMenuViewHelper
     {
         $this->registerArgument('as', 'string', 'Name of template variable which will contain selected pages', true);
         $this->registerArgument('entryLevel', 'integer', 'The entry level', false, 0);
-        $this->registerArgument('pageUids', 'array', 'Page UIDs of pages to fetch the keywords from', false, array());
-        $this->registerArgument('keywords', 'array', 'Keywords for which to search', false, array());
+        $this->registerArgument('pageUids', 'array', 'Page UIDs of pages to fetch the keywords from', false, []);
+        $this->registerArgument('keywords', 'array', 'Keywords for which to search', false, []);
         $this->registerArgument('includeNotInMenu', 'boolean', 'Include pages that are marked "hide in menu"?', false, false);
         $this->registerArgument('includeMenuSeparator', 'boolean', 'Include pages of the type "Menu separator"?', false, false);
         $this->registerArgument('excludeNoSearchPages', 'boolean', 'Exclude pages that are NOT marked "include in search"?', false, true);
@@ -80,7 +82,7 @@ class KeywordsViewHelper extends AbstractMenuViewHelper
 
         // If no pages have been defined, use the current page
         if (empty($pageUids)) {
-            $pageUids = array($typoScriptFrontendController->page['uid']);
+            $pageUids = [$typoScriptFrontendController->page['uid']];
         }
 
         // Transform the keywords list into an array
@@ -107,11 +109,11 @@ class KeywordsViewHelper extends AbstractMenuViewHelper
             $constraints .= ' AND no_search = 0';
         }
 
-        $keywordConstraints = array();
+        $keywordConstraints = [];
         if ($filteredKeywords) {
-            $db = $this->getDatabaseConnection();
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
             foreach ($filteredKeywords as $keyword) {
-                $keyword = $db->fullQuoteStr('%' . $db->escapeStrForLike($keyword, 'pages') . '%', 'pages');
+                $keyword = $queryBuilder->quote('%' . $queryBuilder->escapeLikeWildcards($keyword) . '%');
                 $keywordConstraints[] = 'keywords LIKE ' . $keyword;
             }
             $constraints .= ' AND (' . implode(' OR ', $keywordConstraints) . ')';
@@ -133,9 +135,9 @@ class KeywordsViewHelper extends AbstractMenuViewHelper
             '',
             $constraints
         );
-        return $this->renderChildrenWithVariables(array(
+        return $this->renderChildrenWithVariables([
             $as => $pages
-        ));
+        ]);
     }
 
     /**
@@ -151,13 +153,5 @@ class KeywordsViewHelper extends AbstractMenuViewHelper
         $keywordList = preg_split('/[,;' . LF . ']/', $keywords);
 
         return array_filter(array_map('trim', $keywordList));
-    }
-
-    /**
-     * @return DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 }

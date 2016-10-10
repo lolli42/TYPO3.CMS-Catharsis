@@ -132,7 +132,7 @@ class InputButton extends AbstractButton implements ButtonInterface
             trim($this->getName()) !== ''
             && trim($this->getValue()) !== ''
             && trim($this->getTitle()) !== ''
-            && $this->getType() === InputButton::class
+            && $this->getType() === self::class
             && $this->getIcon() !== null
         ) {
             return true;
@@ -147,13 +147,13 @@ class InputButton extends AbstractButton implements ButtonInterface
      */
     public function render()
     {
-        $attributes = array(
+        $attributes = [
             'name' => $this->getName(),
             'class' => 'btn btn-default btn-sm ' . $this->getClasses(),
             'value' => $this->getValue(),
             'title' => $this->getTitle(),
             'form' => trim($this->getForm())
-        );
+        ];
         $labelText = '';
         if ($this->showLabelText) {
             $labelText = ' ' . $this->title;

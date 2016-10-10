@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Deprecation: #72496 - Deprecated $LANG->overrideLL
 ==================================================
 
+See :issue:`72496`
+
 Description
 ===========
 
-The method ``LanguageService::overrideLL()`` has been marked as deprecated.
+The method `LanguageService::overrideLL()` has been marked as deprecated.
 
 
 Impact
@@ -19,4 +24,4 @@ Affected Installations
 
 Any TYPO3 instance using the LanguageService method directly within an extension or third-party code.
 
-.. index:: php
+.. index:: PHP-API

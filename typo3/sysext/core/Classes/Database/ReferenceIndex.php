@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Core\Database;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\DBALException;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
@@ -56,11 +57,11 @@ class ReferenceIndex
      * @see updateRefIndexTable()
      * @todo #65461 Create configuration for tables to exclude from ReferenceIndex
      */
-    protected static $nonRelationTables = array(
+    protected static $nonRelationTables = [
         'sys_log' => true,
         'sys_history' => true,
         'tx_extensionmanager_domain_model_extension' => true
-    );
+    ];
 
     /**
      * Definition of fields to exclude from searching for relations
@@ -73,7 +74,7 @@ class ReferenceIndex
      * @see fetchTableRelationFields()
      * @todo #65460 Create configuration for fields to exclude from ReferenceIndex
      */
-    protected static $nonRelationFields = array(
+    protected static $nonRelationFields = [
         'uid' => true,
         'perms_userid' => true,
         'perms_groupid' => true,
@@ -81,7 +82,7 @@ class ReferenceIndex
         'perms_group' => true,
         'perms_everybody' => true,
         'pid' => true
-    );
+    ];
 
     /**
      * Fields of tables that could contain relations are cached per table. This is the prefix for the cache entries since
@@ -97,7 +98,7 @@ class ReferenceIndex
      * @var array
      * @see getRelations(),FlexFormTools::traverseFlexFormXMLData(),getRelations_flexFormCallBack()
      */
-    public $temp_flexRelations = array();
+    public $temp_flexRelations = [];
 
     /**
      * This variable used to indicate whether referencing should take workspace overlays into account
@@ -114,7 +115,7 @@ class ReferenceIndex
      * @var array
      * @see createEntryData(),generateRefIndexData()
      */
-    public $relations = array();
+    public $relations = [];
 
     /**
      * Number which we can increase if a change in the code means we will have to force a re-generation of the index.
@@ -187,11 +188,11 @@ class ReferenceIndex
         $this->WSOL = false;
 
         // Init:
-        $result = array(
+        $result = [
             'keptNodes' => 0,
             'deletedNodes' => 0,
             'addedNodes' => 0
-        );
+        ];
 
         // If this table cannot contain relations, skip it
         if (isset(static::$nonRelationTables[$tableName])) {
@@ -207,16 +208,21 @@ class ReferenceIndex
             $tableRelationFields = $this->runtimeCache->get($cacheId);
         }
 
-        $databaseConnection = $this->getDatabaseConnection();
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('sys_refindex');
 
         // Get current index from Database with hash as index using $uidIndexField
-        $currentRelations = $databaseConnection->exec_SELECTgetRows(
-            '*',
-            'sys_refindex',
-            'tablename=' . $databaseConnection->fullQuoteStr($tableName, 'sys_refindex')
-            . ' AND recuid=' . (int)$uid . ' AND workspace=' . $this->getWorkspaceId(),
-            '', '', '', 'hash'
-        );
+        // no restrictions are needed, since sys_refindex is not a TCA table
+        $queryBuilder = $connection->createQueryBuilder();
+        $queryBuilder->getRestrictions()->removeAll();
+        $queryResult = $queryBuilder->select('*')->from('sys_refindex')->where(
+            $queryBuilder->expr()->eq('tablename', $queryBuilder->createNamedParameter($tableName)),
+            $queryBuilder->expr()->eq('recuid', (int)$uid),
+            $queryBuilder->expr()->eq('workspace', (int)$this->getWorkspaceId())
+        )->execute();
+        $currentRelations = [];
+        while ($relation = $queryResult->fetch()) {
+            $currentRelations[$relation['hash']] = $currentRelations;
+        }
 
         // If the table has fields which could contain relations and the record does exist (including deleted-flagged)
         if ($tableRelationFields !== '' && BackendUtility::getRecordRaw($tableName, 'uid=' . (int)$uid, 'uid')) {
@@ -237,7 +243,7 @@ class ReferenceIndex
                     } else {
                         // If new, add it:
                         if (!$testOnly) {
-                            $databaseConnection->exec_INSERTquery('sys_refindex', $relation);
+                            $connection->insert('sys_refindex', $relation);
                         }
                         $result['addedNodes']++;
                         $relation['_ACTION'] = 'ADDED';
@@ -256,9 +262,16 @@ class ReferenceIndex
                 $result['deletedNodes'] = count($hashList);
                 $result['deletedNodes_hashList'] = implode(',', $hashList);
                 if (!$testOnly) {
-                    $databaseConnection->exec_DELETEquery(
-                        'sys_refindex', 'hash IN (' . implode(',', $databaseConnection->fullQuoteArray($hashList, 'sys_refindex')) . ')'
-                    );
+                    $queryBuilder = $connection->createQueryBuilder();
+                    $queryBuilder
+                        ->delete('sys_refindex')
+                        ->where(
+                            $queryBuilder->expr()->in(
+                                'hash',
+                                $queryBuilder->createNamedParameter($hashList, Connection::PARAM_STR_ARRAY)
+                            )
+                        )
+                        ->execute();
                 }
             }
         }
@@ -280,7 +293,7 @@ class ReferenceIndex
             return null;
         }
 
-        $this->relations = array();
+        $this->relations = [];
 
         // Fetch tableRelationFields and save them in cache if not there yet
         $cacheId = static::$cachePrefixTableRelationFields . $tableName;
@@ -306,8 +319,8 @@ class ReferenceIndex
             $selectFields = 'uid,' . $tableRelationFields . ($deleteField ? ',' . $deleteField : '');
         }
 
-        // Get raw record from DB:
-        $record = $this->getDatabaseConnection()->exec_SELECTgetSingleRow($selectFields, $tableName, 'uid=' . (int)$uid);
+        // Get raw record from DB
+        $record = BackendUtility::getRecordRaw($tableName, 'uid=' . (int)$uid, $selectFields);
         if (!is_array($record)) {
             return null;
         }
@@ -388,7 +401,7 @@ class ReferenceIndex
                 return false;
             }
         }
-        return array(
+        return [
             'tablename' => $table,
             'recuid' => $uid,
             'field' => $field,
@@ -401,7 +414,7 @@ class ReferenceIndex
             'ref_table' => $ref_table,
             'ref_uid' => $ref_uid,
             'ref_string' => $ref_string
-        );
+        ];
     }
 
     /**
@@ -504,7 +517,7 @@ class ReferenceIndex
     {
         // Initialize:
         $uid = $row['uid'];
-        $outRow = array();
+        $outRow = [];
         foreach ($row as $field => $value) {
             if (!isset(static::$nonRelationFields[$field]) && is_array($GLOBALS['TCA'][$table]['columns'][$field]) && (!$onlyField || $onlyField === $field)) {
                 $conf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
@@ -515,8 +528,8 @@ class ReferenceIndex
                     // internal_type file is still a relation of type file and
                     // since http://forge.typo3.org/issues/49538 internal_type file_reference
                     // is a database relation to a sys_file record
-                    $fileResultsFromFiles = array();
-                    $dbResultsFromFiles = array();
+                    $fileResultsFromFiles = [];
+                    $dbResultsFromFiles = [];
                     foreach ($resultsFromFiles as $resultFromFiles) {
                         if (isset($resultFromFiles['table']) && $resultFromFiles['table'] === 'sys_file') {
                             $dbResultsFromFiles[] = $resultFromFiles;
@@ -526,16 +539,16 @@ class ReferenceIndex
                         }
                     }
                     if (!empty($fileResultsFromFiles)) {
-                        $outRow[$field] = array(
+                        $outRow[$field] = [
                             'type' => 'file',
                             'newValueFiles' => $fileResultsFromFiles
-                        );
+                        ];
                     }
                     if (!empty($dbResultsFromFiles)) {
-                        $outRow[$field] = array(
+                        $outRow[$field] = [
                             'type' => 'db',
                             'itemArray' => $dbResultsFromFiles
-                        );
+                        ];
                     }
                 }
                 // Add a softref definition for link fields if the TCA does not specify one already
@@ -546,10 +559,10 @@ class ReferenceIndex
                 $resultsFromDatabase = $this->getRelations_procDB($value, $conf, $uid, $table, $field);
                 if (!empty($resultsFromDatabase)) {
                     // Create an entry for the field with all DB relations:
-                    $outRow[$field] = array(
+                    $outRow[$field] = [
                         'type' => 'db',
                         'itemArray' => $resultsFromDatabase
-                    );
+                    ];
                 }
                 // For "flex" fieldtypes we need to traverse the structure looking for file and db references of course!
                 if ($conf['type'] === 'flex') {
@@ -558,19 +571,19 @@ class ReferenceIndex
                     $currentValueArray = GeneralUtility::xml2array($value);
                     // Traversing the XML structure, processing files:
                     if (is_array($currentValueArray)) {
-                        $this->temp_flexRelations = array(
-                            'db' => array(),
-                            'file' => array(),
-                            'softrefs' => array()
-                        );
+                        $this->temp_flexRelations = [
+                            'db' => [],
+                            'file' => [],
+                            'softrefs' => []
+                        ];
                         // Create and call iterator object:
                         $flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
                         $flexFormTools->traverseFlexFormXMLData($table, $field, $row, $this, 'getRelations_flexFormCallBack');
                         // Create an entry for the field:
-                        $outRow[$field] = array(
+                        $outRow[$field] = [
                             'type' => 'flex',
                             'flexFormRels' => $this->temp_flexRelations
-                        );
+                        ];
                     }
                 }
                 // Soft References:
@@ -617,11 +630,11 @@ class ReferenceIndex
         $structurePath = substr($structurePath, 5) . '/';
         $dsConf = $dsArr['TCEforms']['config'];
         // Implode parameter values:
-        list($table, $uid, $field) = array(
+        list($table, $uid, $field) = [
             $PA['table'],
             $PA['uid'],
             $PA['field']
-        );
+        ];
         // Add files
         $resultsFromFiles = $this->getRelations_procFiles($dataValue, $dsConf, $uid);
         if (!empty($resultsFromFiles)) {
@@ -629,8 +642,8 @@ class ReferenceIndex
             // internal_type file is still a relation of type file and
             // since http://forge.typo3.org/issues/49538 internal_type file_reference
             // is a database relation to a sys_file record
-            $fileResultsFromFiles = array();
-            $dbResultsFromFiles = array();
+            $fileResultsFromFiles = [];
+            $dbResultsFromFiles = [];
             foreach ($resultsFromFiles as $resultFromFiles) {
                 if (isset($resultFromFiles['table']) && $resultFromFiles['table'] === 'sys_file') {
                     $dbResultsFromFiles[] = $resultFromFiles;
@@ -695,7 +708,7 @@ class ReferenceIndex
 
         // Collect file values in array:
         if ($conf['MM']) {
-            $theFileValues = array();
+            $theFileValues = [];
             $dbAnalysis = GeneralUtility::makeInstance(RelationHandler::class);
             $dbAnalysis->start('', 'files', $conf['MM'], $uid);
             foreach ($dbAnalysis->itemArray as $someval) {
@@ -709,15 +722,15 @@ class ReferenceIndex
         // Traverse the files and add them:
         $uploadFolder = $conf['internal_type'] === 'file' ? $conf['uploadfolder'] : '';
         $destinationFolder = $this->destPathFromUploadFolder($uploadFolder);
-        $newValueFiles = array();
+        $newValueFiles = [];
         foreach ($theFileValues as $file) {
             if (trim($file)) {
                 $realFile = $destinationFolder . '/' . trim($file);
-                $newValueFile = array(
+                $newValueFile = [
                     'filename' => basename($file),
                     'ID' => md5($realFile),
                     'ID_absFile' => $realFile
-                );
+                ];
                 // Set sys_file and id for referenced files
                 if ($conf['internal_type'] === 'file_reference') {
                     try {
@@ -725,10 +738,10 @@ class ReferenceIndex
                         if ($file instanceof File || $file instanceof Folder) {
                             // For setting this as sys_file relation later, the keys filename, ID and ID_absFile
                             // have not to be included, because the are not evaluated for db relations.
-                            $newValueFile = array(
+                            $newValueFile = [
                                 'table' => 'sys_file',
                                 'id' => $file->getUid()
-                            );
+                            ];
                         }
                     } catch (\Exception $e) {
                     }
@@ -763,7 +776,7 @@ class ReferenceIndex
         } elseif ($this->isDbReferenceField($conf)) {
             $allowedTables = $conf['type'] === 'group' ? $conf['allowed'] : $conf['foreign_table'];
             if ($conf['MM_opposite_field']) {
-                return array();
+                return [];
             }
             $dbAnalysis = GeneralUtility::makeInstance(RelationHandler::class);
             $dbAnalysis->start($value, $allowedTables, $conf['MM'], $uid, $table, $conf);
@@ -801,10 +814,20 @@ class ReferenceIndex
     {
         $backendUser = $this->getBackendUser();
         if ($backendUser->workspace === 0 && $backendUser->isAdmin() || $bypassWorkspaceAdminCheck) {
-            $databaseConnection = $this->getDatabaseConnection();
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_refindex');
+            $queryBuilder->getRestrictions()->removeAll();
 
-            // Get current index from Database:
-            $referenceRecord = $databaseConnection->exec_SELECTgetSingleRow('*', 'sys_refindex', 'hash=' . $databaseConnection->fullQuoteStr($hash, 'sys_refindex'));
+            // Get current index from Database
+            $referenceRecord = $queryBuilder
+                ->select('*')
+                ->from('sys_refindex')
+                ->where(
+                    $queryBuilder->expr()->eq('hash', $queryBuilder->createNamedParameter($hash))
+                )
+                ->setMaxResults(1)
+                ->execute()
+                ->fetch();
+
             // Check if reference existed.
             if (!is_array($referenceRecord)) {
                 return 'ERROR: No reference record with hash="' . $hash . '" was found!';
@@ -814,14 +837,26 @@ class ReferenceIndex
                 return 'ERROR: Table "' . $referenceRecord['tablename'] . '" was not in TCA!';
             }
 
-            // Get that record from database:
-            $record = $databaseConnection->exec_SELECTgetSingleRow('*', $referenceRecord['tablename'], 'uid=' . (int)$referenceRecord['recuid']);
+            // Get that record from database
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable($referenceRecord['tablename']);
+            $queryBuilder->getRestrictions()->removeAll();
+            $record = $queryBuilder
+                ->select('*')
+                ->from($referenceRecord['tablename'])
+                ->where(
+                    $queryBuilder->expr()->eq('uid',  (int)$referenceRecord['recuid'])
+                )
+                ->setMaxResults(1)
+                ->execute()
+                ->fetch();
+
             if (is_array($record)) {
                 // Get relation for single field from record
                 $recordRelations = $this->getRelations($referenceRecord['tablename'], $record, $referenceRecord['field']);
                 if ($fieldRelation = $recordRelations[$referenceRecord['field']]) {
                     // Initialize data array that is to be sent to DataHandler afterwards:
-                    $dataArray = array();
+                    $dataArray = [];
                     // Based on type
                     switch ((string)$fieldRelation['type']) {
                         case 'db':
@@ -881,7 +916,7 @@ class ReferenceIndex
                         // Otherwise this cannot update things in deleted records...
                         $dataHandler->bypassAccessCheckForRecords = true;
                         // Check has been done previously that there is a backend user which is Admin and also in live workspace
-                        $dataHandler->start($dataArray, array());
+                        $dataHandler->start($dataArray, []);
                         $dataHandler->process_datamap();
                         // Return errors if any:
                         if (!empty($dataHandler->errorLog)) {
@@ -918,14 +953,14 @@ class ReferenceIndex
                 list($itemArray[$refRec['sorting']]['table'], $itemArray[$refRec['sorting']]['id']) = explode(':', $newValue);
             }
             // Traverse and compile new list of records:
-            $saveValue = array();
+            $saveValue = [];
             foreach ($itemArray as $pair) {
                 $saveValue[] = $pair['table'] . '_' . $pair['id'];
             }
             // Set in data array:
             if ($flexPointer) {
                 $flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
-                $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = array();
+                $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = [];
                 $flexFormTools->setArrayValueByPath(substr($flexPointer, 0, -1), $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'], implode(',', $saveValue));
             } else {
                 $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']] = implode(',', $saveValue);
@@ -959,14 +994,14 @@ class ReferenceIndex
                 $itemArray[$refRec['sorting']]['filename'] = $newValue;
             }
             // Traverse and compile new list of records:
-            $saveValue = array();
+            $saveValue = [];
             foreach ($itemArray as $fileInfo) {
                 $saveValue[] = $fileInfo['filename'];
             }
             // Set in data array:
             if ($flexPointer) {
                 $flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
-                $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = array();
+                $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = [];
                 $flexFormTools->setArrayValueByPath(substr($flexPointer, 0, -1), $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'], implode(',', $saveValue));
             } else {
                 $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']] = implode(',', $saveValue);
@@ -1006,7 +1041,7 @@ class ReferenceIndex
         if (!strstr($softref['tokenizedContent'], '{softref:')) {
             if ($flexPointer) {
                 $flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
-                $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = array();
+                $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'] = [];
                 $flexFormTools->setArrayValueByPath(substr($flexPointer, 0, -1), $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']]['data'], $softref['tokenizedContent']);
             } else {
                 $dataArray[$refRec['tablename']][$refRec['recuid']][$refRec['field']] = $softref['tokenizedContent'];
@@ -1032,13 +1067,13 @@ class ReferenceIndex
      */
     protected function isDbReferenceField(array $configuration)
     {
-        return (
+        return
             ($configuration['type'] === 'group' && $configuration['internal_type'] === 'db')
             || (
                 ($configuration['type'] === 'select' || $configuration['type'] === 'inline')
                 && !empty($configuration['foreign_table'])
             )
-        );
+        ;
     }
 
     /**
@@ -1049,7 +1084,7 @@ class ReferenceIndex
      */
     public function isReferenceField(array $configuration)
     {
-        return (
+        return
             $this->isDbReferenceField($configuration)
             ||
             ($configuration['type'] === 'group' && ($configuration['internal_type'] === 'file' || $configuration['internal_type'] === 'file_reference')) // getRelations_procFiles
@@ -1059,7 +1094,7 @@ class ReferenceIndex
             $configuration['type'] === 'flex'
             ||
             isset($configuration['softref'])
-        );
+        ;
     }
 
     /**
@@ -1074,7 +1109,7 @@ class ReferenceIndex
             return '';
         }
 
-        $fields = array();
+        $fields = [];
 
         foreach ($GLOBALS['TCA'][$tableName]['columns'] as $field => $fieldDefinition) {
             if (is_array($fieldDefinition['config'])) {
@@ -1117,9 +1152,8 @@ class ReferenceIndex
      */
     public function updateIndex($testOnly, $cli_echo = false)
     {
-        $databaseConnection = $this->getDatabaseConnection();
-        $errors = array();
-        $tableNames = array();
+        $errors = [];
+        $tableNames = [];
         $recCount = 0;
         $tableCount = 0;
         $headerContent = $testOnly ? 'Reference Index being TESTED (nothing written, remove the "--check" argument)' : 'Reference Index being Updated';
@@ -1127,24 +1161,35 @@ class ReferenceIndex
             echo '*******************************************' . LF . $headerContent . LF . '*******************************************' . LF;
         }
         // Traverse all tables:
+        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         foreach ($GLOBALS['TCA'] as $tableName => $cfg) {
             if (isset(static::$nonRelationTables[$tableName])) {
                 continue;
             }
-            // Traverse all records in tables, including deleted records:
-            $fieldNames = (BackendUtility::isTableWorkspaceEnabled($tableName) ? 'uid,t3ver_wsid' : 'uid');
-            $res = $databaseConnection->exec_SELECTquery($fieldNames, $tableName, '1=1');
-            if ($databaseConnection->sql_error()) {
+            $fields = ['uid'];
+            if (BackendUtility::isTableWorkspaceEnabled($tableName)) {
+                $fields[] = 't3ver_wsid';
+            }
+            // Traverse all records in tables, including deleted records
+            $queryBuilder = $connectionPool->getQueryBuilderForTable($tableName);
+            $queryBuilder->getRestrictions()->removeAll();
+            try {
+                $queryResult = $queryBuilder
+                    ->select(...$fields)
+                    ->from($tableName)
+                    ->execute();
+            } catch (DBALException $e) {
                 // Table exists in $TCA but does not exist in the database
+                // @todo: improve / change message and add actual sql error?
                 GeneralUtility::sysLog(sprintf('Table "%s" exists in $TCA but does not exist in the database. You should run the Database Analyzer in the Install Tool to fix this.', $tableName), 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
                 continue;
             }
+
             $tableNames[] = $tableName;
             $tableCount++;
-            $uidList = array(0);
-            while ($record = $databaseConnection->sql_fetch_assoc($res)) {
-                /** @var $refIndexObj ReferenceIndex */
-                $refIndexObj = GeneralUtility::makeInstance(ReferenceIndex::class);
+            $uidList = [0];
+            while ($record = $queryResult->fetch()) {
+                $refIndexObj = GeneralUtility::makeInstance(self::class);
                 if (isset($record['t3ver_wsid'])) {
                     $refIndexObj->setWorkspaceId($record['t3ver_wsid']);
                 }
@@ -1159,35 +1204,66 @@ class ReferenceIndex
                     }
                 }
             }
-            $databaseConnection->sql_free_result($res);
 
-            // Searching lost indexes for this table:
-            $where = 'tablename=' . $databaseConnection->fullQuoteStr($tableName, 'sys_refindex') . ' AND recuid NOT IN (' . implode(',', $uidList) . ')';
-            $lostIndexes = $databaseConnection->exec_SELECTgetRows('hash', 'sys_refindex', $where);
-            $lostIndexesCount = count($lostIndexes);
-            if ($lostIndexesCount) {
-                $error = 'Table ' . $tableName . ' has ' . $lostIndexesCount . ' lost indexes which are now deleted';
+            // Searching for lost indexes for this table
+            $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_refindex');
+            $queryBuilder->getRestrictions()->removeAll();
+            $lostIndexes = $queryBuilder
+                ->count('hash')
+                ->from('sys_refindex')
+                ->where(
+                    $queryBuilder->expr()->eq('tablename', $queryBuilder->createNamedParameter($tableName)),
+                    $queryBuilder->expr()->notIn('recuid', $uidList)
+                )
+                ->execute()
+                ->fetchColumn(0);
+
+            if ($lostIndexes > 0) {
+                $error = 'Table ' . $tableName . ' has ' . $lostIndexes . ' lost indexes which are now deleted';
                 $errors[] = $error;
                 if ($cli_echo) {
                     echo $error . LF;
                 }
                 if (!$testOnly) {
-                    $databaseConnection->exec_DELETEquery('sys_refindex', $where);
+                    $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_refindex');
+                    $queryBuilder->delete('sys_refindex')
+                        ->where(
+                            $queryBuilder->expr()->eq('tablename', $queryBuilder->createNamedParameter($tableName)),
+                            $queryBuilder->expr()->notIn('recuid', $uidList)
+                        )->execute();
                 }
             }
         }
-        // Searching lost indexes for non-existing tables:
-        $where = 'tablename NOT IN (' . implode(',', $databaseConnection->fullQuoteArray($tableNames, 'sys_refindex')) . ')';
-        $lostTables = $databaseConnection->exec_SELECTgetRows('hash', 'sys_refindex', $where);
-        $lostTablesCount = count($lostTables);
-        if ($lostTablesCount) {
-            $error = 'Index table hosted ' . $lostTablesCount . ' indexes for non-existing tables, now removed';
+
+        // Searching lost indexes for non-existing tables
+        $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_refindex');
+        $queryBuilder->getRestrictions()->removeAll();
+        $lostTables = $queryBuilder
+            ->count('hash')
+            ->from('sys_refindex')
+            ->where(
+                $queryBuilder->expr()->notIn(
+                    'tablename',
+                    $queryBuilder->createNamedParameter($tableNames, Connection::PARAM_STR_ARRAY)
+                )
+            )->execute()
+            ->fetchColumn(0);
+
+        if ($lostTables > 0) {
+            $error = 'Index table hosted ' . $lostTables . ' indexes for non-existing tables, now removed';
             $errors[] = $error;
             if ($cli_echo) {
                 echo $error . LF;
             }
             if (!$testOnly) {
-                $databaseConnection->exec_DELETEquery('sys_refindex', $where);
+                $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_refindex');
+                $queryBuilder->delete('sys_refindex')
+                    ->where(
+                        $queryBuilder->expr()->notIn(
+                            'tablename',
+                            $queryBuilder->createNamedParameter($tableNames, Connection::PARAM_STR_ARRAY)
+                        )
+                    )->execute();
             }
         }
         $errorCount = count($errors);
@@ -1211,17 +1287,7 @@ class ReferenceIndex
             $registry = GeneralUtility::makeInstance(Registry::class);
             $registry->set('core', 'sys_refindex_lastUpdate', $GLOBALS['EXEC_TIME']);
         }
-        return array($headerContent, $bodyContent, $errorCount);
-    }
-
-    /**
-     * Return DatabaseConnection
-     *
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
+        return [$headerContent, $bodyContent, $errorCount];
     }
 
     /**

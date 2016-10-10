@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================================
 Deprecation: #73442 - Modal.getSeverityClass has been moved to the Severity module
 ==================================================================================
+
+See :issue:`73442`
 
 Description
 ===========
@@ -25,4 +30,4 @@ Migration
 
 Change the calls to :js:`Severity.getCssClass(severity)`.
 
-.. index:: javascript
+.. index:: JavaScript, Backend

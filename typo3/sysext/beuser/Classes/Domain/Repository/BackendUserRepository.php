@@ -31,7 +31,7 @@ class BackendUserRepository extends \TYPO3\CMS\Extbase\Domain\Repository\Backend
     public function findByUidList(array $uidList)
     {
         $query = $this->createQuery();
-        return $query->matching($query->in('uid', $GLOBALS['TYPO3_DB']->cleanIntArray($uidList)))->execute();
+        return $query->matching($query->in('uid', array_map('intval', $uidList)))->execute();
     }
 
     /**
@@ -42,17 +42,18 @@ class BackendUserRepository extends \TYPO3\CMS\Extbase\Domain\Repository\Backend
      */
     public function findDemanded(\TYPO3\CMS\Beuser\Domain\Model\Demand $demand)
     {
-        $constraints = array();
+        $constraints = [];
         $query = $this->createQuery();
         // Find invisible as well, but not deleted
         $constraints[] = $query->equals('deleted', 0);
-        $query->setOrderings(array('userName' => \TYPO3\CMS\Extbase\Persistence\QueryInterface::ORDER_ASCENDING));
+        $query->setOrderings(['userName' => \TYPO3\CMS\Extbase\Persistence\QueryInterface::ORDER_ASCENDING]);
         // Username
         if ($demand->getUserName() !== '') {
-            $searchConstraints = array();
-            foreach (array('userName', 'uid', 'realName') as $field) {
+            $searchConstraints = [];
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('be_users');
+            foreach (['userName', 'uid', 'realName'] as $field) {
                 $searchConstraints[] = $query->like(
-                    $field, '%' . $GLOBALS['TYPO3_DB']->escapeStrForLike($demand->getUserName(), 'be_users') . '%'
+                    $field, '%' . $queryBuilder->escapeLikeWildcards($demand->getUserName()) . '%'
                 );
             }
             $constraints[] = $query->logicalOr($searchConstraints);
@@ -103,7 +104,7 @@ class BackendUserRepository extends \TYPO3\CMS\Extbase\Domain\Repository\Backend
      */
     public function findOnline()
     {
-        $uids = array();
+        $uids = [];
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('be_sessions');
 

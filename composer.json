@@ -51,14 +51,14 @@
 		"doctrine/dbal": "~2.5.4"
 	},
 	"require-dev": {
-		"phpunit/phpunit": "^5.4",
+		"phpunit/phpunit": "^5.6",
 		"mikey179/vfsStream": "~1.6.0",
 		"codeception/codeception": "^2.2",
 		"se/selenium-server-standalone": "~2.53",
 		"7elix/styleguide": "~8.0.0",
 		"site5/phantoman": "^1.0",
-		"jakoch/phantomjs-installer": "2.1.1-p05",
-		"friendsofphp/php-cs-fixer": "^1.11"
+		"jakoch/phantomjs-installer": "2.1.1-p06",
+		"friendsofphp/php-cs-fixer": "^1.12"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -82,7 +82,6 @@
 	},
 	"replace": {
 		"typo3/cms-about": "self.version",
-		"typo3/cms-adodb": "self.version",
 		"typo3/cms-backend": "self.version",
 		"typo3/cms-belog": "self.version",
 		"typo3/cms-beuser": "self.version",
@@ -91,7 +90,6 @@
 		"typo3/cms-compatibility7": "self.version",
 		"typo3/cms-cshmanual": "self.version",
 		"typo3/cms-css-styled-content": "self.version",
-		"typo3/cms-dbal": "self.version",
 		"typo3/cms-documentation": "self.version",
 		"typo3/cms-extbase": "self.version",
 		"typo3/cms-extensionmanager": "self.version",
@@ -107,7 +105,6 @@
 		"typo3/cms-func-wizards": "self.version",
 		"typo3/cms-impexp": "self.version",
 		"typo3/cms-indexed-search": "self.version",
-		"typo3/cms-indexed-search-mysql": "self.version",
 		"typo3/cms-info": "self.version",
 		"typo3/cms-info-pagetsconfig": "self.version",
 		"typo3/cms-install": "self.version",
@@ -146,7 +143,6 @@
 			"TYPO3\\CMS\\Core\\": "typo3/sysext/core/Classes/",
 			"TYPO3\\CMS\\Cshmanual\\": "typo3/sysext/cshmanual/Classes/",
 			"TYPO3\\CMS\\CssStyledContent\\": "typo3/sysext/css_styled_content/Classes/",
-			"TYPO3\\CMS\\Dbal\\": "typo3/sysext/dbal/Classes/",
 			"TYPO3\\CMS\\Documentation\\": "typo3/sysext/documentation/Classes/",
 			"TYPO3\\CMS\\Extbase\\": "typo3/sysext/extbase/Classes/",
 			"TYPO3\\CMS\\Extensionmanager\\": "typo3/sysext/extensionmanager/Classes/",
@@ -201,7 +197,6 @@
 			"TYPO3\\CMS\\Belog\\Tests\\": "typo3/sysext/belog/Tests/",
 			"TYPO3\\CMS\\Beuser\\Tests\\": "typo3/sysext/beuser/Tests/",
 			"TYPO3\\CMS\\Core\\Tests\\": "typo3/sysext/core/Tests/",
-			"TYPO3\\CMS\\Dbal\\Tests\\": "typo3/sysext/dbal/Tests/",
 			"TYPO3\\CMS\\Documentation\\Tests\\": "typo3/sysext/documentation/Tests/",
 			"TYPO3\\CMS\\Extbase\\Tests\\": "typo3/sysext/extbase/Tests/",
 			"TYPO3\\CMS\\Extensionmanager\\Tests\\": "typo3/sysext/extensionmanager/Tests/",

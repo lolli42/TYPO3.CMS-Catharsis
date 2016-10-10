@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ============================================
 Deprecation: #75621 - GeneralUtility methods
 ============================================
 
+See :issue:`75621`
+
 Description
 ===========
 
-The following methods within ``GeneralUtility`` have been marked as deprecated:
+The following methods within `GeneralUtility` have been marked as deprecated:
 
 * compat_version()
 * convertMicrotime()
@@ -46,3 +51,5 @@ For the following methods, use the native PHP methods and constants directly tha
 * rawUrlEncodeFP()
 * lcfirst()
 * getMaximumPathLength()
+
+.. index:: PHP-API

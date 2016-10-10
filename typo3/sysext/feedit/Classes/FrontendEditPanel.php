@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\View\AdminPanelView;
 
@@ -74,7 +75,7 @@ class FrontendEditPanel
         $this->frontendController = $frontendController ?: $GLOBALS['TSFE'];
         $this->backendUser = $backendUser ?: $GLOBALS['BE_USER'];
         $this->cObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
-        $this->cObj->start(array());
+        $this->cObj->start([]);
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
     }
 
@@ -93,7 +94,7 @@ class FrontendEditPanel
      * @param array $hiddenFields
      * @return string The input content string with the editPanel appended. This function returns only an edit panel appended to the content string if a backend user is logged in (and has the correct permissions). Otherwise the content string is directly returned.
      */
-    public function editPanel($content, array $conf, $currentRecord = '', array $dataArr = array(), $table = '', array $allow = array(), $newUID = 0, array $hiddenFields = array())
+    public function editPanel($content, array $conf, $currentRecord = '', array $dataArr = [], $table = '', array $allow = [], $newUID = 0, array $hiddenFields = [])
     {
         $hiddenFieldString = $command = '';
 
@@ -195,7 +196,7 @@ class FrontendEditPanel
         $hidden = $this->isDisabled($table, $dataArr) ? ' typo3-feedit-element-hidden' : '';
         $outerWrapConfig = isset($conf['stdWrap.'])
             ? $conf['stdWrap.']
-            : array('wrap' => '<div class="typo3-feedit-element' . $hidden . '">|</div>');
+            : ['wrap' => '<div class="typo3-feedit-element' . $hidden . '">|</div>'];
         $finalOut = $this->cObj->stdWrap($finalOut, $outerWrapConfig);
 
         return $finalOut;
@@ -216,7 +217,7 @@ class FrontendEditPanel
      * @param string $fieldList
      * @return string The input content string, possibly with edit icons added (not necessarily in the end but just after the last string of normal content.
      */
-    public function editIcons($content, $params, array $conf = array(), $currentRecord = '', array $dataArr = array(), $addUrlParamStr = '', $table, $editUid, $fieldList)
+    public function editIcons($content, $params, array $conf = [], $currentRecord = '', array $dataArr = [], $addUrlParamStr = '', $table, $editUid, $fieldList)
     {
         // Special content is about to be shown, so the cache must be disabled.
         $this->frontendController->set_no_cache('Display frontend edit icons', true);
@@ -228,12 +229,12 @@ class FrontendEditPanel
 
         $url = BackendUtility::getModuleUrl(
             'record_edit',
-            array(
+            [
                 'edit[' . $table . '][' . $editUid . ']' => 'edit',
                 'columnsOnly' => $fieldList,
                 'noView' => $nV,
                 'feEdit' => 1
-            )
+            ]
         ) . $addUrlParamStr;
         $icon = $this->editPanelLinkWrap_doWrap($iconImg, $url, 'content-link');
         if ($conf['beforeLastTag'] < 0) {
@@ -269,7 +270,7 @@ class FrontendEditPanel
         $nV = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
         if ($cmd == 'edit') {
             $rParts = explode(':', $currentRecord);
-            $out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', array('edit[' . $rParts[0] . '][' . $rParts[1] . ']' => 'edit', 'noView' => $nV, 'feEdit' => 1)), $currentRecord);
+            $out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', ['edit[' . $rParts[0] . '][' . $rParts[1] . ']' => 'edit', 'noView' => $nV, 'feEdit' => 1]), $currentRecord);
         } elseif ($cmd == 'new') {
             $rParts = explode(':', $currentRecord);
             if ($rParts[0] == 'pages') {
@@ -278,7 +279,7 @@ class FrontendEditPanel
                 if (!(int)$nPid) {
                     $nPid = MathUtility::canBeInterpretedAsInteger($rParts[1]) ? -$rParts[1] : $this->frontendController->id;
                 }
-                $out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', array('edit[' . $rParts[0] . '][' . $nPid . ']' => 'new', 'noView' => $nV)), $currentRecord);
+                $out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', ['edit[' . $rParts[0] . '][' . $nPid . ']' => 'new', 'noView' => $nV]), $currentRecord);
             }
         } else {
             if ($confirm && $this->backendUser->jsConfirmation(JsConfirmation::FE_EDIT)) {
@@ -306,7 +307,7 @@ class FrontendEditPanel
     {
         $width = MathUtility::forceIntegerInRange($this->backendUser->getTSConfigVal('options.feedit.popupWidth'), 690, 5000, 690);
         $height = MathUtility::forceIntegerInRange($this->backendUser->getTSConfigVal('options.feedit.popupHeight'), 500, 5000, 500);
-        $onclick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($url . '&returnUrl=' . ExtensionManagementUtility::extRelPath('backend') . 'Resources/Private/Templates/Close.html') . ',\'FEquickEditWindow\',\'width=' . $width . ',height=' . $height . ',status=0,menubar=0,scrollbars=1,resizable=1\');vHWin.focus();return false;';
+        $onclick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($url . '&returnUrl=' . PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::siteRelPath('backend') . 'Resources/Private/Templates/Close.html')) . ',\'FEquickEditWindow\',\'width=' . $width . ',height=' . $height . ',status=0,menubar=0,scrollbars=1,resizable=1\');vHWin.focus();return false;';
         return '<a href="#" class="btn btn-default btn-sm ' . htmlspecialchars($additionalClasses) . '" onclick="' . htmlspecialchars($onclick) . '" class="frontEndEditIconLinks">' . $string . '</a>';
     }
 

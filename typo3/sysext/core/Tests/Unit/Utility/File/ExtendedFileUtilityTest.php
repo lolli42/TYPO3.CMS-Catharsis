@@ -13,8 +13,15 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility\File;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use Doctrine\DBAL\Driver\Statement;
+use Prophecy\Argument;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\Query\Restriction\DefaultRestrictionContainer;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility
@@ -27,9 +34,8 @@ class ExtendedFileUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     protected function setUp()
     {
         $GLOBALS['LANG'] = $this->getMockBuilder(\TYPO3\CMS\Lang\LanguageService::class)
-            ->setMethods(array('sL'))
+            ->setMethods(['sL'])
             ->getMock();
-        $GLOBALS['TYPO3_DB'] = $this->createMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class);
     }
 
     /**
@@ -39,27 +45,43 @@ class ExtendedFileUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $fileUid = 1;
         $file = $this->getMockBuilder(File::class)
-            ->setMethods(array('getUid'))
+            ->setMethods(['getUid'])
             ->disableOriginalConstructor()
             ->getMock();
         $file->expects($this->once())->method('getUid')->will($this->returnValue($fileUid));
 
         $folder = $this->getMockBuilder(Folder::class)
-            ->setMethods(array('getFiles'))
+            ->setMethods(['getFiles'])
             ->disableOriginalConstructor()
             ->getMock();
         $folder->expects($this->once())
             ->method('getFiles')->with(0, 0, Folder::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS, true)
-            ->will($this->returnValue(array($file))
+            ->will($this->returnValue([$file])
         );
 
         /** @var \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility $subject */
         $subject = $this->getMockBuilder(\TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::class)
-            ->setMethods(array('addFlashMessage'))
+            ->setMethods(['addFlashMessage'])
             ->getMock();
-        $GLOBALS['TYPO3_DB']->expects($this->once())
-            ->method('exec_SELECTcountRows')->with('*', 'sys_refindex', 'deleted=0 AND ref_table="sys_file" AND ref_uid IN (' . $fileUid . ') AND tablename<>"sys_file_metadata"')
-            ->will($this->returnValue(1));
+
+        // prophetizing the DB query
+        $expressionBuilderProphet = $this->prophesize(ExpressionBuilder::class);
+        $expressionBuilderProphet->eq(Argument::cetera())->willReturn('1 = 1');
+        $expressionBuilderProphet->neq(Argument::cetera())->willReturn('1 != 1');
+        $expressionBuilderProphet->in(Argument::cetera())->willReturn('uid IN (1)');
+        $databaseStatementProphet = $this->prophesize(Statement::class);
+        $databaseStatementProphet->fetchColumn(Argument::cetera())->willReturn(1);
+        $queryBuilderProphet = $this->prophesize(QueryBuilder::class);
+        $queryBuilderProphet->getRestrictions()->willReturn(GeneralUtility::makeInstance(DefaultRestrictionContainer::class));
+        $queryBuilderProphet->count(Argument::cetera())->willReturn($queryBuilderProphet);
+        $queryBuilderProphet->from(Argument::cetera())->willReturn($queryBuilderProphet);
+        $queryBuilderProphet->where(Argument::cetera())->willReturn($queryBuilderProphet);
+        $queryBuilderProphet->createNamedParameter(Argument::cetera())->willReturnArgument(0);
+        $queryBuilderProphet->execute()->willReturn($databaseStatementProphet);
+        $queryBuilderProphet->expr()->willReturn($expressionBuilderProphet->reveal());
+        $connectionPoolProphet = $this->prophesize(ConnectionPool::class);
+        $connectionPoolProphet->getQueryBuilderForTable(Argument::cetera())->willReturn($queryBuilderProphet->reveal());
+        GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
 
         $GLOBALS['LANG']->expects($this->at(0))->method('sL')
             ->with('LLL:EXT:lang/locallang_core.xlf:message.description.folderNotDeletedHasFilesWithReferences')
@@ -78,16 +100,16 @@ class ExtendedFileUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function folderHasFilesInUseReturnsFalseIfItHasNoFiles()
     {
         $folder = $this->getMockBuilder(Folder::class)
-            ->setMethods(array('getFiles'))
+            ->setMethods(['getFiles'])
             ->disableOriginalConstructor()
             ->getMock();
         $folder->expects($this->once())->method('getFiles')->with(0, 0, Folder::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS, true)->will(
-            $this->returnValue(array())
+            $this->returnValue([])
         );
 
         /** @var \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility $subject */
         $subject = $this->getMockBuilder(\TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::class)
-            ->setMethods(array('addFlashMessage'))
+            ->setMethods(['addFlashMessage'])
             ->getMock();
         $this->assertFalse($subject->folderHasFilesInUse($folder));
     }

@@ -1,5 +1,5 @@
 <?php
-$EM_CONF[$_EXTKEY] = array(
+$EM_CONF[$_EXTKEY] = [
     'title' => 'Web>Info, Page TSconfig',
     'description' => 'Displays the compiled Page TSconfig values relative to a page.',
     'category' => 'module',
@@ -10,13 +10,13 @@ $EM_CONF[$_EXTKEY] = array(
     'author' => 'Kasper Skaarhoj',
     'author_email' => 'kasperYYYY@typo3.com',
     'author_company' => 'Curby Soft Multimedia',
-    'version' => '8.3.0',
-    'constraints' => array(
-        'depends' => array(
-            'typo3' => '8.3.0-8.3.99',
-            'info' => '8.3.0-8.3.99',
-        ),
-        'conflicts' => array(),
-        'suggests' => array(),
-    ),
-);
+    'version' => '8.4.0',
+    'constraints' => [
+        'depends' => [
+            'typo3' => '8.4.0-8.4.99',
+            'info' => '8.4.0-8.4.99',
+        ],
+        'conflicts' => [],
+        'suggests' => [],
+    ],
+];

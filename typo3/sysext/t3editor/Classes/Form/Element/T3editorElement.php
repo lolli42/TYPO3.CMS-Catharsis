@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\T3editor\T3editor;
 
@@ -39,7 +40,7 @@ class T3editorElement extends AbstractFormElement
     /**
      * @var array
      */
-    protected $allowedModes = array(
+    protected $allowedModes = [
         self::MODE_CSS,
         self::MODE_HTML,
         self::MODE_JAVASCRIPT,
@@ -48,7 +49,7 @@ class T3editorElement extends AbstractFormElement
         self::MODE_SPARQL,
         self::MODE_TYPOSCRIPT,
         self::MODE_XML,
-    );
+    ];
 
     /**
      * @var array
@@ -72,7 +73,7 @@ class T3editorElement extends AbstractFormElement
      *
      * @var string
      */
-    protected $relExtPath = '';
+    protected $extPath = '';
 
     /**
      * @var string
@@ -84,7 +85,7 @@ class T3editorElement extends AbstractFormElement
      *
      * @var array
      */
-    protected $codeCompletionComponents = array('TsRef', 'CompletionResult', 'TsParser', 'TsCodeCompletion');
+    protected $codeCompletionComponents = ['TsRef', 'CompletionResult', 'TsParser', 'TsCodeCompletion'];
 
     /**
      * Render t3editor element
@@ -94,8 +95,8 @@ class T3editorElement extends AbstractFormElement
     public function render()
     {
         $this->getLanguageService()->includeLLFile('EXT:t3editor/Resources/Private/Language/locallang.xlf');
-        $this->relExtPath = ExtensionManagementUtility::extRelPath('t3editor');
-        $this->codemirrorPath = $this->relExtPath . $this->codemirrorPath;
+        $this->extPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath('t3editor'));
+        $this->codemirrorPath = $this->extPath . $this->codemirrorPath;
 
         $this->resultArray = $this->initializeResultArray();
 
@@ -104,7 +105,7 @@ class T3editorElement extends AbstractFormElement
         $rows = MathUtility::forceIntegerInRange($parameterArray['fieldConf']['config']['rows'] ?: 10, 1, 40);
         $this->setMode(isset($parameterArray['fieldConf']['config']['format']) ? $parameterArray['fieldConf']['config']['format'] : T3editor::MODE_MIXED);
 
-        $attributes = array();
+        $attributes = [];
         $attributes['rows'] = $rows;
         $attributes['wrap'] = 'off';
         $attributes['style'] = 'width:100%;';
@@ -121,7 +122,7 @@ class T3editorElement extends AbstractFormElement
             $parameterArray['itemFormElValue'],
             $attributeString,
             $this->data['tableName'] . ' > ' . $this->data['fieldName'],
-            array('target' => 0)
+            ['target' => 0]
         );
         $this->resultArray['additionalJavaScriptPost'][] = 'require(["TYPO3/CMS/T3editor/T3editor"], function(T3editor) {T3editor.findAndInitializeEditors();});';
 
@@ -158,7 +159,7 @@ class T3editorElement extends AbstractFormElement
      */
     protected function initJavascriptCode()
     {
-        $this->resultArray['stylesheetFiles'][] = $this->relExtPath . 'Resources/Public/Css/t3editor.css';
+        $this->resultArray['stylesheetFiles'][] = 'EXT:t3editor/Resources/Public/Css/t3editor.css';
         if ($this->mode === self::MODE_TYPOSCRIPT) {
             foreach ($this->codeCompletionComponents as $codeCompletionComponent) {
                 $this->resultArray['requireJsModules'][] = 'TYPO3/CMS/T3editor/Plugins/CodeCompletion/' . $codeCompletionComponent;
@@ -177,17 +178,17 @@ class T3editorElement extends AbstractFormElement
      * @param array $hiddenfields
      * @return string Generated HTML code for editor
      */
-    protected function getHTMLCodeForEditor($name, $class = '', $content = '', $additionalParams = '', $alt = '', array $hiddenfields = array())
+    protected function getHTMLCodeForEditor($name, $class = '', $content = '', $additionalParams = '', $alt = '', array $hiddenfields = [])
     {
-        $code = array();
-        $attributes = array();
+        $code = [];
+        $attributes = [];
         $attributes['class'] = $class . ' t3editor';
         $attributes['alt'] = $alt;
         $attributes['id'] = 't3editor_' . $this->editorCounter;
         $attributes['name'] = $name;
         $attributes['data-labels'] = json_encode($this->getLanguageService()->getLabelsWithPrefix('js.', 'label_'));
         $attributes['data-instance-number'] =  $this->editorCounter;
-        $attributes['data-editor-path'] =  $this->relExtPath;
+        $attributes['data-editor-path'] =  $this->extPath;
         $attributes['data-codemirror-path'] =  $this->codemirrorPath;
         $attributes['data-ajaxsavetype'] = ''; // no ajax save in FormEngine at the moment
         $attributes['data-parserfile'] = $this->getParserfileByMode($this->mode);
@@ -201,7 +202,7 @@ class T3editorElement extends AbstractFormElement
 
         $code[] = '<div class="t3editor">';
         $code[] = '	<div class="t3e_wrap">';
-        $code[] = str_replace(array(CR, LF), '', file_get_contents(GeneralUtility::getFileAbsFileName('EXT:t3editor/Resources/Private/Templates/t3editor.html')));
+        $code[] = str_replace([CR, LF], '', file_get_contents(GeneralUtility::getFileAbsFileName('EXT:t3editor/Resources/Private/Templates/t3editor.html')));
         $code[] = '	</div>';
         $code[] = '	<textarea ' . $attributesString . '>' . htmlspecialchars($content) . '</textarea>';
         $code[] = '</div>';
@@ -223,30 +224,30 @@ class T3editorElement extends AbstractFormElement
      */
     protected function getParserfileByMode($mode)
     {
-        $parserfile = array();
+        $parserfile = [];
         switch ($mode) {
             case self::MODE_TYPOSCRIPT:
                 $relPath = '../../../parse_typoscript/';
-                $parserfile = array($relPath . 'tokenizetyposcript.js', $relPath . 'parsetyposcript.js');
+                $parserfile = [$relPath . 'tokenizetyposcript.js', $relPath . 'parsetyposcript.js'];
                 break;
             case self::MODE_JAVASCRIPT:
-                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js');
+                $parserfile = ['tokenizejavascript.js', 'parsejavascript.js'];
                 break;
             case self::MODE_CSS:
-                $parserfile = array('parsecss.js');
+                $parserfile = ['parsecss.js'];
                 break;
             case self::MODE_XML:
-                $parserfile = array('parsexml.js');
+                $parserfile = ['parsexml.js'];
                 break;
             case self::MODE_SPARQL:
-                $parserfile = array('parsesparql.js');
+                $parserfile = ['parsesparql.js'];
                 break;
             case self::MODE_HTML:
-                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js', 'parsecss.js', 'parsexml.js', 'parsehtmlmixed.js');
+                $parserfile = ['tokenizejavascript.js', 'parsejavascript.js', 'parsecss.js', 'parsexml.js', 'parsehtmlmixed.js'];
                 break;
             case self::MODE_PHP:
             case self::MODE_MIXED:
-                $parserfile = array('tokenizejavascript.js', 'parsejavascript.js', 'parsecss.js', 'parsexml.js', '../contrib/php/js/tokenizephp.js', '../contrib/php/js/parsephp.js', '../contrib/php/js/parsephphtmlmixed.js');
+                $parserfile = ['tokenizejavascript.js', 'parsejavascript.js', 'parsecss.js', 'parsexml.js', '../contrib/php/js/tokenizephp.js', '../contrib/php/js/parsephp.js', '../contrib/php/js/parsephphtmlmixed.js'];
                 break;
         }
         return json_encode($parserfile);
@@ -262,33 +263,33 @@ class T3editorElement extends AbstractFormElement
     {
         switch ($mode) {
             case self::MODE_TYPOSCRIPT:
-                $stylesheet = array($this->relExtPath . 'Resources/Public/Css/t3editor_typoscript_colors.css');
+                $stylesheet = [$this->extPath . 'Resources/Public/Css/t3editor_typoscript_colors.css'];
                 break;
             case self::MODE_JAVASCRIPT:
-                $stylesheet = array($this->codemirrorPath . '../css/jscolors.css');
+                $stylesheet = [$this->codemirrorPath . '../css/jscolors.css'];
                 break;
             case self::MODE_CSS:
-                $stylesheet = array($this->codemirrorPath . '../css/csscolors.css');
+                $stylesheet = [$this->codemirrorPath . '../css/csscolors.css'];
                 break;
             case self::MODE_XML:
-                $stylesheet = array($this->codemirrorPath . '../css/xmlcolors.css');
+                $stylesheet = [$this->codemirrorPath . '../css/xmlcolors.css'];
                 break;
             case self::MODE_HTML:
-                $stylesheet = array($this->codemirrorPath . '../css/xmlcolors.css', $this->codemirrorPath . '../css/jscolors.css', $this->codemirrorPath . '../css/csscolors.css');
+                $stylesheet = [$this->codemirrorPath . '../css/xmlcolors.css', $this->codemirrorPath . '../css/jscolors.css', $this->codemirrorPath . '../css/csscolors.css'];
                 break;
             case self::MODE_SPARQL:
-                $stylesheet = array($this->codemirrorPath . '../css/sparqlcolors.css');
+                $stylesheet = [$this->codemirrorPath . '../css/sparqlcolors.css'];
                 break;
             case self::MODE_PHP:
-                $stylesheet = array($this->codemirrorPath . '../contrib/php/css/phpcolors.css');
+                $stylesheet = [$this->codemirrorPath . '../contrib/php/css/phpcolors.css'];
                 break;
             case self::MODE_MIXED:
-                $stylesheet = array($this->codemirrorPath . '../css/xmlcolors.css', $this->codemirrorPath . '../css/jscolors.css', $this->codemirrorPath . '../css/csscolors.css', $this->codemirrorPath . '../contrib/php/css/phpcolors.css');
+                $stylesheet = [$this->codemirrorPath . '../css/xmlcolors.css', $this->codemirrorPath . '../css/jscolors.css', $this->codemirrorPath . '../css/csscolors.css', $this->codemirrorPath . '../contrib/php/css/phpcolors.css'];
                 break;
             default:
-                $stylesheet = array();
+                $stylesheet = [];
         }
-        $stylesheet[] = $this->relExtPath . 'Resources/Public/Css/t3editor_inner.css';
+        $stylesheet[] = $this->extPath . 'Resources/Public/Css/t3editor_inner.css';
         return json_encode($stylesheet);
     }
 

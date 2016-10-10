@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================================
 Deprecation: #71255 - ExtendedFileUtility::pushErrorMessagesToFlashMessageQueue()
 =================================================================================
 
+See :issue:`71255`
+
 Description
 ===========
 
-Method ``\TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::pushErrorMessagesToFlashMessageQueue()`` has been marked as deprecated.
+Method `\TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::pushErrorMessagesToFlashMessageQueue()` has been marked as deprecated.
 
 
 Impact
@@ -25,4 +30,4 @@ Migration
 
 Implement the method by yourself.
 
-.. index:: php
+.. index:: PHP-API

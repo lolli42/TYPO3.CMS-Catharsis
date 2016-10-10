@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================
 Breaking: #72476 - PHP Constant TYPO3_PROCEED_IF_NO_USER removed
 ================================================================
 
+See :issue:`72476`
+
 Description
 ===========
 
-The PHP constant ``TYPO3_PROCEED_IF_NO_USER`` has been removed.
+The PHP constant `TYPO3_PROCEED_IF_NO_USER` has been removed.
 
 
 Impact
@@ -27,4 +32,4 @@ Migration
 
 Use a custom RequestHandler, the Backend Routing, AJAX Registration or the Module Configuration for skipping the user authentication when necessary.
 
-.. index:: php
+.. index:: PHP-API

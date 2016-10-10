@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Breaking: #72334 - Removed utf8 conversion in EXT:recycler
 ==========================================================
+
+See :issue:`72334`
 
 Description
 ===========
@@ -27,7 +32,7 @@ The following methods have been removed:
 Affected Installations
 ======================
 
-Any TYPO3 instance directly accessing any of the mentioned ``RecyclerUtility``
+Any TYPO3 instance directly accessing any of the mentioned `RecyclerUtility`
 methods above via a custom extension.
 
 
@@ -36,4 +41,4 @@ Migration
 
 Remove the usages to these methods, and use the strings directly.
 
-.. index:: php
+.. index:: PHP-API

@@ -14,7 +14,11 @@ namespace TYPO3\CMS\Frontend\Plugin;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\Driver\Statement;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Localization\Locales;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
@@ -66,7 +70,7 @@ class AbstractPlugin
      *
      * @var array
      */
-    public $piVars = array(
+    public $piVars = [
         'pointer' => '',
         // Used as a pointer for lists
         'mode' => '',
@@ -74,7 +78,7 @@ class AbstractPlugin
         'sword' => '',
         // Search word
         'sort' => ''
-    );
+    ];
 
     /**
      * Local pointer variabe array.
@@ -83,14 +87,14 @@ class AbstractPlugin
      *
      * @var array
      */
-    public $internal = array('res_count' => 0, 'results_at_a_time' => 20, 'maxPages' => 10, 'currentRow' => array(), 'currentTable' => '');
+    public $internal = ['res_count' => 0, 'results_at_a_time' => 20, 'maxPages' => 10, 'currentRow' => [], 'currentTable' => ''];
 
     /**
      * Local Language content
      *
      * @var array
      */
-    public $LOCAL_LANG = array();
+    public $LOCAL_LANG = [];
 
     /**
      * Contains those LL keys, which have been set to (empty) in TypoScript.
@@ -100,7 +104,7 @@ class AbstractPlugin
      *
      * @var array
      */
-    protected $LOCAL_LANG_UNSET = array();
+    protected $LOCAL_LANG_UNSET = [];
 
     /**
      * Flag that tells if the locallang file has been fetch (or tried to
@@ -168,7 +172,7 @@ class AbstractPlugin
     /**
      * @var array
      */
-    public $pi_autoCacheFields = array();
+    public $pi_autoCacheFields = [];
 
     /**
      * @var bool
@@ -200,7 +204,7 @@ class AbstractPlugin
      *
      * @var array
      */
-    public $conf = array();
+    public $conf = [];
 
     /**
      * internal, don't mess with...
@@ -244,8 +248,14 @@ class AbstractPlugin
         if ($this->prefixId) {
             $this->piVars = GeneralUtility::_GPmerged($this->prefixId);
             // cHash mode check
-            // IMPORTANT FOR CACHED PLUGINS (USER cObject): As soon as you generate cached plugin output which depends on parameters (eg. seeing the details of a news item) you MUST check if a cHash value is set.
-            // Background: The function call will check if a cHash parameter was sent with the URL because only if it was the page may be cached. If no cHash was found the function will simply disable caching to avoid unpredictable caching behaviour. In any case your plugin can generate the expected output and the only risk is that the content may not be cached. A missing cHash value is considered a mistake in the URL resulting from either URL manipulation, "realurl" "grayzones" etc. The problem is rare (more frequent with "realurl") but when it occurs it is very puzzling!
+            // IMPORTANT FOR CACHED PLUGINS (USER cObject): As soon as you generate cached plugin output which
+            // depends on parameters (eg. seeing the details of a news item) you MUST check if a cHash value is set.
+            // Background: The function call will check if a cHash parameter was sent with the URL because only if
+            // it was the page may be cached. If no cHash was found the function will simply disable caching to
+            // avoid unpredictable caching behaviour. In any case your plugin can generate the expected output and
+            // the only risk is that the content may not be cached. A missing cHash value is considered a mistake
+            // in the URL resulting from either URL manipulation, "realurl" "grayzones" etc. The problem is rare
+            // (more frequent with "realurl") but when it occurs it is very puzzling!
             if ($this->pi_checkCHash && !empty($this->piVars)) {
                 $this->frontendController->reqCHash();
             }
@@ -313,7 +323,7 @@ class AbstractPlugin
         if (isset($this->conf['_DEFAULT_PI_VARS.']) && is_array($this->conf['_DEFAULT_PI_VARS.'])) {
             $this->conf['_DEFAULT_PI_VARS.'] = $this->applyStdWrapRecursive($this->conf['_DEFAULT_PI_VARS.']);
             $tmp = $this->conf['_DEFAULT_PI_VARS.'];
-            ArrayUtility::mergeRecursiveWithOverrule($tmp, is_array($this->piVars) ? $this->piVars : array());
+            ArrayUtility::mergeRecursiveWithOverrule($tmp, is_array($this->piVars) ? $this->piVars : []);
             $this->piVars = $tmp;
         }
     }
@@ -337,7 +347,7 @@ class AbstractPlugin
      * @see pi_linkToPage()
      * @see ContentObjectRenderer->getTypoLink()
      */
-    public function pi_getPageLink($id, $target = '', $urlParameters = array())
+    public function pi_getPageLink($id, $target = '', $urlParameters = [])
     {
         return $this->cObj->getTypoLink_URL($id, $urlParameters, $target);
     }
@@ -354,7 +364,7 @@ class AbstractPlugin
      * @return string The input string wrapped in <a> tags with the URL and target set.
      * @see pi_getPageLink(), ContentObjectRenderer::getTypoLink()
      */
-    public function pi_linkToPage($str, $id, $target = '', $urlParameters = array())
+    public function pi_linkToPage($str, $id, $target = '', $urlParameters = [])
     {
         return $this->cObj->getTypoLink($str, $id, $urlParameters, $target);
     }
@@ -370,9 +380,9 @@ class AbstractPlugin
      * @return string The input string wrapped in <a> tags
      * @see pi_linkTP_keepPIvars(), ContentObjectRenderer::typoLink()
      */
-    public function pi_linkTP($str, $urlParameters = array(), $cache = false, $altPageId = 0)
+    public function pi_linkTP($str, $urlParameters = [], $cache = false, $altPageId = 0)
     {
-        $conf = array();
+        $conf = [];
         $conf['useCacheHash'] = $this->pi_USER_INT_obj ? 0 : $cache;
         $conf['no_cache'] = $this->pi_USER_INT_obj ? 0 : !$cache;
         $conf['parameter'] = $altPageId ? $altPageId : ($this->pi_tmpPageId ? $this->pi_tmpPageId : $this->frontendController->id);
@@ -393,7 +403,7 @@ class AbstractPlugin
      * @return string The input string wrapped in <a> tags
      * @see pi_linkTP()
      */
-    public function pi_linkTP_keepPIvars($str, $overrulePIvars = array(), $cache = false, $clearAnyway = false, $altPageId = 0)
+    public function pi_linkTP_keepPIvars($str, $overrulePIvars = [], $cache = false, $clearAnyway = false, $altPageId = 0)
     {
         if (is_array($this->piVars) && is_array($overrulePIvars) && !$clearAnyway) {
             $piVars = $this->piVars;
@@ -404,7 +414,7 @@ class AbstractPlugin
                 $cache = $this->pi_autoCache($overrulePIvars);
             }
         }
-        return $this->pi_linkTP($str, array($this->prefixId => $overrulePIvars), $cache, $altPageId);
+        return $this->pi_linkTP($str, [$this->prefixId => $overrulePIvars], $cache, $altPageId);
     }
 
     /**
@@ -418,7 +428,7 @@ class AbstractPlugin
      * @return string The URL ($this->cObj->lastTypoLinkUrl)
      * @see pi_linkTP_keepPIvars()
      */
-    public function pi_linkTP_keepPIvars_url($overrulePIvars = array(), $cache = false, $clearAnyway = false, $altPageId = 0)
+    public function pi_linkTP_keepPIvars_url($overrulePIvars = [], $cache = false, $clearAnyway = false, $altPageId = 0)
     {
         $this->pi_linkTP_keepPIvars('|', $overrulePIvars, $cache, $clearAnyway, $altPageId);
         return $this->cObj->lastTypoLinkUrl;
@@ -437,15 +447,15 @@ class AbstractPlugin
      * @return string The input string wrapped in <a> tags
      * @see pi_linkTP(), pi_linkTP_keepPIvars()
      */
-    public function pi_list_linkSingle($str, $uid, $cache = false, $mergeArr = array(), $urlOnly = false, $altPageId = 0)
+    public function pi_list_linkSingle($str, $uid, $cache = false, $mergeArr = [], $urlOnly = false, $altPageId = 0)
     {
         if ($this->prefixId) {
             if ($cache) {
-                $overrulePIvars = $uid ? array('showUid' => $uid) : array();
+                $overrulePIvars = $uid ? ['showUid' => $uid] : [];
                 $overrulePIvars = array_merge($overrulePIvars, (array)$mergeArr);
-                $str = $this->pi_linkTP($str, array($this->prefixId => $overrulePIvars), $cache, $altPageId);
+                $str = $this->pi_linkTP($str, [$this->prefixId => $overrulePIvars], $cache, $altPageId);
             } else {
-                $overrulePIvars = array('showUid' => $uid ?: '');
+                $overrulePIvars = ['showUid' => $uid ?: ''];
                 $overrulePIvars = array_merge($overrulePIvars, (array)$mergeArr);
                 $str = $this->pi_linkTP_keepPIvars($str, $overrulePIvars, $cache, 0, $altPageId);
             }
@@ -508,12 +518,12 @@ class AbstractPlugin
      * @param bool $forceOutput Forces the output of the page browser if you set this option to "TRUE" (otherwise it's only drawn if enough entries are available)
      * @return string Output HTML-Table, wrapped in <div>-tags with a class attribute (if $wrapArr is not passed,
      */
-    public function pi_list_browseresults($showResultCount = 1, $tableParams = '', $wrapArr = array(), $pointerName = 'pointer', $hscText = true, $forceOutput = false)
+    public function pi_list_browseresults($showResultCount = 1, $tableParams = '', $wrapArr = [], $pointerName = 'pointer', $hscText = true, $forceOutput = false)
     {
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][AbstractPlugin::class]['pi_list_browseresults'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][AbstractPlugin::class]['pi_list_browseresults'])
+        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['pi_list_browseresults'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['pi_list_browseresults'])
         ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][AbstractPlugin::class]['pi_list_browseresults'] as $classRef) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['pi_list_browseresults'] as $classRef) {
                 $hookObj = GeneralUtility::makeInstance($classRef);
                 if (method_exists($hookObj, 'pi_list_browseresults')) {
                     $pageBrowser = $hookObj->pi_list_browseresults($showResultCount, $tableParams, $wrapArr, $pointerName, $hscText, $forceOutput, $this);
@@ -587,13 +597,13 @@ class AbstractPlugin
                 $firstPage = 0;
                 $lastPage = MathUtility::forceIntegerInRange($totalPages, 1, $maxPages);
             }
-            $links = array();
+            $links = [];
             // Make browse-table/links:
             // Link to first page
             if ($showFirstLast) {
                 if ($pointer > 0) {
                     $label = $this->pi_getLL('pi_list_browseresults_first', '<< First');
-                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, array($pointerName => null), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
+                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, [$pointerName => null], $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
                 } else {
                     $label = $this->pi_getLL('pi_list_browseresults_first', '<< First');
                     $links[] = $this->cObj->wrap(hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
@@ -603,7 +613,7 @@ class AbstractPlugin
             if ($alwaysPrev >= 0) {
                 if ($pointer > 0) {
                     $label = $this->pi_getLL('pi_list_browseresults_prev', '< Previous');
-                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, array($pointerName => ($pointer - 1) ?: ''), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
+                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, [$pointerName => ($pointer - 1) ?: ''], $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
                 } elseif ($alwaysPrev) {
                     $label = $this->pi_getLL('pi_list_browseresults_prev', '< Previous');
                     $links[] = $this->cObj->wrap($hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
@@ -622,10 +632,10 @@ class AbstractPlugin
                     if ($this->internal['dontLinkActivePage']) {
                         $links[] = $this->cObj->wrap($pageText, $wrapper['activeLinkWrap']);
                     } else {
-                        $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, array($pointerName => $a ?: ''), $pi_isOnlyFields), $wrapper['activeLinkWrap']);
+                        $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, [$pointerName => $a ?: ''], $pi_isOnlyFields), $wrapper['activeLinkWrap']);
                     }
                 } else {
-                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, array($pointerName => $a ?: ''), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
+                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, [$pointerName => $a ?: ''], $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
                 }
             }
             if ($pointer < $totalPages - 1 || $showFirstLast) {
@@ -635,14 +645,14 @@ class AbstractPlugin
                     $links[] = $this->cObj->wrap($hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
                 } else {
                     $label = $this->pi_getLL('pi_list_browseresults_next', 'Next >');
-                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, array($pointerName => $pointer + 1), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
+                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, [$pointerName => $pointer + 1], $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
                 }
             }
             // Link to last page
             if ($showFirstLast) {
                 if ($pointer < $totalPages - 1) {
                     $label = $this->pi_getLL('pi_list_browseresults_last', 'Last >>');
-                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, array($pointerName => $totalPages - 1), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
+                    $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, [$pointerName => $totalPages - 1], $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
                 } else {
                     $label = $this->pi_getLL('pi_list_browseresults_last', 'Last >>');
                     $links[] = $this->cObj->wrap($hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
@@ -685,12 +695,12 @@ class AbstractPlugin
      * @param string $tableParams Attributes for the table tag which is wrapped around the table cells containing the menu
      * @return string Output HTML, wrapped in <div>-tags with a class attribute
      */
-    public function pi_list_modeSelector($items = array(), $tableParams = '')
+    public function pi_list_modeSelector($items = [], $tableParams = '')
     {
-        $cells = array();
+        $cells = [];
         foreach ($items as $k => $v) {
             $cells[] = '
-					<td' . ($this->piVars['mode'] == $k ? $this->pi_classParam('modeSelector-SCell') : '') . '><p>' . $this->pi_linkTP_keepPIvars(htmlspecialchars($v), array('mode' => $k), $this->pi_isOnlyFields($this->pi_isOnlyFields)) . '</p></td>';
+					<td' . ($this->piVars['mode'] == $k ? $this->pi_classParam('modeSelector-SCell') : '') . '><p>' . $this->pi_linkTP_keepPIvars(htmlspecialchars($v), ['mode' => $k], $this->pi_isOnlyFields($this->pi_isOnlyFields)) . '</p></td>';
         }
         $sTables = '
 
@@ -714,20 +724,20 @@ class AbstractPlugin
      * $this->pi_list_row() is used for rendering each row
      * Notice that these two functions are typically ALWAYS defined in the extension class of the plugin since they are directly concerned with the specific layout for that plugins purpose.
      *
-     * @param bool|\mysqli_result|object $res Result pointer to a SQL result which can be traversed.
+     * @param Statement $statement Result pointer to a SQL result which can be traversed.
      * @param string $tableParams Attributes for the table tag which is wrapped around the table rows containing the list
      * @return string Output HTML, wrapped in <div>-tags with a class attribute
      * @see pi_list_row(), pi_list_header()
      */
-    public function pi_list_makelist($res, $tableParams = '')
+    public function pi_list_makelist($statement, $tableParams = '')
     {
         // Make list table header:
-        $tRows = array();
+        $tRows = [];
         $this->internal['currentRow'] = '';
         $tRows[] = $this->pi_list_header();
         // Make list table rows
         $c = 0;
-        while ($this->internal['currentRow'] = $this->databaseConnection->sql_fetch_assoc($res)) {
+        while ($this->internal['currentRow'] = $statement->fetch()) {
             $tRows[] = $this->pi_list_row($c);
             $c++;
         }
@@ -854,7 +864,7 @@ class AbstractPlugin
      * @return string Returns FALSE/blank if no BE User login and of course if the panel is not shown for other reasons. Otherwise the HTML for the panel (a table).
      * @see ContentObjectRenderer::EDITPANEL()
      */
-    public function pi_getEditPanel($row = array(), $tablename = '', $label = '', $conf = array())
+    public function pi_getEditPanel($row = [], $tablename = '', $label = '', $conf = [])
     {
         $panel = '';
         if (!$row || !$tablename) {
@@ -897,17 +907,17 @@ class AbstractPlugin
      * @return string The processed content
      * @see ContentObjectRenderer::editIcons()
      */
-    public function pi_getEditIcon($content, $fields, $title = '', $row = array(), $tablename = '', $oConf = array())
+    public function pi_getEditIcon($content, $fields, $title = '', $row = [], $tablename = '', $oConf = [])
     {
         if ($this->frontendController->beUserLogin) {
             if (!$row || !$tablename) {
                 $row = $this->internal['currentRow'];
                 $tablename = $this->internal['currentTable'];
             }
-            $conf = array_merge(array(
+            $conf = array_merge([
                 'beforeLastTag' => 1,
                 'iconTitle' => $title
-            ), $oConf);
+            ], $oConf);
             $content = $this->cObj->editIcons($content, $tablename . ':' . $fields, $conf, $tablename . ':' . $row['uid'], $row, '&viewUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')));
         }
         return $content;
@@ -1003,7 +1013,7 @@ class AbstractPlugin
             // Overlaying labels from TypoScript (including fictitious language keys for non-system languages!):
             if (isset($this->conf['_LOCAL_LANG.'])) {
                 // Clear the "unset memory"
-                $this->LOCAL_LANG_UNSET = array();
+                $this->LOCAL_LANG_UNSET = [];
                 foreach ($this->conf['_LOCAL_LANG.'] as $languageKey => $languageArray) {
                     // Remove the dot after the language key
                     $languageKey = substr($languageKey, 0, -1);
@@ -1041,69 +1051,101 @@ class AbstractPlugin
      * @param string $groupBy If set, this is added as a " GROUP BY ...." part of the query.
      * @param string $orderBy If set, this is added as a " ORDER BY ...." part of the query. The default is that an ORDER BY clause is made based on $this->internal['orderBy'] and $this->internal['descFlag'] where the orderBy field must be found in $this->internal['orderByList']
      * @param string $query If set, this is taken as the first part of the query instead of what is created internally. Basically this should be a query starting with "FROM [table] WHERE ... AND ...". The $addWhere clauses and all the other stuff is still added. Only the tables and PID selecting clauses are bypassed. May be deprecated in the future!
-     * @return bool|\mysqli_result|object SQL result pointer
+     * @return Statement
      */
     public function pi_exec_query($table, $count = false, $addWhere = '', $mm_cat = '', $groupBy = '', $orderBy = '', $query = '')
     {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryBuilder->from($table);
+
         // Begin Query:
         if (!$query) {
+            // This adds WHERE-clauses that ensures deleted, hidden, starttime/endtime/access records are NOT
+            // selected, if they should not! Almost ALWAYS add this to your queries!
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+
             // Fetches the list of PIDs to select from.
             // TypoScript property .pidList is a comma list of pids. If blank, current page id is used.
             // TypoScript property .recursive is an int+ which determines how many levels down from the pids in the pid-list subpages should be included in the select.
-            $pidList = $this->pi_getPidList($this->conf['pidList'], $this->conf['recursive']);
+            $pidList = GeneralUtility::intExplode(',', $this->pi_getPidList($this->conf['pidList'], $this->conf['recursive']), true);
             if (is_array($mm_cat)) {
-                // This adds WHERE-clauses that ensures deleted, hidden, starttime/endtime/access records are NOT
-                // selected, if they should not! Almost ALWAYS add this to your queries!
-                $query = 'FROM ' . $table . ',' . $mm_cat['table'] . ',' . $mm_cat['mmtable'] . LF . ' WHERE ' . $table . '.uid=' . $mm_cat['mmtable'] . '.uid_local AND ' . $mm_cat['table'] . '.uid=' . $mm_cat['mmtable'] . '.uid_foreign ' . LF . (strcmp($mm_cat['catUidList'], '') ? ' AND ' . $mm_cat['table'] . '.uid IN (' . $mm_cat['catUidList'] . ')' : '') . LF . ' AND ' . $table . '.pid IN (' . $pidList . ')' . LF . $this->cObj->enableFields($table) . LF;
+                $queryBuilder->from($mm_cat['table'])
+                    ->from($mm_cat['mmtable'])
+                    ->where(
+                        $queryBuilder->expr()->eq($table . '.uid', $queryBuilder->quoteIdentifier($mm_cat['mmtable'] . '.uid_local')),
+                        $queryBuilder->expr()->eq($mm_cat['table'] . '.uid', $queryBuilder->quoteIdentifier($mm_cat['mmtable'] . '.uid_foreign')),
+                        $queryBuilder->expr()->in($table . '.pid', $pidList)
+                    );
+                if (strcmp($mm_cat['catUidList'], '')) {
+                    $queryBuilder->andWhere(
+                        $queryBuilder->expr()->in(
+                            $mm_cat['table'] . '.uid',
+                            GeneralUtility::intExplode(',', $mm_cat['catUidList'], true)
+                        )
+                    );
+                }
             } else {
-                // This adds WHERE-clauses that ensures deleted, hidden, starttime/endtime/access records are NOT
-                // selected, if they should not! Almost ALWAYS add this to your queries!
-                $query = 'FROM ' . $table . ' WHERE pid IN (' . $pidList . ')' . LF . $this->cObj->enableFields($table) . LF;
+                $queryBuilder->where($queryBuilder->expr()->in('pid', $pidList));
             }
+        } else {
+            // Restrictions need to be handled by the $query parameter!
+            $queryBuilder->getRestrictions()->removeAll();
+
+            // Split the "FROM ... WHERE" string so we get the WHERE part and TABLE names separated...:
+            list($tableListFragment, $whereFragment) = preg_split('/WHERE/i', trim($query), 2);
+            foreach (QueryHelper::parseTableList($tableListFragment) as $tableNameAndAlias) {
+                list($tableName, $tableAlias) = $tableNameAndAlias;
+                $queryBuilder->from($tableName, $tableAlias);
+            }
+            $queryBuilder->where(QueryHelper::stripLogicalOperatorPrefix($whereFragment));
         }
-        // Split the "FROM ... WHERE" string so we get the WHERE part and TABLE names separated...:
-        list($TABLENAMES, $WHERE) = preg_split('/WHERE/i', trim($query), 2);
-        $TABLENAMES = trim(substr(trim($TABLENAMES), 5));
-        $WHERE = trim($WHERE);
+
         // Add '$addWhere'
         if ($addWhere) {
-            $WHERE .= ' ' . $addWhere . LF;
+            $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($addWhere));
         }
         // Search word:
         if ($this->piVars['sword'] && $this->internal['searchFieldList']) {
-            $WHERE .= $this->cObj->searchWhere($this->piVars['sword'], $this->internal['searchFieldList'], $table) . LF;
-        }
-        if ($count) {
-            $queryParts = array(
-                'SELECT' => 'count(*)',
-                'FROM' => $TABLENAMES,
-                'WHERE' => $WHERE,
-                'GROUPBY' => '',
-                'ORDERBY' => '',
-                'LIMIT' => ''
+            $queryBuilder->andWhere(
+                QueryHelper::stripLogicalOperatorPrefix(
+                    $this->cObj->searchWhere($this->piVars['sword'], $this->internal['searchFieldList'], $table)
+                )
             );
+        }
+
+        if ($count) {
+            $queryBuilder->count('*');
         } else {
+            // Add 'SELECT'
+            $fields = $this->pi_prependFieldsWithTable($table, $this->pi_listFields);
+            $queryBuilder->select(...GeneralUtility::trimExplode(',', $fields, true));
+
             // Order by data:
             if (!$orderBy && $this->internal['orderBy']) {
                 if (GeneralUtility::inList($this->internal['orderByList'], $this->internal['orderBy'])) {
-                    $orderBy = 'ORDER BY ' . $table . '.' . $this->internal['orderBy'] . ($this->internal['descFlag'] ? ' DESC' : '');
+                    $sorting = $this->internal['descFlag'] ? ' DESC' : 'ASC';
+                    $queryBuilder->orderBy($table . '.' . $this->internal['orderBy'], $sorting);
+                }
+            } elseif ($orderBy) {
+                foreach (QueryHelper::parseOrderBy($orderBy) as $fieldNameAndSorting) {
+                    list($fieldName, $sorting) = $fieldNameAndSorting;
+                    $queryBuilder->addOrderBy($fieldName, $sorting);
                 }
             }
+
             // Limit data:
             $pointer = (int)$this->piVars['pointer'];
             $results_at_a_time = MathUtility::forceIntegerInRange($this->internal['results_at_a_time'], 1, 1000);
-            $LIMIT = $pointer * $results_at_a_time . ',' . $results_at_a_time;
-            // Add 'SELECT'
-            $queryParts = array(
-                'SELECT' => $this->pi_prependFieldsWithTable($table, $this->pi_listFields),
-                'FROM' => $TABLENAMES,
-                'WHERE' => $WHERE,
-                'GROUPBY' => $this->databaseConnection->stripGroupBy($groupBy),
-                'ORDERBY' => $this->databaseConnection->stripOrderBy($orderBy),
-                'LIMIT' => $LIMIT
-            );
+            $queryBuilder->setFirstResult($pointer * $results_at_a_time)
+                ->setMaxResults($results_at_a_time);
+
+            // Grouping
+            if (!empty($groupBy)) {
+                $queryBuilder->groupBy(...QueryHelper::parseGroupBy($groupBy));
+            }
         }
-        return $this->databaseConnection->exec_SELECT_queryArray($queryParts);
+
+        return $queryBuilder->execute();
     }
 
     /**
@@ -1134,7 +1176,7 @@ class AbstractPlugin
         }
         $recursive = MathUtility::forceIntegerInRange($recursive, 0);
         $pid_list_arr = array_unique(GeneralUtility::trimExplode(',', $pid_list, true));
-        $pid_list = array();
+        $pid_list = [];
         foreach ($pid_list_arr as $val) {
             $val = MathUtility::forceIntegerInRange($val, 0);
             if ($val) {
@@ -1157,7 +1199,7 @@ class AbstractPlugin
     public function pi_prependFieldsWithTable($table, $fieldList)
     {
         $list = GeneralUtility::trimExplode(',', $fieldList, true);
-        $return = array();
+        $return = [];
         foreach ($list as $listItem) {
             $return[] = $table . '.' . $listItem;
         }
@@ -1177,12 +1219,41 @@ class AbstractPlugin
      */
     public function pi_getCategoryTableContents($table, $pid, $whereClause = '', $groupBy = '', $orderBy = '', $limit = '')
     {
-        $res = $this->databaseConnection->exec_SELECTquery('*', $table, 'pid=' . (int)$pid . $this->cObj->enableFields($table) . ' ' . $whereClause, $groupBy, $orderBy, $limit);
-        $outArr = array();
-        while ($row = $this->databaseConnection->sql_fetch_assoc($res)) {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+        $queryBuilder->select('*')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('pid', (int)$pid),
+                QueryHelper::stripLogicalOperatorPrefix($whereClause)
+            );
+
+        if (!empty($orderBy)) {
+            foreach (QueryHelper::parseOrderBy($orderBy) as $fieldNameAndSorting) {
+                list($fieldName, $sorting) = $fieldNameAndSorting;
+                $queryBuilder->addOrderBy($fieldName, $sorting);
+            }
+        }
+
+        if (!empty($groupBy)) {
+            $queryBuilder->groupBy(...QueryHelper::parseGroupBy($groupBy));
+        }
+
+        if (!empty($limit)) {
+            $limitValues = GeneralUtility::intExplode(',', $limit, true);
+            if (count($limitValues) === 1) {
+                $queryBuilder->setMaxResults($limitValues[0]);
+            } else {
+                $queryBuilder->setFirstResult($limitValues[0])
+                    ->setMaxResults($limitValues[1]);
+            }
+        }
+
+        $result = $queryBuilder->execute();
+        $outArr = [];
+        while ($row = $result->fetch()) {
             $outArr[$row['uid']] = $row;
         }
-        $this->databaseConnection->sql_free_result($res);
         return $outArr;
     }
 
@@ -1283,7 +1354,7 @@ class AbstractPlugin
         if (!is_array($this->cObj->data[$field]) && $this->cObj->data[$field]) {
             $this->cObj->data[$field] = GeneralUtility::xml2array($this->cObj->data[$field]);
             if (!is_array($this->cObj->data[$field])) {
-                $this->cObj->data[$field] = array();
+                $this->cObj->data[$field] = [];
             }
         }
     }

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================================
 Breaking: #45899 - Split class ImportExport into classes Import and Export
 ==========================================================================
+
+See :issue:`45899`
 
 Description
 ===========
@@ -26,4 +31,4 @@ Migration
 
 Use or extend one or both of the new classes (TYPO3\CMS\Impexp\Import and TYPO3\CMS\Impexp\Export).
 
-.. index:: php
+.. index:: PHP-API

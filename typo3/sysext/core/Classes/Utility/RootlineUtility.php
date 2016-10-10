@@ -14,6 +14,10 @@ namespace TYPO3\CMS\Core\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\DBALException;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -34,7 +38,7 @@ class RootlineUtility
     /**
      * @var array
      */
-    protected $parsedMountPointParameters = array();
+    protected $parsedMountPointParameters = [];
 
     /**
      * @var int
@@ -59,14 +63,14 @@ class RootlineUtility
     /**
      * @var array
      */
-    protected static $localCache = array();
+    protected static $localCache = [];
 
     /**
      * Fields to fetch when populating rootline data
      *
      * @var array
      */
-    protected static $rootlineFields = array(
+    protected static $rootlineFields = [
         'pid',
         'uid',
         't3ver_oid',
@@ -90,7 +94,7 @@ class RootlineUtility
         'mount_pid_ol',
         'fe_login_mode',
         'backend_layout_next_level'
-    );
+    ];
 
     /**
      * Rootline Context
@@ -107,12 +111,7 @@ class RootlineUtility
     /**
      * @var array
      */
-    protected static $pageRecordCache = array();
-
-    /**
-     * @var \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected $databaseConnection;
+    protected static $pageRecordCache = [];
 
     /**
      * @param int $uid
@@ -159,7 +158,6 @@ class RootlineUtility
         }
         self::$rootlineFields = array_merge(self::$rootlineFields, GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'], true));
         self::$rootlineFields = array_unique(self::$rootlineFields);
-        $this->databaseConnection = $GLOBALS['TYPO3_DB'];
 
         $this->cacheIdentifier = $this->getCacheIdentifier();
     }
@@ -173,8 +171,8 @@ class RootlineUtility
      */
     public static function purgeCaches()
     {
-        self::$localCache = array();
-        self::$pageRecordCache = array();
+        self::$localCache = [];
+        self::$pageRecordCache = [];
     }
 
     /**
@@ -190,13 +188,13 @@ class RootlineUtility
             $mountPointParameter = str_replace(',', '__', $mountPointParameter);
         }
 
-        return implode('_', array(
+        return implode('_', [
             $otherUid !== null ? (int)$otherUid : $this->pageUid,
             $mountPointParameter,
             $this->languageUid,
             $this->workspaceUid,
             $this->versionPreview ? 1 : 0
-        ));
+        ]);
     }
 
     /**
@@ -244,7 +242,16 @@ class RootlineUtility
     {
         $currentCacheIdentifier = $this->getCacheIdentifier($uid);
         if (!isset(self::$pageRecordCache[$currentCacheIdentifier])) {
-            $row = $this->databaseConnection->exec_SELECTgetSingleRow(implode(',', self::$rootlineFields), 'pages', 'uid = ' . (int)$uid . ' AND pages.deleted = 0 AND pages.doktype <> ' . PageRepository::DOKTYPE_RECYCLER);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+            $queryBuilder->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            $row = $queryBuilder->select(...self::$rootlineFields)
+                ->from('pages')
+                ->where(
+                    $queryBuilder->expr()->eq('uid', (int)$uid),
+                    $queryBuilder->expr()->neq('doktype', (int)PageRepository::DOKTYPE_RECYCLER)
+                )
+                ->execute()
+                ->fetch();
             if (empty($row)) {
                 throw new \RuntimeException('Could not fetch page data for uid ' . $uid . '.', 1343589451);
             }
@@ -275,6 +282,8 @@ class RootlineUtility
     protected function enrichWithRelationFields($uid, array $pageRecord)
     {
         $pageOverlayFields = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields']);
+        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+
         foreach ($GLOBALS['TCA']['pages']['columns'] as $column => $configuration) {
             if ($this->columnHasRelationToResolve($configuration)) {
                 $configuration = $configuration['config'];
@@ -291,36 +300,45 @@ class RootlineUtility
                     );
                     $relatedUids = isset($loadDBGroup->tableArray[$configuration['foreign_table']])
                         ? $loadDBGroup->tableArray[$configuration['foreign_table']]
-                        : array();
+                        : [];
                 } else {
                     $columnIsOverlaid = in_array($column, $pageOverlayFields, true);
                     $table = $configuration['foreign_table'];
-                    $field = $configuration['foreign_field'];
-                    $whereClauseParts = array($field . ' = ' . (int)($columnIsOverlaid ? $uid : $pageRecord['uid']));
+
+                    $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
+                    $queryBuilder->getRestrictions()->removeAll()
+                        ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                        ->add(GeneralUtility::makeInstance(HiddenRestriction::class));
+                    $queryBuilder->select('uid')
+                        ->from($table)
+                        ->where(
+                            $queryBuilder->expr()->eq($configuration['foreign_field'], (int)($columnIsOverlaid ? $uid : $pageRecord['uid']))
+                        );
+
                     if (isset($configuration['foreign_match_fields']) && is_array($configuration['foreign_match_fields'])) {
                         foreach ($configuration['foreign_match_fields'] as $field => $value) {
-                            $whereClauseParts[] = $field . ' = ' . $this->databaseConnection->fullQuoteStr($value, $table);
+                            $queryBuilder->andWhere(
+                                $queryBuilder->expr()->eq($field, $queryBuilder->createNamedParameter($value))
+                            );
                         }
                     }
                     if (isset($configuration['foreign_table_field'])) {
-                        if ((int)$this->languageUid > 0 && $columnIsOverlaid) {
-                            $whereClauseParts[] = trim($configuration['foreign_table_field']) . ' = \'pages_language_overlay\'';
-                        } else {
-                            $whereClauseParts[] = trim($configuration['foreign_table_field']) . ' = \'pages\'';
-                        }
+                        $queryBuilder->andWhere(
+                            $queryBuilder->expr()->eq(
+                                trim($configuration['foreign_table_field']),
+                                $queryBuilder->createNamedParameter((int)$this->languageUid > 0 && $columnIsOverlaid ? 'pages_language_overlay' : 'pages'))
+                        );
                     }
-                    if (isset($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled'])) {
-                        $whereClauseParts[] = $table . '.' . $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled'] . ' = 0';
+                    if (isset($configuration['foreign_sortby'])) {
+                        $queryBuilder->orderBy($configuration['foreign_sortby']);
                     }
-                    $whereClause = implode(' AND ', $whereClauseParts);
-                    $whereClause .= $this->pageContext->deleteClause($table);
-                    $orderBy = isset($configuration['foreign_sortby']) ? $configuration['foreign_sortby'] : '';
-                    $rows = $this->databaseConnection->exec_SELECTgetRows('uid', $table, $whereClause, '', $orderBy);
-                    if (!is_array($rows)) {
-                        throw new \RuntimeException('Could to resolve related records for page ' . $uid . ' and foreign_table ' . htmlspecialchars($configuration['foreign_table']), 1343589452);
+                    try {
+                        $statement = $queryBuilder->execute();
+                    } catch (DBALException $e) {
+                        throw new \RuntimeException('Could to resolve related records for page ' . $uid . ' and foreign_table ' . htmlspecialchars($table), 1343589452);
                     }
-                    $relatedUids = array();
-                    foreach ($rows as $row) {
+                    $relatedUids = [];
+                    while ($row = $statement->fetch()) {
                         $relatedUids[] = $row['uid'];
                     }
                 }
@@ -340,10 +358,10 @@ class RootlineUtility
     protected function columnHasRelationToResolve(array $configuration)
     {
         $configuration = $configuration['config'];
-        if (!empty($configuration['MM']) && !empty($configuration['type']) && in_array($configuration['type'], array('select', 'inline', 'group'))) {
+        if (!empty($configuration['MM']) && !empty($configuration['type']) && in_array($configuration['type'], ['select', 'inline', 'group'])) {
             return true;
         }
-        if (!empty($configuration['foreign_field']) && !empty($configuration['type']) && in_array($configuration['type'], array('select', 'inline'))) {
+        if (!empty($configuration['foreign_field']) && !empty($configuration['type']) && in_array($configuration['type'], ['select', 'inline'])) {
             return true;
         }
         return false;
@@ -368,7 +386,7 @@ class RootlineUtility
         } else {
             $parentUid = $page['pid'];
         }
-        $cacheTags = array('pageId_' . $page['uid']);
+        $cacheTags = ['pageId_' . $page['uid']];
         if ($parentUid > 0) {
             // Get rootline of (and including) parent page
             $mountPointParameter = !empty($this->parsedMountPointParameters) ? $this->mountPointParameter : '';
@@ -383,7 +401,7 @@ class RootlineUtility
                 }
             }
         } else {
-            $rootline = array();
+            $rootline = [];
         }
         array_push($rootline, $page);
         krsort($rootline);
@@ -418,11 +436,11 @@ class RootlineUtility
         // Current page replaces the original mount-page
         if ($mountPointPageData['mount_pid_ol']) {
             $mountedPageData['_MOUNT_OL'] = true;
-            $mountedPageData['_MOUNT_PAGE'] = array(
+            $mountedPageData['_MOUNT_PAGE'] = [
                 'uid' => $mountPointPageData['uid'],
                 'pid' => $mountPointPageData['pid'],
                 'title' => $mountPointPageData['title']
-            );
+            ];
         } else {
             // The mount-page is not replaced, the mount-page itself has to be used
             $mountedPageData = $mountPointPageData;

@@ -125,7 +125,6 @@ CREATE TABLE pages (
 	TSconfig text,
 	is_siteroot tinyint(4) DEFAULT '0' NOT NULL,
 	php_tree_stop tinyint(4) DEFAULT '0' NOT NULL,
-	tx_impexp_origuid int(11) DEFAULT '0' NOT NULL,
 	url varchar(255) DEFAULT '' NOT NULL,
 	starttime int(11) unsigned DEFAULT '0' NOT NULL,
 	endtime int(11) unsigned DEFAULT '0' NOT NULL,
@@ -422,6 +421,7 @@ CREATE TABLE sys_file_reference (
 	KEY parent (pid,deleted),
 	KEY tablenames_fieldname (tablenames(32),fieldname(12)),
 	KEY deleted (deleted),
+	KEY uid_local (uid_local),
 	KEY uid_foreign (uid_foreign)
 );
 
@@ -572,7 +572,7 @@ CREATE TABLE sys_refindex (
 	hash varchar(32) DEFAULT '' NOT NULL,
 	tablename varchar(255) DEFAULT '' NOT NULL,
 	recuid int(11) DEFAULT '0' NOT NULL,
-	field varchar(40) DEFAULT '' NOT NULL,
+	field varchar(64) DEFAULT '' NOT NULL,
 	flexpointer varchar(255) DEFAULT '' NOT NULL,
 	softref_key varchar(30) DEFAULT '' NOT NULL,
 	softref_id varchar(40) DEFAULT '' NOT NULL,
@@ -636,6 +636,7 @@ CREATE TABLE sys_language (
 	flag varchar(20) DEFAULT '' NOT NULL,
 	language_isocode varchar(2) DEFAULT '' NOT NULL,
 	static_lang_isocode int(11) unsigned DEFAULT '0' NOT NULL,
+	sorting int(11) unsigned DEFAULT '0' NOT NULL,
 	PRIMARY KEY (uid),
 	KEY parent (pid)
 );

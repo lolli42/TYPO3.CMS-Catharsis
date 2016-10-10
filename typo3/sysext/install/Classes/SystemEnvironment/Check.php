@@ -49,7 +49,7 @@ class Check
     /**
      * @var array List of required PHP extensions
      */
-    protected $requiredPhpExtensions = array(
+    protected $requiredPhpExtensions = [
         'filter',
         'gd',
         'hash',
@@ -63,7 +63,7 @@ class Check
         'xml',
         'zip',
         'zlib',
-    );
+    ];
 
     /**
      * Get all status information as array with status objects
@@ -72,7 +72,7 @@ class Check
      */
     public function getStatus()
     {
-        $status = array();
+        $status = [];
         $status[] = $this->checkCurrentDirectoryIsInIncludePath();
         $status[] = $this->checkFileUploadEnabled();
         $status[] = $this->checkPostUploadSizeIsHigherOrEqualMaximumFileUploadSize();
@@ -112,7 +112,6 @@ class Check
         $status[] = $this->checkGdLibJpgSupport();
         $status[] = $this->checkGdLibPngSupport();
         $status[] = $this->checkGdLibFreeTypeSupport();
-        $status[] = $this->checkRegisterGlobals();
 
         return $status;
     }
@@ -365,10 +364,10 @@ class Check
         $disabledFunctionsArray = $this->trimExplode(',', $disabledFunctions);
 
         // Array with strings to find
-        $findStrings = array(
+        $findStrings = [
             // Disabled by default on Ubuntu OS but this is okay since the Core does not use them
             'pcntl_',
-        );
+        ];
         foreach ($disabledFunctionsArray as $key => $disabledFunction) {
             foreach ($findStrings as $findString) {
                 if (strpos($disabledFunction, $findString) !== false) {
@@ -1140,35 +1139,6 @@ class Check
     }
 
     /**
-     * Check register globals
-     *
-     * @return Status\StatusInterface
-     */
-    protected function checkRegisterGlobals()
-    {
-        $registerGlobalsEnabled = filter_var(
-            ini_get('register_globals'),
-            FILTER_VALIDATE_BOOLEAN,
-            array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE)
-        );
-        if ($registerGlobalsEnabled === true) {
-            $status = new Status\ErrorStatus();
-            $status->setTitle('PHP register globals on');
-            $status->setMessage(
-                'register_globals=' . ini_get('register_globals') . LF .
-                'TYPO3 requires PHP setting "register_globals" set to off.' .
-                ' This ancient PHP setting is a big security problem and should' .
-                ' never be enabled:' . LF .
-                'register_globals=Off'
-            );
-        } else {
-            $status = new Status\OkStatus();
-            $status->setTitle('PHP register globals off');
-        }
-        return $status;
-    }
-
-    /**
      * Helper methods
      */
 
@@ -1209,7 +1179,7 @@ class Check
             $suhosinInSimulationMode = filter_var(
                 ini_get('suhosin.simulation'),
                 FILTER_VALIDATE_BOOLEAN,
-                array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE)
+                [FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE]
             );
             if (!$suhosinInSimulationMode) {
                 $suhosinLoaded = true;
@@ -1230,7 +1200,7 @@ class Check
     {
         $explodedValues = explode($delimiter, $string);
         $resultWithPossibleEmptyValues = array_map('trim', $explodedValues);
-        $result = array();
+        $result = [];
         foreach ($resultWithPossibleEmptyValues as $value) {
             if ($value !== '') {
                 $result[] = $value;

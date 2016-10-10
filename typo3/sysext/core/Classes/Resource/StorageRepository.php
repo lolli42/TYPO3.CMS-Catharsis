@@ -15,6 +15,8 @@ namespace TYPO3\CMS\Core\Resource;
  */
 
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -53,11 +55,6 @@ class StorageRepository extends AbstractRepository
      */
     protected $logger;
 
-    /**
-     * @var \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected $db;
-
     public function __construct()
     {
         parent::__construct();
@@ -65,7 +62,6 @@ class StorageRepository extends AbstractRepository
         /** @var $logManager LogManager */
         $logManager = GeneralUtility::makeInstance(LogManager::class);
         $this->logger = $logManager->getLogger(__CLASS__);
-        $this->db = $GLOBALS['TYPO3_DB'];
     }
 
     /**
@@ -90,23 +86,38 @@ class StorageRepository extends AbstractRepository
     protected function initializeLocalCache()
     {
         if (static::$storageRowCache === null) {
-            static::$storageRowCache = $this->db->exec_SELECTgetRows(
-                '*',
-                $this->table,
-                '1=1' . $this->getWhereClauseForEnabledFields(),
-                '',
-                'name',
-                '',
-                'uid'
-            );
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable($this->table);
+
+            if ($this->getEnvironmentMode() === 'FE' && !empty($GLOBALS['TSFE']->sys_page)) {
+                $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            }
+
+            $result = $queryBuilder
+                ->select('*')
+                ->from($this->table)
+                ->orderBy('name')
+                ->execute();
+
+            static::$storageRowCache = [];
+            while ($row = $result->fetch()) {
+                if (!empty($row['uid'])) {
+                    static::$storageRowCache[$row['uid']] = $row;
+                }
+            }
+
             // if no storage is created before or the user has not access to a storage
             // static::$storageRowCache would have the value array()
             // so check if there is any record. If no record is found, create the fileadmin/ storage
-            // selecting just one row is enoung
+            // selecting just one row is enough
 
-            if (static::$storageRowCache === array()) {
-                $storageObjectsExists = $this->db->exec_SELECTgetSingleRow('uid', $this->table, '');
-                if ($storageObjectsExists !== null) {
+            if (static::$storageRowCache === []) {
+                $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getConnectionForTable($this->table);
+
+                $storageObjectsCount = $connection->count('uid', $this->table, []);
+
+                if ($storageObjectsCount === 0) {
                     if ($this->createLocalStorage(
                         'fileadmin/ (auto-created)',
                         $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
@@ -137,7 +148,7 @@ class StorageRepository extends AbstractRepository
         /** @var $driverRegistry Driver\DriverRegistry */
         $driverRegistry = GeneralUtility::makeInstance(Driver\DriverRegistry::class);
 
-        $storageObjects = array();
+        $storageObjects = [];
         foreach (static::$storageRowCache as $storageRow) {
             if ($storageRow['driver'] !== $storageType) {
                 continue;
@@ -146,7 +157,7 @@ class StorageRepository extends AbstractRepository
                 $storageObjects[] = $this->factory->getStorageObject($storageRow['uid'], $storageRow);
             } else {
                 $this->logger->warning(
-                    sprintf('Could not instantiate storage "%s" because of missing driver.', array($storageRow['name'])),
+                    sprintf('Could not instantiate storage "%s" because of missing driver.', [$storageRow['name']]),
                     $storageRow
                 );
             }
@@ -167,13 +178,13 @@ class StorageRepository extends AbstractRepository
         /** @var $driverRegistry Driver\DriverRegistry */
         $driverRegistry = GeneralUtility::makeInstance(Driver\DriverRegistry::class);
 
-        $storageObjects = array();
+        $storageObjects = [];
         foreach (static::$storageRowCache as $storageRow) {
             if ($driverRegistry->driverExists($storageRow['driver'])) {
                 $storageObjects[] = $this->factory->getStorageObject($storageRow['uid'], $storageRow);
             } else {
                 $this->logger->warning(
-                    sprintf('Could not instantiate storage "%s" because of missing driver.', array($storageRow['name'])),
+                    sprintf('Could not instantiate storage "%s" because of missing driver.', [$storageRow['name']]),
                     $storageRow
                 );
             }
@@ -195,24 +206,24 @@ class StorageRepository extends AbstractRepository
     {
         $caseSensitive = $this->testCaseSensitivity($pathType === 'relative' ? PATH_site . $basePath : $basePath);
         // create the FlexForm for the driver configuration
-        $flexFormData = array(
-            'data' => array(
-                'sDEF' => array(
-                    'lDEF' => array(
-                        'basePath' => array('vDEF' => rtrim($basePath, '/') . '/'),
-                        'pathType' => array('vDEF' => $pathType),
-                        'caseSensitive' => array('vDEF' => $caseSensitive)
-                    )
-                )
-            )
-        );
+        $flexFormData = [
+            'data' => [
+                'sDEF' => [
+                    'lDEF' => [
+                        'basePath' => ['vDEF' => rtrim($basePath, '/') . '/'],
+                        'pathType' => ['vDEF' => $pathType],
+                        'caseSensitive' => ['vDEF' => $caseSensitive]
+                    ]
+                ]
+            ]
+        ];
 
         /** @var $flexObj FlexFormTools */
         $flexObj = GeneralUtility::makeInstance(FlexFormTools::class);
         $flexFormXml = $flexObj->flexArray2Xml($flexFormData, true);
 
             // create the record
-        $field_values = array(
+        $field_values = [
             'pid' => 0,
             'tstamp' => $GLOBALS['EXEC_TIME'],
             'crdate' => $GLOBALS['EXEC_TIME'],
@@ -225,9 +236,13 @@ class StorageRepository extends AbstractRepository
             'is_public' => 1,
             'is_writable' => 1,
             'is_default' => $default ? 1 : 0
-        );
-        $this->db->exec_INSERTquery('sys_file_storage', $field_values);
-        return (int)$this->db->sql_insert_id();
+        ];
+
+        $dbConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable($this->table);
+        $dbConnection->insert($this->table, $field_values);
+
+        return (int)$dbConnection->lastInsertId($this->table);
     }
 
     /**

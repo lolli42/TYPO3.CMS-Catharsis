@@ -97,7 +97,7 @@ class VimeoRenderer implements FileRendererInterface
             }
         }
 
-        $urlParams = array();
+        $urlParams = [];
         if (!empty($options['autoplay'])) {
             $urlParams[] = 'autoplay=1';
         }
@@ -115,7 +115,7 @@ class VimeoRenderer implements FileRendererInterface
         }
 
         $videoId = $this->getOnlineMediaHelper($file)->getOnlineMediaId($orgFile);
-        $src = sprintf('//player.vimeo.com/video/%s?%s', $videoId, implode('&amp;', $urlParams));
+        $src = sprintf('https://player.vimeo.com/video/%s?%s', $videoId, implode('&amp;', $urlParams));
 
         $attributes = ['allowfullscreen'];
         if ((int)$width > 0) {

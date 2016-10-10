@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================================
 Feature: #69394 - EXT:form - Directly load form wizard as inline wizard
 =======================================================================
+
+See :issue:`69394`
 
 Description
 ===========
@@ -20,4 +25,6 @@ Since integrators and editors had massive problems with overridden form configur
 the wizard cannot be deactivated anymore. Instead, the integrator can configure whether
 to load the form wizard by default or not. The following UserTS is integrated by default:
 
-``setup.default.tx_form.showWizardByDefault = 1``
+`setup.default.tx_form.showWizardByDefault = 1`
+
+.. index:: Backend, ext:form

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================
 Breaking: #75708 - Always store <p> tags in DB from RTE
 =======================================================
+
+See :issue:`75708`
 
 Description
 ===========
@@ -29,3 +34,5 @@ Migration
 =========
 
 An upgrade wizard inside the Install Tool (coming until 8.1) will make sure that any database RTE field is converted.
+
+.. index:: Database, Backend, RTE

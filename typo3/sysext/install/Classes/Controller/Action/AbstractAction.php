@@ -45,17 +45,17 @@ abstract class AbstractAction implements ActionInterface
     /**
      * @var array Values in $_POST['install']
      */
-    protected $postValues = array();
+    protected $postValues = [];
 
     /**
      * @var array Contains the fatal error array of the last request when passed. Schema is the one returned by error_get_last()
      */
-    protected $lastError = array();
+    protected $lastError = [];
 
     /**
      * @var array<\TYPO3\CMS\Install\Status\StatusInterface> Optional status message from controller
      */
-    protected $messages = array();
+    protected $messages = [];
 
     /**
      * Handles the action
@@ -83,8 +83,8 @@ abstract class AbstractAction implements ActionInterface
         $mainTemplate = ucfirst($this->action);
         $this->view = GeneralUtility::makeInstance(StandaloneView::class);
         $this->view->setTemplatePathAndFilename($viewRootPath . 'Templates/Action/' . $controllerActionDirectoryName . '/' . $mainTemplate . '.html');
-        $this->view->setLayoutRootPaths(array($viewRootPath . 'Layouts/'));
-        $this->view->setPartialRootPaths(array($viewRootPath . 'Partials/'));
+        $this->view->setLayoutRootPaths([$viewRootPath . 'Layouts/']);
+        $this->view->setPartialRootPaths([$viewRootPath . 'Partials/']);
         $this->view
             // time is used in js and css as parameter to force loading of resources
             ->assign('time', time())
@@ -166,24 +166,9 @@ abstract class AbstractAction implements ActionInterface
      *
      * @param array<\TYPO3\CMS\Install\Status\StatusInterface> $messages
      */
-    public function setMessages(array $messages = array())
+    public function setMessages(array $messages = [])
     {
         $this->messages = $messages;
-    }
-
-    /**
-     * Return TRUE if dbal and adodb extension is loaded
-     *
-     * @return bool TRUE if dbal and adodb is loaded
-     */
-    protected function isDbalEnabled()
-    {
-        if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('adodb')
-            && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')
-        ) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -264,7 +249,7 @@ abstract class AbstractAction implements ActionInterface
      */
     protected function getExtensionCompatibilityTesterMessages()
     {
-        $extensionCompatibilityTesterMessages = array();
+        $extensionCompatibilityTesterMessages = [];
 
         /** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
         $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\LoadingStatus::class);

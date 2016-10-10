@@ -40,6 +40,7 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
@@ -428,7 +429,7 @@ class EditDocumentController extends AbstractModule
      */
     protected function emitFunctionAfterSignal($signalName)
     {
-        $this->getSignalSlotDispatcher()->dispatch(__CLASS__, $signalName . 'After', array($this));
+        $this->getSignalSlotDispatcher()->dispatch(__CLASS__, $signalName . 'After', [$this]);
     }
 
     /**
@@ -567,7 +568,7 @@ class EditDocumentController extends AbstractModule
                 1,
                 'Referer host \'%s\' and server host \'%s\' did not match and veriCode was not valid either!',
                 1,
-                array($refInfo['host'], $httpHost)
+                [$refInfo['host'], $httpHost]
             );
             debug('Error: Referer host did not match with server host.');
         } else {
@@ -585,7 +586,7 @@ class EditDocumentController extends AbstractModule
             if (!empty($tce->substNEWwithIDs_table)) {
                 // save the expanded/collapsed states for new inline records, if any
                 FormEngineUtility::updateInlineView($this->uc, $tce);
-                $newEditConf = array();
+                $newEditConf = [];
                 foreach ($this->editconf as $tableName => $tableCmds) {
                     $keys = array_keys($tce->substNEWwithIDs_table, $tableName);
                     if (!empty($keys)) {
@@ -651,7 +652,7 @@ class EditDocumentController extends AbstractModule
                 // otherwise new elements are inserted after one using a negative uid)
                 $insertRecordOnTop = ($this->getNewIconMode($nTable) == 'top');
                 // Setting a blank editconf array for a new record:
-                $this->editconf = array();
+                $this->editconf = [];
                 // Determine related page ID for regular live context
                 if ($nRec['pid'] != -1) {
                     if ($insertRecordOnTop) {
@@ -738,17 +739,17 @@ class EditDocumentController extends AbstractModule
 			}
 '
         );
-        $t3Configuration = array();
+        $t3Configuration = [];
 
         if (ExtensionManagementUtility::isLoaded('feedit') && (int)GeneralUtility::_GP('feEdit') === 1) {
             // We have to load some locallang strings and push them into TYPO3.LLL if this request was
             // triggered by feedit. Originally, this object is fed by BackendController which is not
             // called here. This block of code is intended to be removed at a later point again.
             $lang = $this->getLanguageService();
-            $coreLabels = array(
+            $coreLabels = [
                 'csh_tooltip_loading' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:csh_tooltip_loading')
-            );
-            $generatedLabels = array();
+            ];
+            $generatedLabels = [];
             $generatedLabels['core'] = $coreLabels;
             $code = 'TYPO3.LLL = ' . json_encode($generatedLabels) . ';';
             $filePath = 'typo3temp/assets/js/backend-' . sha1($code) . '.js';
@@ -765,11 +766,9 @@ class EditDocumentController extends AbstractModule
         $javascript = '
 			TYPO3.configuration = ' . json_encode($t3Configuration) . ';
 			// Object: TS:
-			// passwordDummy is used by tbe_editor.js and has to be declared here as
 			// TS object overwrites the object declared in tbe_editor.js
 			function typoSetup() {	//
 				this.uniqueID = "";
-				this.passwordDummy = "********";
 			}
 			var TS = new typoSetup();
 
@@ -817,7 +816,7 @@ class EditDocumentController extends AbstractModule
         $pageTsConfig = BackendUtility::getPagesTSconfig($currentPageId);
         $previewConfiguration = isset($pageTsConfig['TCEMAIN.']['preview.'][$table . '.'])
             ? $pageTsConfig['TCEMAIN.']['preview.'][$table . '.']
-            : array();
+            : [];
 
         $recordArray = BackendUtility::getRecord($table, $recordId);
 
@@ -968,21 +967,21 @@ class EditDocumentController extends AbstractModule
                         || !isset($this->docHandler[$this->storeUrlMd5]))
                     && !$this->dontStoreDocumentRef
                 ) {
-                    $this->docHandler[$this->storeUrlMd5] = array(
+                    $this->docHandler[$this->storeUrlMd5] = [
                         $this->storeTitle,
                         $this->storeArray,
                         $this->storeUrl,
                         $this->firstEl
-                    );
-                    $this->getBackendUser()->pushModuleData('FormEngine', array($this->docHandler, $this->storeUrlMd5));
+                    ];
+                    $this->getBackendUser()->pushModuleData('FormEngine', [$this->docHandler, $this->storeUrlMd5]);
                     BackendUtility::setUpdateSignal('OpendocsController::updateNumber', count($this->docHandler));
                 }
                 // Module configuration
                 $this->modTSconfig = $this->viewId ? BackendUtility::getModTSconfig(
                     $this->viewId,
                     'mod.xMOD_alt_doc'
-                ) : array();
-                $body = $this->formResultCompiler->JStop();
+                ) : [];
+                $body = $this->formResultCompiler->addCssFiles();
                 $body .= $this->compileForm($editForm);
                 $body .= $this->formResultCompiler->printNeededJSFunctions();
                 $body .= '</form>';
@@ -1013,7 +1012,7 @@ class EditDocumentController extends AbstractModule
     public function makeEditForm()
     {
         // Initialize variables:
-        $this->elementsData = array();
+        $this->elementsData = [];
         $this->errorC = 0;
         $this->newC = 0;
         $editForm = '';
@@ -1117,13 +1116,13 @@ class EditDocumentController extends AbstractModule
                                         : BackendUtility::getRecordTitle($table, FormEngineUtility::databaseRowCompatibility($formData['databaseRow']), true);
                                 }
 
-                                $this->elementsData[] = array(
+                                $this->elementsData[] = [
                                     'table' => $table,
                                     'uid' => $formData['databaseRow']['uid'],
                                     'pid' => $formData['databaseRow']['pid'],
                                     'cmd' => $command,
                                     'deleteAccess' => $deleteAccess
-                                );
+                                ];
 
                                 if ($command !== 'new') {
                                     BackendUtility::lockRecords($table, $formData['databaseRow']['uid'], $table === 'tt_content' ? $formData['databaseRow']['pid'] : 0);
@@ -1148,7 +1147,7 @@ class EditDocumentController extends AbstractModule
                                 $formResult['doSaveFieldName'] = 'doSave';
 
                                 // @todo: Put all the stuff into FormEngine as final "compiler" class
-                                // @todo: This is done here for now to not rewrite JStop()
+                                // @todo: This is done here for now to not rewrite addCssFiles()
                                 // @todo: and printNeededJSFunctions() now
                                 $this->formResultCompiler->mergeResult($formResult);
 
@@ -1216,11 +1215,11 @@ class EditDocumentController extends AbstractModule
                     );
                 } else {
                     // exclude sysfolders, spacers and recycler by default
-                    $excludeDokTypes = array(
+                    $excludeDokTypes = [
                         PageRepository::DOKTYPE_RECYCLER,
                         PageRepository::DOKTYPE_SYSFOLDER,
                         PageRepository::DOKTYPE_SPACER
-                    );
+                    ];
                 }
                 if (!in_array((int)$this->pageinfo['doktype'], $excludeDokTypes, true)
                     || isset($pagesTSconfig['TCEMAIN.']['preview.'][$this->firstEl['table'] . '.']['previewPageId'])
@@ -1360,11 +1359,11 @@ class EditDocumentController extends AbstractModule
                         GeneralUtility::quoteJSvalue(
                             BackendUtility::getModuleUrl(
                                 'record_history',
-                                array(
+                                [
                                     'element' => $this->firstEl['table'] . ':' . $this->firstEl['uid'],
                                     'revert' => 'ALL_FIELDS',
                                     'returnUrl' => $this->R_URI,
-                                )
+                                ]
                             )
                         ) . '; return false;';
 
@@ -1381,7 +1380,7 @@ class EditDocumentController extends AbstractModule
                             )
                         )
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
-                            'actions-edit-undo',
+                            'actions-document-history-open',
                             Icon::SIZE_SMALL
                         ));
                     $buttonBar->addButton($undoButton, ButtonBar::BUTTON_POSITION_LEFT, 3);
@@ -1391,10 +1390,10 @@ class EditDocumentController extends AbstractModule
                         GeneralUtility::quoteJSvalue(
                             BackendUtility::getModuleUrl(
                                 'record_history',
-                                array(
+                                [
                                     'element' => $this->firstEl['table'] . ':' . $this->firstEl['uid'],
                                     'returnUrl' => $this->R_URI,
-                                )
+                                ]
                             )
                         ) . '; return false;';
 
@@ -1414,7 +1413,7 @@ class EditDocumentController extends AbstractModule
                         ->setHref($this->R_URI . '&columnsOnly=')
                         ->setTitle($lang->getLL('editWholeRecord'))
                         ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
-                            'actions-document-open',
+                            'actions-open',
                             Icon::SIZE_SMALL
                         ));
                     $buttonBar->addButton($columnsOnlyButton, ButtonBar::BUTTON_POSITION_LEFT, 3);
@@ -1468,7 +1467,7 @@ class EditDocumentController extends AbstractModule
      */
     public function shortCutLink()
     {
-        if ($this->returnUrl !== ExtensionManagementUtility::extRelPath('backend') . 'Resources/Private/Templates/Close.html') {
+        if ($this->returnUrl !== ExtensionManagementUtility::siteRelPath('backend') . 'Resources/Private/Templates/Close.html') {
             $shortCutButton = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->makeShortcutButton();
             $shortCutButton->setModuleName($this->MCONF['name'])
                 ->setGetVariables([
@@ -1488,10 +1487,10 @@ class EditDocumentController extends AbstractModule
      */
     public function openInNewWindowLink()
     {
-        $backendRelPath = ExtensionManagementUtility::extRelPath('backend');
-        if ($this->returnUrl !== $backendRelPath . 'Resources/Private/Templates/Close.html') {
+        $closeUrl = ExtensionManagementUtility::siteRelPath('backend') . 'Resources/Private/Templates/Close.html';
+        if ($this->returnUrl !== $closeUrl) {
             $aOnClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue(GeneralUtility::linkThisScript(
-                array('returnUrl' => $backendRelPath . 'Resources/Private/Templates/Close.html')
+                ['returnUrl' => PathUtility::getAbsoluteWebPath($closeUrl)]
             ))
                 . ','
                 . GeneralUtility::quoteJSvalue(md5($this->R_URI))
@@ -1540,7 +1539,7 @@ class EditDocumentController extends AbstractModule
             $langRows = $this->getLanguages($pid);
             // Page available in other languages than default language?
             if (is_array($langRows) && count($langRows) > 1) {
-                $rowsByLang = array();
+                $rowsByLang = [];
                 $fetchFields = 'uid,' . $languageField . ',' . $transOrigPointerField;
                 // Get record in current language
                 $rowCurrent = BackendUtility::getLiveVersionOfRecord($table, $uid, $fetchFields);
@@ -1593,28 +1592,27 @@ class EditDocumentController extends AbstractModule
                     }
                     $languageMenu = $this->moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
                     $languageMenu->setIdentifier('_langSelector');
-                    $languageMenu->setLabel($this->getLanguageService()->sL(
-                        'LLL:EXT:lang/locallang_general.xlf:LGL.language',
-                        true
-                    ));
+                    $languageMenu->setLabel(htmlspecialchars($this->getLanguageService()->sL(
+                        'LLL:EXT:lang/locallang_general.xlf:LGL.language'
+                    )));
                     foreach ($langRows as $lang) {
                         if ($this->getBackendUser()->checkLanguageAccess($lang['uid'])) {
                             $newTranslation = isset($rowsByLang[$lang['uid']]) ? '' : ' [' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.new')) . ']';
                             // Create url for creating a localized record
                             if ($newTranslation) {
-                                $redirectUrl = BackendUtility::getModuleUrl('record_edit', array(
+                                $redirectUrl = BackendUtility::getModuleUrl('record_edit', [
                                     'justLocalized' => $table . ':' . $rowsByLang[0]['uid'] . ':' . $lang['uid'],
                                     'returnUrl' => $this->retUrl
-                                ));
+                                ]);
                                 $href = BackendUtility::getLinkToDataHandlerAction(
                                     '&cmd[' . $table . '][' . $rowsByLang[0]['uid'] . '][localize]=' . $lang['uid'],
                                     $redirectUrl
                                 );
                             } else {
-                                $href = BackendUtility::getModuleUrl('record_edit', array(
+                                $href = BackendUtility::getModuleUrl('record_edit', [
                                     'edit[' . $table . '][' . $rowsByLang[$lang['uid']]['uid'] . ']' => 'edit',
                                     'returnUrl' => $this->retUrl
-                                ));
+                                ]);
                             }
                             $menuItem = $languageMenu->makeMenuItem()
                                 ->setTitle($lang['title'] . $newTranslation)
@@ -1662,10 +1660,10 @@ class EditDocumentController extends AbstractModule
 
             if (is_array($localizedRecord)) {
                 // Create parameters and finally run the classic page module for creating a new page translation
-                $location = BackendUtility::getModuleUrl('record_edit', array(
+                $location = BackendUtility::getModuleUrl('record_edit', [
                     'edit[' . $table . '][' . $localizedRecord['uid'] . ']' => 'edit',
                     'returnUrl' => GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'))
-                ));
+                ]);
                 HttpUtility::redirect($location);
             }
         }
@@ -1690,8 +1688,8 @@ class EditDocumentController extends AbstractModule
                 $modSharedTSconfig['properties']['defaultLanguageFlag']
             );
         }
-        $languages = array(
-            0 => array(
+        $languages = [
+            0 => [
                 'uid' => 0,
                 'pid' => 0,
                 'hidden' => 0,
@@ -1699,8 +1697,8 @@ class EditDocumentController extends AbstractModule
                         ? $modSharedTSconfig['properties']['defaultLanguageLabel'] . ' (' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage') . ')'
                         : $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage'),
                 'flag' => $modSharedTSconfig['properties']['defaultLanguageFlag']
-            )
-        );
+            ]
+        ];
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('sys_language');
@@ -1708,7 +1706,7 @@ class EditDocumentController extends AbstractModule
         $queryBuilder->select('s.uid', 's.pid', 's.hidden', 's.title', 's.flag')
             ->from('sys_language', 's')
             ->groupBy('s.uid', 's.pid', 's.hidden', 's.title', 's.flag')
-            ->orderBy('s.title');
+            ->orderBy('s.sorting');
 
         if ($id) {
             $queryBuilder->getRestrictions()
@@ -1758,7 +1756,7 @@ class EditDocumentController extends AbstractModule
             foreach ($this->editconf as $table => $conf) {
                 if (is_array($conf) && $GLOBALS['TCA'][$table]) {
                     // Traverse the keys/comments of each table (keys can be a commalist of uids)
-                    $newConf = array();
+                    $newConf = [];
                     foreach ($conf as $cKey => $cmd) {
                         if ($cmd == 'edit') {
                             // Traverse the ids:
@@ -1884,10 +1882,10 @@ class EditDocumentController extends AbstractModule
             // add the closing document to the recent documents
             $recentDocs = $this->getBackendUser()->getModuleData('opendocs::recent');
             if (!is_array($recentDocs)) {
-                $recentDocs = array();
+                $recentDocs = [];
             }
             $closedDoc = $this->docHandler[$this->storeUrlMd5];
-            $recentDocs = array_merge(array($this->storeUrlMd5 => $closedDoc), $recentDocs);
+            $recentDocs = array_merge([$this->storeUrlMd5 => $closedDoc], $recentDocs);
             if (count($recentDocs) > 8) {
                 $recentDocs = array_slice($recentDocs, 0, 8);
             }
@@ -1895,10 +1893,10 @@ class EditDocumentController extends AbstractModule
             unset($this->docHandler[$this->storeUrlMd5]);
             if ($code == '3') {
                 $recentDocs = array_merge($this->docHandler, $recentDocs);
-                $this->docHandler = array();
+                $this->docHandler = [];
             }
             $this->getBackendUser()->pushModuleData('opendocs::recent', $recentDocs);
-            $this->getBackendUser()->pushModuleData('FormEngine', array($this->docHandler, $this->docDat[1]));
+            $this->getBackendUser()->pushModuleData('FormEngine', [$this->docHandler, $this->docDat[1]]);
             BackendUtility::setUpdateSignal('OpendocsController::updateNumber', count($this->docHandler));
         }
         // If ->returnEditConf is set, then add the current content of editconf to the ->retUrl variable: (used by

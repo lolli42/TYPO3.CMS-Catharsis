@@ -25,6 +25,13 @@ use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
 class PageBrowsingResultsViewHelper extends AbstractViewHelper
 {
     /**
+     * As this ViewHelper renders HTML, the output must not be escaped.
+     *
+     * @var bool
+     */
+    protected $escapeOutput = false;
+
+    /**
      * Initialize arguments
      */
     public function initializeArguments()
@@ -64,6 +71,6 @@ class PageBrowsingResultsViewHelper extends AbstractViewHelper
         $firstResultOnPage = $currentPage * $resultsPerPage + 1;
         $lastResultOnPage = $currentPage * $resultsPerPage + $resultsPerPage;
         $label = LocalizationUtility::translate('displayResults', 'IndexedSearch');
-        return sprintf($label, $firstResultOnPage, min(array($numberOfResults, $lastResultOnPage)), $numberOfResults);
+        return sprintf($label, $firstResultOnPage, min([$numberOfResults, $lastResultOnPage]), $numberOfResults);
     }
 }

@@ -1,5 +1,5 @@
 <?php
-$EM_CONF[$_EXTKEY] = array(
+$EM_CONF[$_EXTKEY] = [
     'title' => 'Extbase Framework for Extensions',
     'description' => 'A framework to build extensions in the style of TYPO3 Flow for TYPO3 CMS.',
     'category' => 'misc',
@@ -10,12 +10,12 @@ $EM_CONF[$_EXTKEY] = array(
     'uploadfolder' => 0,
     'createDirs' => '',
     'clearCacheOnLoad' => 1,
-    'version' => '8.3.0',
-    'constraints' => array(
-        'depends' => array(
-            'typo3' => '8.3.0-8.3.99',
-        ),
-        'conflicts' => array(),
-        'suggests' => array(),
-    ),
-);
+    'version' => '8.4.0',
+    'constraints' => [
+        'depends' => [
+            'typo3' => '8.4.0-8.4.99',
+        ],
+        'conflicts' => [],
+        'suggests' => [],
+    ],
+];

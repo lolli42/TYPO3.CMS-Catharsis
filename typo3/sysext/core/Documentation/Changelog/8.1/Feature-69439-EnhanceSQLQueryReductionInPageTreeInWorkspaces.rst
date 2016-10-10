@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ========================================================================
 Feature: #69439 - Enhance SQL query reduction in page tree in workspaces
 ========================================================================
+
+See :issue:`69439`
 
 Description
 ===========
@@ -26,3 +31,5 @@ Impact
 ======
 
 The hooks introduce the possibility to modify the determined results - only if those hooks are used.
+
+.. index:: Database, LocalConfiguration

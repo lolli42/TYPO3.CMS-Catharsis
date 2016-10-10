@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare(strict_types=1);
 namespace TYPO3\CMS\Core\Tests\Unit\Database\Query\Restriction;
 
 /*
@@ -141,8 +141,8 @@ class FrontendRestrictionContainerTest extends AbstractRestrictionTestCase
                     ],
                 ],
             ],
-            'pages' => array(
-                'ctrl' => array(
+            'pages' => [
+                'ctrl' => [
                     'label' => 'title',
                     'tstamp' => 'tstamp',
                     'sortby' => 'sorting',
@@ -150,15 +150,15 @@ class FrontendRestrictionContainerTest extends AbstractRestrictionTestCase
                     'versioningWS' => true,
                     'origUid' => 't3_origuid',
                     'delete' => 'deleted',
-                    'enablecolumns' => array(
+                    'enablecolumns' => [
                         'disabled' => 'hidden',
                         'starttime' => 'starttime',
                         'endtime' => 'endtime',
                         'fe_group' => 'fe_group'
-                    ),
-                ),
-                'columns' => array()
-            )
+                    ],
+                ],
+                'columns' => []
+            ]
         ];
 
         $pageRepository = $this->createMock(PageRepository::class);

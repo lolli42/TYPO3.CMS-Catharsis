@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Breaking: #73698 - Streamline layout of FlashMessages
 =====================================================
+
+See :issue:`73698`
 
 Description
 ===========
@@ -67,4 +72,4 @@ Migration
 
 No migration needed, the generated output should be as expected. If the rendering is broken please consider about the correct usage of FlashMessages and read the explanation about message types above.
 
-.. index:: fluid
+.. index:: Backend, Fluid

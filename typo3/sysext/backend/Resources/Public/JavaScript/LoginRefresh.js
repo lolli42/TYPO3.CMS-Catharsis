@@ -16,10 +16,12 @@
  * Task that periodically checks if a blocking event in the backend occurred and
  * displays a proper dialog to the user.
  */
-define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Typo3Notification) {
+define(['jquery', 'TYPO3/CMS/Backend/Notification', 'TYPO3/CMS/Rsaauth/RsaEncryptionModule', 'bootstrap'], function($, Typo3Notification, RsaEncryption) {
+	'use strict';
+
 	/**
 	 *
-	 * @type {{identifier: {loginrefresh: string, lockedModal: string, loginFormModal: string}, options: {modalConfig: {backdrop: string}}, webNotification: null, intervalId: null, backendIsLocked: boolean, isTimingOut: boolean, $timeoutModal: string, $backendLockedModal: string, $loginForm: string, loginFramesetUrl: string, logoutUrl: string}}
+	 * @type {{identifier: {loginrefresh: string, lockedModal: string, loginFormModal: string}, options: {modalConfig: {backdrop: string}}, webNotification: null, intervalTime: integer, intervalId: null, backendIsLocked: boolean, isTimingOut: boolean, $timeoutModal: string, $backendLockedModal: string, $loginForm: string, loginFramesetUrl: string, logoutUrl: string}}
 	 * @exports TYPO3/CMS/Backend/LoginRefresh
 	 */
 	var LoginRefresh = {
@@ -34,6 +36,7 @@ define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Ty
 			}
 		},
 		webNotification: null,
+		intervalTime: 60,
 		intervalId: null,
 		backendIsLocked: false,
 		isTimingOut: false,
@@ -53,7 +56,7 @@ define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Ty
 		}
 
 		// set interval to 60 seconds
-		var interval = 1000 * 60;
+		var interval = 1000 * LoginRefresh.intervalTime;
 		LoginRefresh.intervalId = setInterval(LoginRefresh.checkActiveSession, interval);
 	};
 
@@ -83,6 +86,16 @@ define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Ty
 				)
 			)
 		);
+	};
+
+	/**
+	 * Set interval time
+	 *
+	 * @param {integer} intervalTime
+	 */
+	LoginRefresh.setIntervalTime = function(intervalTime) {
+		// To avoid the integer overflow in setInterval, we limit the interval time to be one request per day
+		LoginRefresh.intervalTime = Math.min(intervalTime, 86400);
 	};
 
 	/**
@@ -224,8 +237,11 @@ define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Ty
 					LoginRefresh.$loginForm.find('form').submit();
 				})
 		);
-
-		LoginRefresh.registerDefaultModalEvents(LoginRefresh.$loginForm).on('submit', LoginRefresh.submitForm);
+		var $LoginRefreshForm = LoginRefresh.$loginForm.find('#beLoginRefresh');
+		if (undefined !== RsaEncryption) {
+			RsaEncryption.registerForm($LoginRefreshForm.get(0));
+		}
+		LoginRefresh.registerDefaultModalEvents($LoginRefreshForm).on('submit', LoginRefresh.submitForm);
 
 		$('body').append(LoginRefresh.$loginForm);
 	};
@@ -449,8 +465,7 @@ define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Ty
 		});
 	};
 
-	// initialize and return the LoginRefresh object
-	$(function() {
+	LoginRefresh.initialize = function() {
 		LoginRefresh.initializeTimeoutModal();
 		LoginRefresh.initializeBackendLockedModal();
 		LoginRefresh.initializeLoginForm();
@@ -460,7 +475,7 @@ define(['jquery', 'TYPO3/CMS/Backend/Notification', 'bootstrap'], function($, Ty
 		if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
 			Notification.requestPermission();
 		}
-	});
+	};
 
 	// expose to global
 	TYPO3.LoginRefresh = LoginRefresh;

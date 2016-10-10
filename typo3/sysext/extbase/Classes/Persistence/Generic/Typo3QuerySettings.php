@@ -36,7 +36,7 @@ class Typo3QuerySettings implements QuerySettingsInterface
      *
      * @var array
      */
-    protected $storagePageIds = array();
+    protected $storagePageIds = [];
 
     /**
      * A flag indicating whether all or some enable fields should be ignored. If TRUE, all enable fields are ignored.
@@ -53,7 +53,7 @@ class Typo3QuerySettings implements QuerySettingsInterface
      *
      * @var array
      */
-    protected $enableFieldsToBeIgnored = array();
+    protected $enableFieldsToBeIgnored = [];
 
     /**
      * Flag whether deleted records should be included in the result set.
@@ -94,6 +94,7 @@ class Typo3QuerySettings implements QuerySettingsInterface
      * Flag whether the query should use a prepared statement
      *
      * @var bool
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 9, this option is handled automatically now in the database abstraction
      */
     protected $usePreparedStatement = false;
 
@@ -101,6 +102,7 @@ class Typo3QuerySettings implements QuerySettingsInterface
      * Flag whether the query should be cached using the caching framework
      *
      * @var bool
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, as the database is taking care of query caching
      */
     protected $useQueryCache = true;
 
@@ -340,36 +342,44 @@ class Typo3QuerySettings implements QuerySettingsInterface
     /**
      * @param bool $usePreparedStatement
      * @return QuerySettingsInterface
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 9, this option is handled automatically now in the database abstraction
      */
     public function usePreparedStatement($usePreparedStatement)
     {
+        GeneralUtility::logDeprecatedFunction();
         $this->usePreparedStatement = $usePreparedStatement;
         return $this;
     }
 
     /**
      * @return bool
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 9, this option is handled automatically now in the database abstraction
      */
     public function getUsePreparedStatement()
     {
+        GeneralUtility::logDeprecatedFunction();
         return (bool)$this->usePreparedStatement;
     }
 
     /**
      * @param bool $useQueryCache
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, as the database is taking care of query caching
      * @return QuerySettingsInterface
      */
     public function useQueryCache($useQueryCache)
     {
+        GeneralUtility::logDeprecatedFunction();
         $this->useQueryCache = (bool)$useQueryCache;
         return $this;
     }
 
     /**
      * @return bool
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, as the database is taking care of query caching
      */
     public function getUseQueryCache()
     {
+        GeneralUtility::logDeprecatedFunction();
         return $this->useQueryCache;
     }
 }

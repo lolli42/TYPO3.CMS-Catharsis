@@ -78,13 +78,6 @@ function rawurlencode(str) {
 	return output;
 }
 
-/**
- * Function to similar to PHPs  rawurlencode() which removes TYPO3_SITE_URL;
- */
-function rawurlencodeAndRemoveSiteUrl(str)	{	//
-	var siteUrl = TYPO3.configuration.siteUrl;
-	return rawurlencode(str_replace(siteUrl, "", str));
-}
 
 /**
  * String-replace function
@@ -162,24 +155,8 @@ function getModuleUrl(inUrl)	{	//
 	}
 }
 
-/**
- * Print properties of an object
- */
-function debugObj(obj,name)	{	//
-	var acc;
-	for (var i in obj) {
-		if (obj[i]) {
-			acc+=i+":  "+obj[i]+"\n";
-		}
-	}
-	alert("Object: "+name+"\n\n"+acc);
-}
 
 
 
 	// Used by Frameset Modules
 var currentSubScript = "";
-var currentSubNavScript = "";
-
-	// status of WS FE preview
-var WorkspaceFrontendPreviewEnabled = TYPO3.configuration.workspaceFrontendPreviewEnabled;

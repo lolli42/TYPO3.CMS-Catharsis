@@ -43,7 +43,7 @@ class AjaxRequestHandler
     /**
      * @var array
      */
-    protected $content = array();
+    protected $content = [];
 
     /**
      * @var string
@@ -138,7 +138,7 @@ class AjaxRequestHandler
      */
     public function setContentFormat($format)
     {
-        if (ArrayUtility::inArray(array('plain', 'xml', 'json', 'jsonhead', 'jsonbody', 'javascript'), $format)) {
+        if (ArrayUtility::inArray(['plain', 'xml', 'json', 'jsonhead', 'jsonbody', 'javascript'], $format)) {
             $this->contentFormat = $format;
         }
     }
@@ -217,7 +217,7 @@ class AjaxRequestHandler
         $response = GeneralUtility::makeInstance(Response::class);
         $response = $response
             ->withStatus(500, ' (AJAX)')
-            ->withHeader('Content-type', 'text/xml; charset=utf-8')
+            ->withHeader('Content-Type', 'text/xml; charset=utf-8')
             ->withHeader('X-JSON', 'false');
 
         $response->getBody()->write('<t3err>' . htmlspecialchars($this->errorMessage) . '</t3err>');
@@ -236,7 +236,7 @@ class AjaxRequestHandler
         /** @var Response $response */
         $response = GeneralUtility::makeInstance(Response::class);
         $response = $response
-            ->withHeader('Content-type', 'text/html; charset=utf-8')
+            ->withHeader('Content-Type', 'text/html; charset=utf-8')
             ->withHeader('X-JSON', 'true');
 
         $response->getBody()->write(implode('', $this->content));
@@ -255,7 +255,7 @@ class AjaxRequestHandler
         /** @var Response $response */
         $response = GeneralUtility::makeInstance(Response::class);
         $response = $response
-            ->withHeader('Content-type', 'text/xml; charset=utf-8')
+            ->withHeader('Content-Type', 'text/xml; charset=utf-8')
             ->withHeader('X-JSON', 'true');
 
         $response->getBody()->write(implode('', $this->content));
@@ -279,7 +279,7 @@ class AjaxRequestHandler
     {
         /** @var Response $response */
         $response = GeneralUtility::makeInstance(Response::class);
-        $response = $response->withHeader('Content-type', 'application/json; charset=utf-8');
+        $response = $response->withHeader('Content-Type', 'application/json; charset=utf-8');
 
         $content = json_encode($this->content);
         // Bring content in xhr.responseText except when in "json head only" mode
@@ -302,7 +302,7 @@ class AjaxRequestHandler
     protected function renderAsJavascript()
     {
         $response = GeneralUtility::makeInstance(Response::class);
-        $response = $response->withHeader('Content-type', 'text/html; charset=utf-8');
+        $response = $response->withHeader('Content-Type', 'text/html; charset=utf-8');
         $response->getBody()->write(str_replace('|', json_encode($this->content), $this->javascriptCallbackWrap));
         return $response;
     }

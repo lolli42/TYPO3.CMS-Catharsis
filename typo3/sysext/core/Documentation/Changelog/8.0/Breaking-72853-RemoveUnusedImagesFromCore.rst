@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================
 Breaking: #72853 - Remove unused Images from core
 =================================================
+
+See :issue:`72853`
 
 Description
 ===========
@@ -104,4 +109,4 @@ Migration
 
 No migration
 
-.. index:: icons
+.. index:: Frontend, Backend

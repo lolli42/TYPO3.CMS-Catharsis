@@ -74,7 +74,7 @@ class LinkButton extends AbstractButton implements ButtonInterface
         if (
             trim($this->getHref()) !== ''
             && trim($this->getTitle()) !== ''
-            && $this->getType() === LinkButton::class
+            && $this->getType() === self::class
             && $this->getIcon() !== null
         ) {
             return true;
@@ -89,11 +89,11 @@ class LinkButton extends AbstractButton implements ButtonInterface
      */
     public function render()
     {
-        $attributes = array(
+        $attributes = [
             'href' => $this->getHref(),
             'class' => 'btn btn-default btn-sm ' . $this->getClasses(),
             'title' => $this->getTitle()
-        );
+        ];
         $labelText = '';
         if ($this->showLabelText) {
             $labelText = ' ' . $this->title;

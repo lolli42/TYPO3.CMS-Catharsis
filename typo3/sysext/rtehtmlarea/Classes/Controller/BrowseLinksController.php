@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
@@ -93,27 +94,27 @@ class BrowseLinksController extends AbstractLinkBrowserController
     /**
      * @var array
      */
-    protected $classesAnchorDefault = array();
+    protected $classesAnchorDefault = [];
 
     /**
      * @var array
      */
-    protected $classesAnchorDefaultTitle = array();
+    protected $classesAnchorDefaultTitle = [];
 
     /**
      * @var array
      */
-    protected $classesAnchorClassTitle = array();
+    protected $classesAnchorClassTitle = [];
 
     /**
      * @var array
      */
-    protected $classesAnchorDefaultTarget = array();
+    protected $classesAnchorDefaultTarget = [];
 
     /**
      * @var array
      */
-    protected $classesAnchorJSOptions = array();
+    protected $classesAnchorJSOptions = [];
 
     /**
      * @var string
@@ -123,7 +124,7 @@ class BrowseLinksController extends AbstractLinkBrowserController
     /**
      * @var array
      */
-    protected $additionalAttributes = array();
+    protected $additionalAttributes = [];
 
     /**
      * @var string
@@ -175,7 +176,7 @@ class BrowseLinksController extends AbstractLinkBrowserController
             $this->contentTypo3Language = GeneralUtility::_GP('contentTypo3Language');
             $this->RTEtsConfigParams = GeneralUtility::_GP('RTEtsConfigParams');
         }
-        $pArr[1] = implode(':', array($this->editorNo, $this->contentTypo3Language));
+        $pArr[1] = implode(':', [$this->editorNo, $this->contentTypo3Language]);
         $pArr[2] = $this->RTEtsConfigParams;
         $this->bparams = implode('|', $pArr);
 
@@ -215,6 +216,14 @@ class BrowseLinksController extends AbstractLinkBrowserController
             return;
         }
 
+        if (!empty($this->currentLinkParts['url'])) {
+            $linkService = GeneralUtility::makeInstance(LinkService::class);
+            $data = $linkService->resolve($this->currentLinkParts['url']);
+            $this->currentLinkParts['type'] = $data['type'];
+            unset($data['type']);
+            $this->currentLinkParts['url'] = $data;
+        }
+
         if (!empty($this->currentLinkParts['class'])) {
             // remove required classes
             $currentClasses = GeneralUtility::trimExplode(' ', $this->currentLinkParts['class'], true);
@@ -222,33 +231,6 @@ class BrowseLinksController extends AbstractLinkBrowserController
                 $this->currentLinkParts['class'] = end($currentClasses);
             }
         }
-
-        if (empty($this->currentLinkParts['data-htmlarea-external']) && strpos($this->currentLinkParts['url'], 'mailto:') === false) {
-            // strip siteUrl prefix except for external and mail links
-            $paramsPosition = strpos($this->currentLinkParts['url'], '?');
-            if ($paramsPosition !== false) {
-                $this->currentLinkParts['url'] = substr($this->currentLinkParts['url'], $paramsPosition + 1);
-            }
-            // special treatment for page links, remove the id= part
-            $idPosition = strpos($this->currentLinkParts['url'], 'id=');
-            if ($idPosition !== false) {
-                $this->currentLinkParts['url'] = substr($this->currentLinkParts['url'], $idPosition + 3);
-            }
-
-            // in RTE the additional params are encoded directly at the end of the href part
-            // we need to split this again into dedicated fields
-            $additionalParamsPosition = strpos($this->currentLinkParts['url'], '?');
-            if ($additionalParamsPosition === false) {
-                $additionalParamsPosition = strpos($this->currentLinkParts['url'], '&');
-            }
-            if ($additionalParamsPosition !== false) {
-                $this->currentLinkParts['params'] = substr($this->currentLinkParts['url'], $additionalParamsPosition);
-                $this->currentLinkParts['url'] = substr($this->currentLinkParts['url'], 0, $additionalParamsPosition);
-                // in case the first sign was an ? override it with &
-                $this->currentLinkParts['params'][0] = '&';
-            }
-        }
-
         parent::initCurrentUrl();
     }
 
@@ -465,7 +447,7 @@ class BrowseLinksController extends AbstractLinkBrowserController
      */
     protected function getTargetField()
     {
-        $targetSelectorConfig = array();
+        $targetSelectorConfig = [];
         if (is_array($this->buttonConfig['targetSelector.'])) {
             $targetSelectorConfig = $this->buttonConfig['targetSelector.'];
         }

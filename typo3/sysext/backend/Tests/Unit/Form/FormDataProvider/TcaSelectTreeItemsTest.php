@@ -80,7 +80,6 @@ class TcaSelectTreeItemsTest extends UnitTestCase
 
         /** @var Statement|ObjectProphecy $statementProphet */
         $statementProphet = $this->prophesize(Statement::class);
-        $statementProphet->errorInfo()->shouldBeCalled();
         $statementProphet->fetch()->shouldBeCalled();
 
         $restrictionProphet = $this->prophesize(DefaultRestrictionContainer::class);
@@ -125,7 +124,7 @@ class TcaSelectTreeItemsTest extends UnitTestCase
             ->shouldBeCalled()
             ->willReturn($statementProphet->reveal());
 
-        # Two instances are needed due to the push/pop behavior of addInstance()
+        // Two instances are needed due to the push/pop behavior of addInstance()
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
     }

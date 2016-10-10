@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ================================================
 Breaking: #73044 - JSON for ClickMenu in Backend
 ================================================
+
+See :issue:`73044`
 
 Description
 ===========
@@ -28,4 +33,4 @@ Migration
 
 Adapt the custom code to handle JSON responses instead of XML responses.
 
-.. index:: javascript
+.. index:: JavaScript, Backend

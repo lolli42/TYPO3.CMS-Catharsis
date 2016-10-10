@@ -36,17 +36,17 @@ class FileContentParser
     /**
      * @var array
      */
-    public $app = array();
+    public $app = [];
 
     /**
      * @var array
      */
-    public $ext2itemtype_map = array();
+    public $ext2itemtype_map = [];
 
     /**
      * @var array
      */
-    public $supportedExtensions = array();
+    public $supportedExtensions = [];
 
     /**
      * @var \TYPO3\CMS\IndexedSearch\Indexer
@@ -435,12 +435,11 @@ class FileContentParser
      * Wraps the "splitLabel function" of the language object.
      *
      * @param string $reference: Reference/key of the label
-     * @param bool $useHtmlSpecialChar: Convert special chars to HTML entities (default: FALSE)
      * @return string The label of the reference/key to be fetched
      */
-    protected function sL($reference, $useHtmlSpecialChar = false)
+    protected function sL($reference)
     {
-        return $this->langObject->sL($reference, $useHtmlSpecialChar);
+        return $this->langObject->sL($reference);
     }
 
     /************************
@@ -745,7 +744,7 @@ class FileContentParser
      */
     public function fileContentParts($ext, $absFile)
     {
-        $cParts = array(0);
+        $cParts = [0];
         switch ($ext) {
             case 'pdf':
                 $this->setLocaleForServerFileSystem();
@@ -755,7 +754,7 @@ class FileContentParser
                 $pdfInfo = $this->splitPdfInfo($res);
                 unset($res);
                 if ((int)$pdfInfo['pages']) {
-                    $cParts = array();
+                    $cParts = [];
                     // Calculate mode
                     if ($this->pdf_mode > 0) {
                         $iter = ceil($pdfInfo['pages'] / $this->pdf_mode);
@@ -786,7 +785,7 @@ class FileContentParser
      */
     public function splitPdfInfo($pdfInfoArray)
     {
-        $res = array();
+        $res = [];
         if (is_array($pdfInfoArray)) {
             foreach ($pdfInfoArray as $line) {
                 $parts = explode(':', $line, 2);

@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Backend\Tree;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Imaging\Icon;
 
 /**
  * Representation Tree Node
@@ -43,7 +44,7 @@ class TreeRepresentationNode extends \TYPO3\CMS\Backend\Tree\TreeNode
     /**
      * Node Icon
      *
-     * @var string
+     * @var string | Icon
      */
     protected $icon = '';
 
@@ -72,7 +73,7 @@ class TreeRepresentationNode extends \TYPO3\CMS\Backend\Tree\TreeNode
     }
 
     /**
-     * @param string $icon
+     * @param string|Icon $icon
      * @return void
      */
     public function setIcon($icon)
@@ -81,7 +82,7 @@ class TreeRepresentationNode extends \TYPO3\CMS\Backend\Tree\TreeNode
     }
 
     /**
-     * @return string
+     * @return string|Icon
      */
     public function getIcon()
     {
@@ -151,13 +152,13 @@ class TreeRepresentationNode extends \TYPO3\CMS\Backend\Tree\TreeNode
     public function toArray($addChildNodes = true)
     {
         $arrayRepresentation = parent::toArray();
-        $arrayRepresentation = array_merge($arrayRepresentation, array(
+        $arrayRepresentation = array_merge($arrayRepresentation, [
             'label' => $this->label,
             'type' => $this->type,
             'class' => $this->class,
             'icon' => $this->icon,
             'callbackAction' => $this->callbackAction
-        ));
+        ]);
         return $arrayRepresentation;
     }
 

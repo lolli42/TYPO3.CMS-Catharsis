@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ===============================================================================
 Breaking: #75711 - Removed DB-related methods and TCA-related options from cObj
 ===============================================================================
 
+See :issue:`75711`
+
 Description
 ===========
 
-The following methods have been removed from ``ContentObjectRenderer`` without substitution:
+The following methods have been removed from `ContentObjectRenderer` without substitution:
 
 * DBgetDelete()
 * DBgetUpdate()
@@ -32,3 +37,5 @@ Affected Installations
 ======================
 
 Any TYPO3 installation using DB-related Frontend Administration with the obsolete functionality.
+
+.. index:: PHP-API, TCA, Database

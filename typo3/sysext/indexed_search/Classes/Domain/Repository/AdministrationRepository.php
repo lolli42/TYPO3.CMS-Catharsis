@@ -19,11 +19,12 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Dbal\Database\DatabaseConnection;
 use TYPO3\CMS\IndexedSearch\FileContentParser;
 
 /**
@@ -36,17 +37,17 @@ class AdministrationRepository
      *
      * @var FileContentParser[]
      */
-    public $external_parsers = array();
+    public $external_parsers = [];
 
     /**
      * @var array
      */
-    protected $allPhashListed = array();
+    protected $allPhashListed = [];
 
     /**
      * @var array
      */
-    protected $iconFileNameCache = array();
+    protected $iconFileNameCache = [];
 
     /**
      * Get group list information
@@ -56,15 +57,18 @@ class AdministrationRepository
      */
     public function getGrlistRecord($phash)
     {
-        $db = $this->getDatabaseConnection();
-        $res = $db->exec_SELECTquery('index_grlist.*', 'index_grlist', 'phash=' . (int)$phash);
-        $allRows = array();
-        $numberOfRows = $db->sql_num_rows($res);
-        while ($row = $db->sql_fetch_assoc($res)) {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_grlist');
+        $result = $queryBuilder
+            ->select('*')
+            ->from('index_grlist')
+            ->where($queryBuilder->expr()->eq('phash', (int)$phash))
+            ->execute();
+        $numberOfRows = $result->rowCount();
+        $allRows = [];
+        while ($row = $result->fetch()) {
             $row['pcount'] = $numberOfRows;
             $allRows[] = $row;
         }
-        $db->sql_free_result($res);
         return $allRows;
     }
 
@@ -76,7 +80,13 @@ class AdministrationRepository
      */
     public function getNumberOfFulltextRecords($phash)
     {
-        return $this->getDatabaseConnection()->exec_SELECTcountRows('phash', 'index_fulltext', 'phash=' . (int)$phash);
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_fulltext');
+        return $queryBuilder
+            ->count('phash')
+            ->from('index_fulltext')
+            ->where($queryBuilder->expr()->eq('phash', (int)$phash))
+            ->execute()
+            ->fetchColumn(0);
     }
 
     /**
@@ -87,7 +97,13 @@ class AdministrationRepository
      */
     public function getNumberOfWords($phash)
     {
-        return $this->getDatabaseConnection()->exec_SELECTcountRows('*', 'index_rel', 'phash=' . (int)$phash);
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_rel');
+        return $queryBuilder
+            ->count('*')
+            ->from('index_rel')
+            ->where($queryBuilder->expr()->eq('phash', (int)$phash))
+            ->execute()
+            ->fetchColumn(0);
     }
 
     /**
@@ -97,36 +113,63 @@ class AdministrationRepository
      */
     public function getExternalDocumentsStatistic()
     {
-        $result = array();
+        $result = [];
 
-        $db = $this->getDatabaseConnection();
-        $res = $db->exec_SELECTquery(
-            'count(*) AS pcount,index_phash.*',
-            'index_phash',
-            'item_type<>\'0\'',
-            'phash_grouping,phash,cHashParams,data_filename,data_page_id,data_page_reg1,data_page_type,data_page_mp,gr_list,item_type,item_title,item_description,item_mtime,tstamp,item_size,contentHash,crdate,parsetime,sys_language_uid,item_crdate,externalUrl,recordUid,freeIndexUid,freeIndexSetId',
-            'item_type'
-        );
-        while ($row = $db->sql_fetch_assoc($res)) {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_phash');
+        $res = $queryBuilder
+            ->select('index_phash.*')
+            ->addSelectLiteral($queryBuilder->expr()->count('*', 'pcount'))
+            ->from('index_phash')
+            ->where($queryBuilder->expr()->neq('item_type', 0))
+            ->groupBy(
+                'phash_grouping',
+                'phash',
+                'cHashParams',
+                'data_filename',
+                'data_page_id',
+                'data_page_reg1',
+                'data_page_type',
+                'data_page_mp',
+                'gr_list',
+                'item_type',
+                'item_title',
+                'item_description',
+                'item_mtime',
+                'tstamp',
+                'item_size',
+                'contentHash',
+                'crdate',
+                'parsetime',
+                'sys_language_uid',
+                'item_crdate',
+                'externalUrl',
+                'recordUid',
+                'freeIndexUid',
+                'freeIndexSetId'
+            )
+            ->orderBy('item_type')
+            ->execute();
+
+        while ($row = $res->fetch()) {
             $this->addAdditionalInformation($row);
 
             $result[] = $row;
 
             if ($row['pcount'] > 1) {
-                $res2 = $db->exec_SELECTquery(
-                    'index_phash.*',
-                    'index_phash',
-                    'phash_grouping=' . (int)$row['phash_grouping'] . ' AND phash<>' . (int)$row['phash']
-                );
-                while ($row2 = $db->sql_fetch_assoc($res2)) {
+                $res2 = $queryBuilder
+                    ->select('*')
+                    ->from('index_phash')
+                    ->where(
+                        $queryBuilder->expr()->eq('phash_grouping', (int)$row['phash_grouping']),
+                        $queryBuilder->expr()->neq('phash', (int)$row['phash'])
+                    )
+                    ->execute();
+                while ($row2 = $res2->fetch()) {
                     $this->addAdditionalInformation($row2);
                     $result[] = $row2;
                 }
-                $db->sql_free_result($res2);
             }
         }
-        $db->sql_free_result($res);
-
         return $result;
     }
 
@@ -137,17 +180,22 @@ class AdministrationRepository
      */
     public function getRecordsNumbers()
     {
-        $tables = array(
+        $tables = [
             'index_phash',
             'index_words',
             'index_rel',
             'index_grlist',
             'index_section',
             'index_fulltext',
-        );
-        $recordList = array();
+        ];
+        $recordList = [];
         foreach ($tables as $tableName) {
-            $recordList[$tableName] = $this->getDatabaseConnection()->exec_SELECTcountRows('*', $tableName);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($tableName);
+            $recordList[$tableName] = $queryBuilder
+                ->count('*')
+                ->from($tableName)
+                ->execute()
+                ->fetchColumn(0);
         }
         return $recordList;
     }
@@ -159,29 +207,35 @@ class AdministrationRepository
      */
     public function getPageHashTypes()
     {
-        $counts = array();
-        $types = array(
+        $counts = [];
+        $types = [
             'html' => 1,
             'htm' => 1,
             'pdf' => 2,
             'doc' => 3,
             'txt' => 4
-        );
+        ];
         $revTypes = array_flip($types);
         $revTypes[0] = 'TYPO3 page';
-        $db = $this->getDatabaseConnection();
-        $res = $db->exec_SELECTquery('count(*),item_type', 'index_phash', '', 'item_type', 'item_type');
-        while ($row = $db->sql_fetch_row($res)) {
-            $itemType = $row[1];
-            $counts[] = array(
-                'count' => $row[0],
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_phash');
+        $res = $queryBuilder
+            ->select('item_type')
+            ->addSelectLiteral($queryBuilder->expr()->count('*', 'count'))
+            ->from('index_phash')
+            ->groupBy('item_type')
+            ->orderBy('item_type')
+            ->execute();
+
+        while ($row = $res->fetch()) {
+            $itemType = $row['item_type'];
+            $counts[] = [
+                'count' => $row['count'],
                 'name' => $revTypes[$itemType],
                 'type' => $itemType,
                 'uniqueCount' => $this->countUniqueTypes($itemType),
-            );
+            ];
         }
-        $db->sql_free_result($res);
-
         return $counts;
     }
 
@@ -193,18 +247,14 @@ class AdministrationRepository
      */
     protected function countUniqueTypes($itemType)
     {
-        $db = $this->getDatabaseConnection();
-        $res = $db->exec_SELECTquery(
-            'count(*)',
-            'index_phash',
-            'item_type=' . $db->fullQuoteStr($itemType, 'index_phash'),
-            'phash_grouping'
-        );
-        $items = array();
-        while ($row = $db->sql_fetch_row($res)) {
-            $items[] = $row;
-        }
-        $db->sql_free_result($res);
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_phash');
+        $items = $queryBuilder
+            ->count('*')
+            ->from('index_phash')
+            ->where($queryBuilder->expr()->eq('item_type', $queryBuilder->createNamedParameter($itemType)))
+            ->groupBy('phash_grouping')
+            ->execute()
+            ->fetchAll();
 
         return count($items);
     }
@@ -217,7 +267,13 @@ class AdministrationRepository
      */
     public function getNumberOfSections($pageHash)
     {
-        return $this->getDatabaseConnection()->exec_SELECTcountRows('phash', 'index_section', 'phash=' . (int)$pageHash);
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_section');
+        return (int)$queryBuilder
+            ->count('phash')
+            ->from('index_section')
+            ->where($queryBuilder->expr()->eq('phash', (int)$pageHash))
+            ->execute()
+            ->fetchColumn(0);
     }
 
     /**
@@ -227,34 +283,61 @@ class AdministrationRepository
      */
     public function getPageStatistic()
     {
-        $result = array();
-        $db = $this->getDatabaseConnection();
-        $res = $db->exec_SELECTquery(
-            'count(*) AS pcount,index_phash.*',
-            'index_phash',
-            'data_page_id<>0',
-            'phash_grouping,phash,cHashParams,data_filename,data_page_id,data_page_reg1,data_page_type,data_page_mp,gr_list,item_type,item_title,item_description,item_mtime,tstamp,item_size,contentHash,crdate,parsetime,sys_language_uid,item_crdate,externalUrl,recordUid,freeIndexUid,freeIndexSetId',
-            'data_page_id'
-        );
-        while ($row = $db->sql_fetch_assoc($res)) {
+        $result = [];
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_phash');
+        $res = $queryBuilder
+            ->select('index_phash.*')
+            ->addSelectLiteral($queryBuilder->expr()->count('*', 'pcount'))
+            ->from('index_phash')
+            ->where($queryBuilder->expr()->neq('data_page_id', 0))
+            ->groupBy(
+                'phash_grouping',
+                'phash',
+                'cHashParams',
+                'data_filename',
+                'data_page_id',
+                'data_page_reg1',
+                'data_page_type',
+                'data_page_mp',
+                'gr_list',
+                'item_type',
+                'item_title',
+                'item_description',
+                'item_mtime',
+                'tstamp',
+                'item_size',
+                'contentHash',
+                'crdate',
+                'parsetime',
+                'sys_language_uid',
+                'item_crdate',
+                'externalUrl',
+                'recordUid',
+                'freeIndexUid',
+                'freeIndexSetId'
+            )
+            ->orderBy('data_page_id')
+            ->execute();
+
+        while ($row = $res->fetch()) {
             $this->addAdditionalInformation($row);
             $result[] = $row;
 
             if ($row['pcount'] > 1) {
-                $res2 = $db->exec_SELECTquery(
-                    'index_phash.*',
-                    'index_phash',
-                    'phash_grouping=' . (int)$row['phash_grouping'] . ' AND phash<>' . (int)$row['phash']
-                );
-                while ($row2 = $db->sql_fetch_assoc($res2)) {
+                $res2 = $queryBuilder
+                    ->select('*')
+                    ->from('index_phash')
+                    ->where(
+                        $queryBuilder->expr()->eq('phash_grouping', (int)$row['phash_grouping']),
+                        $queryBuilder->expr()->neq('phash', (int)$row['phash'])
+                    )
+                    ->execute();
+                while ($row2 = $res2->fetch()) {
                     $this->addAdditionalInformation($row2);
                     $result[] = $row2;
                 }
-                $db->sql_free_result($res2);
             }
         }
-        $db->sql_free_result($res);
-
         return $result;
     }
 
@@ -268,46 +351,34 @@ class AdministrationRepository
      */
     public function getGeneralSearchStatistic($additionalWhere, $pageUid, $max = 50)
     {
-        $queryParts = array(
-            'SELECT' => 'word, COUNT(*) AS c',
-            'FROM' => 'index_stat_word',
-            'WHERE' => sprintf('pageid= %d ' . $additionalWhere, $pageUid),
-            'GROUPBY' => 'word',
-            'ORDERBY' => '',
-            'LIMIT' => (int)$max
-        );
-        $db = $this->getDatabaseConnection();
-        $res = $db->exec_SELECTquery(
-            $queryParts['SELECT'],
-            $queryParts['FROM'],
-            $queryParts['WHERE'],
-            $queryParts['GROUPBY'],
-            $queryParts['ORDERBY'],
-            $queryParts['LIMIT']
-        );
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('index_stat_word');
+        $queryBuilder
+            ->select('word')
+            ->from('index_stat_word')
+            ->addSelectLiteral($queryBuilder->expr()->count('*', 'c'))
+            ->where($queryBuilder->expr()->eq('pageid', (int)$pageUid))
+            ->groupBy('word')
+            ->setMaxResults((int)$max);
 
-        $count = 0;
-        if ($res) {
-            $count = $db->sql_num_rows($res);
+        if (!empty($additionalWhere)) {
+            $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($additionalWhere));
         }
 
-        $db->sql_free_result($res);
+        $result = $queryBuilder->execute();
+        $count = (int)$result->rowCount();
+        $result->closeCursor();
 
         // exist several statistics for this page?
-        if ($count == 0) {
+        if ($count === 0) {
             // Limit access to pages of the current site
-            $secureAddWhere = ' AND pageid IN (' . $this->extGetTreeList((int)$pageUid, 100, 0, '1=1') . ') ';
-            $queryParts['WHERE'] = '1=1 ' . $additionalWhere . $secureAddWhere;
+            $queryBuilder->where(
+                $queryBuilder->expr()->in('pageid', $this->extGetTreeList((int)$pageUid, 100, 0, '1=1')),
+                QueryHelper::stripLogicalOperatorPrefix($additionalWhere)
+            );
         }
 
-        return $db->exec_SELECTgetRows(
-            $queryParts['SELECT'],
-            $queryParts['FROM'],
-            $queryParts['WHERE'],
-            $queryParts['GROUPBY'],
-            $queryParts['ORDERBY'],
-            $queryParts['LIMIT']
-        );
+        return $queryBuilder->execute()->fetchAll();
     }
 
     /**
@@ -338,7 +409,7 @@ class AdministrationRepository
      */
     public function getTree($pageId, $depth = 4, $mode)
     {
-        $allLines = array();
+        $allLines = [];
         $pageRecord = BackendUtility::getRecord('pages', (int)$pageId);
         if (!$pageRecord) {
             return $allLines;
@@ -349,60 +420,146 @@ class AdministrationRepository
         $tree->init('AND ' . $perms_clause);
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
         $HTML = '<span title="' . htmlspecialchars($pageRecord['title']) . '">' . $iconFactory->getIconForRecord('pages', $pageRecord, Icon::SIZE_SMALL)->render() . '</span>';
-        $tree->tree[] = array(
+        $tree->tree[] = [
             'row' => $pageRecord,
             'HTML' => $HTML
-        );
+        ];
 
         if ($depth > 0) {
             $tree->getTree((int)$pageId, $depth, '');
         }
-        $db = $this->getDatabaseConnection();
+
         foreach ($tree->tree as $singleLine) {
-            $res = $db->exec_SELECTquery(
-                'ISEC.phash_t3, ISEC.rl0, ISEC.rl1, ISEC.rl2, ISEC.page_id, ISEC.uniqid, ' .
-                'IP.phash, IP.phash_grouping, IP.cHashParams, IP.data_filename, IP.data_page_id, ' .
-                'IP.data_page_reg1, IP.data_page_type, IP.data_page_mp, IP.gr_list, IP.item_type, ' .
-                'IP.item_title, IP.item_description, IP.item_mtime, IP.tstamp, IP.item_size, ' .
-                'IP.contentHash, IP.crdate, IP.parsetime, IP.sys_language_uid, IP.item_crdate, ' .
-                'IP.externalUrl, IP.recordUid, IP.freeIndexUid, IP.freeIndexSetId, count(*) AS count_val',
-                'index_phash IP, index_section ISEC',
-                'IP.phash = ISEC.phash AND ISEC.page_id = ' . (int)$singleLine['row']['uid'],
-                'IP.phash,IP.phash_grouping,IP.cHashParams,IP.data_filename,IP.data_page_id,IP.data_page_reg1,IP.data_page_type,IP.data_page_mp,IP.gr_list,IP.item_type,IP.item_title,IP.item_description,IP.item_mtime,IP.tstamp,IP.item_size,IP.contentHash,IP.crdate,IP.parsetime,IP.sys_language_uid,IP.item_crdate,ISEC.phash,ISEC.phash_t3,ISEC.rl0,ISEC.rl1,ISEC.rl2,ISEC.page_id,ISEC.uniqid,IP.externalUrl,IP.recordUid,IP.freeIndexUid,IP.freeIndexSetId',
-                'IP.item_type, IP.tstamp',
-                10 + 1
-            );
-            $lines = array();
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_phash');
+            $result = $queryBuilder->select(
+                'ISEC.phash_t3',
+                'ISEC.rl0',
+                'ISEC.rl1',
+                'ISEC.rl2',
+                'ISEC.page_id',
+                'ISEC.uniqid',
+                'IP.phash',
+                'IP.phash_grouping',
+                'IP.cHashParams',
+                'IP.data_filename',
+                'IP.data_page_id',
+                'IP.data_page_reg1',
+                'IP.data_page_type',
+                'IP.data_page_mp',
+                'IP.gr_list',
+                'IP.item_type',
+                'IP.item_title',
+                'IP.item_description',
+                'IP.item_mtime',
+                'IP.tstamp',
+                'IP.item_size',
+                'IP.contentHash',
+                'IP.crdate',
+                'IP.parsetime',
+                'IP.sys_language_uid',
+                'IP.item_crdate',
+                'IP.externalUrl',
+                'IP.recordUid',
+                'IP.freeIndexUid',
+                'IP.freeIndexSetId'
+            )
+            ->addSelectLiteral($queryBuilder->expr()->count('*', 'count_val'))
+            ->from('index_phash', 'IP')
+            ->from('index_section', 'ISEC')
+            ->where(
+                $queryBuilder->expr()->eq('IP.phash', $queryBuilder->quoteIdentifier('ISEC.phash')),
+                $queryBuilder->expr()->eq('ISEC.page_id', (int)$singleLine['row']['uid'])
+            )
+            ->groupBy(
+                'IP.phash',
+                'IP.phash_grouping',
+                'IP.cHashParams',
+                'IP.data_filename',
+                'IP.data_page_id',
+                'IP.data_page_reg1',
+                'IP.data_page_type',
+                'IP.data_page_mp',
+                'IP.gr_list',
+                'IP.item_type',
+                'IP.item_title',
+                'IP.item_description',
+                'IP.item_mtime',
+                'IP.tstamp',
+                'IP.item_size',
+                'IP.contentHash',
+                'IP.crdate',
+                'IP.parsetime',
+                'IP.sys_language_uid',
+                'IP.item_crdate',
+                'ISEC.phash',
+                'ISEC.phash_t3',
+                'ISEC.rl0',
+                'ISEC.rl1',
+                'ISEC.rl2',
+                'ISEC.page_id',
+                'ISEC.uniqid',
+                'IP.externalUrl',
+                'IP.recordUid',
+                'IP.freeIndexUid',
+                'IP.freeIndexSetId'
+            )
+            ->orderBy('IP.item_type')
+            ->addOrderBy('IP.tstamp')
+            ->setMaxResults(11)
+            ->execute();
+
+            $lines = [];
             // Collecting phash values (to remove local indexing for)
             // Traverse the result set of phash rows selected:
-            while ($row = $db->sql_fetch_assoc($res)) {
-                $this->allPhashListed[] = $row['phash'];
-                // Adds a display row:
+            while ($row = $result->fetch()) {
                 $row['icon'] = $this->makeItemTypeIcon($row['item_type']);
-                $row['wordCount'] = count($db->exec_SELECTgetRows(
-                    'index_words.baseword, index_rel.*',
-                    'index_rel, index_words',
-                    'index_rel.phash = ' . (int)$row['phash'] . ' AND index_words.wid = index_rel.wid',
-                    '',
-                    '',
-                    '',
-                    'baseword'
-                ));
+                $this->allPhashListed[] = $row['phash'];
+
+                // Adds a display row:
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable('index_rel');
+                $wordCountResult = $queryBuilder->count('index_words.baseword')
+                    ->from('index_rel')
+                    ->from('index_words')
+                    ->where(
+                        $queryBuilder->expr()->eq('index_rel.phash', (int)$row['phash']),
+                        $queryBuilder->expr()->eq('index_words.wid', $queryBuilder->quoteIdentifier('index_rel.wid'))
+                    )
+                    ->groupBy('index_words.baseword')
+                    ->execute();
+
+                $row['wordCount'] = $wordCountResult->rowCount();
+                $wordCountResult->closeCursor();
 
                 if ($mode === 'content') {
-                    $row['fulltextData'] = $db->exec_SELECTgetSingleRow(
-                        '*',
-                        'index_fulltext',
-                        'phash = ' . $row['phash']);
-                    $wordRecords = $db->exec_SELECTgetRows(
-                        'index_words.baseword, index_rel.*',
-                        'index_rel, index_words',
-                        'index_rel.phash = ' . (int)$row['phash'] . ' AND index_words.wid = index_rel.wid',
-                        '', '', '', 'baseword');
+                    $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getQueryBuilderForTable('index_fulltext');
+                    $row['fulltextData'] = $queryBuilder->select('*')
+                        ->from('index_fulltext')
+                        ->where($queryBuilder->expr()->eq('phash', (int)$row['phash']))
+                        ->setMaxResults(1)
+                        ->execute()
+                        ->fetch();
+
+                    $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getQueryBuilderForTable('index_rel');
+                    $wordRecords = $queryBuilder->select('index_words.baseword')
+                        ->from('index_rel')
+                        ->from('index_words')
+                        ->where(
+                            $queryBuilder->expr()->eq('index_rel.phash', (int)$row['phash']),
+                            $queryBuilder->expr()->eq(
+                                'index_words.wid',
+                                $queryBuilder->quoteIdentifier('index_rel.wid')
+                            )
+                        )
+                        ->groupBy('index_words.baseword')
+                        ->orderBy('index_words.baseword')
+                        ->execute()
+                        ->fetchAll();
+
                     if (is_array($wordRecords)) {
-                        $indexed_words = array_keys($wordRecords);
-                        sort($indexed_words);
-                        $row['allWords'] = $indexed_words;
+                        $row['allWords'] = array_column($wordRecords, 'baseword');
                     }
                 }
 
@@ -428,7 +585,8 @@ class AdministrationRepository
      */
     protected function extGetTreeList($id, $depth, $begin = 0, $perms_clause)
     {
-        $list = GeneralUtility::makeInstance(FrontendBackendUserAuthentication::class)->extGetTreeList($id, $depth, $begin, $perms_clause);
+        $list = GeneralUtility::makeInstance(FrontendBackendUserAuthentication::class)
+            ->extGetTreeList($id, $depth, $begin, $perms_clause);
 
         if (empty($list)) {
             $list = $id;
@@ -452,21 +610,27 @@ class AdministrationRepository
         if ($phashList === 'ALL') {
             $this->getTree($pageId, $depth, '');
             $phashRows = $this->allPhashListed;
-            $this->allPhashListed = array();
+            $this->allPhashListed = [];
         } else {
             $phashRows = GeneralUtility::trimExplode(',', $phashList, true);
         }
 
-        $db = $this->getDatabaseConnection();
         foreach ($phashRows as $phash) {
             $phash = (int)$phash;
             if ($phash > 0) {
-                $idList = array();
-                $res = $db->exec_SELECTquery('page_id', 'index_section', 'phash=' . $phash);
-                while ($row = $db->sql_fetch_assoc($res)) {
+                $idList = [];
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable('index_section');
+                $res = $queryBuilder
+                    ->select('page_id')
+                    ->from('index_section')
+                    ->where(
+                        $queryBuilder->expr()->eq('phash', (int)$phash)
+                    )
+                    ->execute();
+                while ($row = $res->fetch()) {
                     $idList[] = (int)$row['page_id'];
                 }
-                $db->sql_free_result($res);
 
                 if (!empty($idList)) {
                     /** @var FrontendInterface $pageCache */
@@ -477,9 +641,18 @@ class AdministrationRepository
                 }
 
                 // Removing old registrations for all tables.
-                $tableArr = array('index_phash', 'index_rel', 'index_section', 'index_grlist', 'index_fulltext', 'index_debug');
+                $tableArr = [
+                    'index_phash',
+                    'index_rel',
+                    'index_section',
+                    'index_grlist',
+                    'index_fulltext',
+                    'index_debug'
+                ];
                 foreach ($tableArr as $table) {
-                    $db->exec_DELETEquery($table, 'phash=' . $phash);
+                    GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getConnectionForTable($table)
+                        ->delete($table, ['phash' => (int)$phash]);
                 }
             }
         }
@@ -494,10 +667,12 @@ class AdministrationRepository
     public function saveStopWords(array $words)
     {
         foreach ($words as $wid => $state) {
-            $fieldArray = array(
-                'is_stopword' => (int)$state
-            );
-            $this->getDatabaseConnection()->exec_UPDATEquery('index_words', 'wid=' . (int)$wid, $fieldArray);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('index_words');
+            $queryBuilder
+                ->update('index_words')
+                ->set('is_stopword', (int)$state)
+                ->where($queryBuilder->expr()->eq('wid', (int)$wid))
+                ->execute();
         }
     }
 
@@ -525,10 +700,10 @@ class AdministrationRepository
             }
         }
         // Compile new list:
-        $data = array();
+        $data = [];
         $data['pages'][$pageId]['keywords'] = implode(', ', array_keys($keywords));
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->start($data, array());
+        $dataHandler->start($data, []);
         $dataHandler->process_datamap();
     }
 
@@ -550,14 +725,6 @@ class AdministrationRepository
             $this->iconFileNameCache[$itemType] = $icon;
         }
         return $this->iconFileNameCache[$itemType];
-    }
-
-    /**
-     * @return DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 
     /**

@@ -35,13 +35,13 @@ class Configuration
      */
     public static function create()
     {
-        return \TYPO3\CMS\Form\Utility\FormUtility::getObjectManager()->get(Configuration::class);
+        return \TYPO3\CMS\Form\Utility\FormUtility::getObjectManager()->get(self::class);
     }
 
     /**
      * @var array
      */
-    protected $typoScript = array();
+    protected $typoScript = [];
 
     /**
      * @var bool

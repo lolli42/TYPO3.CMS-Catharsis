@@ -29,8 +29,10 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Backend\View\PageLayoutView;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -200,28 +202,29 @@ class PageLayoutController
      *
      * @var array
      */
-    public $MCONF = array();
+    public $MCONF = [];
 
     /**
      * Menu configuration
      *
      * @var array
      */
-    public $MOD_MENU = array();
+    public $MOD_MENU = [];
 
     /**
      * Module settings (session variable)
      *
      * @var array
      */
-    public $MOD_SETTINGS = array();
+    public $MOD_SETTINGS = [];
 
     /**
      * Array of tables to be listed by the Web > Page module in addition to the default tables
      *
      * @var array
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
-    public $externalTables = array();
+    public $externalTables = [];
 
     /**
      * Module output accumulation
@@ -241,7 +244,7 @@ class PageLayoutController
     /**
      * @var array
      */
-    protected $eRParts = array();
+    protected $eRParts = [];
 
     /**
      * @var string
@@ -278,15 +281,7 @@ class PageLayoutController
      *
      * @var array
      */
-    protected $languagesInColumnCache = array();
-
-    /**
-     * Caches the amount of content elements as a matrix
-     *
-     * @var array
-     * @internal
-     */
-    public $contentElementCache = array();
+    protected $languagesInColumnCache = [];
 
     /**
      * @var IconFactory
@@ -367,17 +362,17 @@ class PageLayoutController
     {
         $lang = $this->getLanguageService();
         // MENU-ITEMS:
-        $this->MOD_MENU = array(
+        $this->MOD_MENU = [
             'tt_content_showHidden' => '',
-            'function' => array(
+            'function' => [
                 0 => $lang->getLL('m_function_0'),
                 1 => $lang->getLL('m_function_1'),
                 2 => $lang->getLL('m_function_2')
-            ),
-            'language' => array(
+            ],
+            'language' => [
                 0 => $lang->getLL('m_default')
-            )
-        );
+            ]
+        ];
         // initialize page/be_user TSconfig settings
         $this->modSharedTSconfig = BackendUtility::getModTSconfig($this->id, 'mod.SHARED');
         $this->modTSconfig = BackendUtility::getModTSconfig($this->id, 'mod.' . $this->moduleName);
@@ -388,6 +383,12 @@ class PageLayoutController
         //              'fList' =>  'title,description,image',
         //              'icon' => TRUE));
         if (is_array($this->externalTables)) {
+            if (!empty($this->externalTables)) {
+                GeneralUtility::deprecationLog('The rendering of records in the page module by using '
+                    . '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'cms\'][\'db_layout\'][\'addTables\']'
+                    . ' has been deprecated since TYPO3 CMS 8 and will be removed in TYPO3 CMS 9.'
+                );
+            }
             foreach ($this->externalTables as $table => $tableSettings) {
                 // delete the default settings from above
                 if (is_array($this->MOD_MENU[$table])) {
@@ -401,10 +402,43 @@ class PageLayoutController
             }
         }
         // First, select all pages_language_overlay records on the current page. Each represents a possibility for a language on the page. Add these to language selector.
-        $res = $this->exec_languageQuery($this->id);
-        while ($lRow = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_language');
+        $queryBuilder->getRestrictions()->removeAll();
+        if ($this->id) {
+            $queryBuilder->select('sys_language.uid AS uid', 'sys_language.title AS title')
+                ->from('sys_language')
+                ->join(
+                    'sys_language',
+                    'pages_language_overlay',
+                    'pages_language_overlay',
+                    $queryBuilder->expr()->eq('sys_language.uid', $queryBuilder->quoteIdentifier('pages_language_overlay.sys_language_uid'))
+                )
+                ->where(
+                    $queryBuilder->expr()->eq('pages_language_overlay.deleted', 0),
+                    $queryBuilder->expr()->eq('pages_language_overlay.pid', (int)$this->id),
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->gte('pages_language_overlay.t3ver_state', (int)(new VersionState(VersionState::DEFAULT_STATE))),
+                        $queryBuilder->expr()->eq('pages_language_overlay.t3ver_wsid', (int)$this->getBackendUser()->workspace)
+                    )
+                )
+                ->groupBy('pages_language_overlay.sys_language_uid', 'sys_language.uid', 'sys_language.pid',
+                    'sys_language.tstamp', 'sys_language.hidden', 'sys_language.title',
+                    'sys_language.language_isocode', 'sys_language.static_lang_isocode', 'sys_language.flag')
+                ->orderBy('sys_language.sorting');
+            if (!$this->getBackendUser()->isAdmin()) {
+                $queryBuilder->andWhere($queryBuilder->expr()->eq('sys_language.hidden', 0));
+            }
+            $statement = $queryBuilder->execute();
+        } else {
+            $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(HiddenRestriction::class));
+            $statement = $queryBuilder->select('uid', 'title')
+                ->from('sys_language')
+                ->orderBy('sorting')
+                ->execute();
+        }
+        while ($lRow = $statement->fetch()) {
             if ($this->getBackendUser()->checkLanguageAccess($lRow['uid'])) {
-                $this->MOD_MENU['language'][$lRow['uid']] = $lRow['hidden'] ? '(' . $lRow['title'] . ')' : $lRow['title'];
+                $this->MOD_MENU['language'][$lRow['uid']] = $lRow['title'];
             }
         }
         // Setting alternative default label:
@@ -428,13 +462,23 @@ class PageLayoutController
      */
     protected function makeActionMenu()
     {
-        $availableActionArray = array(
+        $availableActionArray = [
             0 => $this->getLanguageService()->getLL('m_function_0'),
             1 => $this->getLanguageService()->getLL('m_function_1'),
             2 => $this->getLanguageService()->getLL('m_function_2')
-        );
+        ];
         // Find if there are ANY languages at all (and if not, remove the language option from function menu).
-        $count = $this->getDatabaseConnection()->exec_SELECTcountRows('uid', 'sys_language', $this->getBackendUser()->isAdmin() ? '' : 'hidden=0');
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_language');
+        if ($this->getBackendUser()->isAdmin()) {
+            $queryBuilder->getRestrictions()->removeAll();
+        }
+
+        $count = $queryBuilder
+            ->count('uid')
+            ->from('sys_language')
+            ->execute()
+            ->fetchColumn(0);
+
         if (!$count) {
             unset($availableActionArray['2']);
         }
@@ -484,7 +528,7 @@ class PageLayoutController
     {
         if ($this->clear_cache && !empty($this->pageinfo)) {
             $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $dataHandler->start(array(), array());
+            $dataHandler->start([], []);
             $dataHandler->clear_cacheCmd($this->id);
         }
     }
@@ -499,6 +543,9 @@ class PageLayoutController
         $content = '';
         $lang = $this->getLanguageService();
 
+        $view = GeneralUtility::makeInstance(StandaloneView::class);
+        $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/InfoBox.html'));
+
         // If page is a folder
         if ($this->pageinfo['doktype'] == PageRepository::DOKTYPE_SYSFOLDER) {
             $moduleLoader = GeneralUtility::makeInstance(ModuleLoader::class);
@@ -508,30 +555,92 @@ class PageLayoutController
                 $title = $lang->getLL('goToListModule');
                 $message = '<p>' . $lang->getLL('goToListModuleMessage') . '</p>';
                 $message .= '<a class="btn btn-info" href="javascript:top.goToModule(\'web_list\',1);">' . $lang->getLL('goToListModule') . '</a>';
-                $view = GeneralUtility::makeInstance(StandaloneView::class);
-                $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/InfoBox.html'));
-                $view->assignMultiple(array(
+                $view->assignMultiple([
                     'title' => $title,
                     'message' => $message,
                     'state' => InfoboxViewHelper::STATE_INFO
-                ));
+                ]);
                 $content .= $view->render();
+            }
+        } elseif ($this->pageinfo['doktype'] === PageRepository::DOKTYPE_SHORTCUT) {
+            $shortcutMode = (int)$this->pageinfo['shortcut_mode'];
+            $pageRepository = GeneralUtility::makeInstance(PageRepository::class);
+            $targetPage = [];
+
+            if ($this->pageinfo['shortcut'] || $shortcutMode) {
+                switch ($shortcutMode) {
+                    case PageRepository::SHORTCUT_MODE_NONE:
+                        $targetPage = $pageRepository->getPage($this->pageinfo['shortcut']);
+                        break;
+                    case PageRepository::SHORTCUT_MODE_FIRST_SUBPAGE:
+                        $targetPage = reset($pageRepository->getMenu($this->pageinfo['shortcut'] ?: $this->pageinfo['uid']));
+                        break;
+                    case PageRepository::SHORTCUT_MODE_PARENT_PAGE:
+                        $targetPage = $pageRepository->getPage($this->pageinfo['pid']);
+                        break;
+                }
+
+                $message = '';
+                if ($shortcutMode === PageRepository::SHORTCUT_MODE_RANDOM_SUBPAGE) {
+                    $message .= sprintf($lang->getLL('pageIsRandomInternalLinkMessage'));
+                } else {
+                    $linkToPid = $this->local_linkThisScript(['id' => $targetPage['uid']]);
+                    $path = BackendUtility::getRecordPath($targetPage['uid'], $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW), 1000);
+                    $linkedPath = '<a href="' . $linkToPid . '">' . htmlspecialchars($path) . '</a>';
+                    $message .= sprintf($lang->getLL('pageIsInternalLinkMessage'), $linkedPath);
+                }
+
+                $message .= ' (' . htmlspecialchars($lang->sL(BackendUtility::getLabelFromItemlist('pages', 'shortcut_mode', $shortcutMode))) . ')';
+
+                $view->assignMultiple([
+                    'title' => $this->pageinfo['title'],
+                    'message' => $message,
+                    'state' => InfoboxViewHelper::STATE_INFO
+                ]);
+                $content .= $view->render();
+            } else {
+                if (empty($targetPage) && $shortcutMode !== PageRepository::SHORTCUT_MODE_RANDOM_SUBPAGE) {
+                    $view->assignMultiple([
+                        'title' => $this->pageinfo['title'],
+                        'message' => $lang->getLL('pageIsMisconfiguredInternalLinkMessage'),
+                        'state' => InfoboxViewHelper::STATE_ERROR
+                    ]);
+                    $content .= $view->render();
+                }
+            }
+        } elseif ($this->pageinfo['doktype'] === PageRepository::DOKTYPE_LINK) {
+            if (empty($this->pageinfo['url'])) {
+                $view->assignMultiple([
+                    'title' => $this->pageinfo['title'],
+                    'message' => $lang->getLL('pageIsMisconfiguredExternalLinkMessage'),
+                    'state' => InfoboxViewHelper::STATE_ERROR
+                ]);
+                $content .= $view->render();
+            } else {
+                $externalUrl = htmlspecialchars(GeneralUtility::makeInstance(PageRepository::class)->getExtURL($this->pageinfo));
+                if ($externalUrl !== false) {
+                    $externalUrlHtml = '<a href="' . $externalUrl . '" target="_blank" rel="noopener">' . $externalUrl . '</a>';
+                    $view->assignMultiple([
+                        'title' => $this->pageinfo['title'],
+                        'message' => sprintf($lang->getLL('pageIsExternalLinkMessage'), $externalUrlHtml),
+                        'state' => InfoboxViewHelper::STATE_INFO
+                    ]);
+                    $content .= $view->render();
+                }
             }
         }
         // If content from different pid is displayed
         if ($this->pageinfo['content_from_pid']) {
             $contentPage = BackendUtility::getRecord('pages', (int)$this->pageinfo['content_from_pid']);
-            $linkToPid = $this->local_linkThisScript(array('id' => $this->pageinfo['content_from_pid']));
+            $linkToPid = $this->local_linkThisScript(['id' => $this->pageinfo['content_from_pid']]);
             $title = BackendUtility::getRecordTitle('pages', $contentPage);
             $link = '<a href="' . $linkToPid . '">' . htmlspecialchars($title) . ' (PID ' . (int)$this->pageinfo['content_from_pid'] . ')</a>';
             $message = sprintf($lang->getLL('content_from_pid_title'), $link);
-            $view = GeneralUtility::makeInstance(StandaloneView::class);
-            $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/InfoBox.html'));
-            $view->assignMultiple(array(
+            $view->assignMultiple([
                 'title' => $title,
                 'message' => $message,
                 'state' => InfoboxViewHelper::STATE_INFO
-            ));
+            ]);
             $content .= $view->render();
         }
         return $content;
@@ -663,7 +772,7 @@ class PageLayoutController
                 $content .= '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db', ['prErr' => 1, 'uPT' => 1])) . '" method="post" enctype="multipart/form-data" name="editform" id="PageLayoutController" onsubmit="return TBE_EDITOR.checkSubmit(1);">';
                 $content .= $this->renderQuickEdit();
             } else {
-                $content .= '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl($this->moduleName, array('id' => $this->id, 'imagemode' =>  $this->imagemode))) . '" id="PageLayoutController" method="post">';
+                $content .= '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl($this->moduleName, ['id' => $this->id, 'imagemode' =>  $this->imagemode])) . '" id="PageLayoutController" method="post">';
                 // Page title
                 $content .= '<h1 class="t3js-title-inlineedit">' . htmlspecialchars($this->getLocalizedPageTitle()) . '</h1>';
                 // All other listings
@@ -683,11 +792,11 @@ class PageLayoutController
             $content .= '<h1>' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '</h1>';
             $view = GeneralUtility::makeInstance(StandaloneView::class);
             $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/InfoBox.html'));
-            $view->assignMultiple(array(
+            $view->assignMultiple([
                 'title' => $lang->getLL('clickAPage_header'),
                 'message' => $lang->getLL('clickAPage_content'),
                 'state' => InfoboxViewHelper::STATE_INFO
-            ));
+            ]);
             $content .= $view->render();
         }
         // Set content
@@ -701,28 +810,51 @@ class PageLayoutController
      */
     public function renderQuickEdit()
     {
-        $databaseConnection = $this->getDatabaseConnection();
         $beUser = $this->getBackendUser();
         $lang = $this->getLanguageService();
         // Set the edit_record value for internal use in this function:
         $edit_record = $this->edit_record;
         // If a command to edit all records in a column is issue, then select all those elements, and redirect to FormEngine
         if (substr($edit_record, 0, 9) == '_EDIT_COL') {
-            $res = $databaseConnection->exec_SELECTquery('*', 'tt_content', 'pid=' . (int)$this->id . ' AND colPos=' . (int)substr($edit_record, 10) . ' AND sys_language_uid=' . (int)$this->current_sys_language . ($this->MOD_SETTINGS['tt_content_showHidden'] ? '' : BackendUtility::BEenableFields('tt_content')) . BackendUtility::deleteClause('tt_content') . BackendUtility::versioningPlaceholderClause('tt_content'), '', 'sorting');
-            $idListA = array();
-            while ($cRow = $databaseConnection->sql_fetch_assoc($res)) {
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+            if ($this->MOD_SETTINGS['tt_content_showHidden']) {
+                $queryBuilder->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            }
+            $statement = $queryBuilder->select('*')
+                ->from('tt_content')
+                ->orderBy('sorting')
+                ->where(
+                    $queryBuilder->expr()->eq('pid', (int)$this->id),
+                    $queryBuilder->expr()->eq('colPos', (int)substr($edit_record, 10)),
+                    $queryBuilder->expr()->eq('sys_language_uid', (int)$this->current_sys_language),
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->gte('t3ver_state', (int)(new VersionState(VersionState::DEFAULT_STATE))),
+                        $queryBuilder->expr()->eq('t3ver_wsid', (int)$beUser->workspace)
+                    )
+                )
+                ->execute();
+            $idListA = [];
+            while ($cRow = $statement->fetch()) {
                 $idListA[] = $cRow['uid'];
             }
-            $url = BackendUtility::getModuleUrl('record_edit', array(
+            $url = BackendUtility::getModuleUrl('record_edit', [
                 'edit[tt_content][' . implode(',', $idListA) . ']' => 'edit',
-                'returnUrl' => $this->local_linkThisScript(array('edit_record' => ''))
-            ));
+                'returnUrl' => $this->local_linkThisScript(['edit_record' => ''])
+            ]);
             HttpUtility::redirect($url);
         }
         // If the former record edited was the creation of a NEW record, this will look up the created records uid:
         if ($this->new_unique_uid) {
-            $res = $databaseConnection->exec_SELECTquery('*', 'sys_log', 'userid=' . (int)$beUser->user['uid'] . ' AND NEWid=' . $databaseConnection->fullQuoteStr($this->new_unique_uid, 'sys_log'));
-            $sys_log_row = $databaseConnection->sql_fetch_assoc($res);
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_log');
+            $queryBuilder->getRestrictions()->removeAll();
+            $sys_log_row = $queryBuilder->select('tablename', 'recuid')
+                ->from('sys_log')
+                ->where(
+                    $queryBuilder->expr()->eq('userid', (int)$beUser->user['uid']),
+                    $queryBuilder->expr()->eq('NEWid', $queryBuilder->createNamedParameter($this->new_unique_uid))
+                )
+                ->execute()
+                ->fetch();
             if (is_array($sys_log_row)) {
                 $edit_record = $sys_log_row['tablename'] . ':' . $sys_log_row['recuid'];
             }
@@ -735,8 +867,19 @@ class PageLayoutController
         $this->deleteButton = MathUtility::canBeInterpretedAsInteger($this->eRParts[1]) && $edit_record && ($tableName !== 'pages' && $this->EDIT_CONTENT || $tableName === 'pages' && $this->CALC_PERMS & Permission::PAGE_DELETE);
         // If undo-button should be rendered (depends on available items in sys_history)
         $this->undoButton = false;
-        $undoRes = $databaseConnection->exec_SELECTquery('tstamp', 'sys_history', 'tablename=' . $databaseConnection->fullQuoteStr($tableName, 'sys_history') . ' AND recuid=' . (int)$this->eRParts[1], '', 'tstamp DESC', '1');
-        if ($this->undoButtonR = $databaseConnection->sql_fetch_assoc($undoRes)) {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_history');
+        $queryBuilder->getRestrictions()->removeAll();
+        $this->undoButtonR = $queryBuilder->select('tstamp')
+            ->from('sys_history')
+            ->where(
+                $queryBuilder->expr()->eq('tablename', $queryBuilder->createNamedParameter($tableName)),
+                $queryBuilder->expr()->eq('recuid', (int)$this->eRParts[1])
+            )
+            ->orderBy('tstamp', 'DESC')
+            ->setMaxResults(1)
+            ->execute()
+            ->fetch();
+        if ($this->undoButtonR) {
             $this->undoButton = true;
         }
         // Setting up the Return URL for coming back to THIS script (if links take the user to another script)
@@ -770,10 +913,10 @@ class PageLayoutController
             }
 
             // @todo: Hack because DatabaseInitializeNewRow reads from _GP directly
-            $GLOBALS['_GET']['defVals'][$tableName] = array(
+            $GLOBALS['_GET']['defVals'][$tableName] = [
                 'colPos' => (int)$ex_colPos,
                 'sys_language_uid' => (int)$this->current_sys_language
-            );
+            ];
 
             /** @var TcaDatabaseRecord $formDataGroup */
             $formDataGroup = GeneralUtility::makeInstance(TcaDatabaseRecord::class);
@@ -824,7 +967,7 @@ class PageLayoutController
                     <input type="hidden" name="redirect" value="' . htmlspecialchars($redirect) . '" />
                     ';
                 // Add JavaScript as needed around the form:
-                $content = $formResultCompiler->JStop() . $panel . $formResultCompiler->printNeededJSFunctions();
+                $content = $formResultCompiler->addCssFiles() . $panel . $formResultCompiler->printNeededJSFunctions();
 
                 // Display "is-locked" message:
                 if ($command === 'edit') {
@@ -913,8 +1056,8 @@ class PageLayoutController
         // also fills $dbList->activeTables
         $dbList->getTableMenu($this->id);
         // Initialize other variables:
-        $tableOutput = array();
-        $tableJSOutput = array();
+        $tableOutput = [];
+        $tableJSOutput = [];
         $CMcounter = 0;
         // Traverse the list of table names which has records on this page (that array is populated
         // by the $dblist object during the function getTableMenu()):
@@ -940,14 +1083,14 @@ class PageLayoutController
                 $dbList->tt_contentConfig['showInfo'] = 1;
                 // Setting up the tt_content columns to show:
                 if (is_array($GLOBALS['TCA']['tt_content']['columns']['colPos']['config']['items'])) {
-                    $colList = array();
+                    $colList = [];
                     $tcaItems = GeneralUtility::callUserFunction(BackendLayoutView::class . '->getColPosListItemsParsed', $this->id, $this);
                     foreach ($tcaItems as $temp) {
                         $colList[] = $temp[1];
                     }
                 } else {
                     // ... should be impossible that colPos has no array. But this is the fallback should it make any sense:
-                    $colList = array('1', '0', '2', '3');
+                    $colList = ['1', '0', '2', '3'];
                 }
                 if ($this->colPosList !== '') {
                     $colList = array_intersect(GeneralUtility::intExplode(',', $this->colPosList), $colList);
@@ -995,7 +1138,7 @@ class PageLayoutController
         $headerContentHook = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/db_layout.php']['drawHeaderHook'];
         if (is_array($headerContentHook)) {
             foreach ($headerContentHook as $hook) {
-                $params = array();
+                $params = [];
                 $content .= GeneralUtility::callUserFunction($hook, $params, $this);
             }
         }
@@ -1018,7 +1161,7 @@ class PageLayoutController
         $footerContentHook = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/db_layout.php']['drawFooterHook'];
         if (is_array($footerContentHook)) {
             foreach ($footerContentHook as $hook) {
-                $params = array();
+                $params = [];
                 $content .= GeneralUtility::callUserFunction($hook, $params, $this);
             }
         }
@@ -1203,7 +1346,7 @@ class PageLayoutController
 
                 // Delete record
                 if ($this->deleteButton) {
-                    $dataAttributes = array();
+                    $dataAttributes = [];
                     $dataAttributes['table'] = $this->eRParts[0];
                     $dataAttributes['uid'] = $this->eRParts[1];
                     $dataAttributes['return-url'] = BackendUtility::getModuleUrl($this->moduleName) . '&id=' . $this->id;
@@ -1224,11 +1367,11 @@ class PageLayoutController
                             GeneralUtility::quoteJSvalue(
                                 BackendUtility::getModuleUrl(
                                     'record_history',
-                                    array(
+                                    [
                                         'element' => $this->eRParts[0] . ':' . $this->eRParts[1],
                                         'revert' => 'ALL_FIELDS',
                                         'returnUrl' => $this->R_URI,
-                                    )
+                                    ]
                                 )
                             ) . '; return false;')
                         ->setTitle(sprintf($lang->getLL('undoLastChange'), BackendUtility::calcAge($GLOBALS['EXEC_TIME'] - $this->undoButtonR['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears'))))
@@ -1240,10 +1383,10 @@ class PageLayoutController
                             GeneralUtility::quoteJSvalue(
                                 BackendUtility::getModuleUrl(
                                     'record_history',
-                                    array(
+                                    [
                                             'element' => $this->eRParts[0] . ':' . $this->eRParts[1],
                                             'returnUrl' => $this->R_URI,
-                                        )
+                                        ]
                                 ) . '#latest'
                             ) . ');return false;')
                         ->setTitle($lang->getLL('recordHistory'))
@@ -1267,11 +1410,50 @@ class PageLayoutController
      */
     public function getNumberOfHiddenElements()
     {
-        return $this->getDatabaseConnection()->exec_SELECTcountRows(
-            'uid',
-            'tt_content',
-            'pid=' . (int)$this->id . ' AND sys_language_uid=' . (int)$this->current_sys_language . BackendUtility::BEenableFields('tt_content', 1) . BackendUtility::deleteClause('tt_content') . BackendUtility::versioningPlaceholderClause('tt_content')
-        );
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+        $queryBuilder
+            ->count('uid')
+            ->from('tt_content')
+            ->where(
+                $queryBuilder->expr()->eq('pid', (int)$this->id),
+                $queryBuilder->expr()->eq('sys_language_uid', (int)$this->current_sys_language)
+            );
+
+        if (!empty($GLOBALS['TCA']['tt_content']['ctrl']['enablecolumns']['disabled'])) {
+            $andWhere[] = $queryBuilder->expr()->neq('hidden', 0);
+        }
+
+        if (!empty($GLOBALS['TCA']['tt_content']['ctrl']['enablecolumns']['starttime'])) {
+            $andWhere[] = $queryBuilder->expr()->andX(
+                $queryBuilder->expr()->neq('starttime', 0),
+                $queryBuilder->expr()->gt('starttime', (int)$GLOBALS['SIM_ACCESS_TIME'])
+            );
+        }
+
+        if (!empty($GLOBALS['TCA']['tt_content']['ctrl']['enablecolumns']['endtime'])) {
+            $andWhere[] = $queryBuilder->expr()->andX(
+                $queryBuilder->expr()->neq('endtime', 0),
+                $queryBuilder->expr()->lte('endtime', (int)$GLOBALS['SIM_ACCESS_TIME'])
+            );
+        }
+
+        if (!empty($andWhere)) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->orX(...$andWhere)
+            );
+        }
+
+        $count = $queryBuilder
+            ->execute()
+            ->fetchColumn(0);
+
+        return (int)$count;
     }
 
     /**
@@ -1286,87 +1468,6 @@ class PageLayoutController
         $params['popView'] = '';
         $params['new_unique_uid'] = '';
         return GeneralUtility::linkThisScript($params);
-    }
-
-    /**
-     * Returns a SQL query for selecting sys_language records.
-     *
-     * @param int $id Page id: If zero, the query will select all sys_language records from root level which are NOT hidden. If set to another value, the query will select all sys_language records that has a pages_language_overlay record on that page (and is not hidden, unless you are admin user)
-     * @return string Return query string.
-     */
-    public function exec_languageQuery($id)
-    {
-        if ($id) {
-            $exQ = BackendUtility::deleteClause('pages_language_overlay') .
-                ($this->getBackendUser()->isAdmin() ? '' : ' AND sys_language.hidden=0');
-            return $this->getDatabaseConnection()->exec_SELECTquery(
-                'sys_language.*',
-                'pages_language_overlay,sys_language',
-                'pages_language_overlay.sys_language_uid=sys_language.uid AND pages_language_overlay.pid=' . (int)$id . $exQ .
-                BackendUtility::versioningPlaceholderClause('pages_language_overlay'),
-                'pages_language_overlay.sys_language_uid,sys_language.uid,sys_language.pid,sys_language.tstamp,sys_language.hidden,sys_language.title,sys_language.language_isocode,sys_language.static_lang_isocode,sys_language.flag',
-                'sys_language.title'
-            );
-        } else {
-            return $this->getDatabaseConnection()->exec_SELECTquery(
-                'sys_language.*',
-                'sys_language',
-                'sys_language.hidden=0',
-                '',
-                'sys_language.title'
-            );
-        }
-    }
-
-    /**
-     * Check if a column of a page for a language is empty. Translation records are ignored here!
-     *
-     * @param int $colPos
-     * @param int $languageId
-     * @return bool
-     */
-    public function isColumnEmpty($colPos, $languageId)
-    {
-        foreach ($this->contentElementCache[$languageId][$colPos] as $uid => $row) {
-            if ((int)$row['l18n_parent'] === 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Get elements for a column and a language
-     *
-     * @param int $pageId
-     * @param int $colPos
-     * @param int $languageId
-     * @return array
-     */
-    public function getElementsFromColumnAndLanguage($pageId, $colPos, $languageId)
-    {
-        if (!isset($this->contentElementCache[$languageId][$colPos])) {
-            $languageId = (int)$languageId;
-            $whereClause = 'tt_content.pid=' . (int)$pageId . ' AND tt_content.colPos=' . (int)$colPos . ' AND tt_content.sys_language_uid=' . $languageId . BackendUtility::deleteClause('tt_content');
-            if ($languageId > 0) {
-                $whereClause .= ' AND tt_content.l18n_parent=0 AND sys_language.uid=' . $languageId . ($this->getBackendUser()->isAdmin() ? '' : ' AND sys_language.hidden=0');
-            }
-
-            $databaseConnection = $this->getDatabaseConnection();
-            $res = $databaseConnection->exec_SELECTquery(
-                'tt_content.uid',
-                'tt_content,sys_language',
-                $whereClause
-            );
-            while ($row = $databaseConnection->sql_fetch_assoc($res)) {
-                $this->contentElementCache[$languageId][$colPos][$row['uid']] = $row;
-            }
-            $databaseConnection->sql_free_result($res);
-        }
-        if (is_array($this->contentElementCache[$languageId][$colPos])) {
-            return array_keys($this->contentElementCache[$languageId][$colPos]);
-        }
-        return array();
     }
 
     /**
@@ -1410,16 +1511,6 @@ class PageLayoutController
     }
 
     /**
-     * Returns the database connection
-     *
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
-    }
-
-    /**
      * Returns current PageRenderer
      *
      * @return PageRenderer
@@ -1437,7 +1528,6 @@ class PageLayoutController
     protected function makeQuickEditMenu($edit_record)
     {
         $lang = $this->getLanguageService();
-        $databaseConnection = $this->getDatabaseConnection();
         $beUser = $this->getBackendUser();
 
         $quickEditMenu = $this->moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
@@ -1446,7 +1536,7 @@ class PageLayoutController
 
         // Setting close url/return url for exiting this script:
         // Goes to 'Columns' view if close is pressed (default)
-        $this->closeUrl = $this->local_linkThisScript(array('SET' => array('function' => 1)));
+        $this->closeUrl = $this->local_linkThisScript(['SET' => ['function' => 1]]);
         if ($this->returnUrl) {
             $this->closeUrl = $this->returnUrl;
         }
@@ -1480,17 +1570,33 @@ class PageLayoutController
                 ->setActive($edit_record == $inValue);
             $quickEditMenu->addMenuItem($menuItem);
         }
-        // Selecting all content elements from this language and allowed colPos:
-        $whereClause = 'pid=' . (int)$this->id . ' AND sys_language_uid=' . (int)$this->current_sys_language . ' AND colPos IN (' . $this->colPosList . ')' . ($this->MOD_SETTINGS['tt_content_showHidden'] ? '' : BackendUtility::BEenableFields('tt_content')) . BackendUtility::deleteClause('tt_content') . BackendUtility::versioningPlaceholderClause('tt_content');
-        if (!$this->getBackendUser()->user['admin']) {
-            $whereClause .= ' AND editlock = 0';
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');
+        if ($this->MOD_SETTINGS['tt_content_showHidden']) {
+            $queryBuilder->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
         }
-        $res = $databaseConnection->exec_SELECTquery('*', 'tt_content', $whereClause, '', 'colPos,sorting');
+        $queryBuilder->select('*')
+            ->from('tt_content')
+            ->where(
+                $queryBuilder->expr()->eq('pid', (int)$this->id),
+                $queryBuilder->expr()->eq('sys_language_uid', (int)$this->current_sys_language),
+                $queryBuilder->expr()->in('colPos', GeneralUtility::intExplode(',', $this->colPosList)),
+                $queryBuilder->expr()->orX(
+                    $queryBuilder->expr()->gte('t3ver_state', (int)(new VersionState(VersionState::DEFAULT_STATE))),
+                    $queryBuilder->expr()->eq('t3ver_wsid', (int)$beUser->workspace)
+                )
+            )
+            ->orderBy('colPos')
+            ->addOrderBy('sorting');
+        if (!$beUser->user['admin']) {
+            $queryBuilder->andWhere($queryBuilder->expr()->eq('editlock', 0));
+        }
+        $statement = $queryBuilder->execute();
         $colPos = null;
         $first = 1;
         // Page is the pid if no record to put this after.
         $prev = $this->id;
-        while ($cRow = $databaseConnection->sql_fetch_assoc($res)) {
+        while ($cRow = $statement->fetch()) {
             BackendUtility::workspaceOL('tt_content', $cRow);
             if (is_array($cRow)) {
                 if ($first) {
@@ -1580,15 +1686,28 @@ class PageLayoutController
      */
     protected function currentPageHasSubPages()
     {
-        $count = $this->getDatabaseConnection()->exec_SELECTcountRows(
-            'uid',
-            'pages',
-            'pid = ' . (int)$this->id
-                . BackendUtility::deleteClause('pages')
-                . BackendUtility::versioningPlaceholderClause('pages')
-                . BackendUtility::getWorkspaceWhereClause('pages')
-        );
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
 
-        return $count > 0;
+        // get workspace id
+        $workspaceId = (int)$this->getBackendUser()->workspace;
+        $comparisonExpression = $workspaceId === 0 ? 'neq' : 'eq';
+
+        $count = $queryBuilder
+            ->count('uid')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('pid', (int)$this->id),
+                $queryBuilder->expr()->eq('t3ver_wsid', $workspaceId),
+                $queryBuilder->expr()->{$comparisonExpression}('pid', -1)
+            )
+            ->execute()
+            ->fetchColumn(0);
+
+        return (bool)$count;
     }
 }

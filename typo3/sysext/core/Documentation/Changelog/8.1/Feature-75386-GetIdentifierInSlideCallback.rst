@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Feature: #75386 - Get identifier in slide callback
 ==================================================
 
+See :issue:`75386`
+
 Description
 ===========
 
-The callback of :js:`Wizard.addSlide()` now has a new parameter ``identifier``.
+The callback of :js:`Wizard.addSlide()` now has a new parameter `identifier`.
 
 
 Impact
@@ -20,3 +25,5 @@ Example code:
 	Wizard.addSlide('my-identifier', 'Foobar', '', Severity.info, function($slide, settings, identifier) {
 		console.log(identifier); // my-identifier
 	});
+
+.. index:: JavaScript, Backend

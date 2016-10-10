@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================================
 Breaking: #66861 - Do not automatically append a "/" to the identifier of a folder
 ==================================================================================
+
+See :issue:`66861`
 
 Description
 ===========
@@ -24,3 +29,5 @@ Migration
 =========
 
 All drivers that depend on this `/` being added should be adjusted so the driver handles this.
+
+.. index:: PHP-API, FAL

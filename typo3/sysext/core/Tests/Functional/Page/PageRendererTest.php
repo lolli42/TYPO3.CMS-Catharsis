@@ -80,7 +80,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
         $subject->addCssInlineBlock('general3', 'h1 {margin:20px;}', null, true);
 
         $subject->loadJquery();
-        $expectedJqueryRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+        $expectedJqueryRegExp = '#<script src="typo3/sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
         $expectedJqueryStatement = 'var TYPO3 = TYPO3 || {}; TYPO3.jQuery = jQuery.noConflict(true);';
 
         $expectedBodyContent = $this->getUniqueId('ABCDE-');
@@ -134,13 +134,13 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
         // Bunch of label tests
         $subject->loadExtJS();
         $subject->addInlineLanguageLabel('myKey', 'myValue');
-        $subject->addInlineLanguageLabelArray(array(
+        $subject->addInlineLanguageLabelArray([
             'myKeyArray1' => 'myValueArray1',
             'myKeyArray2' => 'myValueArray2'
-        ));
-        $subject->addInlineLanguageLabelArray(array(
+        ]);
+        $subject->addInlineLanguageLabelArray([
             'myKeyArray3' => 'myValueArray3'
-        ));
+        ]);
         $expectedInlineLabelReturnValue = 'TYPO3.lang = {"myKey":"myValue","myKeyArray1":"myValueArray1","myKeyArray2":"myValueArray2","myKeyArray3":"myValueArray3"';
 
         $subject->addInlineLanguageLabelFile('EXT:lang/locallang_core.xlf');
@@ -149,13 +149,13 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 
         // Bunch of inline settings test
         $subject->addInlineSetting('myApp', 'myKey', 'myValue');
-        $subject->addInlineSettingArray('myApp', array(
+        $subject->addInlineSettingArray('myApp', [
             'myKey1' => 'myValue1',
             'myKey2' => 'myValue2'
-        ));
-        $subject->addInlineSettingArray('myApp', array(
+        ]);
+        $subject->addInlineSettingArray('myApp', [
             'myKey3' => 'myValue3'
-        ));
+        ]);
         $expectedInlineSettingsReturnValue = 'TYPO3.settings = {"myApp":{"myKey":"myValue","myKey1":"myValue1","myKey2":"myValue2","myKey3":"myValue3"}';
 
         $renderedString = $subject->render(\TYPO3\CMS\Core\Page\PageRenderer::PART_FOOTER);
@@ -177,7 +177,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
     {
         $subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-        $expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+        $expectedRegExp = '#<script src="typo3/sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
         $expectedStatement = 'var TYPO3 = TYPO3 || {}; TYPO3.MyNameSpace = jQuery.noConflict(true);';
         $subject->loadJquery(null, null, 'MyNameSpace');
         $out = $subject->render();
@@ -192,7 +192,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
     {
         $subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-        $expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+        $expectedRegExp = '#<script src="typo3/sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
         $expectedStatement = 'jQuery.noConflict();';
         $subject->loadJquery(null, null, \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_NAMESPACE_DEFAULT_NOCONFLICT);
         $out = $subject->render();
@@ -208,7 +208,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
     {
         $subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-        $expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+        $expectedRegExp = '#<script src="typo3/sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
         $subject->loadJquery(null, null, \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_NAMESPACE_NONE);
         $out = $subject->render();
         $this->assertRegExp($expectedRegExp, $out);
@@ -222,7 +222,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
     {
         $subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-        $expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+        $expectedRegExp = '#<script src="typo3/sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
         $expectedStatement = 'var TYPO3 = TYPO3 || {}; TYPO3.jQuery = jQuery.noConflict(true);';
         $subject->loadJquery();
         $subject->enableDebugMode();
@@ -236,28 +236,28 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
      */
     public function loadJqueryFromSourceDataProvider()
     {
-        return array(
-            'google with version number' => array(
+        return [
+            'google with version number' => [
                 '1.6.3',
                 'google',
                 '#<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.js" type="text/javascript"></script>#'
-            ),
-            'msn with version number' => array(
+            ],
+            'msn with version number' => [
                 '1.6.3',
                 'msn',
                 '#<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.6.3.js" type="text/javascript"></script>#'
-            ),
-            'jquery with version number' => array(
+            ],
+            'jquery with version number' => [
                 '1.6.3',
                 'jquery',
                 '#<script src="https://code.jquery.com/jquery-1.6.3.js" type="text/javascript"></script>#'
-            ),
-            'jquery with custom URL' => array(
+            ],
+            'jquery with custom URL' => [
                 '1.6.3',
                 'https://my.cool.cdn/foo/jquery.js',
                 '#<script src="https://my.cool.cdn/foo/jquery.js" type="text/javascript"></script>#'
-            ),
-        );
+            ],
+        ];
     }
 
     /**
@@ -294,7 +294,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
     {
         $subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-        $expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/extjs/ext-all-debug\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+        $expectedRegExp = '#<script src="typo3/sysext/core/Resources/Public/JavaScript/Contrib/extjs/ext-all-debug\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
         $subject->loadExtJS(true, true);
         $subject->enableExtJsDebug();
         $out = $subject->render();

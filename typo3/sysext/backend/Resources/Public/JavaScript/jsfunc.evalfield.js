@@ -260,7 +260,6 @@ function evalFunc_input(type,inVal) {
 	value = this.caseSwitch(type,value);
 	if (value=="") {
 		return "";
-		return 0;	// Why would I ever return a zero??? (20/12/01)
 	}
 	switch (type) {
 		case "datetime":
@@ -456,7 +455,7 @@ function evalFunc_output(type,value,FObj) {
 			theString = h+':'+((m<10)?'0':'')+m + ((type=="timesec")?':'+((s<10)?'0':'')+s:'');
 			break;
 		case "password":
-			theString = (value)	? TS.passwordDummy : "";
+			theString = (value)	? "********" : "";
 			break;
 		case "int":
 			theString = (FObj.checkbox && value==FObj.checkboxValue)?'':value;

@@ -22,10 +22,10 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Backend\Wizard\NewContentElementWizardHookInterface;
 use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Service\DependencyOrderingService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Script Class for the New Content element wizard
@@ -70,7 +70,7 @@ class NewContentElementController extends AbstractModule
      *
      * @var array
      */
-    public $modTSconfig = array();
+    public $modTSconfig = [];
 
     /**
      * Internal backend template object
@@ -106,11 +106,6 @@ class NewContentElementController extends AbstractModule
     protected $pageInfo;
 
     /**
-     * @var array
-     */
-    protected $elementWrapper;
-
-    /**
      * @var string
      */
     protected $onClickEvent;
@@ -121,12 +116,24 @@ class NewContentElementController extends AbstractModule
     protected $MCONF;
 
     /**
+     * @var StandaloneView
+     */
+    protected $view;
+
+    /**
+     * @var StandaloneView
+     */
+    protected $menuItemView;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
         parent::__construct();
         $GLOBALS['SOBE'] = $this;
+        $this->view = $this->getFluidTemplateObject();
+        $this->menuItemView = $this->getFluidTemplateObject('MenuItem.html');
         $this->init();
     }
 
@@ -189,16 +196,16 @@ class NewContentElementController extends AbstractModule
      */
     public function main()
     {
-        $lang = $this->getLanguageService();
-        $this->content .= '<form action="" name="editForm" id="NewContentElementController"><input type="hidden" name="defValues" value="" />';
+        $hasAccess = true;
         if ($this->id && $this->access) {
+
             // Init position map object:
             $posMap = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ContentCreationPagePositionMap::class);
             $posMap->cur_sys_language = $this->sys_language;
             // If a column is pre-set:
             if (isset($this->colPos)) {
                 if ($this->uid_pid < 0) {
-                    $row = array();
+                    $row = [];
                     $row['uid'] = abs($this->uid_pid);
                 } else {
                     $row = '';
@@ -216,11 +223,9 @@ class NewContentElementController extends AbstractModule
             // ***************************
             // Creating content
             // ***************************
-            $this->content .= '<h1>' . $lang->getLL('newContentElement') . '</h1>';
             // Wizard
             $wizardItems = $this->wizardArray();
             // Wrapper for wizards
-            $this->elementWrapper['section'] = array('', '');
             // Hook for manipulating wizardItems, wrapper, onClickEvent etc.
             if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms']['db_new_content_el']['wizardItemsHook'])) {
                 foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms']['db_new_content_el']['wizardItemsHook'] as $classData) {
@@ -243,69 +248,54 @@ class NewContentElementController extends AbstractModule
 				}'
             );
 
-            $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
-
             // Traverse items for the wizard.
             // An item is either a header or an item rendered with a radio button and title/description and icon:
             $cc = ($key = 0);
-            $menuItems = array();
-            foreach ($wizardItems as $k => $wInfo) {
+            $menuItems = [];
+
+            $this->view->assign('onClickEvent', $this->onClickEvent);
+
+            foreach ($wizardItems as $wizardKey => $wInfo) {
+                $wizardOnClick = '';
                 if ($wInfo['header']) {
-                    $menuItems[] = array(
+                    $menuItems[] = [
                         'label' => htmlspecialchars($wInfo['header']),
-                        'content' => $this->elementWrapper['section'][0]
-                    );
+                        'content' => ''
+                    ];
                     $key = count($menuItems) - 1;
                 } else {
-                    $content = '';
-
                     if (!$this->onClickEvent) {
                         // Radio button:
-                        $oC = 'document.editForm.defValues.value=unescape(' . GeneralUtility::quoteJSvalue(rawurlencode($wInfo['params'])) . ');goToalt_doc();' . (!$this->onClickEvent ? 'window.location.hash=\'#sel2\';' : '');
-                        $content .= '<div class="media-left"><input type="radio" name="tempB" value="' . htmlspecialchars($k) . '" onclick="' . htmlspecialchars($oC) . '" /></div>';
+                        $wizardOnClick = 'document.editForm.defValues.value=unescape(' . GeneralUtility::quoteJSvalue(rawurlencode($wInfo['params'])) . ');goToalt_doc();' . (!$this->onClickEvent ? 'window.location.hash=\'#sel2\';' : '');
                         // Onclick action for icon/title:
-                        $aOnClick = 'document.getElementsByName(\'tempB\')[' . $cc . '].checked=1;' . $oC . 'return false;';
+                        $aOnClick = 'document.getElementsByName(\'tempB\')[' . $cc . '].checked=1;' . $wizardOnClick . 'return false;';
                     } else {
                         $aOnClick = "document.editForm.defValues.value=unescape('" . rawurlencode($wInfo['params']) . "');goToalt_doc();" . (!$this->onClickEvent?"window.location.hash='#sel2';":'');
                     }
 
                     $icon = $this->moduleTemplate->getIconFactory()->getIcon($wInfo['iconIdentifier'])->render();
-                    $menuItems[$key]['content'] .= '
-						<div class="media">
-							<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
-								' . $content . '
-								<div class="media-left">
-									' . $icon . '
-								</div>
-								<div class="media-body">
-									<strong>' . htmlspecialchars($wInfo['title']) . '</strong>' .
-                                    '<br />' .
-                                    nl2br(htmlspecialchars(trim($wInfo['description']))) .
-                                '</div>
-							</a>
-						</div>';
+
+                    $this->menuItemView->assignMultiple([
+                            'onClickEvent' => $this->onClickEvent,
+                            'aOnClick' => $aOnClick,
+                            'wizardInformation' => $wInfo,
+                            'icon' => $icon,
+                            'wizardOnClick' => $wizardOnClick,
+                            'wizardKey' => $wizardKey
+                        ]
+                    );
+                    $menuItems[$key]['content'] .= $this->menuItemView->render();
                     $cc++;
                 }
             }
-            // Add closing section-tag
-            foreach ($menuItems as $key => $val) {
-                $menuItems[$key]['content'] .= $this->elementWrapper['section'][1];
-            }
-            // Add the wizard table to the content, wrapped in tabs
-            $code = '<p>' . htmlspecialchars($lang->getLL('sel1')) . '</p>' . $this->moduleTemplate->getDynamicTabMenu(
+
+            $this->view->assign('renderedTabs', $this->moduleTemplate->getDynamicTabMenu(
                 $menuItems,
                 'new-content-element-wizard'
-            );
-
-            $this->content .= !$this->onClickEvent ? '<h2>' . htmlspecialchars($lang->getLL('1_selectType')) . '</h2>' : '';
-            $this->content .= '<div>' . $code . '</div>';
+            ));
 
             // If the user must also select a column:
             if (!$this->onClickEvent) {
-                // Add anchor "sel2"
-                $this->content .= '<div><a name="sel2"></a></div>';
-                // Select position
-                $code = '<p>' . htmlspecialchars($lang->getLL('sel2')) . '</p>';
 
                 // Load SHARED page-TSconfig settings and retrieve column list from there, if applicable:
                 $colPosArray = GeneralUtility::callUserFunction(
@@ -317,15 +307,15 @@ class NewContentElementController extends AbstractModule
                 // Removing duplicates, if any
                 $colPosList = implode(',', array_unique(array_map('intval', $colPosIds)));
                 // Finally, add the content of the column selector to the content:
-                $code .= $posMap->printContentElementColumns($this->id, 0, $colPosList, 1, $this->R_URI);
-                $this->content .= '<h2>' . htmlspecialchars($lang->getLL('2_selectPosition')) . '</h2><div>' . $code . '</div>';
+                $this->view->assign('posMap', $posMap->printContentElementColumns($this->id, 0, $colPosList, 1, $this->R_URI));
             }
         } else {
             // In case of no access:
-            $this->content = '';
-            $this->content .= '<h1>' . $lang->getLL('newContentElement') . '</h1>';
+            $hasAccess = false;
         }
-        $this->content .= '</form>';
+        $this->view->assign('hasAccess', $hasAccess);
+
+        $this->content = $this->view->render();
         // Setting up the buttons and markers for docheader
         $this->getButtons();
     }
@@ -364,7 +354,7 @@ class NewContentElementController extends AbstractModule
      */
     public function wizardArray()
     {
-        $wizardItems = array();
+        $wizardItems = [];
         if (is_array($this->config)) {
             $wizards = $this->config['wizardItems.'];
             $appendWizards = $this->wizard_appendWizards($wizards['elements.']);
@@ -378,8 +368,8 @@ class NewContentElementController extends AbstractModule
                 foreach ($wizards as $groupKey => $wizardGroup) {
                     $groupKey = rtrim($groupKey, '.');
                     $showItems = GeneralUtility::trimExplode(',', $wizardGroup['show'], true);
-                    $showAll = $wizardGroup['show'] === '*';
-                    $groupItems = array();
+                    $showAll = in_array('*', $showItems, true);
+                    $groupItems = [];
                     if (is_array($appendWizards[$groupKey . '.']['elements.'])) {
                         $wizardElements = array_merge((array)$wizardGroup['elements.'], $appendWizards[$groupKey . '.']['elements.']);
                     } else {
@@ -415,7 +405,7 @@ class NewContentElementController extends AbstractModule
     public function wizard_appendWizards($wizardElements)
     {
         if (!is_array($wizardElements)) {
-            $wizardElements = array();
+            $wizardElements = [];
         }
         if (is_array($GLOBALS['TBE_MODULES_EXT']['xMOD_db_new_content_el']['addElClasses'])) {
             foreach ($GLOBALS['TBE_MODULES_EXT']['xMOD_db_new_content_el']['addElClasses'] as $class => $path) {
@@ -424,7 +414,7 @@ class NewContentElementController extends AbstractModule
                 $wizardElements = $modObj->proc($wizardElements);
             }
         }
-        $returnElements = array();
+        $returnElements = [];
         foreach ($wizardElements as $key => $wizardItem) {
             preg_match('/^[a-zA-Z0-9]+_/', $key, $group);
             $wizardGroup = $group[0] ? substr($group[0], 0, -1) . '.' : $key;
@@ -455,9 +445,9 @@ class NewContentElementController extends AbstractModule
      */
     public function wizard_getGroupHeader($groupKey, $wizardGroup)
     {
-        return array(
+        return [
             'header' => $this->getLanguageService()->sL($wizardGroup['header'])
-        );
+        ];
     }
 
     /**
@@ -472,9 +462,9 @@ class NewContentElementController extends AbstractModule
     public function removeInvalidElements(&$wizardItems)
     {
         // Get TCEFORM from TSconfig of current page
-        $row = array('pid' => $this->id);
+        $row = ['pid' => $this->id];
         $TCEFORM_TSconfig = BackendUtility::getTCEFORM_TSconfig('tt_content', $row);
-        $headersUsed = array();
+        $headersUsed = [];
         // Traverse wizard items:
         foreach ($wizardItems as $key => $cfg) {
             // Exploding parameter string, if any (old style)
@@ -486,7 +476,7 @@ class NewContentElementController extends AbstractModule
                 // (in case remaining parameters are around).
                 if (is_array($tempGetVars['defVals']['tt_content'])) {
                     $wizardItems[$key]['tt_content_defValues'] = array_merge(
-                        is_array($wizardItems[$key]['tt_content_defValues']) ? $wizardItems[$key]['tt_content_defValues'] : array(),
+                        is_array($wizardItems[$key]['tt_content_defValues']) ? $wizardItems[$key]['tt_content_defValues'] : [],
                         $tempGetVars['defVals']['tt_content']
                     );
                     unset($tempGetVars['defVals']['tt_content']);
@@ -554,7 +544,9 @@ class NewContentElementController extends AbstractModule
     {
         if (isset($wizardGroup[$key])) {
             $wizardGroup[$key] = GeneralUtility::trimExplode(',', $wizardGroup[$key]);
-            $wizardGroup[$key] = array_map(function ($s) {return $s . '.';}, $wizardGroup[$key]);
+            $wizardGroup[$key] = array_map(function ($s) {
+                return $s . '.';
+            }, $wizardGroup[$key]);
         }
     }
 
@@ -576,5 +568,20 @@ class NewContentElementController extends AbstractModule
     protected function getBackendUser()
     {
         return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * returns a new standalone view, shorthand function
+     *
+     * @param string $filename
+     * @return StandaloneView
+     */
+    protected function getFluidTemplateObject(string $filename = 'Main.html'):StandaloneView
+    {
+        /** @var StandaloneView $view */
+        $view = GeneralUtility::makeInstance(StandaloneView::class);
+        $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/NewContentElement/' . $filename));
+        $view->getRequest()->setControllerExtensionName('Backend');
+        return $view;
     }
 }

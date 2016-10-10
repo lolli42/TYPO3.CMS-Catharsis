@@ -13,6 +13,9 @@ namespace TYPO3\CMS\Core\Collection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Abstract implementation of a RecordCollection
@@ -155,9 +158,9 @@ abstract class AbstractRecordCollection implements RecordCollectionInterface, Pe
      */
     public function serialize()
     {
-        $data = array(
+        $data = [
             'uid' => $this->getIdentifier()
-        );
+        ];
         return serialize($data);
     }
 
@@ -326,11 +329,13 @@ abstract class AbstractRecordCollection implements RecordCollectionInterface, Pe
      */
     public static function load($id, $fillItems = false)
     {
-        $collectionRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
-            '*',
-            static::$storageTableName,
-            'uid=' . (int)$id . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause(static::$storageTableName)
-        );
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable(static::$storageTableName);
+        $queryBuilder->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $collectionRecord = $queryBuilder->select('*')
+            ->from(static::$storageTableName)
+            ->where($queryBuilder->expr()->eq('uid', (int)$id))
+            ->execute()
+            ->fetch();
         return self::create($collectionRecord, $fillItems);
     }
 
@@ -360,18 +365,18 @@ abstract class AbstractRecordCollection implements RecordCollectionInterface, Pe
     public function persist()
     {
         $uid = $this->getIdentifier() == 0 ? 'NEW' . rand(100000, 999999) : $this->getIdentifier();
-        $data = array(
-            trim(static::$storageTableName) => array(
+        $data = [
+            trim(static::$storageTableName) => [
                 $uid => $this->getPersistableDataArray()
-            )
-        );
+            ]
+        ];
         // New records always must have a pid
         if ($this->getIdentifier() == 0) {
             $data[trim(static::$storageTableName)][$uid]['pid'] = 0;
         }
         /** @var \TYPO3\CMS\Core\DataHandling\DataHandler $tce */
         $tce = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
-        $tce->start($data, array());
+        $tce->start($data, []);
         $tce->process_datamap();
     }
 
@@ -396,7 +401,7 @@ abstract class AbstractRecordCollection implements RecordCollectionInterface, Pe
      */
     protected function getItemUidList($includeTableName = true)
     {
-        $list = array();
+        $list = [];
         foreach ($this->storage as $entry) {
             $list[] = ($includeTableName ? $this->getItemTableName() . '_' : '') . $entry['uid'];
         }
@@ -410,17 +415,17 @@ abstract class AbstractRecordCollection implements RecordCollectionInterface, Pe
      */
     public function toArray()
     {
-        $itemArray = array();
+        $itemArray = [];
         foreach ($this->storage as $item) {
             $itemArray[] = $item;
         }
-        return array(
+        return [
             'uid' => $this->getIdentifier(),
             'title' => $this->getTitle(),
             'description' => $this->getDescription(),
             'table_name' => $this->getItemTableName(),
             'items' => $itemArray
-        );
+        ];
     }
 
     /**

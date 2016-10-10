@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ============================================
 Deprecation: #76370 - Deprecate CacheFactory
 ============================================
 
+See :issue:`76370`
+
 Description
 ===========
 
-Class :php:``CacheFactory`` has been deprecated.
+Class :php:`CacheFactory` has been deprecated.
 
 
 Impact
@@ -25,3 +30,5 @@ Migration
 =========
 
 Nothing notable, do not use this class anymore.
+
+.. index:: PHP-API

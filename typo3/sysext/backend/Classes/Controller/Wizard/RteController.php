@@ -66,7 +66,7 @@ class RteController extends AbstractWizardController
      *
      * @var array
      */
-    public $MCONF = array();
+    public $MCONF = [];
 
     /**
      * Constructor
@@ -91,7 +91,7 @@ class RteController extends AbstractWizardController
         // Setting GPvars:
         $this->P = GeneralUtility::_GP('P');
         $this->popView = GeneralUtility::_GP('popView');
-        $this->R_URI = GeneralUtility::linkThisScript(array('popView' => ''));
+        $this->R_URI = GeneralUtility::linkThisScript(['popView' => '']);
         // "Module name":
         $this->MCONF['name'] = 'wizard_rte';
         // Need to NOT have the page wrapped in DIV since if we do that we destroy
@@ -212,7 +212,7 @@ class RteController extends AbstractWizardController
             $formContent .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($this->R_URI) . '" />
 						<input type="hidden" name="_serialNumber" value="' . md5(microtime()) . '" />';
             // Finally, add the whole setup:
-            $this->content .= $formResultCompiler->JStop()
+            $this->content .= $formResultCompiler->addCssFiles()
                 . $formContent
                 . $formResultCompiler->printNeededJSFunctions();
         } else {
@@ -284,7 +284,7 @@ class RteController extends AbstractWizardController
                 ->setName('_savedokview_x')
                 ->setValue('1')
                 ->setForm('RteController')
-                ->setOnClick('document.editform.redirect.value+= '  . GeneralUtility::quoteJSvalue('&popView=1') . '; '
+                ->setOnClick('document.editform.redirect.value+= ' . GeneralUtility::quoteJSvalue('&popView=1') . '; '
                     . ' TBE_EDITOR.checkAndDoSubmit(1); return false;')
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow'))
                 ->setIcon(
@@ -317,11 +317,11 @@ class RteController extends AbstractWizardController
                     GeneralUtility::quoteJSvalue(
                         BackendUtility::getModuleUrl(
                             'record_history',
-                            array(
+                            [
                                 'element' => $this->P['table'] . ':' . $this->P['uid'],
                                 'revert' => 'field:' . $this->P['field'],
                                 'returnUrl' => $this->R_URI,
-                            )
+                            ]
                         )
                     ) . '; return false;';
 

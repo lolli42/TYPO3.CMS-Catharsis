@@ -6,7 +6,7 @@ config.index_metatags = 1
 plugin.tx_indexedsearch {
 
 	settings {
-		targetPid =
+		targetPid = {$plugin.tx_indexedsearch.settings.targetPid}
 		# show the rules
 		displayRules = 1
 
@@ -23,14 +23,11 @@ plugin.tx_indexedsearch {
 		displayLevel1Sections = 1
 		displayLevel2Sections = 0
 		displayLevelxAllTypes = 0
-		clearSearchBox = 0
-		clearSearchBox.enableSubSearchCheckBox = 1
 		displayForbiddenRecords = 0
 		alwaysShowPageLinks = 1
 		mediaList =
 
-		#search.rootPidList
-		rootPidList =
+		rootPidList = {$plugin.tx_indexedsearch.settings.rootPidList}
 		page_links = 10
 		detectDomainRcords = 0
 		defaultFreeIndexUidList =
@@ -104,6 +101,7 @@ plugin.tx_indexedsearch {
 			languageUid = -1
 			sortDesc = 1
 			searchType = 1
+			extResume = 1
 		}
 
 	}
@@ -123,5 +121,4 @@ plugin.tx_indexedsearch {
 			10 = {$plugin.tx_indexedsearch.view.layoutRootPath}
 		}
 	}
-
 }

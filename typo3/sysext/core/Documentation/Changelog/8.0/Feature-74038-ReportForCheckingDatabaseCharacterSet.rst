@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Feature: #74038 - Report for checking database character set
 ============================================================
+
+See :issue:`74038`
 
 Description
 ===========
@@ -16,3 +21,5 @@ Impact
 
 If the default database character set is not utf-8, the report warns administrators
 about a wrong charset.
+
+.. index:: Backend, Database

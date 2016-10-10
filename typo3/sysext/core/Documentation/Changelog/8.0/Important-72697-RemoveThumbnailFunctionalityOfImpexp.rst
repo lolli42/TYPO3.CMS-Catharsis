@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Important: #72697 - Remove thumbnail functionality of impexp
 ============================================================
+
+See :issue:`72697`
 
 Description
 ===========
@@ -8,4 +13,4 @@ Description
 Previously it was possible to add additional thumbnails to exports of the EXT:impexp.
 This functionality is completely outdated and not needed anymore.
 
-.. index:: php
+.. index:: PHP-API

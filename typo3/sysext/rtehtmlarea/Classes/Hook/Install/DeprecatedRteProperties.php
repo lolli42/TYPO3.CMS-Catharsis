@@ -14,6 +14,10 @@ namespace TYPO3\CMS\Rtehtmlarea\Hook\Install;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\DBALException;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Install\Updates\AbstractUpdate;
 
 /**
@@ -33,7 +37,7 @@ class DeprecatedRteProperties extends AbstractUpdate
      *
      * @var array
      */
-    protected $replacementRteProperties = array(
+    protected $replacementRteProperties = [
         'disableRightClick' => 'contextMenu.disable',
         'disableContextMenu' => 'contextMenu.disable',
         'hidePStyleItems' => 'buttons.formatblock.removeItems',
@@ -49,7 +53,7 @@ class DeprecatedRteProperties extends AbstractUpdate
         'blindImageOptions' => 'buttons.image.options.removeItems',
         'blindLinkOptions' => 'buttons.link.options.removeItems',
         'defaultLinkTarget' => 'buttons.link.properties.target.default'
-    );
+    ];
 
     /**
      * Properties that may be replaced automatically in Page TSconfig (except inludes from external files)
@@ -57,20 +61,20 @@ class DeprecatedRteProperties extends AbstractUpdate
      *
      * @var array
      */
-    protected $doubleReplacementRteProperties = array(
-        'disableTYPO3Browsers' => array(
+    protected $doubleReplacementRteProperties = [
+        'disableTYPO3Browsers' => [
             'buttons.image.TYPO3Browser.disabled',
             'buttons.link.TYPO3Browser.disabled'
-        ),
-        'showTagFreeClasses' => array(
+        ],
+        'showTagFreeClasses' => [
             'buttons.blockstyle.showTagFreeClasses',
             'buttons.textstyle.showTagFreeClasses'
-        ),
-        'disablePCexamples' => array(
+        ],
+        'disablePCexamples' => [
             'buttons.blockstyle.disableStyleOnOptionLabel',
             'buttons.textstyle.disableStyleOnOptionLabel'
-        )
-    );
+        ]
+    ];
 
     /**
      * Properties that may not be replaced automatically in Page TSconfig
@@ -78,7 +82,7 @@ class DeprecatedRteProperties extends AbstractUpdate
      *
      * @var array
      */
-    protected $useInsteadRteProperties = array(
+    protected $useInsteadRteProperties = [
         'fontSize' => 'buttons.fontsize.addItems',
         'RTE.default.classesAnchor' => 'RTE.default.buttons.link.properties.class.allowedClasses',
         'RTE.default.classesAnchor.default.[link-type]' => 'RTE.default.buttons.link.[link-type].properties.class.default',
@@ -90,7 +94,7 @@ class DeprecatedRteProperties extends AbstractUpdate
         'mainStyle_bgcolor' => 'contentCSS',
         'inlineStyle.[any-keystring]' => 'contentCSS',
         'ignoreMainStyleOverride' => 'n.a.'
-    );
+    ];
 
     /**
      * Function which checks if update is needed. Called in the beginning of an update process.
@@ -102,7 +106,7 @@ class DeprecatedRteProperties extends AbstractUpdate
     {
         $result = false;
 
-        $pages = $this->getPagesWithDeprecatedRteProperties($dbQueries, $customMessages);
+        $pages = $this->getPagesWithDeprecatedRteProperties($customMessages);
         $pagesCount = count($pages);
         $deprecatedProperties = '';
         $deprecatedRteProperties = array_merge($this->replacementRteProperties, $this->useInsteadRteProperties);
@@ -114,7 +118,7 @@ class DeprecatedRteProperties extends AbstractUpdate
         }
         $description = '<p>The following Page TSconfig RTE properties are deprecated since TYPO3 4.6 and have been removed in TYPO3 6.0.</p>' . LF . '<table><thead><tr><th>Deprecated property</th><th>Use instead</th></tr></thead>' . LF . '<tbody>' . $deprecatedProperties . '</tboby></table>' . LF . '<p>You are currently using some of these properties on <strong>' . strval($pagesCount) . '&nbsp;pages</strong>  (including deleted and hidden pages).</p>' . LF;
         if ($pagesCount) {
-            $pagesUids = array();
+            $pagesUids = [];
             foreach ($pages as $page) {
                 $pagesUids[] = $page['uid'];
             }
@@ -165,7 +169,7 @@ class DeprecatedRteProperties extends AbstractUpdate
     public function performUpdate(array &$dbQueries, &$customMessages)
     {
         $customMessages = '';
-        $pages = $this->getPagesWithDeprecatedRteProperties($dbQueries, $customMessages);
+        $pages = $this->getPagesWithDeprecatedRteProperties($customMessages);
         if (empty($customMessages)) {
             $pagesCount = count($pages);
             if ($pagesCount) {
@@ -176,7 +180,7 @@ class DeprecatedRteProperties extends AbstractUpdate
                     if (empty($customMessages)) {
                         // If all pages were updated, we query again to check if any deprecated properties are still present.
                         if (count($updateablePages) === $pagesCount) {
-                            $pagesAfter = $this->getPagesWithDeprecatedRteProperties($dbQueries, $customMessages);
+                            $pagesAfter = $this->getPagesWithDeprecatedRteProperties($customMessages);
                             if (empty($customMessages)) {
                                 if (!empty($pagesAfter)) {
                                     $customMessages = 'Some deprecated Page TSconfig properties were found. However, the wizard was unable to automatically replace all the deprecated properties found. Some properties will have to be replaced manually.';
@@ -198,29 +202,66 @@ class DeprecatedRteProperties extends AbstractUpdate
     /**
      * Gets the pages with deprecated RTE properties in TSconfig column
      *
-     * @param array $dbQueries Pointer where to insert all DB queries made, so they can be shown to the user if wanted
      * @param string $customMessages Pointer to output custom messages
      * @return array uid and inclusion string for the pages with deprecated RTE properties in TSconfig column
      */
-    protected function getPagesWithDeprecatedRteProperties(&$dbQueries, &$customMessages)
+    protected function getPagesWithDeprecatedRteProperties(&$customMessages)
     {
-        $fields = 'uid, TSconfig';
-        $table = 'pages';
-        $where = '';
-        $db = $this->getDatabaseConnection();
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $isMySQL = StringUtility::beginsWith($queryBuilder->getConnection()->getServerVersion(), 'MySQL');
+
+        $constraints = [];
         foreach (array_merge($this->replacementRteProperties, $this->useInsteadRteProperties, $this->doubleReplacementRteProperties) as $deprecatedRteProperty => $_) {
-            $where .= ($where ? ' OR ' : '') . '(TSconfig LIKE BINARY ' . $db->fullQuoteStr('%RTE.%' . $deprecatedRteProperty . '%', 'pages') . ' AND TSconfig NOT LIKE BINARY ' . $db->fullQuoteStr('%RTE.%' . $deprecatedRteProperty . 's%', 'pages') . ')' . LF;
+            // MySQL needs the non-standard BINARY modifier to ensure case sensitive comparisons with LIKE
+            if ($isMySQL) {
+                $constraints[] = $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->comparison(
+                        $queryBuilder->quoteIdentifier('TSconfig'),
+                        'LIKE BINARY',
+                        $queryBuilder->createNamedParameter(
+                            '%RTE.%' . $queryBuilder->escapeLikeWildcards($deprecatedRteProperty) . '%'
+                        )
+                    ),
+                    $queryBuilder->expr()->comparison(
+                        $queryBuilder->quoteIdentifier('TSconfig'),
+                        'NOT LIKE BINARY',
+                        $queryBuilder->createNamedParameter(
+                            '%RTE.%' . $queryBuilder->escapeLikeWildcards($deprecatedRteProperty) . 's%'
+                        )
+                    )
+                );
+            } else {
+                $constraints[] = $queryBuilder->expr()->andX(
+                    $queryBuilder->expr()->like(
+                        'TSconfig',
+                        $queryBuilder->createNamedParameter(
+                            '%RTE.%' . $queryBuilder->escapeLikeWildcards($deprecatedRteProperty) . '%'
+                        )
+                    ),
+                    $queryBuilder->expr()->notLike(
+                        'TSconfig',
+                        $queryBuilder->createNamedParameter(
+                            '%RTE.%' . $queryBuilder->escapeLikeWildcards($deprecatedRteProperty) . 's%'
+                        )
+                    )
+                );
+            }
         }
-        $res = $db->exec_SELECTquery($fields, $table, $where);
-        $dbQueries[] = str_replace(LF, ' ', $db->debug_lastBuiltQuery);
-        if ($db->sql_error()) {
-            $customMessages = 'SQL-ERROR: ' . htmlspecialchars($db->sql_error());
+
+        try {
+            return $queryBuilder
+                ->select('uid', 'TSconfig')
+                ->from('pages')
+                ->orWhere(...$constraints)
+                ->execute()
+                ->fetchAll();
+        } catch (DBALException $e) {
+            $customMessages = 'SQL-ERROR: ' . htmlspecialchars($e->getPrevious()->getMessage());
         }
-        $pages = array();
-        while ($row = $db->sql_fetch_assoc($res)) {
-            $pages[] = $row;
-        }
-        return $pages;
+
+        return [];
     }
 
     /**
@@ -235,7 +276,7 @@ class DeprecatedRteProperties extends AbstractUpdate
             $deprecatedProperties = explode(',', '/' . implode('/,/((RTE\\.(default\\.|config\\.[a-zA-Z0-9_\\-]*\\.[a-zA-Z0-9_\\-]*\\.))|\\s)', array_keys($this->replacementRteProperties)) . '/');
             $replacementProperties = explode(',', '$1' . implode(',$1', array_values($this->replacementRteProperties)));
             $updatedPageTSConfig = preg_replace($deprecatedProperties, $replacementProperties, $page['TSconfig']);
-            if ($updatedPageTSConfig == $page['TSconfig']) {
+            if ($updatedPageTSConfig === $page['TSconfig']) {
                 unset($pages[$index]);
             } else {
                 $pages[$index]['TSconfig'] = $updatedPageTSConfig;
@@ -253,18 +294,17 @@ class DeprecatedRteProperties extends AbstractUpdate
      */
     protected function updatePages($pages, &$dbQueries, &$customMessages)
     {
-        $db = $this->getDatabaseConnection();
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
         foreach ($pages as $page) {
-            $table = 'pages';
-            $where = 'uid =' . $page['uid'];
-            $field_values = array(
-                'TSconfig' => $page['TSconfig']
-            );
-            $db->exec_UPDATEquery($table, $where, $field_values);
-            $dbQueries[] = str_replace(LF, ' ', $db->debug_lastBuiltQuery);
-            if ($db->sql_error()) {
-                $customMessages .= 'SQL-ERROR: ' . htmlspecialchars($db->sql_error()) . LF . LF;
+            try {
+                $queryBuilder->update('pages')
+                    ->where($queryBuilder->expr()->eq('uid', (int)$page['uid']))
+                    ->set('TSconfig', $queryBuilder->quote($page['TSconfig']), false)
+                    ->execute();
+            } catch (DBALException $e) {
+                $customMessages .= 'SQL-ERROR: ' . htmlspecialchars($e->getPrevious()->getMessage()) . LF . LF;
             }
+            $dbQueries[] = str_replace(LF, ' ', $queryBuilder->getSQL());
         }
     }
 }
