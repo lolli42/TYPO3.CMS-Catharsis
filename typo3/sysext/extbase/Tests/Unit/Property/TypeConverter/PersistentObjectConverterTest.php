@@ -307,11 +307,7 @@ class PersistentObjectConverterTest extends UnitTestCase
         $source = [
             '__identity' => 666
         ];
-        $this->mockPersistenceManager
-            ->expects($this->any())
-            ->method('getObjectByIdentifier')
-            ->with(666)
-            ->will($this->throwException(new DuplicateObjectException('testing', 1476107580)));
+        $this->mockPersistenceManager->expects($this->any())->method('getObjectByIdentifier')->with(666)->will($this->throwException(new DuplicateObjectException));
         $this->converter->convertFrom($source, 'SomeType');
     }
 
@@ -342,11 +338,7 @@ class PersistentObjectConverterTest extends UnitTestCase
         $expectedObject = new \TYPO3\CMS\Extbase\Tests\Fixture\ClassWithSetters();
         $expectedObject->property1 = 'bar';
 
-        $this->mockReflectionService
-            ->expects($this->any())
-            ->method('getMethodParameters')
-            ->with(\TYPO3\CMS\Extbase\Tests\Fixture\ClassWithSetters::class, '__construct')
-            ->will($this->throwException(new \ReflectionException('testing', 1476107618)));
+        $this->mockReflectionService->expects($this->any())->method('getMethodParameters')->with(\TYPO3\CMS\Extbase\Tests\Fixture\ClassWithSetters::class, '__construct')->will($this->throwException(new \ReflectionException()));
         $configuration = $this->buildConfiguration([PersistentObjectConverter::CONFIGURATION_CREATION_ALLOWED => true]);
         $result = $this->converter->convertFrom($source, \TYPO3\CMS\Extbase\Tests\Fixture\ClassWithSetters::class, $convertedChildProperties, $configuration);
         $this->assertEquals($expectedObject, $result);

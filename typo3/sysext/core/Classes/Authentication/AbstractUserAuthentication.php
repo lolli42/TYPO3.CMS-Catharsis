@@ -370,7 +370,7 @@ abstract class AbstractUserAuthentication
     {
         // Backend or frontend login - used for auth services
         if (empty($this->loginType)) {
-            throw new Exception('No loginType defined, should be set explicitly by subclass', 1476045345);
+            throw new Exception('No loginType defined, should be set explicitly by subclass');
         }
         // Enable dev logging if set
         if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['writeDevLog']) {

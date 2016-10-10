@@ -118,10 +118,7 @@ class ValidationBuilder
                 $ruleName = $rulesTyposcript[$key];
                 $validatorClassName = $this->typoScriptRepository->getRegisteredClassName($ruleName, 'registeredValidators');
                 if ($validatorClassName === null) {
-                    throw new \RuntimeException(
-                        'Class "' . $validatorClassName . '" not registered via typoscript.',
-                        1476048511
-                    );
+                    throw new \RuntimeException('Class "' . $validatorClassName . '" not registered via typoscript.');
                 }
                 if (
                     (int)$key
@@ -164,10 +161,7 @@ class ValidationBuilder
                             'mandatoryMessage' => $mandatoryMessage
                         ];
                     } else {
-                        throw new \RuntimeException(
-                            'Class "' . $validatorClassName . '" could not be loaded.',
-                            1476048550
-                        );
+                        throw new \RuntimeException('Class "' . $validatorClassName . '" could not be loaded.');
                     }
                 }
             }

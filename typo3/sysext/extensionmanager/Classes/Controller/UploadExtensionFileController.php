@@ -119,7 +119,7 @@ class UploadExtensionFileController extends AbstractController
         if (Bootstrap::usesComposerClassLoading()) {
             throw new ExtensionManagerException(
                 'Composer mode is active. You are not allowed to upload any extension file.',
-                1444725828
+                1444725828821
             );
         }
     }
@@ -136,7 +136,7 @@ class UploadExtensionFileController extends AbstractController
         if (Bootstrap::usesComposerClassLoading()) {
             throw new ExtensionManagerException(
                 'Composer mode is active. You are not allowed to upload any extension file.',
-                1444725853
+                1444725853814
             );
         }
         $file = $_FILES['tx_extensionmanager_tools_extensionmanagerextensionmanager'];

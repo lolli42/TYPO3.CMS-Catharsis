@@ -92,10 +92,7 @@ class ClassInfoFactory
                     $reflectionParameter = $reflectionMethod->getParameters();
                     if (isset($reflectionParameter[0])) {
                         if (!$reflectionParameter[0]->getClass()) {
-                            throw new \Exception(
-                                'Method "' . $reflectionMethod->getName() . '" of class "' . $reflectedClass->getName() . '" is marked as setter for Dependency Injection, but does not have a type annotation',
-                                1476108030
-                            );
+                            throw new \Exception('Method "' . $reflectionMethod->getName() . '" of class "' . $reflectedClass->getName() . '" is marked as setter for Dependency Injection, but does not have a type annotation');
                         }
                         $result[$reflectionMethod->getName()] = $reflectionParameter[0]->getClass()->getName();
                     }

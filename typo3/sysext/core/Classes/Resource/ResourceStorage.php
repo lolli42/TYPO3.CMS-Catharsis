@@ -2028,7 +2028,7 @@ class ResourceStorage implements ResourceStorageInterface
      */
     protected function moveFolderBetweenStorages(Folder $folderToMove, Folder $targetParentFolder, $newFolderName)
     {
-        throw new \RuntimeException('Not yet implemented', 1476046361);
+        throw new \RuntimeException('Not yet implemented');
     }
 
     /**
@@ -2085,7 +2085,7 @@ class ResourceStorage implements ResourceStorageInterface
      */
     protected function copyFolderBetweenStorages(Folder $folderToCopy, Folder $targetParentFolder, $newFolderName)
     {
-        throw new \RuntimeException('Not yet implemented.', 1476046386);
+        throw new \RuntimeException('Not yet implemented.');
     }
 
     /**

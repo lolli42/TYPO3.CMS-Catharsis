@@ -306,10 +306,7 @@ class StagesService implements \TYPO3\CMS\Core\SingletonInterface
     public function getNextStage($stageId)
     {
         if (!MathUtility::canBeInterpretedAsInteger($stageId)) {
-            throw new \InvalidArgumentException(
-                $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'),
-                1291109987
-            );
+            throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'), 1291109987);
         }
         $nextStage = false;
         $workspaceStageRecs = $this->getStagesForWS();
@@ -376,10 +373,7 @@ class StagesService implements \TYPO3\CMS\Core\SingletonInterface
     public function getPrevStage($stageId)
     {
         if (!MathUtility::canBeInterpretedAsInteger($stageId)) {
-            throw new \InvalidArgumentException(
-                $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'),
-                1476048351
-            );
+            throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'));
         }
         $prevStage = false;
         $workspaceStageRecs = $this->getStagesForWS();
@@ -649,10 +643,7 @@ class StagesService implements \TYPO3\CMS\Core\SingletonInterface
     {
         $result = null;
         if (!MathUtility::canBeInterpretedAsInteger($stageId)) {
-            throw new \InvalidArgumentException(
-                $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'),
-                1476048371
-            );
+            throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'));
         }
         $workspaceStage = BackendUtility::getRecord(self::TABLE_STAGE, $stageId);
         if (is_array($workspaceStage) && isset($workspaceStage[$property])) {

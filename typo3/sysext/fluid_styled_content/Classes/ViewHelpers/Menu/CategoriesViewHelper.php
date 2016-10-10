@@ -102,7 +102,7 @@ class CategoriesViewHelper extends AbstractMenuViewHelper
                     }
                 }
             } catch (\RuntimeException $e) {
-                throw new Exception($e->getMessage(), 1476122186);
+                throw new Exception($e->getMessage());
             }
         }
 

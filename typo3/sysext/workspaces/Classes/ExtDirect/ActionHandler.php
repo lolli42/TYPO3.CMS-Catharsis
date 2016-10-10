@@ -342,10 +342,7 @@ class ActionHandler extends AbstractHandler
         $stageRecord = WorkspaceRecord::get($this->getCurrentWorkspace())->getStage($stageId);
 
         if ($stageRecord === null) {
-            throw new \InvalidArgumentException(
-                $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'),
-                1476044776
-            );
+            throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'));
         }
 
         $recipients = [];

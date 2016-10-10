@@ -81,7 +81,7 @@ class ExtDirectRouter
                 }
                 try {
                     if (!$validToken) {
-                        throw new \TYPO3\CMS\Core\FormProtection\Exception('ExtDirect: Invalid Security Token!', 1476046324);
+                        throw new \TYPO3\CMS\Core\FormProtection\Exception('ExtDirect: Invalid Security Token!');
                     }
                     $extResponse[$index]['type'] = 'rpc';
                     $extResponse[$index]['result'] = $this->processRpc($singleRequest, $namespace);
