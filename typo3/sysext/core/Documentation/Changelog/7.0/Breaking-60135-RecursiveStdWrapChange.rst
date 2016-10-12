@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Breaking: #60135 - Recursive stdWrap is now only called once
 ============================================================
+
+See :issue:`60135`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================================
 Breaking: #64637 - Compatibility CSS Styled Content TypoScript templates removed
 ================================================================================
+
+See :issue:`64637`
 
 Description
 ===========

@@ -31,15 +31,32 @@ class SecurityStatus implements \TYPO3\CMS\Reports\StatusProviderInterface
      */
     public function getStatus()
     {
-        $statuses = array(
+        $statuses = [
             'trustedHostsPattern' => $this->getTrustedHostsPatternStatus(),
             'adminUserAccount' => $this->getAdminAccountStatus(),
             'encryptionKeyEmpty' => $this->getEncryptionKeyStatus(),
             'fileDenyPattern' => $this->getFileDenyPatternStatus(),
             'htaccessUpload' => $this->getHtaccessUploadStatus(),
-            'saltedpasswords' => $this->getSaltedPasswordsStatus()
-        );
+            'saltedpasswords' => $this->getSaltedPasswordsStatus(),
+            'cacheFloodingProtection' => $this->getCacheFloodingProtectionStatus()
+        ];
         return $statuses;
+    }
+
+    /**
+     * @return \TYPO3\CMS\Reports\Status An object representing whether the check is disabled
+     */
+    protected function getCacheFloodingProtectionStatus()
+    {
+        $value = $GLOBALS['LANG']->getLL('status_ok');
+        $message = '';
+        $severity = \TYPO3\CMS\Reports\Status::OK;
+        if (empty($GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId'])) {
+            $value = $GLOBALS['LANG']->getLL('status_insecure');
+            $severity = \TYPO3\CMS\Reports\Status::ERROR;
+            $message = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:warning.install_cache_flooding');
+        }
+        return GeneralUtility::makeInstance(\TYPO3\CMS\Reports\Status::class, $GLOBALS['LANG']->getLL('status_cacheFloodingProtection'), $value, $message, $severity);
     }
 
     /**
@@ -93,10 +110,10 @@ class SecurityStatus implements \TYPO3\CMS\Reports\StatusProviderInterface
                 $severity = \TYPO3\CMS\Reports\Status::ERROR;
                 $editUserAccountUrl = BackendUtility::getModuleUrl(
                     'record_edit',
-                    array(
+                    [
                         'edit[be_users][' . $row['uid'] . ']' => 'edit',
                         'returnUrl' => BackendUtility::getModuleUrl('system_ReportsTxreportsm1')
-                    )
+                    ]
                 );
                 $message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:warning.backend_admin'),
                     '<a href="' . htmlspecialchars($editUserAccountUrl) . '">', '</a>');
@@ -200,7 +217,7 @@ class SecurityStatus implements \TYPO3\CMS\Reports\StatusProviderInterface
         $configCheck = GeneralUtility::makeInstance(\TYPO3\CMS\Saltedpasswords\Utility\ExtensionManagerConfigurationUtility::class);
         $message = '<p>' . $GLOBALS['LANG']->getLL('status_saltedPasswords_infoText') . '</p>';
         $messageDetail = '';
-        $resultCheck = $configCheck->checkConfigurationBackend(array(), new \TYPO3\CMS\Core\TypoScript\ConfigurationForm());
+        $resultCheck = $configCheck->checkConfigurationBackend([], new \TYPO3\CMS\Core\TypoScript\ConfigurationForm());
         switch ($resultCheck['errorType']) {
             case FlashMessage::INFO:
                 $messageDetail .= $resultCheck['html'];

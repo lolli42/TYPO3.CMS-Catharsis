@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================
 Feature: #47712 - New Locking API
 =================================
+
+See :issue:`47712`
 
 Description
 ===========
@@ -10,7 +15,7 @@ in the various operating systems, the new API introduces a locking service, whic
 locking methods. Some basic methods are shipped with the Core, but the available methods may be extended by
 extensions.
 
-A locking method has to implement the ``LockingStrategyInterface``. Each method has a set of capabilities, which
+A locking method has to implement the `LockingStrategyInterface`. Each method has a set of capabilities, which
 may vary depending on the current system, and a priority.
 
 If a function requires a lock, the locking service is asked for the best fitting mechanism matching the requested

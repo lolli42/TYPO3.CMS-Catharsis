@@ -1,13 +1,18 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================================
 Feature: #58033 - Enable label override of checkbox and radio buttons by TSconfig
 =================================================================================
+
+See :issue:`58033`
 
 Description
 -----------
 
 Use TSconfig to override labels of radio buttons and checkboxes used in FormEngine.
 
-For single checkboxes the key ``default`` is used:
+For single checkboxes the key `default` is used:
 
 .. code-block:: typoscript
 

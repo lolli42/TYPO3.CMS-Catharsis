@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================================
 Important: #36166 - Move access right parameters from BE to SYS configuration
 =============================================================================
+
+See :issue:`36166`
 
 Description
 ===========

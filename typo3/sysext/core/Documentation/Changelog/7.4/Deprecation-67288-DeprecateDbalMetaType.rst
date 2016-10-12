@@ -1,13 +1,18 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================================
 Deprecation: #67288 - Deprecate Dbal\DatabaseConnection::MetaType() method
 ==========================================================================
+
+See :issue:`67288`
 
 Description
 ===========
 
 The following public function has been marked as deprecated as the bugfix requires a signature change:
 
-* ``Dbal\DatabaseConnection->MetaType()``
+* `Dbal\DatabaseConnection->MetaType()`
 
 
 Impact
@@ -20,4 +25,4 @@ be bypassed and the DBMS will be queried for the necessary information on each c
 Migration
 =========
 
-Switch to ``getMetadata()`` and the field name for which you need the ADOdb MetaType information.
+Switch to `getMetadata()` and the field name for which you need the ADOdb MetaType information.

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================
 Breaking: #62925 - ExtJS Ext.ux.DateTimePicker removed
 ======================================================
+
+See :issue:`62925`
 
 Description
 ===========

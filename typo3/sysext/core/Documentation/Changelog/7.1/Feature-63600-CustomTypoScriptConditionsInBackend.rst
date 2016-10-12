@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================================
 Feature: #61489 - Allow own TypoScript Conditions in Backend as well
 ====================================================================
+
+See :issue:`61489`
 
 Description
 ===========
@@ -29,5 +34,5 @@ where the TypoScript Condition class deals with =/!= etc itself.
 Impact
 ======
 
-If you've previously used the ``userFunc`` condition, you are encouraged to use this new API for your own TypoScript
+If you've previously used the `userFunc` condition, you are encouraged to use this new API for your own TypoScript
 conditions.

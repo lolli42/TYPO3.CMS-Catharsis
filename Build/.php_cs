@@ -40,7 +40,6 @@ $finder = Symfony\CS\Finder\DefaultFinder::create()
     ->exclude('typo3conf')
     ->exclude('typo3temp')
     ->exclude('adodb')
-    ->exclude('php-openid')
     ->in(__DIR__ . '/../');
 
 // Return a Code Sniffing configuration using
@@ -67,6 +66,7 @@ return Symfony\CS\Config\Config::create()
         'extra_empty_lines',
         'phpdoc_no_package',
         'phpdoc_scalar',
-        'no_empty_lines_after_phpdocs'
+        'no_empty_lines_after_phpdocs',
+        'short_array_syntax'
     ])
     ->finder($finder);

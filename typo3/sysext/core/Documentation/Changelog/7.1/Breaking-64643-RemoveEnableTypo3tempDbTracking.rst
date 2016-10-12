@@ -1,12 +1,17 @@
+
+.. include:: ../../Includes.txt
+
 ========================================================================
 Breaking: #64643 - Remove functionality for enable_typo3temp_db_tracking
 ========================================================================
+
+See :issue:`64643`
 
 Description
 ===========
 
 The logic and the database table for tracking generated typo3temp/ images by GraphicalFunctions have been removed
-without substitution. The option to enable this functionality ``$TYPO3_CONF_VARS[GFX][enable_typo3temp_db_tracking]``
+without substitution. The option to enable this functionality `$TYPO3_CONF_VARS[GFX][enable_typo3temp_db_tracking]`
 has been removed.
 
 
@@ -19,7 +24,7 @@ Images generated with GraphicalFunctions with the option above enabled will not 
 Affected installations
 ======================
 
-Any installation having the option ``$TYPO3_CONF_VARS[GFX][enable_typo3temp_db_tracking]`` enabled.
+Any installation having the option `$TYPO3_CONF_VARS[GFX][enable_typo3temp_db_tracking]` enabled.
 
 
 Migration

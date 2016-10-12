@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================================
 Feature: #34922 - Allow .ts file extension for static TypoScript templates
 ==========================================================================
+
+See :issue:`34922`
 
 Description
 ===========

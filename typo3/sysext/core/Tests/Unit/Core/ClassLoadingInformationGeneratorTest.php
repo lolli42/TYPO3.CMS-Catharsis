@@ -88,7 +88,7 @@ class ClassLoadingInformationGeneratorTest extends UnitTestCase
                 ]
             ],
         ];
-        $packageMock = $this->createPackageMock(array());
+        $packageMock = $this->createPackageMock([]);
         /** @var ClassLoader|\PHPUnit_Framework_MockObject_MockObject $classLoaderMock */
         $classLoaderMock = $this->getMock(ClassLoader::class);
         $generator = new ClassLoadingInformationGenerator($classLoaderMock, [], __DIR__);
@@ -147,6 +147,19 @@ class ClassLoadingInformationGeneratorTest extends UnitTestCase
                 ],
                 [
                     '\'TYPO3\\\\CMS\\\\TestExtension\\\\\' => array($typo3InstallDir . \'/Fixtures/test_extension/Classes\')',
+                ],
+                [],
+            ],
+            'Psr-4 section with array' => [
+                [
+                    'autoload' => [
+                        'psr-4' => [
+                            'TYPO3\\CMS\\TestExtension\\' => ['Classes/', 'Resources/PHP/'],
+                        ],
+                    ],
+                ],
+                [
+                    '\'TYPO3\\\\CMS\\\\TestExtension\\\\\' => array($typo3InstallDir . \'/Fixtures/test_extension/Classes\',$typo3InstallDir . \'/Fixtures/test_extension/Resources/PHP\')',
                 ],
                 [],
             ],

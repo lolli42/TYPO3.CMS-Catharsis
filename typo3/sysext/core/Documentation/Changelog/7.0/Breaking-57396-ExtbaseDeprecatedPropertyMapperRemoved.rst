@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #57396 - Deprecated Extbase Property Mapper was removed
 =================================================================
+
+See :issue:`57396`
 
 Description
 ===========

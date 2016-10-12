@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===============================================
 Breaking: #57382 - Remove old flash message API
 ===============================================
+
+See :issue:`57382`
 
 Description
 ===========
@@ -22,4 +27,4 @@ Migration
 =========
 
 Change the API calls to not be of static kind anymore.
-Extbase extensions have to use ``getFlashMessageQueue()`` of the controllerContext
+Extbase extensions have to use `getFlashMessageQueue()` of the controllerContext

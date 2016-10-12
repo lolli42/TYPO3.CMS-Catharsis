@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Breaking: #63437 - Class aliases moved to legacy extension
 ==========================================================
+
+See :issue:`63437`
 
 Description
 ===========

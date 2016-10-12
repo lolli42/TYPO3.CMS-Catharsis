@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Feature: #16794 - Linking of Indexed Search result sections
 ===========================================================
+
+See :issue:`16794`
 
 Description
 ===========

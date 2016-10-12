@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ========================================
 Feature: #64031 - JavaScript Storage API
 ========================================
+
+See :issue:`64031`
 
 Description
 ===========
@@ -18,15 +23,15 @@ API Methods
 
 The API provides two objects available in the top frame attached to the global TYPO3 object:
 
-1) ``top.TYPO3.Storage.Client``
-2) ``top.TYPO3.Storage.Persistent``
+1) `top.TYPO3.Storage.Client`
+2) `top.TYPO3.Storage.Persistent`
 
 Each object has the following API methods
 
-* ``get(key)`` To fetch the data behind the key.
-* ``set(key, value)`` To set/override a key with any arbitrary content.
-* ``isset(key)`` (bool) checks if the key is in use.
-* ``clear()`` to empty all data inside the storage.
+* `get(key)` To fetch the data behind the key.
+* `set(key, value)` To set/override a key with any arbitrary content.
+* `isset(key)` (bool) checks if the key is in use.
+* `clear()` to empty all data inside the storage.
 
 
 Examples

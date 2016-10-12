@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================
 Feature: #59396 - TypolinkViewHelper
 ====================================
+
+See :issue:`59396`
 
 Description
 ===========

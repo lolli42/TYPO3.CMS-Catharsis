@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================
 Breaking: #60561 - Default TypoScript Constants Removed
 =======================================================
+
+See :issue:`60561`
 
 Description
 ===========

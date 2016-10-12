@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================
 Feature: #67293 - Dependency ordering service
 =============================================
+
+See :issue:`67293`
 
 Description
 ===========
@@ -27,8 +32,8 @@ Typical use case:
 		...
 	];
 
-In order to evaluate such relative dependencies to finally have a sorted list for ``['someHook']``, we introduced a new
-helper class ``\TYPO3\CMS\Core\Service\DependencyOrderingService``, which does the evaluation work for you.
+In order to evaluate such relative dependencies to finally have a sorted list for `['someHook']`, we introduced a new
+helper class `\TYPO3\CMS\Core\Service\DependencyOrderingService`, which does the evaluation work for you.
 
 Example usage:
 
@@ -37,9 +42,9 @@ Example usage:
 	$hooks = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['someExt']['someHook'];
 	$sortedHooks = GeneralUtility:makeInstance(DependencyOrderingService::class)->orderByDependencies($hooks , 'runBefore', 'runAfter');
 
-``$sortedHooks`` will then contain the content of ``$hooks``, but sorted according to the dependencies.
+`$sortedHooks` will then contain the content of `$hooks`, but sorted according to the dependencies.
 
-The ``DependencyOrderingService`` class also detects cycles in the dependencies and will throw an Exception in case
+The `DependencyOrderingService` class also detects cycles in the dependencies and will throw an Exception in case
 conflicting dependencies have been defined.
 
 In case the initial list does not specify a dependency for an item, those items will be put last in the final sorted list.

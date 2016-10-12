@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================================
 Breaking: #69401 - Adopt form to support the Extbase/ Fluid MVC stack
 =====================================================================
 
+See :issue:`69401`
+
 Description
 ===========
 
-The ``postProcessor`` interface and the mail postProcessor have changed.
+The `postProcessor` interface and the mail postProcessor have changed.
 
 Validators and filters have been moved to other folders and both class
 names and algorithms have changed.

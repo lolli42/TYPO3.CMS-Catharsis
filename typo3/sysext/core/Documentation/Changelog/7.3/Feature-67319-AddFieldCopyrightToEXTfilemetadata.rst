@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Feature: #67319 - Add field "copyright" to EXT:filemetadata
 ===========================================================
+
+See :issue:`67319`
 
 Description
 ===========

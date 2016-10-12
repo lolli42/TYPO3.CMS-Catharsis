@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =========================================================
 Breaking: #66369 - Removed ElementBrowser related classes
 =========================================================
+
+See :issue:`66369`
 
 Description
 ===========

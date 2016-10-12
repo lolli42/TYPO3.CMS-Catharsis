@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Feature: #49060 - MySql Comments reflected in SchemaMigrator
 ============================================================
+
+See :issue:`49060`
 
 Description
 ===========

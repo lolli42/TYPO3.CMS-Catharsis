@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Feature: #69120 - Add basic file search in element browser
 ==========================================================
+
+See :issue:`69120`
 
 Description
 ===========

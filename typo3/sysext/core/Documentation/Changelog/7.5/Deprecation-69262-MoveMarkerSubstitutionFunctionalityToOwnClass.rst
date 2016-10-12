@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 =========================================================================
 Deprecation: #69262 - Move marker substitution functionality to own class
 =========================================================================
 
+See :issue:`69262`
+
 Description
 ===========
 
-The marker substitution functionality has been moved from ``core/Classes/Html/HtmlParser.php`` to it's own class ``core/Classes/Service/MarkerBasedTemplateService.php``
+The marker substitution functionality has been moved from `core/Classes/Html/HtmlParser.php` to it's own class `core/Classes/Service/MarkerBasedTemplateService.php`
 
 The following methods within HtmlParser have been marked as deprecated.
 
@@ -34,7 +39,7 @@ Extensions that call these PHP methods directly.
 Migration
 =========
 
-Change the use statement from ``TYPO3\CMS\Core\Html\HtmlParser`` to ``TYPO3\CMS\Core\Service\MarkerBasedTemplateService`` and create an instance of this service class.
+Change the use statement from `TYPO3\CMS\Core\Html\HtmlParser` to `TYPO3\CMS\Core\Service\MarkerBasedTemplateService` and create an instance of this service class.
 The methods are not static anymore, but named as before.
 
 .. code-block:: php

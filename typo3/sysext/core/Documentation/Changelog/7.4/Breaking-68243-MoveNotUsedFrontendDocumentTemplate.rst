@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =========================================================
 Breaking: #68243 - Move not used FrontendDocumentTemplate
 =========================================================
+
+See :issue:`68243`
 
 Description
 ===========

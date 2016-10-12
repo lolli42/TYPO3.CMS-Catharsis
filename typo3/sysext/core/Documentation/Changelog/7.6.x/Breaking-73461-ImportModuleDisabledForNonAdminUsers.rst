@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Breaking: #73461 - Import module disabled for non admin users
 =============================================================
+
+See :issue:`73461`
 
 Description
 ===========

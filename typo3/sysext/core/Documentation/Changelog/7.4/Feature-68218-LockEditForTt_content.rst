@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================
 Feature: #68218 - Lock edit for tt_content
 ==========================================
+
+See :issue:`68218`
 
 Description
 ===========

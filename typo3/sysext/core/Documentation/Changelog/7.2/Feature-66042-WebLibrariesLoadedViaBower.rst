@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================
 Feature: #66042 - Web Libraries are included via bower
 ======================================================
+
+See :issue:`66042`
 
 Description
 ===========
@@ -21,7 +26,7 @@ command.
 	bower install
 
 For updating the code-base to a new version, the bower.json in the root directory can be adapted.
-Executing ``bower update`` will then update the third-party libraries.
+Executing `bower update` will then update the third-party libraries.
 
 
 Impact

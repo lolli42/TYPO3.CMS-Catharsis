@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Deprecation: #66223 - Backend parseTime deprecated
 ==================================================
+
+See :issue:`66223`
 
 Description
 ===========
@@ -12,7 +17,7 @@ and is not in use anymore.
 Impact
 ======
 
-Debug information is not shown anymore on a backend page if the member var ``$parseTimeFlag`` is enabled.
+Debug information is not shown anymore on a backend page if the member var `$parseTimeFlag` is enabled.
 
 
 Affected Installations
@@ -25,4 +30,4 @@ document template class.
 Migration
 =========
 
-Do not set the member var to ``TRUE``.
+Do not set the member var to `TRUE`.

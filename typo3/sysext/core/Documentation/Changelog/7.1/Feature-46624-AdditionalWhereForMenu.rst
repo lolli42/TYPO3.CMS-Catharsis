@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Feature: #46624 - HMENU item selection via additionalWhere
 ==========================================================
+
+See :issue:`46624`
 
 Description
 ===========

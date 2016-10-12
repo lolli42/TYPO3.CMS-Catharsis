@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==============================================================
 Feature: #54519 - Report links to disabled linkhandler records
 ==============================================================
+
+See :issue:`54519`
 
 Description
 ===========

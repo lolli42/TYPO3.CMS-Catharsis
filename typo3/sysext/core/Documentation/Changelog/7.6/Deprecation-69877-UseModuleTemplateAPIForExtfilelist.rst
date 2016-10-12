@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Deprecation: #69877 - Use ModuleTemplate API for ext:filelist
 =============================================================
 
+See :issue:`69877`
+
 Description
 ===========
 
-Method ``getButtonsAndOtherMarkers`` of class ``\TYPO3\CMS\Filelist\FileList`` has been marked as deprecated.
+Method `getButtonsAndOtherMarkers` of class `\TYPO3\CMS\Filelist\FileList` has been marked as deprecated.
 
 
 Impact

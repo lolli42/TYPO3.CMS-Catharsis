@@ -176,7 +176,7 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
 
         // Look up tt_content elements from the expanded page:
         $res = $db->exec_SELECTquery(
-            'uid,header,hidden,starttime,endtime,fe_group,CType,colPos,bodytext',
+            '*',
             'tt_content',
             'pid=' . (int)$expPageId . BackendUtility::deleteClause('tt_content')
             . BackendUtility::versioningPlaceholderClause('tt_content'),
@@ -228,7 +228,7 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
         if ((int)$this->getBackendUser()->getSessionData('pageTree_temporaryMountPoint') === 0) {
             return '';
         }
-        $link = '<p><a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('setTempDBmount' => 0))) . '" class="btn btn-primary">'
+        $link = '<p><a href="' . htmlspecialchars(GeneralUtility::linkThisScript(['setTempDBmount' => 0])) . '" class="btn btn-primary">'
             . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.temporaryDBmount', true) . '</a></p>';
         return $link;
     }

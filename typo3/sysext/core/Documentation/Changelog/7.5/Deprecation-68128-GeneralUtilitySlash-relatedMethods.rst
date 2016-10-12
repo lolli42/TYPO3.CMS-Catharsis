@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Deprecation: #68128 - GeneralUtility slash-related methods
 ==========================================================
 
+See :issue:`68128`
+
 Description
 ===========
 
-The following methods within ``GeneralUtility`` used to add or remove slashes
+The following methods within `GeneralUtility` used to add or remove slashes
 have been marked as deprecated.
 
 .. code-block:: php

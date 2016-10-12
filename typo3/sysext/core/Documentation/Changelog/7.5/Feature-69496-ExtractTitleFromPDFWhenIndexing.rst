@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================
 Feature: #69496 - Extract title from PDF when indexing
 ======================================================
+
+See :issue:`69496`
 
 Description
 ===========

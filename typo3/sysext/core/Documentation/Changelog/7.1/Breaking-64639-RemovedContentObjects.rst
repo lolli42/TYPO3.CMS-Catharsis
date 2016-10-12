@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================================
 Breaking: #63687 - Outdated ContentObjects moved to legacy extension
 ====================================================================
+
+See :issue:`63687`
 
 Description
 ===========

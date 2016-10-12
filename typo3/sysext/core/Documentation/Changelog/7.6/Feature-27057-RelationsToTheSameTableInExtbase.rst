@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ========================================================
 Feature: #27057 - Relations to the same table in Extbase
 ========================================================
+
+See :issue:`27057`
 
 Description
 ===========

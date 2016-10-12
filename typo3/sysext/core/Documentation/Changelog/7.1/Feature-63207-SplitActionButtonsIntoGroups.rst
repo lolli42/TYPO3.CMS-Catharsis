@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===============================================
 Feature: #63207 - Split buttons into two groups
 ===============================================
+
+See :issue:`63207`
 
 Description
 ===========

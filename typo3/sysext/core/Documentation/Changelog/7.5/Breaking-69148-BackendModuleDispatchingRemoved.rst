@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Breaking: #69148 - Backend Module Dispatching removed
 =====================================================
+
+See :issue:`69148`
 
 Description
 ===========
@@ -12,7 +17,7 @@ called "ModuleRunner" and its Interface have been removed as well.
 Impact
 ======
 
-Any dispatcher registered via ``$TBE_MODULES['_dispatcher']`` is not evaluated anymore.
+Any dispatcher registered via `$TBE_MODULES['_dispatcher']` is not evaluated anymore.
 
 
 Affected Installations

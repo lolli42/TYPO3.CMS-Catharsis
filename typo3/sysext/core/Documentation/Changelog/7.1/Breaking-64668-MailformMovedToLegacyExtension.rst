@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================================
 Breaking: #64668 - Content Element mailform moved to legacy extension
 =====================================================================
 
+See :issue:`64668`
+
 Description
 ===========
 
-The fallback "mailform" functionality, containing the ``FORM`` ContentObject, the submission logic for sending mailform
+The fallback "mailform" functionality, containing the `FORM` ContentObject, the submission logic for sending mailform
 and the content element (CType=mailform) has been moved to the legacy extension "compatibility6". This mailform
 was available when the "Form" extension, introduced in TYPO3 CMS 4.7, was not installed.
 

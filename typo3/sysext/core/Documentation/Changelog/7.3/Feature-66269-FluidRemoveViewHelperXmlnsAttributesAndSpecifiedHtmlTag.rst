@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================================
 Feature: #66269 - Fluid: Remove ViewHelper xmlns-attributes and specified html tag
 ==================================================================================
+
+See :issue:`66269`
 
 Description
 ===========

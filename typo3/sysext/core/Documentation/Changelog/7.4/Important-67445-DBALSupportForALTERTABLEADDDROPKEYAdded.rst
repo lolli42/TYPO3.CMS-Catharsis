@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================================
 Important: #67445 - DBAL support for ALTER TABLE ADD/DROP KEY added
 ===================================================================
+
+See :issue:`67445`
 
 Description
 ===========

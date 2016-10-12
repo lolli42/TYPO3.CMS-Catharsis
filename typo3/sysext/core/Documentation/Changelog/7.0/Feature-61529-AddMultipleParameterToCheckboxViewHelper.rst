@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Feature: #61529 - Add multiple parameter to f:form.checkbox
 ===========================================================
+
+See :issue:`61529`
 
 Description
 ===========

@@ -10951,6 +10951,9 @@ div.t3-form-field-container:first-child .t3-form-field-label-flex {
   opacity: 0.5;
   filter: alpha(opacity=50);
 }
+.t3-form-field-eval-null-checkbox {
+  z-index: 9000;
+}
 .t3-form-palette-field-label {
   text-indent: 2px;
 }
@@ -12155,15 +12158,18 @@ select.form-control:not([size]) {
   -webkit-appearance: none;
      -moz-appearance: none;
           appearance: none;
+}
+select.form-control[size="1"]::-ms-expand,
+select.form-control:not([size])::-ms-expand {
+  display: none;
+}
+select.form-control[size="1"]:not(.form-select-no-siblings),
+select.form-control:not([size]):not(.form-select-no-siblings) {
   background-image: url('../../../../../../typo3/sysext/core/Resources/Public/Icons/T3Icons/actions/actions-view-list-expand.svg');
   background-position: right 4px center;
   background-repeat: no-repeat;
   background-size: 16px 16px;
   padding-right: 24px;
-}
-select.form-control[size="1"]::-ms-expand,
-select.form-control:not([size])::-ms-expand {
-  display: none;
 }
 select.form-control[size="1"].input-sm,
 select.form-control:not([size]).input-sm,
@@ -13356,7 +13362,7 @@ iframe {
 }
 .typo3-extension-list .ext-icon {
   max-height: 16px;
-  width: auto;
+  max-width: 16px;
 }
 .typo3-extension-list tr.installed td {
   background-color: #c8ffaa;

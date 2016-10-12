@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================================================
 Feature: #68773 - Show a special image for official distributions in Extension Manager
 ======================================================================================
+
+See :issue:`68773`
 
 Description
 ===========

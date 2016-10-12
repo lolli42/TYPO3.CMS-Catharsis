@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================
 Breaking: #63000 - Migrate EXT:cshmanual to Extbase
 ===================================================
+
+See :issue:`63000`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Breaking: #60630 - Scheduler Module Template File Moved
 ===========================================================
+
+See :issue:`60630`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Breaking: #68321 - Move language and images in rtehtmlarea
 ==========================================================
+
+See :issue:`68321`
 
 Description
 ===========

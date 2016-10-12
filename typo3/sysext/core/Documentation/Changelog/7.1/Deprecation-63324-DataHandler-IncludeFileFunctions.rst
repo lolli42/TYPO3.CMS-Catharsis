@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================================
 Deprecation: #62864 - DataHandler->include_filefunctions deprecated
 ===================================================================
 
+See :issue:`62864`
+
 Description
 ===========
 
-The public property ``->include_filefunctions`` has been marked as deprecated.
+The public property `->include_filefunctions` has been marked as deprecated.
 It has not been formally defined and was only created dynamically in the code.
 
 Impact
@@ -22,4 +27,4 @@ All installations running extensions that rely on reading this property. Current
 Migration
 =========
 
-If your extension needs to know whether the BasicFileUtility has been instantiated in DataHandler it could use ``$datahandler->fileFunc instanceof \TYPO3\CMS\Core\Utility\File\BasicFileUtility``
+If your extension needs to know whether the BasicFileUtility has been instantiated in DataHandler it could use `$datahandler->fileFunc instanceof \TYPO3\CMS\Core\Utility\File\BasicFileUtility`

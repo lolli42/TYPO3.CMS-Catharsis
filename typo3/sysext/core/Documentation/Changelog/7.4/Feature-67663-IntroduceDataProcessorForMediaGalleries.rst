@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Feature: #67663 - Introduce DataProcessor for media galleries
 =============================================================
+
+See :issue:`67663`
 
 Description
 ===========

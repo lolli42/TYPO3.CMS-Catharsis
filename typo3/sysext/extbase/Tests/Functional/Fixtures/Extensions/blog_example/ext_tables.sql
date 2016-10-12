@@ -90,7 +90,7 @@ CREATE TABLE tx_blogexample_domain_model_comment (
 
 	post int(11) DEFAULT '0' NOT NULL,
 
-	date int(11) DEFAULT '0' NOT NULL,
+	date datetime,
 	author varchar(255) DEFAULT '' NOT NULL,
 	email varchar(255) DEFAULT '' NOT NULL,
 	content text NOT NULL,
@@ -198,4 +198,25 @@ CREATE TABLE tx_blogexample_post_post_mm (
 
 	KEY uid_local (uid_local),
 	KEY uid_foreign (uid_foreign)
+);
+
+#
+# Table structure for table 'tx_blogexample_domain_model_dateexample'
+#
+CREATE TABLE tx_blogexample_domain_model_dateexample (
+	uid int(11) unsigned DEFAULT '0' NOT NULL auto_increment,
+	pid int(11) DEFAULT '0' NOT NULL,
+
+	datetime_int int(11) DEFAULT '0' NOT NULL,
+	datetime_text varchar(255) DEFAULT '' NOT NULL,
+	datetime_datetime datetime,
+
+	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
+	crdate int(11) unsigned DEFAULT '0' NOT NULL,
+	deleted tinyint(4) unsigned DEFAULT '0' NOT NULL,
+	hidden tinyint(4) unsigned DEFAULT '0' NOT NULL,
+	sys_language_uid int(11) DEFAULT '0' NOT NULL,
+
+	PRIMARY KEY (uid),
+	KEY parent (pid)
 );

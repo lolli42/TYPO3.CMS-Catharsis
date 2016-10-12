@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Feature: #60064 - Logging Framework Introspection Processor
 ===========================================================
+
+See :issue:`60064`
 
 Description
 ===========

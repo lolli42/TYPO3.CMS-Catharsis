@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #24449 - Use move placeholders as default in workspaces
 =================================================================
+
+See :issue:`24449`
 
 Description
 ===========

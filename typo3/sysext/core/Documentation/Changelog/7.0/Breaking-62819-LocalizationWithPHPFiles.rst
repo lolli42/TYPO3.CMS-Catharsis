@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Breaking: #62819 - Remove php Localization Support
 ==================================================
+
+See :issue:`62819`
 
 Description
 ===========

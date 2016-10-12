@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================================
 Feature: #70002 - Make it possible to register own icons for file extensions
 ============================================================================
+
+See :issue:`70002`
 
 Description
 ===========

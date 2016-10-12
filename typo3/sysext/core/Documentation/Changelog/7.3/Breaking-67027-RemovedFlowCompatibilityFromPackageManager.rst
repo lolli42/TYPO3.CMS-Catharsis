@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #67027 - Removed FLOW-compatibility from PackageManager
 =================================================================
+
+See :issue:`67027`
 
 Description
 ===========

@@ -1,25 +1,30 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Deprecation: #68122 - Deprecate GeneralUtility::readLLfile
 ==========================================================
 
+See :issue:`68122`
+
 Description
 ===========
 
-Method ``GeneralUtility::realLLfile()`` was just a wrapper around LocalizationFactory
+Method `GeneralUtility::realLLfile()` was just a wrapper around LocalizationFactory
 and has been marked as deprecated.
 
 
 Impact
 ======
 
-Extensions using ``realLLfile()`` to parse localization files should switch to
-an instance of ``LocalizationFactory``.
+Extensions using `realLLfile()` to parse localization files should switch to
+an instance of `LocalizationFactory`.
 
 
 Affected Installations
 ======================
 
-Extensions using ``GeneralUtility::readLLfile()``
+Extensions using `GeneralUtility::readLLfile()`
 
 
 Migration

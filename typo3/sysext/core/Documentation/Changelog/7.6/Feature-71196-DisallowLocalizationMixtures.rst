@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ================================================
 Feature: #71196 - Disallow localization mixtures
 ================================================
+
+See :issue:`71196`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ========================================================
 Breaking: #66754 - Remove RenderingContextAwareInterface
 ========================================================
+
+See :issue:`66754`
 
 Description
 ===========

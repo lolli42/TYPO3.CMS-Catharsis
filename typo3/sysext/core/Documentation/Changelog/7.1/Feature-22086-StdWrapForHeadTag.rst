@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Feature: #22086 - Add .stdWrap to page.headTag option
 =====================================================
+
+See :issue:`22086`
 
 Description
 ===========

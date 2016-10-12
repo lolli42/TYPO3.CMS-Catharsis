@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Breaking: #72117 - API change in ExceptionHandlerInterface
 ==========================================================
+
+See :issue:`72117`
 
 Description
 ===========

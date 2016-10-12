@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================================
 Breaking: #63687 - Web=>Functions=>Wizards moved to legacy extension
 ====================================================================
+
+See :issue:`63687`
 
 Description
 ===========
@@ -28,5 +33,5 @@ Migration
 =========
 
 Any extension hooking into "Web" => "Functions" => "Wizards" need to be adapted. In their ext_tables.php the
-``insertModuleFunction`` call does not need to have a 5th parameter given. EXT:compatibility6 is then no longer
+`insertModuleFunction` call does not need to have a 5th parameter given. EXT:compatibility6 is then no longer
 needed.

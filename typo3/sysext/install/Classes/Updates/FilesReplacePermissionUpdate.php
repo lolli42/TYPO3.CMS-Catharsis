@@ -105,7 +105,7 @@ class FilesReplacePermissionUpdate extends AbstractUpdate
      */
     protected function getRecordsFromTable($table)
     {
-        $fields = implode(',', array('uid', 'file_permissions'));
+        $fields = implode(',', ['uid', 'file_permissions']);
         $records = $this->getDatabaseConnection()->exec_SELECTgetRows($fields, $table, $this->getWhereClause());
         return $records;
     }
@@ -117,6 +117,6 @@ class FilesReplacePermissionUpdate extends AbstractUpdate
      */
     protected function getWhereClause()
     {
-        return 'file_permissions LIKE \'%writeFile%\' AND file_permissions LIKE \'%replaceFile%\'';
+        return 'file_permissions LIKE \'%writeFile%\' AND file_permissions NOT LIKE \'%replaceFile%\'';
     }
 }

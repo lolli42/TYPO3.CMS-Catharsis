@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==============================================================
 Feature: #66077 - Introduce callouts to replace content alerts
 ==============================================================
+
+See :issue:`66077`
 
 Description
 ===========

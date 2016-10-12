@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #65727 - Don't provide access to localPath of FAL files
 =================================================================
+
+See :issue:`65727`
 
 Description
 ===========

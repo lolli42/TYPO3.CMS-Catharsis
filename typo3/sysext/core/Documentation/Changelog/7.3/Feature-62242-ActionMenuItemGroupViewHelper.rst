@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===============================================
 Feature: #62242 - ActionMenuItemGroupViewHelper
 ===============================================
+
+See :issue:`62242`
 
 Description
 ===========

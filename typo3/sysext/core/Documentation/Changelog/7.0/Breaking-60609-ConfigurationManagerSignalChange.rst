@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================
 Breaking: #60609 - Configuration Manager Signal Changed
 =======================================================
+
+See :issue:`60609`
 
 Description
 ===========

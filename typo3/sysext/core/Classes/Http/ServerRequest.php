@@ -36,12 +36,12 @@ class ServerRequest extends Request implements ServerRequestInterface
     /**
      * @var array
      */
-    protected $attributes;
+    protected $attributes = [];
 
     /**
      * @var array
      */
-    protected $cookieParams;
+    protected $cookieParams = [];
 
     /**
      * @var array
@@ -51,17 +51,17 @@ class ServerRequest extends Request implements ServerRequestInterface
     /**
      * @var array
      */
-    protected $queryParams;
+    protected $queryParams = [];
 
     /**
      * @var array
      */
-    protected $serverParams;
+    protected $serverParams = [];
 
     /**
      * @var array
      */
-    protected $uploadedFiles;
+    protected $uploadedFiles = [];
 
     /**
      * Constructor, the only place to set all parameters of this Message/Request
@@ -74,7 +74,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      * @param array $uploadedFiles Upload file information, a tree of UploadedFiles
      * @throws \InvalidArgumentException for any invalid value.
      */
-    public function __construct($uri = null, $method = null, $body = 'php://input', array $headers = array(), array $serverParams = array(), array $uploadedFiles = null)
+    public function __construct($uri = null, $method = null, $body = 'php://input', array $headers = [], array $serverParams = [], array $uploadedFiles = null)
     {
         if ($uploadedFiles !== null) {
             $this->validateUploadedFiles($uploadedFiles);

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================
 Feature: #50136 - Add SVG support
 =================================
+
+See :issue:`50136`
 
 Description
 ===========
@@ -15,4 +20,4 @@ An extra fallback is added to ImageInfo to determine SVG dimensions when IM/GM f
 Impact
 ======
 
-SVG is added as default supported image file extension to ``$GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']``.
+SVG is added as default supported image file extension to `$GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']`.

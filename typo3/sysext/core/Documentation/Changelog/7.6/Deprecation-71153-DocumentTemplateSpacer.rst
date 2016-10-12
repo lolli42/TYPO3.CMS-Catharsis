@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ================================================
 Deprecation: #71153 - DocumentTemplate->spacer()
 ================================================
 
+See :issue:`71153`
+
 Description
 ===========
 
-Method ``TYPO3\CMS\Backend\Template\DocumentTemplate::spacer()`` has been marked as deprecated.
+Method `TYPO3\CMS\Backend\Template\DocumentTemplate::spacer()` has been marked as deprecated.
 
 
 Affected Installations

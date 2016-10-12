@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================================
 Feature: #69543 - Introduced $GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext']
 ================================================================================
 
+See :issue:`69543`
+
 Description
 ===========
 
-Now we got the ``RendererRegistry`` with the ``VideoTagRenderer``, ``AudioTagRenderer`` and ``MediaViewHelper`` in the
+Now we got the `RendererRegistry` with the `VideoTagRenderer`, `AudioTagRenderer` and `MediaViewHelper` in the
 core we needed also a way to define a list of file extensions of the files that can be handled by these. This list
 can then be used in the TCA for allowing sys_file_references to these files.
 
@@ -63,7 +68,7 @@ TCA example:
 Extending this list:
 --------------------
 
-If you want to extend this list you can add the desired extension name to list in the ``ext_localconf.php`` of your extension.
+If you want to extend this list you can add the desired extension name to list in the `ext_localconf.php` of your extension.
 
 .. code-block:: php
 

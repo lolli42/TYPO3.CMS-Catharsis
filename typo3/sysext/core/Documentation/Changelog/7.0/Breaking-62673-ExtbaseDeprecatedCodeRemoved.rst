@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Breaking: #62673 - Deprecated extbase code is removed
 =====================================================
+
+See :issue:`62673`
 
 Description
 ===========

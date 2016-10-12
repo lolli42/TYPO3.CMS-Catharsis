@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Breaking: #62291 - RTE Deprecated JavaScript methods removed
 ============================================================
+
+See :issue:`62291`
 
 Description
 ===========

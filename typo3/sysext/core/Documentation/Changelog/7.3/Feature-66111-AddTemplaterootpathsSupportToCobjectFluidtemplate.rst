@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ========================================================================
 Feature: #66111 - Add TemplateRootPaths support to cObject FLUIDTEMPLATE
 ========================================================================
 
+See :issue:`66111`
+
 Description
 ===========
 
-cObject FLUIDTEMPLATE has been extended with ``templateRootPaths`` and ``templateName``. Now you can set a template name
+cObject FLUIDTEMPLATE has been extended with `templateRootPaths` and `templateName`. Now you can set a template name
 and when rendering the template this name is used together with the set format to find the template in the given
 templateRootPaths with the same fallback logic as layoutRootPath and partialRootPath
 

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #62670 - Removal of deprecated code in multiple sysexts
 =================================================================
+
+See :issue:`62670`
 
 Description
 ===========
@@ -14,8 +19,8 @@ All connection parameters (host, username, password, db) for methods :code:`sql_
 CSS Styled Content
 ------------------
 
-The old frontend plugin file ``pi1/class.tx_cssstyledcontent_pi1.php`` is removed.
-Refer to ``Classes/Controller/CssStyledContentController.php`` instead.
+The old frontend plugin file `pi1/class.tx_cssstyledcontent_pi1.php` is removed.
+Refer to `Classes/Controller/CssStyledContentController.php` instead.
 
 
 Install Tool

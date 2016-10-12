@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================
 Breaking: #53658 - option alternateBgColors removed
 ===================================================
+
+See :issue:`53658`
 
 Description
 ===========

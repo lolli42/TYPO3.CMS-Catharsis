@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Deprecation: #62363 - TSFE->JSeventFuncCalls disabled
 =====================================================
+
+See :issue:`62363`
 
 Description
 ===========

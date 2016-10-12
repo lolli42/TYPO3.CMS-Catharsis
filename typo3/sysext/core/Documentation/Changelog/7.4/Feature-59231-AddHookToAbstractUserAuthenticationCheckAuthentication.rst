@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================================
 Feature: #59231 - Hook for AbstractUserAuthentication::checkAuthentication()
 ============================================================================
 
+See :issue:`59231`
+
 Description
 ===========
 
-Hook to post-process login failures in ``AbstractUserAuthentication::checkAuthentication``.
+Hook to post-process login failures in `AbstractUserAuthentication::checkAuthentication`.
 By default the process sleeps for five seconds in case of failing. By using this hook, different solutions for
 brute force protection can be implemented.
 

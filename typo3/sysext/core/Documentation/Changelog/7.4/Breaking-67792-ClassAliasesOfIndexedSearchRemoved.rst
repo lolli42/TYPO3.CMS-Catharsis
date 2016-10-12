@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================
 Breaking: #67792 - Class aliases of Indexed Search removed
 ==========================================================
+
+See :issue:`67792`
 
 Description
 ===========
@@ -13,8 +18,8 @@ Impact
 
 These class aliases are not available anymore:
 
-- ``tx_indexedsearch``
-- ``Tx_IndexedSearch_Controller_SearchController``
+- `tx_indexedsearch`
+- `Tx_IndexedSearch_Controller_SearchController`
 
 
 Affected Installations
@@ -28,5 +33,5 @@ Migration
 
 Use the new class names:
 
-- ``\TYPO3\CMS\IndexedSearch\Controller\SearchFormController``
-- ``\TYPO3\CMS\IndexedSearch\Controller\SearchController``
+- `\TYPO3\CMS\IndexedSearch\Controller\SearchFormController`
+- `\TYPO3\CMS\IndexedSearch\Controller\SearchController`

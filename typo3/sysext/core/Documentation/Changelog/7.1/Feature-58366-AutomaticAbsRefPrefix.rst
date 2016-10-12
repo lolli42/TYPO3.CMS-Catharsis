@@ -1,12 +1,17 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Feature: #58366 - Add "auto" Option for config.absRefPrefix
 ===========================================================
 
+See :issue:`58366`
+
 Description
 ===========
 
-The TypoScript setting ``config.absRefPrefix`` can be used to allow URL rewriting like giving a hard
-prefix for all relative paths. As an alternative to ``config.baseURL`` to be set to a specific domain
+The TypoScript setting `config.absRefPrefix` can be used to allow URL rewriting like giving a hard
+prefix for all relative paths. As an alternative to `config.baseURL` to be set to a specific domain
 absRefPrefix can autodetect the site root and use that instead of manually setting this option.
 
 Frontend:

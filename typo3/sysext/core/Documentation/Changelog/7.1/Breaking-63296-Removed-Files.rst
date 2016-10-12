@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Breaking: #63296 - Deprecated typo3/ files removed
 ==================================================
+
+See :issue:`63296`
 
 Description
 ===========

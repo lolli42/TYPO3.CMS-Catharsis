@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================
 Breaking: #52705 - Default log configuration is changed
 =======================================================
+
+See :issue:`52705`
 
 Description
 ===========

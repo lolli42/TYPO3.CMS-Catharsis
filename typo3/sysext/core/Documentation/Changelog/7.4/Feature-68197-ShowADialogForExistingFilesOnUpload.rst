@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Feature: #68197 - Show a dialog for existing files on upload
 ============================================================
+
+See :issue:`68197`
 
 Description
 ===========

@@ -1,13 +1,18 @@
+
+.. include:: ../../Includes.txt
+
 ======================================
 Feature: #67880 - Added count to split
 ======================================
 
+See :issue:`67880`
+
 Description
 ===========
 
-A new property ``returnCount`` is added to the stdWrap property ``split``.
+A new property `returnCount` is added to the stdWrap property `split`.
 
-When dealing with comma separated values like the content of ``field:records`` or similar,
+When dealing with comma separated values like the content of `field:records` or similar,
 we might need to know how many items are present inside the csv.
 
 Example:

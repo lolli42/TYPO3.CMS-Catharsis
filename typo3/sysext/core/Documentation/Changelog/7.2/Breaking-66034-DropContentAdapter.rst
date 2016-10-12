@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================
 Breaking: #66034 - Drop Content Adapter
 =======================================
+
+See :issue:`66034`
 
 Description
 ===========

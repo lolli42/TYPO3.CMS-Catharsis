@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================
 Breaking: #61959 - Move flash message output to alerts
 ======================================================
+
+See :issue:`61959`
 
 Description
 ===========

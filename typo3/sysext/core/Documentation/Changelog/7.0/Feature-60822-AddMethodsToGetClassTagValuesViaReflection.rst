@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Feature: #60822 - Class annotations in extbase reflection service
 =================================================================
+
+See :issue:`60822`
 
 Description
 ===========

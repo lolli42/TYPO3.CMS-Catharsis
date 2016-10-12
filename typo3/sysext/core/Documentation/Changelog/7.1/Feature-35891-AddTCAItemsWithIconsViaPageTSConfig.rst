@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================================
 Feature: #35891 - FormEngine: Possibility to add icons via PageTSconfig
 =======================================================================
+
+See :issue:`35891`
 
 Description
 ===========

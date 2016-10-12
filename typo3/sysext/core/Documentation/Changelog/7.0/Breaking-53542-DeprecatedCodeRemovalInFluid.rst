@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Breaking: #62416 - Removal of deprecated code in sysext fluid
 =============================================================
+
+See :issue:`62416`
 
 Description
 ===========
@@ -10,16 +15,16 @@ ContainerViewHelper
 
 The following options have been removed from the ViewHelper:
 
-* ``enableJumpToUrl``
-* ``addCssFile``, use ``includeCssFiles`` instead
-* ``addJsFile``, use ``includeJsFiles`` instead
+* `enableJumpToUrl`
+* `addCssFile`, use `includeCssFiles` instead
+* `addJsFile`, use `includeJsFiles` instead
 
 
 AbstractBackendViewHelper
 -------------------------
 
-The usage of ``$GLOBALS['SOBE']`` is removed for retrieving the DocumentTemplate instance.
-Use ``->getDocInstance()`` instead.
+The usage of `$GLOBALS['SOBE']` is removed for retrieving the DocumentTemplate instance.
+Use `->getDocInstance()` instead.
 
 
 TemplateView
@@ -27,9 +32,9 @@ TemplateView
 
 The following methods have been removed:
 
-* ``getTemplateRootPath()`` is removed, use ``getTemplateRootPaths()`` instead
-* ``getPartialRootPath()`` is removed, use ``setPartialRootPaths()`` instead
-* ``getLayoutRootPath()`` is removed, use ``getLayoutRootPaths()`` instead
+* `getTemplateRootPath()` is removed, use `getTemplateRootPaths()` instead
+* `getPartialRootPath()` is removed, use `setPartialRootPaths()` instead
+* `getLayoutRootPath()` is removed, use `getLayoutRootPaths()` instead
 
 
 Impact

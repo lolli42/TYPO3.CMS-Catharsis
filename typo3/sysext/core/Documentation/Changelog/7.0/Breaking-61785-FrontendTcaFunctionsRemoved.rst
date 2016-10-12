@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================================================
 Breaking: #61785 - getCompressedTCarray and includeTCA from TypoScriptFrontendController removed
 ================================================================================================
+
+See :issue:`61785`
 
 Description
 ===========

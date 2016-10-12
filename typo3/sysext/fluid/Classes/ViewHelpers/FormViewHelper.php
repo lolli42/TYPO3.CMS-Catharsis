@@ -146,7 +146,7 @@ class FormViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormViewH
      * @param string $hiddenFieldClassName
      * @return string rendered form
      */
-    public function render($action = null, array $arguments = array(), $controller = null, $extensionName = null, $pluginName = null, $pageUid = null, $object = null, $pageType = 0, $noCache = false, $noCacheHash = false, $section = '', $format = '', array $additionalParams = array(), $absolute = false, $addQueryString = false, array $argumentsToBeExcludedFromQueryString = array(), $fieldNamePrefix = null, $actionUri = null, $objectName = null, $hiddenFieldClassName = null)
+    public function render($action = null, array $arguments = [], $controller = null, $extensionName = null, $pluginName = null, $pageUid = null, $object = null, $pageType = 0, $noCache = false, $noCacheHash = false, $section = '', $format = '', array $additionalParams = [], $absolute = false, $addQueryString = false, array $argumentsToBeExcludedFromQueryString = [], $fieldNamePrefix = null, $actionUri = null, $objectName = null, $hiddenFieldClassName = null)
     {
         $this->setFormActionUri();
         if (strtolower($this->arguments['method']) === 'get') {
@@ -196,7 +196,8 @@ class FormViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormViewH
             $formActionUri = $this->arguments['actionUri'];
         } else {
             $uriBuilder = $this->controllerContext->getUriBuilder();
-            $formActionUri = $uriBuilder->reset()->setTargetPageUid($this->arguments['pageUid'])->setTargetPageType($this->arguments['pageType'])->setNoCache($this->arguments['noCache'])->setUseCacheHash(!$this->arguments['noCacheHash'])->setSection($this->arguments['section'])->setCreateAbsoluteUri($this->arguments['absolute'])->setArguments((array)$this->arguments['additionalParams'])->setAddQueryString($this->arguments['addQueryString'])->setArgumentsToBeExcludedFromQueryString((array)$this->arguments['argumentsToBeExcludedFromQueryString'])->setFormat($this->arguments['format'])->uriFor($this->arguments['action'], $this->arguments['arguments'], $this->arguments['controller'], $this->arguments['extensionName'], $this->arguments['pluginName']);
+            $pageUid = (int)$this->arguments['pageUid'] > 0 ? (int)$this->arguments['pageUid'] : null;
+            $formActionUri = $uriBuilder->reset()->setTargetPageUid($pageUid)->setTargetPageType($this->arguments['pageType'])->setNoCache($this->arguments['noCache'])->setUseCacheHash(!$this->arguments['noCacheHash'])->setSection($this->arguments['section'])->setCreateAbsoluteUri($this->arguments['absolute'])->setArguments((array)$this->arguments['additionalParams'])->setAddQueryString($this->arguments['addQueryString'])->setArgumentsToBeExcludedFromQueryString((array)$this->arguments['argumentsToBeExcludedFromQueryString'])->setFormat($this->arguments['format'])->uriFor($this->arguments['action'], $this->arguments['arguments'], $this->arguments['controller'], $this->arguments['extensionName'], $this->arguments['pluginName']);
             $this->formActionUriArguments = $uriBuilder->getArguments();
         }
         $this->tag->addAttribute('action', $formActionUri);
@@ -331,7 +332,7 @@ class FormViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormViewH
     {
         if ($this->hasArgument('object')) {
             $this->viewHelperVariableContainer->add(\TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formObject', $this->arguments['object']);
-            $this->viewHelperVariableContainer->add(\TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'additionalIdentityProperties', array());
+            $this->viewHelperVariableContainer->add(\TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'additionalIdentityProperties', []);
         }
     }
 
@@ -390,7 +391,7 @@ class FormViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormViewH
      */
     protected function addFormFieldNamesToViewHelperVariableContainer()
     {
-        $this->viewHelperVariableContainer->add(\TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formFieldNames', array());
+        $this->viewHelperVariableContainer->add(\TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper::class, 'formFieldNames', []);
     }
 
     /**

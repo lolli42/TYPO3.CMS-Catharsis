@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Breaking: #67749 - Force class auto loading for various hooks
 =============================================================
+
+See :issue:`67749`
 
 Description
 ===========

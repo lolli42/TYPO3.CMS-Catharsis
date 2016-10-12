@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Feature: #36743 - Registry for adding text extractor classes
 ============================================================
+
+See :issue:`36743`
 
 Description
 ===========

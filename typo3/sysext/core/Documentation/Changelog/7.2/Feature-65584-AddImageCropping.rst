@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================
 Feature: #65584 - Add image cropping
 ====================================
+
+See :issue:`65584`
 
 Description
 ===========

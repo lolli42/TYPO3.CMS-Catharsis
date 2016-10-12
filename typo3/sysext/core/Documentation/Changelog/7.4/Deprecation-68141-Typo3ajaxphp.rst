@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================
 Deprecation: #68141 - typo3/ajax.php
 ====================================
+
+See :issue:`68141`
 
 Description
 ===========
@@ -18,10 +23,10 @@ All extensions directly linking to typo3/ajax.php will throw a deprecation warni
 Affected Installations
 ======================
 
-Installations with custom extensions that call typo3/ajax.php without using proper API calls from ``BackendUtility``.
+Installations with custom extensions that call typo3/ajax.php without using proper API calls from `BackendUtility`.
 
 
 Migration
 =========
 
-Use ``BackendUtility::getAjaxUrl()``.
+Use `BackendUtility::getAjaxUrl()`.

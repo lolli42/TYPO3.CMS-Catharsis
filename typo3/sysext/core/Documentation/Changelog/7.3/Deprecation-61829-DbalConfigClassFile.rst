@@ -1,18 +1,23 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Deprecation: #61829 - Deprecate config.classFile DBAL option
 ============================================================
 
+See :issue:`61829`
+
 Description
 ===========
 
-The DBAL option ``config.classFile`` has been marked for deprecation,
+The DBAL option `config.classFile` has been marked for deprecation,
 and will be removed with TYPO3 CMS 8.
 
 
 Impact
 ======
 
-Using ``config.classFile`` option will throw a deprecation message.
+Using `config.classFile` option will throw a deprecation message.
 
 
 Affected Installations

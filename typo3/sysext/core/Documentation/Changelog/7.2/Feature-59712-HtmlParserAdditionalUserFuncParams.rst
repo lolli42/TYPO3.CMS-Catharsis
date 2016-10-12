@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Feature: #59712 - Additional params for HTMLparser userFunc
 ===========================================================
+
+See :issue:`59712`
 
 Description
 ===========
@@ -27,7 +32,7 @@ as the first parameter:
 
 When additional options are provided as described above, these options will be
 passed in the first function parameter as an array. The attribute value is passed
-in the array with the ```attributeValue``` array key.
+in the array with the ``attributeValue`` array key.
 
 ::
 

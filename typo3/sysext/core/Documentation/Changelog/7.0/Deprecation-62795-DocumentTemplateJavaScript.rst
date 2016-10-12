@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================
 Deprecation: #62795 - DocumentTemplate->endPageJS()
 ===================================================
+
+See :issue:`62795`
 
 Description
 ===========

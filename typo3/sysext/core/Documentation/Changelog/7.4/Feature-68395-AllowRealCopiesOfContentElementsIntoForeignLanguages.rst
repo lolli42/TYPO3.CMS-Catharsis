@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==============================================================================
 Feature: #68395 - Allow real copies of content elements into foreign languages
 ==============================================================================
+
+See :issue:`68395`
 
 Description
 ===========

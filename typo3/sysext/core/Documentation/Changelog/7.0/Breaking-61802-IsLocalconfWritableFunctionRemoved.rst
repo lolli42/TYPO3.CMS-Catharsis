@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================
 Breaking: #61802 - deprecated isLocalconfWritable function removed
 ==================================================================
+
+See :issue:`61802`
 
 Description
 ===========

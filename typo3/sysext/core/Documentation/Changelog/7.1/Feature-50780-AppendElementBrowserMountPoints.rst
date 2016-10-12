@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Feature: #50780 - Append element browser mount points
 =====================================================
+
+See :issue:`50780`
 
 Description
 ===========

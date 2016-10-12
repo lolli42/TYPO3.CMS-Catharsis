@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Breaking: #19737 - Prefer root templates for pages
 ==================================================
+
+See :issue:`19737`
 
 Description
 ===========

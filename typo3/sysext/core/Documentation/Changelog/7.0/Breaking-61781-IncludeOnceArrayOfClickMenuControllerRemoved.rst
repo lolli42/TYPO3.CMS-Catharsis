@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================================
 Breaking: #61781 - include_once array in ClickMenuController removed
 ====================================================================
+
+See :issue:`61781`
 
 Description
 ===========

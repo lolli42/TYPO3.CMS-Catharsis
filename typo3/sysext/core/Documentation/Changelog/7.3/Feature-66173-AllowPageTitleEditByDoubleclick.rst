@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================
 Feature: #66173 - Allow page title edit by doubleclick
 ======================================================
+
+See :issue:`66173`
 
 Description
 ===========

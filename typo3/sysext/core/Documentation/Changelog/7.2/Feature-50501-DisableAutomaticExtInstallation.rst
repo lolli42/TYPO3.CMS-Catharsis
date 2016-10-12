@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================================
 Feature: #50501 - Extension Manager: Disable automatic installation
 ===================================================================
+
+See :issue:`50501`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===============================================================
 Breaking: #61863 - deprecated connectDB from EidUtility removed
 ===============================================================
+
+See :issue:`61863`
 
 Description
 ===========

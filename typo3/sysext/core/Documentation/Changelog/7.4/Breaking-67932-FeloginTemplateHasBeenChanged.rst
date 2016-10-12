@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================================
 Breaking: #67932 - felogin template has been changed for RSA encryption
 =======================================================================
+
+See :issue:`67932`
 
 Description
 ===========
@@ -25,7 +30,7 @@ Any installation using a custom felogin template and having rsaauth enabled for 
 Migration
 =========
 
-The template has to be adjusted and a ``data-rsa-encryption`` attribute has to be added to the password field in ``<!--###TEMPLATE_LOGIN###-->``
+The template has to be adjusted and a `data-rsa-encryption` attribute has to be added to the password field in `<!--###TEMPLATE_LOGIN###-->`
 
 The field definition in your template has to be updated to like this:
 

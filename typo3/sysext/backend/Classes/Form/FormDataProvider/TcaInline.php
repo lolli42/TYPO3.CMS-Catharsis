@@ -199,7 +199,7 @@ class TcaInline extends AbstractDatabaseRecordProvider implements FormDataProvid
                     $uidOfDefaultLanguageRecord = $localizedRecord[$fieldNameWithDefaultLanguageUid];
                     if (in_array($uidOfDefaultLanguageRecord, $connectedUidsOfDefaultLanguageRecord)) {
                         // This localized child has a default language record. Remove this record from list of default language records
-                        $connectedUidsOfDefaultLanguageRecord = array_diff($connectedUidsOfDefaultLanguageRecord, array($uidOfDefaultLanguageRecord));
+                        $connectedUidsOfDefaultLanguageRecord = array_diff($connectedUidsOfDefaultLanguageRecord, [$uidOfDefaultLanguageRecord]);
                     }
                     // Compile localized record
                     $compiledChild = $this->compileChild($result, $fieldName, $localizedUid);
@@ -397,7 +397,7 @@ class TcaInline extends AbstractDatabaseRecordProvider implements FormDataProvid
                 if ($workspaceVersion !== false) {
                     $versionState = VersionState::cast($workspaceVersion['t3ver_state']);
                     if ($versionState->equals(VersionState::DELETE_PLACEHOLDER)) {
-                        return [];
+                        continue;
                     }
                     $uid = $workspaceVersion['uid'];
                 }

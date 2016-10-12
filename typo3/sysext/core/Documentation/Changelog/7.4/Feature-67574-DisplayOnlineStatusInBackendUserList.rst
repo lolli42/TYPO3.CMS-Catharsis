@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Feature: #67574 - Display online status in backend user list
 ============================================================
+
+See :issue:`67574`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================================
 Feature: #51905 - Add dependencies between classes in the Rich Text Editor
 ==========================================================================
+
+See :issue:`51905`
 
 Description
 ===========

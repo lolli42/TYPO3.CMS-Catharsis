@@ -1,13 +1,18 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================
 Feature: #64726 - Added support for multiple FlashMessage queues
 ================================================================
 
+See :issue:`64726`
+
 Description
 ===========
 
-In Extbase ControllerContext the method ``getFlashMessageQueue()`` now optionally
-allows to specify which queue to fetch. If none is specified the ``default-
-messagequeue`` for the current controller/plugin will be used.
+In Extbase ControllerContext the method `getFlashMessageQueue()` now optionally
+allows to specify which queue to fetch. If none is specified the `default-
+messagequeue` for the current controller/plugin will be used.
 
 .. code-block:: php
 

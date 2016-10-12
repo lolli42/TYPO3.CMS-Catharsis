@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ========================================================
 Feature: #66070 - Configure anchor for pagination widget
 ========================================================
+
+See :issue:`66070`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Breaking: #56951 - Remove unused methods in PagePositionMap
 ===========================================================
+
+See :issue:`56951`
 
 Description
 ===========
@@ -14,8 +19,8 @@ Impact
 A fatal error will be thrown if one of the removed methods is used.
 The removed methods are:
 
-``insertQuadLines``
-``JSimgFunc``
+`insertQuadLines`
+`JSimgFunc`
 
 
 Affected Installations

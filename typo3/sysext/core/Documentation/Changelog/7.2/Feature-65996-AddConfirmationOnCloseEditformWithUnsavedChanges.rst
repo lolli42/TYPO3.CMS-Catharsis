@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================================================
 Feature: #65996 - Show confirm message on closing an edit form with unsaved changes
 ===================================================================================
+
+See :issue:`65996`
 
 Description
 ===========

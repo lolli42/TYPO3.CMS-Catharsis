@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Feature: #63395 - HTML5 video poster preview image
 ==================================================
+
+See :issue:`63395`
 
 Description
 ===========

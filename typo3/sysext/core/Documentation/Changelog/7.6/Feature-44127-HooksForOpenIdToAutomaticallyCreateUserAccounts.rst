@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Feature: #44127 - Introduced two new Hooks for OpenID
 =====================================================
+
+See :issue:`44127`
 
 Description
 ===========

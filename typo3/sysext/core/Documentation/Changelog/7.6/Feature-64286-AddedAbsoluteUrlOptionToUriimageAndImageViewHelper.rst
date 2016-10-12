@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================================
 Feature: #64286 - Added absolute url option to uri.image and image viewHelper
 =============================================================================
 
+See :issue:`64286`
+
 Description
 ===========
 
-The ImageViewhelper and Uri/ImageViewHelper got a new option ``absolute``. With this option you are able to force
+The ImageViewhelper and Uri/ImageViewHelper got a new option `absolute`. With this option you are able to force
 the ViewHelpers to output an absolute url.
 
 Examples:

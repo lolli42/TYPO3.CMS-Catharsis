@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Breaking: #61860 - deprecated function int_from_ver removed
 ===========================================================
+
+See :issue:`61860`
 
 Description
 ===========

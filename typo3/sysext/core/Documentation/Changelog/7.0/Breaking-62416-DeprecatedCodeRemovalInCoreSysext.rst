@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ============================================================
 Breaking: #62416 - Removal of deprecated code in sysext core
 ============================================================
+
+See :issue:`62416`
 
 Description
 ===========

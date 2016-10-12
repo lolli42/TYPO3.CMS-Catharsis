@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================================
 Feature: #68282 - Make DatabaseRecordList configurable to be editable
 =====================================================================
 
+See :issue:`68282`
+
 Description
 ===========
 
-A new property ``editable`` is added to ``\TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList`` which is set to TRUE
+A new property `editable` is added to `\TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList` which is set to TRUE
 by default. If set to FALSE, the records can't be edited.
 
 

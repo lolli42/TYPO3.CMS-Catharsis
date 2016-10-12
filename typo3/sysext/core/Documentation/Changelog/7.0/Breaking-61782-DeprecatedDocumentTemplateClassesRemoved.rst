@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==============================================================
 Breaking: #61782 - deprecated DocumentTemplate classes removed
 ==============================================================
+
+See :issue:`61782`
 
 Description
 ===========

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ========================================
 Deprecation: #67471 - Deprecate init.php
 ========================================
+
+See :issue:`67471`
 
 Description
 ===========

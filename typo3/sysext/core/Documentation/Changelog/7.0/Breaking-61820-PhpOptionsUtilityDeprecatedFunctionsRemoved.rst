@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #61820 - deprecated PhpOptionsUtility functions removed
 =================================================================
+
+See :issue:`61820`
 
 Description
 ===========

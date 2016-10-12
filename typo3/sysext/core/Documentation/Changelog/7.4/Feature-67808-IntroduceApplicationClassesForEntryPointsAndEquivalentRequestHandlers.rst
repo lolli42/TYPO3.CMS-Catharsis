@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===============================================================================================
 Feature: #67808 - Introduce Application classes for entry points and equivalent RequestHandlers
 ===============================================================================================
+
+See :issue:`67808`
 
 Description
 ===========

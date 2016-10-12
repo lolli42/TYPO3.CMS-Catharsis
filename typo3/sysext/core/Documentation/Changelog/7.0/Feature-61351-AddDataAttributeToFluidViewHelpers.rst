@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =========================================================
 Feature: #61351 - Add data attribute to Fluid ViewHelpers
 =========================================================
+
+See :issue:`61351`
 
 Description
 ===========

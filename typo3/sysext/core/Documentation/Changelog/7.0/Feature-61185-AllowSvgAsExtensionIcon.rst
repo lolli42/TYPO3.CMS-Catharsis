@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================
 Feature: #66185 - Allow Svg Files as Extension icon
 ===================================================
+
+See :issue:`66185`
 
 Description
 ===========

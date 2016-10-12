@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================================
 Feature: #67071 - Processed files cleanup tool added in Install Tool
 ====================================================================
+
+See :issue:`67071`
 
 Description
 ===========

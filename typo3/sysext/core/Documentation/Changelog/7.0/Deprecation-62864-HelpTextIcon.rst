@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =============================================================
 Deprecation: #62864 - BackendUtility->helpTextIcon deprecated
 =============================================================
+
+See :issue:`62864`
 
 Description
 ===========

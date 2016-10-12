@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ================================================================
 Breaking: #61822 - deprecated function getUniqueFields() removed
 ================================================================
+
+See :issue:`61822`
 
 Description
 ===========

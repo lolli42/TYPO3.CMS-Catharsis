@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================
 Deprecation: #69369 - Use property text instead of data
 =======================================================
+
+See :issue:`69369`
 
 Description
 ===========

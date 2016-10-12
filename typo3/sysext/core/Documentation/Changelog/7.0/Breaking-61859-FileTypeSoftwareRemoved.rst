@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #61859 - deprecated file type FILETYPE_SOFTWARE removed
 =================================================================
+
+See :issue:`61859`
 
 Description
 ===========

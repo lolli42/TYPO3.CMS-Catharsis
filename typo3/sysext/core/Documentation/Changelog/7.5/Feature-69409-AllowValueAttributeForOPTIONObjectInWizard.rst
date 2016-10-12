@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================================
 Feature: #69409 - Allow value attribute for OPTION object in wizard
 ===================================================================
+
+See :issue:`69409`
 
 Description
 ===========

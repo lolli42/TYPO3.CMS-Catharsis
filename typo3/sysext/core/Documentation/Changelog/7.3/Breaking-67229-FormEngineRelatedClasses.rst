@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==============================================
 Breaking: #67229 - FormEngine related classses
 ==============================================
+
+See :issue:`67229`
 
 
 Description
@@ -8,11 +13,11 @@ Description
 
 With the further development of FormEngine, some minor changes on PHP level have been applied:
 
-* Class ``TYPO3\CMS\T3editor\FormWizard`` has been removed
+* Class `TYPO3\CMS\T3editor\FormWizard` has been removed
 
-* Class ``TYPO3\CMS\Rtehtmlarea\Controller\FrontendRteController`` has been removed
+* Class `TYPO3\CMS\Rtehtmlarea\Controller\FrontendRteController` has been removed
 
-* The method signature of class ``TYPO3\CMS\Utility\BackendUtility`` method ``getSpecConfParts`` has changed
+* The method signature of class `TYPO3\CMS\Utility\BackendUtility` method `getSpecConfParts` has changed
 
 
 Impact

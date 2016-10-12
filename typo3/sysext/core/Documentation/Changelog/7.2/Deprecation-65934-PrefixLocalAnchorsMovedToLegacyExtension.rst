@@ -1,12 +1,17 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================================================
 Deprecation: #65934 - "Prefix Local Anchors" functionality moved to legacy extension
 ====================================================================================
+
+See :issue:`65934`
 
 Description
 ===========
 
 Prefixing local anchors is not considered best practice in web sites anymore as the same is achieved with
-absolute prefixes for links (see ``config.absRefPrefix``). Therefore the according functionality has been moved to
+absolute prefixes for links (see `config.absRefPrefix`). Therefore the according functionality has been moved to
 the legacy extension EXT:compatibility6.
 
 The following TypoScript option has been marked for deprecation:
@@ -32,7 +37,7 @@ The content output of the TYPO3 frontend is not prefixed with local anchors anym
 Affected installations
 ======================
 
-Any installation having the TypoScript option ``config.prefixLocalAnchors`` set will have different behaviour in the
+Any installation having the TypoScript option `config.prefixLocalAnchors` set will have different behaviour in the
 frontend rendering.
 
 

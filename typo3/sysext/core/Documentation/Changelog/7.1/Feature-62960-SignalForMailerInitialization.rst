@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================
 Feature: #62960 - Signal for mailer initialization
 ==================================================
+
+See :issue:`62960`
 
 Description
 ===========

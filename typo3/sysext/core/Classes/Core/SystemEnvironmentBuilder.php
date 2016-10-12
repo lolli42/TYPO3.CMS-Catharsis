@@ -44,13 +44,13 @@ class SystemEnvironmentBuilder
      *         and GeneralUtility is not available yet.
      * @var array
      */
-    protected static $supportedCgiServerApis = array(
+    protected static $supportedCgiServerApis = [
         'fpm-fcgi',
         'cgi',
         'isapi',
         'cgi-fcgi',
         'srv', // HHVM with fastcgi
-    );
+    ];
 
     /**
      * An array of disabled methods
@@ -85,7 +85,7 @@ class SystemEnvironmentBuilder
     protected static function defineBaseConstants()
     {
         // This version, branch and copyright
-        define('TYPO3_version', '7.6.11-dev');
+        define('TYPO3_version', '7.6.12-dev');
         define('TYPO3_branch', '7.6');
         define('TYPO3_copyright_year', '1998-2016');
 
@@ -202,9 +202,9 @@ class SystemEnvironmentBuilder
     {
         // Unset variable(s) in global scope (security issue #13959)
         unset($GLOBALS['error']);
-        $GLOBALS['TYPO3_MISC'] = array();
-        $GLOBALS['T3_VAR'] = array();
-        $GLOBALS['T3_SERVICES'] = array();
+        $GLOBALS['TYPO3_MISC'] = [];
+        $GLOBALS['T3_VAR'] = [];
+        $GLOBALS['T3_SERVICES'] = [];
     }
 
     /**

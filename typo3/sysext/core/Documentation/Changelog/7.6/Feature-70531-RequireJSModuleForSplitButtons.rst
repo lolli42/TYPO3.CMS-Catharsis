@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ====================================================
 Feature: #70531 - RequireJS module for split buttons
 ====================================================
+
+See :issue:`70531`
 
 Description
 ===========
@@ -13,7 +18,7 @@ the submit can be modified, e.g aborting the submit.
 Impact
 ======
 
-To use the ``SplitButtons`` module, include it in your own RequireJS module:
+To use the `SplitButtons` module, include it in your own RequireJS module:
 
 .. code-block:: javascript
 
@@ -22,7 +27,7 @@ To use the ``SplitButtons`` module, include it in your own RequireJS module:
 	});
 
 
-Callbacks will be added by calling ``SplitButtons.addPreSubmitCallback``:
+Callbacks will be added by calling `SplitButtons.addPreSubmitCallback`:
 
 .. code-block:: javascript
 

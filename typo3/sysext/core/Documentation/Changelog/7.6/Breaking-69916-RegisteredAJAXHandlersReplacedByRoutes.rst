@@ -1,14 +1,19 @@
+
+.. include:: ../../Includes.txt
+
 ==============================================================
 Breaking: #69916 - Registered AJAX handlers replaced by routes
 ==============================================================
 
+See :issue:`69916`
+
 Description
 ===========
 
-AJAX handlers registered in the core by ``ExtensionManagementUtility::registerAjaxHandler()`` have been replaced
+AJAX handlers registered in the core by `ExtensionManagementUtility::registerAjaxHandler()` have been replaced
 by AJAX routes, which are registered inside any extension under Configuration/Backend/AjaxRoutes.php.
 
-The routes registered in AjaxRoutes.php are available via JavaScript via ``TYPO3.settings.ajaxUrls[routeIdentifier]``.
+The routes registered in AjaxRoutes.php are available via JavaScript via `TYPO3.settings.ajaxUrls[routeIdentifier]`.
 
 Impact
 ======
@@ -134,7 +139,7 @@ CodeCompletion::loadTemplates          t3editor_codecompletion_loadtemplates   /
 ====================================   =====================================   =======================================
 
 * T3Editor_TSrefLoader::getTypes and T3Editor_TSrefLoader::getDescription have been combined. The separation is done by
-  the new parameter ``fetch`` being either "types" or "description".
+  the new parameter `fetch` being either "types" or "description".
 
 EXT:taskcenter
 ^^^^^^^^^^^^^^

@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =======================================================================
 Feature: #66697 - Add uppercamelcase and lowercamelcase to stdWrap.case
 =======================================================================
+
+See :issue:`66697`
 
 Description
 ===========

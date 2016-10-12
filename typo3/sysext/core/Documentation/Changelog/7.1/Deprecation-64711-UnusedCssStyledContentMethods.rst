@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==========================================================================
 Deprecation: #64711 - Various methods within CSS Styled Content Controller
 ==========================================================================
+
+See :issue:`64711`
 
 Description
 ===========

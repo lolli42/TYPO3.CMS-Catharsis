@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================================
 Breaking: #60152 - GeneralUtility::formatSize is now locale aware
 =================================================================
+
+See :issue:`60152`
 
 Description
 ===========
@@ -28,4 +33,4 @@ If you think you get the wrong decimal separator, ensure the locale is configure
 and the locale really exists on the server.
 
 TypoScript option: :code:`config.locale`
-Commandline: ``locale -a``
+Commandline: `locale -a`

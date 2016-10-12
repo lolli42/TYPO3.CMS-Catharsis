@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Deprecation: #37171 - Deprecate t3editor->isEnabled()
 =====================================================
+
+See :issue:`37171`
 
 Description
 ===========

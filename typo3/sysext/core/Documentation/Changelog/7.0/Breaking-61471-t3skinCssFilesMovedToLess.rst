@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =====================================================
 Breaking: #61471 - EXT:t3skin CSS files moved to less
 =====================================================
+
+See :issue:`61471`
 
 Description
 ===========

@@ -1,11 +1,16 @@
+
+.. include:: ../../Includes.txt
+
 ======================================================================================
 Feature: #68895 - Introduced hook in BackendUserAuthentication::getDefaultUploadFolder
 ======================================================================================
 
+See :issue:`68895`
+
 Description
 ===========
 
-It is now possible to change the upload folder returned by ``BackendUserAuthentication::getDefaultUploadFolder()`` by
+It is now possible to change the upload folder returned by `BackendUserAuthentication::getDefaultUploadFolder()` by
 registering a hook. This makes it possible to set a different upload folder for fields with direct upload enabled in the
 backend.
 
@@ -13,7 +18,7 @@ backend.
 Register own getDefaultUploadFolder hook
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To use your own hook to manipulate the upload folder you need to register the function in ``ext_localconf.php`` of
+To use your own hook to manipulate the upload folder you need to register the function in `ext_localconf.php` of
 your extension.
 
 .. code-block:: php

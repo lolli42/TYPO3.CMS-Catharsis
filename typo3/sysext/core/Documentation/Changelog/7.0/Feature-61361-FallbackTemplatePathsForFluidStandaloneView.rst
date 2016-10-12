@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===================================================================================
 Feature: #61361 - Template Path Fallback for Fluid StandaloneView and FLUIDTEMPLATE
 ===================================================================================
+
+See :issue:`61361`
 
 Description
 ===========

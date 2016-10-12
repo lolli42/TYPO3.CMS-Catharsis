@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================
 Breaking: #61783 - Removed deprecated mailing API
 =================================================
+
+See :issue:`61783`
 
 Description
 ===========

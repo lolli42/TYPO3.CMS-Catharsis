@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ================================================
 Breaking: #60559 - Dropped Backend Login Options
 ================================================
+
+See :issue:`60559`
 
 Description
 ===========

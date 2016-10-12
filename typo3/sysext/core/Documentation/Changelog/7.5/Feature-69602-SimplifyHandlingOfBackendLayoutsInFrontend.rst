@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================
 Feature: #69602 - Simplify handling of backend layouts in frontend
 ==================================================================
+
+See :issue:`69602`
 
 Description
 ===========
@@ -29,7 +34,7 @@ To get the correct backend layout, the following TypoScript code can be used:
 	  }
 	}
 
-Using  ``data = pagelayout`` is the same as using as
+Using  `data = pagelayout` is the same as using as
 
 .. code-block:: typoscript
 

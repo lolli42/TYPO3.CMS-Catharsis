@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ===========================================================
 Breaking: #60559 - T3skin Backend Login Template File Moved
 ===========================================================
+
+See :issue:`60559`
 
 Description
 ===========

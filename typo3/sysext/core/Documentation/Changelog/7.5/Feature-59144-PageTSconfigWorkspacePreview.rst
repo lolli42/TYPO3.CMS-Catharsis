@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 ==================================================================
 Feature: #59144 - Previewing workspace records using Page TSconfig
 ==================================================================
+
+See :issue:`59144`
 
 Description
 ===========

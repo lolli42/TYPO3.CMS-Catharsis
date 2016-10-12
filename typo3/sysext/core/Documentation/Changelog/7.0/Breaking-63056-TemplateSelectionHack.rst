@@ -1,6 +1,11 @@
+
+.. include:: ../../Includes.txt
+
 =================================================
 Breaking: #63056 - Remove Template Selection Hack
 =================================================
+
+See :issue:`63056`
 
 Description
 ===========

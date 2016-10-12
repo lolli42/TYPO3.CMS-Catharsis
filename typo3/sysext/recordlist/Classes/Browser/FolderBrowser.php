@@ -44,6 +44,10 @@ class FolderBrowser extends AbstractElementBrowser implements ElementBrowserInte
     {
         parent::initialize();
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Recordlist/BrowseFolders');
+        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function() {
+            DragDrop.table = "folders";
+            Tree.registerDragDropHandlers();
+        }');
     }
 
     /**
@@ -70,7 +74,7 @@ class FolderBrowser extends AbstractElementBrowser implements ElementBrowserInte
             $this->expandFolder = $data['expandFolder'];
             $store = false;
         }
-        return array($data, $store);
+        return [$data, $store];
     }
 
     /**
@@ -150,7 +154,7 @@ class FolderBrowser extends AbstractElementBrowser implements ElementBrowserInte
         $folderIcon .= '</a>';
         $content .= $folderIcon . '<br />';
 
-        $lines = array();
+        $lines = [];
         // Traverse the folder list:
         foreach ($folders as $subFolder) {
             $subFolderIdentifier = $subFolder->getCombinedIdentifier();
