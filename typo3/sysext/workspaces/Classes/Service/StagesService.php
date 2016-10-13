@@ -306,7 +306,10 @@ class StagesService implements \TYPO3\CMS\Core\SingletonInterface
     public function getNextStage($stageId)
     {
         if (!MathUtility::canBeInterpretedAsInteger($stageId)) {
-            throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'), 1291109987);
+            throw new \InvalidArgumentException(
+                $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'),
+                1291109987
+            );
         }
         $nextStage = false;
         $workspaceStageRecs = $this->getStagesForWS();
@@ -373,7 +376,10 @@ class StagesService implements \TYPO3\CMS\Core\SingletonInterface
     public function getPrevStage($stageId)
     {
         if (!MathUtility::canBeInterpretedAsInteger($stageId)) {
-            throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'));
+            throw new \InvalidArgumentException(
+                $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'),
+                1476048351
+            );
         }
         $prevStage = false;
         $workspaceStageRecs = $this->getStagesForWS();
@@ -643,7 +649,10 @@ class StagesService implements \TYPO3\CMS\Core\SingletonInterface
     {
         $result = null;
         if (!MathUtility::canBeInterpretedAsInteger($stageId)) {
-            throw new \InvalidArgumentException($GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'));
+            throw new \InvalidArgumentException(
+                $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:error.stageId.integer'),
+                1476048371
+            );
         }
         $workspaceStage = BackendUtility::getRecord(self::TABLE_STAGE, $stageId);
         if (is_array($workspaceStage) && isset($workspaceStage[$property])) {
@@ -779,13 +788,5 @@ class StagesService implements \TYPO3\CMS\Core\SingletonInterface
     protected function getBackendUser()
     {
         return $GLOBALS['BE_USER'];
-    }
-
-    /**
-     * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 }

@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Core\Resource;
  */
 
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Resource\Exception\InvalidTargetFolderException;
 use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
@@ -2028,7 +2027,7 @@ class ResourceStorage implements ResourceStorageInterface
      */
     protected function moveFolderBetweenStorages(Folder $folderToMove, Folder $targetParentFolder, $newFolderName)
     {
-        throw new \RuntimeException('Not yet implemented');
+        throw new \RuntimeException('Not yet implemented', 1476046361);
     }
 
     /**
@@ -2085,7 +2084,7 @@ class ResourceStorage implements ResourceStorageInterface
      */
     protected function copyFolderBetweenStorages(Folder $folderToCopy, Folder $targetParentFolder, $newFolderName)
     {
-        throw new \RuntimeException('Not yet implemented.');
+        throw new \RuntimeException('Not yet implemented.', 1476046386);
     }
 
     /**
@@ -2998,13 +2997,5 @@ class ResourceStorage implements ResourceStorageInterface
     public function isDefault()
     {
         return $this->isDefault;
-    }
-
-    /**
-     * @return DatabaseConnection
-     */
-    protected function getDatabaseConnection()
-    {
-        return $GLOBALS['TYPO3_DB'];
     }
 }

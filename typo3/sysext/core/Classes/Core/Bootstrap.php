@@ -438,10 +438,12 @@ class Bootstrap
      *
      * @return Bootstrap
      * @internal This is not a public API method, do not use in own extensions
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9. Use the Install Tool to dump autoload information.
      */
     public function ensureClassLoadingInformationExists()
     {
         if (!self::$usesComposerClassLoading && !ClassLoadingInformation::isClassLoadingInformationAvailable()) {
+            GeneralUtility::logDeprecatedFunction();
             ClassLoadingInformation::dumpClassLoadingInformation();
             ClassLoadingInformation::registerClassLoadingInformation();
         }
@@ -654,7 +656,10 @@ class Bootstrap
                 break;
             default:
                 // Throw exception if an invalid option is set.
-                throw new \RuntimeException('The option $TYPO3_CONF_VARS[SYS][displayErrors] is not set to "-1", "0" or "1".');
+                throw new \RuntimeException(
+                    'The option $TYPO3_CONF_VARS[SYS][displayErrors] is not set to "-1", "0" or "1".',
+                    1476046290
+                );
         }
         @ini_set('display_errors', $displayErrors);
 
