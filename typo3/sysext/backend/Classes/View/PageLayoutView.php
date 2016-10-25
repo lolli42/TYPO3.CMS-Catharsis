@@ -574,14 +574,16 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                         . ' '
                         . $this->getLanguageService()->getLL('content', true) . '</a>';
                 }
-                $content[$key] .= '
-				<div class="t3-page-ce t3js-page-ce" data-page="' . (int)$id . '" id="' . StringUtility::getUniqueId() . '">
-					<div class="t3js-page-new-ce t3-page-ce-wrapper-new-ce" id="colpos-' . $key . '-' . 'page-' . $id . '-' . StringUtility::getUniqueId() . '">'
-                        . $link
-                    . '</div>
-                    <div class="t3-page-ce-dropzone-available t3js-page-ce-dropzone-available"></div>
-                </div>
-				';
+                if ($this->getBackendUser()->checkLanguageAccess($lP)) {
+                    $content[$key] .= '
+                    <div class="t3-page-ce t3js-page-ce" data-page="' . (int)$id . '" id="' . StringUtility::getUniqueId() . '">
+                        <div class="t3js-page-new-ce t3-page-ce-wrapper-new-ce" id="colpos-' . $key . '-' . 'page-' . $id . '-' . StringUtility::getUniqueId() . '">'
+                            . $link
+                            . '</div>
+                        <div class="t3-page-ce-dropzone-available t3js-page-ce-dropzone-available"></div>
+                    </div>
+                    ';
+                }
                 $editUidList = '';
                 if (!isset($contentRecordsPerColumn[$key]) || !is_array($contentRecordsPerColumn[$key])) {
                     $message = GeneralUtility::makeInstance(
@@ -648,6 +650,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                             // Add icon "new content element below"
                             if (!$disableMoveAndNewButtons
                                 && $this->getPageLayoutController()->contentIsNotLockedForEditors()
+                                && $this->getBackendUser()->checkLanguageAccess($lP)
                                 && (!$this->checkIfTranslationsExistInLanguage($contentRecordsPerColumn, $lP))
                             ) {
                                 // New content element:
@@ -736,7 +739,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                 $rowCount = (int)$backendLayout['__config']['backend_layout.']['rowCount'];
                 $grid .= '<colgroup>';
                 for ($i = 0; $i < $colCount; $i++) {
-                    $grid .= '<col style="width:' . 100 / $colCount . '%"></col>';
+                    $grid .= '<col />';
                 }
                 $grid .= '</colgroup>';
                 // Cycle through rows
@@ -1435,21 +1438,25 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                         . $this->iconFactory->getIcon('actions-edit-' . strtolower($label), Icon::SIZE_SMALL)->render() . '</a>';
                 }
                 // Delete
-                $params = '&cmd[tt_content][' . $row['uid'] . '][delete]=1';
-                $confirm = $this->getLanguageService()->getLL('deleteWarning')
-                    . BackendUtility::translationCount('tt_content', $row['uid'], (' '
-                    . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.translationsOfRecord')));
-                $out .= '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars(BackendUtility::getLinkToDataHandlerAction($params)) . '"'
-                    . ' data-severity="warning"'
-                    . ' data-title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_alt_doc.xlf:label.confirm.delete_record.title')) . '"'
-                    . ' data-content="' . htmlspecialchars($confirm) . '" '
-                    . ' data-button-close-text="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel')) . '"'
-                    . ' title="' . $this->getLanguageService()->getLL('deleteItem', true) . '">'
-                    . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
-                if ($out && $this->getBackendUser()->doesUserHaveAccess($this->pageinfo, Permission::CONTENT_EDIT)) {
-                    $out = '<div class="btn-group btn-group-sm" role="group">' . $out . '</div>';
-                } else {
-                    $out = '';
+                $disableDeleteTS = $this->getBackendUser()->getTSConfig('options.disableDelete');
+                $disableDelete = (bool) trim(isset($disableDeleteTS['properties']['tt_content']) ? $disableDeleteTS['properties']['tt_content'] : $disableDeleteTS['value']);
+                if (!$disableDelete) {
+                    $params = '&cmd[tt_content][' . $row['uid'] . '][delete]=1';
+                    $confirm = $this->getLanguageService()->getLL('deleteWarning')
+                        . BackendUtility::translationCount('tt_content', $row['uid'], (' '
+                        . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.translationsOfRecord')));
+                    $out .= '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars(BackendUtility::getLinkToDataHandlerAction($params)) . '"'
+                        . ' data-severity="warning"'
+                        . ' data-title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_alt_doc.xlf:label.confirm.delete_record.title')) . '"'
+                        . ' data-content="' . htmlspecialchars($confirm) . '" '
+                        . ' data-button-close-text="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel')) . '"'
+                        . ' title="' . $this->getLanguageService()->getLL('deleteItem', true) . '">'
+                        . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
+                    if ($out && $this->getBackendUser()->doesUserHaveAccess($this->pageinfo, Permission::CONTENT_EDIT)) {
+                        $out = '<div class="btn-group btn-group-sm" role="group">' . $out . '</div>';
+                    } else {
+                        $out = '';
+                    }
                 }
                 if (!$disableMoveAndNewButtons) {
                     $moveButtonContent = '';

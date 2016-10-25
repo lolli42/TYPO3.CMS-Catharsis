@@ -644,12 +644,13 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
             $this->firstElementNumber = $this->firstElementNumber - 2;
             $this->iLimit = $this->iLimit + 2;
             // (API function from TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRecordList)
-            $queryParts = $this->makeQueryArray($table, $id, $addWhere, $selFieldList);
+            $queryParts = $this->makeQueryArray($table, $id, $addWhere);
+
             $this->firstElementNumber = $this->firstElementNumber + 2;
             $this->iLimit = $this->iLimit - 2;
         } else {
             // (API function from TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRecordList)
-            $queryParts = $this->makeQueryArray($table, $id, $addWhere, $selFieldList);
+            $queryParts = $this->makeQueryArray($table, $id, $addWhere);
         }
 
         // Finding the total amount of records on the page
@@ -1412,7 +1413,8 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                      && $this->getBackendUserAuthentication()->checkLanguageAccess(0)
                      && $localCalcPerms & Permission::PAGE_EDIT
                      || $table !== 'pages'
-                        && $this->calcPerms & Permission::CONTENT_EDIT;
+                        && $this->calcPerms & Permission::CONTENT_EDIT
+                        && $this->getBackendUserAuthentication()->recordEditAccessInternals($table, $row);
         $permsEdit = $this->overlayEditLockPermissions($table, $row, $permsEdit);
         // "Show" link (only pages and tt_content elements)
         if ($table == 'pages' || $table == 'tt_content') {
@@ -1531,11 +1533,11 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
             $hiddenField = $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled'];
 
             if (
-                $permsEdit && $hiddenField && $GLOBALS['TCA'][$table]['columns'][$hiddenField]
-                && (!$GLOBALS['TCA'][$table]['columns'][$hiddenField]['exclude']
+                !empty($GLOBALS['TCA'][$table]['columns'][$hiddenField])
+                && (empty($GLOBALS['TCA'][$table]['columns'][$hiddenField]['exclude'])
                     || $this->getBackendUserAuthentication()->check('non_exclude_fields', $table . ':' . $hiddenField))
             ) {
-                if ($this->isRecordCurrentBackendUser($table, $row)) {
+                if (!$permsEdit || $this->isRecordCurrentBackendUser($table, $row)) {
                     $hideAction = $this->spaceIcon;
                 } else {
                     $hideTitle = $this->getLanguageService()->getLL('hide' . ($table == 'pages' ? 'Page' : ''), true);
@@ -1559,7 +1561,9 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                 $this->addActionToCellGroup($cells, $hideAction, 'hide');
             }
             // "Delete" link:
-            if ($permsEdit && ($table === 'pages' && $localCalcPerms & Permission::PAGE_DELETE || $table !== 'pages' && $this->calcPerms & Permission::CONTENT_EDIT)) {
+            $disableDeleteTS = $this->getBackendUserAuthentication()->getTSConfig('options.disableDelete');
+            $disableDelete = (bool) trim(isset($disableDeleteTS['properties'][$table]) ? $disableDeleteTS['properties'][$table] : $disableDeleteTS['value']);
+            if ($permsEdit && !$disableDelete && ($table === 'pages' && $localCalcPerms & Permission::PAGE_DELETE || $table !== 'pages' && $this->calcPerms & Permission::CONTENT_EDIT)) {
                 // Check if the record version is in "deleted" state, because that will switch the action to "restore"
                 if ($this->getBackendUserAuthentication()->workspace > 0 && isset($row['t3ver_state']) && (int)$row['t3ver_state'] === 2) {
                     $actionName = 'restore';
