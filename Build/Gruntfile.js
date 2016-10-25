@@ -275,8 +275,8 @@ module.exports = function(grunt) {
 					/**
 					 * copy needed parts of jquery
 					 */
-					'jquery/jquery-2.2.3.js': 'jquery/dist/jquery.js',
-					'jquery/jquery-2.2.3.min.js': 'jquery/dist/jquery.min.js',
+					'jquery/jquery-3.1.1.js': 'jquery/dist/jquery.js',
+					'jquery/jquery-3.1.1.min.js': 'jquery/dist/jquery.min.js',
 					/**
 					 * copy needed parts of jquery-ui
 					 */
@@ -340,7 +340,6 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-svgmin');
 	grunt.loadNpmTasks('grunt-postcss');
 	grunt.loadNpmTasks('grunt-contrib-copy');
-	grunt.loadNpmTasks('grunt-copy');
 	grunt.loadNpmTasks("grunt-ts");
 	grunt.loadNpmTasks('grunt-tslint');
 	grunt.loadNpmTasks('grunt-typings');
@@ -388,7 +387,11 @@ module.exports = function(grunt) {
 	 * - 2) Compiles all TypeScript files (*.ts) which are located in sysext/<EXTKEY>/Resources/Private/TypeScript/*.ts
 	 * - 3) Copy all generated JavaScript and Map files to public folders
 	 */
-	grunt.registerTask('scripts', ['tslint', 'ts', 'copy:ts_files']);
+	grunt.registerTask('scripts', ['tslint', 'tsclean', 'ts', 'copy:ts_files']);
+
+	grunt.task.registerTask('tsclean', function() {
+		grunt.file.delete("JavaScript");
+	});
 
 	/**
 	 * grunt build task

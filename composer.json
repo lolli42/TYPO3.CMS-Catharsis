@@ -46,7 +46,7 @@
 		"psr/http-message": "~1.0",
 		"cogpowered/finediff": "~0.3.1",
 		"mso/idna-convert": "^1.1.0",
-		"typo3fluid/fluid": "^1.1",
+		"typo3fluid/fluid": "^2.0",
 		"guzzlehttp/guzzle": "^6.2.1",
 		"doctrine/dbal": "~2.5.4"
 	},
@@ -56,8 +56,6 @@
 		"codeception/codeception": "^2.2",
 		"se/selenium-server-standalone": "~2.53",
 		"7elix/styleguide": "~8.0.0",
-		"site5/phantoman": "^1.0",
-		"jakoch/phantomjs-installer": "2.1.1-p06",
 		"friendsofphp/php-cs-fixer": "^1.12"
 	},
 	"suggest": {
@@ -73,7 +71,8 @@
 		"typo3/class-alias-loader": {
 			"always-add-alias-loader": true,
 			"class-alias-maps": [
-				"typo3/sysext/fluid/Migrations/Code/ClassAliasMap.php"
+				"typo3/sysext/fluid/Migrations/Code/ClassAliasMap.php",
+				"typo3/sysext/version/Migrations/Code/ClassAliasMap.php"
 			]
 		},
 		"branch-alias": {
@@ -219,13 +218,5 @@
 			"TYPO3\\CMS\\Recycler\\Tests\\": "typo3/sysext/recycler/Tests/"
 		},
 		"classmap": ["typo3/sysext/extbase/Tests/Unit/Object/Container/Fixtures/"]
-	},
-	"scripts": {
-		"post-install-cmd": [
-			"PhantomInstaller\\Installer::installPhantomJS"
-		],
-		"post-update-cmd": [
-			"PhantomInstaller\\Installer::installPhantomJS"
-		]
 	}
 }

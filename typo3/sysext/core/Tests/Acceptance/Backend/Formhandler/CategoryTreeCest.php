@@ -27,6 +27,10 @@ class CategoryTreeCest
     public function _before(Admin $I)
     {
         $I->useExistingSession();
+        // Ensure main content frame is fully loaded, otherwise there are load-race-conditions
+        $I->switchToIFrame('list_frame');
+        $I->waitForText('Web Content Management System');
+        $I->switchToIFrame();
     }
 
     /**
@@ -35,9 +39,9 @@ class CategoryTreeCest
     public function checkIfCategoryListIsAvailable(Admin $I)
     {
         // A sub-element of web module is show
-        $I->waitForElementVisible('#web .typo3-module-menu-group-container .typo3-module-menu-item');
+        $I->waitForElementVisible('#web .modulemenu-group-container .modulemenu-item');
         $I->click('#web_list');
-        $I->switchToIFrame('contentIframe');
+        $I->switchToIFrame('list_frame');
         $I->waitForElement('#recordlist-sys_category');
         $I->seeNumberOfElements('#recordlist-sys_category table > tbody > tr', [5, 100]);
     }
@@ -48,9 +52,9 @@ class CategoryTreeCest
     public function editCategoryItem(Admin $I)
     {
         // A sub-element of web module is show
-        $I->waitForElementVisible('#web .typo3-module-menu-group-container .typo3-module-menu-item');
+        $I->waitForElementVisible('#web .modulemenu-group-container .modulemenu-item');
         $I->click('#web_list');
-        $I->switchToIFrame('contentIframe');
+        $I->switchToIFrame('list_frame');
         // Select category with id 7
         $I->click('#recordlist-sys_category tr[data-uid="7"] a[data-original-title="Edit record"]');
         // Change title and level to root

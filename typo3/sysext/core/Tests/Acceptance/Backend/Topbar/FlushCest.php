@@ -30,28 +30,14 @@ class FlushCest
     protected static $topBarModuleSelector = '#typo3-cms-backend-backend-toolbaritems-clearcachetoolbaritem';
 
     /**
-     * Selector for the "Flush frontend caches" link
-     *
-     * @var string
-     */
-    protected static $docHeaderFlushFrontendCachesLinkSelector = 'a span[data-identifier="actions-system-cache-clear-impact-low"]';
-
-    /**
-     * Selector for the "Flush all caches" link
-     *
-     * @var string
-     */
-    protected static $docHeaderFlushAllCachesLinkSelector = 'a span[data-identifier="actions-system-cache-clear-impact-high"]';
-
-    /**
      * @param Admin $I
      */
     public function _before(Admin $I)
     {
         $I->useExistingSession();
         // Ensure main content frame is fully loaded, otherwise there are load-race-conditions
-        $I->switchToIFrame('contentIframe');
-        $I->waitForText('Web>Page module');
+        $I->switchToIFrame('list_frame');
+        $I->waitForText('Web Content Management System');
         $I->switchToIFrame();
     }
 
@@ -74,10 +60,8 @@ class FlushCest
     {
         $I->click(Topbar::$dropdownToggleSelector, self::$topBarModuleSelector);
         // Ensure existence of link for flush frontend caches
-        $I->waitForElementVisible(self::$docHeaderFlushFrontendCachesLinkSelector);
-        $I->seeElement(self::$docHeaderFlushFrontendCachesLinkSelector);
+        $I->canSee('Flush frontend caches', 'a');
         // Ensure existence of link for flush all caches
-        $I->waitForElementVisible(self::$docHeaderFlushAllCachesLinkSelector);
-        $I->seeElement(self::$docHeaderFlushAllCachesLinkSelector);
+        $I->canSee('Flush all caches', 'a');
     }
 }

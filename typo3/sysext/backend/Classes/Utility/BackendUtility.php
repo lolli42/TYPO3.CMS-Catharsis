@@ -3477,8 +3477,8 @@ class BackendUtility
                         break;
                     case 'updateFolderTree':
                         $signals[] = '
-								if (top && top.TYPO3.Backend && top.TYPO3.Backend.NavigationIframe) {
-									top.TYPO3.Backend.NavigationIframe.refresh();
+								if (top && top.nav_frame && top.nav_frame.location) {
+									top.nav_frame.location.reload(true);
 								}';
                         break;
                     case 'updateModuleMenu':
@@ -4139,6 +4139,10 @@ class BackendUtility
                 );
             } else {
                 $queryBuilder->andWhere($queryBuilder->expr()->eq('ref_uid', (int)$ref));
+
+                if ($table === 'sys_file') {
+                    $queryBuilder->andWhere($queryBuilder->expr()->neq('tablename', $queryBuilder->quote('sys_file_metadata')));
+                }
             }
 
             $count = $queryBuilder->execute()->fetchColumn(0);

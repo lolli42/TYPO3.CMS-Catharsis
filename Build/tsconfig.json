@@ -2,6 +2,7 @@
     "compilerOptions": {
         "target": "es5",
         "module": "amd",
+        "sourceMap": false,
         "removeComments": false,
         "pretty": true,
         "baseUrl": ".",
@@ -162,11 +163,13 @@
     },
     "filesGlob": [
         "typings/index.d.ts",
+        "typings/no-def/index.d.ts",
         "../../typo3/sysext/*/Resources/Private/TypeScript/**/*.ts",
         "!node_modules/**"
     ],
     "files": [
         "typings/index.d.ts",
+        "typings/no-def/index.d.ts",
         "../../typo3/sysext/backend/Resources/Private/TypeScript/ColorPicker.ts"
     ]
 }

@@ -25,8 +25,8 @@ class AddPageInPageModuleCest
     {
         $I->useExistingSession();
         // Ensure main content frame is fully loaded, otherwise there are load-race-conditions
-        $I->switchToIFrame('contentIframe');
-        $I->waitForText('Web>Page module');
+        $I->switchToIFrame('list_frame');
+        $I->waitForText('Web Content Management System');
         $I->switchToIFrame();
     }
 
@@ -43,7 +43,7 @@ class AddPageInPageModuleCest
         $I->click('Page');
 
         // New page from root page
-        $typo3NavigationContainer = '#typo3-navigationContainer';
+        $typo3NavigationContainer = '.scaffold-content-navigation-component';
         $I->waitForElement($typo3NavigationContainer);
         $rootNode = 'a.x-tree-node-anchor > span';
         $rootNodeIcon = '#extdd-1 > span.t3js-icon.icon.icon-size-small.icon-state-default.icon-apps-pagetree-root';
@@ -54,7 +54,7 @@ class AddPageInPageModuleCest
         $I->click($contextMenuNew);
 
         // Switch to content frame
-        $I->switchToIFrame('contentIframe');
+        $I->switchToIFrame('list_frame');
 
         // New page select position wizard
         $I->click('i[title="Insert the new page here"]');

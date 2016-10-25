@@ -102,8 +102,8 @@ define(['jquery'], function($) {
 			// to be reloaded.
 			if (typeof response.items === "undefined") {
 				var res = parameters.match(/&reloadListFrame=(0|1|2)(&|$)/);
-				if (parseInt(res[1], 0)) {
-					top.content.list_frame.location.reload(true);
+				if (res !== null && parseInt(res[1], 0)) {
+					top.list_frame.location.reload(true);
 				}
 			} else {
 				ClickMenu.populateData(response.items, response.level);

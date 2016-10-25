@@ -46,7 +46,7 @@ var inline = {
 			return;
 		}
 
-		var $recordHeader = TYPO3.jQuery(this);
+		var $recordHeader = $triggerElement.closest('.panel-heading');
 		inline.expandCollapseRecord(
 			$recordHeader.attr('id').replace(/_header$/, ''),
 			$recordHeader.attr('data-expandSingle'),
@@ -1294,13 +1294,10 @@ var inline = {
 	 *
 	 * @param string objectId
 	 * @return string
+	 * @deprecated since TYPO3 CMS v8, this method will be removed in TYPO3 CMS v9. Use $.escapeSelector() instead, which was added with jQuery 3.0.
 	 */
 	escapeSelectorObjectId: function (objectId) {
-		var escapedSelectorObjectId;
-		var escapedObjectId = this.escapeObjectId(objectId);
-		escapedSelectorObjectId = escapedObjectId.replace(/\\:/g, '\\\\\\:');
-		escapedSelectorObjectId = escapedSelectorObjectId.replace(/\\\./g, '\\\\\\.');
-		return escapedSelectorObjectId;
+		return $.escapeSelector(objectId);
 	},
 
 	/**
@@ -1326,6 +1323,8 @@ var inline = {
 /*]]>*/
 (function ($) {
 	$(function () {
-		$(document).delegate('[data-toggle="formengine-inline"]', 'click', inline.toggleEvent);
+		$(document).on('click', '[data-toggle="formengine-inline"]', function(event) {
+			inline.toggleEvent(event);
+		});
 	});
 })(TYPO3.jQuery);
