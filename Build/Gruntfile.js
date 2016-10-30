@@ -151,9 +151,6 @@ module.exports = function(grunt) {
 				]
 			}
 		},
-		typings: {
-			install: {}
-		},
 		watch: {
 			options: {
 				livereload: true
@@ -219,6 +216,15 @@ module.exports = function(grunt) {
 					{ dest: '<%= paths.sysext %>version/Resources/Public/Icons/module-version.svg', src: '<%= paths.t3icons %>module/module-version.svg' },
 					{ dest: '<%= paths.sysext %>viewpage/Resources/Public/Icons/module-viewpage.svg', src: '<%= paths.t3icons %>module/module-viewpage.svg' },
 					{ dest: '<%= paths.sysext %>workspaces/Resources/Public/Icons/module-workspaces.svg', src: '<%= paths.t3icons %>module/module-workspaces.svg' }
+				]
+			},
+			fonts: {
+				files: [
+					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.eot', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.eot' },
+					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.svg', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.svg' },
+					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.ttf', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.ttf' },
+					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.woff' },
+					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff2', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.woff2' }
 				]
 			},
 			npm: {
@@ -306,7 +312,8 @@ module.exports = function(grunt) {
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js"],
-					"<%= paths.install %>Public/JavaScript/tagsort.min.js": ["<%= paths.install %>Public/JavaScript/tagsort.min.js"]
+					"<%= paths.install %>Public/JavaScript/tagsort.min.js": ["<%= paths.install %>Public/JavaScript/tagsort.min.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js": ["<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js"]
 				}
 			}
 		},
@@ -342,7 +349,6 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks("grunt-ts");
 	grunt.loadNpmTasks('grunt-tslint');
-	grunt.loadNpmTasks('grunt-typings');
 
 	/**
 	 * grunt default task
@@ -371,11 +377,10 @@ module.exports = function(grunt) {
 	 *
 	 * this task does the following things:
 	 * - npm install
-	 * - typings install
 	 * - bower install
 	 * - copy some bower components to a specific destinations because they need to be included via PHP
 	 */
-	grunt.registerTask('update', ['npm-install', 'typings', 'bower_install', 'bowercopy']);
+	grunt.registerTask('update', ['npm-install', 'bower_install', 'bowercopy']);
 
 	/**
 	 * grunt scripts task

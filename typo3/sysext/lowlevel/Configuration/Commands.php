@@ -9,5 +9,13 @@
 return [
     'syslog:list' => [
         'class' => \TYPO3\CMS\Lowlevel\Command\ListSysLogCommand::class
+    ],
+    'cleanup:deletedrecords' => [
+        'class' => \TYPO3\CMS\Lowlevel\Command\DeletedRecordsCommand::class,
+        'user' => '_cli_lowlevel'
+    ],
+    'cleanup:flexforms' => [
+        'class' => \TYPO3\CMS\Lowlevel\Command\CleanFlexFormsCommand::class,
+        'user' => '_cli_lowlevel'
     ]
 ];

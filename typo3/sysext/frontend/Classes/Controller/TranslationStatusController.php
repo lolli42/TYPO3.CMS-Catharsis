@@ -229,7 +229,9 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
                             $info = '';
                         } else {
                             $status = GeneralUtility::hideIfNotTranslated($data['row']['l18n_cfg']) || GeneralUtility::hideIfDefaultLanguage($data['row']['l18n_cfg']) ? 'danger' : '';
-                            $info = '<input type="checkbox" name="newOL[' . $langRow['uid'] . '][' . $data['row']['uid'] . ']" value="1" />';
+                            $info = '<div class="btn-group"><label class="btn btn-default btn-checkbox">';
+                            $info .= '<input type="checkbox" name="newOL[' . $langRow['uid'] . '][' . $data['row']['uid'] . ']" value="1" />';
+                            $info .= '<span class="t3-icon fa"></span></label></div>';
                             $newOL_js[$langRow['uid']] .= '
 								+(document.webinfoForm['
                                 . GeneralUtility::quoteJSvalue('newOL[' . $langRow['uid'] . '][' . $data['row']['uid'] . ']')
@@ -382,8 +384,18 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
         $result = $queryBuilder
             ->select('*')
             ->from(static::$pageLanguageOverlayTable)
-            ->where($queryBuilder->expr()->eq('pid', (int)$pageId))
-            ->andWhere($queryBuilder->expr()->eq('sys_language_uid', (int)$langId))
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'pid',
+                    $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
+                )
+            )
+            ->andWhere(
+                $queryBuilder->expr()->eq(
+                    'sys_language_uid',
+                    $queryBuilder->createNamedParameter($langId, \PDO::PARAM_INT)
+                )
+            )
             ->execute();
 
         $row = $result->fetch();
@@ -415,10 +427,16 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
             ->count('uid')
             ->from('tt_content')
             ->where(
-                $queryBuilder->expr()->eq('pid', (int)$pageId)
+                $queryBuilder->expr()->eq(
+                    'pid',
+                    $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
+                )
             )
             ->andWhere(
-                $queryBuilder->expr()->eq('sys_language_uid', (int)$sysLang)
+                $queryBuilder->expr()->eq(
+                    'sys_language_uid',
+                    $queryBuilder->createNamedParameter($sysLang, \PDO::PARAM_INT)
+                )
             )
             ->execute()
             ->fetchColumn(0);

@@ -396,6 +396,15 @@ abstract class AbstractTreeView
                 if (is_array($rootRec)) {
                     $firstHtml .= $this->getIcon($rootRec);
                 }
+
+                if ($this->ext_showPathAboveMounts) {
+                    $mountPointPid = $rootRec['pid'];
+                    if ($lastMountPointPid !== $mountPointPid) {
+                        $title = \TYPO3\CMS\Backend\Tree\Pagetree\Commands::getMountPointPath($mountPointPid);
+                        $this->tree[] = ['isMountPointPath' => true, 'title' => $title];
+                    }
+                    $lastMountPointPid = $mountPointPid;
+                }
             } else {
                 // Artificial record for the tree root, id=0
                 $rootRec = $this->getRootRecord();
@@ -846,7 +855,10 @@ abstract class AbstractTreeView
                 ->count('uid')
                 ->from($this->table)
                 ->where(
-                    $queryBuilder->expr()->eq($this->parentField, (int)$uid),
+                    $queryBuilder->expr()->eq(
+                        $this->parentField,
+                        $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
+                    ),
                     QueryHelper::stripLogicalOperatorPrefix($this->clause)
                 )
                 ->execute()
@@ -912,7 +924,10 @@ abstract class AbstractTreeView
                 ->select(...$this->fieldArray)
                 ->from($this->table)
                 ->where(
-                    $queryBuilder->expr()->eq($this->parentField, (int)$parentId),
+                    $queryBuilder->expr()->eq(
+                        $this->parentField,
+                        $queryBuilder->createNamedParameter($parentId, \PDO::PARAM_INT)
+                    ),
                     QueryHelper::stripLogicalOperatorPrefix($this->clause)
                 );
 

@@ -18,12 +18,15 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
 
 /**
  * Get avatar for backend user
  */
 class AvatarViewHelper extends AbstractViewHelper
 {
+    use CompileWithRenderStatic;
+
     /**
      * As this ViewHelper renders HTML, the output must not be escaped.
      *
@@ -45,20 +48,6 @@ class AvatarViewHelper extends AbstractViewHelper
     /**
      * Resolve user avatar from backend user id.
      *
-     * @return string html image tag
-     */
-    public function render()
-    {
-        return static::renderStatic(
-            $this->arguments,
-            $this->buildRenderChildrenClosure(),
-            $this->renderingContext
-        );
-    }
-
-    /**
-     * Resolve user avatar from backend user id.
-     *
      * @param array $arguments
      * @param \Closure $renderChildrenClosure
      * @param RenderingContextInterface $renderingContext
@@ -72,7 +61,12 @@ class AvatarViewHelper extends AbstractViewHelper
             $backendUser = $queryBuilder
                 ->select('*')
                 ->from('be_users')
-                ->where($queryBuilder->expr()->eq('uid', (int)$arguments['backendUser']))
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'uid',
+                        $queryBuilder->createNamedParameter($arguments['backendUser'], \PDO::PARAM_INT)
+                    )
+                )
                 ->execute()
                 ->fetch();
         } else {

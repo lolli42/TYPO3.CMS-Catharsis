@@ -1,0 +1,16 @@
+<h3>TCA Migrations</h3>
+<p>
+	Checks whether the current TCA needs migrations and displays applied migrations.
+</p>
+<form method="post">
+	<f:render partial="Action/Common/HiddenFormFields" arguments="{_all}" />
+	<div id="tcaMigrationsCheck">
+		<div class="messageTemplate" style="display: none;">
+			<div class="t3js-message typo3-message alert">
+				<h4></h4>
+				<p class="messageText"></p>
+			</div>
+		</div>
+		<f:render partial="Action/Common/SubmitButton" arguments="{name:'tcaMigrationsCheck', text:'Check TCA Migrations'}"/>
+	</div>
+</form>

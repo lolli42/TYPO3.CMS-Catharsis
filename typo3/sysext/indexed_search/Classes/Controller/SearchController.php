@@ -15,6 +15,7 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
  */
 
 use TYPO3\CMS\Core\Charset\CharsetConverter;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Html\HtmlParser;
@@ -62,6 +63,11 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * @var int
      */
     protected $defaultResultNumber = 10;
+
+    /**
+     * @var int[]
+     */
+    protected $availableResultsNumbers = [];
 
     /**
      * Search repository
@@ -175,6 +181,14 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             $this->redirect('noTypoScript');
         }
 
+        // Sets availableResultsNumbers - has to be called before request settings are read to avoid DoS attack
+        $this->availableResultsNumbers = array_filter(GeneralUtility::intExplode(',', $this->settings['blind']['numberOfResults']));
+
+        // Sets default result number if at least one availableResultsNumbers exists
+        if (isset($this->availableResultsNumbers[0])) {
+            $this->defaultResultNumber = $this->availableResultsNumbers[0];
+        }
+
         $this->loadSettings();
 
         // setting default values
@@ -193,7 +207,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         if ($searchData['_freeIndexUid'] !== '' && $searchData['_freeIndexUid'] !== '_') {
             $searchData['freeIndexUid'] = $searchData['_freeIndexUid'];
         }
-        $searchData['numberOfResults'] = MathUtility::forceIntegerInRange($searchData['numberOfResults'], 1, 100, $this->defaultResultNumber);
+        $searchData['numberOfResults'] = $this->getNumberOfResults($searchData['numberOfResults']);
         // This gets the search-words into the $searchWordArray
         $this->setSword($searchData['sword']);
         // Add previous search words to current
@@ -270,7 +284,12 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                     $indexCfgRec = $queryBuilder
                         ->select('*')
                         ->from('index_config')
-                        ->where($queryBuilder->expr()->eq('uid', (int)$freeIndexUid))
+                        ->where(
+                            $queryBuilder->expr()->eq(
+                                'uid',
+                                $queryBuilder->createNamedParameter($freeIndexUid, \PDO::PARAM_INT)
+                            )
+                        )
                         ->execute()
                         ->fetch();
                     $categoryTitle = $indexCfgRec['title'];
@@ -678,7 +697,12 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                 $ftdrow = $queryBuilder
                     ->select('*')
                     ->from('index_fulltext')
-                    ->where($queryBuilder->expr()->eq('phash', (int)$row['phash']))
+                    ->where(
+                        $queryBuilder->expr()->eq(
+                            'phash',
+                            $queryBuilder->createNamedParameter($row['phash'], \PDO::PARAM_INT)
+                        )
+                    )
                     ->execute()
                     ->fetch();
                 if ($ftdrow !== false) {
@@ -1149,7 +1173,12 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                 $result = $queryBuilder
                     ->select('uid', 'title')
                     ->from('index_config')
-                    ->where($queryBuilder->expr()->in('uid', $uidList))
+                    ->where(
+                        $queryBuilder->expr()->in(
+                            'uid',
+                            $queryBuilder->createNamedParameter($uidList, Connection::PARAM_INT_ARRAY)
+                        )
+                    )
                     ->execute();
 
                 while ($row = $result->fetch()) {
@@ -1236,17 +1265,11 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     protected function getAllAvailableNumberOfResultsOptions()
     {
         $allOptions = [];
-        $blindSettings = $this->settings['blind'];
-        if (!$blindSettings['numberOfResults']) {
-            $allOptions = [
-                10 => 10,
-                25 => 25,
-                50 => 50,
-                100 => 100
-            ];
+        if (count($this->availableResultsNumbers) > 1) {
+            $allOptions = array_combine($this->availableResultsNumbers, $this->availableResultsNumbers);
         }
         // disable single entries by TypoScript
-        $allOptions = $this->removeOptionsFromOptionList($allOptions, $blindSettings['numberOfResults']);
+        $allOptions = $this->removeOptionsFromOptionList($allOptions, $this->settings['blind']['numberOfResults']);
         return $allOptions;
     }
 
@@ -1330,7 +1353,12 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             $result = $queryBuilder
                 ->select('uid', 'title')
                 ->from('pages')
-                ->where($queryBuilder->expr()->eq('pid', (int)$pageUid))
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'pid',
+                        $queryBuilder->createNamedParameter($pageUid, \PDO::PARAM_INT)
+                    )
+                )
                 ->orderBy('sorting')
                 ->execute();
 
@@ -1403,7 +1431,12 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         $row = $queryBuilder
             ->select('domainName')
             ->from('sys_domain')
-            ->where($queryBuilder->expr()->eq('pid', (int)$id))
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'pid',
+                    $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)
+                )
+            )
             ->orderBy('sorting')
             ->setMaxResults(1)
             ->execute()
@@ -1500,6 +1533,20 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             10, 400, 60
         );
         $this->settings['results.']['hrefInSummaryCropSignifier'] = $GLOBALS['TSFE']->cObj->stdWrap($typoScriptArray['hrefInSummaryCropSignifier'], $typoScriptArray['hrefInSummaryCropSignifier.']);
+    }
+
+    /**
+     * Returns number of results to display
+     *
+     * @param int $numberOfResults Requested number of results
+     * @return int
+     */
+    protected function getNumberOfResults($numberOfResults)
+    {
+        $numberOfResults = intval($numberOfResults);
+
+        return (in_array($numberOfResults, $this->availableResultsNumbers)) ?
+            $numberOfResults : $this->defaultResultNumber;
     }
 
     /**

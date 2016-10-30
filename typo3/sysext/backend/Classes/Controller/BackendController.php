@@ -280,20 +280,22 @@ class BackendController
         }
         // if no custom logo was set or the path is invalid, use the original one
         if (empty($logoPath)) {
-            $logoPath = GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Public/Images/typo3-topbar@2x.png');
-        }
-        list($logoWidth, $logoHeight) = @getimagesize($logoPath);
+            $logoPath = GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Public/Images/typo3_logo_orange.svg');
+            $logoWidth = 22;
+            $logoHeight = 22;
+        } else {
+            list($logoWidth, $logoHeight) = @getimagesize($logoPath);
 
-        // High-resolution?
-        if (strpos($logoPath, '@2x.') !== false) {
-            $logoWidth = $logoWidth/2;
-            $logoHeight = $logoHeight/2;
+            // High-resolution?
+            if (strpos($logoPath, '@2x.') !== false) {
+                $logoWidth /= 2;
+                $logoHeight /= 2;
+            }
         }
 
         $view->assign('logoUrl', PathUtility::getAbsoluteWebPath($logoPath));
         $view->assign('logoWidth', $logoWidth);
         $view->assign('logoHeight', $logoHeight);
-        $view->assign('logoLink', TYPO3_URL_GENERAL);
         $view->assign('applicationVersion', TYPO3_version);
         $view->assign('siteName', $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
         $view->assign('moduleMenu', $this->generateModuleMenu());

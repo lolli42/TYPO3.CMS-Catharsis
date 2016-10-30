@@ -119,8 +119,9 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
         /** @var ElementBrowserPageTreeView $pageTree */
         $pageTree = GeneralUtility::makeInstance(ElementBrowserPageTreeView::class);
         $pageTree->setLinkParameterProvider($this);
-        $pageTree->ext_showPageId = (bool)$backendUser->getTSConfigVal('options.pageTree.showPageIdWithTitle');
         $pageTree->ext_showNavTitle = (bool)$backendUser->getTSConfigVal('options.pageTree.showNavTitle');
+        $pageTree->ext_showPageId = (bool)$backendUser->getTSConfigVal('options.pageTree.showPageIdWithTitle');
+        $pageTree->ext_showPathAboveMounts = (bool)$backendUser->getTSConfigVal('options.pageTree.showPathAboveMounts');
         $pageTree->addField('nav_title');
 
         $this->view->assign('temporaryTreeMountCancelLink', $this->getTemporaryTreeMountCancelNotice());
@@ -167,7 +168,12 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
             $contentElements = $queryBuilder
                 ->select('*')
                 ->from('tt_content')
-                ->where($queryBuilder->expr()->eq('pid', (int)$pageId))
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'pid',
+                        $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
+                    )
+                )
                 ->orderBy('colPos')
                 ->addOrderBy('sorting')
                 ->execute()

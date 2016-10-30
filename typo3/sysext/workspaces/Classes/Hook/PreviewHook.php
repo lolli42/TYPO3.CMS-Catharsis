@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Version\Hook;
+namespace TYPO3\CMS\Workspaces\Hook;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -19,7 +19,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\RootLevelRestriction;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -120,7 +119,7 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface
                 $tempBackendUser->unpack_uc('');
                 $tempBackendUser->fetchGroupData();
                 // Handle degradation of admin users
-                if ($tempBackendUser->isAdmin() && ExtensionManagementUtility::isLoaded('workspaces')) {
+                if ($tempBackendUser->isAdmin()) {
                     $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                         ->getQueryBuilderForTable('sys_workspace');
 
@@ -132,7 +131,12 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface
                     $workspaceRecord = $queryBuilder
                         ->select('uid', 'adminusers', 'reviewers', 'members', 'db_mountpoints')
                         ->from('sys_workspace')
-                        ->where($queryBuilder->expr()->eq('uid', (int)$workspaceUid))
+                        ->where(
+                            $queryBuilder->expr()->eq(
+                                'uid',
+                                $queryBuilder->createNamedParameter($workspaceUid, \PDO::PARAM_INT)
+                            )
+                        )
                         ->execute()
                         ->fetch();
 
@@ -263,8 +267,14 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface
                 ->select('*')
                 ->from('sys_preview')
                 ->where(
-                    $queryBuilder->expr()->eq('keyword', $queryBuilder->createNamedParameter($inputCode)),
-                    $queryBuilder->expr()->gt('endtime', (int)$GLOBALS['EXEC_TIME'])
+                    $queryBuilder->expr()->eq(
+                        'keyword',
+                        $queryBuilder->createNamedParameter($inputCode, \PDO::PARAM_STR)
+                    ),
+                    $queryBuilder->expr()->gt(
+                        'endtime',
+                        $queryBuilder->createNamedParameter($GLOBALS['EXEC_TIME'], \PDO::PARAM_INT)
+                    )
                 )
                 ->setMaxResults(1)
                 ->execute()
