@@ -7,7 +7,7 @@ return [
         'crdate' => 'crdate',
         'cruser_id' => 'cruser_id',
         'delete' => 'deleted',
-        'prependAtCopy' => 'LLL:EXT:lang/locallang_general.xlf:LGL.prependAtCopy',
+        'prependAtCopy' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.prependAtCopy',
         'enablecolumns' => [
             'disabled' => 'hidden'
         ],
@@ -23,7 +23,7 @@ return [
     ],
     'columns' => [
         'hidden' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.disable',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.disable',
             'exclude' => true,
             'config' => [
                 'type' => 'check',
@@ -65,7 +65,7 @@ return [
             ]
         ],
         'description' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.description',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.description',
             'config' => [
                 'type' => 'text',
                 'rows' => 5,
@@ -78,16 +78,23 @@ return [
             'config' => [
                 'type' => 'text',
                 'cols' => 40,
-                'rows' => 10
+                'rows' => 10,
+                'enableTabulator' => true,
+                'fixedFont' => true,
             ],
-            'defaultExtras' => 'fixed-font : enable-tab'
         ]
     ],
     'types' => [
         '0' => ['showitem' => '
-			hidden,title,description,subgroup,
-			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:fe_groups.tabs.options, lockToDomain, TSconfig,
-			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:fe_groups.tabs.extended
-		']
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                title,subgroup,
+            --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:fe_groups.tabs.options,
+                lockToDomain, TSconfig,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        ']
     ]
 ];

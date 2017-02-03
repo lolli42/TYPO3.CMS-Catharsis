@@ -26,13 +26,15 @@ if (TYPO3_MODE === 'BE') {
                 'type' => 'text',
                 'label' => 'LLL:EXT:setup/Resources/Private/Language/locallang.xlf:beUser_realName',
                 'table' => 'be_users',
-                'csh' => 'beUser_realName'
+                'csh' => 'beUser_realName',
+                'max' => 80
             ],
             'email' => [
                 'type' => 'email',
                 'label' => 'LLL:EXT:setup/Resources/Private/Language/locallang.xlf:beUser_email',
                 'table' => 'be_users',
-                'csh' => 'beUser_email'
+                'csh' => 'beUser_email',
+                'max' => 80
             ],
             'emailMeAtLogin' => [
                 'type' => 'check',
@@ -58,7 +60,7 @@ if (TYPO3_MODE === 'BE') {
                 'csh' => 'passwordCurrent',
             ],
             'avatar' => [
-                'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.avatar',
+                'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.avatar',
                 'type' => 'avatar',
                 'table' => 'be_users',
                 'allowed' => $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']
@@ -131,16 +133,10 @@ if (TYPO3_MODE === 'BE') {
                 'label' => 'LLL:EXT:setup/Resources/Private/Language/locallang.xlf:flexibleTextareas_MaxHeight',
                 'csh' => 'flexibleTextareas_MaxHeight'
             ],
-            'debugInWindow' => [
-                'type' => 'check',
-                'label' => 'LLL:EXT:setup/Resources/Private/Language/locallang.xlf:debugInWindow',
-                'access' => 'admin'
-            ]
         ],
         'showitem' => '--div--;LLL:EXT:setup/Resources/Private/Language/locallang.xlf:personal_data,realName,email,emailMeAtLogin,avatar,lang,
 				--div--;LLL:EXT:setup/Resources/Private/Language/locallang.xml:passwordHeader,passwordCurrent,password,password2,
 				--div--;LLL:EXT:setup/Resources/Private/Language/locallang.xlf:opening,startModule,
-				--div--;LLL:EXT:setup/Resources/Private/Language/locallang.xlf:editFunctionsTab,edit_RTE,resizeTextareas_Flexible,resizeTextareas_MaxHeight,titleLen,thumbnailsByDefault,edit_docModuleUpload,showHiddenFilesAndFolders,copyLevels,recursiveDelete,resetConfiguration,
-				--div--;LLL:EXT:setup/Resources/Private/Language/locallang.xlf:adminFunctions,debugInWindow'
+				--div--;LLL:EXT:setup/Resources/Private/Language/locallang.xlf:editFunctionsTab,edit_RTE,resizeTextareas_Flexible,resizeTextareas_MaxHeight,titleLen,thumbnailsByDefault,edit_docModuleUpload,showHiddenFilesAndFolders,copyLevels,recursiveDelete,resetConfiguration'
     ];
 }

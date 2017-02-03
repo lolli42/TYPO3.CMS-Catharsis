@@ -1,8 +1,8 @@
 
 .. include:: ../../Includes.txt
 
-8.4-dev Changes (master)
-========================
+master changes
+==============
 
 **Table of contents**
 
@@ -39,3 +39,13 @@ Deprecation
    :glob:
 
    Deprecation-*
+
+Important
+^^^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+   :glob:
+
+   Important-*

@@ -166,7 +166,13 @@ class SetupModuleController extends AbstractModule
     {
         parent::__construct();
         $this->formProtection = FormProtectionFactory::get();
-        $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
+        $pageRenderer = $this->moduleTemplate->getPageRenderer();
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngine');
+        $pageRenderer->addInlineSetting('FormEngine', 'formName', 'editform');
+        $pageRenderer->addInlineLanguageLabelArray([
+            'FormEngine.remainingCharacters'    => 'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.remainingCharacters',
+        ], true);
     }
 
     /**
@@ -299,6 +305,8 @@ class SetupModuleController extends AbstractModule
                 }
                 // Restore admin status after processing
                 $beUser->user['admin'] = $isAdmin;
+
+                BackendUtility::setUpdateSignal('updateTopbar');
             }
         }
     }
@@ -434,7 +442,7 @@ class SetupModuleController extends AbstractModule
 
         $saveButton = $buttonBar->makeInputButton()
             ->setName('data[save]')
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.saveDoc'))
             ->setValue('1')
             ->setForm('SetupModuleController')
             ->setShowLabelText(true)
@@ -519,6 +527,12 @@ class SetupModuleController extends AbstractModule
                 case 'email':
                 case 'password':
                     $noAutocomplete = '';
+
+                    $maxLength = $config['max'] ?? 0;
+                    if ((int)$maxLength > 0) {
+                        $more .= ' maxlength="' . (int)$maxLength . '"';
+                    }
+
                     if ($type === 'password') {
                         $value = '';
                         $noAutocomplete = 'autocomplete="off" ';
@@ -622,7 +636,7 @@ class SetupModuleController extends AbstractModule
                     $html = '';
             }
 
-            $code[] = '<div class="form-section"><div class="row"><div class="form-group col-md-12">' .
+            $code[] = '<div class="form-section"><div class="row"><div class="form-group t3js-formengine-field-item col-md-12">' .
                 $label .
                 $html .
                 '</div></div></div>';
@@ -819,7 +833,7 @@ class SetupModuleController extends AbstractModule
                     return $accessObject->accessLevelCheck($config);
                 }
             }
-        } elseif ($access == 'admin') {
+        } elseif ($access === 'admin') {
             return $this->isAdmin;
         }
 
@@ -1019,15 +1033,15 @@ class SetupModuleController extends AbstractModule
             }
 
             function clearExistingImage() {
-                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#image_' . htmlspecialchars($fieldName)) . ').hide();
-                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#clear_button_' . htmlspecialchars($fieldName)) . ').hide();
-                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(\'\');
+                $(' . GeneralUtility::quoteJSvalue('#image_' . htmlspecialchars($fieldName)) . ').hide();
+                $(' . GeneralUtility::quoteJSvalue('#clear_button_' . htmlspecialchars($fieldName)) . ').hide();
+                $(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(\'\');
             }
 
             function setFileUid(field, value, fileUid) {
                 clearExistingImage();
-                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(fileUid);
-                TYPO3.jQuery(' . GeneralUtility::quoteJSvalue('#add_button_' . htmlspecialchars($fieldName)) . ').removeClass(\'btn-default\').addClass(\'btn-info\');
+                $(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(fileUid);
+                $(' . GeneralUtility::quoteJSvalue('#add_button_' . htmlspecialchars($fieldName)) . ').removeClass(\'btn-default\').addClass(\'btn-info\');
 
                 browserWin.close();
             }

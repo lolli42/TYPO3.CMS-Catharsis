@@ -16,7 +16,7 @@ return [
     ],
     'columns' => [
         'title' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.title',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.title',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -34,12 +34,6 @@ return [
                 'size' => 3,
                 'maxitems' => 100,
                 'autoSizeMax' => 20,
-                'show_thumbs' => true,
-                'wizards' => [
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ]
-                ]
             ]
         ],
         'default_mailcomment' => [
@@ -73,12 +67,6 @@ return [
                 'size' => 3,
                 'maxitems' => 100,
                 'autoSizeMax' => 20,
-                'show_thumbs' => true,
-                'wizards' => [
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ]
-                ]
             ]
         ],
         'allow_notificaton_settings' => [
@@ -115,7 +103,11 @@ return [
     ],
     'types' => [
         '0' => ['showitem' => '
-			--div--;LLL:EXT:workspaces/Resources/Private/Language/locallang_db.xlf:tabs.general,title,responsible_persons,
-			--div--;LLL:EXT:workspaces/Resources/Private/Language/locallang_db.xlf:tabs.notification_settings,--palette--;;stage, notification_defaults, default_mailcomment']
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                title,responsible_persons,
+            --div--;LLL:EXT:workspaces/Resources/Private/Language/locallang_db.xlf:tabs.notification_settings,
+                --palette--;;stage, notification_defaults, default_mailcomment,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        ']
     ]
 ];

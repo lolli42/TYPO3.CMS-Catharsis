@@ -61,9 +61,8 @@ CREATE TABLE fe_session_data (
 #
 CREATE TABLE fe_sessions (
 	ses_id varchar(32) DEFAULT '' NOT NULL,
-	ses_name varchar(32) DEFAULT '' NOT NULL,
+	ses_name varchar(255) DEFAULT '' NOT NULL,
 	ses_iplock varchar(39) DEFAULT '' NOT NULL,
-	ses_hashlock int(11) DEFAULT '0' NOT NULL,
 	ses_userid int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_data blob,
@@ -275,7 +274,6 @@ CREATE TABLE tt_content (
 	header_layout varchar(30) DEFAULT '0' NOT NULL,
 	menu_type varchar(30) DEFAULT '0' NOT NULL,
 	list_type varchar(255) DEFAULT '' NOT NULL,
-	select_key varchar(80) DEFAULT '' NOT NULL,
 	sectionIndex tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	linkToTop tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	file_collections text,
@@ -292,6 +290,7 @@ CREATE TABLE tt_content (
 	accessibility_bypass_text varchar(30) DEFAULT '' NOT NULL,
 	l18n_parent int(11) DEFAULT '0' NOT NULL,
 	l18n_diffsource mediumblob,
+	l10n_source int(11) DEFAULT '0' NOT NULL,
 	selected_categories text,
 	category_field varchar(64) DEFAULT '' NOT NULL,
 	table_caption varchar(255) DEFAULT NULL,

@@ -145,7 +145,7 @@ class NewContentElementController extends AbstractModule
     public function init()
     {
         $lang = $this->getLanguageService();
-        $lang->includeLLFile('EXT:lang/locallang_misc.xlf');
+        $lang->includeLLFile('EXT:lang/Resources/Private/Language/locallang_misc.xlf');
         $LOCAL_LANG_orig = $GLOBALS['LOCAL_LANG'];
         $lang->includeLLFile('EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf');
         ArrayUtility::mergeRecursiveWithOverrule($LOCAL_LANG_orig, $GLOBALS['LOCAL_LANG']);
@@ -491,7 +491,7 @@ class NewContentElementController extends AbstractModule
                     if (is_array($GLOBALS['TCA']['tt_content']['columns'][$fN])) {
                         // Get information about if the field value is OK:
                         $config = &$GLOBALS['TCA']['tt_content']['columns'][$fN]['config'];
-                        $authModeDeny = $config['type'] == 'select' && $config['authMode']
+                        $authModeDeny = $config['type'] === 'select' && $config['authMode']
                             && !$backendUser->checkAuthMode('tt_content', $fN, $fV, $config['authMode']);
                         // explode TSconfig keys only as needed
                         if (!isset($removeItems[$fN])) {

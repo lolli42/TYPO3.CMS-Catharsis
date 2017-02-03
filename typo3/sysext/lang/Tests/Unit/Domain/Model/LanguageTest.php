@@ -17,7 +17,7 @@ namespace TYPO3\CMS\Lang\Tests\Unit\Domain\Model;
 /**
  * Testcase for Language
  */
-class LanguageTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class LanguageTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var \TYPO3\CMS\Lang\Domain\Model\Language

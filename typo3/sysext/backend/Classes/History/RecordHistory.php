@@ -436,7 +436,7 @@ class RecordHistory
             // remove first link
             $singleLine['time'] = htmlspecialchars(BackendUtility::datetime($entry['tstamp']));
             // add time
-            $singleLine['age'] = htmlspecialchars(BackendUtility::calcAge($GLOBALS['EXEC_TIME'] - $entry['tstamp'], $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')));
+            $singleLine['age'] = htmlspecialchars(BackendUtility::calcAge($GLOBALS['EXEC_TIME'] - $entry['tstamp'], $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears')));
             // add age
 
             $singleLine['tableUid'] = $this->linkPage(
@@ -549,6 +549,7 @@ class RecordHistory
         if (is_array($entry['newRecord'])) {
             /* @var DiffUtility $diffUtility */
             $diffUtility = GeneralUtility::makeInstance(DiffUtility::class);
+            $diffUtility->stripTags = false;
             $fieldsToDisplay = array_keys($entry['newRecord']);
             $languageService = $this->getLanguageService();
             foreach ($fieldsToDisplay as $fN) {
@@ -655,7 +656,7 @@ class RecordHistory
 
         $changeLog = $this->getHistoryData($elParts[0], $elParts[1]);
         // get history of tables of this page and merge it into changelog
-        if ($elParts[0] == 'pages' && $this->showSubElements && $this->hasPageAccess('pages', $elParts[1])) {
+        if ($elParts[0] === 'pages' && $this->showSubElements && $this->hasPageAccess('pages', $elParts[1])) {
             foreach ($GLOBALS['TCA'] as $tablename => $value) {
                 // check if there are records on the page
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($tablename);

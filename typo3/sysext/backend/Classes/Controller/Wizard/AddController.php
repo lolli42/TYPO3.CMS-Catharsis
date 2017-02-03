@@ -40,7 +40,7 @@ class AddController extends AbstractWizardController
     public $content;
 
     /**
-     * If set, the TCEmain class is loaded and used to add the returning ID to the parent record.
+     * If set, the DataHandler class is loaded and used to add the returning ID to the parent record.
      *
      * @var int
      */
@@ -87,7 +87,7 @@ class AddController extends AbstractWizardController
     public function __construct()
     {
         parent::__construct();
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_wizards.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_wizards.xlf');
         $GLOBALS['SOBE'] = $this;
 
         $this->init();

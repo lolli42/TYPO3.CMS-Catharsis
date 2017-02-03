@@ -30,7 +30,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/createContentRecords.csv
+     * @see DataSet/createContentRecords.csv
      */
     public function createContents()
     {
@@ -45,7 +45,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/createContentRecordAndDiscardCreatedContentRecord.csv
+     * @see DataSet/createContentRecordAndDiscardCreatedContentRecord.csv
      */
     public function createContentAndDiscardCreatedContent()
     {
@@ -60,7 +60,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/createAndCopyContentRecordAndDiscardCopiedContentRecord.csv
+     * @see DataSet/createAndCopyContentRecordAndDiscardCopiedContentRecord.csv
      */
     public function createAndCopyContentAndDiscardCopiedContent()
     {
@@ -77,7 +77,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/modifyContentRecord.csv
+     * @see DataSet/modifyContentRecord.csv
      */
     public function modifyContent()
     {
@@ -92,7 +92,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/deleteContentRecord.csv
+     * @see DataSet/deleteContentRecord.csv
      */
     public function deleteContent()
     {
@@ -124,7 +124,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/copyContentRecord.csv
+     * @see DataSet/copyContentRecord.csv
      */
     public function copyContent()
     {
@@ -139,7 +139,45 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/localizeContentRecord.csv
+     * @see DataSet/copyContentToLanguage.csv
+     */
+    public function copyContentToLanguage()
+    {
+        parent::copyContentToLanguage();
+        $this->actionService->publishWorkspace(self::VALUE_WorkspaceId);
+        $this->assertAssertionDataSet('copyContentToLanguage');
+
+        $this->setUpFrontendRootPage(1, [
+            'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/JsonRenderer.ts',
+            'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/JsonRendererNoOverlay.ts'
+        ]);
+        $responseSections = $this->getFrontendResponse(self::VALUE_PageId, self::VALUE_LanguageId)->getResponseSections();
+        $this->assertThat($responseSections, $this->getRequestSectionHasRecordConstraint()
+            ->setTable(self::TABLE_Content)->setField('header')->setValues('[Translate to Dansk:] Regular Element #3', '[Translate to Dansk:] Regular Element #2'));
+    }
+
+    /**
+     * @test
+     * @see DataSet/copyContentToLanguageFromNonDefaultLanguage.csv
+     */
+    public function copyContentToLanguageFromNonDefaultLanguage()
+    {
+        parent::copyContentToLanguageFromNonDefaultLanguage();
+        $this->actionService->publishWorkspace(self::VALUE_WorkspaceId);
+        $this->assertAssertionDataSet('copyContentToLanguageFromNonDefaultLanguage');
+
+        $this->setUpFrontendRootPage(1, [
+            'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/JsonRenderer.ts',
+            'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/JsonRendererNoOverlay.ts'
+        ]);
+        $responseSections = $this->getFrontendResponse(self::VALUE_PageId, self::VALUE_LanguageIdSecond)->getResponseSections();
+        $this->assertThat($responseSections, $this->getRequestSectionHasRecordConstraint()
+            ->setTable(self::TABLE_Content)->setField('header')->setValues('[Translate to Deutsch:] [Translate to Dansk:] Regular Element #3'));
+    }
+
+    /**
+     * @test
+     * @see DataSet/localizeContentRecord.csv
      */
     public function localizeContent()
     {
@@ -154,7 +192,22 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/changeContentRecordSorting.csv
+     * @see DataSet/localizeContentFromNonDefaultLanguage.csv
+     */
+    public function localizeContentFromNonDefaultLanguage()
+    {
+        parent::localizeContentFromNonDefaultLanguage();
+        $this->actionService->publishWorkspace(self::VALUE_WorkspaceId);
+        $this->assertAssertionDataSet('localizeContentFromNonDefaultLanguage');
+
+        $responseSections = $this->getFrontendResponse(self::VALUE_PageId, self::VALUE_LanguageIdSecond)->getResponseSections();
+        $this->assertThat($responseSections, $this->getRequestSectionHasRecordConstraint()
+            ->setTable(self::TABLE_Content)->setField('header')->setValues('Regular Element #1', '[Translate to Deutsch:] [Translate to Dansk:] Regular Element #3'));
+    }
+
+    /**
+     * @test
+     * @see DataSet/changeContentRecordSorting.csv
      */
     public function changeContentSorting()
     {
@@ -169,7 +222,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/moveContentRecordToDifferentPage.csv
+     * @see DataSet/moveContentRecordToDifferentPage.csv
      */
     public function moveContentToDifferentPage()
     {
@@ -187,7 +240,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/moveContentRecordToDifferentPageAndChangeSorting.csv
+     * @see DataSet/moveContentRecordToDifferentPageAndChangeSorting.csv
      */
     public function moveContentToDifferentPageAndChangeSorting()
     {
@@ -206,7 +259,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/createPageRecord.csv
+     * @see DataSet/createPageRecord.csv
      */
     public function createPage()
     {
@@ -221,7 +274,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/modifyPageRecord.csv
+     * @see DataSet/modifyPageRecord.csv
      */
     public function modifyPage()
     {
@@ -236,7 +289,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/deletePageRecord.csv
+     * @see DataSet/deletePageRecord.csv
      */
     public function deletePage()
     {
@@ -250,7 +303,21 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/copyPageRecord.csv
+     * @see DataSet/deleteContentAndPage.csv
+     */
+    public function deleteContentAndPage()
+    {
+        parent::deleteContentAndPage();
+        $this->actionService->publishWorkspace(self::VALUE_WorkspaceId);
+        $this->assertAssertionDataSet('deleteContentAndPage');
+
+        $response = $this->getFrontendResponse(self::VALUE_PageId, 0, 0, 0, false);
+        $this->assertContains('PageNotFoundException', $response->getError());
+    }
+
+    /**
+     * @test
+     * @see DataSet/copyPageRecord.csv
      */
     public function copyPage()
     {
@@ -265,7 +332,25 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/localizePageRecord.csv
+     * @see DataSet/copyPageFreeMode.csv
+     */
+    public function copyPageFreeMode()
+    {
+        $this->importScenarioDataSet('LivePageFreeModeElements');
+        parent::copyPageFreeMode();
+        $this->actionService->publishWorkspace(self::VALUE_WorkspaceId);
+        $this->assertAssertionDataSet('copyPageFreeMode');
+
+        $responseSections = $this->getFrontendResponse($this->recordIds['newPageId'], 0)->getResponseSections();
+        $this->assertThat($responseSections, $this->getRequestSectionHasRecordConstraint()
+            ->setTable(self::TABLE_Page)->setField('title')->setValues('Target'));
+        $this->assertThat($responseSections, $this->getRequestSectionHasRecordConstraint()
+            ->setTable(self::TABLE_Content)->setField('header')->setValues('Regular Element #10'));
+    }
+
+    /**
+     * @test
+     * @see DataSet/localizePageRecord.csv
      */
     public function localizePage()
     {
@@ -280,7 +365,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/changePageRecordSorting.csv
+     * @see DataSet/changePageRecordSorting.csv
      */
     public function changePageSorting()
     {
@@ -297,7 +382,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/movePageRecordToDifferentPage.csv
+     * @see DataSet/movePageRecordToDifferentPage.csv
      */
     public function movePageToDifferentPage()
     {
@@ -314,7 +399,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/movePageRecordToDifferentPageAndChangeSorting.csv
+     * @see DataSet/movePageRecordToDifferentPageAndChangeSorting.csv
      */
     public function movePageToDifferentPageAndChangeSorting()
     {
@@ -335,7 +420,7 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
 
     /**
      * @test
-     * @see DataSet/Assertion/movePageRecordToDifferentPageAndCreatePageRecordAfterMovedPageRecord.csv
+     * @see DataSet/movePageRecordToDifferentPageAndCreatePageRecordAfterMovedPageRecord.csv
      * @see http://forge.typo3.org/issues/33104
      * @see http://forge.typo3.org/issues/55573
      */
@@ -357,10 +442,6 @@ class ActionTest extends \TYPO3\CMS\Workspaces\Tests\Functional\DataHandling\Reg
      */
     public function createPlaceholdersAndDeleteDraftParentPage()
     {
-        // @todo These two log entries could be avoided in DataHandlerHook, but are expected
-        // "[newlog()] Error: You cannot swap versions for a record you do not have access to edit!"
-        $this->expectedErrorLogEntries = 2;
-
         parent::createPlaceholdersAndDeleteDraftParentPage();
         $this->actionService->publishWorkspace(self::VALUE_WorkspaceId);
         $this->assertAssertionDataSet('createPlaceholdersAndDeleteDraftParentPage');

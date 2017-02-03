@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Core\DataHandling;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 
@@ -136,17 +137,21 @@ class PlainDataResolver
             return $this->resolvedIds;
         }
 
-        $ids = $this->reindex(
-            $this->processVersionOverlays($this->liveIds)
-        );
-        $ids = $this->reindex(
-            $this->processSorting($ids)
-        );
-        $ids = $this->reindex(
-            $this->applyLiveIds($ids)
-        );
+        $this->resolvedIds = $this->processVersionOverlays($this->liveIds);
+        if ($this->resolvedIds !== $this->liveIds) {
+            $this->resolvedIds = $this->reindex($this->resolvedIds);
+        }
 
-        $this->resolvedIds = $ids;
+        $tempIds = $this->processSorting($this->resolvedIds);
+        if ($tempIds !== $this->resolvedIds) {
+            $this->resolvedIds = $this->reindex($tempIds);
+        }
+
+        $tempIds = $this->applyLiveIds($this->resolvedIds);
+        if ($tempIds !== $this->resolvedIds) {
+            $this->resolvedIds = $this->reindex($tempIds);
+        }
+
         return $this->resolvedIds;
     }
 
@@ -367,7 +372,10 @@ class PlainDataResolver
      */
     protected function isWorkspaceEnabled()
     {
-        return BackendUtility::isTableWorkspaceEnabled($this->tableName);
+        if (ExtensionManagementUtility::isLoaded('version')) {
+            return BackendUtility::isTableWorkspaceEnabled($this->tableName);
+        }
+        return false;
     }
 
     /**

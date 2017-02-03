@@ -74,6 +74,13 @@ class RedisBackend extends AbstractBackend implements TaggableBackendInterface
     protected $connected = false;
 
     /**
+     * Persistent connection
+     *
+     * @var bool
+     */
+    protected $persistentConnection = false;
+
+    /**
      * Hostname / IP of the Redis server, defaults to 127.0.0.1.
      *
      * @var string
@@ -140,7 +147,11 @@ class RedisBackend extends AbstractBackend implements TaggableBackendInterface
     {
         $this->redis = new \Redis();
         try {
-            $this->connected = $this->redis->connect($this->hostname, $this->port);
+            if ($this->persistentConnection) {
+                $this->connected = $this->redis->pconnect($this->hostname, $this->port);
+            } else {
+                $this->connected = $this->redis->connect($this->hostname, $this->port);
+            }
         } catch (\Exception $e) {
             \TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('Could not connect to redis server.', 'core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
         }
@@ -158,6 +169,18 @@ class RedisBackend extends AbstractBackend implements TaggableBackendInterface
                 }
             }
         }
+    }
+
+    /**
+     * Setter for persistent connection
+     *
+     * @param bool $persistentConnection
+     * @return void
+     * @api
+     */
+    public function setPersistentConnection($persistentConnection)
+    {
+        $this->persistentConnection = $persistentConnection;
     }
 
     /**
@@ -194,7 +217,7 @@ class RedisBackend extends AbstractBackend implements TaggableBackendInterface
      */
     public function setDatabase($database)
     {
-        if (!is_integer($database)) {
+        if (!is_int($database)) {
             throw new \InvalidArgumentException('The specified database number is of type "' . gettype($database) . '" but an integer is expected.', 1279763057);
         }
         if ($database < 0) {
@@ -243,7 +266,7 @@ class RedisBackend extends AbstractBackend implements TaggableBackendInterface
      */
     public function setCompressionLevel($compressionLevel)
     {
-        if (!is_integer($compressionLevel)) {
+        if (!is_int($compressionLevel)) {
             throw new \InvalidArgumentException('The specified compression of type "' . gettype($compressionLevel) . '" but an integer is expected.', 1289679154);
         }
         if ($compressionLevel >= -1 && $compressionLevel <= 9) {
@@ -277,7 +300,7 @@ class RedisBackend extends AbstractBackend implements TaggableBackendInterface
             throw new \TYPO3\CMS\Core\Cache\Exception\InvalidDataException('The specified data is of type "' . gettype($data) . '" but a string is expected.', 1279469941);
         }
         $lifetime = $lifetime === null ? $this->defaultLifetime : $lifetime;
-        if (!is_integer($lifetime)) {
+        if (!is_int($lifetime)) {
             throw new \InvalidArgumentException('The specified lifetime is of type "' . gettype($lifetime) . '" but an integer or NULL is expected.', 1279488008);
         }
         if ($lifetime < 0) {

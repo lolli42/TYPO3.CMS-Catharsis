@@ -22,7 +22,6 @@ use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Reports\Status as ReportStatus;
 use TYPO3\CMS\Reports\StatusProviderInterface;
@@ -95,7 +94,7 @@ class ConfigurationStatus implements StatusProviderInterface
             $value = $this->getLanguageService()->getLL('status_empty');
             $severity = ReportStatus::WARNING;
             $url =  BackendUtility::getModuleUrl('system_dbint') . '&id=0&SET[function]=refindex';
-            $message = sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.backend_reference_index'), '<a href="' . htmlspecialchars($url) . '">', '</a>', BackendUtility::datetime($lastRefIndexUpdate));
+            $message = sprintf($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.backend_reference_index'), '<a href="' . htmlspecialchars($url) . '">', '</a>', BackendUtility::datetime($lastRefIndexUpdate));
         }
         return GeneralUtility::makeInstance(ReportStatus::class, $this->getLanguageService()->getLL('status_referenceIndex'), $value, $message, $severity);
     }
@@ -154,7 +153,7 @@ class ConfigurationStatus implements StatusProviderInterface
         if (function_exists('memcache_connect') && is_array($memcachedServers)) {
             foreach ($memcachedServers as $testServer) {
                 $configuredServer = $testServer;
-                if (substr($testServer, 0, 7) == 'unix://') {
+                if (substr($testServer, 0, 7) === 'unix://') {
                     $host = $testServer;
                     $port = 0;
                 } else {
@@ -179,7 +178,7 @@ class ConfigurationStatus implements StatusProviderInterface
         if (!empty($failedConnections)) {
             $value = $this->getLanguageService()->getLL('status_connectionFailed');
             $severity = ReportStatus::WARNING;
-            $message = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.memcache_not_usable') . '<br /><br />' . '<ul><li>' . implode('</li><li>', $failedConnections) . '</li></ul>';
+            $message = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.memcache_not_usable') . '<br /><br />' . '<ul><li>' . implode('</li><li>', $failedConnections) . '</li></ul>';
         }
         return GeneralUtility::makeInstance(ReportStatus::class, $this->getLanguageService()->getLL('status_memcachedConfiguration'), $value, $message, $severity);
     }
@@ -193,11 +192,11 @@ class ConfigurationStatus implements StatusProviderInterface
     protected function getDeprecationLogStatus()
     {
         $title = $this->getLanguageService()->getLL('status_configuration_DeprecationLog');
-        $value = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:disabled');
+        $value = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:disabled');
         $message = '';
         $severity = ReportStatus::OK;
         if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['enableDeprecationLog']) {
-            $value = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:enabled');
+            $value = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:enabled');
             $message = '<p>' . $this->getLanguageService()->getLL('status_configuration_DeprecationLogEnabled') . '</p>';
             $severity = ReportStatus::NOTICE;
             $logFile = GeneralUtility::getDeprecationLogFileName();
@@ -277,7 +276,7 @@ class ConfigurationStatus implements StatusProviderInterface
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME);
 
-        return StringUtility::beginsWith($connection->getServerVersion(), 'MySQL');
+        return strpos($connection->getServerVersion(), 'MySQL') === 0;
     }
 
     /**
@@ -306,7 +305,7 @@ class ConfigurationStatus implements StatusProviderInterface
         $severity = ReportStatus::OK;
         $statusValue = $this->getLanguageService()->getLL('status_ok');
         // also allow utf8mb4
-        if (!StringUtility::beginsWith($defaultDatabaseCharset, 'utf8')) {
+        if (strpos($defaultDatabaseCharset, 'utf8') !== 0) {
             // If the default character set is e.g. latin1, BUT all tables in the system are UTF-8,
             // we assume that TYPO3 has the correct charset for adding tables, and everything is fine
             $nonUtf8TableCollationsFound = $queryBuilder->select('table_collation')

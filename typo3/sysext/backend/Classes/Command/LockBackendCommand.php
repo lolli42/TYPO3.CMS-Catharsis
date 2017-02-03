@@ -21,7 +21,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Core function for locking and unlocking the TYPO3 Backend
+ * Core function for locking the TYPO3 Backend
  */
 class LockBackendCommand extends Command
 {
@@ -30,22 +30,18 @@ class LockBackendCommand extends Command
      */
     protected function configure()
     {
-        if ($this->getName() === 'backend:unlock') {
-            $this
-                ->setDescription('Unlock the TYPO3 Backend');
-        } else {
-            $this
-                ->setDescription('Lock the TYPO3 Backend')
-                ->addArgument(
-                    'redirect',
-                    InputArgument::OPTIONAL,
-                    'If set, then the TYPO3 Backend will redirect to the locking state (only used when locking the TYPO3 Backend'
-                );
-        }
+        $this
+            ->setDescription('Lock the TYPO3 Backend')
+            ->addArgument(
+                'redirect',
+                InputArgument::OPTIONAL,
+                'If set, then the TYPO3 Backend will redirect to the locking state (only used when locking the TYPO3 Backend'
+            );
     }
 
     /**
-     * Executes the command for adding or removing the lock file
+     * Executes the command for adding the lock file
+     *
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return void
@@ -54,41 +50,6 @@ class LockBackendCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $io->title($this->getDescription());
-        if ($this->getName() === 'backend:unlock') {
-            $this->unlock($io);
-        } else {
-            $this->lock($io, $input);
-        }
-    }
-
-    /**
-     * Unlock the TYPO3 Backend by removing the lock file
-     *
-     * @param SymfonyStyle $io
-     */
-    protected function unlock(SymfonyStyle $io)
-    {
-        $lockFile = $this->getLockFileName();
-        if (@is_file($lockFile)) {
-            unlink($lockFile);
-            if (@is_file($lockFile)) {
-                $io->caution('Could not remove lock file "' . $lockFile . '"!');
-            } else {
-                $io->success('Removed lock file "' . $lockFile . '".');
-            }
-        } else {
-            $io->note('No lock file "' . $lockFile . '" was found.' . LF . 'Hence no lock can be removed.');
-        }
-    }
-
-    /**
-     * Lock the TYPO3 Backend
-     *
-     * @param SymfonyStyle $io
-     * @param InputInterface $input
-     */
-    protected function lock(SymfonyStyle $io, InputInterface $input)
-    {
         $lockFile = $this->getLockFileName();
         if (@is_file($lockFile)) {
             $io->note('A lock file already exists. Overwriting it.');

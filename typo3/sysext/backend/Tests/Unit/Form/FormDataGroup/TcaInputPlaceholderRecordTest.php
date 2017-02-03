@@ -19,13 +19,12 @@ use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataGroup\TcaInputPlaceholderRecord;
 use TYPO3\CMS\Backend\Form\FormDataProviderInterface;
 use TYPO3\CMS\Core\Service\DependencyOrderingService;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test case
  */
-class TcaInputPlaceholderRecordTest extends UnitTestCase
+class TcaInputPlaceholderRecordTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var TcaInputPlaceholderRecord
@@ -94,7 +93,7 @@ class TcaInputPlaceholderRecordTest extends UnitTestCase
         GeneralUtility::addInstance(\stdClass::class, $formDataProviderProphecy->reveal());
 
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionCode(1443986127);
+        $this->expectExceptionCode(1485299408);
 
         $this->subject->compile([]);
     }

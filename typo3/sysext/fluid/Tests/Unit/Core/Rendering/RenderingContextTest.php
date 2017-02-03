@@ -21,7 +21,7 @@ use TYPO3Fluid\Fluid\Core\ViewHelper\ViewHelperVariableContainer;
 /**
  * Test case
  */
-class RenderingContextTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class RenderingContextTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * Parsing state
@@ -97,5 +97,39 @@ class RenderingContextTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $viewHelperVariableContainer = $this->createMock(ViewHelperVariableContainer::class);
         $this->renderingContext->_set('viewHelperVariableContainer', $viewHelperVariableContainer);
         $this->assertSame($viewHelperVariableContainer, $this->renderingContext->getViewHelperVariableContainer());
+    }
+
+    /**
+     * @test
+     * @dataProvider getControllerActionTestValues
+     * @param string $input
+     * @param string $expected
+     */
+    public function setControllerActionProcessesInputCorrectly($input, $expected)
+    {
+        $subject = new RenderingContextFixture();
+        $request = $this->getMockBuilder(Request::class)->setMethods(['setControllerActionName'])->getMock();
+        $request->expects($this->at(0))->method('setControllerActionName')->with('index');
+        $request->expects($this->at(1))->method('setControllerActionName')->with(lcfirst($expected));
+        $controllerContext = $this->getMockBuilder(ControllerContext::class)->setMethods(['getRequest'])->getMock();
+        $controllerContext->expects($this->atLeastOnce())->method('getRequest')->willReturn($request);
+        $subject->setControllerContext($controllerContext);
+        $subject->setControllerAction($input);
+        $this->assertAttributeSame($expected, 'controllerAction', $subject);
+    }
+
+    /**
+     * @return array
+     */
+    public function getControllerActionTestValues()
+    {
+        return [
+            ['default', 'default'],
+            ['default.html', 'default'],
+            ['default.sub.html', 'default'],
+            ['Sub/Default', 'Sub/Default'],
+            ['Sub/Default.html', 'Sub/Default'],
+            ['Sub/Default.sub.html', 'Sub/Default']
+        ];
     }
 }

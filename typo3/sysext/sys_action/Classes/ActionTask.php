@@ -381,30 +381,30 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
                         <fieldset class="form-section">
                             <h4 class="form-section-headline">' . $this->getLanguageService()->getLL('action_t1_legend_generalFields') . '</h4>
                             <div class="form-group">
-                                <label for="field_disable">' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_general.xlf:LGL.disable') . '</label>
+                                <label for="field_disable">' . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.disable') . '</label>
                                 <input type="checkbox" id="field_disable" name="data[disable]" value="1" class="checkbox" ' . ($vars['disable'] == 1 ? ' checked="checked" ' : '') . ' />
                             </div>
                             <div class="form-group">
-                                <label for="field_realname">' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_general.xlf:LGL.name') . '</label>
+                                <label for="field_realname">' . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.name') . '</label>
                                 <input type="text" id="field_realname" class="form-control" name="data[realName]" value="' . htmlspecialchars($vars['realName']) . '" />
                             </div>
                             <div class="form-group">
-                                <label for="field_username">' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_tca.xlf:be_users.username') . '</label>
+                                <label for="field_username">' . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.username') . '</label>
                                 <input type="text" id="field_username" class="form-control" name="data[username]" value="' . htmlspecialchars($vars['username']) . '" />
                             </div>
                             <div class="form-group">
-                                <label for="field_password">' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_tca.xlf:be_users.password') . '</label>
+                                <label for="field_password">' . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.password') . '</label>
                                 <input type="password" id="field_password" class="form-control" name="data[password]" value="" />
                             </div>
                             <div class="form-group">
-                                <label for="field_email">' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_general.xlf:LGL.email') . '</label>
+                                <label for="field_email">' . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.email') . '</label>
                                 <input type="text" id="field_email" class="form-control" name="data[email]" value="' . htmlspecialchars($vars['email']) . '" />
                             </div>
                         </fieldset>
                         <fieldset class="form-section">
                             <h4 class="form-section-headline">' . $this->getLanguageService()->getLL('action_t1_legend_configuration') . '</h4>
                             <div class="form-group">
-                                <label for="field_usergroup">' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_tca.xlf:be_users.usergroup') . '</label>
+                                <label for="field_usergroup">' . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.usergroup') . '</label>
                                 <select id="field_usergroup" class="form-control" name="data[usergroup][]" multiple="multiple">
                                     ' . $this->getUsergroups($record, $vars) . '
                                 </select>
@@ -593,13 +593,13 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
                 $newUserId = $key;
             }
         }
-        // Save/update user by using TCEmain
+        // Save/update user by using DataHandler
         if (is_array($data)) {
-            $tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
-            $tce->start($data, [], $this->getBackendUser());
-            $tce->admin = 1;
-            $tce->process_datamap();
-            $newUserId = (int)$tce->substNEWwithIDs['NEW'];
+            $dataHandler = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
+            $dataHandler->start($data, [], $this->getBackendUser());
+            $dataHandler->admin = 1;
+            $dataHandler->process_datamap();
+            $newUserId = (int)$dataHandler->substNEWwithIDs['NEW'];
             if ($newUserId) {
                 // Create
                 $this->action_createDir($newUserId);
@@ -722,7 +722,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
     {
         $path = $GLOBALS['TYPO3_CONF_VARS']['BE']['userHomePath'];
         // If path is set and a valid directory
-        if ($path && @is_dir($path) && $GLOBALS['TYPO3_CONF_VARS']['BE']['lockRootPath'] && GeneralUtility::isFirstPartOfStr($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['lockRootPath']) && substr($path, -1) == '/') {
+        if ($path && @is_dir($path) && $GLOBALS['TYPO3_CONF_VARS']['BE']['lockRootPath'] && GeneralUtility::isFirstPartOfStr($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['lockRootPath']) && substr($path, -1) === '/') {
             return $path;
         }
     }
@@ -941,7 +941,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
             $dblist->counter++;
             $dblist->MOD_MENU = ['bigControlPanel' => '', 'clipBoard' => '', 'localization' => ''];
             $dblist->modTSconfig = $this->taskObject->modTSconfig;
-            $dblist->dontShowClipControlPanels = (!$this->taskObject->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
+            $dblist->dontShowClipControlPanels = (!$this->taskObject->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current === 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
             // Initialize the listing object, dblist, for rendering the list:
             $this->pointer = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange(GeneralUtility::_GP('pointer'), 0, 100000);
             $dblist->start($this->id, $this->table, $this->pointer, $this->taskObject->search_field, $this->taskObject->search_levels, $this->taskObject->showLimit);

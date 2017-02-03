@@ -76,7 +76,7 @@ class Lexer
         $this->debugString = '';
         // Then convert the string to lowercase:
         if (!$this->lexerConf['casesensitive']) {
-            $wordString = $this->csObj->conv_case('utf-8', $wordString, 'toLower');
+            $wordString = mb_strtolower($wordString, 'utf-8');
         }
         // Now, splitting words:
         $len = 0;
@@ -134,13 +134,13 @@ class Lexer
         in the same manner, and since the set of characters is huge so the
         extra matches are not significant.(Hint taken from ZOPEs chinese user group)[Kasper: As far as I can see this will only work well with or-searches!]
          */
-        if ($cType == 'cjk') {
+        if ($cType === 'cjk') {
             // Find total string length:
-            $strlen = $this->csObj->strlen('utf-8', $theWord);
+            $strlen = mb_strlen($theWord, 'utf-8');
             // Traverse string length and add words as pairs of two chars:
             for ($a = 0; $a < $strlen; $a++) {
                 if ($strlen == 1 || $a < $strlen - 1) {
-                    $words[] = $this->csObj->substr('utf-8', $theWord, $a, 2);
+                    $words[] = mb_substr($theWord, $a, 2, 'utf-8');
                 }
             }
         } else {
@@ -207,8 +207,8 @@ class Lexer
                     // We are in a sequence of words
                     if (
                         !$cType
-                        || $cType_prev == 'cjk' && ($cType === 'num' || $cType === 'alpha')
-                        || $cType == 'cjk' && ($cType_prev === 'num' || $cType_prev === 'alpha')
+                        || $cType_prev === 'cjk' && ($cType === 'num' || $cType === 'alpha')
+                        || $cType === 'cjk' && ($cType_prev === 'num' || $cType_prev === 'alpha')
                     ) {
                         // Check if the non-letter char is NOT a print-join char because then it signifies the end of the word.
                         if (!in_array($cp, $this->lexerConf['printjoins'])) {

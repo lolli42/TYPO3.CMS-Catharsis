@@ -45,10 +45,13 @@ class TcaInline extends AbstractDatabaseRecordProvider implements FormDataProvid
         $result = $this->addInlineFirstPid($result);
 
         foreach ($result['processedTca']['columns'] as $fieldName => $fieldConfig) {
-            if (!$this->isInlineField($fieldConfig) || !$this->isUserAllowedToModify($fieldConfig)) {
+            if (!$this->isInlineField($fieldConfig)) {
                 continue;
             }
             $result['processedTca']['columns'][$fieldName]['children'] = [];
+            if (!$this->isUserAllowedToModify($fieldConfig)) {
+                continue;
+            }
             if ($result['inlineResolveExistingChildren']) {
                 $result = $this->resolveRelatedRecords($result, $fieldName);
                 $result = $this->addForeignSelectorAndUniquePossibleRecords($result, $fieldName);
@@ -94,7 +97,7 @@ class TcaInline extends AbstractDatabaseRecordProvider implements FormDataProvid
             $table = $result['tableName'];
             $row = $result['databaseRow'];
             // If the parent is a page, use the uid(!) of the (new?) page as pid for the child records:
-            if ($table == 'pages') {
+            if ($table === 'pages') {
                 $liveVersionId = BackendUtility::getLiveVersionIdOfRecord('pages', $row['uid']);
                 $pid = is_null($liveVersionId) ? $row['uid'] : $liveVersionId;
             } elseif ($row['pid'] < 0) {
@@ -182,9 +185,13 @@ class TcaInline extends AbstractDatabaseRecordProvider implements FormDataProvid
             }
             $result['databaseRow'][$fieldName] = implode(',', $connectedUidsOfLocalizedOverlay);
             if ($result['inlineCompileExistingChildren']) {
+                $tableNameWithDefaultRecords = $result['tableName'];
+                if ($tableNameWithDefaultRecords === 'pages_language_overlay') {
+                    $tableNameWithDefaultRecords = 'pages';
+                }
                 $connectedUidsOfDefaultLanguageRecord = $this->resolveConnectedRecordUids(
                     $result['processedTca']['columns'][$fieldName]['config'],
-                    $result['tableName'],
+                    $tableNameWithDefaultRecords,
                     $result['defaultLanguageRow']['uid'],
                     $result['defaultLanguageRow'][$fieldName]
                 );

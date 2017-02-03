@@ -365,7 +365,7 @@ class Query implements QueryInterface
      * Sets the statement of this query. If you use this, you will lose the abstraction from a concrete storage
      * backend (database).
      *
-     * @param string|\TYPO3\CMS\Core\Database\PreparedStatement $statement The statement
+     * @param string|\TYPO3\CMS\Core\Database\PreparedStatement|\TYPO3\CMS\Core\Database\Query\QueryBuilder|\Doctrine\DBAL\Statement $statement The statement
      * @param array $parameters An array of parameters. These will be bound to placeholders '?' in the $statement.
      * @return QueryInterface
      */
@@ -483,7 +483,7 @@ class Query implements QueryInterface
             $comparison = $this->qomFactory->comparison(
                 $this->qomFactory->lowerCase($this->qomFactory->propertyValue($propertyName, $this->getSelectorName())),
                 QueryInterface::OPERATOR_EQUAL_TO,
-                \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class)->conv_case(\TYPO3\CMS\Extbase\Persistence\Generic\Query::CHARSET, $operand, 'toLower')
+                mb_strtolower($operand, \TYPO3\CMS\Extbase\Persistence\Generic\Query::CHARSET)
             );
         }
         return $comparison;

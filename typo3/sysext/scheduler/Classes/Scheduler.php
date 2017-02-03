@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Scheduler;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Registry;
@@ -70,7 +71,11 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
             ];
             $connection = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getConnectionForTable('tx_scheduler_task');
-            $result = $connection->insert('tx_scheduler_task', $fields);
+            $result = $connection->insert(
+                'tx_scheduler_task',
+                $fields,
+                ['serialized_task_object' => Connection::PARAM_LOB]
+            );
 
             if ($result) {
                 $task->setTaskUid($connection->lastInsertId('tx_scheduler_task'));
@@ -133,7 +138,8 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
                 $connectionPool->getConnectionForTable('tx_scheduler_task')->update(
                     'tx_scheduler_task',
                     ['serialized_executions' => $value],
-                    ['uid' => (int)$row['uid']]
+                    ['uid' => (int)$row['uid']],
+                    ['serialized_executions' => Connection::PARAM_LOB]
                 );
             }
         }
@@ -150,6 +156,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
      */
     public function executeTask(Task\AbstractTask $task)
     {
+        $task->setRunOnNextCronJob(false);
         // Trigger the saving of the task, as this will calculate its next execution time
         // This should be calculated all the time, even if the execution is skipped
         // (in case it is skipped, this pushes back execution to the next possible date)
@@ -248,7 +255,11 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
         $taskUid = $task->getTaskUid();
         if (!empty($taskUid)) {
             try {
-                $executionTime = $task->getNextDueExecution();
+                if ($task->getRunOnNextCronJob()) {
+                    $executionTime = time();
+                } else {
+                    $executionTime = $task->getNextDueExecution();
+                }
                 $task->setExecutionTime($executionTime);
             } catch (\Exception $e) {
                 $task->setDisabled(true);
@@ -264,7 +275,12 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
             ];
             $result = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getConnectionForTable('tx_scheduler_task')
-                ->update('tx_scheduler_task', $fields, ['uid' => $taskUid]);
+                ->update(
+                    'tx_scheduler_task',
+                    $fields,
+                    ['uid' => $taskUid],
+                    ['serialized_task_object' => Connection::PARAM_LOB]
+                );
         } else {
             $result = false;
         }

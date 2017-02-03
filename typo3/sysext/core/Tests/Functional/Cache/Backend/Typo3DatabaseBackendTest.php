@@ -16,13 +16,13 @@ namespace TYPO3\CMS\Core\Tests\Functional\Cache\Backend;
 
 use TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Tests\FunctionalTestCase;
 
 /**
  * Test case
  */
-class Typo3DatabaseBackendTest extends FunctionalTestCase
+class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
 {
 
     /**
@@ -132,6 +132,9 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 'identifier' => 'myIdentifier',
                 'expires' => $GLOBALS['EXEC_TIME'] - 60,
                 'content' => 'myCachedContent',
+            ],
+            [
+                'content' => Connection::PARAM_LOB
             ]
         );
 
@@ -156,6 +159,9 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 'identifier' => 'myIdentifier',
                 'expires' => $GLOBALS['EXEC_TIME'] + 60,
                 'content' => 'myCachedContent',
+            ],
+            [
+                'content' => Connection::PARAM_LOB
             ]
         );
 
@@ -180,6 +186,9 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 'identifier' => 'myIdentifier',
                 'expires' => $GLOBALS['EXEC_TIME'] + 60,
                 'content' => gzcompress('myCachedContent'),
+            ],
+            [
+                'content' => Connection::PARAM_LOB
             ]
         );
 
@@ -206,6 +215,9 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 'identifier' => 'myIdentifier',
                 'expires' => $GLOBALS['EXEC_TIME'] + 60,
                 'content' => gzcompress(''),
+            ],
+            [
+                'content' => Connection::PARAM_LOB
             ]
         );
 
@@ -246,6 +258,9 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 'identifier' => 'myIdentifier',
                 'expires' => $GLOBALS['EXEC_TIME'] - 60,
                 'content' => 'myCachedContent',
+            ],
+            [
+                'content' => Connection::PARAM_LOB
             ]
         );
 
@@ -270,6 +285,9 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 'identifier' => 'myIdentifier',
                 'expires' => $GLOBALS['EXEC_TIME'] + 60,
                 'content' => 'myCachedContent',
+            ],
+            [
+                'content' => Connection::PARAM_LOB
             ]
         );
 
@@ -308,6 +326,9 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 'identifier' => 'myIdentifier',
                 'expires' => $GLOBALS['EXEC_TIME'] + 60,
                 'content' => 'myCachedContent',
+            ],
+            [
+                'content' => Connection::PARAM_LOB
             ]
         );
 
@@ -333,7 +354,10 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
                 ['myIdentifier', $GLOBALS['EXEC_TIME'] + 60, 'myCachedContent'],
                 ['otherIdentifier', $GLOBALS['EXEC_TIME'] + 60, 'otherCachedContent'],
             ],
-            ['identifier', 'expires', 'content']
+            ['identifier', 'expires', 'content'],
+            [
+                'content' => Connection::PARAM_LOB
+            ]
         );
         $subject = new Typo3DatabaseBackend('Testing');
         $subject->setCache($frontendProphecy->reveal());
@@ -367,18 +391,11 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
      */
     public function findIdentifiersByTagReturnsIdentifierTaggedWithGivenTag()
     {
-        $frontendProphecy = $this->prophesize(FrontendInterface::class);
-        $frontendProphecy->getIdentifier()->willReturn('cache_pages');
-
-        $subject = new Typo3DatabaseBackend('Testing');
-        $subject->setCache($frontendProphecy->reveal());
-
-        $subject->set('idA', 'dataA', ['tagA', 'tagB']);
-        $subject->set('idB', 'dataB', ['tagB', 'tagC']);
+        $subject = $this->getSubjectObject();
 
         $this->assertSame(['idA' => 'idA'], $subject->findIdentifiersByTag('tagA'));
         $this->assertSame(['idA' => 'idA', 'idB' => 'idB'], $subject->findIdentifiersByTag('tagB'));
-        $this->assertSame(['idB' => 'idB'], $subject->findIdentifiersByTag('tagC'));
+        $this->assertSame(['idB' => 'idB', 'idC' => 'idC'], $subject->findIdentifiersByTag('tagC'));
     }
 
     /**
@@ -386,18 +403,17 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
      */
     public function flushByTagWorksWithEmptyCacheTablesWithMysql()
     {
-        $frontendProphecy = $this->prophesize(FrontendInterface::class);
-        $frontendProphecy->getIdentifier()->willReturn('cache_pages');
-
-        // Must be mocked here to test for "mysql" version implementation
-        $subject = $this->getMockBuilder(Typo3DatabaseBackend::class)
-            ->setMethods(['isConnectionMysql'])
-            ->setConstructorArgs(['Testing'])
-            ->getMock();
-        $subject->expects($this->once())->method('isConnectionMysql')->willReturn(true);
-        $subject->setCache($frontendProphecy->reveal());
-
+        $subject = $this->getSubjectObject(true);
         $subject->flushByTag('tagB');
+    }
+
+    /**
+     * @test
+     */
+    public function flushByTagsWorksWithEmptyCacheTablesWithMysql()
+    {
+        $subject = $this->getSubjectObject(true);
+        $subject->flushByTags(['tagB']);
     }
 
     /**
@@ -405,20 +421,7 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
      */
     public function flushByTagRemovesCorrectRowsFromDatabaseWithMysql()
     {
-        $frontendProphecy = $this->prophesize(FrontendInterface::class);
-        $frontendProphecy->getIdentifier()->willReturn('cache_pages');
-
-        // Must be mocked here to test for "mysql" version implementation
-        $subject = $this->getMockBuilder(Typo3DatabaseBackend::class)
-            ->setMethods(['isConnectionMysql'])
-            ->setConstructorArgs(['Testing'])
-            ->getMock();
-        $subject->expects($this->once())->method('isConnectionMysql')->willReturn(true);
-        $subject->setCache($frontendProphecy->reveal());
-
-        $subject->set('idA', 'dataA', ['tagA', 'tagB']);
-        $subject->set('idB', 'dataB', ['tagB', 'tagC']);
-        $subject->set('idC', 'dataC', ['tagC', 'tagD']);
+        $subject = $this->getSubjectObject(true);
         $subject->flushByTag('tagB');
 
         $cacheTableConnection = (new ConnectionPool())->getConnectionForTable('cf_cache_pages');
@@ -429,6 +432,24 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
         $this->assertSame(0, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idA']));
         $this->assertSame(0, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idB']));
         $this->assertSame(2, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idC']));
+    }
+
+    /**
+     * @test
+     */
+    public function flushByTagsRemovesCorrectRowsFromDatabaseWithMysql()
+    {
+        $subject = $this->getSubjectObject(true);
+        $subject->flushByTags(['tagC', 'tagD']);
+
+        $cacheTableConnection = (new ConnectionPool())->getConnectionForTable('cf_cache_pages');
+        $this->assertSame(1, $cacheTableConnection->count('*', 'cf_cache_pages', ['identifier' => 'idA']));
+        $this->assertSame(0, $cacheTableConnection->count('*', 'cf_cache_pages', ['identifier' => 'idB']));
+        $this->assertSame(0, $cacheTableConnection->count('*', 'cf_cache_pages', ['identifier' => 'idC']));
+        $tagsTableConnection = (new ConnectionPool())->getConnectionForTable('cf_cache_pages_tags');
+        $this->assertSame(2, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idA']));
+        $this->assertSame(0, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idB']));
+        $this->assertSame(0, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idC']));
     }
 
     /**
@@ -436,18 +457,17 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
      */
     public function flushByTagWorksWithEmptyCacheTablesWithNonMysql()
     {
-        $frontendProphecy = $this->prophesize(FrontendInterface::class);
-        $frontendProphecy->getIdentifier()->willReturn('cache_pages');
-
-        // Must be mocked here to test for "mysql" version implementation
-        $subject = $this->getMockBuilder(Typo3DatabaseBackend::class)
-            ->setMethods(['isConnectionMysql'])
-            ->setConstructorArgs(['Testing'])
-            ->getMock();
-        $subject->expects($this->once())->method('isConnectionMysql')->willReturn(false);
-        $subject->setCache($frontendProphecy->reveal());
-
+        $subject = $this->getSubjectObject(true, false);
         $subject->flushByTag('tagB');
+    }
+
+    /**
+     * @test
+     */
+    public function flushByTagsWorksWithEmptyCacheTablesWithNonMysql()
+    {
+        $subject = $this->getSubjectObject(true, false);
+        $subject->flushByTags(['tagB', 'tagC']);
     }
 
     /**
@@ -455,20 +475,7 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
      */
     public function flushByTagRemovesCorrectRowsFromDatabaseWithNonMysql()
     {
-        $frontendProphecy = $this->prophesize(FrontendInterface::class);
-        $frontendProphecy->getIdentifier()->willReturn('cache_pages');
-
-        // Must be mocked here to test for "mysql" version implementation
-        $subject = $this->getMockBuilder(Typo3DatabaseBackend::class)
-            ->setMethods(['isConnectionMysql'])
-            ->setConstructorArgs(['Testing'])
-            ->getMock();
-        $subject->expects($this->once())->method('isConnectionMysql')->willReturn(false);
-        $subject->setCache($frontendProphecy->reveal());
-
-        $subject->set('idA', 'dataA', ['tagA', 'tagB']);
-        $subject->set('idB', 'dataB', ['tagB', 'tagC']);
-        $subject->set('idC', 'dataC', ['tagC', 'tagD']);
+        $subject = $this->getSubjectObject(true, false);
         $subject->flushByTag('tagB');
 
         $cacheTableConnection = (new ConnectionPool())->getConnectionForTable('cf_cache_pages');
@@ -484,19 +491,27 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
     /**
      * @test
      */
+    public function flushByTagsRemovesCorrectRowsFromDatabaseWithNonMysql()
+    {
+        $subject = $this->getSubjectObject(true, false);
+        $subject->flushByTags(['tagC', 'tagD']);
+
+        $cacheTableConnection = (new ConnectionPool())->getConnectionForTable('cf_cache_pages');
+        $this->assertSame(1, $cacheTableConnection->count('*', 'cf_cache_pages', ['identifier' => 'idA']));
+        $this->assertSame(0, $cacheTableConnection->count('*', 'cf_cache_pages', ['identifier' => 'idB']));
+        $this->assertSame(0, $cacheTableConnection->count('*', 'cf_cache_pages', ['identifier' => 'idC']));
+        $tagsTableConnection = (new ConnectionPool())->getConnectionForTable('cf_cache_pages_tags');
+        $this->assertSame(2, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idA']));
+        $this->assertSame(0, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idB']));
+        $this->assertSame(0, $tagsTableConnection->count('*', 'cf_cache_pages_tags', ['identifier' => 'idC']));
+    }
+
+    /**
+     * @test
+     */
     public function collectGarbageWorksWithEmptyTableWithMysql()
     {
-        $frontendProphecy = $this->prophesize(FrontendInterface::class);
-        $frontendProphecy->getIdentifier()->willReturn('cache_pages');
-
-        // Must be mocked here to test for "mysql" version implementation
-        $subject = $this->getMockBuilder(Typo3DatabaseBackend::class)
-            ->setMethods(['isConnectionMysql'])
-            ->setConstructorArgs(['Testing'])
-            ->getMock();
-        $subject->expects($this->once())->method('isConnectionMysql')->willReturn(true);
-        $subject->setCache($frontendProphecy->reveal());
-
+        $subject = $this->getSubjectObject(true);
         $subject->collectGarbage();
     }
 
@@ -748,5 +763,34 @@ class Typo3DatabaseBackendTest extends FunctionalTestCase
         $tagsTableConnection = (new ConnectionPool())->getConnectionForTable('cf_cache_pages_tags');
         $this->assertSame(0, $cacheTableConnection->count('*', 'cf_cache_pages', []));
         $this->assertSame(0, $tagsTableConnection->count('*', 'cf_cache_pages_tags', []));
+    }
+
+    /**
+     * @param bool $returnMockObject
+     * @param bool $isConnectionMysql
+     *
+     * @return Typo3DatabaseBackend
+     */
+    protected function getSubjectObject($returnMockObject = false, $isConnectionMysql = true)
+    {
+        $frontendProphecy = $this->prophesize(FrontendInterface::class);
+        $frontendProphecy->getIdentifier()->willReturn('cache_pages');
+
+        if (!$returnMockObject) {
+            $subject = new Typo3DatabaseBackend('Testing');
+        } else {
+            $subject = $this->getMockBuilder(Typo3DatabaseBackend::class)
+                ->setMethods(['isConnectionMysql'])
+                ->setConstructorArgs(['Testing'])
+                ->getMock();
+            $subject->expects($this->once())->method('isConnectionMysql')->willReturn($isConnectionMysql);
+        }
+        $subject->setCache($frontendProphecy->reveal());
+
+        $subject->set('idA', 'dataA', ['tagA', 'tagB']);
+        $subject->set('idB', 'dataB', ['tagB', 'tagC']);
+        $subject->set('idC', 'dataC', ['tagC', 'tagD']);
+
+        return $subject;
     }
 }

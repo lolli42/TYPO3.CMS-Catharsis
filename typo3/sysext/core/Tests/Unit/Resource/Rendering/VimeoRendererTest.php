@@ -18,12 +18,11 @@ use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\VimeoHelper;
 use TYPO3\CMS\Core\Resource\Rendering\VimeoRenderer;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Class VimeoRendererTest
  */
-class VimeoRendererTest extends UnitTestCase
+class VimeoRendererTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var VimeoRenderer|\PHPUnit_Framework_MockObject_MockObject

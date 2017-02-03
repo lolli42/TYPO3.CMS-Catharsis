@@ -30,7 +30,6 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
@@ -38,7 +37,7 @@ use TYPO3\CMS\Lang\LanguageService;
 /**
  * Test case
  */
-class TcaSelectItemsTest extends UnitTestCase
+class TcaSelectItemsTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var TcaSelectItems|\PHPUnit_Framework_MockObject_MockObject
@@ -235,7 +234,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'aValue',
                                 ],
                             ],
-                            'maxitems' => 1
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -245,7 +244,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
 
         $languageService->sL('aLabel')->shouldBeCalled()->willReturn('translated');
 
@@ -282,7 +281,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     3 => null,
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -343,7 +342,7 @@ class TcaSelectItemsTest extends UnitTestCase
                             'type' => 'select',
                             'renderType' => 'selectSingle',
                             'special' => 'tables',
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -366,7 +365,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
         $languageService->sL(Argument::containingString('INVALID VALUE'))->willReturnArgument(0);
 
         $languageService->sL('aTitle')->shouldBeCalled()->willReturnArgument(0);
@@ -406,7 +405,7 @@ class TcaSelectItemsTest extends UnitTestCase
                             'renderType' => 'selectSingle',
                             'special' => 'pagetypes',
                             'items' => [],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -432,7 +431,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
 
         $languageService->sL('aLabel')->shouldBeCalled()->willReturnArgument(0);
 
@@ -735,7 +734,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.allow')->shouldBeCalled()->willReturn('allowMe');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.allow')->shouldBeCalled()->willReturn('allowMe');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $expectedItems = [
@@ -806,7 +805,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.deny')->shouldBeCalled()->willReturn('denyMe');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.deny')->shouldBeCalled()->willReturn('denyMe');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $expectedItems = [
@@ -892,7 +891,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.allow')->shouldBeCalled()->willReturn('allowMe');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.allow')->shouldBeCalled()->willReturn('allowMe');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $expectedItems = [
@@ -984,7 +983,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.deny')->shouldBeCalled()->willReturn('denyMe');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.deny')->shouldBeCalled()->willReturn('denyMe');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $expectedItems = [
@@ -1093,6 +1092,11 @@ class TcaSelectItemsTest extends UnitTestCase
                     'anItemKey' => [
                         0 => 'anItemTitle',
                     ],
+                    'anotherKey' => [
+                        0 => 'anotherTitle',
+                        1 => 'status-status-permission-denied',
+                        2 => 'aDescription',
+                    ],
                 ],
             ]
         ];
@@ -1109,6 +1113,12 @@ class TcaSelectItemsTest extends UnitTestCase
                 1 => 'aKey:anItemKey',
                 2 => 'empty-empty',
                 3 => null,
+            ],
+            2 => [
+                0 => 'anotherTitle',
+                1 => 'aKey:anotherKey',
+                2 => 'status-status-permission-denied',
+                3 => [ 'description' => 'aDescription' ],
             ],
         ];
 
@@ -1240,6 +1250,32 @@ class TcaSelectItemsTest extends UnitTestCase
     /**
      * @test
      */
+    public function addDataThrowsExceptionForInvalidFileFolder()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [],
+            'processedTca' => [
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'select',
+                            'renderType' => 'selectSingle',
+                            'fileFolder' => 'EXT:non_existing/Resources/Public/',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1479399227);
+        $this->subject->addData($input);
+    }
+
+    /**
+     * @test
+     */
     public function addDataAddsItemsByAddItemsFromPageTsConfig()
     {
         $input = [
@@ -1261,7 +1297,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     null,
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -1320,7 +1356,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     null,
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -1825,7 +1861,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     3 => null,
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -1903,7 +1939,7 @@ class TcaSelectItemsTest extends UnitTestCase
                             'foreign_table' => 'fTable',
                             'foreign_table_prefix' => 'aPrefix',
                             'items' => [],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -1955,13 +1991,13 @@ class TcaSelectItemsTest extends UnitTestCase
         $expected = $input;
         $expected['processedTca']['columns']['aField']['config']['items'] = [
             0 => [
-                0 => 'aPrefix[LLL:EXT:lang/locallang_core.xlf:labels.no_title]',
+                0 => 'aPrefix[LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.no_title]',
                 1 => 1,
                 2 => 'default-not-found',
                 3 => null,
             ],
             1 => [
-                0 => 'aPrefix[LLL:EXT:lang/locallang_core.xlf:labels.no_title]',
+                0 => 'aPrefix[LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.no_title]',
                 1 => 2,
                 2 => 'default-not-found',
                 3 => null,
@@ -1990,7 +2026,7 @@ class TcaSelectItemsTest extends UnitTestCase
                             'type' => 'select',
                             'renderType' => 'selectSingle',
                             'foreign_table' => 'fTable',
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2086,7 +2122,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2142,7 +2178,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2198,7 +2234,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2277,7 +2313,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2333,7 +2369,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2395,7 +2431,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2405,7 +2441,7 @@ class TcaSelectItemsTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         /** @var BackendUserAuthentication|ObjectProphecy $backendUserProphecy */
@@ -2453,7 +2489,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ]
@@ -2502,7 +2538,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     null,
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -2553,7 +2589,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     1 => 'remove',
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -2631,7 +2667,7 @@ class TcaSelectItemsTest extends UnitTestCase
                     3 => null,
                 ],
             ],
-            'maxitems' => 1,
+            'maxitems' => 99999,
         ];
 
         $this->assertSame($expected, $this->subject->addData($input));
@@ -2791,7 +2827,7 @@ class TcaSelectItemsTest extends UnitTestCase
                                     null,
                                 ],
                             ],
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -2814,7 +2850,7 @@ class TcaSelectItemsTest extends UnitTestCase
         $GLOBALS['LANG'] = $languageService->reveal();
         $languageService->sL('aLabel')->willReturnArgument(0);
         $languageService->sL('labelOverride')->shouldBeCalled()->willReturnArgument(0);
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
 
         $expected = $input;
         $expected['databaseRow']['aField'] = ['aValue'];
@@ -3044,7 +3080,7 @@ class TcaSelectItemsTest extends UnitTestCase
                         'config' => [
                             'type' => 'select',
                             'renderType' => 'selectSingle',
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                             'items' => [],
                         ],
                     ],
@@ -3147,7 +3183,7 @@ class TcaSelectItemsTest extends UnitTestCase
     {
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.noMatchingValue')->willReturn('INVALID VALUE "%s"');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
 
         $relationHandlerProphecy = $this->prophesize(RelationHandler::class);
@@ -3166,7 +3202,7 @@ class TcaSelectItemsTest extends UnitTestCase
                         'config' => [
                             'type' => 'select',
                             'renderType' => 'selectSingle',
-                            'maxitems' => 1,
+                            'maxitems' => 99999,
                             'items' => [
                                 ['foo', 'foo', null, null],
                             ],

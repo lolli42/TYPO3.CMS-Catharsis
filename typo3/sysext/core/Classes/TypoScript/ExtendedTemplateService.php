@@ -107,11 +107,6 @@ class ExtendedTemplateService extends TemplateService
     ];
 
     /**
-     * @var bool
-     */
-    public $backend_info = true;
-
-    /**
      * Tsconstanteditor
      *
      * @var int
@@ -419,9 +414,9 @@ class ExtendedTemplateService extends TemplateService
         $keyArr_alpha = [];
         foreach ($arr as $key => $value) {
             // Don't do anything with comments / linenumber registrations...
-            if (substr($key, -2) != '..') {
+            if (substr($key, -2) !== '..') {
                 $key = preg_replace('/\\.$/', '', $key);
-                if (substr($key, -1) != '.') {
+                if (substr($key, -1) !== '.') {
                     if (MathUtility::canBeInterpretedAsInteger($key)) {
                         $keyArr_num[$key] = $arr[$key];
                     } else {
@@ -468,7 +463,7 @@ class ExtendedTemplateService extends TemplateService
                             $urlParameters['breakPointLN'] = GeneralUtility::_GP('breakPointLN');
                         }
                         $aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
-                        if ($this->bType != 'const') {
+                        if ($this->bType !== 'const') {
                             $ln = is_array($arr[$key . '.ln..']) ? 'Defined in: ' . $this->lineNumberToScript($arr[$key . '.ln..']) : 'N/A';
                         } else {
                             $ln = '';
@@ -578,7 +573,7 @@ class ExtendedTemplateService extends TemplateService
         $keyArr = [];
         foreach ($arr as $key => $value) {
             $key = preg_replace('/\\.$/', '', $key);
-            if (substr($key, -1) != '.') {
+            if (substr($key, -1) !== '.') {
                 $keyArr[$key] = 1;
             }
         }
@@ -662,7 +657,7 @@ class ExtendedTemplateService extends TemplateService
         $keyArr = [];
         foreach ($arr as $key => $value) {
             $key = preg_replace('/\\.$/', '', $key);
-            if (substr($key, -1) != '.') {
+            if (substr($key, -1) !== '.') {
                 $keyArr[$key] = 1;
             }
         }
@@ -786,7 +781,7 @@ class ExtendedTemplateService extends TemplateService
     {
         if ($chars >= 4) {
             if (strlen($string) > $chars) {
-                if (strlen($string) > 24 && substr($string, 0, 12) == '##' . $this->Cmarker . '_B##') {
+                if (strlen($string) > 24 && substr($string, 0, 12) === '##' . $this->Cmarker . '_B##') {
                     return '##' . $this->Cmarker . '_B##' . GeneralUtility::fixed_lgd_cs(substr($string, 12, -12), ($chars - 3))
                         . '##' . $this->Cmarker . '_E##';
                 } else {
@@ -805,7 +800,7 @@ class ExtendedTemplateService extends TemplateService
     public function ext_lnBreakPointWrap($lineNumber, $str)
     {
         return '<a href="#" id="line-' . $lineNumber . '" onClick="return brPoint(' . $lineNumber . ','
-            . ($this->ext_lineNumberOffset_mode == 'setup' ? 1 : 0) . ');">' . $str . '</a>';
+            . ($this->ext_lineNumberOffset_mode === 'setup' ? 1 : 0) . ');">' . $str . '</a>';
     }
 
     /**
@@ -831,9 +826,9 @@ class ExtendedTemplateService extends TemplateService
             }
             $cArr[$k] = $lineNum . str_replace(' ', '&nbsp;', $v);
             $firstChar = substr(trim($v), 0, 1);
-            if ($firstChar == '[') {
+            if ($firstChar === '[') {
                 $cArr[$k] = '<strong class="text-success">' . $cArr[$k] . '</strong>';
-            } elseif ($firstChar == '/' || $firstChar == '#') {
+            } elseif ($firstChar === '/' || $firstChar === '#') {
                 if ($comments) {
                     $cArr[$k] = '<span class="text-muted">' . $cArr[$k] . '</span>';
                 } else {
@@ -1076,6 +1071,8 @@ class ExtendedTemplateService extends TemplateService
                             } else {
                                 $retArr['params'] = GeneralUtility::intExplode('-', $retArr['paramstr']);
                             }
+                            $retArr['min'] = $retArr['params'][0];
+                            $retArr['max'] = $retArr['params'][1];
                             $retArr['paramstr'] = $retArr['params'][0] . ' - ' . $retArr['params'][1];
                             break;
                         case 'options':
@@ -1173,12 +1170,6 @@ class ExtendedTemplateService extends TemplateService
                         $head = trim($label_parts[0]);
                         $body = '';
                     }
-                    if (strlen($head) > 35) {
-                        if (!$body) {
-                            $body = $head;
-                        }
-                        $head = GeneralUtility::fixed_lgd_cs($head, 35);
-                    }
                     $typeDat = $this->ext_getTypeData($params['type']);
                     $p_field = '';
                     $raname = substr(md5($params['name']), 0, 10);
@@ -1189,17 +1180,26 @@ class ExtendedTemplateService extends TemplateService
                     switch ($typeDat['type']) {
                         case 'int':
                         case 'int+':
+                            $additionalAttributes = '';
                             if ($typeDat['paramstr']) {
                                 $hint = ' Range: ' . $typeDat['paramstr'];
                             } elseif ($typeDat['type'] === 'int+') {
                                 $hint = ' Range: 0 - ';
+                                $typeDat['min'] = 0;
                             } else {
                                 $hint = ' (Integer)';
                             }
 
+                            if (isset($typeDat['min'])) {
+                                $additionalAttributes .= ' min="' . (int)$typeDat['min'] . '" ';
+                            }
+                            if (isset($typeDat['max'])) {
+                                $additionalAttributes .= ' max="' . (int)$typeDat['max'] . '" ';
+                            }
+
                             $p_field =
-                                '<input class="form-control" id="' . $idName . '" type="text"'
-                                . ' name="' . $fN . '" value="' . $fV . '"' . ' onChange="uFormUrl(' . $aname . ')" />';
+                                '<input class="form-control" id="' . $idName . '" type="number"'
+                                . ' name="' . $fN . '" value="' . $fV . '"' . ' onChange="uFormUrl(' . $aname . ')"' . $additionalAttributes . ' />';
                             break;
                         case 'color':
                             $p_field = '
@@ -1285,8 +1285,6 @@ class ExtendedTemplateService extends TemplateService
                             $userFunctionParams = ['fieldName' => $fN, 'fieldValue' => $fV];
                             $p_field = GeneralUtility::callUserFunction($userFunction, $userFunctionParams, $this);
                             break;
-                        case 'small':
-
                         default:
                             $p_field = '<input class="form-control" id="' . $idName . '" type="text" name="' . $fN . '" value="' . $fV . '"'
                                 . ' onChange="uFormUrl(' . $aname . ')" />';
@@ -1310,7 +1308,7 @@ class ExtendedTemplateService extends TemplateService
                             $userTyposcriptStyle = 'style="display:none;"';
                             $defaultTyposcriptStyle = '';
                         }
-                        $deleteTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.deleteTitle'));
+                        $deleteTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.deleteTitle'));
                         $deleteIcon = $iconFactory->getIcon('actions-edit-undo', Icon::SIZE_SMALL)->render();
                         $deleteIconHTML =
                             '<button type="button" class="btn btn-default t3js-toggle" data-toggle="undo" rel="' . $idName . '">'
@@ -1318,7 +1316,7 @@ class ExtendedTemplateService extends TemplateService
                                     . $deleteIcon
                                 . '</span>'
                             . '</button>';
-                        $editTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.editTitle'));
+                        $editTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.editTitle'));
                         $editIcon = $iconFactory->getIcon('actions-open', Icon::SIZE_SMALL)->render();
                         $editIconHTML =
                             '<button type="button" class="btn btn-default t3js-toggle" data-toggle="edit"  rel="' . $idName . '">'
@@ -1632,11 +1630,13 @@ class ExtendedTemplateService extends TemplateService
     }
 
     /**
+     * Is set by runThroughTemplates(), previously set via TemplateAnalyzerModuleFunctionController from the outside
+     *
      * @return array
      */
     protected function getRootLine()
     {
-        return isset($GLOBALS['rootLine']) ? $GLOBALS['rootLine'] : [];
+        return is_array($this->absoluteRootLine) ? $this->absoluteRootLine : [];
     }
 
     /**

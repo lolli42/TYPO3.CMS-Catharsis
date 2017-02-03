@@ -17,9 +17,7 @@ namespace TYPO3\CMS\Backend\Form\FormDataProvider;
 use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroup\TcaInputPlaceholderRecord;
 use TYPO3\CMS\Backend\Form\FormDataProviderInterface;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -49,7 +47,7 @@ class TcaInputPlaceholders implements FormDataProviderInterface
             }
 
             // Resolve __row|field type placeholders
-            if (StringUtility::beginsWith($fieldConfig['config']['placeholder'], '__row|')) {
+            if (strpos($fieldConfig['config']['placeholder'], '__row|') === 0) {
                 // split field names into array and remove the __row indicator
                 $fieldNameArray = array_slice(
                     GeneralUtility::trimExplode('|', $fieldConfig['config']['placeholder'], true),
@@ -59,7 +57,7 @@ class TcaInputPlaceholders implements FormDataProviderInterface
             }
 
             // Resolve placeholders from language files
-            if (StringUtility::beginsWith($fieldConfig['config']['placeholder'], 'LLL:')) {
+            if (strpos($fieldConfig['config']['placeholder'], 'LLL:') === 0) {
                 $result['processedTca']['columns'][$fieldName]['config']['placeholder'] = $this->getLanguageService()->sL($fieldConfig['config']['placeholder']);
             }
 
@@ -176,15 +174,9 @@ class TcaInputPlaceholders implements FormDataProviderInterface
             return $relatedUids;
         }
 
-        $values = GeneralUtility::trimExplode(',', $value, true);
-        foreach ($values as $groupValue) {
-            list($foreignIdentifier, $_) = GeneralUtility::trimExplode('|', $groupValue);
-            list($recordForeignTable, $foreignUid) = BackendUtility::splitTable_Uid($foreignIdentifier);
-            // skip records that do not match the allowed table
-            if (!empty($recordForeignTable) && ($recordForeignTable !== $allowedTable)) {
-                continue;
-            }
-            $relatedUids[] = $foreignUid;
+        // Related group values have been prepared by TcaGroup data provider, an array is expected here
+        foreach ($value as $singleValue) {
+            $relatedUids[] = $singleValue['uid'];
         }
 
         return $relatedUids;

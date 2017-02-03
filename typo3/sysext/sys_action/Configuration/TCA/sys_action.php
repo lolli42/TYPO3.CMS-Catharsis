@@ -6,7 +6,7 @@ return [
         'tstamp' => 'tstamp',
         'default_sortby' => 'ORDER BY title',
         'sortby' => 'sorting',
-        'prependAtCopy' => 'LLL:EXT:lang/locallang_general.xlf:LGL.prependAtCopy',
+        'prependAtCopy' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.prependAtCopy',
         'title' => 'LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action',
         'crdate' => 'crdate',
         'cruser_id' => 'cruser_id',
@@ -26,7 +26,7 @@ return [
     ],
     'columns' => [
         'title' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.title',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.title',
             'config' => [
                 'type' => 'input',
                 'size' => 25,
@@ -35,7 +35,7 @@ return [
             ]
         ],
         'description' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.description',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.description',
             'config' => [
                 'type' => 'text',
                 'rows' => 10,
@@ -49,7 +49,7 @@ return [
             ]
         ],
         'type' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.type',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.type',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -94,7 +94,7 @@ return [
                 'foreign_table' => 'be_groups',
                 'foreign_table_where' => 'ORDER BY be_groups.title',
                 'size' => 10,
-                'maxitems' => '20',
+                'maxitems' => 20,
                 'autoSizeMax' => 10
             ]
         ],
@@ -113,12 +113,6 @@ return [
                 'size' => 1,
                 'maxitems' => 1,
                 'minitems' => 1,
-                'show_thumbs' => true,
-                'wizards' => [
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ]
-                ]
             ]
         ],
         't3_listPid' => [
@@ -130,12 +124,6 @@ return [
                 'size' => 1,
                 'maxitems' => 1,
                 'minitems' => 1,
-                'show_thumbs' => true,
-                'wizards' => [
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ]
-                ]
             ]
         ],
         't3_tables' => [
@@ -159,75 +147,64 @@ return [
                 'size' => 5,
                 'maxitems' => 50,
                 'minitems' => 1,
-                'show_thumbs' => true,
-                'wizards' => [
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ]
-                ]
             ]
         ]
     ],
     'types' => [
         '0' => ['showitem' => '
-			type,
-			title,
-			description,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.access,
-				hidden,
-				assign_to_groups
-		'],
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                type,title,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,assign_to_groups,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        '],
         '1' => ['showitem' => '
-			type,
-			title,
-			description,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.create_user.settings,
-				t1_userprefix,t1_copy_of_user,
-				t1_allowed_groups,
-				t1_create_user_dir,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.access,
-				hidden,
-				assign_to_groups
-		'],
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                type,title,t1_userprefix,t1_copy_of_user,t1_allowed_groups,t1_create_user_dir,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,assign_to_groups,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        '],
         '2' => ['showitem' => '
-			type,
-			title,
-			description,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.access,
-				hidden,
-				assign_to_groups
-		'],
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                type,title,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,assign_to_groups,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        '],
         '3' => ['showitem' => '
-			type,
-			title,
-			description,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.record_list.settings,
-				t3_listPid,
-				t3_tables,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.access,
-				hidden,
-				assign_to_groups
-		'],
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                type,title,t3_listPid,t3_tables,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,assign_to_groups,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        '],
         '4' => ['showitem' => '
-			type,
-			title,
-			description,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.edit_records.settings,
-				t4_recordsToEdit,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.access,
-				hidden,
-				assign_to_groups
-		'],
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                type,title,t4_recordsToEdit,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,assign_to_groups,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        '],
         '5' => ['showitem' => '
-			type,
-			title,
-			description,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.new_record.settings,
-				t3_listPid;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.new_record.pid,
-				t3_tables;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.new_record.tablename,
-			--div--;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.tab.access,
-				hidden,
-				assign_to_groups
-		']
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                type,title,t3_listPid;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.new_record.pid,
+                t3_tables;LLL:EXT:sys_action/Resources/Private/Language/locallang_tca.xlf:sys_action.new_record.tablename,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,assign_to_groups,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        ']
     ]
 ];

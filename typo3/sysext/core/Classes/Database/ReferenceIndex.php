@@ -27,6 +27,7 @@ use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 
 /**
  * Reference index processing and relation extraction
@@ -44,37 +45,35 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 class ReferenceIndex
 {
     /**
-     * Definition of tables to exclude from searching for relations
+     * Definition of tables to exclude from the ReferenceIndex
      *
      * Only tables which do not contain any relations and never did so far since references also won't be deleted for
      * these. Since only tables with an entry in $GLOBALS['TCA] are handled by ReferenceIndex there is no need to add
      * *_mm-tables.
      *
-     * This is implemented as an array with fields as keys and booleans as values to be able to fast isset() instead of
-     * slow in_array() lookup.
+     * Implemented as array with fields as keys and booleans as values for fast isset() lookup instead of slow in_array()
      *
      * @var array
      * @see updateRefIndexTable()
-     * @todo #65461 Create configuration for tables to exclude from ReferenceIndex
+     * @see shouldExcludeTableFromReferenceIndex()
      */
-    protected static $nonRelationTables = [
+    protected static $excludedTables = [
         'sys_log' => true,
         'sys_history' => true,
         'tx_extensionmanager_domain_model_extension' => true
     ];
 
     /**
-     * Definition of fields to exclude from searching for relations
+     * Definition of fields to exclude from ReferenceIndex in *every* table
      *
-     * This is implemented as an array with fields as keys and booleans as values to be able to fast isset() instead of
-     * slow in_array() lookup.
+     * Implemented as array with fields as keys and booleans as values for fast isset() lookup instead of slow in_array()
      *
      * @var array
      * @see getRelations()
      * @see fetchTableRelationFields()
-     * @todo #65460 Create configuration for fields to exclude from ReferenceIndex
+     * @see shouldExcludeTableColumnFromReferenceIndex()
      */
-    protected static $nonRelationFields = [
+    protected static $excludedColumns = [
         'uid' => true,
         'perms_userid' => true,
         'perms_groupid' => true,
@@ -195,7 +194,7 @@ class ReferenceIndex
         ];
 
         // If this table cannot contain relations, skip it
-        if (isset(static::$nonRelationTables[$tableName])) {
+        if ($this->shouldExcludeTableFromReferenceIndex($tableName)) {
             return $result;
         }
 
@@ -315,7 +314,8 @@ class ReferenceIndex
         $deleteField = $GLOBALS['TCA'][$tableName]['ctrl']['delete'];
 
         if ($tableRelationFields === '*') {
-            // If one field of a record is of type flex, all fields have to be fetched to be passed to BackendUtility::getFlexFormDS
+            // If one field of a record is of type flex, all fields have to be fetched
+            // to be passed to FlexFormTools->getDataStructureIdentifier()
             $selectFields = '*';
         } else {
             // otherwise only fields that might contain relations are fetched
@@ -416,7 +416,7 @@ class ReferenceIndex
             'workspace' => $this->getWorkspaceId(),
             'ref_table' => $ref_table,
             'ref_uid' => $ref_uid,
-            'ref_string' => $ref_string
+            'ref_string' => mb_substr($ref_string, 0, 1024)
         ];
     }
 
@@ -522,7 +522,7 @@ class ReferenceIndex
         $uid = $row['uid'];
         $outRow = [];
         foreach ($row as $field => $value) {
-            if (!isset(static::$nonRelationFields[$field]) && is_array($GLOBALS['TCA'][$table]['columns'][$field]) && (!$onlyField || $onlyField === $field)) {
+            if ($this->shouldExcludeTableColumnFromReferenceIndex($table, $field, $onlyField) === false) {
                 $conf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
                 // Add files
                 $resultsFromFiles = $this->getRelations_procFiles($value, $conf, $uid);
@@ -555,7 +555,7 @@ class ReferenceIndex
                     }
                 }
                 // Add a softref definition for link fields if the TCA does not specify one already
-                if ($conf['type'] === 'input' && isset($conf['wizards']['link']) && empty($conf['softref'])) {
+                if ($conf['type'] === 'input' && $conf['renderType'] === 'inputLink' && empty($conf['softref'])) {
                     $conf['softref'] = 'typolink';
                 }
                 // Add DB:
@@ -570,7 +570,8 @@ class ReferenceIndex
                 // For "flex" fieldtypes we need to traverse the structure looking for file and db references of course!
                 if ($conf['type'] === 'flex') {
                     // Get current value array:
-                    // NOTICE: failure to resolve Data Structures can lead to integrity problems with the reference index. Please look up the note in the JavaDoc documentation for the function \TYPO3\CMS\Backend\Utility\BackendUtility::getFlexFormDS()
+                    // NOTICE: failure to resolve Data Structures can lead to integrity problems with the reference index. Please look up
+                    // the note in the JavaDoc documentation for the function FlexFormTools->getDataStructureIdentifier()
                     $currentValueArray = GeneralUtility::xml2array($value);
                     // Traversing the XML structure, processing files:
                     if (is_array($currentValueArray)) {
@@ -662,7 +663,7 @@ class ReferenceIndex
             }
         }
         // Add a softref definition for link fields if the TCA does not specify one already
-        if ($dsConf['type'] === 'input' && isset($dsConf['wizards']['link']) && empty($dsConf['softref'])) {
+        if ($dsConf['type'] === 'input' && $dsConf['renderType'] === 'inputLink' && empty($dsConf['softref'])) {
             $dsConf['softref'] = 'typolink';
         }
         // Add DB:
@@ -1095,7 +1096,7 @@ class ReferenceIndex
             ||
             ($configuration['type'] === 'group' && ($configuration['internal_type'] === 'file' || $configuration['internal_type'] === 'file_reference')) // getRelations_procFiles
             ||
-            ($configuration['type'] === 'input' && isset($configuration['wizards']['link'])) // getRelations_procDB
+            ($configuration['type'] === 'input' && $configuration['renderType'] === 'inputLink') // getRelations_procDB
             ||
             $configuration['type'] === 'flex'
             ||
@@ -1122,7 +1123,7 @@ class ReferenceIndex
                 // Check for flex field
                 if (isset($fieldDefinition['config']['type']) && $fieldDefinition['config']['type'] === 'flex') {
                     // Fetch all fields if the is a field of type flex in the table definition because the complete row is passed to
-                    // BackendUtility::getFlexFormDS in the end and might be needed in ds_pointerField or $hookObj->getFlexFormDS_postProcessDS
+                    // FlexFormTools->getDataStructureIdentifier() in the end and might be needed in ds_pointerField or a hook
                     return '*';
                 }
                 // Only fetch this field if it can contain a reference
@@ -1168,10 +1169,18 @@ class ReferenceIndex
         }
         // Traverse all tables:
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $refIndexConnectionName = empty($GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping']['sys_refindex'])
+                ? ConnectionPool::DEFAULT_CONNECTION_NAME
+                : $GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping']['sys_refindex'];
+
         foreach ($GLOBALS['TCA'] as $tableName => $cfg) {
-            if (isset(static::$nonRelationTables[$tableName])) {
+            if ($this->shouldExcludeTableFromReferenceIndex($tableName)) {
                 continue;
             }
+            $tableConnectionName = empty($GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping'][$tableName])
+                ? ConnectionPool::DEFAULT_CONNECTION_NAME
+                : $GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping'][$tableName];
+
             $fields = ['uid'];
             if (BackendUtility::isTableWorkspaceEnabled($tableName)) {
                 $fields[] = 't3ver_wsid';
@@ -1193,14 +1202,12 @@ class ReferenceIndex
 
             $tableNames[] = $tableName;
             $tableCount++;
-            $uidList = [0];
             while ($record = $queryResult->fetch()) {
                 $refIndexObj = GeneralUtility::makeInstance(self::class);
                 if (isset($record['t3ver_wsid'])) {
                     $refIndexObj->setWorkspaceId($record['t3ver_wsid']);
                 }
                 $result = $refIndexObj->updateRefIndexTable($tableName, $record['uid'], $testOnly);
-                $uidList[] = $record['uid'];
                 $recCount++;
                 if ($result['addedNodes'] || $result['deletedNodes']) {
                     $error = 'Record ' . $tableName . ':' . $record['uid'] . ' had ' . $result['addedNodes'] . ' added indexes and ' . $result['deletedNodes'] . ' deleted indexes';
@@ -1211,7 +1218,34 @@ class ReferenceIndex
                 }
             }
 
+            // Subselect based queries only work on the same connection
+            if ($refIndexConnectionName !== $tableConnectionName) {
+                GeneralUtility::sysLog(
+                    sprintf(
+                        'Not checking table "%s" for lost indexes, "sys_refindex" table uses a different connection',
+                        $tableName
+                    ),
+                    'core',
+                    GeneralUtility::SYSLOG_SEVERITY_ERROR
+                );
+                continue;
+            }
+
             // Searching for lost indexes for this table
+            // Build sub-query to find lost records
+            $subQueryBuilder = $connectionPool->getQueryBuilderForTable($tableName);
+            $subQueryBuilder->getRestrictions()->removeAll();
+            $subQueryBuilder
+                ->select('uid')
+                ->from($tableName, 'sub_' . $tableName)
+                ->where(
+                    $subQueryBuilder->expr()->eq(
+                        'sub_' . $tableName . '.uid',
+                        $queryBuilder->quoteIdentifier('sys_refindex.recuid')
+                    )
+                );
+
+            // Main query to find lost records
             $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_refindex');
             $queryBuilder->getRestrictions()->removeAll();
             $lostIndexes = $queryBuilder
@@ -1222,10 +1256,7 @@ class ReferenceIndex
                         'tablename',
                         $queryBuilder->createNamedParameter($tableName, \PDO::PARAM_STR)
                     ),
-                    $queryBuilder->expr()->notIn(
-                        'recuid',
-                        $queryBuilder->createNamedParameter($uidList, Connection::PARAM_INT_ARRAY)
-                    )
+                    'NOT EXISTS (' . $subQueryBuilder->getSQL() . ')'
                 )
                 ->execute()
                 ->fetchColumn(0);
@@ -1244,11 +1275,9 @@ class ReferenceIndex
                                 'tablename',
                                 $queryBuilder->createNamedParameter($tableName, \PDO::PARAM_STR)
                             ),
-                            $queryBuilder->expr()->notIn(
-                                'recuid',
-                                $queryBuilder->createNamedParameter($uidList, Connection::PARAM_INT_ARRAY)
-                            )
-                        )->execute();
+                            'NOT EXISTS (' . $subQueryBuilder->getSQL() . ')'
+                        )
+                        ->execute();
                 }
             }
         }
@@ -1306,6 +1335,50 @@ class ReferenceIndex
             $registry->set('core', 'sys_refindex_lastUpdate', $GLOBALS['EXEC_TIME']);
         }
         return [$headerContent, $bodyContent, $errorCount];
+    }
+
+    /**
+     * Checks if a given table should be excluded from ReferenceIndex
+     *
+     * @param string $tableName Name of the table
+     * @return bool true if it should be excluded
+     */
+    protected function shouldExcludeTableFromReferenceIndex($tableName)
+    {
+        if (isset(static::$excludedTables[$tableName])) {
+            return static::$excludedTables[$tableName];
+        }
+
+        // Only exclude tables from ReferenceIndex which do not contain any relations and never did since existing references won't be deleted!
+        // There is no need to add tables without a definition in $GLOBALS['TCA] since ReferenceIndex only handles those.
+        $excludeTable = false;
+        $signalSlotDispatcher = GeneralUtility::makeInstance(Dispatcher::class);
+        $signalSlotDispatcher->dispatch(__CLASS__, 'shouldExcludeTableFromReferenceIndex', [$tableName, &$excludeTable]);
+
+        static::$excludedTables[$tableName] = $excludeTable;
+
+        return static::$excludedTables[$tableName];
+    }
+
+    /**
+     * Checks if a given column in a given table should be excluded in the ReferenceIndex process
+     *
+     * @param string $tableName Name of the table
+     * @param string $column Name of the column
+     * @param string $onlyColumn Name of a specific column to fetch
+     * @return bool true if it should be excluded
+     */
+    protected function shouldExcludeTableColumnFromReferenceIndex($tableName, $column, $onlyColumn)
+    {
+        if (isset(static::$excludedColumns[$column])) {
+            return true;
+        }
+
+        if (is_array($GLOBALS['TCA'][$tableName]['columns'][$column]) && (!$onlyColumn || $onlyColumn === $column)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

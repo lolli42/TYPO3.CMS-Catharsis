@@ -249,10 +249,13 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
     public $writeAttemptLog = true;
 
     /**
-     * if > 0 : session-timeout in seconds.
-     * if FALSE/<0 : no timeout.
-     * if string: The string is field name from the user table where the timeout can be found.
-     * @var string|int
+     * Session timeout (on the server)
+     *
+     * If >0: session-timeout in seconds.
+     * If <=0: Instant logout after login.
+     * The value must be at least 180 to avoid side effects.
+     *
+     * @var int
      */
     public $sessionTimeout = 6000;
 
@@ -300,6 +303,9 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
         parent::__construct();
         $this->name = self::getCookieName();
         $this->loginType = 'BE';
+        $this->warningEmail = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
+        $this->lockIP = $GLOBALS['TYPO3_CONF_VARS']['BE']['lockIP'];
+        $this->sessionTimeout = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['sessionTimeout'];
     }
 
     /**
@@ -691,9 +697,9 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
     public function checkFullLanguagesAccess($table, $record)
     {
         $recordLocalizationAccess = $this->checkLanguageAccess(0);
-        if ($recordLocalizationAccess && (BackendUtility::isTableLocalizable($table) || isset($GLOBALS['TCA'][$table]['ctrl']['transForeignTable']))) {
-            if (isset($GLOBALS['TCA'][$table]['ctrl']['transForeignTable'])) {
-                $l10nTable = $GLOBALS['TCA'][$table]['ctrl']['transForeignTable'];
+        if ($recordLocalizationAccess && (BackendUtility::isTableLocalizable($table) || $table === 'pages')) {
+            if ($table === 'pages') {
+                $l10nTable = 'pages_language_overlay';
                 $pointerField = $GLOBALS['TCA'][$l10nTable]['ctrl']['transOrigPointerField'];
                 $pointerValue = $record['uid'];
             } else {
@@ -771,7 +777,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
                 return false;
             }
         } elseif (
-            isset($GLOBALS['TCA'][$table]['ctrl']['transForeignTable']) && $checkFullLanguageAccess &&
+            $table === 'pages' && $checkFullLanguageAccess &&
             !$this->checkFullLanguagesAccess($table, $idOrRow)
         ) {
             return false;
@@ -840,7 +846,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
     {
         if ($this->isAdmin()) {
             $result = true;
-        } elseif ($tableName == 'pages') {
+        } elseif ($tableName === 'pages') {
             switch ($actionType) {
                 case 'edit':
                     $result = ($compiledPermissions & Permission::PAGE_EDIT) !== 0;
@@ -2530,10 +2536,7 @@ This is a dump of the failures:
     {
         // UC - user configuration is a serialized array inside the user object
         // If there is a saved uc we implement that instead of the default one.
-        $temp_theSavedUC = unserialize($this->user['uc']);
-        if (is_array($temp_theSavedUC)) {
-            $this->unpack_uc($temp_theSavedUC);
-        }
+        $this->unpack_uc();
         // Setting defaults if uc is empty
         $updated = false;
         $originalUc = [];
@@ -2658,7 +2661,7 @@ This is a dump of the failures:
      * The conditions are:
      * + backend user is a regular user and adminOnly is not defined
      * + backend user is an admin user
-     * + backend user is used in CLI context and adminOnly is explicitly set to "2"
+     * + backend user is used in CLI context and adminOnly is explicitly set to "2" (see CommandLineUserAuthentication)
      * + backend user is being controlled by an admin user
      *
      * @return bool Whether a backend user is allowed to access the backend
@@ -2666,11 +2669,9 @@ This is a dump of the failures:
     protected function isUserAllowedToLogin()
     {
         $isUserAllowedToLogin = false;
-        $adminOnlyMode = $GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly'];
+        $adminOnlyMode = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly'];
         // Backend user is allowed if adminOnly is not set or user is an admin:
         if (!$adminOnlyMode || $this->isAdmin()) {
-            $isUserAllowedToLogin = true;
-        } elseif ($adminOnlyMode == 2 && TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) {
             $isUserAllowedToLogin = true;
         } elseif ($this->user['ses_backuserid']) {
             $backendUserId = (int)$this->user['ses_backuserid'];

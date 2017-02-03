@@ -17,12 +17,11 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
 use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class DatabaseRecordTypeValueTest extends UnitTestCase
+class DatabaseRecordTypeValueTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var DatabaseRecordTypeValue|\PHPUnit_Framework_MockObject_MockObject
@@ -61,9 +60,44 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     /**
      * @test
      */
+    public function addDataKeepsExistingTcaRecordTypeValue()
+    {
+        $input = [
+            'recordTypeValue' => 'egon',
+            'processedTca' => [
+                'types' => [
+                    '1' => 'foo',
+                ],
+            ],
+        ];
+        $expected = $input;
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataKeepsExistingTcaRecordTypeValueWithValueZero()
+    {
+        $input = [
+            'recordTypeValue' => 0,
+            'processedTca' => [
+                'types' => [
+                    '1' => 'foo',
+                ],
+            ],
+        ];
+        $expected = $input;
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
     public function addDataSetsRecordTypeValueToHistoricalOneIfTypeZeroIsNotDefined()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'types' => [
                     '1' => 'foo',
@@ -81,6 +115,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataSetsRecordTypeValueToZero()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'types' => [
                     '0' => 'foo',
@@ -100,6 +135,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataThrowsExceptionIfTypePointsToANotExistingField()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'notExists',
@@ -125,6 +161,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataSetsRecordTypeValueToValueOfDatabaseField()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'aField',
@@ -150,6 +187,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataSetsRecordTypeValueToZeroIfValueOfDatabaseFieldIsNotDefinedInTca()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'aField',
@@ -175,6 +213,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataSetsRecordTypeValueToZeroIfValueOfDatabaseFieldIsEmptyString()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'aField',
@@ -200,6 +239,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataThrowsExceptionIfValueTypesNotExistsAndNoFallbackExists()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'aField',
@@ -225,6 +265,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataSetsRecordTypeValueToValueOfDefaultLanguageRecordIfConfiguredAsExclude()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'languageField' => 'sys_language_uid',
@@ -257,79 +298,10 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     /**
      * @test
      */
-    public function addDataSetsRecordTypeValueToValueOfDefaultLanguageRecordIfConfiguredAsMergeIfNotBlank()
-    {
-        $input = [
-            'processedTca' => [
-                'ctrl' => [
-                    'languageField' => 'sys_language_uid',
-                    'type' => 'aField',
-                ],
-                'columns' => [
-                    'aField' => [
-                        'l10n_mode' => 'mergeIfNotBlank',
-                    ],
-                ],
-                'types' => [
-                    '3' => 'foo',
-                ],
-            ],
-            'databaseRow' => [
-                'sys_language_uid' => 2,
-                'aField' => '',
-            ],
-            'defaultLanguageRow' => [
-                'aField' => 3,
-            ],
-        ];
-
-        $expected = $input;
-        $expected['recordTypeValue'] = '3';
-
-        $this->assertSame($expected, $this->subject->addData($input));
-    }
-
-    /**
-     * @test
-     */
-    public function addDataSetsRecordTypeValueToValueOfLocalizedRecordIfConfiguredAsMergeIfNotBlankButNotBlank()
-    {
-        $input = [
-            'processedTca' => [
-                'ctrl' => [
-                    'languageField' => 'sys_language_uid',
-                    'type' => 'aField',
-                ],
-                'columns' => [
-                    'aField' => [
-                        'l10n_mode' => 'mergeIfNotBlank',
-                    ],
-                ],
-                'types' => [
-                    '3' => 'foo',
-                ],
-            ],
-            'databaseRow' => [
-                'sys_language_uid' => 2,
-                'aField' => 3,
-            ],
-            'defaultLanguageRow' => [
-                'aField' => 4,
-            ],
-        ];
-
-        $expected = $input;
-        $expected['recordTypeValue'] = '3';
-
-        $this->assertSame($expected, $this->subject->addData($input));
-    }
-
-    /**
-     * @test
-     */
     public function addDataThrowsExceptionForForeignTypeConfigurationNotAsSelectOrGroup()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'localField:foreignField',
@@ -359,6 +331,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataThrowsExceptionForForeignTypeIfPointerConfigurationHasNoTable()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'localField:foreignField',
@@ -391,6 +364,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataSetsTypeValueFromForeignTableRecord()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'localField:foreignField',
@@ -434,6 +408,7 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
     public function addDataSetsTypeValueFromNestedTcaGroupField()
     {
         $input = [
+            'recordTypeValue' => '',
             'processedTca' => [
                 'ctrl' => [
                     'type' => 'uid_local:type',
@@ -456,7 +431,11 @@ class DatabaseRecordTypeValueTest extends UnitTestCase
             ],
             'databaseRow' => [
                 // Processed group field
-                'uid_local' => 'sys_file_222|my_test.jpg',
+                'uid_local' => [
+                    [
+                        'uid' => 222,
+                    ],
+                ],
             ],
         ];
 

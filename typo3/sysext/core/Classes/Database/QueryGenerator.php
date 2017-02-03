@@ -436,13 +436,13 @@ class QueryGenerator
             // Initialize array to work on, save special parameters
             $ssArr = $this->getSubscript($POST['qG_del']);
             $workArr = &$this->queryConfig;
-            $ssArrSize = sizeof($ssArr) - 1;
+            $ssArrSize = count($ssArr) - 1;
             for ($i = 0; $i < $ssArrSize; $i++) {
                 $workArr = &$workArr[$ssArr[$i]];
             }
             // Delete the entry and move the other entries
             unset($workArr[$ssArr[$i]]);
-            $workArrSize = sizeof($workArr);
+            $workArrSize = count($workArr);
             for ($j = $ssArr[$i]; $j < $workArrSize; $j++) {
                 $workArr[$j] = $workArr[$j + 1];
                 unset($workArr[$j + 1]);
@@ -453,12 +453,12 @@ class QueryGenerator
             // Initialize array to work on, save special parameters
             $ssArr = $this->getSubscript($POST['qG_ins']);
             $workArr = &$this->queryConfig;
-            $ssArrSize = sizeof($ssArr) - 1;
+            $ssArrSize = count($ssArr) - 1;
             for ($i = 0; $i < $ssArrSize; $i++) {
                 $workArr = &$workArr[$ssArr[$i]];
             }
             // Move all entries above position where new entry is to be inserted
-            $workArrSize = sizeof($workArr);
+            $workArrSize = count($workArr);
             for ($j = $workArrSize; $j > $ssArr[$i]; $j--) {
                 $workArr[$j] = $workArr[$j - 1];
             }
@@ -471,7 +471,7 @@ class QueryGenerator
             // Initialize array to work on
             $ssArr = $this->getSubscript($POST['qG_up']);
             $workArr = &$this->queryConfig;
-            $ssArrSize = sizeof($ssArr) - 1;
+            $ssArrSize = count($ssArr) - 1;
             for ($i = 0; $i < $ssArrSize; $i++) {
                 $workArr = &$workArr[$ssArr[$i]];
             }
@@ -485,14 +485,14 @@ class QueryGenerator
             // Initialize array to work on
             $ssArr = $this->getSubscript($POST['qG_nl']);
             $workArr = &$this->queryConfig;
-            $ssArraySize = sizeof($ssArr) - 1;
+            $ssArraySize = count($ssArr) - 1;
             for ($i = 0; $i < $ssArraySize; $i++) {
                 $workArr = &$workArr[$ssArr[$i]];
             }
             // Do stuff:
             $tempEl = $workArr[$ssArr[$i]];
             if (is_array($tempEl)) {
-                if ($tempEl['type'] != 'newlevel') {
+                if ($tempEl['type'] !== 'newlevel') {
                     $workArr[$ssArr[$i]] = [
                         'type' => 'newlevel',
                         'operator' => $tempEl['operator'],
@@ -506,7 +506,7 @@ class QueryGenerator
             // Initialize array to work on
             $ssArr = $this->getSubscript($POST['qG_remnl']);
             $workArr = &$this->queryConfig;
-            $ssArrSize = sizeof($ssArr) - 1;
+            $ssArrSize = count($ssArr) - 1;
             for ($i = 0; $i < $ssArrSize; $i++) {
                 $workArr = &$workArr[$ssArr[$i]];
             }
@@ -599,7 +599,7 @@ class QueryGenerator
             $fieldName = '';
             $subscript = $parent . '[' . $key . ']';
             $lineHTML = [];
-            $lineHTML[] = $this->mkOperatorSelect($this->name . $subscript, $conf['operator'], $c, $conf['type'] != 'FIELD_');
+            $lineHTML[] = $this->mkOperatorSelect($this->name . $subscript, $conf['operator'], $c, $conf['type'] !== 'FIELD_');
             if (substr($conf['type'], 0, 6) === 'FIELD_') {
                 $fieldName = substr($conf['type'], 6);
                 $this->fieldName = $fieldName;
@@ -718,7 +718,7 @@ class QueryGenerator
                 if ($c != 0) {
                     $lineHTML[] = '<button class="btn btn-default" title="Move up" name="qG_up' . htmlspecialchars($subscript) . '"><i class="fa fa-chevron-up fa-fw"></i></button>';
                 }
-                if ($c != 0 && $fieldType != 'newlevel') {
+                if ($c != 0 && $fieldType !== 'newlevel') {
                     $lineHTML[] = '<button class="btn btn-default" title="New level" name="qG_nl' . htmlspecialchars($subscript) . '"><i class="fa fa-chevron-right fa-fw"></i></button>';
                 }
                 if ($fieldType === 'newlevel') {
@@ -1347,7 +1347,7 @@ class QueryGenerator
                 $inputVal = 0;
             }
         } else {
-            $inputVal = doubleval($conf['inputValue' . $suffix]);
+            $inputVal = (float)$conf['inputValue' . $suffix];
         }
         return $inputVal;
     }

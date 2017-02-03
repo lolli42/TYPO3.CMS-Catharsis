@@ -19,13 +19,12 @@ use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataGroup\FlexFormSegment;
 use TYPO3\CMS\Backend\Form\FormDataProviderInterface;
 use TYPO3\CMS\Core\Service\DependencyOrderingService;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test case
  */
-class FlexFormSegmentTest extends UnitTestCase
+class FlexFormSegmentTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var FlexFormSegment
@@ -94,7 +93,7 @@ class FlexFormSegmentTest extends UnitTestCase
         GeneralUtility::addInstance(\stdClass::class, $formDataProviderProphecy->reveal());
 
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionCode(1437906441);
+        $this->expectExceptionCode(1485299408);
 
         $this->subject->compile([]);
     }

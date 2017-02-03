@@ -24,7 +24,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DefaultRestrictionContainer;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider;
 use TYPO3\CMS\Core\Tree\TableConfiguration\TableConfigurationTree;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -36,7 +35,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @see TcaSelecItemsTest
  */
-class TcaSelectTreeItemsTest extends UnitTestCase
+class TcaSelectTreeItemsTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var TcaSelectTreeItems
@@ -175,13 +174,13 @@ class TcaSelectTreeItemsTest extends UnitTestCase
                     ],
                 ],
             ],
+            'selectTreeCompileItems' => true,
         ];
 
         $expected = $input;
         $expected['databaseRow']['aField'] = ['1'];
-        $expected['processedTca']['columns']['aField']['config']['treeData'] = [
-            'items' => [['fake', 'tree', 'data']],
-            'selectedNodes' => []
+        $expected['processedTca']['columns']['aField']['config']['items'] = [
+            'fake', 'tree', 'data',
         ];
         $this->assertEquals($expected, $this->subject->addData($input));
     }
@@ -207,6 +206,9 @@ class TcaSelectTreeItemsTest extends UnitTestCase
         /** @var  TableConfigurationTree|ObjectProphecy $treeDataProviderProphecy */
         $tableConfigurationTreeProphecy = $this->prophesize(TableConfigurationTree::class);
         GeneralUtility::addInstance(TableConfigurationTree::class, $tableConfigurationTreeProphecy->reveal());
+        $tableConfigurationTreeProphecy->render()->willReturn([]);
+        $tableConfigurationTreeProphecy->setDataProvider(Argument::cetera())->shouldBeCalled();
+        $tableConfigurationTreeProphecy->setNodeRenderer(Argument::cetera())->shouldBeCalled();
 
         $input = [
             'tableName' => 'aTable',
@@ -247,6 +249,7 @@ class TcaSelectTreeItemsTest extends UnitTestCase
                     ],
                 ],
             ],
+            'selectTreeCompileItems' => true,
         ];
 
         $this->subject->addData($input);

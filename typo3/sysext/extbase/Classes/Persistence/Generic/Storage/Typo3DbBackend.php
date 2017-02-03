@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Storage;
 use Doctrine\DBAL\DBALException;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -361,7 +362,24 @@ class Typo3DbBackend implements BackendInterface, SingletonInterface
         $realStatement = $statement->getStatement();
         $parameters = $statement->getBoundVariables();
 
-        if ($realStatement instanceof \TYPO3\CMS\Core\Database\PreparedStatement) {
+        // The real statement is an instance of the Doctrine DBAL QueryBuilder, so fetching
+        // this directly is possible
+        if ($realStatement instanceof QueryBuilder) {
+            try {
+                $result = $realStatement->execute();
+            } catch (DBALException $e) {
+                throw new SqlErrorException($e->getPrevious()->getMessage(), 1472064721);
+            }
+            $rows = $result->fetchAll();
+        } elseif ($realStatement instanceof \Doctrine\DBAL\Statement) {
+            try {
+                $result = $realStatement->execute($parameters);
+            } catch (DBALException $e) {
+                throw new SqlErrorException($e->getPrevious()->getMessage(), 1481281404);
+            }
+            $rows = $result->fetchAll();
+        } elseif ($realStatement instanceof \TYPO3\CMS\Core\Database\PreparedStatement) {
+            GeneralUtility::deprecationLog('Extbase support for Prepared Statements has been deprecated in TYPO3 v8, and will be removed in TYPO3 v9. Use native Doctrine DBAL Statements or QueryBuilder objects.');
             $realStatement->execute($parameters);
             $rows = $realStatement->fetchAll();
 
@@ -377,12 +395,7 @@ class Typo3DbBackend implements BackendInterface, SingletonInterface
                 throw new SqlErrorException($e->getPrevious()->getMessage(), 1472064775);
             }
 
-            $rows = [];
-            while ($row = $statement->fetch()) {
-                if (is_array($row)) {
-                    $rows[] = $row;
-                }
-            }
+            $rows = $statement->fetchAll();
         }
 
         return $rows;
@@ -403,9 +416,22 @@ class Typo3DbBackend implements BackendInterface, SingletonInterface
         }
 
         $queryBuilder = $this->objectManager->get(Typo3DbQueryParser::class)
-                ->convertQueryToDoctrineQueryBuilder($query);
+            ->convertQueryToDoctrineQueryBuilder($query)
+            ->resetQueryPart('orderBy');
+
+        if (count($queryBuilder->getQueryPart('groupBy')) !== 0) {
+            $source = $queryBuilder->getQueryPart('from')[0];
+            // Tablename is already quoted for the DBMS, we need to treat table and field names separately
+            $tableName = $source['alias'] ?: $source['table'];
+            $fieldName = $queryBuilder->quoteIdentifier('uid');
+            $queryBuilder->resetQueryPart('groupBy')
+                ->selectLiteral(sprintf('COUNT(DISTINCT %s.%s)', $tableName, $fieldName));
+        } else {
+            $queryBuilder->count('*');
+        }
+
         try {
-            $count = $queryBuilder->count('*')->execute()->fetchColumn(0);
+            $count = $queryBuilder->execute()->fetchColumn(0);
         } catch (DBALException $e) {
             throw new SqlErrorException($e->getPrevious()->getMessage(), 1472074379);
         }
@@ -532,7 +558,7 @@ class Typo3DbBackend implements BackendInterface, SingletonInterface
             if (isset($tableName) && isset($GLOBALS['TCA'][$tableName])
                 && isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])
                 && isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'])
-                && !isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerTable'])
+                && $tableName !== 'pages_language_overlay'
             ) {
                 if (isset($row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']])
                     && $row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']] > 0
@@ -560,11 +586,11 @@ class Typo3DbBackend implements BackendInterface, SingletonInterface
                 }
             }
             $pageRepository->versionOL($tableName, $row, true);
-            if ($tableName == 'pages') {
+            if ($tableName === 'pages') {
                 $row = $pageRepository->getPageOverlay($row, $querySettings->getLanguageUid());
             } elseif (isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])
-                && $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] !== ''
-                && !isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerTable'])
+                      && $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] !== ''
+                      && $tableName !== 'pages_language_overlay'
             ) {
                 if (in_array($row[$GLOBALS['TCA'][$tableName]['ctrl']['languageField']], [-1, 0])) {
                     $overlayMode = $querySettings->getLanguageMode() === 'strict' ? 'hideNonTranslated' : '';

@@ -130,7 +130,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
                 }
             } else {
                 $delimiter = ':';
-                if ($cacheDirectory[0] != '/') {
+                if ($cacheDirectory[0] !== '/') {
                     // relative path to cache directory.
                     $cacheDirectory = PATH_site . $cacheDirectory;
                 }
@@ -158,7 +158,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
                 );
             }
         } else {
-            if ($cacheDirectory[0] == '/') {
+            if ($cacheDirectory[0] === '/') {
                 // Absolute path to cache directory.
                 $documentRoot = '';
             }
@@ -212,7 +212,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
      * @param string $entryIdentifier An identifier for this specific cache entry
      * @param string $data The data to be stored
      * @param array $tags Tags to associate with this cache entry
-     * @param int $lifetime Lifetime of this cache entry in seconds. If NULL is specified, the default lifetime is used. "0" means unlimited lifetime.
+     * @param int $lifetime This cache backend does not support life times
      * @return void
      * @throws \TYPO3\CMS\Core\Cache\Exception if the directory does not exist or is not writable or exceeds the maximum allowed path length, or if no cache frontend has been set.
      * @throws \TYPO3\CMS\Core\Cache\Exception\InvalidDataException if the data to bes stored is not a string.

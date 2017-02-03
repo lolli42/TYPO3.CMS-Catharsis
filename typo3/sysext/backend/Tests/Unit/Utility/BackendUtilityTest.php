@@ -29,14 +29,13 @@ use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DefaultRestrictionContainer;
 use TYPO3\CMS\Core\Database\RelationHandler;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Test case
  */
-class BackendUtilityTest extends UnitTestCase
+class BackendUtilityTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     ///////////////////////////////////////
     // Tests concerning calcAge
@@ -189,7 +188,6 @@ class BackendUtilityTest extends UnitTestCase
                             'internal_type' => 'db',
                             'maxitems' => 22,
                             'minitems' => 0,
-                            'show_thumbs' => true,
                             'size' => 3,
                         ],
                     ],
@@ -914,68 +912,6 @@ class BackendUtilityTest extends UnitTestCase
     public function replaceL10nModeFieldsReplacesFieldsDataProvider()
     {
         return [
-            'same table: mergeIfNotBlank' => [
-                'foo',
-                [
-                    'origUid' => 1,
-                    'field2' => 'fdas',
-                    'field3' => 'trans',
-                ],
-                [
-                    'foo' => [
-                        'ctrl' => [
-                            'transOrigPointerTable' => '',
-                            'transOrigPointerField' => 'origUid'
-                        ],
-                        'columns' => [
-                            'field2' => ['l10n_mode' => 'mergeIfNotBlank'],
-                            'field3' => ['l10n_mode' => 'mergeIfNotBlank']
-                        ]
-                    ]
-                ],
-                [
-                    'origUid' => 0,
-                    'field2' => 'basic',
-                    'field3' => '',
-                ],
-                [
-                    'origUid' => 1,
-                    'field2' => 'fdas',
-                    'field3' => 'trans',
-                ]
-            ],
-            'other table: mergeIfNotBlank' => [
-                'foo',
-                [
-                    'origUid' => 1,
-                    'field2' => '',
-                    'field3' => 'trans',
-                ],
-                [
-                    'foo' => [
-                        'ctrl' => [
-                            'transOrigPointerTable' => 'bar',
-                            'transOrigPointerField' => 'origUid'
-                        ]
-                    ],
-                    'bar' => [
-                        'columns' => [
-                            'field2' => ['l10n_mode' => 'mergeIfNotBlank'],
-                            'field3' => ['l10n_mode' => 'mergeIfNotBlank']
-                        ]
-                    ]
-                ],
-                [
-                    'origUid' => 0,
-                    'field2' => 'basic',
-                    'field3' => '',
-                ],
-                [
-                    'origUid' => 1,
-                    'field2' => 'basic',
-                    'field3' => 'trans',
-                ]
-            ],
             'same table: exclude' => [
                 'foo',
                 [
@@ -986,41 +922,8 @@ class BackendUtilityTest extends UnitTestCase
                 [
                     'foo' => [
                         'ctrl' => [
-                            'transOrigPointerTable' => '',
                             'transOrigPointerField' => 'origUid'
                         ],
-                        'columns' => [
-                            'field2' => ['l10n_mode' => 'exclude'],
-                            'field3' => ['l10n_mode' => 'exclude']
-                        ]
-                    ]
-                ],
-                [
-                    'origUid' => 0,
-                    'field2' => 'basic',
-                    'field3' => '',
-                ],
-                [
-                    'origUid' => 1,
-                    'field2' => 'basic',
-                    'field3' => '',
-                ]
-            ],
-            'other table: exclude' => [
-                'foo',
-                [
-                    'origUid' => 1,
-                    'field2' => 'fdas',
-                    'field3' => 'trans',
-                ],
-                [
-                    'foo' => [
-                        'ctrl' => [
-                            'transOrigPointerTable' => 'bar',
-                            'transOrigPointerField' => 'origUid'
-                        ]
-                    ],
-                    'bar' => [
                         'columns' => [
                             'field2' => ['l10n_mode' => 'exclude'],
                             'field3' => ['l10n_mode' => 'exclude']
@@ -1056,11 +959,7 @@ class BackendUtilityTest extends UnitTestCase
      */
     public function replaceL10nModeFieldsReplacesFields($table, array $row, array $tca, array $originalRow, $expected)
     {
-        if (!empty($tca[$table]['ctrl']['transOrigPointerTable'])) {
-            $tableName = $tca[$table]['ctrl']['transOrigPointerTable'];
-        } else {
-            $tableName = $table;
-        }
+        $tableName = $table === 'pages_language_overlay' ? 'pages' : $table;
 
         list($queryBuilderProphet, $connectionPoolProphet) = $this->mockDatabaseConnection($tableName);
 
@@ -1087,7 +986,7 @@ class BackendUtilityTest extends UnitTestCase
 
         $GLOBALS['TCA'] = $tca;
 
-        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|BackendUtility $subject */
+        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|BackendUtility $subject */
         $subject = $this->getAccessibleMock(BackendUtility::class, ['dummy']);
         $this->assertSame($expected, $subject->_call('replaceL10nModeFields', $table, $row));
     }
@@ -1132,5 +1031,265 @@ class BackendUtilityTest extends UnitTestCase
 
         $this->assertSame('24-03-16 00:00 (-1 day)', BackendUtility::dateTimeAge($GLOBALS['EXEC_TIME'] + 86400));
         $this->assertSame('24-03-16 (-1 day)', BackendUtility::dateTimeAge($GLOBALS['EXEC_TIME'] + 86400, 1, 'date'));
+    }
+
+    ///////////////////////////////////////
+    // Tests concerning getTCAtypes
+    ///////////////////////////////////////
+
+    /**
+     * @test
+     */
+    public function getTCAtypesReturnsCorrectValuesDataProvider()
+    {
+        return [
+            'no input' => [
+                '', // table
+                [], // rec
+                '', // useFieldNameAsKey
+                null // expected
+            ],
+            'non-existant table' => [
+                'fooBar', // table
+                [], // rec
+                '', // useFieldNameAsKey
+                null // expected
+            ],
+            'Doktype=1: one simple field' => [
+                'pages',
+                [
+                    'uid' => '1',
+                    'doktype' => '1'
+                ],
+                false,
+                [
+                    0 => [
+                        'field' => 'title',
+                        'title' => null,
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => 'title'
+                    ]
+                ]
+            ],
+            'non-existant type given: Return for type 1' => [
+                'pages', // table
+                [
+                    'uid' => '1',
+                    'doktype' => '999'
+                ], // rec
+                '', // useFieldNameAsKey
+                [
+                    0 => [
+                        'field' => 'title',
+                        'title' => null,
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => 'title'
+                    ]
+                ] // expected
+            ],
+            'Doktype=1: one simple field, useFieldNameAsKey=true' => [
+                'pages',
+                [
+                    'uid' => '1',
+                    'doktype' => '1'
+                ],
+                true,
+                [
+                    'title' => [
+                        'field' => 'title',
+                        'title' => null,
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => 'title'
+                    ]
+                ]
+            ],
+            'Empty showitem Field' => [
+                'test',
+                [
+                    'uid' => '1',
+                    'fooBar' => '99'
+                ],
+                true,
+                [
+                    '' => [
+                        'field' => '',
+                        'title' => null,
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => ''
+                    ]
+                ]
+            ],
+            'RTE field within a palette' => [
+                'pages',
+                [
+                    'uid' => '1',
+                    'doktype' => '10',
+                ],
+                false,
+                [
+                    0 => [
+                        'field' => '--div--',
+                        'title' => 'General',
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => '--div--;General'
+                    ],
+                    1 => [
+                        'field' => '--palette--',
+                        'title' => 'Palette',
+                        'palette' => '123',
+                        'spec' => [],
+                        'origString' => '--palette--;Palette;123'
+                    ],
+                    2 => [
+                        'field' => 'title',
+                        'title' => null,
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => 'title'
+                    ],
+                    3 => [
+                        'field' => 'text',
+                        'title' => null,
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => 'text'
+                    ],
+                    4 => [
+                        'field' => 'select',
+                        'title' => 'Select field',
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => 'select;Select field'
+                    ]
+                ]
+            ],
+            'RTE field with more settings within a palette' => [
+                'pages',
+                [
+                    'uid' => 1,
+                    'doktype' => 2
+                ],
+                false,
+                [
+                    0 => [
+                        'field' => '--div--',
+                        'title' => 'General',
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => '--div--;General'
+                    ],
+                    1 => [
+                        'field' => '--palette--',
+                        'title' => 'RTE palette',
+                        'palette' => '456',
+                        'spec' => [],
+                        'origString' => '--palette--;RTE palette;456'
+                    ],
+                    2 => [
+                        'field' => 'text2',
+                        'title' => null,
+                        'palette' => null,
+                        'spec' => [],
+                        'origString' => 'text2'
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider getTCAtypesReturnsCorrectValuesDataProvider
+     *
+     * @param string $table
+     * @param array $rec
+     * @param bool $useFieldNameAsKey
+     * @param array $expected
+     */
+    public function getTCAtypesReturnsCorrectValues($table, $rec, $useFieldNameAsKey, $expected)
+    {
+        $GLOBALS['TCA'] = [
+            'pages' => [
+                'ctrl' => [
+                    'type' => 'doktype'
+                ],
+                'columns' => [
+                    'title' => [
+                        'label' => 'Title test',
+                        'config' => [
+                            'type' => 'input'
+                        ]
+                    ],
+                    'text' => [
+                        'label' => 'RTE Text',
+                        'config' => [
+                            'type' => 'text',
+                            'cols' => 40,
+                            'rows' => 5
+                        ],
+                        'defaultExtras' => 'richtext:rte_transform[mode=ts_css]'
+                    ],
+                    'text2' => [
+                        'label' => 'RTE Text 2',
+                        'config' => [
+                            'type' => 'text',
+                            'cols' => 40,
+                            'rows' => 5
+                        ],
+                        'defaultExtras' => 'richtext:rte_transform[mode=fooBar,type=RTE]'
+                    ],
+                    'select' => [
+                        'label' => 'Select test',
+                        'config' => [
+                            'items' => [
+                                ['Please select', 0],
+                                ['Option 1', 1],
+                                ['Option 2', 2]
+                            ]
+                        ],
+                        'maxitems' => 1,
+                        'renderType' => 'selectSingle'
+                    ]
+                ],
+                'types' => [
+                    '1' => [
+                        'showitem' => 'title'
+                    ],
+                    '2' => [
+                        'showitem' => '--div--;General,--palette--;RTE palette;456'
+                    ],
+                    '10' => [
+                        'showitem' => '--div--;General,--palette--;Palette;123,title'
+                    ],
+                    '14' => [
+                        'showitem' => '--div--;General,title'
+                    ]
+                ],
+                'palettes' => [
+                    '123' => [
+                        'showitem' => 'text,select;Select field'
+                    ],
+                    '456' => [
+                        'showitem' => 'text2'
+                    ]
+                ]
+            ],
+            'test' => [
+                'ctrl' => [
+                    'type' => 'fooBar'
+                ],
+                'types' => [
+                    '99' => [ 'showitem' => '']
+                ]
+            ]
+        ];
+
+        $return = BackendUtility::getTCAtypes($table, $rec, $useFieldNameAsKey);
+        $this->assertSame($expected, $return);
     }
 }

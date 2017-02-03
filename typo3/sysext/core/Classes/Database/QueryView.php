@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageRendererResolver;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -90,7 +91,7 @@ class QueryView
     {
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
         $this->languageService = $GLOBALS['LANG'];
-        $this->languageService->includeLLFile('EXT:lang/locallang_t3lib_fullsearch.xlf');
+        $this->languageService->includeLLFile('EXT:lang/Resources/Private/Language/locallang_t3lib_fullsearch.xlf');
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
     }
 
@@ -235,8 +236,10 @@ class QueryView
                 $queryGenerator->enablePrefix = 1;
                 $queryString = $queryGenerator->getQuery($queryGenerator->queryConfig);
 
-                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($queryGenerator->table);
-                $queryBuilder->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable($queryGenerator->table);
+                $queryBuilder->getRestrictions()->removeAll()
+                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
                 $rowCount = $queryBuilder->count('*')
                     ->from($queryGenerator->table)
                     ->where(QueryHelper::stripLogicalOperatorPrefix($queryString))
@@ -248,14 +251,13 @@ class QueryView
                     'qSelect' => $queryGenerator->getSelectQuery($queryString),
                     'qString' => $queryString
                 ];
-                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_action');
-                $queryBuilder->update('sys_action')
-                    ->where($queryBuilder->expr()->eq(
-                        'uid',
-                        $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
-                    ))
-                    ->set('t2_data', serialize($t2DataValue))
-                    ->execute();
+                GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('sys_action')
+                    ->update(
+                        'sys_action',
+                        ['t2_data' => serialize($t2DataValue)],
+                        ['uid' => (int)$uid],
+                        ['t2_data' => Connection::PARAM_LOB]
+                    );
             }
             return 1;
         }
@@ -365,7 +367,9 @@ class QueryView
                 }
             }
             if (!empty($flashMessage)) {
-                $msg = $flashMessage->getMessageAsMarkup();
+                $msg = GeneralUtility::makeInstance(FlashMessageRendererResolver::class)
+                    ->resolve()
+                    ->render([$flashMessage]);
             }
         }
         if ($saveStoreArray) {
@@ -499,7 +503,9 @@ class QueryView
                         '',
                         FlashMessage::INFO
                     );
-                    $out = $flashMessage->getMessageAsMarkup();
+                    GeneralUtility::makeInstance(FlashMessageRendererResolver::class)
+                        ->resolve()
+                        ->render([$flashMessage]);
                 }
                 $cPR['header'] = 'Result';
                 $cPR['content'] = $out;
@@ -677,8 +683,8 @@ class QueryView
         foreach ($row as $fieldName => $fieldValue) {
             if (GeneralUtility::inList($SET['queryFields'], $fieldName)
                 || !$SET['queryFields']
-                && $fieldName != 'pid'
-                && $fieldName != 'deleted'
+                && $fieldName !== 'pid'
+                && $fieldName !== 'deleted'
             ) {
                 if ($SET['search_result_labels']) {
                     $fVnew = $this->getProcessedValueExtra($table, $fieldName, $fieldValue, $conf, '<br />');
@@ -806,7 +812,7 @@ class QueryView
                         break;
                     case 'group':
                         $fields['type'] = 'files';
-                        if ($fields['internal_type'] == 'db') {
+                        if ($fields['internal_type'] === 'db') {
                             $fields['type'] = 'relation';
                         }
                         break;
@@ -846,7 +852,7 @@ class QueryView
                 break;
             case 'time':
                 if ($fieldValue != -1) {
-                    if ($splitString == '<br />') {
+                    if ($splitString === '<br />') {
                         $out = strftime('%H:%M' . $splitString . '%e-%m-%Y', $fieldValue);
                     } else {
                         $out = strftime('%H:%M %e-%m-%Y', $fieldValue);
@@ -927,10 +933,10 @@ class QueryView
     {
         $fieldSetup = $conf;
         $out = '';
-        if ($fieldSetup['type'] == 'files') {
+        if ($fieldSetup['type'] === 'files') {
             $d = dir(PATH_site . $fieldSetup['uploadfolder']);
             while (false !== ($entry = $d->read())) {
-                if ($entry == '.' || $entry == '..') {
+                if ($entry === '.' || $entry === '..') {
                     continue;
                 }
                 $fileArray[] = $entry;
@@ -947,9 +953,9 @@ class QueryView
                 }
             }
         }
-        if ($fieldSetup['type'] == 'multiple') {
+        if ($fieldSetup['type'] === 'multiple') {
             foreach ($fieldSetup['items'] as $key => $val) {
-                if (substr($val[0], 0, 4) == 'LLL:') {
+                if (substr($val[0], 0, 4) === 'LLL:') {
                     $value = $this->languageService->sL($val[0]);
                 } else {
                     $value = $val[0];
@@ -963,9 +969,9 @@ class QueryView
                 }
             }
         }
-        if ($fieldSetup['type'] == 'binary') {
+        if ($fieldSetup['type'] === 'binary') {
             foreach ($fieldSetup['items'] as $Key => $val) {
-                if (substr($val[0], 0, 4) == 'LLL:') {
+                if (substr($val[0], 0, 4) === 'LLL:') {
                     $value = $this->languageService->sL($val[0]);
                 } else {
                     $value = $val[0];
@@ -977,12 +983,12 @@ class QueryView
                 }
             }
         }
-        if ($fieldSetup['type'] == 'relation') {
+        if ($fieldSetup['type'] === 'relation') {
             $dontPrefixFirstTable = 0;
             $useTablePrefix = 0;
             if ($fieldSetup['items']) {
                 foreach ($fieldSetup['items'] as $key => $val) {
-                    if (substr($val[0], 0, 4) == 'LLL:') {
+                    if (substr($val[0], 0, 4) === 'LLL:') {
                         $value = $this->languageService->sL($val[0]);
                     } else {
                         $value = $val[0];
@@ -1044,7 +1050,7 @@ class QueryView
                     if ($GLOBALS['TCA'][$from_table]['columns'][$labelField]['config']['items']) {
                         $items = $GLOBALS['TCA'][$from_table]['columns'][$labelField]['config']['items'];
                         foreach ($items as $labelArray) {
-                            if (substr($labelArray[0], 0, 4) == 'LLL:') {
+                            if (substr($labelArray[0], 0, 4) === 'LLL:') {
                                 $labelFieldSelect[$labelArray[1]] = $this->languageService->sL($labelArray[0]);
                             } else {
                                 $labelFieldSelect[$labelArray[1]] = $labelArray[0];
@@ -1055,7 +1061,7 @@ class QueryView
                     if ($GLOBALS['TCA'][$from_table]['columns'][$altLabelField]['config']['items']) {
                         $items = $GLOBALS['TCA'][$from_table]['columns'][$altLabelField]['config']['items'];
                         foreach ($items as $altLabelArray) {
-                            if (substr($altLabelArray[0], 0, 4) == 'LLL:') {
+                            if (substr($altLabelArray[0], 0, 4) === 'LLL:') {
                                 $altLabelFieldSelect[$altLabelArray[1]] = $this->languageService->sL($altLabelArray[0]);
                             } else {
                                 $altLabelFieldSelect[$altLabelArray[1]] = $altLabelArray[0];
@@ -1122,7 +1128,7 @@ class QueryView
                                 ? 'on'
                                 : $GLOBALS['SOBE']->MOD_SETTINGS['labels_noprefix'];
                         $prefixString =
-                            $GLOBALS['SOBE']->MOD_SETTINGS['labels_noprefix'] == 'on'
+                            $GLOBALS['SOBE']->MOD_SETTINGS['labels_noprefix'] === 'on'
                                 ? ''
                                 : ' [' . $tablePrefix . $val['uid'] . '] ';
                         if (GeneralUtility::inList($fieldValue, $tablePrefix . $val['uid'])
@@ -1184,8 +1190,8 @@ class QueryView
         foreach ($row as $fieldName => $fieldValue) {
             if (GeneralUtility::inList($SET['queryFields'], $fieldName)
                 || !$SET['queryFields']
-                && $fieldName != 'pid'
-                && $fieldName != 'deleted'
+                && $fieldName !== 'pid'
+                && $fieldName !== 'deleted'
             ) {
                 if ($GLOBALS['SOBE']->MOD_SETTINGS['search_result_labels']) {
                     $title = htmlspecialchars($this->languageService->sL($conf['columns'][$fieldName]['label']
@@ -1218,7 +1224,7 @@ class QueryView
         $SET = $GLOBALS['SOBE']->MOD_SETTINGS;
         foreach ($row as $fieldName => $fieldValue) {
             if (GeneralUtility::inList($SET['queryFields'], $fieldName)
-                || !$SET['queryFields'] && $fieldName != 'pid') {
+                || !$SET['queryFields'] && $fieldName !== 'pid') {
                 if (!$out) {
                     if ($GLOBALS['SOBE']->MOD_SETTINGS['search_result_labels']) {
                         $out = htmlspecialchars($this->languageService->sL($conf['columns'][$fieldName]['label']

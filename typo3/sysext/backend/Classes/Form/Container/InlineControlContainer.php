@@ -123,9 +123,9 @@ class InlineControlContainer extends AbstractContainer
 
         // Transport the flexform DS identifier fields to the FormAjaxInlineController
         if (!empty($newStructureItem['flexform'])
-            && isset($this->data['processedTca']['columns'][$field]['config']['ds']['meta']['dataStructurePointers'])
+            && isset($this->data['processedTca']['columns'][$field]['config']['dataStructureIdentifier'])
         ) {
-            $config['flexDataStructurePointers'] = $this->data['processedTca']['columns'][$field]['config']['ds']['meta']['dataStructurePointers'];
+            $config['flexDataStructureIdentifier'] = $this->data['processedTca']['columns'][$field]['config']['dataStructureIdentifier'];
         }
 
         // e.g. data[<table>][<uid>][<field>]
@@ -134,10 +134,6 @@ class InlineControlContainer extends AbstractContainer
         $nameObject = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
 
         $config['inline']['first'] = false;
-        // @todo: This initialization shouldn't be required data provider should take care this is set?
-        if (!is_array($this->data['parameterArray']['fieldConf']['children'])) {
-            $this->data['parameterArray']['fieldConf']['children'] = [];
-        }
         $firstChild = reset($this->data['parameterArray']['fieldConf']['children']);
         if (isset($firstChild['databaseRow']['uid'])) {
             $config['inline']['first'] = $firstChild['databaseRow']['uid'];
@@ -217,8 +213,9 @@ class InlineControlContainer extends AbstractContainer
         $resultArray['inlineData'] = $this->inlineData;
 
         // @todo: It might be a good idea to have something like "isLocalizedRecord" or similar set by a data provider
+        $uidOfDefaultRecord = $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']];
         $isLocalizedParent = $language > 0
-            && $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']][0] > 0
+            && ($uidOfDefaultRecord[0] ?? $uidOfDefaultRecord) > 0
             && MathUtility::canBeInterpretedAsInteger($row['uid']);
         $numberOfFullLocalizedChildren = 0;
         $numberOfNotYetLocalizedChildren = 0;
@@ -288,8 +285,7 @@ class InlineControlContainer extends AbstractContainer
             $options['renderType'] = 'inlineRecordContainer';
             $childResult = $this->nodeFactory->create($options)->render();
             $html .= $childResult['html'];
-            $childArray['html'] = '';
-            $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childResult);
+            $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childResult, false);
             if (!$options['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
                 // Don't add record to list of "valid" uids if it is only the default
                 // language record of a not yet localized child
@@ -326,7 +322,7 @@ class InlineControlContainer extends AbstractContainer
 
         // Publish the uids of the child records in the given order to the browser
         $html .= '<input type="hidden" name="' . $nameForm . '" value="' . implode(',', $sortableRecordUids) . '" '
-            . $this->getValidationDataAsDataAttribute(['type' => 'inline', 'minitems' => $config['minitems'], 'maxitems' => $config['maxitems']])
+            . ' data-formengine-validation-rules="' . htmlspecialchars($this->getValidationDataAsJsonString(['type' => 'inline', 'minitems' => $config['minitems'], 'maxitems' => $config['maxitems']])) . '"'
             . ' class="inlineRecord" />';
         // Close the wrap for all inline fields (container)
         $html .= '</div>';
@@ -351,7 +347,7 @@ class InlineControlContainer extends AbstractContainer
         $attributes = [];
         switch ($type) {
             case 'newRecord':
-                $title = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew'));
+                $title = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.createnew'));
                 $icon = 'actions-document-new';
                 $className = 'typo3-newRecordLink';
                 $attributes['class'] = 'btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
@@ -361,7 +357,7 @@ class InlineControlContainer extends AbstractContainer
                 }
                 if (!empty($conf['appearance']['newRecordLinkAddTitle'])) {
                     $title = htmlspecialchars(sprintf(
-                        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew.link'),
+                        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.createnew.link'),
                         $languageService->sL($GLOBALS['TCA'][$conf['foreign_table']]['ctrl']['title'])
                     ));
                 } elseif (isset($conf['appearance']['newRecordLinkTitle']) && $conf['appearance']['newRecordLinkTitle'] !== '') {
@@ -369,14 +365,14 @@ class InlineControlContainer extends AbstractContainer
                 }
                 break;
             case 'localize':
-                $title = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localizeAllRecords'));
+                $title = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:localizeAllRecords'));
                 $icon = 'actions-document-localize';
                 $className = 'typo3-localizationLink';
                 $attributes['class'] = 'btn btn-default';
                 $attributes['onclick'] = 'return inline.synchronizeLocalizeRecords(' . GeneralUtility::quoteJSvalue($objectPrefix) . ', \'localize\')';
                 break;
             case 'synchronize':
-                $title = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_misc.xlf:synchronizeWithOriginalLanguage'));
+                $title = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:synchronizeWithOriginalLanguage'));
                 $icon = 'actions-document-synchronize';
                 $className = 'typo3-synchronizationLink';
                 $attributes['class'] = 'btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
@@ -436,7 +432,7 @@ class InlineControlContainer extends AbstractContainer
         if (!empty($inlineConfiguration['appearance']['createNewRelationLinkTitle'])) {
             $createNewRelationText = htmlspecialchars($languageService->sL($inlineConfiguration['appearance']['createNewRelationLinkTitle']));
         } else {
-            $createNewRelationText = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.createNewRelation'));
+            $createNewRelationText = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.createNewRelation'));
         }
         if (is_array($groupFieldConfiguration['appearance'])) {
             if (isset($groupFieldConfiguration['appearance']['elementBrowserType'])) {
@@ -499,7 +495,7 @@ class InlineControlContainer extends AbstractContainer
 					data-max-file-size="' . htmlspecialchars($maxFileSize) . '"
 					>';
                 $item .= $this->iconFactory->getIcon('actions-upload', Icon::SIZE_SMALL)->render() . ' ';
-                $item .= htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.select-and-submit'));
+                $item .= htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_upload.select-and-submit'));
                 $item .= '</a>';
 
                 $this->requireJsModules[] = ['TYPO3/CMS/Backend/DragUploader' => 'function(dragUploader){dragUploader.initialize()}'];
@@ -509,9 +505,9 @@ class InlineControlContainer extends AbstractContainer
                         $buttonStyle = ' style="' . $inlineConfiguration['inline']['inlineOnlineMediaAddButtonStyle'] . '"';
                     }
                     $this->requireJsModules[] = 'TYPO3/CMS/Backend/OnlineMedia';
-                    $buttonText = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.button'));
-                    $placeholder = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.placeholder'));
-                    $buttonSubmit = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:online_media.new_media.submit'));
+                    $buttonText = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:online_media.new_media.button'));
+                    $placeholder = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:online_media.new_media.placeholder'));
+                    $buttonSubmit = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:online_media.new_media.submit'));
                     $item .= '
 						<span class="btn btn-default t3js-online-media-add-btn ' . $this->inlineData['config'][$nameObject]['md5'] . '"
 							' . $buttonStyle . '
@@ -530,7 +526,7 @@ class InlineControlContainer extends AbstractContainer
 
         $item = '<div class="form-control-wrap">' . $item . '</div>';
         $allowedList = '';
-        $allowedLabel = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.allowedFileExtensions'));
+        $allowedLabel = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.allowedFileExtensions'));
         foreach ($allowedArray as $allowedItem) {
             $allowedList .= '<span class="label label-success">' . strtoupper($allowedItem) . '</span> ';
         }
@@ -578,7 +574,7 @@ class InlineControlContainer extends AbstractContainer
             if (!empty($config['appearance']['createNewRelationLinkTitle'])) {
                 $createNewRelationText = htmlspecialchars($this->getLanguageService()->sL($config['appearance']['createNewRelationLinkTitle']));
             } else {
-                $createNewRelationText = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.createNewRelation'));
+                $createNewRelationText = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.createNewRelation'));
             }
             $item .= '
             <span class="input-group-btn">

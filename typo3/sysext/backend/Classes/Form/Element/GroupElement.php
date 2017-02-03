@@ -14,21 +14,84 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Resource\ProcessedFile;
-use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
- * Generation of TCEform elements of the type "group"
+ * Generation of elements of the type "group"
  */
 class GroupElement extends AbstractFormElement
 {
+    /**
+     * Default field controls for this element.
+     *
+     * @var array
+     */
+    protected $defaultFieldControl = [
+        'elementBrowser' => [
+            'renderType' => 'elementBrowser',
+        ],
+        'insertClipboard' => [
+            'renderType' => 'insertClipboard',
+            'after' => [ 'elementBrowser' ],
+        ],
+        'editPopup' => [
+            'renderType' => 'editPopup',
+            'disabled' => true,
+            'after' => [ 'insertClipboard' ],
+        ],
+        'addRecord' => [
+            'renderType' => 'addRecord',
+            'disabled' => true,
+            'after' => [ 'editPopup' ],
+        ],
+        'listModule' => [
+            'renderType' => 'listModule',
+            'disabled' => true,
+            'after' => [ 'addRecord' ],
+        ],
+    ];
+
+    /**
+     * Default field wizards for this element
+     *
+     * @var array
+     */
+    protected $defaultFieldWizard = [
+        'tableList' => [
+            'renderType' => 'tableList',
+        ],
+        'fileTypeList' => [
+            'renderType' => 'fileTypeList',
+            'after' => [ 'tableList' ],
+        ],
+        'fileThumbnails' => [
+            'renderType' => 'fileThumbnails',
+            'after' => [ 'fileTypeList' ],
+        ],
+        'recordsOverview' => [
+            'renderType' => 'recordsOverview',
+            'after' => [ 'fileThumbnails' ],
+        ],
+        'fileUpload' => [
+            'renderType' => 'fileUpload',
+            'after' => [ 'recordsOverview' ],
+        ],
+        'otherLanguageContent' => [
+            'renderType' => 'otherLanguageContent',
+            'after' => [ 'fileUpload' ],
+        ],
+        'defaultLanguageDifferences' => [
+            'renderType' => 'defaultLanguageDifferences',
+            'after' => [ 'otherLanguageContent' ],
+        ],
+    ];
+
     /**
      * This will render a selector box into which elements from either
      * the file system or database can be inserted. Relations.
@@ -38,299 +101,301 @@ class GroupElement extends AbstractFormElement
      */
     public function render()
     {
+        $languageService = $this->getLanguageService();
+        $backendUser = $this->getBackendUserAuthentication();
+        $resultArray = $this->initializeResultArray();
+
         $table = $this->data['tableName'];
         $fieldName = $this->data['fieldName'];
         $row = $this->data['databaseRow'];
         $parameterArray = $this->data['parameterArray'];
         $config = $parameterArray['fieldConf']['config'];
-        $show_thumbs = $config['show_thumbs'];
-        $resultArray = $this->initializeResultArray();
+        $elementName = $parameterArray['itemFormElName'];
 
-        $size = isset($config['size']) ? (int)$config['size'] : $this->minimumInputWidth;
-        $maxitems = MathUtility::forceIntegerInRange($config['maxitems'], 0);
-        if (!$maxitems) {
-            $maxitems = 100000;
+        $selectedItems = $parameterArray['itemFormElValue'];
+        $selectedItemsCount = count($selectedItems);
+
+        $maxItems = $config['maxitems'];
+        $autoSizeMax = MathUtility::forceIntegerInRange($config['autoSizeMax'], 0);
+        $size = 5;
+        if (isset($config['size'])) {
+            $size = (int)$config['size'];
         }
-        $minitems = MathUtility::forceIntegerInRange($config['minitems'], 0);
-        $thumbnails = [];
-        $allowed = GeneralUtility::trimExplode(',', $config['allowed'], true);
-        $disallowed = GeneralUtility::trimExplode(',', $config['disallowed'], true);
-        $disabled = $config['readOnly'];
-        $info = [];
-        $parameterArray['itemFormElID_file'] = $parameterArray['itemFormElID'] . '_files';
-
-        // whether the list and delete controls should be disabled
-        $noList = isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'list');
-        $noDelete = isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'delete');
-
-        // "Extra" configuration; Returns configuration for the field based on settings found in the "types" fieldlist.
-        $specConf = BackendUtility::getSpecConfParts($parameterArray['fieldConf']['defaultExtras']);
-
-        // Register properties in required elements / validation
-        $attributes['data-formengine-validation-rules'] = htmlspecialchars(
-            $this->getValidationDataAsJsonString(
-                [
-                    'minitems' => $minitems,
-                    'maxitems' => $maxitems
-                ]
-            )
-        );
-
-        // If maxitems==1 then automatically replace the current item (in list and file selector)
-        if ($maxitems === 1) {
-            $resultArray['additionalJavaScriptPost'][] =
-                'TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[' . GeneralUtility::quoteJSvalue($parameterArray['itemFormElName']) . '] = {
-					itemFormElID_file: ' . GeneralUtility::quoteJSvalue($parameterArray['itemFormElID_file']) . '
-				}';
-            $parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = 'setFormValueManipulate(' . GeneralUtility::quoteJSvalue($parameterArray['itemFormElName'])
-                . ', \'Remove\'); ' . $parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'];
-        } elseif ($noList) {
-            // If the list controls have been removed and the maximum number is reached, remove the first entry to avoid "write once" field
-            $parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = 'setFormValueManipulate(' . GeneralUtility::quoteJSvalue($parameterArray['itemFormElName'])
-                . ', \'RemoveFirstIfFull\', ' . GeneralUtility::quoteJSvalue($maxitems) . '); ' . $parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'];
+        if ($autoSizeMax >= 1) {
+            $size = MathUtility::forceIntegerInRange($selectedItemsCount + 1, MathUtility::forceIntegerInRange($size, 1), $autoSizeMax);
         }
 
-        $html = '<input type="hidden" class="t3js-group-hidden-field" data-formengine-input-name="' . htmlspecialchars($parameterArray['itemFormElName']) . '" value="' . ($config['multiple'] ? 1 : 0) . '"' . $disabled . ' />';
+        $internalType = (string)$config['internal_type'];
+        $maxTitleLength = $backendUser->uc['titleLen'];
 
-        // Define parameters for all types below
-        $commonParameters = [
-            'size' => $size,
-            'dontShowMoveIcons' => isset($config['hideMoveIcons']) || $maxitems <= 1,
-            'autoSizeMax' => MathUtility::forceIntegerInRange($config['autoSizeMax'], 0),
-            'maxitems' => $maxitems,
-            'style' => isset($config['selectedListStyle'])
-                ? ' style="' . htmlspecialchars($config['selectedListStyle']) . '"'
-                : '',
-            'readOnly' => $disabled,
-            'noBrowser' => $noList || isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'browser'),
-            'noList' => $noList,
-            'hideAllowedTables' => GeneralUtility::inList($config['disable_controls'], 'allowedTables'),
-        ];
-
-        // Acting according to either "file" or "db" type:
-        switch ((string)$config['internal_type']) {
-            case 'file_reference':
-                $config['uploadfolder'] = '';
-                // Fall through
-            case 'file':
-                // Creating string showing allowed types:
-                if (empty($allowed)) {
-                    $allowed = ['*'];
+        $listOfSelectedValues = [];
+        $selectorOptionsHtml = [];
+        if ($internalType === 'file_reference' || $internalType === 'file') {
+            foreach ($selectedItems as $selectedItem) {
+                $uidOrPath = $selectedItem['uidOrPath'];
+                $listOfSelectedValues[] = $uidOrPath;
+                $title = $selectedItem['title'];
+                $shortenedTitle = GeneralUtility::fixed_lgd_cs($title, $maxTitleLength);
+                $selectorOptionsHtml[] =
+                    '<option value="' . htmlspecialchars($uidOrPath) . '" title="' . htmlspecialchars($title) . '">'
+                        . htmlspecialchars($shortenedTitle)
+                    . '</option>';
+            }
+        } elseif ($internalType === 'folder') {
+            foreach ($selectedItems as $selectedItem) {
+                $folder = $selectedItem['folder'];
+                $listOfSelectedValues[] = $folder;
+                $selectorOptionsHtml[] =
+                    '<option value="' . htmlspecialchars($folder) . '" title="' . htmlspecialchars($folder) . '">'
+                        . htmlspecialchars($folder)
+                    . '</option>';
+            }
+        } elseif ($internalType === 'db') {
+            foreach ($selectedItems as $selectedItem) {
+                $tableWithUid = $selectedItem['table'] . '_' . $selectedItem['uid'];
+                $listOfSelectedValues[] = $tableWithUid;
+                $title = $selectedItem['title'];
+                if (empty($title)) {
+                    $title = '[' . $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.no_title') . ']';
                 }
-                // Making the array of file items:
-                $itemArray = GeneralUtility::trimExplode(',', $parameterArray['itemFormElValue'], true);
-                $fileFactory = ResourceFactory::getInstance();
-                // Correct the filename for the FAL items
-                foreach ($itemArray as &$fileItem) {
-                    list($fileUid, $fileLabel) = explode('|', $fileItem);
-                    if (MathUtility::canBeInterpretedAsInteger($fileUid)) {
-                        $fileObject = $fileFactory->getFileObject($fileUid);
-                        $fileLabel = $fileObject->getName();
-                    }
-                    $fileItem = $fileUid . '|' . $fileLabel;
-                }
-                // Showing thumbnails:
-                if ($show_thumbs) {
-                    foreach ($itemArray as $imgRead) {
-                        $imgP = explode('|', $imgRead);
-                        $imgPath = rawurldecode($imgP[0]);
-                        // FAL icon production
-                        if (MathUtility::canBeInterpretedAsInteger($imgP[0])) {
-                            $fileObject = $fileFactory->getFileObject($imgP[0]);
-                            if ($fileObject->isMissing()) {
-                                $thumbnails[] = [
-                                    'message' => '<span class="label label-danger">'
-                                        . htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing'))
-                                        . '</span>&nbsp;' . htmlspecialchars($fileObject->getName()) . '<br />'
-                                ];
-                            } elseif (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileObject->getExtension())) {
-                                $thumbnails[] = [
-                                    'name' => htmlspecialchars($fileObject->getName()),
-                                    'image' => $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, [])->getPublicUrl(true)
-                                ];
-                            } else {
-                                $name = htmlspecialchars($fileObject->getName());
-                                // Icon
-                                $thumbnails[] = [
-                                    'name' => $name,
-                                    'image' => '<span title="' . $name . '">' . $this->iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>'
-                                ];
-                            }
-                        } else {
-                            $rowCopy = [];
-                            $rowCopy[$fieldName] = $imgPath;
-                            try {
-                                $thumbnails[] = [
-                                    'name' => $imgPath,
-                                    'image' => BackendUtility::thumbCode(
-                                        $rowCopy,
-                                        $table,
-                                        $fieldName,
-                                        '',
-                                        '',
-                                        $config['uploadfolder'],
-                                        0,
-                                        ' align="middle"'
-                                    )
-                                ];
-                            } catch (\Exception $exception) {
-                                /** @var $flashMessage FlashMessage */
-                                $message = $exception->getMessage();
-                                $flashMessage = GeneralUtility::makeInstance(
-                                    FlashMessage::class,
-                                    $message, '', FlashMessage::ERROR, true
-                                );
-                                /** @var $flashMessageService FlashMessageService */
-                                $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
-                                $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-                                $defaultFlashMessageQueue->enqueue($flashMessage);
-                                $logMessage = $message . ' (' . $table . ':' . $row['uid'] . ')';
-                                GeneralUtility::sysLog($logMessage, 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
-                            }
-                        }
-                    }
-                }
-                // Creating the element:
-                $params = array_merge($commonParameters, [
-                    'allowed' => $allowed,
-                    'disallowed' => $disallowed,
-                    'thumbnails' => $thumbnails,
-                    'noDelete' => $noDelete
-                ]);
-                $html .= $this->dbFileIcons(
-                    $parameterArray['itemFormElName'],
-                    'file',
-                    implode(',', $allowed),
-                    $itemArray,
-                    '',
-                    $params,
-                    null,
-                    '',
-                    '',
-                    '',
-                    $config
-                );
-                if (!$disabled && !(isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'upload'))) {
-                    // Adding the upload field:
-                    $isDirectFileUploadEnabled = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
-                    if ($isDirectFileUploadEnabled && $config['uploadfolder']) {
-                        // Insert the multiple attribute to enable HTML5 multiple file upload
-                        $multipleAttribute = '';
-                        $multipleFilenameSuffix = '';
-                        if (isset($config['maxitems']) && $config['maxitems'] > 1) {
-                            $multipleAttribute = ' multiple="multiple"';
-                            $multipleFilenameSuffix = '[]';
-                        }
-                        $html .= '
-							<div id="' . $parameterArray['itemFormElID_file'] . '">
-								<input type="file"' . $multipleAttribute . '
-									name="data_files' . $this->data['elementBaseName'] . $multipleFilenameSuffix . '"
-									size="35" onchange="' . implode('', $parameterArray['fieldChangeFunc']) . '"
-								/>
-							</div>';
-                    }
-                }
-                break;
-            case 'folder':
-                // If the element is of the internal type "folder":
-                // Array of folder items:
-                $itemArray = GeneralUtility::trimExplode(',', $parameterArray['itemFormElValue'], true);
-                // Creating the element:
-                $params = $commonParameters;
-                $html .= $this->dbFileIcons(
-                    $parameterArray['itemFormElName'],
-                    'folder',
-                    '',
-                    $itemArray,
-                    '',
-                    $params
-                );
-                break;
-            case 'db':
-                // If the element is of the internal type "db":
-                // Creating string showing allowed types:
-                $languageService = $this->getLanguageService();
-
-                $allowedTables = [];
-                if ($allowed[0] === '*') {
-                    $allowedTables = [
-                        'name' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.allTables'))
-                    ];
-                } elseif ($allowed) {
-                    foreach ($allowed as $allowedTable) {
-                        $allowedTables[] = [
-                            // @todo: access to globals!
-                            'name' => htmlspecialchars($languageService->sL($GLOBALS['TCA'][$allowedTable]['ctrl']['title'])),
-                            'icon' => $this->iconFactory->getIconForRecord($allowedTable, [], Icon::SIZE_SMALL)->render(),
-                            'onClick' => 'setFormValueOpenBrowser(\'db\', ' . GeneralUtility::quoteJSvalue($parameterArray['itemFormElName'] . '|||' . $allowedTable) . '); return false;'
-                        ];
-                    }
-                }
-                $perms_clause = $this->getBackendUserAuthentication()->getPagePermsClause(1);
-                $itemArray = [];
-
-                // Thumbnails:
-                // @todo: this is data processing - must be extracted
-                $temp_itemArray = GeneralUtility::trimExplode(',', $parameterArray['itemFormElValue'], true);
-                foreach ($temp_itemArray as $dbRead) {
-                    $recordParts = explode('|', $dbRead);
-                    list($this_table, $this_uid) = BackendUtility::splitTable_Uid($recordParts[0]);
-
-                    $itemArray[] = ['table' => $this_table, 'id' => $this_uid];
-                    if (!$disabled && $show_thumbs) {
-                        if (empty($this_table)) {
-                            throw new \RuntimeException(
-                                'Table name could not been determined for field "' . $fieldName . '" in table "' . $table . '". ' .
-                                'This should never happen since the table name should have been already prepared in the DataProvider TcaGroup. ' .
-                                'Maybe the prepared values have been set to an invalid value by a user defined data provider.',
-                                1468149217
-                            );
-                        }
-                        $rr = BackendUtility::getRecordWSOL($this_table, $this_uid);
-                        $thumbnails[] = [
-                            'name' => BackendUtility::getRecordTitle($this_table, $rr, true),
-                            'image' => $this->iconFactory->getIconForRecord($this_table, $rr, Icon::SIZE_SMALL)->render(),
-                            'path' => BackendUtility::getRecordPath($rr['pid'], $perms_clause, 15),
-                            'uid' => $rr['uid'],
-                            'table' => $this_table
-                        ];
-                    }
-                }
-                // Creating the element:
-                $params = array_merge($commonParameters, [
-                    'info' => $info,
-                    'allowedTables' => $allowedTables,
-                    'thumbnails' => $thumbnails,
-                ]);
-                $html .= $this->dbFileIcons(
-                    $parameterArray['itemFormElName'],
-                    'db',
-                    implode(',', $allowed),
-                    $itemArray,
-                    '',
-                    $params,
-                    null,
-                    $table,
-                    $fieldName,
-                    $row['uid'],
-                    $config
-                );
-                break;
-        }
-        // Wizards:
-        if (!$disabled) {
-            $html = $this->renderWizards(
-                [$html],
-                $config['wizards'],
-                $table,
-                $row,
-                $fieldName,
-                $parameterArray,
-                $parameterArray['itemFormElName'],
-                $specConf
+                $shortenedTitle = GeneralUtility::fixed_lgd_cs($title, $maxTitleLength);
+                $selectorOptionsHtml[] =
+                    '<option value="' . htmlspecialchars($tableWithUid) . '" title="' . htmlspecialchars($title) . '">'
+                        . htmlspecialchars($shortenedTitle)
+                    . '</option>';
+            }
+        } else {
+            throw new \RuntimeException(
+                'internal_type missing on type="group" field',
+                1485007097
             );
         }
-        $resultArray['html'] = $html;
+
+        if (isset($config['readOnly']) && $config['readOnly']) {
+            // Return early if element is read only
+            $html = [];
+            $html[] = '<div class="t3js-formengine-field-item">';
+            $html[] =   '<div class="form-wizards-wrap">';
+            $html[] =       '<div class="form-wizards-element">';
+            $html[] =           '<select';
+            $html[] =               ' size="' . $size . '"';
+            $html[] =               ' disabled="disabled"';
+            $html[] =               ' class="form-control tceforms-multiselect"';
+            $html[] =               ($maxItems !== 1 && $size !== 1) ? ' multiple="multiple"' : '';
+            $html[] =           '>';
+            $html[] =               implode(LF, $selectorOptionsHtml);
+            $html[] =           '</select>';
+            $html[] =       '</div>';
+            $html[] =       '<div class="form-wizards-items-aside">';
+            $html[] =       '</div>';
+            $html[] =   '</div>';
+            $html[] = '</div>';
+            $resultArray['html'] = implode(LF, $html);
+            return $resultArray;
+        }
+
+        // Need some information if in flex form scope for the suggest element
+        $dataStructureIdentifier = '';
+        $flexFormSheetName = '';
+        $flexFormFieldName = '';
+        $flexFormContainerName = '';
+        $flexFormContainerFieldName = '';
+        if ($this->data['processedTca']['columns'][$fieldName]['config']['type'] === 'flex') {
+            $flexFormConfig = $this->data['processedTca']['columns'][$fieldName];
+            $dataStructureIdentifier = $flexFormConfig['config']['dataStructureIdentifier'];
+            if (!isset($flexFormConfig['config']['dataStructureIdentifier'])) {
+                throw new \RuntimeException(
+                    'A data structure identifier must be set in [\'config\'] part of a flex form.'
+                    . ' This is usually added by TcaFlexPrepare data processor',
+                    1485206970
+                );
+            }
+            if (isset($data['flexFormSheetName'])) {
+                $flexFormSheetName = $data['flexFormSheetName'];
+            }
+            if (isset($data['flexFormFieldName'])) {
+                $flexFormFieldName = $data['flexFormFieldName'];
+            }
+            if (isset($data['flexFormContainerName'])) {
+                $flexFormContainerName = $data['flexFormContainerName'];
+            }
+            if (isset($data['flexFormContainerFieldName'])) {
+                $flexFormContainerFieldName = $data['flexFormContainerFieldName'];
+            }
+        }
+        // Get minimum characters for suggest from TCA and override by TsConfig
+        $suggestMinimumCharacters = 0;
+        if (isset($config['suggestOptions']['default']['minimumCharacters'])) {
+            $suggestMinimumCharacters = (int)$config['suggestOptions']['default']['minimumCharacters'];
+        }
+        if (isset($parameterArray['fieldTSConfig']['suggest.']['default.']['minimumCharacters'])) {
+            $suggestMinimumCharacters = (int)$parameterArray['fieldTSConfig']['suggest.']['default.']['minimumCharacters'];
+        }
+        $suggestMinimumCharacters = $suggestMinimumCharacters > 0 ? $suggestMinimumCharacters : 2;
+
+        $itemCanBeSelectedMoreThanOnce = !empty($config['multiple']);
+
+        $showMoveIcons = true;
+        if (isset($config['hideMoveIcons']) && $config['hideMoveIcons']) {
+            $showMoveIcons = false;
+        }
+        $showDeleteControl = true;
+        if (isset($config['hideDeleteIcon']) && $config['hideDeleteIcon']) {
+            $showDeleteControl = false;
+        }
+
+        if ($maxItems === 1) {
+            // If maxItems==1 then automatically replace the current item in list
+            $parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] =
+                'setFormValueManipulate(' . GeneralUtility::quoteJSvalue($elementName) . ', \'Remove\');'
+                . $parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'];
+        }
+
+        // Check against inline uniqueness - Create some onclick js for delete control and element browser
+        // to override record selection in some FAL scenarios - See 'appearance' docs of group element
+        $inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
+        $inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
+        $deleteControlOnClick = '';
+        if ($this->data['isInlineChild']
+            && $this->data['inlineParentUid']
+            && $this->data['inlineParentConfig']['foreign_table'] === $table
+            && $this->data['inlineParentConfig']['foreign_unique'] === $fieldName
+        ) {
+            $objectPrefix = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']) . '-' . $table;
+            $deleteControlOnClick = 'inline.revertUnique(' . GeneralUtility::quoteJSvalue($objectPrefix) . ',null,' . GeneralUtility::quoteJSvalue($row['uid']) . ');';
+        }
+
+        $selectorAttributes = [
+            'id' => StringUtility::getUniqueId('tceforms-multiselect-'),
+            'data-formengine-input-name' => htmlspecialchars($elementName),
+            'data-formengine-validation-rules' => $this->getValidationDataAsJsonString($config),
+            'size' => $size,
+        ];
+        $selectorClasses = [
+            'form-control',
+            'tceforms-multiselect',
+        ];
+        if ($maxItems === 1) {
+            $selectorClasses[] = 'form-select-no-siblings';
+        }
+        $selectorAttributes['class'] = implode(' ', $selectorClasses);
+        if ($maxItems !== 1 && $size !== 1) {
+            $selectorAttributes['multiple'] = 'multiple';
+        }
+
+        $legacyWizards = $this->renderWizards();
+        $legacyFieldControlHtml = implode(LF, $legacyWizards['fieldControl']);
+        $legacyFieldWizardHtml = implode(LF, $legacyWizards['fieldWizard']);
+
+        $fieldInformationResult = $this->renderFieldInformation();
+        $fieldInformationHtml = $fieldInformationResult['html'];
+        $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldInformationResult, false);
+
+        $fieldControlResult = $this->renderFieldControl();
+        $fieldControlHtml = $legacyFieldControlHtml . $fieldControlResult['html'];
+        $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldControlResult, false);
+
+        $fieldWizardResult = $this->renderFieldWizard();
+        $fieldWizardHtml = $legacyFieldWizardHtml . $fieldWizardResult['html'];
+        $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldWizardResult, false);
+
+        $html = [];
+        $html[] = '<div class="t3js-formengine-field-item">';
+        $html[] =   $fieldInformationHtml;
+        $html[] =   '<div class="form-wizards-wrap">';
+        if ($internalType === 'db' && (!isset($config['hideSuggest']) || (bool)$config['hideSuggest'] !== true)) {
+            $html[] =   '<div class="form-wizards-items-top">';
+            $html[] =       '<div class="autocomplete t3-form-suggest-container">';
+            $html[] =           '<div class="input-group">';
+            $html[] =               '<span class="input-group-addon">';
+            $html[] =                   $this->iconFactory->getIcon('actions-search', Icon::SIZE_SMALL)->render();
+            $html[] =               '</span>';
+            $html[] =               '<input type="search" class="t3-form-suggest form-control"';
+            $html[] =                   ' placeholder="' . $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.findRecord') . '"';
+            $html[] =                   ' data-fieldname="' . htmlspecialchars($fieldName) . '"';
+            $html[] =                   ' data-tablename="' . htmlspecialchars($table) . '"';
+            $html[] =                   ' data-field="' . htmlspecialchars($elementName) . '"';
+            $html[] =                   ' data-uid="' . htmlspecialchars($this->data['databaseRow']['uid']) . '"';
+            $html[] =                   ' data-pid="' . htmlspecialchars($this->data['effectivePid']) . '"';
+            $html[] =                   ' data-fieldtype="' . htmlspecialchars($config['type']) . '"';
+            $html[] =                   ' data-minchars="' . htmlspecialchars($suggestMinimumCharacters) . '"';
+            $html[] =                   ' data-datastructureidentifier="' . htmlspecialchars($dataStructureIdentifier) . '"';
+            $html[] =                   ' data-flexformsheetname="' . htmlspecialchars($flexFormSheetName) . '"';
+            $html[] =                   ' data-flexformfieldname="' . htmlspecialchars($flexFormFieldName) . '"';
+            $html[] =                   ' data-flexformcontainername="' . htmlspecialchars($flexFormContainerName) . '"';
+            $html[] =                   ' data-flexformcontainerfieldname="' . htmlspecialchars($flexFormContainerFieldName) . '"';
+            $html[] =               '/>';
+            $html[] =           '</div>';
+            $html[] =       '</div>';
+            $html[] =   '</div>';
+        }
+        $html[] =       '<div class="form-wizards-element">';
+        $html[] =           '<input type="hidden" class="t3js-group-hidden-field" data-formengine-input-name="' . htmlspecialchars($elementName) . '" value="' . $itemCanBeSelectedMoreThanOnce . '" />';
+        $html[] =           '<select ' . GeneralUtility::implodeAttributes($selectorAttributes, true) . '>';
+        $html[] =               implode(LF, $selectorOptionsHtml);
+        $html[] =           '</select>';
+        $html[] =       '</div>';
+        $html[] =       '<div class="form-wizards-items-aside">';
+        $html[] =           '<div class="btn-group-vertical">';
+        if ($maxItems > 1 && $size >=5 && $showMoveIcons) {
+            $html[] =           '<a href="#"';
+            $html[] =               ' class="btn btn-default t3js-btn-moveoption-top"';
+            $html[] =               ' data-fieldname="' . htmlspecialchars($elementName) . '"';
+            $html[] =               ' title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.move_to_top')) . '"';
+            $html[] =           '>';
+            $html[] =               $this->iconFactory->getIcon('actions-move-to-top', Icon::SIZE_SMALL)->render();
+            $html[] =           '</a>';
+        }
+        if ($maxItems > 1 && $size > 1 && $showMoveIcons) {
+            $html[] =           '<a href="#"';
+            $html[] =               ' class="btn btn-default t3js-btn-moveoption-up"';
+            $html[] =               ' data-fieldname="' . htmlspecialchars($elementName) . '"';
+            $html[] =               ' title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.move_up')) . '"';
+            $html[] =           '>';
+            $html[] =               $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL)->render();
+            $html[] =           '</a>';
+            $html[] =           '<a href="#"';
+            $html[] =               ' class="btn btn-default t3js-btn-moveoption-down"';
+            $html[] =               ' data-fieldname="' . htmlspecialchars($elementName) . '"';
+            $html[] =               ' title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.move_down')) . '"';
+            $html[] =           '>';
+            $html[] =               $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL)->render();
+            $html[] =           '</a>';
+        }
+        if ($maxItems > 1 && $size >= 5 && $showMoveIcons) {
+            $html[] =           '<a href="#"';
+            $html[] =               ' class="btn btn-default t3js-btn-moveoption-bottom"';
+            $html[] =               ' data-fieldname="' . htmlspecialchars($elementName) . '"';
+            $html[] =               ' title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.move_to_bottom')) . '"';
+            $html[] =           '>';
+            $html[] =               $this->iconFactory->getIcon('actions-move-to-bottom', Icon::SIZE_SMALL)->render();
+            $html[] =           '</a>';
+        }
+        if ($showDeleteControl) {
+            $html[] =           '<a href="#"';
+            $html[] =               ' class="btn btn-default t3js-btn-removeoption"';
+            $html[] =               ' data-fieldname="' . htmlspecialchars($elementName) . '"';
+            $html[] =               ' title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.remove_selected')) . '"';
+            $html[] =               ' onClick="' . $deleteControlOnClick . '"';
+            $html[] =           '>';
+            $html[] =               $this->iconFactory->getIcon('actions-selection-delete', Icon::SIZE_SMALL)->render();
+            $html[] =           '</a>';
+        }
+        $html[] =           '</div>';
+        $html[] =       '</div>';
+        $html[] =       '<div class="form-wizards-items-aside">';
+        $html[] =           '<div class="btn-group-vertical">';
+        $html[] =               $fieldControlHtml;
+        $html[] =           '</div>';
+        $html[] =       '</div>';
+        $html[] =       '<div class="form-wizards-items-bottom">';
+        $html[] =           $fieldWizardHtml;
+        $html[] =       '</div>';
+        $html[] =   '</div>';
+        $html[] =   '<input type="hidden" name="' . htmlspecialchars($elementName) . '" value="' . htmlspecialchars(implode(',', $listOfSelectedValues)) . '" />';
+        $html[] = '</div>';
+
+        $resultArray['html'] = implode(LF, $html);
         return $resultArray;
     }
 
@@ -340,5 +405,13 @@ class GroupElement extends AbstractFormElement
     protected function getBackendUserAuthentication()
     {
         return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * @return LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
     }
 }

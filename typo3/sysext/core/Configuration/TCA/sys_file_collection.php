@@ -1,7 +1,7 @@
 <?php
 return [
     'ctrl' => [
-        'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection',
+        'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection',
         'label' => 'title',
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
@@ -20,7 +20,6 @@ return [
             'static' => 'apps-clipboard-images',
             'folder' => 'apps-filetree-folder-media'
         ],
-        'requestUpdate' => 'storage',
         'enablecolumns' => [
             'disabled' => 'hidden',
             'starttime' => 'starttime',
@@ -33,7 +32,7 @@ return [
     ],
     'columns' => [
         't3ver_label' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.versionLabel',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.versionLabel',
             'config' => [
                 'type' => 'input',
                 'size' => 30,
@@ -42,24 +41,28 @@ return [
         ],
         'sys_language_uid' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.language',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.language',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'foreign_table' => 'sys_language',
                 'foreign_table_where' => 'ORDER BY sys_language.title',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.allLanguages', -1],
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.default_value', 0]
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.allLanguages', -1],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.default_value', 0]
                 ],
                 'default' => 0,
-                'showIconTable' => true,
+                'fieldWizard' => [
+                    'selectIcons' => [
+                        'disabled' => false,
+                    ],
+                ],
             ]
         ],
         'l10n_parent' => [
             'displayCond' => 'FIELD:sys_language_uid:>:0',
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.l18n_parent',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.l18n_parent',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -78,7 +81,7 @@ return [
         ],
         'hidden' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.hidden',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.hidden',
             'config' => [
                 'type' => 'check',
                 'default' => 0
@@ -86,22 +89,20 @@ return [
         ],
         'starttime' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.starttime',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.starttime',
             'config' => [
                 'type' => 'input',
-                'size' => 8,
-                'max' => 20,
+                'renderType' => 'inputDateTime',
                 'eval' => 'date',
                 'default' => 0,
             ]
         ],
         'endtime' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.endtime',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.endtime',
             'config' => [
                 'type' => 'input',
-                'size' => 8,
-                'max' => 20,
+                'renderType' => 'inputDateTime',
                 'eval' => 'date',
                 'default' => 0,
                 'range' => [
@@ -110,23 +111,23 @@ return [
             ]
         ],
         'type' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.type',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.type',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.type.0', 'static'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.type.1', 'folder'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.type.2', 'category']
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.type.0', 'static'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.type.1', 'folder'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.type.2', 'category']
                 ]
             ]
         ],
         'files' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.files',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.files',
             'config' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getFileFieldTCAConfig('files')
         ],
         'title' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.title',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.title',
             'config' => [
                 'type' => 'input',
                 'size' => 30,
@@ -134,7 +135,8 @@ return [
             ]
         ],
         'storage' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.storage',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.storage',
+            'onChange' => 'reload',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -149,7 +151,7 @@ return [
             ]
         ],
         'folder' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.folder',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.folder',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -159,14 +161,14 @@ return [
             ]
         ],
         'recursive' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.recursive',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.recursive',
             'config' => [
                 'type' => 'check',
                 'default' => 0
             ]
         ],
         'category' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_collection.category',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_collection.category',
             'config' => [
                 'minitems' => 0,
                 'maxitems' => 1,
@@ -186,20 +188,52 @@ return [
     ],
     'types' => [
         '0' => [
-            'showitem' => 'title, sys_language_uid, l10n_parent, l10n_diffsource, type, files,
-                --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access, starttime, endtime',
+            'showitem' => '
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                    type,title,files,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:language,
+                    --palette--;;language,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                    --palette--;;timeRestriction,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+            '
         ],
         'static' => [
-            'showitem' => 'title, sys_language_uid, l10n_parent, l10n_diffsource, type, files,
-                --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access, starttime, endtime',
+            'showitem' => '
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                    type,title,files,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:language,
+                    --palette--;;language,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                    --palette--;;timeRestriction,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+            '
         ],
         'folder' => [
-            'showitem' => 'sys_language_uid, l10n_parent, l10n_diffsource, title, type, storage, folder, recursive,
-                --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access, starttime, endtime',
+            'showitem' => '
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                    type,title,storage, folder, recursive,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:language,
+                    --palette--;;language,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                    --palette--;;timeRestriction,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+            '
         ],
         'category' => [
-            'showitem' => 'sys_language_uid, l10n_parent, l10n_diffsource, title, type, category,
-                --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access, starttime, endtime',
+            'showitem' => '
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                    type,title,category,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:language,
+                    --palette--;;language,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                    --palette--;;timeRestriction,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+            ',
         ],
+    ],
+    'palettes' => [
+        'timeRestriction' => ['showitem' => 'starttime, endtime'],
+        'language' => ['showitem' => 'sys_language_uid, l10n_parent'],
     ],
 ];

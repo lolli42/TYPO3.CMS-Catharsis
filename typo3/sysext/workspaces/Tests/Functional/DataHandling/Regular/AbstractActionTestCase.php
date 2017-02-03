@@ -28,7 +28,13 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     const VALUE_ContentIdSecond = 298;
     const VALUE_ContentIdThird = 299;
     const VALUE_ContentIdThirdLocalized = 300;
+
+    const VALUE_ContentIdTenth = 310;
+    const VALUE_ContentIdTenthLocalized = 311;
+    const VALUE_ContentIdTenthLocalized2 = 312;
+
     const VALUE_LanguageId = 1;
+    const VALUE_LanguageIdSecond = 2;
     const VALUE_WorkspaceId = 1;
 
     const TABLE_Page = 'pages';
@@ -65,7 +71,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
      */
 
     /**
-     * @see DataSet/Assertion/createContentRecords.csv
+     * @see DataSet/createContentRecords.csv
      */
     public function createContents()
     {
@@ -78,7 +84,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/createContentRecordAndDiscardCreatedContentRecord.csv
+     * @see DataSet/createContentRecordAndDiscardCreatedContentRecord.csv
      */
     public function createContentAndDiscardCreatedContent()
     {
@@ -89,7 +95,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/createAndCopyContentRecordAndDiscardCopiedContentRecord.csv
+     * @see DataSet/createAndCopyContentRecordAndDiscardCopiedContentRecord.csv
      */
     public function createAndCopyContentAndDiscardCopiedContent()
     {
@@ -102,7 +108,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/modifyContentRecord.csv
+     * @see DataSet/modifyContentRecord.csv
      */
     public function modifyContent()
     {
@@ -110,7 +116,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/deleteContentRecord.csv
+     * @see DataSet/deleteContentRecord.csv
      */
     public function deleteContent()
     {
@@ -127,7 +133,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/copyContentRecord.csv
+     * @see DataSet/copyContentRecord.csv
      */
     public function copyContent()
     {
@@ -136,7 +142,28 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/localizeContentRecord.csv
+     * @see DataSet/copyContentToLanguage.csv
+     */
+    public function copyContentToLanguage()
+    {
+        $copiedTableIds = $this->actionService->copyRecordToLanguage(self::TABLE_Content, self::VALUE_ContentIdSecond, self::VALUE_LanguageId);
+        $this->recordIds['localizedContentId'] = $copiedTableIds[self::TABLE_Content][self::VALUE_ContentIdSecond];
+    }
+
+    /**
+     * Free mode "translation" of a record in non default language
+     *
+     * @test
+     * @see DataSet/copyContentToLanguageFromNonDefaultLanguage.csv
+     */
+    public function copyContentToLanguageFromNonDefaultLanguage()
+    {
+        $copiedTableIds = $this->actionService->copyRecordToLanguage(self::TABLE_Content, self::VALUE_ContentIdThirdLocalized, self::VALUE_LanguageIdSecond);
+        $this->recordIds['localizedContentId'] = $copiedTableIds[self::TABLE_Content][self::VALUE_ContentIdThirdLocalized];
+    }
+
+    /**
+     * @see DataSet/localizeContentRecord.csv
      */
     public function localizeContent()
     {
@@ -145,7 +172,16 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/changeContentRecordSorting.csv
+     * @see DataSet/localizeContentRecord.csv
+     */
+    public function localizeContentFromNonDefaultLanguage()
+    {
+        $localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Content, self::VALUE_ContentIdThirdLocalized, self::VALUE_LanguageIdSecond);
+        $this->recordIds['localizedContentId'] = $localizedTableIds[self::TABLE_Content][self::VALUE_ContentIdThirdLocalized];
+    }
+
+    /**
+     * @see DataSet/changeContentRecordSorting.csv
      */
     public function changeContentSorting()
     {
@@ -175,7 +211,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/moveContentRecordToDifferentPage.csv
+     * @see DataSet/moveContentRecordToDifferentPage.csv
      */
     public function moveContentToDifferentPage()
     {
@@ -183,7 +219,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/moveContentRecordToDifferentPageAndChangeSorting.csv
+     * @see DataSet/moveContentRecordToDifferentPageAndChangeSorting.csv
      */
     public function moveContentToDifferentPageAndChangeSorting()
     {
@@ -196,7 +232,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
      */
 
     /**
-     * @see DataSet/Assertion/createPageRecord.csv
+     * @see DataSet/createPageRecord.csv
      */
     public function createPage()
     {
@@ -205,7 +241,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/modifyPageRecord.csv
+     * @see DataSet/modifyPageRecord.csv
      */
     public function modifyPage()
     {
@@ -213,7 +249,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/deletePageRecord.csv
+     * @see DataSet/deletePageRecord.csv
      */
     public function deletePage()
     {
@@ -221,7 +257,16 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/copyPageRecord.csv
+     * @see DataSet/deleteContentAndPage.csv
+     */
+    public function deleteContentAndPage()
+    {
+        $this->actionService->deleteRecord(self::TABLE_Content, self::VALUE_ContentIdSecond);
+        $this->actionService->deleteRecord(self::TABLE_Page, self::VALUE_PageId);
+    }
+
+    /**
+     * @see DataSet/copyPageRecord.csv
      */
     public function copyPage()
     {
@@ -232,7 +277,20 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/localizePageRecord.csv
+     * @test
+     * @see DataSet/copyPageFreeMode.csv
+     */
+    public function copyPageFreeMode()
+    {
+        $newTableIds = $this->actionService->copyRecord(self::TABLE_Page, self::VALUE_PageIdTarget, self::VALUE_PageIdTarget);
+        $this->recordIds['newPageId'] = $newTableIds[self::TABLE_Page][self::VALUE_PageIdTarget];
+        $this->recordIds['newContentIdTenth'] = $newTableIds[self::TABLE_Content][self::VALUE_ContentIdTenth];
+        $this->recordIds['newContentIdTenthLocalized'] = $newTableIds[self::TABLE_Content][self::VALUE_ContentIdTenthLocalized];
+        $this->recordIds['newContentIdTenthLocalized2'] = $newTableIds[self::TABLE_Content][self::VALUE_ContentIdTenthLocalized2];
+    }
+
+    /**
+     * @see DataSet/localizePageRecord.csv
      */
     public function localizePage()
     {
@@ -241,7 +299,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/changePageRecordSorting.csv
+     * @see DataSet/changePageRecordSorting.csv
      */
     public function changePageSorting()
     {
@@ -249,7 +307,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/movePageRecordToDifferentPage.csv
+     * @see DataSet/movePageRecordToDifferentPage.csv
      */
     public function movePageToDifferentPage()
     {
@@ -257,7 +315,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/movePageRecordToDifferentPageAndChangeSorting.csv
+     * @see DataSet/movePageRecordToDifferentPageAndChangeSorting.csv
      */
     public function movePageToDifferentPageAndChangeSorting()
     {
@@ -266,7 +324,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     }
 
     /**
-     * @see DataSet/Assertion/movePageRecordToDifferentPageAndCreatePageRecordAfterMovedPageRecord.csv
+     * @see DataSet/movePageRecordToDifferentPageAndCreatePageRecordAfterMovedPageRecord.csv
      * @see http://forge.typo3.org/issues/33104
      * @see http://forge.typo3.org/issues/55573
      */

@@ -25,7 +25,6 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Script Class for rendering the Table Wizard
@@ -110,7 +109,7 @@ class TableController extends AbstractWizardController
     public function __construct()
     {
         parent::__construct();
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_wizards.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_wizards.xlf');
         $GLOBALS['SOBE'] = $this;
 
         $this->init();
@@ -188,7 +187,7 @@ class TableController extends AbstractWizardController
             // Close
             $closeButton = $buttonBar->makeLinkButton()
                 ->setHref($this->P['returnUrl'])
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc'))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.closeDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
             $buttonBar->addButton($closeButton);
             // Save
@@ -197,13 +196,13 @@ class TableController extends AbstractWizardController
                 ->setValue('1')
                 ->setForm('TableController')
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL))
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc'));
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.saveDoc'));
             // Save & Close
             $saveAndCloseButton = $buttonBar->makeInputButton()
                 ->setName('_saveandclosedok')
                 ->setValue('1')
                 ->setForm('TableController')
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc'))
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.saveCloseDoc'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                     'actions-document-save-close',
                     Icon::SIZE_SMALL
@@ -503,7 +502,7 @@ class TableController extends AbstractWizardController
             $cmd = '';
         }
         if ($cmd && MathUtility::canBeInterpretedAsInteger($kk)) {
-            if (StringUtility::beginsWith($cmd, 'row_')) {
+            if (strpos($cmd, 'row_') === 0) {
                 switch ($cmd) {
                     case 'row_remove':
                         unset($this->TABLECFG['c'][$kk]);
@@ -540,7 +539,7 @@ class TableController extends AbstractWizardController
                 }
                 ksort($this->TABLECFG['c']);
             }
-            if (StringUtility::beginsWith($cmd, 'col_')) {
+            if (strpos($cmd, 'col_') === 0) {
                 foreach ($this->TABLECFG['c'] as $cAK => $value) {
                     switch ($cmd) {
                         case 'col_remove':

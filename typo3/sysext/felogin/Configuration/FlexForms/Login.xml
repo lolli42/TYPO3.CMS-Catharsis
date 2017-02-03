@@ -14,7 +14,7 @@
 								<type>check</type>
 								<items type="array">
 									<numIndex index="1" type="array">
-										<numIndex index="0">LLL:EXT:lang/locallang_core.xlf:labels.enabled</numIndex>
+										<numIndex index="0">LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.enabled</numIndex>
 										<numIndex index="1">1</numIndex>
 									</numIndex>
 								</items>
@@ -29,7 +29,7 @@
 								<type>check</type>
 								<items type="array">
 									<numIndex index="1" type="array">
-										<numIndex index="0">LLL:EXT:lang/locallang_core.xlf:labels.enabled</numIndex>
+										<numIndex index="0">LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.enabled</numIndex>
 										<numIndex index="1">1</numIndex>
 									</numIndex>
 								</items>
@@ -44,7 +44,7 @@
 								<type>check</type>
 								<items type="array">
 									<numIndex index="1" type="array">
-										<numIndex index="0">LLL:EXT:lang/locallang_core.xlf:labels.enabled</numIndex>
+										<numIndex index="0">LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.enabled</numIndex>
 										<numIndex index="1">1</numIndex>
 									</numIndex>
 								</items>
@@ -62,19 +62,13 @@
 								<size>3</size>
 								<maxitems>22</maxitems>
 								<minitems>0</minitems>
-								<show_thumbs>1</show_thumbs>
-								<wizards>
-									<suggest>
-										<type>suggest</type>
-									</suggest>
-								</wizards>
 							</config>
 						</TCEforms>
 					</pages>
 
 					<recursive>
 						<TCEforms>
-							<label>LLL:EXT:lang/locallang_general.xlf:LGL.recursive</label>
+							<label>LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.recursive</label>
 							<config>
 								<type>select</type>
 								<renderType>selectSingle</renderType>
@@ -174,7 +168,7 @@
 								<type>check</type>
 								<items type="array">
 									<numIndex index="1" type="array">
-										<numIndex index="0">LLL:EXT:lang/locallang_core.xlf:labels.enabled</numIndex>
+										<numIndex index="0">LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.enabled</numIndex>
 										<numIndex index="1">1</numIndex>
 									</numIndex>
 								</items>
@@ -191,12 +185,6 @@
 								<size>1</size>
 								<maxitems>1</maxitems>
 								<minitems>0</minitems>
-								<show_thumbs>1</show_thumbs>
-								<wizards>
-									<suggest>
-										<type>suggest</type>
-									</suggest>
-								</wizards>
 							</config>
 						</TCEforms>
 					</redirectPageLogin>
@@ -210,12 +198,6 @@
 								<size>1</size>
 								<maxitems>1</maxitems>
 								<minitems>0</minitems>
-								<show_thumbs>1</show_thumbs>
-								<wizards>
-									<suggest>
-										<type>suggest</type>
-									</suggest>
-								</wizards>
 							</config>
 						</TCEforms>
 					</redirectPageLoginError>
@@ -229,12 +211,6 @@
 								<size>1</size>
 								<maxitems>1</maxitems>
 								<minitems>0</minitems>
-								<show_thumbs>1</show_thumbs>
-								<wizards>
-									<suggest>
-										<type>suggest</type>
-									</suggest>
-								</wizards>
 							</config>
 						</TCEforms>
 					</redirectPageLogout>
@@ -245,7 +221,7 @@
 								<type>check</type>
 								<items type="array">
 									<numIndex index="1" type="array">
-										<numIndex index="0">LLL:EXT:lang/locallang_common.xlf:disable</numIndex>
+										<numIndex index="0">LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:disable</numIndex>
 										<numIndex index="1">1</numIndex>
 									</numIndex>
 								</items>

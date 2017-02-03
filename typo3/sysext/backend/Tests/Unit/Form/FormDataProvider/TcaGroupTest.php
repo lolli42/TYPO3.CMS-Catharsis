@@ -15,17 +15,17 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  */
 
 use Prophecy\Prophecy\ObjectProphecy;
+use TYPO3\CMS\Backend\Clipboard\Clipboard;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test case
  */
-class TcaGroupTest extends UnitTestCase
+class TcaGroupTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var TcaGroup
@@ -109,14 +109,32 @@ class TcaGroupTest extends UnitTestCase
                         'config' => [
                             'type' => 'group',
                             'internal_type' => 'file',
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
             ],
         ];
+
+        $clipboardProphecy = $this->prophesize(Clipboard::class);
+        GeneralUtility::addInstance(Clipboard::class, $clipboardProphecy->reveal());
+        $clipboardProphecy->initializeClipboard()->shouldBeCalled();
+        $clipboardProphecy->elFromTable('_FILE')->shouldBeCalled()->willReturn([]);
+
         $expected = $input;
-        $expected['databaseRow']['aField'] = '%2FaDir%2FaFile.txt|aFile.txt,%2FanotherDir%2FanotherFile.css|anotherFile.css';
-        $this->assertSame($expected, $this->subject->addData($input));
+        $expected['databaseRow']['aField'] = [
+            [
+                'uidOrPath' => '/aDir/aFile.txt',
+                'title' => '/aDir/aFile.txt',
+            ],
+            [
+                'uidOrPath' => '/anotherDir/anotherFile.css',
+                'title' => '/anotherDir/anotherFile.css',
+            ],
+        ];
+        $expected['processedTca']['columns']['aField']['config']['clipboardElements'] = [];
+        $expected['processedTca']['columns']['aField']['config']['allowed'] = '*';
+        $this->assertEquals($expected, $this->subject->addData($input));
     }
 
     /**
@@ -134,6 +152,7 @@ class TcaGroupTest extends UnitTestCase
                         'config' => [
                             'type' => 'group',
                             'internal_type' => 'folder',
+                            'maxitems' => 99999,
                         ],
                     ],
                 ],
@@ -142,7 +161,6 @@ class TcaGroupTest extends UnitTestCase
 
         /** @var Folder|ObjectProphecy $relationHandlerProphecy */
         $folderProphecy = $this->prophesize(Folder::class);
-        $folderProphecy->getIdentifier()->shouldBeCalled()->willReturn('anotherFolder');
 
         /** @var ResourceFactory|ObjectProphecy $relationHandlerProphecy */
         $resourceFactoryProphecy = $this->prophesize(ResourceFactory::class);
@@ -152,7 +170,12 @@ class TcaGroupTest extends UnitTestCase
             ->willReturn($folderProphecy->reveal());
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = '1%3A%2FaFolder%2FanotherFolder%2F|anotherFolder';
+        $expected['databaseRow']['aField'] = [
+            [
+                'folder' => '1:/aFolder/anotherFolder/',
+            ]
+        ];
+        $expected['processedTca']['columns']['aField']['config']['clipboardElements'] = [];
         $this->assertSame($expected, $this->subject->addData($input));
     }
 
@@ -166,6 +189,7 @@ class TcaGroupTest extends UnitTestCase
             'internal_type' => 'db',
             'MM' => 'mmTableName',
             'allowed' => 'aForeignTable',
+            'maxitems' => 99999,
         ];
         $input = [
             'tableName' => 'aTable',
@@ -182,15 +206,43 @@ class TcaGroupTest extends UnitTestCase
             ],
         ];
 
+        $clipboardProphecy = $this->prophesize(Clipboard::class);
+        GeneralUtility::addInstance(Clipboard::class, $clipboardProphecy->reveal());
+        $clipboardProphecy->initializeClipboard()->shouldBeCalled();
+        $clipboardProphecy->elFromTable('aForeignTable')->shouldBeCalled()->willReturn([]);
+
         /** @var RelationHandler|ObjectProphecy $relationHandlerProphecy */
         $relationHandlerProphecy = $this->prophesize(RelationHandler::class);
         GeneralUtility::addInstance(RelationHandler::class, $relationHandlerProphecy->reveal());
         $relationHandlerProphecy->start('1,2', 'aForeignTable', 'mmTableName', 42, 'aTable', $aFieldConfig)->shouldBeCalled();
         $relationHandlerProphecy->getFromDB()->shouldBeCalled();
-        $relationHandlerProphecy->readyForInterface()->shouldBeCalled()->willReturn('1|aLabel,2|anotherLabel');
+        $relationHandlerProphecy->getResolvedItemArray()->shouldBeCalled()->willReturn([
+            [
+                'table' => 'aForeignTable',
+                'uid' => 1,
+            ],
+            [
+                'table' => 'aForeignTable',
+                'uid' => 2,
+            ],
+        ]);
 
         $expected = $input;
-        $expected['databaseRow']['aField'] = '1|aLabel,2|anotherLabel';
+        $expected['databaseRow']['aField'] = [
+            [
+                'table' => 'aForeignTable',
+                'uid' => null,
+                'title' => '',
+                'row' => null,
+            ],
+            [
+                'table' => 'aForeignTable',
+                'uid' => null,
+                'title' => '',
+                'row' => null,
+            ]
+        ];
+        $expected['processedTca']['columns']['aField']['config']['clipboardElements'] = [];
 
         $this->assertSame($expected, $this->subject->addData($input));
     }

@@ -123,40 +123,40 @@ class MathUtility
         $number = 0;
         $Msign = '+';
         $err = '';
-        $buffer = doubleval(current($reg[2]));
+        $buffer = (float)current($reg[2]);
         // Advance pointer
         $regSliced = array_slice($reg[2], 1, null, true);
         foreach ($regSliced as $k => $v) {
-            $v = doubleval($v);
+            $v = (float)$v;
             $sign = $reg[1][$k];
-            if ($sign == '+' || $sign == '-') {
-                $Msign == '-' ? ($number -= $buffer) : ($number += $buffer);
+            if ($sign === '+' || $sign === '-') {
+                $Msign === '-' ? ($number -= $buffer) : ($number += $buffer);
                 $Msign = $sign;
                 $buffer = $v;
             } else {
-                if ($sign == '/') {
+                if ($sign === '/') {
                     if ($v) {
                         $buffer /= $v;
                     } else {
                         $err = 'dividing by zero';
                     }
                 }
-                if ($sign == '%') {
+                if ($sign === '%') {
                     if ($v) {
                         $buffer %= $v;
                     } else {
                         $err = 'dividing by zero';
                     }
                 }
-                if ($sign == '*') {
+                if ($sign === '*') {
                     $buffer *= $v;
                 }
-                if ($sign == '^') {
+                if ($sign === '^') {
                     $buffer = pow($buffer, $v);
                 }
             }
         }
-        $number = $Msign == '-' ? ($number -= $buffer) : ($number += $buffer);
+        $number = $Msign === '-' ? ($number -= $buffer) : ($number += $buffer);
         return $err ? 'ERROR: ' . $err : $number;
     }
 

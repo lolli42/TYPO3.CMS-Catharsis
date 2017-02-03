@@ -3,21 +3,13 @@
 #
 # Sets the proc options for all default configurations.
 #
-# Assumptions:	- CSS Styled Content is installed.
-#		- XHTML output is expected.
-#
 # ***************************************************************************************
 
 	## Default RTE processing rules
 RTE.default.proc {
 
 		## TRANSFORMATION METHOD
-		## We assume that CSS Styled Content is used.
 	overruleMode = ts_css
-
-		## DO NOT CONVERT BR TAGS INTO LINEBREAKS
-		## br tags in the content are assumed to be intentional.
-	dontConvBRtoParagraph = 1
 
 		## TAGS ALLOWED OUTSIDE P
 	allowTagsOutside = address, article, aside, blockquote, footer, header, hr, nav, section, div
@@ -39,9 +31,6 @@ RTE.default.proc {
 		## ALLOWED P ATTRIBUTES
 	keepPDIVattribs = class, align, id, title, dir, lang, xml:lang, itemscope, itemtype, itemprop
 
-		## REMAP BOLD AND ITALIC TO STRONG AND EMPHASIS AND VICE VERSA
-	transformBoldAndItalicTags = 1
-
 		## CONTENT TO DATABASE
 	entryHTMLparser_db = 1
 	entryHTMLparser_db {
@@ -53,9 +42,6 @@ RTE.default.proc {
 			## TAGS DENIED
 			## Make sure we can set rules on any tag listed in allowTags.
 		denyTags >
-
-			## AVOID CONTENT BEING HSC'ed TWICE
-		htmlSpecialChars = 0
 
 		tags {
 
@@ -109,30 +95,26 @@ RTE.default.proc {
 	HTMLparser_db {
 			## STRIP ALL ATTRIBUTES FROM THESE TAGS
 			## If this list of tags is not set, it will default to: b,i,u,br,center,hr,sub,sup,strong,em,li,ul,ol,blockquote,strike.
-			## However, we want to keep xml:lang attribute on most tags and tags from the default list where cleaned on entry.
+			## However, we want to keep xml:lang attribute on most tags and tags from the default list were cleaned on entry.
 		noAttrib = br
+
+			# Previously called "transformBoldAndItalicTags"
+			# When storing content in the DB, all <strong> and <em> tags are transferred to <b> and <i>
+		tags {
+			strong.remap = B
+			em.remap = I
+		}
 	}
 
-	exitHTMLparser_db = 1
-	exitHTMLparser_db {
-			## KEEP ALL TAGS
-			## Unwanted tags were removed on entry.
-			## Without this rule, the parser will remove all tags! Presumably, this rule will be more efficient than repeating the allowTags rule
-		keepNonMatchedTags = 1
-
-			## AVOID CONTENT BEING HSC'ed TWICE
-		htmlSpecialChars = 0
+	HTMLparser_rte {
+			# Previously called "transformBoldAndItalicTags"
+			# When fetching content from the DB, all <b> and <i> tags are transferred to <strong> and <em>
+		tags {
+			b.remap = strong
+			i.remap = em
+		}
 	}
 }
 
 	## Use same RTE processing rules in FE
 RTE.default.FE.proc < RTE.default.proc
-
-	## RTE processing rules for bodytext column of tt_content table
-	## Erase settings from other extensions
-RTE.config.tt_content.bodytext >
-
-	## Make sure we use ts_css transformation
-RTE.config.tt_content.bodytext.proc.overruleMode = ts_css
-RTE.config.tt_content.bodytext.types.text.proc.overruleMode = ts_css
-RTE.config.tt_content.bodytext.types.textpic.proc.overruleMode = ts_css

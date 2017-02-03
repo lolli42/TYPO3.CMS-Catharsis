@@ -169,7 +169,7 @@ class ClientUtility
     }
 
     /**
-     * Returns the version of a browser; Basically getting doubleval() of the input string,
+     * Returns the version of a browser; Basically getting float value of the input string,
      * stripping of any non-numeric values in the beginning of the string first.
      *
      * @param string $version A string with version number, eg. "/7.32 blablabla
@@ -177,7 +177,7 @@ class ClientUtility
      */
     public static function getVersion($version)
     {
-        return doubleval(preg_replace('/^[^0-9]*/', '', $version));
+        return (float)preg_replace('/^[^0-9]*/', '', $version);
     }
 
     /**
@@ -185,9 +185,11 @@ class ClientUtility
      *
      * @param string $userAgent The useragent string, \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('HTTP_USER_AGENT')
      * @return string Code for the specific device type
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function getDeviceType($userAgent)
     {
+        GeneralUtility::logDeprecatedFunction();
         // Hook: $TYPO3_CONF_VARS['SC_OPTIONS']['t3lib/div/class.t3lib_utility_client.php']['getDeviceType']:
         $getDeviceTypeHooks = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/div/class.t3lib_utility_client.php']['getDeviceType'];
         if (is_array($getDeviceTypeHooks)) {
@@ -215,7 +217,7 @@ class ClientUtility
         // wap
         $browser = substr($userAgent, 0, 4);
         $wapviwer = substr(stristr($userAgent, 'wap'), 0, 3);
-        if ($wapviwer == 'wap' || $browser == 'noki' || $browser == 'eric' || $browser == 'r380' || $browser == 'up.b' || $browser == 'winw' || $browser == 'wapa') {
+        if ($wapviwer === 'wap' || $browser === 'noki' || $browser === 'eric' || $browser == 'r380' || $browser === 'up.b' || $browser === 'winw' || $browser === 'wapa') {
             $deviceType = 'wap';
         }
         // grabber

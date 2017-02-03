@@ -243,7 +243,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
         if ($this->recordFound && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS']) {
             // View page
             $buttons['view'] = '
-				<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage')) . '">
+				<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.showPage')) . '">
 					' . $this->moduleTemplate->getIconFactory()->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '
 				</a>';
             // Shortcut
@@ -257,7 +257,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                     'id' => $this->pageinfo['uid'],
                     'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
                 ]
-            )) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList')) . '</a>';
+            )) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.showList')) . '</a>';
         }
         return $buttons;
     }
@@ -287,6 +287,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                 $diff_2_record = BackendUtility::getRecord($this->table, $diff_2);
                 if (is_array($diff_1_record) && is_array($diff_2_record)) {
                     $diffUtility = GeneralUtility::makeInstance(DiffUtility::class);
+                    $diffUtility->stripTags = false;
                     $rows = [];
                     $rows[] = '
 									<tr>
@@ -388,7 +389,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 					<td>' . $row['t3ver_count'] . '</td>
 					<td>' . $row['pid'] . '</td>
 					<td>
-						<a href="' . htmlspecialchars($editUrl) . '" title="' . htmlspecialchars($lang->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit')) . '">
+						<a href="' . htmlspecialchars($editUrl) . '" title="' . htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.edit')) . '">
 							' . $this->moduleTemplate->getIconFactory()->getIcon('actions-open', Icon::SIZE_SMALL)->render() . '
 						</a>' . htmlspecialchars($row['t3ver_label']) . '
 					</td>
@@ -493,7 +494,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 							<td>' . ($ownVer > 1 ? '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_txversionM1', ['table' => $table, 'uid' => $subrow['uid']])) . '">' . ($ownVer - 1) . '</a>' : '') . '</td>
 							<td class="col-control">' . $this->adminLinks($table, $subrow) . '</td>
 						</tr>';
-                    if ($table == 'pages' && $c < 100) {
+                    if ($table === 'pages' && $c < 100) {
                         $sub = $this->pageSubContent($subrow['uid'], $c + 1);
                         if ($sub) {
                             $content .= '
@@ -547,9 +548,9 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
             'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
         ]);
         $adminLink = '<div class="btn-group btn-group-sm" role="group">';
-        $adminLink .= '<a class="btn btn-default" href="' . htmlspecialchars($editUrl) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-open', Icon::SIZE_SMALL)->render() . '</a>';
+        $adminLink .= '<a class="btn btn-default" href="' . htmlspecialchars($editUrl) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.edit')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-open', Icon::SIZE_SMALL)->render() . '</a>';
         // Delete link:
-        $adminLink .= '<a class="btn btn-default" href="' . htmlspecialchars(BackendUtility::getLinkToDataHandlerAction('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1')) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
+        $adminLink .= '<a class="btn btn-default" href="' . htmlspecialchars(BackendUtility::getLinkToDataHandlerAction('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1')) . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete')) . '">' . $this->moduleTemplate->getIconFactory()->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
         $adminLink .= '</div>';
         if ($table === 'pages') {
             // If another page module was specified, replace the default Page module with the new one

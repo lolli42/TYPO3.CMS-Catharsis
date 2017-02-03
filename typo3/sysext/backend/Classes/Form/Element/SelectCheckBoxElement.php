@@ -23,10 +23,27 @@ use TYPO3\CMS\Core\Utility\StringUtility;
 /**
  * Creates a widget with check box elements.
  *
- * This is rendered for config type=select, renderType=selectCheckBox, maxitems > 1
+ * This is rendered for config type=select, renderType=selectCheckBox
  */
 class SelectCheckBoxElement extends AbstractFormElement
 {
+    /**
+     * Default field wizards enabled for this element.
+     *
+     * @var array
+     */
+    protected $defaultFieldWizard = [
+        'otherLanguageContent' => [
+            'renderType' => 'otherLanguageContent',
+        ],
+        'defaultLanguageDifferences' => [
+            'renderType' => 'defaultLanguageDifferences',
+            'after' => [
+                'otherLanguageContent',
+            ],
+        ],
+    ];
+
     /**
      * Render check boxes
      *
@@ -34,6 +51,8 @@ class SelectCheckBoxElement extends AbstractFormElement
      */
     public function render()
     {
+        $resultArray = $this->initializeResultArray();
+
         $html = [];
         // Field configuration from TCA:
         $parameterArray = $this->data['parameterArray'];
@@ -57,7 +76,7 @@ class SelectCheckBoxElement extends AbstractFormElement
                     // Non-selectable element:
                     if ($p[1] === '--div--') {
                         $selIcon = '';
-                        if (isset($p[2]) && $p[2] != 'empty-empty') {
+                        if (isset($p[2]) && $p[2] !== 'empty-empty') {
                             $selIcon = FormEngineUtility::getIconHtml($p[2]);
                         }
                         $currentGroup++;
@@ -110,6 +129,25 @@ class SelectCheckBoxElement extends AbstractFormElement
                     }
                 }
             }
+
+            $legacyWizards = $this->renderWizards();
+            $legacyFieldWizardHtml = implode(LF, $legacyWizards['fieldWizard']);
+
+            $fieldInformationResult = $this->renderFieldInformation();
+            $fieldInformationHtml = $fieldInformationResult['html'];
+            $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldInformationResult, false);
+
+            $fieldWizardResult = $this->renderFieldWizard();
+            $fieldWizardHtml = $legacyFieldWizardHtml . $fieldWizardResult['html'];
+            $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldWizardResult, false);
+
+            $html[] = '<div class="t3js-formengine-field-item">';
+            if (!$disabled) {
+                $html[] = $fieldInformationHtml;
+            }
+            $html[] =   '<div class="form-wizards-wrap">';
+            $html[] =       '<div class="form-wizards-element">';
+
             // Add an empty hidden field which will send a blank value if all items are unselected.
             $html[] = '<input type="hidden" class="select-checkbox" name="' . htmlspecialchars($parameterArray['itemFormElName']) . '" value="">';
 
@@ -156,20 +194,20 @@ class SelectCheckBoxElement extends AbstractFormElement
                     $resetGroupBtn = '';
                     if (!empty($resetGroup)) {
                         $resetGroup[] = 'TYPO3.FormEngine.updateCheckboxState(this);';
-                        $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.revertSelection'));
+                        $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.revertSelection'));
                         $resetGroupBtn = '<a href="#" '
                             . 'class="btn btn-default btn-sm" '
                             . 'onclick="' . implode('', $resetGroup) . ' return false;" '
                             . 'title="' . $title . '">'
                             . $this->iconFactory->getIcon('actions-edit-undo', Icon::SIZE_SMALL)->render() . ' '
-                            . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.revertSelection') . '</a>';
+                            . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.revertSelection') . '</a>';
                     }
 
                     if (is_array($group['header'])) {
                         $html[] = '<div id="' . $groupId . '" class="panel-collapse collapse" role="tabpanel">';
                     }
                     $checkboxId = uniqid($groupId);
-                    $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.toggleall'));
+                    $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.toggleall'));
                     $html[] =    '<div class="table-responsive">';
                     $html[] =        '<table class="table table-transparent table-hover">';
                     $html[] =            '<thead>';
@@ -190,25 +228,19 @@ class SelectCheckBoxElement extends AbstractFormElement
                 }
                 $html[] = '</div>';
             }
+
+            $html[] =       '</div>';
+            if (!$disabled) {
+                $html[] =   '<div class="form-wizards-items-bottom">';
+                $html[] =       $fieldWizardHtml;
+                $html[] =   '</div>';
+            }
+            $html[] =   '</div>';
+            $html[] = '</div>';
         }
 
-        if (!$disabled) {
-            $html = $this->renderWizards(
-                [implode(LF, $html)],
-                $config['wizards'],
-                $this->data['tableName'],
-                $this->data['databaseRow'],
-                $this->data['fieldName'],
-                $parameterArray,
-                $parameterArray['itemFormElName'],
-                BackendUtility::getSpecConfParts($parameterArray['fieldConf']['defaultExtras'])
-            );
-        }
-
-        $resultArray = $this->initializeResultArray();
-        $resultArray['html'] = $html;
+        $resultArray['html'] = implode(LF, $html);
         $resultArray['requireJsModules'][] = 'TYPO3/CMS/Backend/Tooltip';
-
         return $resultArray;
     }
 }

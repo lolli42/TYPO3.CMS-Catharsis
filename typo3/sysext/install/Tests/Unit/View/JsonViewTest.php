@@ -14,13 +14,12 @@ namespace TYPO3\CMS\Install\Tests\Unit\View;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Install\Status\Exception;
 
 /**
  * Tests for the custom json view class
  */
-class JsonViewTest extends UnitTestCase
+class JsonViewTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @test
@@ -48,12 +47,12 @@ class JsonViewTest extends UnitTestCase
     public function transformStatusToArrayCreatesArrayFromStatusMessage()
     {
         $status = $this->createMock(\TYPO3\CMS\Install\Status\StatusInterface::class);
-        $status->expects($this->once())->method('getSeverity')->will($this->returnValue('aSeverity'));
+        $status->expects($this->once())->method('getSeverity')->will($this->returnValue(-2));
         $status->expects($this->once())->method('getTitle')->will($this->returnValue('aTitle'));
         $status->expects($this->once())->method('getMessage')->will($this->returnValue('aMessage'));
         $jsonView = $this->getAccessibleMock(\TYPO3\CMS\Install\View\JsonView::class, ['dummy']);
         $return = $jsonView->_call('transformStatusToArray', $status);
-        $this->assertSame('aSeverity', $return['severity']);
+        $this->assertSame(-2, $return['severity']);
         $this->assertSame('aTitle', $return['title']);
         $this->assertSame('aMessage', $return['message']);
     }

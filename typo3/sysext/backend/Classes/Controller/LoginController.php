@@ -113,7 +113,7 @@ class LoginController
             GeneralUtility::makeInstance(PageRenderer::class)->setLanguage($preferredBrowserLanguage);
         }
 
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_login.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_login.xlf');
 
         // Setting the redirect URL to "index.php?M=main" if no alternative input is given
         $this->redirectToURL = $this->redirectUrl ?: BackendUtility::getModuleUrl('main');
@@ -218,6 +218,7 @@ class LoginController
                 'typo3' => $this->getUriForFileName('EXT:backend/Resources/Public/Images/typo3_orange.svg'),
             ],
             'copyright' => BackendUtility::TYPO3_copyRightNotice(),
+            'redirectUrl' => $this->redirectUrl,
             'loginNewsItems' => $this->getSystemNews(),
             'loginProviderIdentifier' => $this->loginProviderIdentifier,
             'loginProviders' => $this->loginProviders

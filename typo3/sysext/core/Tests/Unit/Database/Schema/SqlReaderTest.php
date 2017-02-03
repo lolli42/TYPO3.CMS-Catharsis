@@ -17,13 +17,12 @@ namespace TYPO3\CMS\Core\Tests\Unit\Database;
  */
 
 use TYPO3\CMS\Core\Database\Schema\SqlReader;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tests for SqlReader
  */
-class SqlReaderTest extends UnitTestCase
+class SqlReaderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var SqlReader

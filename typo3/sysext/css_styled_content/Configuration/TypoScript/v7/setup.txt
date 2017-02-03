@@ -84,6 +84,18 @@ lib.parseFunc {
 			typolink.target.override = {$styles.content.links.target}
 			parseFunc.constants =1
 		}
+		a = TEXT
+		a {
+			current = 1
+			typolink {
+				parameter.data = parameters:href
+				title.data = parameters:title
+				aTagParams.data = parameters:allParams
+				target.data = parameters:target
+				extTarget = {$styles.content.links.extTarget}
+				extTarget.override.data = parameters:target
+			}
+		}
 	}
 	allowTags = {$styles.content.links.allowTags}
 	denyTags = *
@@ -1214,9 +1226,6 @@ tt_content.uploads {
 
 		collections.field = file_collections
 
-		# get from path (backwards compatibility, contains strings like "fileadmin/user_uploads/")
-		folders.field = select_key
-
 		sorting.field = filelink_sorting
 
 		# render the files
@@ -1724,7 +1733,7 @@ tt_content.list {
 	20.key.field = list_type
 
 	20.stdWrap {
-		editIcons = tt_content: list_type, layout, select_key, pages [recursive]
+		editIcons = tt_content: list_type, layout, pages [recursive]
 		editIcons.iconTitle.data = LLL:EXT:css_styled_content/Resources/Private/Language/locallang.xlf:eIcon.plugin
 
 		prefixComment = 2 | Plugin inserted:

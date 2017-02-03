@@ -18,12 +18,11 @@ use TYPO3\CMS\Backend\Controller\Page\LocalizationController;
 use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Tests\FunctionalTestCase;
 
 /**
  * Test case for TYPO3\CMS\Backend\Controller\Page\LocalizationController
  */
-class LocalizationControllerTest extends FunctionalTestCase
+class LocalizationControllerTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
 {
     /**
      * @var LocalizationController
@@ -43,7 +42,7 @@ class LocalizationControllerTest extends FunctionalTestCase
         Bootstrap::getInstance()->initializeLanguageObject();
 
         $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/backend/Tests/Functional/Fixtures/pages.xml');
-        $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/sys_language.xml');
+        $this->importDataSet(ORIGINAL_ROOT . 'components/testing_framework/Resources/Core/Functional/Fixtures/sys_language.xml');
         $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/backend/Tests/Functional/Controller/Page/Fixtures/tt_content-default-language.xml');
 
         $this->subject = new LocalizationController();
@@ -126,19 +125,19 @@ class LocalizationControllerTest extends FunctionalTestCase
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 1,
-                'header' => 'Test indhold 1 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test indhold 1',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 2,
-                'header' => 'Test indhold 2 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test indhold 2',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 3,
-                'header' => 'Test indhold 3 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test indhold 3',
             ],
         ];
         $queryBuilder = (new ConnectionPool())->getQueryBuilderForTable('tt_content');
@@ -182,19 +181,19 @@ class LocalizationControllerTest extends FunctionalTestCase
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 0,
-                'header' => 'Test content 1 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test content 1',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 0,
-                'header' => 'Test content 2 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test content 2',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 0,
-                'header' => 'Test content 3 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test content 3',
             ],
         ];
         $queryBuilder = (new ConnectionPool())->getQueryBuilderForTable('tt_content');
@@ -240,19 +239,19 @@ class LocalizationControllerTest extends FunctionalTestCase
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 0,
-                'header' => 'Test indhold 1 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test indhold 1',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 0,
-                'header' => 'Test indhold 2 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test indhold 2',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 2,
                 'l18n_parent' => 0,
-                'header' => 'Test indhold 3 (copy 1)',
+                'header' => '[Translate to Deutsch:] Test indhold 3',
             ],
         ];
         $queryBuilder = (new ConnectionPool())->getQueryBuilderForTable('tt_content');
@@ -322,25 +321,25 @@ class LocalizationControllerTest extends FunctionalTestCase
                 'pid' => 1,
                 'sys_language_uid' => 1,
                 'l18n_parent' => 0,
-                'header' => 'Test content 1 (copy 1)',
+                'header' => '[Translate to Dansk:] Test content 1',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 1,
                 'l18n_parent' => 0,
-                'header' => 'Test content 2 (copy 1)',
+                'header' => '[Translate to Dansk:] Test content 2.5',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 1,
                 'l18n_parent' => 0,
-                'header' => 'Test content 2.5 (copy 1)',
+                'header' => '[Translate to Dansk:] Test content 2',
             ],
             [
                 'pid' => 1,
                 'sys_language_uid' => 1,
                 'l18n_parent' => 0,
-                'header' => 'Test content 3 (copy 1)',
+                'header' => '[Translate to Dansk:] Test content 3',
             ],
         ];
         $queryBuilder = (new ConnectionPool())->getQueryBuilderForTable('tt_content');

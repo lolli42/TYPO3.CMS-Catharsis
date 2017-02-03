@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * Plugin 'Website User Login' for the 'felogin' extension.
@@ -142,7 +142,10 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         $this->redirectUrl = $this->validateRedirectUrl($this->redirectUrl);
         // Get Template
         $templateFile = $this->conf['templateFile'] ?: 'EXT:felogin/Resources/Private/Templates/FrontendLogin.html';
-        $this->template = $this->cObj->fileResource($templateFile);
+        $template = $this->getTypoScriptFrontendController()->tmpl->getFileName($templateFile);
+        if ($template !== null && file_exists($template)) {
+            $this->template = file_get_contents($template);
+        }
         // Is user logged in?
         $this->userIsLoggedIn = $this->frontendController->loginUser;
         // Redirect
@@ -789,20 +792,20 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                             }
                             break;
                     }
-                } elseif ($this->logintype == '' && $redirMethod == 'login' && $this->conf['redirectPageLogin']) {
+                } elseif ($this->logintype == '' && $redirMethod === 'login' && $this->conf['redirectPageLogin']) {
                     // If login and page not accessible
                     $this->cObj->typoLink('', [
                         'parameter' => $this->conf['redirectPageLogin'],
                         'linkAccessRestrictedPages' => true
                     ]);
                     $redirect_url[] = $this->cObj->lastTypoLinkUrl;
-                } elseif ($this->logintype == '' && $redirMethod == 'logout' && $this->conf['redirectPageLogout'] && $this->frontendController->loginUser) {
+                } elseif ($this->logintype == '' && $redirMethod === 'logout' && $this->conf['redirectPageLogout'] && $this->frontendController->loginUser) {
                     // If logout and page not accessible
                     $redirect_url[] = $this->pi_getPageLink((int)$this->conf['redirectPageLogout']);
                 } elseif ($this->logintype === 'logout') {
                     // after logout
                     // Hook for general actions after after logout has been confirmed
-                    if ($this->logintype === 'logout' && $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['logout_confirmed']) {
+                    if ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['logout_confirmed']) {
                         $_params = [];
                         foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['logout_confirmed'] as $_funcRef) {
                             if ($_funcRef) {
@@ -1042,8 +1045,8 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
     {
         $urlWithoutSchema = preg_replace('#^https?://#', '', $url);
         $siteUrlWithoutSchema = preg_replace('#^https?://#', '', GeneralUtility::getIndpEnv('TYPO3_SITE_URL'));
-        return StringUtility::beginsWith($urlWithoutSchema . '/', GeneralUtility::getIndpEnv('HTTP_HOST') . '/')
-            && StringUtility::beginsWith($urlWithoutSchema, $siteUrlWithoutSchema);
+        return strpos($urlWithoutSchema . '/', GeneralUtility::getIndpEnv('HTTP_HOST') . '/') === 0
+            && strpos($urlWithoutSchema, $siteUrlWithoutSchema) === 0;
     }
 
     /**
@@ -1103,5 +1106,15 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
             }
         }
         return false;
+    }
+
+    /**
+     * Get TypoScriptFrontendController
+     *
+     * @return TypoScriptFrontendController
+     */
+    protected function getTypoScriptFrontendController()
+    {
+        return $GLOBALS['TSFE'];
     }
 }

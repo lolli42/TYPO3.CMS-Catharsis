@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Tests\Functional\Persistence;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class CountTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
+class CountTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
 {
     /**
      * @var int number of all records
@@ -60,7 +60,7 @@ class CountTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
     {
         parent::setUp();
 
-        $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/pages.xml');
+        $this->importDataSet(ORIGINAL_ROOT . 'components/testing_framework/Resources/Core/Functional/Fixtures/pages.xml');
         $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/extbase/Tests/Functional/Persistence/Fixtures/blogs.xml');
         $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/extbase/Tests/Functional/Persistence/Fixtures/posts.xml');
         $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/extbase/Tests/Functional/Persistence/Fixtures/post-post-mm.xml');
@@ -197,7 +197,11 @@ class CountTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
             )
         );
 
-        $this->assertSame(10, $query->count());
+        // QueryResult is lazy, so we have to run valid method to initialize
+        $result = $query->execute();
+        $result->valid();
+
+        $this->assertSame(10, $result->count());
     }
 
     /**
@@ -231,6 +235,6 @@ class CountTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
                 $query->equals('tagsSpecial.name', 'SpecialTagForAuthor1')
             )
         );
-        $this->assertSame(3, $query->count());
+        $this->assertSame(4, $query->count());
     }
 }

@@ -13,7 +13,8 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
  *
  * The TYPO3 project - inspiring people to share!
  */
-use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase;
+
+use TYPO3\Components\TestingFramework\Fluid\Unit\ViewHelpers\ViewHelperBaseTestcase;
 use TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder;
 
 /**
@@ -31,7 +32,7 @@ class SelectViewHelperTest extends ViewHelperBaseTestcase
         parent::setUp();
         $this->arguments['name'] = '';
         $this->arguments['sortByOptionLabel'] = false;
-        $this->viewHelper = $this->getAccessibleMock(\TYPO3\CMS\Fluid\ViewHelpers\Form\SelectViewHelper::class, ['setErrorClassAttribute', 'registerFieldNameForFormTokenGeneration']);
+        $this->viewHelper = $this->getAccessibleMock(\TYPO3\CMS\Fluid\ViewHelpers\Form\SelectViewHelper::class, ['setErrorClassAttribute', 'registerFieldNameForFormTokenGeneration', 'renderChildren']);
         $this->tagBuilder = $this->createMock(\TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder::class);
         $this->viewHelper->_set('tag', $this->tagBuilder);
     }
@@ -180,25 +181,6 @@ class SelectViewHelperTest extends ViewHelperBaseTestcase
             ],
         ]);
 
-        $this->injectDependenciesIntoViewHelper($this->viewHelper);
-        $this->viewHelper->_set('tag', $this->tagBuilder);
-        $this->viewHelper->initialize();
-        $this->viewHelper->render();
-    }
-
-    /**
-     * @test
-     */
-    public function anEmptyOptionTagIsRenderedIfOptionsArrayIsEmptyToAssureXhtmlCompatibility()
-    {
-        $this->tagBuilder->expects($this->once())->method('addAttribute')->with('name', 'myName');
-        $this->viewHelper->expects($this->once())->method('registerFieldNameForFormTokenGeneration')->with('myName');
-        $this->tagBuilder->expects($this->once())->method('setContent')->with('<option value=""></option>' . chr(10));
-        $this->tagBuilder->expects($this->once())->method('render');
-
-        $this->arguments['options'] = [];
-        $this->arguments['value'] = 'value2';
-        $this->arguments['name'] = 'myName';
         $this->injectDependenciesIntoViewHelper($this->viewHelper);
         $this->viewHelper->_set('tag', $this->tagBuilder);
         $this->viewHelper->initialize();

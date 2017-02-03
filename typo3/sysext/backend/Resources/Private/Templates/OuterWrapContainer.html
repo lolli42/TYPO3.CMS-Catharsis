@@ -2,11 +2,13 @@
 
 <f:if condition="{infoBoxMessage}">
 	<f:be.infobox title="{infoBoxMessageTitle}">
-		{infoBoxMessage}
+		{infoBoxMessage -> f:format.nl2br()}
 	</f:be.infobox>
 </f:if>
 
 <div class="typo3-TCEforms">
+	<f:format.raw>{fieldInformationHtml}</f:format.raw>
+	<f:format.raw>{fieldWizardHtml}</f:format.raw>
 	<f:format.raw>{childHtml}</f:format.raw>
 	<div class="help-block text-right">
 		<f:format.raw>{icon}</f:format.raw>

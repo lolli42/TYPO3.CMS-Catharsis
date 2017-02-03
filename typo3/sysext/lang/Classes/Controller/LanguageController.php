@@ -239,6 +239,23 @@ class LanguageController extends ActionController
     }
 
     /**
+     * Remove a language
+     *
+     * @param array $data The request data
+     * @return void
+     */
+    public function removeLanguageAction(array $data)
+    {
+        $response = ['success' => false];
+        if (!empty($data['locale'])) {
+            $response = $this->languageRepository->deactivateByLocale($data['locale']);
+            $absoluteLanguagePath = GeneralUtility::getFileAbsFileName(PATH_typo3conf . 'l10n/' . $data['locale']);
+            GeneralUtility::rmdir($absoluteLanguagePath, true);
+        }
+        $this->view->assign('response', $response);
+    }
+
+    /**
      * DocHeaderMenu
      */
     protected function prepareDocHeaderMenu()
@@ -258,6 +275,7 @@ class LanguageController extends ActionController
             'flashmessage.canceled',
             'flashmessage.languageActivated',
             'flashmessage.languageDeactivated',
+            'flashmessage.languageRemoved',
             'flashmessage.noLanguageActivated',
             'flashmessage.errorOccurred',
             'table.processing',
@@ -278,7 +296,7 @@ class LanguageController extends ActionController
         /** @var Menu $menu */
         $menu = GeneralUtility::makeInstance(Menu::class);
         $menu->setIdentifier('_languageMenu');
-        $menu->setLabel($this->getLanguageService()->sL('LLL:EXT:lang/locallang_general.xlf:LGL.language'));
+        $menu->setLabel($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.language'));
 
         /** @var MenuItem $languageListMenuItem */
         $languageListMenuItem = GeneralUtility::makeInstance(MenuItem::class);

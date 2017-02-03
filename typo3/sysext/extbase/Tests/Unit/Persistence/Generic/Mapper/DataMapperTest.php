@@ -14,7 +14,8 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic\Mapper;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Tests\AccessibleObjectInterface;
+use TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface;
+use TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface;
 use TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnexpectedTypeException;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
@@ -22,7 +23,7 @@ use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 /**
  * Test case
  */
-class DataMapperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class DataMapperTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @test
@@ -313,6 +314,11 @@ class DataMapperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function getPlainValueReturnsExpectedValuesDataProvider()
     {
+        $traversableDomainObject = $this->prophesize()
+            ->willImplement(\Iterator::class)
+            ->willImplement(DomainObjectInterface::class);
+        $traversableDomainObject->getUid()->willReturn(1);
+
         return [
             'datetime to timestamp' => ['1365866253', new \DateTime('@1365866253')],
             'boolean true to 1' => [1, true],
@@ -321,6 +327,7 @@ class DataMapperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             'plain value is returned unchanged' => ['RANDOM string', 'RANDOM string'],
             'array is flattened' => ['a,b,c', ['a', 'b', 'c']],
             'deep array is flattened' => ['a,b,c', [['a', 'b'], 'c']],
+            'traversable domain object to identifier' => [1, $traversableDomainObject->reveal()],
         ];
     }
 

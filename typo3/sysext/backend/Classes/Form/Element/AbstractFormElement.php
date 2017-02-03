@@ -14,24 +14,14 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Clipboard\Clipboard;
 use TYPO3\CMS\Backend\Form\AbstractNode;
-use TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface;
-use TYPO3\CMS\Backend\Form\FormDataCompiler;
-use TYPO3\CMS\Backend\Form\FormDataGroup\OnTheFly;
-use TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems;
-use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Backend\Form\Wizard\SuggestWizard;
-use TYPO3\CMS\Backend\Form\Wizard\ValueSliderWizard;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -61,14 +51,9 @@ abstract class AbstractFormElement extends AbstractNode
     protected $maxInputWidth = 50;
 
     /**
-     * @var \TYPO3\CMS\Backend\Clipboard\Clipboard|NULL
+     * @var IconFactory
      */
-    protected $clipboard = null;
-
-    /**
-     * @var NodeFactory
-     */
-    protected $nodeFactory;
+    protected $iconFactory;
 
     /**
      * Container objects give $nodeFactory down to other containers.
@@ -80,16 +65,231 @@ abstract class AbstractFormElement extends AbstractNode
     {
         parent::__construct($nodeFactory, $data);
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-        // @todo: this must vanish as soon as elements are clean
-        $this->nodeFactory = $nodeFactory;
     }
 
     /**
-     * @return bool TRUE if wizards are disabled on a global level
+     * Merge field information configuration with default and render them.
+     *
+     * @return array Result array
      */
-    protected function isWizardsDisabled()
+    protected function renderFieldInformation(): array
     {
-        return !empty($this->data['disabledWizards']);
+        $options = $this->data;
+        $fieldInformation = $this->defaultFieldInformation;
+        $fieldInformationFromTca = $options['parameterArray']['fieldConf']['config']['fieldInformation'] ?? [];
+        ArrayUtility::mergeRecursiveWithOverrule($fieldInformation, $fieldInformationFromTca);
+        $options['renderType'] = 'fieldInformation';
+        $options['renderData']['fieldInformation'] = $fieldInformation;
+        return $this->nodeFactory->create($options)->render();
+    }
+
+    /**
+     * Merge field control configuration with default controls and render them.
+     *
+     * @return array Result array
+     */
+    protected function renderFieldControl(): array
+    {
+        $options = $this->data;
+        $fieldControl = $this->defaultFieldControl;
+        $fieldControlFromTca = $options['parameterArray']['fieldConf']['config']['fieldControl'] ?? [];
+        ArrayUtility::mergeRecursiveWithOverrule($fieldControl, $fieldControlFromTca);
+        $options['renderType'] = 'fieldControl';
+        $options['renderData']['fieldControl'] = $fieldControl;
+        return $this->nodeFactory->create($options)->render();
+    }
+
+    /**
+     * Merge field wizard configuration with default wizards and render them.
+     *
+     * @return array Result array
+     */
+    protected function renderFieldWizard(): array
+    {
+        $options = $this->data;
+        $fieldWizard = $this->defaultFieldWizard;
+        $fieldWizardFromTca = $options['parameterArray']['fieldConf']['config']['fieldWizard'] ?? [];
+        ArrayUtility::mergeRecursiveWithOverrule($fieldWizard, $fieldWizardFromTca);
+        $options['renderType'] = 'fieldWizard';
+        $options['renderData']['fieldWizard'] = $fieldWizard;
+        return $this->nodeFactory->create($options)->render();
+    }
+
+    /**
+     * Returns true if the "null value" checkbox should be rendered. This is used in some
+     * "text" based types like "text" and "input" for some renderType's.
+     *
+     * A field has eval=null set, but has no useOverridePlaceholder defined.
+     * Goal is to have a field that can distinct between NULL and empty string in the database.
+     * A checkbox and an additional hidden field will be created, both with the same name
+     * and prefixed with "control[active]". If the checkbox is set (value 1), the value from the casual
+     * input field will be written to the database. If the checkbox is not set, the hidden field
+     * transfers value=0 to DataHandler, the value of the input field will then be reset to NULL by the
+     * DataHandler at an early point in processing, so NULL will be written to DB as field value.
+     *
+     * All that only works if the field is not within flex form scope since flex forms
+     * can not store a "null" value or distinct it from "empty string".
+     *
+     * @return bool
+     */
+    protected function hasNullCheckboxButNoPlaceholder(): bool
+    {
+        $hasNullCheckboxNoPlaceholder = false;
+        $parameterArray = $this->data['parameterArray'];
+        $mode = $parameterArray['fieldConf']['config']['mode'] ?? '';
+        if (empty($this->data['flexFormDataStructureIdentifier'])
+            && !empty($parameterArray['fieldConf']['config']['eval'])
+            && GeneralUtility::inList($parameterArray['fieldConf']['config']['eval'], 'null')
+            && ($mode !== 'useOrOverridePlaceholder')
+        ) {
+            $hasNullCheckboxNoPlaceholder = true;
+        }
+        return $hasNullCheckboxNoPlaceholder;
+    }
+
+    /**
+     * Returns true if the "null value" checkbox should be rendered and the placeholder
+     * handling is enabled. This is used in some "text" based types like "text" and
+     * "input" for some renderType's.
+     *
+     * A field has useOverridePlaceholder set and null in eval and is not within a flex form.
+     * Here, a value from a deeper DB structure can be "fetched up" as value, and can also be overridden by a
+     * local value. This is used in FAL, where eg. the "title" field can have the default value from sys_file_metadata,
+     * the title field of sys_file_reference is then set to NULL. Or the "override" checkbox is set, and a string
+     * or an empty string is then written to the field of sys_file_reference.
+     * The situation is similar to hasNullCheckboxButNoPlaceholder(), but additionally a "default" value should be shown.
+     * To achieve this, again a hidden control[hidden] field is added together with a checkbox with the same name
+     * to transfer the information whether the default value should be used or not: Checkbox checked transfers 1 as
+     * value in control[active], meaning the overridden value should be used.
+     * Additionally to the casual input field, a second field is added containing the "placeholder" value. This
+     * field has no name attribute and is not transferred at all. Those two are then hidden / shown depending
+     * on the state of the above checkbox in via JS.
+     *
+     * @return bool
+     */
+    protected function hasNullCheckboxWithPlaceholder(): bool
+    {
+        $hasNullCheckboxWithPlaceholder = false;
+        $parameterArray = $this->data['parameterArray'];
+        $mode = $parameterArray['fieldConf']['config']['mode'] ?? '';
+        if (empty($this->data['flexFormDataStructureIdentifier'])
+            && !empty($parameterArray['fieldConf']['config']['eval'])
+            && GeneralUtility::inList($parameterArray['fieldConf']['config']['eval'], 'null')
+            && ($mode === 'useOrOverridePlaceholder')
+        ) {
+            $hasNullCheckboxWithPlaceholder = true;
+        }
+        return $hasNullCheckboxWithPlaceholder;
+    }
+
+    /**
+     * Format field content if 'format' is set to date, filesize, ..., user
+     *
+     * @param string $format Configuration for the display.
+     * @param string $itemValue The value to display
+     * @param array $formatOptions Format options
+     * @return string Formatted field value
+     */
+    protected function formatValue($format, $itemValue, $formatOptions = [])
+    {
+        switch ($format) {
+            case 'date':
+                if ($itemValue) {
+                    $option = isset($formatOptions['option']) ? trim($formatOptions['option']) : '';
+                    if ($option) {
+                        if (isset($formatOptions['strftime']) && $formatOptions['strftime']) {
+                            $value = strftime($option, $itemValue);
+                        } else {
+                            $value = date($option, $itemValue);
+                        }
+                    } else {
+                        $value = date('d-m-Y', $itemValue);
+                    }
+                } else {
+                    $value = '';
+                }
+                if (isset($formatOptions['appendAge']) && $formatOptions['appendAge']) {
+                    $age = BackendUtility::calcAge(
+                        $GLOBALS['EXEC_TIME'] - $itemValue,
+                        $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears')
+                    );
+                    $value .= ' (' . $age . ')';
+                }
+                $itemValue = $value;
+                break;
+            case 'datetime':
+                // compatibility with "eval" (type "input")
+                if ($itemValue !== '' && !is_null($itemValue)) {
+                    $itemValue = date('H:i d-m-Y', (int)$itemValue);
+                }
+                break;
+            case 'time':
+                // compatibility with "eval" (type "input")
+                if ($itemValue !== '' && !is_null($itemValue)) {
+                    $itemValue = date('H:i', (int)$itemValue);
+                }
+                break;
+            case 'timesec':
+                // compatibility with "eval" (type "input")
+                if ($itemValue !== '' && !is_null($itemValue)) {
+                    $itemValue = date('H:i:s', (int)$itemValue);
+                }
+                break;
+            case 'year':
+                // compatibility with "eval" (type "input")
+                if ($itemValue !== '' && !is_null($itemValue)) {
+                    $itemValue = date('Y', (int)$itemValue);
+                }
+                break;
+            case 'int':
+                $baseArr = ['dec' => 'd', 'hex' => 'x', 'HEX' => 'X', 'oct' => 'o', 'bin' => 'b'];
+                $base = isset($formatOptions['base']) ? trim($formatOptions['base']) : '';
+                $format = isset($baseArr[$base]) ? $baseArr[$base] : 'd';
+                $itemValue = sprintf('%' . $format, $itemValue);
+                break;
+            case 'float':
+                // default precision
+                $precision = 2;
+                if (isset($formatOptions['precision'])) {
+                    $precision = MathUtility::forceIntegerInRange($formatOptions['precision'], 1, 10, $precision);
+                }
+                $itemValue = sprintf('%.' . $precision . 'f', $itemValue);
+                break;
+            case 'number':
+                $format = isset($formatOptions['option']) ? trim($formatOptions['option']) : '';
+                $itemValue = sprintf('%' . $format, $itemValue);
+                break;
+            case 'md5':
+                $itemValue = md5($itemValue);
+                break;
+            case 'filesize':
+                // We need to cast to int here, otherwise empty values result in empty output,
+                // but we expect zero.
+                $value = GeneralUtility::formatSize((int)$itemValue);
+                if (!empty($formatOptions['appendByteSize'])) {
+                    $value .= ' (' . $itemValue . ')';
+                }
+                $itemValue = $value;
+                break;
+            case 'user':
+                $func = trim($formatOptions['userFunc']);
+                if ($func) {
+                    $params = [
+                        'value' => $itemValue,
+                        'args' => $formatOptions['userFunc'],
+                        'config' => [
+                            'type' => 'none',
+                            'format' => $format,
+                            'format.' => $formatOptions,
+                        ],
+                    ];
+                    $itemValue = GeneralUtility::callUserFunction($func, $params, $this);
+                }
+                break;
+            default:
+                // Do nothing e.g. when $format === ''
+        }
+        return $itemValue;
     }
 
     /**
@@ -108,39 +308,101 @@ abstract class AbstractFormElement extends AbstractNode
     }
 
     /**
-     * @var IconFactory
+     * @return bool TRUE if wizards are disabled on a global level
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - remove together with renderWizards(), log is thrown in renderWizards()
      */
-    protected $iconFactory;
+    protected function isWizardsDisabled()
+    {
+        return !empty($this->data['disabledWizards']);
+    }
 
     /**
      * Rendering wizards for form fields.
      *
-     * @param array $itemKinds Array with the real item in the first value
+     * Deprecated, old "wizard" API. This method will be removed in v9, but is kept for
+     * backwards compatibility. Extensions that give the item HTML in $itemKinds, trigger
+     * the legacy mode of this method which wraps calculated wizards around the given item HTML.
+     *
+     * This method is deprecated and will vanish in v9. Migrate old wizards to the "fieldWizard",
+     * "fieldInformation" and "fieldControl" API instead.
+     *
+     * @param null|array $itemKinds Array with the real item in the first value. Array in legacy mode, else null
      * @param array $wizConf The "wizards" key from the config array for the field (from TCA)
      * @param string $table Table name
      * @param array $row The record array
-     * @param string $field The field name
+     * @param string $fieldName The field name
      * @param array $PA Additional configuration array.
      * @param string $itemName The field name
      * @param array $specConf Special configuration if available.
      * @param bool $RTE Whether the RTE could have been loaded.
-     *
-     * @return string The new item value.
+     * @return string|array String in legacy mode, an array with the buttons and the controls in non-legacy mode
      * @throws \InvalidArgumentException
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
-    protected function renderWizards($itemKinds, $wizConf, $table, $row, $field, $PA, $itemName, $specConf, $RTE = false)
-    {
+    protected function renderWizards(
+        $itemKinds = null,
+        $wizConf = null,
+        $table = null,
+        $row = null,
+        $fieldName = null,
+        $PA = null,
+        $itemName = null,
+        $specConf = null,
+        $RTE = null
+    ) {
+        if ($itemKinds !== null) {
+            // Deprecation log if the old $itemsKinds array comes in containing the item HTML - all core elements
+            // deliver null here. If not null, the legacy mode of the method is enabled that wraps the calculated
+            // wizards around given item HTML.
+            GeneralUtility::logDeprecatedFunction();
+        }
+        $item = '';
+        if (is_array($itemKinds)) {
+            $item = $itemKinds[0];
+        }
+
+        if ($wizConf === null) {
+            $wizConf = $this->data['parameterArray']['fieldConf']['config']['wizards'] ?? null;
+        }
+        if ($table === null) {
+            $table = $this->data['tableName'];
+        }
+        if ($row === null) {
+            $row = $this->data['databaseRow'];
+        }
+        if ($fieldName === null) {
+            $fieldName = $this->data['fieldName'];
+        }
+        if ($PA === null) {
+            $PA = $this->data['parameterArray'];
+        }
+        if ($itemName === null) {
+            $itemName = $PA['itemFormElName'];
+        }
+        if ($RTE === null) {
+            $RTE = false;
+            if ((bool)$this->data['parameterArray']['fieldConf']['config']['enableRichtext'] === true) {
+                $RTE = true;
+            }
+        }
+
         // Return not changed main item directly if wizards are disabled
         if (!is_array($wizConf) || $this->isWizardsDisabled()) {
-            return $itemKinds[0];
+            if ($itemKinds === null) {
+                return [
+                    'fieldControl' => [],
+                    'fieldWizard' => [],
+                ];
+            } else {
+                return $item;
+            }
         }
 
         $languageService = $this->getLanguageService();
 
         $fieldChangeFunc = $PA['fieldChangeFunc'];
-        $item = $itemKinds[0];
         $md5ID = 'ID' . GeneralUtility::shortMD5($itemName);
-        $prefixOfFormElName = 'data[' . $table . '][' . $row['uid'] . '][' . $field . ']';
+        $prefixOfFormElName = 'data[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']';
         $flexFormPath = '';
         if (GeneralUtility::isFirstPartOfStr($PA['itemFormElName'], $prefixOfFormElName)) {
             $flexFormPath = str_replace('][', '/', substr($PA['itemFormElName'], strlen($prefixOfFormElName) + 1, -1));
@@ -150,9 +412,6 @@ abstract class AbstractFormElement extends AbstractNode
         if ($PA['fieldConf']['config']['type'] === 'select' && (int)$PA['fieldConf']['config']['maxitems'] > 1 && $PA['fieldConf']['config']['renderType'] === 'selectSingleBox') {
             $itemName .= '[]';
         }
-
-        // Contains wizard identifiers enabled for this record type, see "special configuration" docs
-        $wizardsEnabledByType = $specConf['wizards']['parameters'];
 
         $buttonWizards = [];
         $otherWizards = [];
@@ -173,13 +432,6 @@ abstract class AbstractFormElement extends AbstractNode
             // Wizards can be shown based on selected "type" of record. If this is the case, the wizard configuration
             // is set to enableByTypeConfig = 1, and the wizardIdentifier is found in $wizardsEnabledByType
             $wizardIsEnabled = true;
-            if (
-                isset($wizardConfiguration['enableByTypeConfig'])
-                && (bool)$wizardConfiguration['enableByTypeConfig']
-                && (!is_array($wizardsEnabledByType) || !in_array($wizardIdentifier, $wizardsEnabledByType))
-            ) {
-                $wizardIsEnabled = false;
-            }
             // Disable if wizard is for RTE fields only and the handled field is no RTE field or RTE can not be loaded
             if (isset($wizardConfiguration['RTEonly']) && (bool)$wizardConfiguration['RTEonly'] && !$RTE) {
                 $wizardIsEnabled = false;
@@ -207,13 +459,14 @@ abstract class AbstractFormElement extends AbstractNode
 
             switch ($wizardConfiguration['type']) {
                 case 'userFunc':
+                    GeneralUtility::logDeprecatedFunction();
                     $params = [];
                     $params['params'] = $wizardConfiguration['params'];
                     $params['exampleImg'] = $wizardConfiguration['exampleImg'];
                     $params['table'] = $table;
                     $params['uid'] = $row['uid'];
                     $params['pid'] = $row['pid'];
-                    $params['field'] = $field;
+                    $params['field'] = $fieldName;
                     $params['flexFormPath'] = $flexFormPath;
                     $params['md5ID'] = $md5ID;
                     $params['returnUrl'] = $this->data['returnUrl'];
@@ -224,7 +477,7 @@ abstract class AbstractFormElement extends AbstractNode
                     $params['fieldChangeFunc'] = $fieldChangeFunc;
                     $params['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($fieldChangeFunc));
 
-                    $params['item'] = &$item;
+                    $params['item'] = $item;
                     $params['icon'] = $icon;
                     $params['iTitle'] = $iTitle;
                     $params['wConf'] = $wizardConfiguration;
@@ -233,13 +486,14 @@ abstract class AbstractFormElement extends AbstractNode
                     break;
 
                 case 'script':
+                    GeneralUtility::logDeprecatedFunction();
                     $params = [];
                     $params['params'] = $wizardConfiguration['params'];
                     $params['exampleImg'] = $wizardConfiguration['exampleImg'];
                     $params['table'] = $table;
                     $params['uid'] = $row['uid'];
                     $params['pid'] = $row['pid'];
-                    $params['field'] = $field;
+                    $params['field'] = $fieldName;
                     $params['flexFormPath'] = $flexFormPath;
                     $params['md5ID'] = $md5ID;
                     $params['returnUrl'] = $this->data['returnUrl'];
@@ -249,7 +503,7 @@ abstract class AbstractFormElement extends AbstractNode
                     if (isset($wizardConfiguration['module']['urlParameters']) && is_array($wizardConfiguration['module']['urlParameters'])) {
                         $urlParameters = $wizardConfiguration['module']['urlParameters'];
                     }
-                    $wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters, '');
+                    $wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters);
                     $url = $wScript . (strstr($wScript, '?') ? '' : '?') . GeneralUtility::implodeArrayForUrl('', ['P' => $params]);
                     $buttonWizards[] =
                         '<a class="btn btn-default" href="' . htmlspecialchars($url) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">'
@@ -258,13 +512,14 @@ abstract class AbstractFormElement extends AbstractNode
                     break;
 
                 case 'popup':
+                    GeneralUtility::logDeprecatedFunction();
                     $params = [];
                     $params['params'] = $wizardConfiguration['params'];
                     $params['exampleImg'] = $wizardConfiguration['exampleImg'];
                     $params['table'] = $table;
                     $params['uid'] = $row['uid'];
                     $params['pid'] = $row['pid'];
-                    $params['field'] = $field;
+                    $params['field'] = $fieldName;
                     $params['flexFormPath'] = $flexFormPath;
                     $params['md5ID'] = $md5ID;
                     $params['returnUrl'] = $this->data['returnUrl'];
@@ -280,12 +535,12 @@ abstract class AbstractFormElement extends AbstractNode
                     if (isset($wizardConfiguration['module']['urlParameters']) && is_array($wizardConfiguration['module']['urlParameters'])) {
                         $urlParameters = $wizardConfiguration['module']['urlParameters'];
                     }
-                    $wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters, '');
+                    $wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters);
                     $url = $wScript . (strstr($wScript, '?') ? '' : '?') . GeneralUtility::implodeArrayForUrl('', ['P' => $params]);
 
                     $onlyIfSelectedJS = '';
                     if (isset($wizardConfiguration['popup_onlyOpenIfSelected']) && $wizardConfiguration['popup_onlyOpenIfSelected']) {
-                        $notSelectedText = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.noSelItemForEdit');
+                        $notSelectedText = $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.noSelItemForEdit');
                         $onlyIfSelectedJS =
                             'if (!TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName) . ')){' .
                                 'alert(' . GeneralUtility::quoteJSvalue($notSelectedText) . ');' .
@@ -310,88 +565,16 @@ abstract class AbstractFormElement extends AbstractNode
                             $icon .
                         '</a>';
                     break;
-
-                case 'slider':
-                    $params = [];
-                    $params['fieldConfig'] = $PA['fieldConf']['config'];
-                    $params['field'] = $field;
-                    $params['table'] = $table;
-                    $params['flexFormPath'] = $flexFormPath;
-                    $params['md5ID'] = $md5ID;
-                    $params['itemName'] = $itemName;
-                    $params['wConf'] = $wizardConfiguration;
-                    $params['row'] = $row;
-
-                    /** @var ValueSliderWizard $wizard */
-                    $wizard = GeneralUtility::makeInstance(ValueSliderWizard::class);
-                    $otherWizards[] = $wizard->renderWizard($params);
-                    break;
-
-                case 'select':
-                    // The select wizard is a select drop down added to the main element. It provides all the functionality
-                    // that select items can do for us, so we process this element via data processing.
-                    // @todo: This should be embedded in an own provider called in the main data group to not handle this on the fly here
-
-                    // Select wizard page TS can be set in TCEFORM."table"."field".wizards."wizardName"
-                    $pageTsConfig = [];
-                    if (isset($this->data['pageTsConfig']['TCEFORM.'][$table . '.'][$field . '.']['wizards.'][$wizardIdentifier . '.'])
-                        && is_array($this->data['pageTsConfig']['TCEFORM.'][$table . '.'][$field . '.']['wizards.'][$wizardIdentifier . '.'])
-                    ) {
-                        $pageTsConfig['TCEFORM.']['dummySelectWizard.'][$wizardIdentifier . '.'] = $this->data['pageTsConfig']['TCEFORM.'][$table . '.'][$field . '.']['wizards.'][$wizardIdentifier . '.'];
-                    }
-                    $selectWizardDataInput = [
-                        'tableName' => 'dummySelectWizard',
-                        'command' => 'edit',
-                        'pageTsConfig' => $pageTsConfig,
-                        'processedTca' => [
-                            'ctrl' => [],
-                            'columns' => [
-                                $wizardIdentifier => [
-                                    'type' => 'select',
-                                    'renderType' => 'selectSingle',
-                                    'config' => $wizardConfiguration,
-                                ],
-                            ],
-                        ],
-                    ];
-                    /** @var OnTheFly $formDataGroup */
-                    $formDataGroup = GeneralUtility::makeInstance(OnTheFly::class);
-                    $formDataGroup->setProviderList([ TcaSelectItems::class ]);
-                    /** @var FormDataCompiler $formDataCompiler */
-                    $formDataCompiler = GeneralUtility::makeInstance(FormDataCompiler::class, $formDataGroup);
-                    $compilerResult = $formDataCompiler->compile($selectWizardDataInput);
-                    $selectWizardItems = $compilerResult['processedTca']['columns'][$wizardIdentifier]['config']['items'];
-
-                    $options = [];
-                    $options[] = '<option>' . $iTitle . '</option>';
-                    foreach ($selectWizardItems as $selectWizardItem) {
-                        $options[] = '<option value="' . htmlspecialchars($selectWizardItem[1]) . '">' . htmlspecialchars($selectWizardItem[0]) . '</option>';
-                    }
-                    if ($wizardConfiguration['mode'] == 'append') {
-                        $assignValue = 'document.querySelectorAll(' . GeneralUtility::quoteJSvalue('[data-formengine-input-name="' . $itemName . '"]') . ')[0].value=\'\'+this.options[this.selectedIndex].value+document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value';
-                    } elseif ($wizardConfiguration['mode'] == 'prepend') {
-                        $assignValue = 'document.querySelectorAll(' . GeneralUtility::quoteJSvalue('[data-formengine-input-name="' . $itemName . '"]') . ')[0].value+=\'\'+this.options[this.selectedIndex].value';
-                    } else {
-                        $assignValue = 'document.querySelectorAll(' . GeneralUtility::quoteJSvalue('[data-formengine-input-name="' . $itemName . '"]') . ')[0].value=this.options[this.selectedIndex].value';
-                    }
-                    $otherWizards[] =
-                        '<select' .
-                            ' id="' . StringUtility::getUniqueId('tceforms-select-') . '"' .
-                            ' class="form-control tceforms-select tceforms-wizardselect"' .
-                            ' onchange="' . htmlspecialchars($assignValue . ';this.blur();this.selectedIndex=0;' . implode('', $fieldChangeFunc)) . '"' .
-                        '>' .
-                            implode('', $options) .
-                        '</select>';
-                    break;
-                case 'suggest':
-                    if (!empty($PA['fieldTSConfig']['suggest.']['default.']['hide'])) {
-                        break;
-                    }
-                    /** @var SuggestWizard $suggestWizard */
-                    $suggestWizard = GeneralUtility::makeInstance(SuggestWizard::class);
-                    $otherWizards[] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
-                    break;
             }
+        }
+
+        if ($itemKinds === null) {
+            // Return an array with the two wizard types directly if the legacy mode
+            // is not enabled.
+            return [
+                'fieldControl' => $buttonWizards,
+                'fieldWizard' => $otherWizards,
+            ];
         }
 
         // For each rendered wizard, put them together around the item.
@@ -403,419 +586,22 @@ abstract class AbstractFormElement extends AbstractNode
             $innerContent .= implode(' ', $otherWizards);
 
             // Position
-            $classes = ['form-wizards-wrap'];
             if ($wizConf['_POSITION'] === 'left') {
-                $classes[] = 'form-wizards-aside';
-                $innerContent = '<div class="form-wizards-items">' . $innerContent . '</div><div class="form-wizards-element">' . $item . '</div>';
+                $innerContent = '<div class="form-wizards-items-aside">' . $innerContent . '</div><div class="form-wizards-element">' . $item . '</div>';
             } elseif ($wizConf['_POSITION'] === 'top') {
-                $classes[] = 'form-wizards-top';
-                $innerContent = '<div class="form-wizards-items">' . $innerContent . '</div><div class="form-wizards-element">' . $item . '</div>';
+                $innerContent = '<div class="form-wizards-items-top">' . $innerContent . '</div><div class="form-wizards-element">' . $item . '</div>';
             } elseif ($wizConf['_POSITION'] === 'bottom') {
-                $classes[] = 'form-wizards-bottom';
-                $innerContent = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $innerContent . '</div>';
+                $innerContent = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items-bottom">' . $innerContent . '</div>';
             } else {
-                $classes[] = 'form-wizards-aside';
-                $innerContent = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $innerContent . '</div>';
+                $innerContent = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items-aside">' . $innerContent . '</div>';
             }
             $item = '
-				<div class="' . implode(' ', $classes) . '">
+				<div class="form-wizards-wrap">
 					' . $innerContent . '
 				</div>';
         }
 
         return $item;
-    }
-
-    /**
-     * Prints the selector box form-field for the db/file/select elements (multiple)
-     *
-     * @param string $fName Form element name
-     * @param string $mode Mode "db", "file" (internal_type for the "group" type) OR blank (then for the "select" type)
-     * @param string $allowed Commalist of "allowed
-     * @param array $itemArray The array of items. For "select" and "group"/"file" this is just a set of value. For "db" its an array of arrays with table/uid pairs.
-     * @param string $selector Alternative selector box.
-     * @param array $params An array of additional parameters, eg: "size", "info", "headers" (array with "selector" and "items"), "noBrowser", "thumbnails
-     * @param null $_ unused (onFocus in the past), will be removed in TYPO3 CMS 9
-     * @param string $table (optional) Table name processing for
-     * @param string $field (optional) Field of table name processing for
-     * @param string $uid (optional) uid of table record processing for
-     * @param array $config (optional) The TCA field config
-     * @return string The form fields for the selection.
-     * @throws \UnexpectedValueException
-     * @todo: Hack this mess into pieces and inline to group / select element depending on what they need
-     */
-    protected function dbFileIcons($fName, $mode, $allowed, $itemArray, $selector = '', $params = [], $_ = null, $table = '', $field = '', $uid = '', $config = [])
-    {
-        $languageService = $this->getLanguageService();
-        $disabled = '';
-        if ($params['readOnly']) {
-            $disabled = ' disabled="disabled"';
-        }
-        // INIT
-        $uidList = [];
-        $opt = [];
-        $itemArrayC = 0;
-        // Creating <option> elements:
-        if (is_array($itemArray)) {
-            $itemArrayC = count($itemArray);
-            switch ($mode) {
-                case 'db':
-                    foreach ($itemArray as $pp) {
-                        $pRec = BackendUtility::getRecordWSOL($pp['table'], $pp['id']);
-                        if (is_array($pRec)) {
-                            $pTitle = BackendUtility::getRecordTitle($pp['table'], $pRec, false, true);
-                            $pUid = $pp['table'] . '_' . $pp['id'];
-                            $uidList[] = $pUid;
-                            $title = htmlspecialchars($pTitle);
-                            $opt[] = '<option value="' . htmlspecialchars($pUid) . '" title="' . $title . '">' . $title . '</option>';
-                        }
-                    }
-                    break;
-                case 'file_reference':
-
-                case 'file':
-                    foreach ($itemArray as $item) {
-                        $itemParts = explode('|', $item);
-                        $uidList[] = ($pUid = ($pTitle = $itemParts[0]));
-                        $title = htmlspecialchars(rawurldecode($itemParts[1]));
-                        $opt[] = '<option value="' . htmlspecialchars(rawurldecode($itemParts[0])) . '" title="' . $title . '">' . $title . '</option>';
-                    }
-                    break;
-                case 'folder':
-                    foreach ($itemArray as $pp) {
-                        $pParts = explode('|', $pp);
-                        $uidList[] = ($pUid = ($pTitle = $pParts[0]));
-                        $title = htmlspecialchars(rawurldecode($pParts[0]));
-                        $opt[] = '<option value="' . htmlspecialchars(rawurldecode($pParts[0])) . '" title="' . $title . '">' . $title . '</option>';
-                    }
-                    break;
-                default:
-                    foreach ($itemArray as $pp) {
-                        $pParts = explode('|', $pp, 2);
-                        $uidList[] = ($pUid = $pParts[0]);
-                        $pTitle = $pParts[1];
-                        $title = htmlspecialchars(rawurldecode($pTitle));
-                        $opt[] = '<option value="' . htmlspecialchars(rawurldecode($pUid)) . '" title="' . $title . '">' . $title . '</option>';
-                    }
-            }
-        }
-        // Create selector box of the options
-        $sSize = $params['autoSizeMax']
-            ? MathUtility::forceIntegerInRange($itemArrayC + 1, MathUtility::forceIntegerInRange($params['size'], 1), $params['autoSizeMax'])
-            : $params['size'];
-        if (!$selector) {
-            $maxItems = (int)($params['maxitems'] ?? 0);
-            $size = (int)($params['size'] ?? 0);
-            $classes = ['form-control', 'tceforms-multiselect'];
-            if ($maxItems === 1) {
-                $classes[] = 'form-select-no-siblings';
-            }
-            $isMultiple = $maxItems !== 1 && $size !== 1;
-            $selector = '<select id="' . StringUtility::getUniqueId('tceforms-multiselect-') . '" '
-                . ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '" class="' . implode(' ', $classes) . '"')
-                . ($isMultiple ? ' multiple="multiple"' : '')
-                . ' data-formengine-input-name="' . htmlspecialchars($fName) . '" ' . $this->getValidationDataAsDataAttribute($config) . $params['style'] . $disabled . '>' . implode('', $opt)
-                . '</select>';
-        }
-        $icons = [
-            'L' => [],
-            'R' => []
-        ];
-        $rOnClickInline = '';
-        if (!$params['readOnly'] && !$params['noList']) {
-            if (!$params['noBrowser']) {
-                // Check against inline uniqueness
-                /** @var InlineStackProcessor $inlineStackProcessor */
-                $inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
-                $inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
-                $aOnClickInline = '';
-                if ($this->data['isInlineChild'] && $this->data['inlineParentUid']) {
-                    if ($this->data['inlineParentConfig']['foreign_table'] === $table
-                        && $this->data['inlineParentConfig']['foreign_unique'] === $field
-                    ) {
-                        $objectPrefix = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']) . '-' . $table;
-                        $aOnClickInline = $objectPrefix . '|inline.checkUniqueElement|inline.setUniqueElement';
-                        $rOnClickInline = 'inline.revertUnique(' . GeneralUtility::quoteJSvalue($objectPrefix) . ',null,' . GeneralUtility::quoteJSvalue($uid) . ');';
-                    }
-                }
-                if (is_array($config['appearance']) && isset($config['appearance']['elementBrowserType'])) {
-                    $elementBrowserType = $config['appearance']['elementBrowserType'];
-                } else {
-                    $elementBrowserType = $mode;
-                }
-                if (is_array($config['appearance']) && isset($config['appearance']['elementBrowserAllowed'])) {
-                    $elementBrowserAllowed = $config['appearance']['elementBrowserAllowed'];
-                } else {
-                    $elementBrowserAllowed = $allowed;
-                }
-                $aOnClick = 'setFormValueOpenBrowser(' . GeneralUtility::quoteJSvalue($elementBrowserType) . ','
-                    . GeneralUtility::quoteJSvalue(($fName . '|||' . $elementBrowserAllowed . '|' . $aOnClickInline)) . '); return false;';
-                $icons['R'][] = '
-					<a href="#"
-						onclick="' . htmlspecialchars($aOnClick) . '"
-						class="btn btn-default"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.browse_' . ($mode == 'db' ? 'db' : 'file'))) . '">
-						' . $this->iconFactory->getIcon('actions-insert-record', Icon::SIZE_SMALL)->render() . '
-					</a>';
-            }
-            if (!$params['dontShowMoveIcons']) {
-                if ($sSize >= 5) {
-                    $icons['L'][] = '
-						<a href="#"
-							class="btn btn-default t3js-btn-moveoption-top"
-							data-fieldname="' . $fName . '"
-							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_top')) . '">
-							' . $this->iconFactory->getIcon('actions-move-to-top', Icon::SIZE_SMALL)->render() . '
-						</a>';
-                }
-                $icons['L'][] = '
-					<a href="#"
-						class="btn btn-default t3js-btn-moveoption-up"
-						data-fieldname="' . $fName . '"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_up')) . '">
-						' . $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL)->render() . '
-					</a>';
-                $icons['L'][] = '
-					<a href="#"
-						class="btn btn-default t3js-btn-moveoption-down"
-						data-fieldname="' . $fName . '"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_down')) . '">
-						' . $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL)->render() . '
-					</a>';
-                if ($sSize >= 5) {
-                    $icons['L'][] = '
-						<a href="#"
-							class="btn btn-default t3js-btn-moveoption-bottom"
-							data-fieldname="' . $fName . '"
-							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_bottom')) . '">
-							' . $this->iconFactory->getIcon('actions-move-to-bottom', Icon::SIZE_SMALL)->render() . '
-						</a>';
-                }
-            }
-            $clipElements = $this->getClipboardElements($allowed, $mode);
-            if (!empty($clipElements)) {
-                $aOnClick = '';
-                foreach ($clipElements as $elValue) {
-                    if ($mode == 'db') {
-                        list($itemTable, $itemUid) = explode('|', $elValue);
-                        $recordTitle = BackendUtility::getRecordTitle($itemTable, BackendUtility::getRecordWSOL($itemTable, $itemUid));
-                        $itemTitle = GeneralUtility::quoteJSvalue($recordTitle);
-                        $elValue = $itemTable . '_' . $itemUid;
-                    } else {
-                        // 'file', 'file_reference' and 'folder' mode
-                        $itemTitle = 'unescape(' . GeneralUtility::quoteJSvalue(rawurlencode(basename($elValue))) . ')';
-                    }
-                    $aOnClick .= 'setFormValueFromBrowseWin(' . GeneralUtility::quoteJSvalue($fName) . ',unescape('
-                        . GeneralUtility::quoteJSvalue(rawurlencode(str_replace('%20', ' ', $elValue))) . '),' . $itemTitle . ',' . $itemTitle . ');';
-                }
-                $aOnClick .= 'return false;';
-                $icons['R'][] = '
-					<a href="#"
-						class="btn btn-default"
-						onclick="' . htmlspecialchars($aOnClick) . '"
-						title="' . htmlspecialchars(sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.clipInsert_' . ($mode == 'db' ? 'db' : 'file')), count($clipElements))) . '">
-						' . $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL)->render() . '
-					</a>';
-            }
-        }
-        if (!$params['readOnly'] && !$params['noDelete']) {
-            $icons['L'][] = '
-				<a href="#"
-					class="btn btn-default t3js-btn-removeoption"
-					onClick="' . $rOnClickInline . '"
-					data-fieldname="' . $fName . '"
-					title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remove_selected')) . '">
-					' . $this->iconFactory->getIcon('actions-selection-delete', Icon::SIZE_SMALL)->render() . '
-				</a>';
-        }
-
-        // Thumbnails
-        $imagesOnly = false;
-        if ($params['thumbnails'] && $params['allowed']) {
-            // In case we have thumbnails, check if only images are allowed.
-            // In this case, render them below the field, instead of to the right
-            $allowedExtensionList = $params['allowed'];
-            $imageExtensionList = GeneralUtility::trimExplode(',', strtolower($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']), true);
-            $imagesOnly = true;
-            foreach ($allowedExtensionList as $allowedExtension) {
-                if (!ArrayUtility::inArray($imageExtensionList, $allowedExtension)) {
-                    $imagesOnly = false;
-                    break;
-                }
-            }
-        }
-        $thumbnails = '';
-        if (is_array($params['thumbnails']) && !empty($params['thumbnails'])) {
-            if ($imagesOnly) {
-                $thumbnails .= '<ul class="list-inline">';
-                foreach ($params['thumbnails'] as $thumbnail) {
-                    $thumbnails .= '<li><span class="thumbnail">' . $thumbnail['image'] . '</span></li>';
-                }
-                $thumbnails .= '</ul>';
-            } else {
-                $thumbnails .= '<div class="table-fit"><table class="table table-white"><tbody>';
-                foreach ($params['thumbnails'] as $thumbnail) {
-                    $thumbnails .= '
-						<tr>
-							<td class="col-icon">
-								' . ($config['internal_type'] === 'db'
-                            ? BackendUtility::wrapClickMenuOnIcon($thumbnail['image'], $thumbnail['table'], $thumbnail['uid'], 1, '', '+copy,info,edit,view')
-                            : $thumbnail['image']) . '
-							</td>
-							<td class="col-title">
-								' . ($config['internal_type'] === 'db'
-                            ? BackendUtility::wrapClickMenuOnIcon($thumbnail['name'], $thumbnail['table'], $thumbnail['uid'], 1, '', '+copy,info,edit,view')
-                            : $thumbnail['name']) . '
-								' . ($config['internal_type'] === 'db' ? ' <span class="text-muted">[' . $thumbnail['uid'] . ']</span>' : '') . '
-							</td>
-						</tr>
-						';
-                }
-                $thumbnails .= '</tbody></table></div>';
-            }
-        }
-
-        // Allowed Tables
-        $allowedTables = '';
-        if (is_array($params['allowedTables']) && !empty($params['allowedTables']) && !$params['hideAllowedTables']) {
-            $allowedTables .= '<div class="help-block">';
-            foreach ($params['allowedTables'] as $key => $item) {
-                if (is_array($item)) {
-                    if (empty($params['readOnly'])) {
-                        $allowedTables .= '<a href="#" onClick="' . htmlspecialchars($item['onClick']) . '" class="btn btn-default">' . $item['icon'] . ' ' . htmlspecialchars($item['name']) . '</a> ';
-                    } else {
-                        $allowedTables .= '<span>' . htmlspecialchars($item['name']) . '</span> ';
-                    }
-                } elseif ($key === 'name') {
-                    $allowedTables .= '<span>' . htmlspecialchars($item) . '</span> ';
-                }
-            }
-            $allowedTables .= '</div>';
-        }
-        // Allowed
-        $allowedList = '';
-        if (is_array($params['allowed']) && !empty($params['allowed'])) {
-            foreach ($params['allowed'] as $item) {
-                $allowedList .= '<span class="label label-success">' . strtoupper($item) . '</span> ';
-            }
-        }
-        // Disallowed
-        $disallowedList = '';
-        if (is_array($params['disallowed']) && !empty($params['disallowed'])) {
-            foreach ($params['disallowed'] as $item) {
-                $disallowedList .= '<span class="label label-danger">' . strtoupper($item) . '</span> ';
-            }
-        }
-        // Rightbox
-        $rightbox = ($params['rightbox'] ?: '');
-
-        // Hook: dbFileIcons_postProcess (requested by FAL-team for use with the "fal" extension)
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['dbFileIcons'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['dbFileIcons'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
-                if (!$hookObject instanceof DatabaseFileIconsHookInterface) {
-                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . DatabaseFileIconsHookInterface::class, 1290167704);
-                }
-                $additionalParams = [
-                    'mode' => $mode,
-                    'allowed' => $allowed,
-                    'itemArray' => $itemArray,
-                    'table' => $table,
-                    'field' => $field,
-                    'uid' => $uid,
-                    'config' => $GLOBALS['TCA'][$table]['columns'][$field]
-                ];
-                $hookObject->dbFileIcons_postProcess($params, $selector, $thumbnails, $icons, $rightbox, $fName, $uidList, $additionalParams, $this);
-            }
-        }
-
-        // Output
-        $str = '
-			' . ($params['headers']['selector'] ? '<label>' . $params['headers']['selector'] . '</label>' : '') . '
-			<div class="form-wizards-wrap form-wizards-aside">
-				<div class="form-wizards-element">
-					' . $selector . '
-					' . (!$params['noList'] && !empty($allowedTables) ? $allowedTables : '') . '
-					' . (!$params['noList'] && (!empty($allowedList) || !empty($disallowedList))
-                ? '<div class="help-block">' . $allowedList . $disallowedList . ' </div>'
-                : '') . '
-				</div>
-				' . (!empty($icons['L']) ? '<div class="form-wizards-items"><div class="btn-group-vertical">' . implode('', $icons['L']) . '</div></div>' : '') . '
-				' . (!empty($icons['R']) ? '<div class="form-wizards-items"><div class="btn-group-vertical">' . implode('', $icons['R']) . '</div></div>' : '') . '
-			</div>
-			';
-        if ($rightbox) {
-            $str = '
-				<div class="form-multigroup-wrap t3js-formengine-field-group">
-					<div class="form-multigroup-item form-multigroup-element">' . $str . '</div>
-					<div class="form-multigroup-item form-multigroup-element">
-						' . ($params['headers']['items'] ? '<label>' . $params['headers']['items'] . '</label>' : '') . '
-						' . ($params['headers']['selectorbox'] ? '<div class="form-multigroup-item-wizard">' . $params['headers']['selectorbox'] . '</div>' : '') . '
-						' . $rightbox . '
-					</div>
-				</div>
-				';
-        }
-        $str .= $thumbnails;
-
-        // Creating the hidden field which contains the actual value as a comma list.
-        $str .= '<input type="hidden" name="' . $fName . '" value="' . htmlspecialchars(implode(',', $uidList)) . '" />';
-        return $str;
-    }
-
-    /**
-     * Returns array of elements from clipboard to insert into GROUP element box.
-     *
-     * @param string $allowed Allowed elements, Eg "pages,tt_content", "gif,jpg,jpeg,png
-     * @param string $mode Mode of relations: "db" or "file
-     * @return array Array of elements in values (keys are insignificant), if none found, empty array.
-     */
-    protected function getClipboardElements($allowed, $mode)
-    {
-        if (!is_object($this->clipboard)) {
-            $this->clipboard = GeneralUtility::makeInstance(Clipboard::class);
-            $this->clipboard->initializeClipboard();
-        }
-
-        $output = [];
-        switch ($mode) {
-            case 'file_reference':
-
-            case 'file':
-                $elFromTable = $this->clipboard->elFromTable('_FILE');
-                $allowedExts = GeneralUtility::trimExplode(',', $allowed, true);
-                // If there are a set of allowed extensions, filter the content:
-                if ($allowedExts) {
-                    foreach ($elFromTable as $elValue) {
-                        $pI = pathinfo($elValue);
-                        $ext = strtolower($pI['extension']);
-                        if (in_array($ext, $allowedExts)) {
-                            $output[] = $elValue;
-                        }
-                    }
-                } else {
-                    // If all is allowed, insert all: (This does NOT respect any disallowed extensions,
-                    // but those will be filtered away by the backend TCEmain)
-                    $output = $elFromTable;
-                }
-                break;
-            case 'db':
-                $allowedTables = GeneralUtility::trimExplode(',', $allowed, true);
-                // All tables allowed for relation:
-                if (trim($allowedTables[0]) === '*') {
-                    $output = $this->clipboard->elFromTable('');
-                } else {
-                    // Only some tables, filter them:
-                    foreach ($allowedTables as $tablename) {
-                        $elFromTable = $this->clipboard->elFromTable($tablename);
-                        $output = array_merge($output, $elFromTable);
-                    }
-                }
-                $output = array_keys($output);
-                break;
-        }
-
-        return $output;
     }
 
     /**

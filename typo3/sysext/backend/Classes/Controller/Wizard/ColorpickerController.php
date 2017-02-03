@@ -24,6 +24,10 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * Script Class for colorpicker wizard
+ *
+ * Unused with new renderType "inputColorPicker" since v8.
+ *
+ * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
  */
 class ColorpickerController extends AbstractWizardController
 {
@@ -119,11 +123,14 @@ class ColorpickerController extends AbstractWizardController
 
     /**
      * Constructor
+     *
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function __construct()
     {
+        GeneralUtility::logDeprecatedFunction();
         parent::__construct();
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_wizards.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_wizards.xlf');
         $GLOBALS['SOBE'] = $this;
 
         $this->init();

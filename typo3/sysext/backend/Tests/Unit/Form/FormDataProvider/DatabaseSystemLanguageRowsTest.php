@@ -25,14 +25,13 @@ use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Test case
  */
-class DatabaseSystemLanguageRowsTest extends UnitTestCase
+class DatabaseSystemLanguageRowsTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var DatabaseSystemLanguageRows
@@ -69,13 +68,13 @@ class DatabaseSystemLanguageRowsTest extends UnitTestCase
             'systemLanguageRows' => [
                 -1 => [
                     'uid' => -1,
-                    'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:multipleLanguages',
+                    'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:multipleLanguages',
                     'iso' => 'DEF',
                     'flagIconIdentifier' => 'flags-multiple',
                 ],
                 0 => [
                     'uid' => 0,
-                    'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage',
+                    'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:defaultLanguage',
                     'iso' => 'DEF',
                     'flagIconIdentifier' => 'empty-empty',
                 ],
@@ -156,13 +155,13 @@ class DatabaseSystemLanguageRowsTest extends UnitTestCase
         $expected['systemLanguageRows'] = [
             -1 => [
                 'uid' => -1,
-                'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:multipleLanguages',
+                'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:multipleLanguages',
                 'iso' => 'DEF',
                 'flagIconIdentifier' => 'flags-multiple',
             ],
             0 => [
                 'uid' => 0,
-                'title' => 'foo (LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage)',
+                'title' => 'foo (LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:defaultLanguage)',
                 'iso' => 'DEF',
                 'flagIconIdentifier' => 'empty-empty',
             ],
@@ -215,13 +214,13 @@ class DatabaseSystemLanguageRowsTest extends UnitTestCase
         $expected['systemLanguageRows'] = [
             -1 => [
                 'uid' => -1,
-                'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:multipleLanguages',
+                'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:multipleLanguages',
                 'iso' => 'DEF',
                 'flagIconIdentifier' => 'flags-multiple',
             ],
             0 => [
                 'uid' => 0,
-                'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage',
+                'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:defaultLanguage',
                 'iso' => 'DEF',
                 'flagIconIdentifier' => 'flags-uk',
             ],
@@ -273,13 +272,13 @@ class DatabaseSystemLanguageRowsTest extends UnitTestCase
             'systemLanguageRows' => [
                 -1 => [
                     'uid' => -1,
-                    'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:multipleLanguages',
+                    'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:multipleLanguages',
                     'iso' => 'DEF',
                     'flagIconIdentifier' => 'flags-multiple',
                 ],
                 0 => [
                     'uid' => 0,
-                    'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage',
+                    'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:defaultLanguage',
                     'iso' => 'DEF',
                     'flagIconIdentifier' => 'empty-empty',
                 ],
@@ -340,13 +339,13 @@ class DatabaseSystemLanguageRowsTest extends UnitTestCase
             'systemLanguageRows' => [
                 -1 => [
                     'uid' => -1,
-                    'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:multipleLanguages',
+                    'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:multipleLanguages',
                     'iso' => 'DEF',
                     'flagIconIdentifier' => 'flags-multiple',
                 ],
                 0 => [
                     'uid' => 0,
-                    'title' => 'LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage',
+                    'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:defaultLanguage',
                     'iso' => 'DEF',
                     'flagIconIdentifier' => 'empty-empty',
                 ],

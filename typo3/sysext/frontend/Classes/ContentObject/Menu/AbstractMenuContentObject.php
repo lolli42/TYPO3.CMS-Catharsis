@@ -19,7 +19,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
@@ -960,10 +959,6 @@ abstract class AbstractMenuContentObject
         }
         // Max number of items
         $limit = MathUtility::forceIntegerInRange($this->conf['special.']['limit'], 0, 100);
-        $extraWhere = ' AND pages.uid<>' . $specialValue . ($this->conf['includeNotInMenu'] ? '' : ' AND pages.nav_hide=0') . $this->getDoktypeExcludeWhere();
-        if ($this->conf['special.']['excludeNoSearchPages']) {
-            $extraWhere .= ' AND pages.no_search=0';
-        }
         // Start point
         $eLevel = $this->parent_cObj->getKey(isset($this->conf['special.']['entryLevel.'])
             ? $this->parent_cObj->stdWrap($this->conf['special.']['entryLevel'], $this->conf['special.']['entryLevel.'])
@@ -991,15 +986,53 @@ abstract class AbstractMenuContentObject
                     )
                 );
             }
-            $where = empty($keyWordsWhereArr) ? '' : '(' . implode(' OR ', $keyWordsWhereArr) . ')';
-            $statement = $this->parent_cObj->exec_getQuery('pages', [
-                'pidInList' => '0',
-                'uidInList' => $id_list,
-                'where' => $where . $extraWhere,
-                'orderBy' => $sortingField ?: $sortField . ' desc',
-                'max' => $limit
-            ]);
-            while ($row = $statement->fetch()) {
+            $queryBuilder
+                ->select('*')
+                ->from('pages')
+                ->where(
+                    $queryBuilder->expr()->in(
+                        'uid',
+                        GeneralUtility::intExplode(',', $id_list, true)
+                    ),
+                    $queryBuilder->expr()->neq(
+                        'uid',
+                        $queryBuilder->createNamedParameter($specialValue, \PDO::PARAM_INT)
+                    )
+                );
+
+            if (count($keyWordsWhereArr) !== 0) {
+                $queryBuilder->andWhere($queryBuilder->expr()->orX(...$keyWordsWhereArr));
+            }
+
+            if ($this->doktypeExcludeList) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->notIn(
+                        'pages.doktype',
+                        GeneralUtility::intExplode(',', $this->doktypeExcludeList, true)
+                    )
+                );
+            }
+
+            if (!$this->conf['includeNotInMenu']) {
+                $queryBuilder->andWhere($queryBuilder->expr()->eq('pages.nav_hide', 0));
+            }
+
+            if ($this->conf['special.']['excludeNoSearchPages']) {
+                $queryBuilder->andWhere($queryBuilder->expr()->eq('pages.no_search', 0));
+            }
+
+            if ($limit > 0) {
+                $queryBuilder->setMaxResults($limit);
+            }
+
+            if ($sortingField) {
+                $queryBuilder->orderBy($sortingField);
+            } else {
+                $queryBuilder->orderBy($sortField, 'desc');
+            }
+
+            $result = $queryBuilder->execute();
+            while ($row = $result->fetch()) {
                 $tsfe->sys_page->versionOL('pages', $row, true);
                 if (is_array($row)) {
                     $menuItems[$row['uid']] = $this->sys_page->getPageOverlay($row);
@@ -1239,7 +1272,7 @@ abstract class AbstractMenuContentObject
             ($this->mconf['SPC'] || !$spacer) // If the spacer-function is not enabled, spacers will not enter the $menuArr
             && (!$data['nav_hide'] || $this->conf['includeNotInMenu']) // Not hidden in navigation
             && !GeneralUtility::inList($this->doktypeExcludeList, $data['doktype']) // Page may not be 'not_in_menu' or 'Backend User Section'
-            && !ArrayUtility::inArray($banUidArray, $data['uid']) // not in banned uid's
+            && !in_array($data['uid'], $banUidArray, false) // not in banned uid's
         ) {
             // Checks if the default language version can be shown:
             // Block page is set, if l18n_cfg allows plus: 1) Either default language or 2) another language but NO overlay record set for page!
@@ -1259,7 +1292,7 @@ abstract class AbstractMenuContentObject
                     // Checking if "&L" should be modified so links to non-accessible pages will not happen.
                     if ($this->conf['protectLvar']) {
                         $languageUid = (int)$tsfe->config['config']['sys_language_uid'];
-                        if ($languageUid && ($this->conf['protectLvar'] == 'all' || GeneralUtility::hideIfNotTranslated($data['l18n_cfg']))) {
+                        if ($languageUid && ($this->conf['protectLvar'] === 'all' || GeneralUtility::hideIfNotTranslated($data['l18n_cfg']))) {
                             $olRec = $tsfe->sys_page->getPageOverlay($data['uid'], $languageUid);
                             if (empty($olRec)) {
                                 // If no pages_language_overlay record then page can NOT be accessed in
@@ -1552,6 +1585,13 @@ abstract class AbstractMenuContentObject
      */
     public function link($key, $altTarget = '', $typeOverride = '')
     {
+        $runtimeCache = $this->getRuntimeCache();
+        $cacheId = 'menu-generated-links-' . md5($key . $altTarget . $typeOverride . serialize($this->menuArr[$key]));
+        $runtimeCachedLink = $runtimeCache->get($cacheId);
+        if ($runtimeCachedLink !== false) {
+            return $runtimeCachedLink;
+        }
+
         // Mount points:
         $MP_var = $this->getMPvar($key);
         $MP_params = $MP_var ? '&MP=' . rawurlencode($MP_var) : '';
@@ -1613,13 +1653,14 @@ abstract class AbstractMenuContentObject
             } catch (\Exception $ex) {
             }
             if (!is_array($shortcut)) {
+                $runtimeCache->set($cacheId, []);
                 return [];
             }
             // Only setting url, not target
             $LD['totalURL'] = $this->parent_cObj->typoLink_URL([
                 'parameter' => $shortcut['uid'],
                 'additionalParams' => $addParams . $this->I['val']['additionalParams'] . $menuItem['_ADD_GETVARS'],
-                'linkAccessRestrictedPages' => $this->mconf['showAccessRestrictedPages'] && $this->mconf['showAccessRestrictedPages'] !== 'NONE'
+                'linkAccessRestrictedPages' => !empty($this->mconf['showAccessRestrictedPages'])
             ]);
         }
         if ($shortcut) {
@@ -1680,6 +1721,7 @@ abstract class AbstractMenuContentObject
         $list['HREF'] = (string)$LD['totalURL'] !== '' ? $LD['totalURL'] : $tsfe->baseUrl;
         $list['TARGET'] = $LD['target'];
         $list['onClick'] = $onClick;
+        $runtimeCache->set($cacheId, $list);
         return $list;
     }
 
@@ -1688,8 +1730,6 @@ abstract class AbstractMenuContentObject
      *
      * Since the pages records used for menu rendering are overlaid by default,
      * the original 'shortcut' value is lost, if a translation did not define one.
-     * The behaviour in TSFE can be compared to the 'mergeIfNotBlank' feature, but
-     * it's hardcoded there and not related to the mentioned setting at all.
      *
      * @param array $page
      * @return array
@@ -1869,6 +1909,12 @@ abstract class AbstractMenuContentObject
      */
     public function isSubMenu($uid)
     {
+        $cacheId = 'menucontentobject-is-submenu-decision-' . $uid;
+        $runtimeCache = $this->getRuntimeCache();
+        $cachedDecision = $runtimeCache->get($cacheId);
+        if (isset($cachedDecision['result'])) {
+            return $cachedDecision['result'];
+        }
         // Looking for a mount-pid for this UID since if that
         // exists we should look for a subpages THERE and not in the input $uid;
         $mount_info = $this->sys_page->getMountPointInfo($uid);
@@ -1906,6 +1952,7 @@ abstract class AbstractMenuContentObject
             $hasSubPages = true;
             break;
         }
+        $runtimeCache->set($cacheId, ['result' => $hasSubPages]);
         return $hasSubPages;
     }
 
@@ -2112,7 +2159,7 @@ abstract class AbstractMenuContentObject
         if ($page['sectionIndex_uid']) {
             $conf['section'] = $page['sectionIndex_uid'];
         }
-        $conf['linkAccessRestrictedPages'] = $this->mconf['showAccessRestrictedPages'] && $this->mconf['showAccessRestrictedPages'] !== 'NONE';
+        $conf['linkAccessRestrictedPages'] = !empty($this->mconf['showAccessRestrictedPages']);
         $this->parent_cObj->typoLink('|', $conf);
         $LD = $this->parent_cObj->lastTypoLinkLD;
         $LD['totalURL'] = $this->parent_cObj->lastTypoLinkUrl;
@@ -2238,6 +2285,14 @@ abstract class AbstractMenuContentObject
     protected function getCache()
     {
         return GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
+    }
+
+    /**
+     * @return \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+     */
+    protected function getRuntimeCache()
+    {
+        return GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_runtime');
     }
 
     /**

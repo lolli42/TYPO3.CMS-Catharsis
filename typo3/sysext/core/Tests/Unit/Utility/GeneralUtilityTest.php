@@ -17,9 +17,9 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
+use TYPO3\Components\TestingFramework\Core\FileStreamWrapper;
 use TYPO3\CMS\Core\Package\Package;
 use TYPO3\CMS\Core\Package\PackageManager;
-use TYPO3\CMS\Core\Tests\FileStreamWrapper;
 use TYPO3\CMS\Core\Tests\Unit\Utility\AccessibleProxies\ExtensionManagementUtilityAccessibleProxy;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFilesystemFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFixture;
@@ -34,7 +34,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\GeneralUtility
  */
-class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class GeneralUtilityTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     const NO_FIX_PERMISSIONS_ON_WINDOWS = 'fixPermissions() not available on Windows (method does nothing)';
     /**
@@ -4294,14 +4294,30 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      */
     public function validPathStrInvalidCharactersDataProvider()
     {
-        return [
+        $data = [
             'double slash in path' => ['path//path'],
             'backslash in path' => ['path\\path'],
             'directory up in path' => ['path/../path'],
             'directory up at the beginning' => ['../path'],
             'NUL character in path' => ['path' . chr(0) . 'path'],
-            'BS character in path' => ['path' . chr(8) . 'path']
+            'BS character in path' => ['path' . chr(8) . 'path'],
+            'invalid UTF-8-sequence' => ["\xc0" . 'path/path'],
+            'Could be overlong NUL in some UTF-8 implementations, invalid in RFC3629' => ["\xc0\x80" . 'path/path'],
         ];
+
+        // Mixing with regular utf-8
+        $utf8Characters = 'Ссылка/';
+        foreach ($data as $key => $value) {
+            $data[$key . ' with UTF-8 characters prepended'] = [$utf8Characters . $value[0]];
+            $data[$key . ' with UTF-8 characters appended'] = [$value[0] . $utf8Characters];
+        }
+
+        // Encoding with UTF-16
+        foreach ($data as $key => $value) {
+            $data[$key . ' encoded with UTF-16'] = [mb_convert_encoding($value[0], 'UTF-16')];
+        }
+
+        return $data;
     }
 
     /**
@@ -4317,13 +4333,27 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     }
 
     /**
+     * Data provider for positive values within validPathStr()
+     */
+    public function validPathStrDataProvider()
+    {
+        $data = [
+            'normal ascii path' => ['fileadmin/templates/myfile..xml'],
+            'special character' => ['fileadmin/templates/Ссылка (fce).xml']
+        ];
+
+        return $data;
+    }
+
+    /**
      * Tests whether Unicode characters are recognized as valid file name characters.
      *
+     * @dataProvider validPathStrDataProvider
      * @test
      */
-    public function validPathStrWorksWithUnicodeFileNames()
+    public function validPathStrWorksWithUnicodeFileNames($path)
     {
-        $this->assertTrue(GeneralUtility::validPathStr('fileadmin/templates/Ссылка (fce).xml'));
+        $this->assertTrue(GeneralUtility::validPathStr($path));
     }
 
     /**
@@ -4556,7 +4586,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $inputData = ['called' => []];
         GeneralUtility::callUserFunction('&TYPO3\\CMS\\Core\\Tests\\Unit\\Utility\\GeneralUtilityTest->user_calledUserFunctionCountCallers', $inputData, $this);
         GeneralUtility::callUserFunction('&TYPO3\\CMS\\Core\\Tests\\Unit\\Utility\\GeneralUtilityTest->user_calledUserFunctionCountCallers', $inputData, $this);
-        $this->assertEquals(1, sizeof($inputData['called']));
+        $this->assertEquals(1, count($inputData['called']));
     }
 
     /**
@@ -4629,6 +4659,76 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $this->assertEquals('<phparray>
 	<el type="array"></el>
 </phparray>', $output);
+    }
+
+    /**
+     * @return array
+     */
+    public function providerForXml2Array(): array
+    {
+        return [
+            'inputWithoutWhitespaces' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+                <T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </field>
+                    </data>
+                </T3FlexForms>'
+            ],
+            'inputWithPrecedingWhitespaces' => [
+                '
+                <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+                <T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </field>
+                    </data>
+                </T3FlexForms>'
+            ],
+            'inputWithTrailingWhitespaces' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+                <T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </field>
+                    </data>
+                </T3FlexForms>
+                '
+            ],
+            'inputWithPrecedingAndTrailingWhitespaces' => [
+                '
+                <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+                <T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </field>
+                    </data>
+                </T3FlexForms>
+                '
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider providerForXml2Array
+     * @param string $input
+     */
+    public function xml2ArrayDealsProperlyWithWhitespace(string $input)
+    {
+        $expected = [
+            'data' => [
+                'settings.persistenceIdentifier' => [
+                    'vDEF' => 'egon',
+                ]
+            ],
+        ];
+        $this->assertSame($expected, GeneralUtility::xml2array($input));
     }
 
     /**

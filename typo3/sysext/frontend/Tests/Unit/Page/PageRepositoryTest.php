@@ -17,10 +17,10 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\Page;
 /**
  * Test case
  */
-class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class PageRepositoryTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
-     * @var \TYPO3\CMS\Frontend\Page\PageRepository|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
+     * @var \TYPO3\CMS\Frontend\Page\PageRepository|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface
      */
     protected $pageSelectObject;
 
@@ -104,20 +104,8 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 'l10n_mode' => 'exclude',
                 'config' => ['type' => 'input'],
             ],
-            'mergeIfNotBlank' => [
-                'l10n_mode' => 'mergeIfNotBlank',
-                'config' => ['type' => 'input'],
-            ],
-            'mergeIfNotBlank_group' => [
-                'l10n_mode' => 'mergeIfNotBlank',
-                'config' => ['type' => 'group'],
-            ],
             'default' => [
                 // no l10n_mode set
-                'config' => ['type' => 'input'],
-            ],
-            'noCopy' => [
-                'l10n_mode' => 'noCopy',
                 'config' => ['type' => 'input'],
             ],
             'prefixLangTitle' => [
@@ -143,19 +131,6 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
             ['exclude',               'fake_table', '',       false, 'exclude field with empty string'],
             ['exclude',               'fake_table', 'foobar', false, 'exclude field with non-empty string'],
-
-            ['mergeIfNotBlank',       'fake_table', '',       false, 'mergeIfNotBlank is not merged with empty string'],
-            ['mergeIfNotBlank',       'fake_table', 0,        true,  'mergeIfNotBlank is merged with 0'],
-            ['mergeIfNotBlank',       'fake_table', '0',      true,  'mergeIfNotBlank is merged with "0"'],
-            ['mergeIfNotBlank',       'fake_table', 'foobar', true,  'mergeIfNotBlank is merged with non-empty string'],
-
-            ['mergeIfNotBlank_group', 'fake_table', '',       false, 'mergeIfNotBlank on group is not merged empty string'],
-            ['mergeIfNotBlank_group', 'fake_table', 0,        false, 'mergeIfNotBlank on group is not merged with 0'],
-            ['mergeIfNotBlank_group', 'fake_table', '0',      false, 'mergeIfNotBlank on group is not merged with "0"'],
-            ['mergeIfNotBlank_group', 'fake_table', 'foobar', true,  'mergeIfNotBlank on group is merged with non-empty string'],
-
-            ['noCopy',                'fake_table', 'foobar', true,  'noCopy is merged with non-empty string'],
-            ['noCopy',                'fake_table', '',       true,  'noCopy is merged with empty string'],
 
             ['prefixLangTitle',       'fake_table', 'foobar', true,  'prefixLangTitle is merged with non-empty string'],
             ['prefixLangTitle',       'fake_table', '',       true,  'prefixLangTitle is merged with empty string'],

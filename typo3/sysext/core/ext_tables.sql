@@ -37,12 +37,11 @@ CREATE TABLE be_groups (
 #
 CREATE TABLE be_sessions (
 	ses_id varchar(32) DEFAULT '' NOT NULL,
-	ses_name varchar(32) DEFAULT '' NOT NULL,
+	ses_name varchar(255) DEFAULT '' NOT NULL,
 	ses_iplock varchar(39) DEFAULT '' NOT NULL,
-	ses_hashlock int(11) DEFAULT '0' NOT NULL,
 	ses_userid int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_tstamp int(11) unsigned DEFAULT '0' NOT NULL,
-	ses_data longtext,
+	ses_data longblob,
 	ses_backuserid int(11) NOT NULL default '0',
 	PRIMARY KEY (ses_id,ses_name),
 	KEY ses_tstamp (ses_tstamp)
@@ -73,7 +72,7 @@ CREATE TABLE be_users (
 	realName varchar(80) DEFAULT '' NOT NULL,
 	userMods text,
 	allowed_languages varchar(255) DEFAULT '' NOT NULL,
-	uc mediumtext,
+	uc mediumblob,
 	file_mountpoints text,
 	file_permissions text,
 	workspace_perms tinyint(3) DEFAULT '1' NOT NULL,
@@ -135,7 +134,6 @@ CREATE TABLE pages (
 	fe_group varchar(100) DEFAULT '0' NOT NULL,
 	subtitle varchar(255) DEFAULT '' NOT NULL,
 	layout int(11) unsigned DEFAULT '0' NOT NULL,
-	url_scheme tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	target varchar(80) DEFAULT '' NOT NULL,
 	media int(11) unsigned DEFAULT '0' NOT NULL,
 	lastUpdated int(10) unsigned DEFAULT '0' NOT NULL,
@@ -500,7 +498,7 @@ CREATE TABLE sys_collection (
 	hidden tinyint(4) DEFAULT '0' NOT NULL,
 	starttime int(11) DEFAULT '0' NOT NULL,
 	endtime int(11) DEFAULT '0' NOT NULL,
-	fe_group int(11) DEFAULT '0' NOT NULL,
+	fe_group varchar(100) DEFAULT '0' NOT NULL,
 
 	title tinytext,
 	description text,
@@ -581,7 +579,7 @@ CREATE TABLE sys_refindex (
 	workspace int(11) DEFAULT '0' NOT NULL,
 	ref_table varchar(255) DEFAULT '' NOT NULL,
 	ref_uid int(11) DEFAULT '0' NOT NULL,
-	ref_string varchar(200) DEFAULT '' NOT NULL,
+	ref_string varchar(1024) DEFAULT '' NOT NULL,
 
 	PRIMARY KEY (hash),
 	KEY lookup_rec (tablename,recuid),

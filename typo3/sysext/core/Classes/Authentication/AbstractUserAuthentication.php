@@ -141,7 +141,7 @@ abstract class AbstractUserAuthentication
      * Session timeout (on the server)
      *
      * If >0: session-timeout in seconds.
-     * If 0: no timeout.
+     * If <=0: Instant logout after login.
      *
      * @var int
      */
@@ -228,14 +228,6 @@ abstract class AbstractUserAuthentication
      * @var int
      */
     public $lockIP = 4;
-
-    /**
-     * Keyword list (comma separated list with no spaces!)
-     * Each keyword indicates some information that can be included in a hash made to lock down user sessions.
-     * Configurable by $GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['lockHashKeyWords']
-     * @var string
-     */
-    public $lockHashKeyWords = 'useragent';
 
     /**
      * @var string
@@ -411,11 +403,9 @@ abstract class AbstractUserAuthentication
         // Internal var 'id' is set
         $this->id = $id;
         // If fallback to get mode....
-        if ($mode == 'get' && $this->getFallBack && $this->get_name) {
+        if ($mode === 'get' && $this->getFallBack && $this->get_name) {
             $this->get_URL_ID = '&' . $this->get_name . '=' . $id;
         }
-        // Set session hashKey lock keywords from configuration; currently only 'useragent' can be used.
-        $this->lockHashKeyWords = $GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['lockHashKeyWords'];
         // Make certain that NO user is set initially
         $this->user = null;
         // Set all possible headers that could ensure that the script is not cached on the client-side
@@ -516,7 +506,7 @@ abstract class AbstractUserAuthentication
             $cookieDomain = $GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['cookieDomain'];
         }
         if ($cookieDomain) {
-            if ($cookieDomain[0] == '/') {
+            if ($cookieDomain[0] === '/') {
                 $match = [];
                 $matchCnt = @preg_match($cookieDomain, GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY'), $match);
                 if ($matchCnt === false) {
@@ -632,7 +622,7 @@ abstract class AbstractUserAuthentication
             }
             // Refuse login for _CLI users, if not processing a CLI request type
             // (although we shouldn't be here in case of a CLI request type)
-            if (strtoupper(substr($loginData['uname'], 0, 5)) == '_CLI_' && !(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI)) {
+            if (strtoupper(substr($loginData['uname'], 0, 5)) === '_CLI_' && !(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI)) {
                 throw new \RuntimeException('TYPO3 Fatal Error: You have tried to login using a CLI user. Access prohibited!', 1270853931);
             }
         }
@@ -832,6 +822,7 @@ abstract class AbstractUserAuthentication
             ['ses_id' => $this->id],
             ['ses_id' => $oldSessionId, 'ses_name' => $this->name]
         );
+        $this->user['ses_id'] = $this->id;
         $this->newSessionID = true;
     }
 
@@ -861,7 +852,11 @@ abstract class AbstractUserAuthentication
 
         // Re-create session entry
         $insertFields = $this->getNewSessionRecord($tempuser);
-        $inserted = (bool)$connection->insert($this->session_table, $insertFields);
+        $inserted = (bool)$connection->insert(
+            $this->session_table,
+            $insertFields,
+            ['ses_data' => Connection::PARAM_LOB]
+        );
         if (!$inserted) {
             $message = 'Session data could not be written to DB. Error: ' . $connection->errorInfo();
             GeneralUtility::sysLog($message, 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
@@ -891,11 +886,15 @@ abstract class AbstractUserAuthentication
      */
     public function getNewSessionRecord($tempuser)
     {
+        $sessionIpLock = '[DISABLED]';
+        if ($this->lockIP && empty($tempuser['disableIPlock'])) {
+            $sessionIpLock = $this->ipLockClause_remoteIPNumber($this->lockIP);
+        }
+
         return [
             'ses_id' => $this->id,
             'ses_name' => $this->name,
-            'ses_iplock' => $tempuser['disableIPlock'] ? '[DISABLED]' : $this->ipLockClause_remoteIPNumber($this->lockIP),
-            'ses_hashlock' => $this->hashLockClause_getHashInt(),
+            'ses_iplock' => $sessionIpLock,
             'ses_userid' => $tempuser[$this->userid_column],
             'ses_tstamp' => $GLOBALS['EXEC_TIME'],
             'ses_data' => ''
@@ -1070,10 +1069,6 @@ abstract class AbstractUserAuthentication
                 $queryBuilder->expr()->eq(
                     $this->session_table . '.ses_userid',
                     $queryBuilder->quoteIdentifier($this->user_table . '.' . $this->userid_column)
-                ),
-                $queryBuilder->expr()->eq(
-                    $this->session_table . '.ses_hashlock',
-                    $queryBuilder->createNamedParameter($this->hashLockClause_getHashInt(), \PDO::PARAM_INT)
                 )
             );
 
@@ -1192,7 +1187,6 @@ abstract class AbstractUserAuthentication
      *
      * @param int $parts 1-4: Indicates how many parts of the IP address to return. 4 means all, 1 means only first number.
      * @return string (Partial) IP address for REMOTE_ADDR
-     * @access private
      */
     protected function ipLockClause_remoteIPNumber($parts)
     {
@@ -1215,36 +1209,12 @@ abstract class AbstractUserAuthentication
      * tce_db.php from eg. MSIE 5.0 because the proper referer is not passed with this browser...
      *
      * @return string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function veriCode()
     {
+        GeneralUtility::logDeprecatedFunction();
         return substr(md5($this->id . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']), 0, 10);
-    }
-
-    /**
-     * This returns the where-clause needed to lock a user to a hash integer
-     *
-     * @return string
-     * @access private
-     */
-    protected function hashLockClause()
-    {
-        return 'AND ' . $this->session_table . '.ses_hashlock=' . $this->hashLockClause_getHashInt();
-    }
-
-    /**
-     * Creates hash integer to lock user to. Depends on configured keywords
-     *
-     * @return int Hash integer
-     * @access private
-     */
-    protected function hashLockClause_getHashInt()
-    {
-        $hashStr = '';
-        if (GeneralUtility::inList($this->lockHashKeyWords, 'useragent')) {
-            $hashStr .= ':' . GeneralUtility::getIndpEnv('HTTP_USER_AGENT');
-        }
-        return GeneralUtility::md5int($hashStr);
     }
 
     /*************************
@@ -1275,7 +1245,8 @@ abstract class AbstractUserAuthentication
             GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($this->session_table)->update(
                 $this->user_table,
                 ['uc' => serialize($variable)],
-                [$this->userid_column => (int)$this->user[$this->userid_column]]
+                [$this->userid_column => (int)$this->user[$this->userid_column]],
+                ['uc' => Connection::PARAM_LOB]
             );
         }
     }
@@ -1325,7 +1296,7 @@ abstract class AbstractUserAuthentication
      */
     public function getModuleData($module, $type = '')
     {
-        if ($type != 'ses' || (isset($this->uc['moduleSessionID'][$module]) && $this->uc['moduleSessionID'][$module] == $this->id)) {
+        if ($type !== 'ses' || (isset($this->uc['moduleSessionID'][$module]) && $this->uc['moduleSessionID'][$module] == $this->id)) {
             return $this->uc['moduleData'][$module];
         }
         return null;
@@ -1363,7 +1334,8 @@ abstract class AbstractUserAuthentication
         GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($this->session_table)->update(
             $this->session_table,
             ['ses_data' => $this->user['ses_data']],
-            ['ses_id' => $this->user['ses_id']]
+            ['ses_id' => $this->user['ses_id']],
+            ['ses_data' => Connection::PARAM_LOB]
         );
     }
 

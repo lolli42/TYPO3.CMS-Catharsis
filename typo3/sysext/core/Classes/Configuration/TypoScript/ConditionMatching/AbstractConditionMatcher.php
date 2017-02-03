@@ -63,7 +63,7 @@ abstract class AbstractConditionMatcher
      */
     public function setPageId($pageId)
     {
-        if (is_integer($pageId) && $pageId > 0) {
+        if (is_int($pageId) && $pageId > 0) {
             $this->pageId = $pageId;
         }
     }
@@ -293,7 +293,7 @@ abstract class AbstractConditionMatcher
                 if ($this->isUserLoggedIn()) {
                     $values = GeneralUtility::trimExplode(',', $value, true);
                     foreach ($values as $test) {
-                        if ($test == '*' || (string)$this->getUserId() === (string)$test) {
+                        if ($test === '*' || (string)$this->getUserId() === (string)$test) {
                             return true;
                         }
                     }
@@ -487,10 +487,10 @@ abstract class AbstractConditionMatcher
             $rightValue = $matches[2];
             switch ($operator) {
                 case '>=':
-                    return $leftValue >= doubleval($rightValue);
+                    return $leftValue >= (float)$rightValue;
                     break;
                 case '<=':
-                    return $leftValue <= doubleval($rightValue);
+                    return $leftValue <= (float)$rightValue;
                     break;
                 case '!=':
                     // multiple values may be split with '|'
@@ -498,7 +498,7 @@ abstract class AbstractConditionMatcher
                     $found = false;
                     $rightValueParts = GeneralUtility::trimExplode('|', $rightValue);
                     foreach ($rightValueParts as $rightValueSingle) {
-                        if ($leftValue == doubleval($rightValueSingle)) {
+                        if ($leftValue == (float)$rightValueSingle) {
                             $found = true;
                             break;
                         }
@@ -506,10 +506,10 @@ abstract class AbstractConditionMatcher
                     return $found === false;
                     break;
                 case '<':
-                    return $leftValue < doubleval($rightValue);
+                    return $leftValue < (float)$rightValue;
                     break;
                 case '>':
-                    return $leftValue > doubleval($rightValue);
+                    return $leftValue > (float)$rightValue;
                     break;
                 default:
                     // nothing valid found except '=', use '='

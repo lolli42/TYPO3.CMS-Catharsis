@@ -22,14 +22,13 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Tests\Unit\Database\Mocks\MockPlatform;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test case
  *
  */
-class ConnectionTest extends UnitTestCase
+class ConnectionTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var Connection|\PHPUnit_Framework_MockObject_MockObject
@@ -193,6 +192,16 @@ class ConnectionTest extends UnitTestCase
                 ['aValue', 'bValue'],
                 [Connection::PARAM_STR, Connection::PARAM_STR],
             ],
+            'with types for field' => [
+                [
+                    'aTestTable',
+                    ['aField' => 123, 'bField' => 'bValue'],
+                    ['aField' => Connection::PARAM_INT, 'bField' => Connection::PARAM_LOB]
+                ],
+                'INSERT INTO "aTestTable" ("aField", "bField") VALUES (?, ?)',
+                [123, 'bValue'],
+                [Connection::PARAM_INT, Connection::PARAM_LOB],
+            ],
         ];
     }
 
@@ -251,6 +260,12 @@ class ConnectionTest extends UnitTestCase
                 ['aValue', 1],
                 [Connection::PARAM_STR],
             ],
+            'with types for field' => [
+                ['aTestTable', ['aField' => 'aValue'], ['uid' => 1], ['aField' => Connection::PARAM_LOB]],
+                'UPDATE "aTestTable" SET "aField" = ? WHERE "uid" = ?',
+                ['aValue', 1],
+                [0 => Connection::PARAM_LOB, 1 => Connection::PARAM_STR],
+            ],
         ];
     }
 
@@ -292,6 +307,12 @@ class ConnectionTest extends UnitTestCase
             ],
             'with types' => [
                 ['aTestTable', ['aField' => 'aValue'], [Connection::PARAM_STR]],
+                'DELETE FROM "aTestTable" WHERE "aField" = ?',
+                ['aValue'],
+                [Connection::PARAM_STR],
+            ],
+            'with types for field' => [
+                ['aTestTable', ['aField' => 'aValue'], ['aField' => Connection::PARAM_STR]],
                 'DELETE FROM "aTestTable" WHERE "aField" = ?',
                 ['aValue'],
                 [Connection::PARAM_STR],

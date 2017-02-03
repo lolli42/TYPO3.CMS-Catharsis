@@ -446,9 +446,11 @@ class ModuleTemplate
     public function getDynamicTabMenu(array $menuItems, $domId, $defaultTabIndex = 1, $collapsible = false, $wrapContent = true, $storeLastActiveTab = true)
     {
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Tabs');
-        $templatePathAndFileName = 'EXT:backend/Resources/Private/Templates/DocumentTemplate/' . ($collapsible ? 'Collapse.html' : 'Tabs.html');
+        $templatePath = ExtensionManagementUtility::extPath('backend')
+            . 'Resources/Private/Templates/DocumentTemplate/';
         $view = GeneralUtility::makeInstance(StandaloneView::class);
-        $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName($templatePathAndFileName));
+        $view->setTemplatePathAndFilename($templatePath . ($collapsible ? 'Collapse.html' : 'Tabs.html'));
+        $view->setPartialRootPaths([$templatePath . 'Partials']);
         $view->assignMultiple([
             'id' => 'DTM-' . GeneralUtility::shortMD5($domId),
             'items' => $menuItems,
@@ -532,7 +534,7 @@ class ModuleTemplate
             $motherModule = '\'\'';
         }
         $confirmationText = GeneralUtility::quoteJSvalue(
-            $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark')
+            $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.makeBookmark')
         );
 
         $shortcutUrl = $pathInfo['path'] . '?' . $storeUrl;
@@ -548,7 +550,7 @@ class ModuleTemplate
             ', ' . $url . ', ' . $confirmationText . ', ' . $motherModule . ', this, ' . GeneralUtility::quoteJSvalue($displayName) . ');return false;';
 
         return '<a href="#" class="' . htmlspecialchars($classes) . '" onclick="' . htmlspecialchars($onClick) . '" title="' .
-        htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark')) . '">' .
+        htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.makeBookmark')) . '">' .
         $this->iconFactory->getIcon('actions-system-shortcut-new', Icon::SIZE_SMALL)->render() . '</a>';
     }
 

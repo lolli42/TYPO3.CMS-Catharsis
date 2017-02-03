@@ -18,6 +18,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use TYPO3\CMS\Core\Authentication\CommandLineUserAuthentication;
 use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -65,47 +66,35 @@ class CommandRequestHandler implements RequestHandlerInterface
     {
         $output = new ConsoleOutput();
 
-        $this->bootstrap->loadExtensionTables();
+        $this->bootstrap
+            ->loadExtensionTables()
+            // create the BE_USER object (not logged in yet)
+            ->initializeBackendUser(CommandLineUserAuthentication::class)
+            ->initializeLanguageObject()
+            // Make sure output is not buffered, so command-line output and interaction can take place
+            ->endOutputBufferingAndCleanPreviousOutput();
 
         // Check if the command to run needs a backend user to be loaded
         $command = $this->getCommandToRun($input);
-        foreach ($this->availableCommands as $data) {
-            if ($data['command'] !== $command) {
-                continue;
+
+        if (!$command) {
+            $cliKeys = array_keys($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['cliKeys']);
+
+            $output->writeln('Old entrypoint keys available:');
+            asort($cliKeys);
+            foreach ($cliKeys as $key => $value) {
+                $output->writeln('  ' . $value);
             }
-            if (isset($data['user'])) {
-                $this->initializeBackendUser($data['user']);
-            }
+            $output->writeln('');
+            $output->writeln('TYPO3 Console Commands:');
         }
 
-        // Make sure output is not buffered, so command-line output and interaction can take place
-        $this->bootstrap->endOutputBufferingAndCleanPreviousOutput();
         $exitCode = $this->application->run($input, $output);
         exit($exitCode);
     }
 
     /**
-     * If the backend script is in CLI mode, it will try to load a backend user named by the CLI module name (in lowercase)
-     *
-     * @param string $userName the name of the module registered inside $TYPO3_CONF_VARS[SC_OPTIONS][GLOBAL][cliKeys] as second parameter
-     * @throws \RuntimeException if a non-admin Backend user could not be loaded
-     */
-    protected function initializeBackendUser($userName)
-    {
-        $this->bootstrap->initializeBackendUser();
-
-        $GLOBALS['BE_USER']->setBeUserByName($userName);
-        if (!$GLOBALS['BE_USER']->user['uid']) {
-            throw new \RuntimeException('No backend user named "' . $userName . '" was found!', 1476107260);
-        }
-
-        $this->bootstrap
-            ->initializeBackendAuthentication()
-            ->initializeLanguageObject();
-    }
-
-    /**
-     * This request handler can handle any CLI request, but checks for
+     * This request handler can handle any CLI request
      *
      * @param InputInterface $input
      * @return bool Always TRUE
@@ -113,7 +102,7 @@ class CommandRequestHandler implements RequestHandlerInterface
     public function canHandleRequest(InputInterface $input)
     {
         $this->populateAvailableCommands();
-        return $this->getCommandToRun($input) !== false;
+        return true;
     }
 
     /**

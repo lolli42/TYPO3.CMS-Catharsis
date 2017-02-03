@@ -235,11 +235,6 @@ function jumpToUrl(URL) {
     protected $pageHeaderFooterTemplateFile = '';
 
     /**
-     * @var bool
-     */
-    protected $extDirectStateProvider = false;
-
-    /**
      * Whether flashmessages should be rendered or not
      *
      * @var bool $showFlashMessages
@@ -338,16 +333,6 @@ function jumpToUrl(URL) {
         }
     }
 
-    /**
-     * Sets inclusion of StateProvider
-     *
-     * @return void
-     */
-    public function setExtDirectStateProvider()
-    {
-        $this->extDirectStateProvider = true;
-    }
-
     /*****************************************
      *
      * EVALUATION FUNCTIONS
@@ -372,10 +357,10 @@ function jumpToUrl(URL) {
         $str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_list', [
             'id' => $id,
             'returnUrl' > GeneralUtility::getIndpEnv('REQUEST_URI')
-        ])) . '" title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList')) . '">' . $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . '</a>';
+        ])) . '" title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.showList')) . '">' . $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render() . '</a>';
 
         // Make link to view page
-        $str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage')) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
+        $str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.showPage')) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL)->render() . '</a>';
         return $str;
     }
 
@@ -471,7 +456,7 @@ function jumpToUrl(URL) {
         } else {
             $motherModule = '\'\'';
         }
-        $confirmationText = GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark'));
+        $confirmationText = GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.makeBookmark'));
 
         $shortcutUrl = $pathInfo['path'] . '?' . $storeUrl;
         $shortcutExist = BackendUtility::shortcutExists($shortcutUrl);
@@ -485,7 +470,7 @@ function jumpToUrl(URL) {
             ', ' . $url . ', ' . $confirmationText . ', ' . $motherModule . ', this);return false;';
 
         return '<a href="#" class="' . htmlspecialchars($classes) . '" onclick="' . htmlspecialchars($onClick) . '" title="' .
-        htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark')) . '">' .
+        htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.makeBookmark')) . '">' .
         $this->iconFactory->getIcon('actions-system-shortcut-new', Icon::SIZE_SMALL)->render() . '</a>';
     }
 
@@ -614,9 +599,6 @@ function jumpToUrl(URL) {
         $this->pageRenderer->setTitle($title);
         // add docstyles
         $this->docStyle();
-        if ($this->extDirectStateProvider) {
-            $this->pageRenderer->addJsFile('EXT:backend/Resources/Public/JavaScript/ExtDirect.StateProvider.js');
-        }
         $this->pageRenderer->addHeaderData($this->JScode);
         foreach ($this->JScodeArray as $name => $code) {
             $this->pageRenderer->addJsInlineCode($name, $code, false);
@@ -1457,7 +1439,7 @@ function jumpToUrl(URL) {
             $title = '';
         }
         // Setting the path of the page
-        $pagePath = htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.path')) . ': <span class="typo3-docheader-pagePath">';
+        $pagePath = htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.path')) . ': <span class="typo3-docheader-pagePath">';
         // crop the title to title limit (or 50, if not defined)
         $cropLength = empty($GLOBALS['BE_USER']->uc['titleLen']) ? 50 : $GLOBALS['BE_USER']->uc['titleLen'];
         $croppedTitle = GeneralUtility::fixed_lgd_cs($title, -$cropLength);

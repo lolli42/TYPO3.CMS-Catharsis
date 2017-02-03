@@ -26,7 +26,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility
  */
-class ExtendedFileUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class ExtendedFileUtilityTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * Sets up this testcase
@@ -84,10 +84,10 @@ class ExtendedFileUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         GeneralUtility::addInstance(ConnectionPool::class, $connectionPoolProphet->reveal());
 
         $GLOBALS['LANG']->expects($this->at(0))->method('sL')
-            ->with('LLL:EXT:lang/locallang_core.xlf:message.description.folderNotDeletedHasFilesWithReferences')
+            ->with('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.description.folderNotDeletedHasFilesWithReferences')
             ->will($this->returnValue('folderNotDeletedHasFilesWithReferences'));
         $GLOBALS['LANG']->expects($this->at(1))->method('sL')
-            ->with('LLL:EXT:lang/locallang_core.xlf:message.header.folderNotDeletedHasFilesWithReferences')
+            ->with('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.header.folderNotDeletedHasFilesWithReferences')
             ->will($this->returnValue('folderNotDeletedHasFilesWithReferences'));
 
         $result = $subject->folderHasFilesInUse($folder);

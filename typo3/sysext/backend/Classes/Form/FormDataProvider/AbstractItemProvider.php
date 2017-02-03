@@ -18,12 +18,16 @@ use Doctrine\DBAL\DBALException;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\FlexForm\Exception\InvalidIdentifierException;
+use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\RelationHandler;
+use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -78,7 +82,7 @@ abstract class AbstractItemProvider
                 $fieldLabel = $languageService->sL($result['processedTca']['columns'][$fieldName]['label']);
             }
             $message = sprintf(
-                $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.items_proc_func_error'),
+                $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:error.items_proc_func_error'),
                 $fieldLabel,
                 $exception->getMessage()
             );
@@ -115,6 +119,9 @@ abstract class AbstractItemProvider
     protected function addItemsFromPageTsConfig(array $result, $fieldName, array $items)
     {
         $table = $result['tableName'];
+        $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
+        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
         if (!empty($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['addItems.'])
             && is_array($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['addItems.'])
         ) {
@@ -130,7 +137,25 @@ abstract class AbstractItemProvider
                     && is_array($addItemsArray[$value . '.'])
                     && !empty($addItemsArray[$value . '.']['icon'])
                 ) {
-                    $icon = $addItemsArray[$value . '.']['icon'];
+                    $iconIdentifier = $addItemsArray[$value . '.']['icon'];
+                    if (!$iconRegistry->isRegistered($iconIdentifier)) {
+                        GeneralUtility::deprecationLog(
+                            'Using a file path for icon in pageTsConfig addItems is deprecated.' .
+                            'Use a registered iconIdentifier instead'
+                        );
+                        $iconPath = GeneralUtility::getFileAbsFileName($iconIdentifier);
+                        if ($iconPath !== '') {
+                            $iconIdentifier = md5($iconPath);
+                            $iconRegistry->registerIcon(
+                                $iconIdentifier,
+                                $iconRegistry->detectIconProvider($iconPath),
+                                [
+                                    'source' => $iconPath
+                                ]
+                            );
+                        }
+                    }
+                    $icon = $iconFactory->getIcon($iconIdentifier, Icon::SIZE_SMALL)->getMarkup('inline');
                 }
                 $items[] = [$label, $value, $icon];
             }
@@ -159,6 +184,7 @@ abstract class AbstractItemProvider
         }
 
         $languageService = $this->getLanguageService();
+        $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
         $special = $result['processedTca']['columns'][$fieldName]['config']['special'];
@@ -292,6 +318,12 @@ abstract class AbstractItemProvider
                             foreach ($coValue['items'] as $itemKey => $itemCfg) {
                                 $icon = 'empty-empty';
                                 $helpText = [];
+                                if (!empty($itemCfg[1])) {
+                                    if ($iconRegistry->isRegistered($itemCfg[1])) {
+                                        // Use icon identifier when registered
+                                        $icon = $itemCfg[1];
+                                    }
+                                }
                                 if (!empty($itemCfg[2])) {
                                     $helpText['description'] = $languageService->sL($itemCfg[2]);
                                 }
@@ -359,6 +391,7 @@ abstract class AbstractItemProvider
      * @param string $fieldName Current handle field name
      * @param array $items Incoming items
      * @return array Modified item array
+     * @throws \RuntimeException
      */
     protected function addItemsFromFolder(array $result, $fieldName, array $items)
     {
@@ -368,8 +401,14 @@ abstract class AbstractItemProvider
             return $items;
         }
 
-        $fileFolder = $result['processedTca']['columns'][$fieldName]['config']['fileFolder'];
-        $fileFolder = GeneralUtility::getFileAbsFileName($fileFolder);
+        $fileFolderRaw = $result['processedTca']['columns'][$fieldName]['config']['fileFolder'];
+        $fileFolder = GeneralUtility::getFileAbsFileName($fileFolderRaw);
+        if ($fileFolder === '') {
+            throw new \RuntimeException(
+                'Invalid folder given for item processing: ' . $fileFolderRaw . ' for table ' . $result['tableName'] . ', field ' . $fieldName,
+                1479399227
+            );
+        }
         $fileFolder = rtrim($fileFolder, '/') . '/';
 
         if (@is_dir($fileFolder)) {
@@ -442,8 +481,8 @@ abstract class AbstractItemProvider
         // Early return on error with flash message
         if (!empty($databaseError)) {
             $msg = $databaseError . '. ';
-            $msg .= $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
-            $msgTitle = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch_title');
+            $msg .= $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:error.database_schema_mismatch');
+            $msgTitle = $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:error.database_schema_mismatch_title');
             /** @var $flashMessage FlashMessage */
             $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $msg, $msgTitle, FlashMessage::ERROR, true);
             /** @var $flashMessageService FlashMessageService */
@@ -707,10 +746,10 @@ abstract class AbstractItemProvider
                 if (!empty($GLOBALS['TCA'][$table]['columns'][$tableField]['label'])) {
                     $labelPrefix = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$tableField]['label']);
                 }
-                // Get all sheets and title
+                // Get all sheets
                 foreach ($flexForms as $extIdent => $extConf) {
                     // Get all fields in sheet
-                    foreach ($extConf['ds']['sheets'] as $sheetName => $sheet) {
+                    foreach ($extConf['sheets'] as $sheetName => $sheet) {
                         if (empty($sheet['ROOT']['el']) || !is_array($sheet['ROOT']['el'])) {
                             continue;
                         }
@@ -755,76 +794,54 @@ abstract class AbstractItemProvider
     }
 
     /**
-     * Returns all registered FlexForm definitions with title and fields
+     * Returns FlexForm data structures it finds. Used in select "special" for be_groups
+     * to set "exclude" flags for single flex form fields.
+     *
+     * This only finds flex forms registered in 'ds' config sections.
+     * This does not resolve other sophisticated flex form data structure references.
+     *
+     * @todo: This approach is limited and doesn't find everything. It works for casual tt_content plugins, though:
+     * @todo: The data structure identifier determination depends on data row, but we don't have all rows at hand here.
+     * @todo: The code thus "guesses" some standard data structure identifier scenarios and tries to resolve those.
+     * @todo: This guessing can not be solved in a good way. A general registry of "all" possible data structures is
+     * @todo: probably not wanted, since that wouldn't work for truly dynamic DS calculations. Probably the only
+     * @todo: thing we could do here is a hook to allow extensions declaring specific data structures to
+     * @todo: allow backend admins to set exclude flags for certain fields in those cases.
      *
      * @param string $table Table to handle
-     * @return array Data structures with speaking extension title
+     * @return array Data structures
      */
     protected function getRegisteredFlexForms($table)
     {
         if (empty($table) || empty($GLOBALS['TCA'][$table]['columns'])) {
             return [];
         }
+        $flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
         $flexForms = [];
         foreach ($GLOBALS['TCA'][$table]['columns'] as $tableField => $fieldConf) {
-            if (!empty($fieldConf['config']['type']) && !empty($fieldConf['config']['ds']) && $fieldConf['config']['type'] == 'flex') {
+            if (!empty($fieldConf['config']['type']) && !empty($fieldConf['config']['ds']) && $fieldConf['config']['type'] === 'flex') {
                 $flexForms[$tableField] = [];
-                // Get pointer fields
-                $pointerFields = !empty($fieldConf['config']['ds_pointerField']) ? $fieldConf['config']['ds_pointerField'] : 'list_type,CType,default';
-                $pointerFields = GeneralUtility::trimExplode(',', $pointerFields);
-                // Get FlexForms
-                foreach ($fieldConf['config']['ds'] as $flexFormKey => $dataStructure) {
+                foreach (array_keys($fieldConf['config']['ds']) as $flexFormKey) {
                     // Get extension identifier (uses second value if it's not empty, "list" or "*", else first one)
                     $identFields = GeneralUtility::trimExplode(',', $flexFormKey);
                     $extIdent = $identFields[0];
                     if (!empty($identFields[1]) && $identFields[1] !== 'list' && $identFields[1] !== '*') {
                         $extIdent = $identFields[1];
                     }
-                    // Load external file references
-                    if (!is_array($dataStructure)) {
-                        $file = GeneralUtility::getFileAbsFileName(str_ireplace('FILE:', '', $dataStructure));
-                        if ($file && @is_file($file)) {
-                            $dataStructure = file_get_contents($file);
-                        }
-                        $dataStructure = GeneralUtility::xml2array($dataStructure);
-                        if (!is_array($dataStructure)) {
-                            continue;
-                        }
+                    $flexFormDataStructureIdentifier = json_encode([
+                        'type' => 'tca',
+                        'tableName' => $table,
+                        'fieldName' => $tableField,
+                        'dataStructureKey' => $flexFormKey,
+                    ]);
+                    try {
+                        $dataStructure = $flexFormTools->parseDataStructureByIdentifier($flexFormDataStructureIdentifier);
+                        $flexForms[$tableField][$extIdent] = $dataStructure;
+                    } catch (InvalidIdentifierException $e) {
+                        // Deliberately empty: The DS identifier is guesswork and the flex ds parser throws
+                        // this exception if it can not resolve to a valid data structure. This is "ok" here
+                        // and the exception is just eaten.
                     }
-                    // Get flexform content
-                    $dataStructure = GeneralUtility::resolveAllSheetsInDS($dataStructure);
-                    if (empty($dataStructure['sheets']) || !is_array($dataStructure['sheets'])) {
-                        continue;
-                    }
-                    // Use DS pointer to get extension title from TCA
-                    // @todo: I don't understand this code ... does it make sense at all?
-                    $title = $extIdent;
-                    $keyFields = GeneralUtility::trimExplode(',', $flexFormKey);
-                    foreach ($pointerFields as $pointerKey => $pointerName) {
-                        if (empty($keyFields[$pointerKey])
-                            || $keyFields[$pointerKey] === '*'
-                            || $keyFields[$pointerKey] === 'list'
-                            || $keyFields[$pointerKey] === 'default'
-                        ) {
-                            continue;
-                        }
-                        if (!empty($GLOBALS['TCA'][$table]['columns'][$pointerName]['config']['items'])) {
-                            $items = $GLOBALS['TCA'][$table]['columns'][$pointerName]['config']['items'];
-                            if (!is_array($items)) {
-                                continue;
-                            }
-                            foreach ($items as $itemConf) {
-                                if (!empty($itemConf[0]) && !empty($itemConf[1]) && $itemConf[1] == $keyFields[$pointerKey]) {
-                                    $title = $itemConf[0];
-                                    break 2;
-                                }
-                            }
-                        }
-                    }
-                    $flexForms[$tableField][$extIdent] = [
-                        'title' => $title,
-                        'ds' => $dataStructure
-                    ];
                 }
             }
         }
@@ -841,8 +858,8 @@ abstract class AbstractItemProvider
     {
         $languageService = static::getLanguageService();
         $adLabel = [
-            'ALLOW' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.allow'),
-            'DENY' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.deny')
+            'ALLOW' => $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.allow'),
+            'DENY' => $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.deny')
         ];
         $allowDenyOptions = [];
         foreach ($GLOBALS['TCA'] as $table => $_) {
@@ -1153,7 +1170,10 @@ abstract class AbstractItemProvider
         $currentDatabaseValues = array_key_exists($fieldName, $row)
             ? $row[$fieldName]
             : '';
-        return GeneralUtility::trimExplode(',', $currentDatabaseValues, true);
+        if (!is_array($currentDatabaseValues)) {
+            $currentDatabaseValues = GeneralUtility::trimExplode(',', $currentDatabaseValues, true);
+        }
+        return $currentDatabaseValues;
     }
 
     /**
@@ -1292,15 +1312,17 @@ abstract class AbstractItemProvider
      *
      * @param mixed $maxItems
      * @return int
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function sanitizeMaxItems($maxItems)
     {
+        GeneralUtility::logDeprecatedFunction();
         if (!empty($maxItems)
-            && (int)$maxItems > 1
+            && (int)$maxItems >= 1
         ) {
             $maxItems = (int)$maxItems;
         } else {
-            $maxItems = 1;
+            $maxItems = 99999;
         }
 
         return $maxItems;
@@ -1341,8 +1363,9 @@ abstract class AbstractItemProvider
      * @param array $itemArray All item records for the select field
      * @param array $dynamicItemArray Item records from dynamic sources
      * @return array
+     * @todo: Check method usage, it's probably bogus in select context and was removed from select tree already.
      */
-    public function getStaticValues($itemArray, $dynamicItemArray)
+    protected function getStaticValues($itemArray, $dynamicItemArray)
     {
         $staticValues = [];
         foreach ($itemArray as $key => $item) {

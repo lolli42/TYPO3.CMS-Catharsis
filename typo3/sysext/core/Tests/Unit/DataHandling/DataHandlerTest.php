@@ -14,9 +14,12 @@ namespace TYPO3\CMS\Core\Tests\Unit\DataHandler;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Prophecy\Argument;
+use TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Tests\AccessibleObjectInterface;
 use TYPO3\CMS\Core\Tests\Unit\DataHandling\Fixtures\AllowAccessHookFixture;
 use TYPO3\CMS\Core\Tests\Unit\DataHandling\Fixtures\InvalidHookFixture;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -24,7 +27,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Test case
  */
-class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class DataHandlerTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var array A backup of registered singleton instances
@@ -347,7 +350,18 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
         /** @var $subject DataHandler|\PHPUnit_Framework_MockObject_MockObject */
         $subject = $this->getMockBuilder(DataHandler::class)
-            ->setMethods(['newlog', 'checkModifyAccessList', 'tableReadOnly', 'checkRecordUpdateAccess', 'recordInfo'])
+            ->setMethods([
+                'newlog',
+                'checkModifyAccessList',
+                'tableReadOnly',
+                'checkRecordUpdateAccess',
+                'recordInfo',
+                'getCacheManager',
+                'registerElementsToBeDeleted',
+                'unsetElementsToBeDeleted',
+                'resetElementsToBeDeleted'
+            ])
+            ->disableOriginalConstructor()
             ->getMock();
 
         $subject->bypassWorkspaceRestrictions = false;
@@ -358,10 +372,18 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
                 ]
             ]
         ];
+
+        $cacheManagerMock = $this->getMockBuilder(CacheManager::class)
+            ->setMethods(['flushCachesInGroupByTags'])
+            ->getMock();
+        $cacheManagerMock->expects($this->once())->method('flushCachesInGroupByTags')->with('pages', []);
+
+        $subject->expects($this->once())->method('getCacheManager')->willReturn($cacheManagerMock);
         $subject->expects($this->once())->method('recordInfo')->will($this->returnValue(null));
         $subject->expects($this->once())->method('checkModifyAccessList')->with('pages')->will($this->returnValue(true));
         $subject->expects($this->once())->method('tableReadOnly')->with('pages')->will($this->returnValue(false));
         $subject->expects($this->once())->method('checkRecordUpdateAccess')->will($this->returnValue(true));
+        $subject->expects($this->once())->method('unsetElementsToBeDeleted')->willReturnArgument(0);
 
         /** @var BackendUserAuthentication|\PHPUnit_Framework_MockObject_MockObject $backEndUser */
         $backEndUser = $this->createMock(BackendUserAuthentication::class);
@@ -371,21 +393,20 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $backEndUser->expects($this->once())->method('workspaceCannotEditRecord')->will($this->returnValue(true));
         $backEndUser->expects($this->once())->method('recordEditAccessInternals')->with('pages', 1)->will($this->returnValue(true));
         $subject->BE_USER = $backEndUser;
-        $createdTceMain = $this->createMock(DataHandler::class);
-        $createdTceMain->expects($this->once())->method('start')->with([], [
+        $createdDataHandler = $this->createMock(DataHandler::class);
+        $createdDataHandler->expects($this->once())->method('start')->with([], [
             'pages' => [
                 1 => [
                     'version' => [
                         'action' => 'new',
-                        'treeLevels' => -1,
                         'label' => 'Auto-created for WS #1'
                     ]
                 ]
             ]
         ]);
-        $createdTceMain->expects($this->never())->method('process_datamap');
-        $createdTceMain->expects($this->once())->method('process_cmdmap');
-        GeneralUtility::addInstance(DataHandler::class, $createdTceMain);
+        $createdDataHandler->expects($this->never())->method('process_datamap');
+        $createdDataHandler->expects($this->once())->method('process_cmdmap');
+        GeneralUtility::addInstance(DataHandler::class, $createdDataHandler);
         $subject->process_datamap();
     }
 
@@ -401,6 +422,10 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         $hookMock->expects($this->once())->method('checkFlexFormValue_beforeMerge');
         $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkFlexFormValue'][] = $hookClass;
         GeneralUtility::addInstance($hookClass, $hookMock);
+        $flexFormToolsProphecy = $this->prophesize(FlexFormTools::class);
+        $flexFormToolsProphecy->getDataStructureIdentifier(Argument::cetera())->willReturn('anIdentifier');
+        $flexFormToolsProphecy->parseDataStructureByIdentifier('anIdentifier')->willReturn([]);
+        GeneralUtility::addInstance(FlexFormTools::class, $flexFormToolsProphecy->reveal());
         $this->subject->_call('checkValueForFlex', [], [], [], '', 0, '', '', 0, 0, 0, [], '');
     }
 

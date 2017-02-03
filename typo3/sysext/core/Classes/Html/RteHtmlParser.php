@@ -15,15 +15,19 @@ namespace TYPO3\CMS\Core\Html;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Resource;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Frontend\Service\TypoLinkCodecService;
 
 /**
  * Class for parsing HTML for the Rich Text Editor. (also called transformations)
+ *
+ * Concerning line breaks:
+ * Regardless if LF (Unix-style) or CRLF (Windows) was put in, the HtmlParser works with LFs and migrates all
+ * line breaks to LFs internally, however when all transformations are done, all LFs are transformed to CRLFs.
+ * This means: RteHtmlParser always returns CRLFs to be maximum compatible with all formats.
  */
 class RteHtmlParser extends HtmlParser
 {
@@ -89,6 +93,45 @@ class RteHtmlParser extends HtmlParser
     public $allowedClasses = [];
 
     /**
+     * A list of HTML attributes for <p> tags. Because <p> tags are wrapped currently in a special handling,
+     * they have a special place for configuration via 'proc.keepPDIVattribs'
+     *
+     * @var array
+     */
+    protected $allowedAttributesForParagraphTags = [
+        'class',
+        'align',
+        'id',
+        'title',
+        'dir',
+        'lang',
+        'xml:lang',
+        'itemscope',
+        'itemtype',
+        'itemprop'
+    ];
+
+    /**
+     * Any tags that are allowed outside of <p> sections - usually similar to the block elements
+     * plus some special tags like <hr> and <img> (if images are allowed).
+     * Completely overrideable via 'proc.allowTagsOutside'
+     *
+     * @var array
+     */
+    protected $allowedTagsOutsideOfParagraphs = [
+        'address',
+        'article',
+        'aside',
+        'blockquote',
+        'div',
+        'footer',
+        'header',
+        'hr',
+        'nav',
+        'section'
+    ];
+
+    /**
      * Initialize, setting element reference and record PID
      *
      * @param string $elRef Element reference, eg "tt_content:bodytext
@@ -108,57 +151,68 @@ class RteHtmlParser extends HtmlParser
      **********************************************/
     /**
      * Transform value for RTE based on specConf in the direction specified by $direction (rte/db)
-     * This is the main function called from tcemain and transfer data classes
+     * This is the main function called from DataHandler and transfer data classes
      *
      * @param string $value Input value
-     * @param array $specConf Special configuration for a field; This is coming from the types-configuration of the field in the TCA. In the types-configuration you can setup features for the field rendering and in particular the RTE takes al its major configuration options from there!
+     * @param array $specConf deprecated old "defaultExtras" parsed as array
      * @param string $direction Direction of the transformation. Two keywords are allowed; "db" or "rte". If "db" it means the transformation will clean up content coming from the Rich Text Editor and goes into the database. The other direction, "rte", is of course when content is coming from database and must be transformed to fit the RTE.
      * @param array $thisConfig Parsed TypoScript content configuring the RTE, probably coming from Page TSconfig.
      * @return string Output value
      */
-    public function RTE_transform($value, $specConf, $direction = 'rte', $thisConfig = [])
+    public function RTE_transform($value, $specConf = [], $direction = 'rte', $thisConfig = [])
     {
-        // Init:
         $this->tsConfig = $thisConfig;
         $this->procOptions = (array)$thisConfig['proc.'];
-        // dynamic configuration of blockElementList
+        if (isset($this->procOptions['allowedClasses.'])) {
+            $this->allowedClasses = (array)$this->procOptions['allowedClasses.'];
+        } else {
+            $this->allowedClasses = GeneralUtility::trimExplode(',', $this->procOptions['allowedClasses'], true);
+        }
+
+        // Dynamic configuration of blockElementList
         if ($this->procOptions['blockElementList']) {
             $this->blockElementList = $this->procOptions['blockElementList'];
         }
-        // Setting modes:
+
+        // Define which attributes are allowed on <p> tags
+        if (isset($this->procOptions['allowAttributes.'])) {
+            $this->allowedAttributesForParagraphTags = $this->procOptions['allowAttributes.'];
+        } elseif (isset($this->procOptions['keepPDIVattribs'])) {
+            $this->allowedAttributesForParagraphTags = GeneralUtility::trimExplode(',', strtolower($this->procOptions['keepPDIVattribs']), true);
+        }
+        // Override tags which are allowed outside of <p> tags
+        if (isset($this->procOptions['allowTagsOutside'])) {
+            if (!isset($this->procOptions['allowTagsOutside.'])) {
+                $this->allowedTagsOutsideOfParagraphs = GeneralUtility::trimExplode(',', strtolower($this->procOptions['allowTagsOutside']), true);
+            } else {
+                $this->allowedTagsOutsideOfParagraphs = (array)$this->procOptions['allowTagsOutside.'];
+            }
+        }
+
+        // Setting modes / transformations to be called
         if ((string)$this->procOptions['overruleMode'] !== '') {
-            $modes = array_unique(GeneralUtility::trimExplode(',', $this->procOptions['overruleMode']));
+            $modes = GeneralUtility::trimExplode(',', $this->procOptions['overruleMode']);
+        } elseif (!empty($this->procOptions['mode'])) {
+            $modes = [$this->procOptions['mode']];
         } else {
             // Get parameters for rte_transformation:
+            // @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - the else{} part can be removed in v9
+            GeneralUtility::deprecationLog(
+                'Argument 2 of RteHtmlParser::RTE_transform() is deprecated. Transformations should be given in $thisConfig[\'proc.\'][\'overruleMode\']'
+            );
             $specialFieldConfiguration = BackendUtility::getSpecConfParametersFromArray($specConf['rte_transform']['parameters']);
-            $modes = array_unique(GeneralUtility::trimExplode('-', $specialFieldConfiguration['mode']));
+            $modes = GeneralUtility::trimExplode('-', $specialFieldConfiguration['mode']);
         }
-        $revmodes = array_flip($modes);
-        // Find special modes and extract them:
-        if (isset($revmodes['ts_css'])) {
-            $modes[$revmodes['ts_css']] = 'css_transform,ts_images,ts_links';
-        }
-        // Make list unique
-        $modes = array_unique(GeneralUtility::trimExplode(',', implode(',', $modes), true));
-        // Reverse order if direction is "rte"
-        if ($direction === 'rte') {
-            $modes = array_reverse($modes);
-        }
-        // Getting additional HTML cleaner configuration. These are applied either before or after the main transformation is done and is thus totally independent processing options you can set up:
-        $entry_HTMLparser = $this->procOptions['entryHTMLparser_' . $direction] ? $this->HTMLparserConfig($this->procOptions['entryHTMLparser_' . $direction . '.']) : '';
-        $exit_HTMLparser = $this->procOptions['exitHTMLparser_' . $direction] ? $this->HTMLparserConfig($this->procOptions['exitHTMLparser_' . $direction . '.']) : '';
-        // Line breaks of content is unified into char-10 only (removing char 13)
-        if (!$this->procOptions['disableUnifyLineBreaks']) {
-            $value = str_replace(CRLF, LF, $value);
-        }
-        // In an entry-cleaner was configured, pass value through the HTMLcleaner with that:
-        if (is_array($entry_HTMLparser)) {
-            $value = $this->HTMLcleaner($value, $entry_HTMLparser[0], $entry_HTMLparser[1], $entry_HTMLparser[2], $entry_HTMLparser[3]);
-        }
-        // Traverse modes:
+        $modes = $this->resolveAppliedTransformationModes($direction, $modes);
+
+        $value = $this->streamlineLineBreaksForProcessing($value);
+
+        // If an entry HTML cleaner was configured, pass the content through the HTMLcleaner
+        $value = $this->runHtmlParserIfConfigured($value, 'entryHTMLparser_' . $direction);
+
+        // Traverse modes
         foreach ($modes as $cmd) {
-            // ->DB
-            if ($direction == 'db') {
+            if ($direction === 'db') {
                 // Checking for user defined transformation:
                 if ($_classRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
                     $_procObj = GeneralUtility::getUserObj($_classRef);
@@ -168,6 +222,9 @@ class RteHtmlParser extends HtmlParser
                 } else {
                     // ... else use defaults:
                     switch ($cmd) {
+                        case 'detectbrokenlinks':
+                            $value = $this->removeBrokenLinkMarkers($value);
+                            break;
                         case 'ts_images':
                             $value = $this->TS_images_db($value);
                             break;
@@ -175,9 +232,6 @@ class RteHtmlParser extends HtmlParser
                             $value = $this->TS_links_db($value);
                             break;
                         case 'css_transform':
-                            $this->allowedClasses = GeneralUtility::trimExplode(',', $this->procOptions['allowedClasses'], true);
-                            // CR has a very disturbing effect, so just remove all CR and rely on LF
-                            $value = str_replace(CR, '', $value);
                             // Transform empty paragraphs into spacing paragraphs
                             $value = str_replace('<p></p>', '<p>&nbsp;</p>', $value);
                             // Double any trailing spacing paragraph so that it does not get removed by divideIntoLines()
@@ -188,9 +242,7 @@ class RteHtmlParser extends HtmlParser
                             // Do nothing
                     }
                 }
-            }
-            // ->RTE
-            if ($direction == 'rte') {
+            } elseif ($direction === 'rte') {
                 // Checking for user defined transformation:
                 if ($_classRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
                     $_procObj = GeneralUtility::getUserObj($_classRef);
@@ -199,6 +251,9 @@ class RteHtmlParser extends HtmlParser
                 } else {
                     // ... else use defaults:
                     switch ($cmd) {
+                        case 'detectbrokenlinks':
+                            $value = $this->markBrokenLinks($value);
+                            break;
                         case 'ts_images':
                             $value = $this->TS_images_rte($value);
                             break;
@@ -206,8 +261,6 @@ class RteHtmlParser extends HtmlParser
                             $value = $this->TS_links_rte($value);
                             break;
                         case 'css_transform':
-                            // Has a very disturbing effect, so just remove all '13' - depend on '10'
-                            $value = str_replace(CR, '', $value);
                             $value = $this->TS_transform_rte($value);
                             break;
                         default:
@@ -216,19 +269,61 @@ class RteHtmlParser extends HtmlParser
                 }
             }
         }
-        // In an exit-cleaner was configured, pass value through the HTMLcleaner with that:
-        if (is_array($exit_HTMLparser)) {
-            $value = $this->HTMLcleaner($value, $exit_HTMLparser[0], $exit_HTMLparser[1], $exit_HTMLparser[2], $exit_HTMLparser[3]);
-        }
-        // Final clean up of linebreaks:
-        if (!$this->procOptions['disableUnifyLineBreaks']) {
-            // Make sure no \r\n sequences has entered in the meantime...
-            $value = str_replace(CRLF, LF, $value);
-            // ... and then change all \n into \r\n
-            $value = str_replace(LF, CRLF, $value);
-        }
-        // Return value:
+
+        // If an exit HTML cleaner was configured, pass the content through the HTMLcleaner
+        $value = $this->runHtmlParserIfConfigured($value, 'exitHTMLparser_' . $direction);
+
+        // Final clean up of linebreaks
+        $value = $this->streamlineLineBreaksAfterProcessing($value);
+
         return $value;
+    }
+
+    /**
+     * Ensures what transformation modes should be executed, and that they are only executed once.
+     *
+     * @param string $direction
+     * @param array $modes
+     * @return array the resolved transformation modes
+     */
+    protected function resolveAppliedTransformationModes(string $direction, array $modes)
+    {
+        $modeList = implode(',', $modes);
+
+        // Replace the shortcut "default" with all custom modes
+        $modeList = str_replace('default', 'detectbrokenlinks,css_transform,ts_images,ts_links', $modeList);
+        // Replace the shortcut "ts_css" with all custom modes
+        // @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - NEXT line can be removed in v9
+        $modeList = str_replace('ts_css', 'detectbrokenlinks,css_transform,ts_images,ts_links', $modeList);
+
+        // Make list unique
+        $modes = array_unique(GeneralUtility::trimExplode(',', $modeList, true));
+        // Reverse order if direction is "rte"
+        if ($direction === 'rte') {
+            $modes = array_reverse($modes);
+        }
+
+        return $modes;
+    }
+
+    /**
+     * Runs the HTML parser if it is configured
+     * Getting additional HTML cleaner configuration. These are applied either before or after the main transformation
+     * is done and thus totally independent processing options you can set up.
+     *
+     * This is only possible via TSconfig (procOptions) currently.
+     *
+     * @param string $content
+     * @param string $configurationDirective used to look up in the procOptions if enabled, and then fetch the
+     * @return string the processed content
+     */
+    protected function runHtmlParserIfConfigured($content, $configurationDirective)
+    {
+        if ($this->procOptions[$configurationDirective]) {
+            list($keepTags, $keepNonMatchedTags, $hscMode, $additionalConfiguration) = $this->HTMLparserConfig($this->procOptions[$configurationDirective . '.']);
+            $content = $this->HTMLcleaner($content, $keepTags, $keepNonMatchedTags, $hscMode, $additionalConfiguration);
+        }
+        return $content;
     }
 
     /************************************
@@ -333,7 +428,9 @@ class RteHtmlParser extends HtmlParser
                                 $fileName = GeneralUtility::shortMD5($absoluteUrl) . '.' . $pI['extension'];
                                 // We insert this image into the user default upload folder
                                 list($table, $field) = explode(':', $this->elRef);
+                                /** @var Resource\Folder $folder */
                                 $folder = $GLOBALS['BE_USER']->getDefaultUploadFolder($this->recPid, $table, $field);
+                                /** @var Resource\File $fileObject */
                                 $fileObject = $folder->createFile($fileName)->setContents($externalFile);
                                 $imageConfiguration = [
                                     'width' => $attribArray['width'],
@@ -367,6 +464,7 @@ class RteHtmlParser extends HtmlParser
                                 $fileOrFolderObject = $resourceFactory->retrieveFileOrFolderObject($path);
                                 if ($fileOrFolderObject instanceof Resource\FileInterface) {
                                     $fileIdentifier = $fileOrFolderObject->getIdentifier();
+                                    /** @var Resource\AbstractFile $fileObject */
                                     $fileObject = $fileOrFolderObject->getStorage()->getFile($fileIdentifier);
                                     // @todo if the retrieved file is a processed file, get the original file...
                                     $attribArray['data-htmlarea-file-uid'] = $fileObject->getUid();
@@ -434,7 +532,10 @@ class RteHtmlParser extends HtmlParser
 
     /**
      * Transformation handler: 'ts_links' / direction: "db"
-     * Converting <A>-tags to <link tags>
+     * Processing anchor tags, and resolves them correctly again via the LinkService syntax
+     *
+     * Splits content into <a> tag blocks and processes each tag, and allows hooks to actually render
+     * the result.
      *
      * @param string $value Content input
      * @return string Content output
@@ -442,94 +543,31 @@ class RteHtmlParser extends HtmlParser
      */
     public function TS_links_db($value)
     {
-        $conf = [];
-        // Split content into <a> tag blocks and process:
         $blockSplit = $this->splitIntoBlock('A', $value);
         foreach ($blockSplit as $k => $v) {
-            // If an A-tag was found:
             if ($k % 2) {
-                list($attribArray) = $this->get_tag_attributes($this->getFirstTag($v), true);
-                $info = $this->urlInfoForLinkTags($attribArray['href']);
-                // Check options:
-                $attribArray_copy = $attribArray;
-                unset($attribArray_copy['href']);
-                unset($attribArray_copy['target']);
-                unset($attribArray_copy['class']);
-                unset($attribArray_copy['title']);
-                unset($attribArray_copy['data-htmlarea-external']);
-                // Unset "rteerror" and "style" attributes if "rteerror" is set!
-                if ($attribArray_copy['rteerror']) {
-                    unset($attribArray_copy['style']);
-                    unset($attribArray_copy['rteerror']);
-                }
-                // Remove additional parameters
-                if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['removeParams_PostProc']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['removeParams_PostProc'])) {
+                list($tagAttributes) = $this->get_tag_attributes($this->getFirstTag($v), true);
+                $linkService = GeneralUtility::makeInstance(LinkService::class);
+                $linkInformation = $linkService->resolve($tagAttributes['href']);
+
+                // Modify parameters, this hook should be deprecated
+                if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'])
+                    && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'])) {
                     $parameters = [
-                        'conf' => &$conf,
-                        'aTagParams' => &$attribArray_copy
+                        'currentBlock' => $v,
+                        'linkInformation' => $linkInformation,
+                        'url' => $linkInformation['href'],
+                        'attributes' => $tagAttributes
                     ];
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['removeParams_PostProc'] as $objRef) {
+                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'] as $objRef) {
                         $processor = GeneralUtility::getUserObj($objRef);
-                        $attribArray_copy = $processor->removeParams($parameters, $this);
-                    }
-                }
-                // Only if href, target, class and tile are the only attributes, we can alter the link!
-                if (empty($attribArray_copy)) {
-                    // Quoting class and title attributes if they contain spaces
-                    $attribArray['class'] = preg_match('/ /', $attribArray['class']) ? '"' . $attribArray['class'] . '"' : $attribArray['class'];
-                    $attribArray['title'] = preg_match('/ /', $attribArray['title']) ? '"' . $attribArray['title'] . '"' : $attribArray['title'];
-                    // Creating the TYPO3 pseudo-tag "<LINK>" for the link (includes href/url, target and class attributes):
-                    // If data-htmlarea-external attribute is set, keep the href unchanged
-                    if ($attribArray['data-htmlarea-external']) {
-                        $href = $attribArray['href'];
-                    } else {
-                        $href = $info['url'] . ($info['query'] ? ',0,' . $info['query'] : '');
-                    }
-                    $typoLink = GeneralUtility::makeInstance(TypoLinkCodecService::class)->encode(['url' => $href, 'target' => $attribArray['target'], 'class' => trim($attribArray['class'], '"'), 'title' => trim($attribArray['title'], '"'), 'additionalParams' => '']);
-                    $bTag = '<link ' . $typoLink . '>';
-                    $eTag = '</link>';
-                    // Modify parameters
-                    if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'])) {
-                        $parameters = [
-                            'conf' => &$conf,
-                            'currentBlock' => $v,
-                            'url' => $href,
-                            'attributes' => $attribArray
-                        ];
-                        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'] as $objRef) {
-                            $processor = GeneralUtility::getUserObj($objRef);
-                            $blockSplit[$k] = $processor->modifyParamsLinksDb($parameters, $this);
-                        }
-                    } else {
-                        $blockSplit[$k] = $bTag . $this->TS_links_db($this->removeFirstAndLastTag($blockSplit[$k])) . $eTag;
+                        $blockSplit[$k] = $processor->modifyParamsLinksDb($parameters, $this);
                     }
                 } else {
-                    // ... otherwise store the link as a-tag.
-                    // Unsetting 'rtekeep' attribute if that had been set.
-                    unset($attribArray['rtekeep']);
-                    if (!$attribArray['data-htmlarea-external']) {
-                        $siteURL = GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
-                        // If the url is local, remove url-prefix
-                        if ($siteURL && substr($attribArray['href'], 0, strlen($siteURL)) == $siteURL) {
-                            $attribArray['href'] = substr($attribArray['href'], strlen($siteURL));
-                        }
-                        // Check for FAL link-handler keyword
-                        list($linkHandlerKeyword, $linkHandlerValue) = explode(':', $attribArray['href'], 2);
-                        if ($linkHandlerKeyword === '?file') {
-                            try {
-                                $fileOrFolderObject = Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject(rawurldecode($linkHandlerValue));
-                                if ($fileOrFolderObject instanceof Resource\FileInterface || $fileOrFolderObject instanceof Resource\Folder) {
-                                    $attribArray['href'] = $fileOrFolderObject->getPublicUrl();
-                                }
-                            } catch (Resource\Exception\ResourceDoesNotExistException $resourceDoesNotExistException) {
-                                // The identifier inserted in the RTE is already gone...
-                            }
-                        }
-                    }
-                    unset($attribArray['data-htmlarea-external']);
-                    $bTag = '<a ' . GeneralUtility::implodeAttributes($attribArray, 1) . '>';
-                    $eTag = '</a>';
-                    $blockSplit[$k] = $bTag . $this->TS_links_db($this->removeFirstAndLastTag($blockSplit[$k])) . $eTag;
+                    // Otherwise store the link as <a> tag as default by TYPO3, with the new link service syntax
+                    $tagAttributes['href'] = $linkService->asString($linkInformation);
+                    $blockSplit[$k] = '<a ' . GeneralUtility::implodeAttributes($tagAttributes, true) . '>'
+                        . $this->TS_links_db($this->removeFirstAndLastTag($blockSplit[$k])) . '</a>';
                 }
             }
         }
@@ -538,132 +576,48 @@ class RteHtmlParser extends HtmlParser
 
     /**
      * Transformation handler: 'ts_links' / direction: "rte"
-     * Converting <link tags> to <A>-tags
+     * Converting TYPO3-specific <link> tags to <a> tags
+     *
+     * This functionality is only used to convert legacy <link> tags to the new linking syntax using <a> tags, and will
+     * not be converted back to <link> tags anymore.
      *
      * @param string $value Content input
      * @return string Content output
-     * @see TS_links_rte()
      */
     public function TS_links_rte($value)
     {
-        $conf = [];
         $value = $this->TS_AtagToAbs($value);
-        // Split content by the TYPO3 pseudo tag "<link>":
-        $blockSplit = $this->splitIntoBlock('link', $value, 1);
-        $siteUrl = GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
+        // Split content by the TYPO3 pseudo tag "<link>"
+        $blockSplit = $this->splitIntoBlock('link', $value, true);
         foreach ($blockSplit as $k => $v) {
-            $error = '';
-            $external = false;
             // Block
             if ($k % 2) {
-                // split away the first "<link" part
-                $typolink = explode(' ', substr($this->getFirstTag($v), 0, -1), 2)[1];
-                $tagCode = GeneralUtility::makeInstance(TypoLinkCodecService::class)->decode($typolink);
+                // Split away the first "<link " part
+                $typoLinkData = explode(' ', substr($this->getFirstTag($v), 0, -1), 2)[1];
+                $tagCode = GeneralUtility::makeInstance(TypoLinkCodecService::class)->decode($typoLinkData);
 
-                $link_param = $tagCode['url'];
-                // Parsing the typolink data. This parsing is roughly done like in \TYPO3\CMS\Frontend\ContentObject->typoLink()
-                // Parse URL:
-                $pU = parse_url($link_param);
-                if (strstr($link_param, '@') && (!$pU['scheme'] || $pU['scheme'] == 'mailto')) {
-                    // mailadr
-                    $href = 'mailto:' . preg_replace('/^mailto:/i', '', $link_param);
-                } elseif ($link_param[0] === '#') {
-                    // check if anchor
-                    $href = $siteUrl . $link_param;
-                } else {
-                    // Check for FAL link-handler keyword:
-                    list($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($link_param), 2);
-                    if ($linkHandlerKeyword === 'file' && !StringUtility::beginsWith($link_param, 'file://')) {
-                        $href = $siteUrl . '?' . $linkHandlerKeyword . ':' . rawurlencode($linkHandlerValue);
-                    } else {
-                        $fileChar = (int)strpos($link_param, '/');
-                        $urlChar = (int)strpos($link_param, '.');
-                        // Detects if a file is found in site-root.
-                        list($rootFileDat) = explode('?', $link_param);
-                        $rFD_fI = pathinfo($rootFileDat);
-                        $fileExtension = strtolower($rFD_fI['extension']);
-                        if (strpos($link_param, '/') === false && trim($rootFileDat) && (@is_file(PATH_site . $rootFileDat) || $fileExtension === 'php' || $fileExtension === 'html' || $fileExtension === 'htm')) {
-                            $href = $siteUrl . $link_param;
-                        } elseif (
-                            (
-                                $pU['scheme']
-                                && !isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$pU['scheme']])
-                            )
-                            || $urlChar && (!$fileChar || $urlChar < $fileChar)
-                        ) {
-                            // url (external): if has scheme or if a '.' comes before a '/'.
-                            $href = $link_param;
-                            if (!$pU['scheme']) {
-                                $href = 'http://' . $href;
-                            }
-                            $external = true;
-                        } elseif ($fileChar) {
-                            // It is an internal file or folder
-                            // Try to transform the href into a FAL reference
-                            try {
-                                $fileOrFolderObject = Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($link_param);
-                            } catch (Resource\Exception $exception) {
-                                // Nothing to be done if file/folder not found or path invalid
-                                $fileOrFolderObject = null;
-                            }
-                            if ($fileOrFolderObject instanceof Resource\Folder) {
-                                // It's a folder
-                                $folderIdentifier = $fileOrFolderObject->getIdentifier();
-                                $href = $siteUrl . '?file:' . rawurlencode($folderIdentifier);
-                            } elseif ($fileOrFolderObject instanceof Resource\FileInterface) {
-                                // It's a file
-                                $fileIdentifier = $fileOrFolderObject->getIdentifier();
-                                $fileObject = $fileOrFolderObject->getStorage()->getFile($fileIdentifier);
-                                $href = $siteUrl . '?file:' . $fileObject->getUid();
-                            } else {
-                                $href = $siteUrl . $link_param;
-                            }
-                        } else {
-                            // integer or alias (alias is without slashes or periods or commas, that is 'nospace,alphanum_x,lower,unique' according to tables.php!!)
-                            // Splitting the parameter by ',' and if the array counts more than 1 element it's an id/type/parameters triplet
-                            $pairParts = GeneralUtility::trimExplode(',', $link_param, true);
-                            $idPart = $pairParts[0];
-                            $link_params_parts = explode('#', $idPart);
-                            $idPart = trim($link_params_parts[0]);
-                            $sectionMark = trim($link_params_parts[1]);
-                            if ((string)$idPart === '') {
-                                $idPart = $this->recPid;
-                            }
-                            // If no id or alias is given, set it to class record pid
-                            // Checking if the id-parameter is an alias.
-                            if (!MathUtility::canBeInterpretedAsInteger($idPart)) {
-                                list($idPartR) = BackendUtility::getRecordsByField('pages', 'alias', $idPart);
-                                $idPart = (int)$idPartR['uid'];
-                            }
-                            $page = BackendUtility::getRecord('pages', $idPart);
-                            if (is_array($page)) {
-                                // Page must exist...
-                                $href = $siteUrl . '?id=' . $idPart . ($pairParts[2] ? $pairParts[2] : '') . ($sectionMark ? '#' . $sectionMark : '');
-                            } elseif (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][array_shift(explode(':', $link_param))])) {
-                                $href = $link_param;
-                            } else {
-                                $href = $siteUrl . '?id=' . $link_param;
-                                $error = 'No page found: ' . $idPart;
-                            }
+                // Parsing the TypoLink data. This parsing is done like in \TYPO3\CMS\Frontend\ContentObject->typoLink()
+                $linkService = GeneralUtility::makeInstance(LinkService::class);
+                $linkInformation = $linkService->resolve($tagCode['url']);
+
+                $href = $linkService->asString($linkInformation);
+
+                // Modify parameters by a hook
+                if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc'])) {
+                    // backwards-compatibility: show an error message if the page is not found
+                    $error = '';
+                    if ($linkInformation['type'] === LinkService::TYPE_PAGE) {
+                        $pageRecord = BackendUtility::getRecord('pages', $linkInformation['pageuid']);
+                        // Page does not exist
+                        if (!is_array($pageRecord)) {
+                            $error = 'Page with ID ' . $linkInformation['pageuid'] . ' not found';
                         }
                     }
-                }
-                // Setting the A-tag:
-                $bTag = '<a href="' . htmlspecialchars($href) . '"'
-                    . ($tagCode['target'] ? ' target="' . htmlspecialchars($tagCode['target']) . '"' : '')
-                    . ($tagCode['class'] ? ' class="' . htmlspecialchars($tagCode['class']) . '"' : '')
-                    . ($tagCode['title'] ? ' title="' . htmlspecialchars($tagCode['title']) . '"' : '')
-                    . ($external ? ' data-htmlarea-external="1"' : '')
-                    . ($error ? ' rteerror="' . htmlspecialchars($error) . '" style="background-color: yellow; border:2px red solid; color: black;"' : '') . '>';
-                $eTag = '</a>';
-                // Modify parameters
-                if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc'])) {
                     $parameters = [
-                        'conf' => &$conf,
                         'currentBlock' => $v,
                         'url' => $href,
                         'tagCode' => $tagCode,
-                        'external' => $external,
+                        'external' => $linkInformation['type'] === LinkService::TYPE_URL,
                         'error' => $error
                     ];
                     foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc'] as $objRef) {
@@ -671,11 +625,20 @@ class RteHtmlParser extends HtmlParser
                         $blockSplit[$k] = $processor->modifyParamsLinksRte($parameters, $this);
                     }
                 } else {
-                    $blockSplit[$k] = $bTag . $this->TS_links_rte($this->removeFirstAndLastTag($blockSplit[$k])) . $eTag;
+                    $anchorAttributes = [
+                        'href'   => $href,
+                        'target' => $tagCode['target'],
+                        'class'  => $tagCode['class'],
+                        'title'  => $tagCode['title']
+                    ];
+
+                    // Setting the <a> tag
+                    $blockSplit[$k] = '<a ' . GeneralUtility::implodeAttributes($anchorAttributes, true) . '>'
+                        . $this->TS_links_rte($this->removeFirstAndLastTag($blockSplit[$k]))
+                        . '</a>';
                 }
             }
         }
-        // Return content:
         return implode('', $blockSplit);
     }
 
@@ -727,20 +690,19 @@ class RteHtmlParser extends HtmlParser
                     default:
                         // usually <hx> tags and <table> tags where no other block elements are within the tags
                         // Eliminate true linebreaks inside block element tags
-                        $blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k]));
+                        $blockSplit[$k] = preg_replace(('/[' . LF . ']+/'), ' ', $blockSplit[$k]);
                 }
             } else {
                 // NON-block:
                 if (trim($blockSplit[$k]) !== '') {
                     $blockSplit[$k] = str_replace('<hr/>', '<hr />', $blockSplit[$k]);
                     // Remove linebreaks preceding hr tags
-                    $blockSplit[$k] = preg_replace('/[' . LF . CR . ']+<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/', '<$1$2/>', $blockSplit[$k]);
+                    $blockSplit[$k] = preg_replace('/[' . LF . ']+<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/', '<$1$2/>', $blockSplit[$k]);
                     // Remove linebreaks following hr tags
-                    $blockSplit[$k] = preg_replace('/<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>[' . LF . CR . ']+/', '<$1$2/>', $blockSplit[$k]);
+                    $blockSplit[$k] = preg_replace('/<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>[' . LF . ']+/', '<$1$2/>', $blockSplit[$k]);
                     // Replace other linebreaks with space
-                    $blockSplit[$k] = preg_replace('/[' . LF . CR . ']+/', ' ', $blockSplit[$k]);
+                    $blockSplit[$k] = preg_replace('/[' . LF . ']+/', ' ', $blockSplit[$k]);
                     $blockSplit[$k] = $this->divideIntoLines($blockSplit[$k]);
-                    $blockSplit[$k] = $this->transformStyledATags($blockSplit[$k]);
                 } else {
                     unset($blockSplit[$k]);
                 }
@@ -752,6 +714,10 @@ class RteHtmlParser extends HtmlParser
 
     /**
      * Wraps a-tags that contain a style attribute with a span-tag
+     * This is not in use anymore, but was necessary before because <a> tags are transformed into <link> tags
+     * in the database, but <link> tags cannot handle style attributes. However, this is considered a
+     * bad approach as it leaves an ugly <span> tag in the database, if allowedTags=span with style attributes are
+     * allowed.
      *
      * @param string $value Content input
      * @return string Content output
@@ -767,7 +733,7 @@ class RteHtmlParser extends HtmlParser
                 if ($attribArray['style'] && !$attribArray['rteerror']) {
                     $attribArray_copy['style'] = $attribArray['style'];
                     unset($attribArray['style']);
-                    $bTag = '<span ' . GeneralUtility::implodeAttributes($attribArray_copy, 1) . '><a ' . GeneralUtility::implodeAttributes($attribArray, 1) . '>';
+                    $bTag = '<span ' . GeneralUtility::implodeAttributes($attribArray_copy, true) . '><a ' . GeneralUtility::implodeAttributes($attribArray, true) . '>';
                     $eTag = '</a></span>';
                     $blockSplit[$k] = $bTag . $this->removeFirstAndLastTag($blockSplit[$k]) . $eTag;
                 }
@@ -859,8 +825,8 @@ class RteHtmlParser extends HtmlParser
     }
 
     /**
-     * Creates an array of configuration for the HTMLcleaner function based on whether content go TO or FROM the Rich Text Editor ($direction)
-     * Unless "tagList" is given, the function will cache the configuration for next time processing goes on. (In this class that is the case only if we are processing a bulletlist)
+     * Creates an array of configuration for the HTMLcleaner function based on whether content
+     * go TO or FROM the Rich Text Editor ($direction)
      *
      * @param string $direction The direction of the content being processed by the output configuration; "db" (content going into the database FROM the rte) or "rte" (content going into the form)
      * @return array Configuration array
@@ -872,7 +838,12 @@ class RteHtmlParser extends HtmlParser
             // Setting up allowed tags:
             // Default is to get allowed/denied tags from internal array of processing options:
             // Construct default list of tags to keep:
-            $keepTags = array_flip(GeneralUtility::trimExplode(',', $this->defaultAllowedTagsList . ',' . strtolower($this->procOptions['allowTags']), true));
+            if (is_array($this->procOptions['allowTags.'])) {
+                $keepTags = implode(',', $this->procOptions['allowTags.']);
+            } else {
+                $keepTags = $this->procOptions['allowTags'];
+            }
+            $keepTags = array_flip(GeneralUtility::trimExplode(',', $this->defaultAllowedTagsList . ',' . strtolower($keepTags), true));
             // For tags to deny, remove them from $keepTags array:
             $denyTags = GeneralUtility::trimExplode(',', $this->procOptions['denyTags'], true);
             foreach ($denyTags as $dKe) {
@@ -881,28 +852,11 @@ class RteHtmlParser extends HtmlParser
             // Based on the direction of content, set further options:
             switch ($direction) {
                 case 'rte':
-                    if (!isset($this->procOptions['transformBoldAndItalicTags']) || $this->procOptions['transformBoldAndItalicTags']) {
-                        // Transform bold/italics tags to strong/em
-                        if (isset($keepTags['b'])) {
-                            $keepTags['b'] = ['remap' => 'STRONG'];
-                        }
-                        if (isset($keepTags['i'])) {
-                            $keepTags['i'] = ['remap' => 'EM'];
-                        }
-                    }
-                    // Transforming keepTags array so it can be understood by the HTMLcleaner function. This basically converts the format of the array from TypoScript (having .'s) to plain multi-dimensional array.
+                    // Transforming keepTags array so it can be understood by the HTMLcleaner function.
+                    // This basically converts the format of the array from TypoScript (having dots) to plain multi-dimensional array.
                     list($keepTags) = $this->HTMLparserConfig($this->procOptions['HTMLparser_rte.'], $keepTags);
                     break;
                 case 'db':
-                    if (!isset($this->procOptions['transformBoldAndItalicTags']) || $this->procOptions['transformBoldAndItalicTags']) {
-                        // Transform strong/em back to bold/italics:
-                        if (isset($keepTags['strong'])) {
-                            $keepTags['strong'] = ['remap' => 'b'];
-                        }
-                        if (isset($keepTags['em'])) {
-                            $keepTags['em'] = ['remap' => 'i'];
-                        }
-                    }
                     // Setting up span tags if they are allowed:
                     if (isset($keepTags['span'])) {
                         $keepTags['span'] = [
@@ -918,7 +872,7 @@ class RteHtmlParser extends HtmlParser
                             $keepTags['span']['fixAttrib']['class']['list'] = $this->allowedClasses;
                         }
                     }
-                    // Setting further options, getting them from the processiong options:
+                    // Setting further options, getting them from the processing options
                     $TSc = $this->procOptions['HTMLparser_db.'];
                     if (!$TSc['globalNesting']) {
                         $TSc['globalNesting'] = 'b,i,u,a,center,font,sub,sup,strong,em,strike,span';
@@ -930,7 +884,7 @@ class RteHtmlParser extends HtmlParser
                     list($keepTags) = $this->HTMLparserConfig($TSc, $keepTags);
                     break;
             }
-            // Caching (internally, in object memory) the result unless tagList is set:
+            // Caching (internally, in object memory) the result
             $this->getKeepTags_cache[$direction] = $keepTags;
         }
         // Return result:
@@ -938,116 +892,60 @@ class RteHtmlParser extends HtmlParser
     }
 
     /**
-     * This resolves the $value into parts based on <p>-sections and <br />-tags. These are returned as lines separated by LF.
+     * This resolves the $value into parts based on <p>-sections. These are returned as lines separated by LF.
      * This point is to resolve the HTML-code returned from RTE into ordinary lines so it's 'human-readable'
      * The function ->setDivTags does the opposite.
      * This function processes content to go into the database.
      *
      * @param string $value Value to process.
-     * @param int $count Recursion brake. Decremented on each recursion down to zero. Default is 5 (which equals the allowed nesting levels of p/div tags).
+     * @param int $count Recursion brake. Decremented on each recursion down to zero. Default is 5 (which equals the allowed nesting levels of p tags).
      * @param bool $returnArray If TRUE, an array with the lines is returned, otherwise a string of the processed input value.
      * @return string Processed input value.
      * @see setDivTags()
      */
     public function divideIntoLines($value, $count = 5, $returnArray = false)
     {
-        // Setting configuration for processing:
-        $allowTagsOutside = GeneralUtility::trimExplode(',', strtolower($this->procOptions['allowTagsOutside'] ? 'hr,' . $this->procOptions['allowTagsOutside'] : 'hr,img'), true);
         // Setting the third param will eliminate false end-tags. Maybe this is a good thing to do...?
-        $divSplit = $this->splitIntoBlock('p', $value, true);
-        // Returns plainly the value if there was no div/p sections in it
-        if (count($divSplit) <= 1 || $count <= 0) {
-            // Wrap hr tags with LF's
-            $newValue = preg_replace('/<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/i', LF . '<$1$2/>' . LF, $value);
-            $newValue = str_replace(LF . LF, LF, $newValue);
-            $newValue = preg_replace('/(^' . LF . ')|(' . LF . '$)/i', '', $newValue);
-            return $newValue;
+        $paragraphBlocks = $this->splitIntoBlock('p', $value, true);
+        // Returns plainly the content if there was no p sections in it
+        if (count($paragraphBlocks) <= 1 || $count <= 0) {
+            return $this->sanitizeLineBreaksForContentOnly($value);
         }
 
-        // define which attributes are allowed on <p> tags
-        if ($this->procOptions['keepPDIVattribs']) {
-            $allowedAttributesForParagraphTags = GeneralUtility::trimExplode(',', strtolower($this->procOptions['keepPDIVattribs']), true);
-        } else {
-            $allowedAttributesForParagraphTags = [];
-        }
-
-        // Traverse the splitted sections:
-        foreach ($divSplit as $k => $v) {
+        // Traverse the splitted sections
+        foreach ($paragraphBlocks as $k => $v) {
             if ($k % 2) {
-                // Inside
+                // Inside a <p> section
                 $v = $this->removeFirstAndLastTag($v);
-                // Fetching 'sub-lines' - which will explode any further p nesting...
+                // Fetching 'sub-lines' - which will explode any further p nesting recursively
                 $subLines = $this->divideIntoLines($v, $count - 1, true);
                 // So, if there happened to be sub-nesting of p, this is written directly as the new content of THIS section. (This would be considered 'an error')
-                if (!is_array($subLines)) {
-                    //... but if NO subsection was found, we process it as a TRUE line without erronous content:
-                    $subLines = [$subLines];
-                    // process break-tags, if configured for. Simply, the breaktags will here be treated like if each was a line of content...
-                    if (!$this->procOptions['dontConvBRtoParagraph']) {
-                        $subLines = preg_split('/<br[[:space:]]*[\\/]?>/i', $v);
-                    }
-                    // Traverse sublines (there is typically one, except if <br/> has been converted to lines as well!)
-                    foreach ($subLines as $sk => $value) {
-                        // Clear up the subline for DB.
-                        $subLines[$sk] = $this->HTMLcleaner_db($subLines[$sk]);
-                        // Get first tag, attributes etc:
-                        $fTag = $this->getFirstTag($divSplit[$k]);
-                        list($tagAttributes) = $this->get_tag_attributes($fTag);
-                        // Keep attributes (lowercase)
-                        $newAttribs = [];
-                        if (!empty($allowedAttributesForParagraphTags)) {
-                            foreach ($allowedAttributesForParagraphTags as $keepA) {
-                                if (isset($tagAttributes[$keepA])) {
-                                    $newAttribs[$keepA] = $tagAttributes[$keepA];
-                                }
-                            }
-                            // CLASS attribute - sort out the allowed tags
-                            if (trim($newAttribs['class']) !== '' && !empty($this->allowedClasses) && !in_array($newAttribs['class'], $this->allowedClasses)) {
-                                $classes = GeneralUtility::trimExplode(' ', $newAttribs['class'], true);
-                                $newClasses = [];
-                                foreach ($classes as $class) {
-                                    if (in_array($class, $this->allowedClasses)) {
-                                        $newClasses[] = $class;
-                                    }
-                                }
-                                if (!empty($newClasses)) {
-                                    $newAttribs['class'] = implode(' ', $newClasses);
-                                } else {
-                                    unset($newAttribs['class']);
-                                }
-                            }
-                        }
-                        // Remove any line break char (10 or 13)
-                        $subLines[$sk] = str_replace([LF, CR], '', $subLines[$sk]);
-                        $subLines[$sk] = '<' . rtrim('p ' . $this->compileTagAttribs($newAttribs)) . '>' . $subLines[$sk] . '</p>';
-                    }
+                if (is_array($subLines)) {
+                    $paragraphBlocks[$k] = implode(LF, $subLines);
+                } else {
+                    //... but if NO subsection was found, we process it as a TRUE line without erroneous content:
+                    $paragraphBlocks[$k] = $this->processContentWithinParagraph($subLines, $paragraphBlocks[$k]);
                 }
-                // Add the processed line(s)
-                $divSplit[$k] = implode(LF, $subLines);
                 // If it turns out the line is just blank (containing a &nbsp; possibly) then just make it pure blank.
                 // But, prevent filtering of lines that are blank in sense above, but whose tags contain attributes.
                 // Those attributes should have been filtered before; if they are still there they must be considered as possible content.
-                if (trim(strip_tags($divSplit[$k])) == '&nbsp;' && !preg_match('/\\<(img)(\\s[^>]*)?\\/?>/si', $divSplit[$k]) && !preg_match('/\\<([^>]*)?( align| class| style| id| title| dir| lang| xml:lang)([^>]*)?>/si', trim($divSplit[$k]))) {
-                    $divSplit[$k] = '';
+                if (trim(strip_tags($paragraphBlocks[$k])) === '&nbsp;' && !preg_match('/\\<(img)(\\s[^>]*)?\\/?>/si', $paragraphBlocks[$k]) && !preg_match('/\\<([^>]*)?( align| class| style| id| title| dir| lang| xml:lang)([^>]*)?>/si', trim($paragraphBlocks[$k]))) {
+                    $paragraphBlocks[$k] = '';
                 }
             } else {
-                // outside div:
-                // Remove positions which are outside p tags and without content
-                $divSplit[$k] = trim(strip_tags($divSplit[$k], '<' . implode('><', $allowTagsOutside) . '>'));
-                // Wrap hr tags with LF's
-                $divSplit[$k] = preg_replace('/<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/i', LF . '<$1$2/>' . LF, $divSplit[$k]);
-                $divSplit[$k] = str_replace(LF . LF, LF, $divSplit[$k]);
-                $divSplit[$k] = preg_replace('/(^' . LF . ')|(' . LF . '$)/i', '', $divSplit[$k]);
-                if ((string)$divSplit[$k] === '') {
-                    unset($divSplit[$k]);
+                // Outside a paragraph, if there is still something in there, just add a <p> tag
+                // Remove positions which are outside <p> tags and without content
+                $paragraphBlocks[$k] = trim(strip_tags($paragraphBlocks[$k], '<' . implode('><', $this->allowedTagsOutsideOfParagraphs) . '>'));
+                $paragraphBlocks[$k] = $this->sanitizeLineBreaksForContentOnly($paragraphBlocks[$k]);
+                if ((string)$paragraphBlocks[$k] === '') {
+                    unset($paragraphBlocks[$k]);
                 } else {
                     // add <p> tags around the content
-                    $divSplit[$k] = str_replace(strip_tags($divSplit[$k]), '<p>' . strip_tags($divSplit[$k]) . '</p>', $divSplit[$k]);
+                    $paragraphBlocks[$k] = str_replace(strip_tags($paragraphBlocks[$k]), '<p>' . strip_tags($paragraphBlocks[$k]) . '</p>', $paragraphBlocks[$k]);
                 }
             }
         }
-        // Return value:
-        return $returnArray ? $divSplit : implode(LF, $divSplit);
+        return $returnArray ? $paragraphBlocks : implode(LF, $paragraphBlocks);
     }
 
     /**
@@ -1062,9 +960,7 @@ class RteHtmlParser extends HtmlParser
     {
         // First, setting configuration for the HTMLcleaner function. This will process each line between the <div>/<p> section on their way to the RTE
         $keepTags = $this->getKeepTags('rte');
-        // Default: remove unknown tags.
-        $kUknown = $this->procOptions['dontProtectUnknownTags_rte'] ? 0 : 'protect';
-        // Divide the content into lines, based on LF:
+        // Divide the content into lines
         $parts = explode(LF, $value);
         foreach ($parts as $k => $v) {
             // Processing of line content:
@@ -1072,17 +968,17 @@ class RteHtmlParser extends HtmlParser
             if (trim($parts[$k]) === '') {
                 $parts[$k] = '&nbsp;';
             } else {
-                // Clean the line content:
-                $parts[$k] = $this->HTMLcleaner($parts[$k], $keepTags, $kUknown);
-                if (!$this->procOptions['dontConvAmpInNBSP_rte']) {
-                    $parts[$k] = str_replace('&amp;nbsp;', '&nbsp;', $parts[$k]);
-                }
+                // Clean the line content, keeping unknown tags (as they can be removed in the entryHTMLparser)
+                $parts[$k] = $this->HTMLcleaner($parts[$k], $keepTags, 'protect');
+                // convert double-encoded &nbsp; into regular &nbsp; however this could also be reversed via the exitHTMLparser
+                // This was previously an option to disable called "dontConvAmpInNBSP_rte"
+                $parts[$k] = str_replace('&amp;nbsp;', '&nbsp;', $parts[$k]);
             }
-            // Wrapping the line in <$dT> if not already wrapped and does not contain an hr tag
+            // Wrapping the line in <p> tags if not already wrapped and does not contain an hr tag
             if (!preg_match('/<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/i', $parts[$k])) {
                 $testStr = strtolower(trim($parts[$k]));
-                if (substr($testStr, 0, 4) != '<div' || substr($testStr, -6) != '</div>') {
-                    if (substr($testStr, 0, 2) != '<p' || substr($testStr, -4) != '</p>') {
+                if (substr($testStr, 0, 4) !== '<div' || substr($testStr, -6) !== '</div>') {
+                    if (substr($testStr, 0, 2) !== '<p' || substr($testStr, -4) !== '</p>') {
                         // Only set p-tags if there is not already div or p tags:
                         $parts[$k] = '<p>' . $parts[$k] . '</p>';
                     }
@@ -1091,6 +987,64 @@ class RteHtmlParser extends HtmlParser
         }
         // Implode result:
         return implode(LF, $parts);
+    }
+
+    /**
+     * Used for transformation from RTE to DB
+     *
+     * Works on a single line within a <p> tag when storing into the database
+     * This always adds <p> tags and validates the arguments,
+     * additionally the content is cleaned up via the HTMLcleaner.
+     *
+     * @param string $content the content within the <p> tag
+     * @param string $fullContentWithTag the whole <p> tag surrounded as well
+     *
+     * @return string the full <p> tag with cleaned content
+     */
+    protected function processContentWithinParagraph(string $content, string $fullContentWithTag)
+    {
+        // clean up the content
+        $content = $this->HTMLcleaner_db($content);
+        // Get the <p> tag, and validate the attributes
+        $fTag = $this->getFirstTag($fullContentWithTag);
+        // Check which attributes of the <p> tag to keep attributes
+        if (!empty($this->allowedAttributesForParagraphTags)) {
+            list($tagAttributes) = $this->get_tag_attributes($fTag);
+            // Make sure the tag attributes only contain the ones that are defined to be allowed
+            $tagAttributes = array_intersect_key($tagAttributes, array_flip($this->allowedAttributesForParagraphTags));
+
+            // Only allow classes that are whitelisted in $this->allowedClasses
+            if (trim($tagAttributes['class']) !== '' && !empty($this->allowedClasses) && !in_array($tagAttributes['class'], $this->allowedClasses, true)) {
+                $classes = GeneralUtility::trimExplode(' ', $tagAttributes['class'], true);
+                $classes = array_intersect($classes, $this->allowedClasses);
+                if (!empty($classes)) {
+                    $tagAttributes['class'] = implode(' ', $classes);
+                } else {
+                    unset($tagAttributes['class']);
+                }
+            }
+        } else {
+            $tagAttributes = [];
+        }
+        // Remove any line break
+        $content = str_replace(LF, '', $content);
+        // Compile the surrounding <p> tag
+        $content = '<' . rtrim('p ' . $this->compileTagAttribs($tagAttributes)) . '>' . $content . '</p>';
+        return $content;
+    }
+
+    /**
+     * Wrap <hr> tags with LFs, and also remove double LFs, used when transforming from RTE to DB
+     *
+     * @param string $content
+     * @return string the modified content
+     */
+    protected function sanitizeLineBreaksForContentOnly(string $content)
+    {
+        $content = preg_replace('/<(hr)(\\s[^>\\/]*)?[[:space:]]*\\/?>/i', LF . '<$1$2/>' . LF, $content);
+        $content = str_replace(LF . LF, LF, $content);
+        $content = preg_replace('/(^' . LF . ')|(' . LF . '$)/i', '', $content);
+        return $content;
     }
 
     /**
@@ -1126,6 +1080,7 @@ class RteHtmlParser extends HtmlParser
 
     /**
      * Parse <A>-tag href and return status of email,external,file or page
+     * This functionality is not in use anymore
      *
      * @param string $url URL to analyse.
      * @return array Information in an array about the URL
@@ -1134,7 +1089,7 @@ class RteHtmlParser extends HtmlParser
     {
         $info = [];
         $url = trim($url);
-        if (substr(strtolower($url), 0, 7) == 'mailto:') {
+        if (substr(strtolower($url), 0, 7) === 'mailto:') {
             $info['url'] = trim(substr($url, 7));
             $info['type'] = 'email';
         } elseif (strpos($url, '?file:') !== false) {
@@ -1191,7 +1146,7 @@ class RteHtmlParser extends HtmlParser
      * Converting <A>-tags to absolute URLs (+ setting rtekeep attribute)
      *
      * @param string $value Content input
-     * @param bool $dontSetRTEKEEP If TRUE, then the "rtekeep" attribute will not be set.
+     * @param bool $dontSetRTEKEEP If TRUE, then the "rtekeep" attribute will not be set. (not in use anymore)
      * @return string Content output
      */
     public function TS_AtagToAbs($value, $dontSetRTEKEEP = false)
@@ -1207,14 +1162,7 @@ class RteHtmlParser extends HtmlParser
                     $uP = parse_url(strtolower($attribArray['href']));
                     if (!$uP['scheme']) {
                         $attribArray['href'] = GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . $attribArray['href'];
-                    } elseif ($uP['scheme'] != 'mailto') {
-                        $attribArray['data-htmlarea-external'] = 1;
                     }
-                } else {
-                    $attribArray['rtekeep'] = 1;
-                }
-                if (!$dontSetRTEKEEP) {
-                    $attribArray['rtekeep'] = 1;
                 }
                 $bTag = '<a ' . GeneralUtility::implodeAttributes($attribArray, true) . '>';
                 $eTag = '</a>';
@@ -1245,6 +1193,10 @@ class RteHtmlParser extends HtmlParser
                     if ($attribArray['width'] > $imageInfo[0]) {
                         $attribArray['width'] = $imageInfo[0];
                     }
+                    if ($imageInfo[0] > 0) {
+                        $attribArray['height'] = round($attribArray['width'] * ($imageInfo[1] / $imageInfo[0]));
+                    }
+                    break;
                 case 'lockRatio':
                     if ($imageInfo[0] > 0) {
                         $attribArray['height'] = round($attribArray['width'] * ($imageInfo[1] / $imageInfo[0]));
@@ -1253,6 +1205,117 @@ class RteHtmlParser extends HtmlParser
             }
         }
         return $attribArray;
+    }
+
+    /**
+     * Called before any processing / transformation is made
+     * Removing any CRs (char 13) and only deal with LFs (char 10) internally.
+     * CR has a very disturbing effect, so just remove all CR and rely on LF
+     *
+     * Historical note: Previously it was possible to disable this functionality via disableUnifyLineBreaks.
+     *
+     * @param string $content the content to process
+     * @return string the modified content
+     */
+    protected function streamlineLineBreaksForProcessing(string $content)
+    {
+        return str_replace(CR, '', $content);
+    }
+
+    /**
+     * Called after any processing / transformation was made
+     * just before the content is returned by the RTE parser all line breaks
+     * get unified to be "CRLF"s again.
+     *
+     * Historical note: Previously it was possible to disable this functionality via disableUnifyLineBreaks.
+     *
+     * @param string $content the content to process
+     * @return string the modified content
+     */
+    protected function streamlineLineBreaksAfterProcessing(string $content)
+    {
+        // Make sure no \r\n sequences has entered in the meantime
+        $content = $this->streamlineLineBreaksForProcessing($content);
+        // ... and then change all \n into \r\n
+        return str_replace(LF, CRLF, $content);
+    }
+
+    /**
+     * Content Transformation from DB to RTE
+     * Checks all <a> tags which reference a t3://page and checks if the page is available
+     * If not, some offensive styling is added.
+     *
+     * @param string $content
+     * @return string the modified content
+     */
+    protected function markBrokenLinks(string $content): string
+    {
+        $blocks = $this->splitIntoBlock('A', $content);
+        $linkService = GeneralUtility::makeInstance(LinkService::class);
+        foreach ($blocks as $position => $value) {
+            if ($position % 2 === 0) {
+                continue;
+            }
+            list($attributes) = $this->get_tag_attributes($this->getFirstTag($value), true);
+            if (empty($attributes['href'])) {
+                continue;
+            }
+            $hrefInformation = $linkService->resolve($attributes['href']);
+            if ($hrefInformation['type'] === LinkService::TYPE_PAGE) {
+                $pageRecord = BackendUtility::getRecord('pages', $hrefInformation['pageuid']);
+                if (!is_array($pageRecord)) {
+                    // Page does not exist
+                    $attributes['data-rte-error'] = 'Page with ID ' . $hrefInformation['pageuid'] . ' not found';
+                    $styling = 'background-color: yellow; border:2px red solid; color: black;';
+                    if (empty($attributes['style'])) {
+                        $attributes['style'] = $styling;
+                    } else {
+                        $attributes['style'] .= ' ' . $styling;
+                    }
+                }
+            }
+            // Always rewrite the block to allow the nested calling even if a page is found
+            $blocks[$position] =
+                '<a ' . GeneralUtility::implodeAttributes($attributes, true, true) . '>'
+                . $this->markBrokenLinks($this->removeFirstAndLastTag($blocks[$position]))
+                . '</a>';
+        }
+        return implode('', $blocks);
+    }
+
+    /**
+     * Content Transformation from RTE to DB
+     * Removes link information error attributes from <a> tags that are added to broken links
+     *
+     * @param string $content the content to process
+     * @return string the modified content
+     */
+    protected function removeBrokenLinkMarkers(string $content): string
+    {
+        $blocks = $this->splitIntoBlock('A', $content);
+        foreach ($blocks as $position => $value) {
+            if ($position % 2 === 0) {
+                continue;
+            }
+            list($attributes) = $this->get_tag_attributes($this->getFirstTag($value), true);
+            if (empty($attributes['href'])) {
+                continue;
+            }
+            // Always remove the styling again (regardless of the page was found or not)
+            // so the database does not contain ugly stuff
+            unset($attributes['data-rte-error']);
+            if (isset($attributes['style'])) {
+                $attributes['style'] = trim(str_replace('background-color: yellow; border:2px red solid; color: black;', '', $attributes['style']));
+                if (empty($attributes['style'])) {
+                    unset($attributes['style']);
+                }
+            }
+            $blocks[$position] =
+                '<a ' . GeneralUtility::implodeAttributes($attributes, true, true) . '>'
+                . $this->removeBrokenLinkMarkers($this->removeFirstAndLastTag($blocks[$position]))
+                . '</a>';
+        }
+        return implode('', $blocks);
     }
 
     /**

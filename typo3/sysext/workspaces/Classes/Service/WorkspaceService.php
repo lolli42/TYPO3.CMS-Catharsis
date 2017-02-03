@@ -93,13 +93,9 @@ class WorkspaceService implements SingletonInterface
         // Avoid invalid workspace settings
         if ($activeId !== null && $activeId !== self::SELECT_ALL_WORKSPACES) {
             $availableWorkspaces = $this->getAvailableWorkspaces();
-            if (!isset($availableWorkspaces[$activeId])) {
-                $activeId = null;
+            if (isset($availableWorkspaces[$activeId])) {
+                $workspaceId = $activeId;
             }
-        }
-
-        if ($activeId !== null) {
-            $workspaceId = $activeId;
         }
 
         return $workspaceId;
@@ -117,7 +113,7 @@ class WorkspaceService implements SingletonInterface
         $title = false;
         switch ($wsId) {
             case self::LIVE_WORKSPACE_ID:
-                $title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:shortcut_onlineWS');
+                $title = $GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:shortcut_onlineWS');
                 break;
             default:
                 $labelField = $GLOBALS['TCA']['sys_workspace']['ctrl']['label'];
@@ -133,13 +129,13 @@ class WorkspaceService implements SingletonInterface
     }
 
     /**
-     * Building tcemain CMD-array for swapping all versions in a workspace.
+     * Building DataHandler CMD-array for swapping all versions in a workspace.
      *
-     * @param int Real workspace ID, cannot be ONLINE (zero).
-     * @param bool If set, then the currently online versions are swapped into the workspace in exchange for the offline versions. Otherwise the workspace is emptied.
+     * @param int $wsid Real workspace ID, cannot be ONLINE (zero).
+     * @param bool $doSwap If set, then the currently online versions are swapped into the workspace in exchange for the offline versions. Otherwise the workspace is emptied.
      * @param int $pageId The page id
      * @param int $language Select specific language only
-     * @return array Command array for tcemain
+     * @return array Command array for DataHandler
      */
     public function getCmdArrayForPublishWS($wsid, $doSwap, $pageId = 0, $language = null)
     {
@@ -168,13 +164,13 @@ class WorkspaceService implements SingletonInterface
     }
 
     /**
-     * Building tcemain CMD-array for releasing all versions in a workspace.
+     * Building DataHandler CMD-array for releasing all versions in a workspace.
      *
-     * @param int Real workspace ID, cannot be ONLINE (zero).
-     * @param bool Run Flush (TRUE) or ClearWSID (FALSE) command
+     * @param int $wsid Real workspace ID, cannot be ONLINE (zero).
+     * @param bool $flush Run Flush (TRUE) or ClearWSID (FALSE) command
      * @param int $pageId The page id
      * @param int $language Select specific language only
-     * @return array Command array for tcemain
+     * @return array Command array for DataHandler
      */
     public function getCmdArrayForFlushWS($wsid, $flush = true, $pageId = 0, $language = null)
     {
@@ -201,12 +197,12 @@ class WorkspaceService implements SingletonInterface
      * Used from backend to display workspace overview
      * User for auto-publishing for selecting versions for publication
      *
-     * @param int Workspace ID. If -99, will select ALL versions from ANY workspace. If -98 will select all but ONLINE. >=-1 will select from the actual workspace
-     * @param int Lifecycle filter: 1 = select all drafts (never-published), 2 = select all published one or more times (archive/multiple), anything else selects all.
-     * @param int Stage filter: -99 means no filtering, otherwise it will be used to select only elements with that stage. For publishing, that would be "10
-     * @param int Page id: Live page for which to find versions in workspace!
-     * @param int Recursion Level - select versions recursive - parameter is only relevant if $pageId != -1
-     * @param string How to collect records for "listing" or "modify" these tables. Support the permissions of each type of record, see \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::check.
+     * @param int $wsid Workspace ID. If -99, will select ALL versions from ANY workspace. If -98 will select all but ONLINE. >=-1 will select from the actual workspace
+     * @param int $filter Lifecycle filter: 1 = select all drafts (never-published), 2 = select all published one or more times (archive/multiple), anything else selects all.
+     * @param int $stage Stage filter: -99 means no filtering, otherwise it will be used to select only elements with that stage. For publishing, that would be "10
+     * @param int $pageId Page id: Live page for which to find versions in workspace!
+     * @param int $recursionLevel Recursion Level - select versions recursive - parameter is only relevant if $pageId != -1
+     * @param string $selectionType How to collect records for "listing" or "modify" these tables. Support the permissions of each type of record, see \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::check.
      * @param int $language Select specific language only
      * @return array Array of all records uids etc. First key is table name, second key incremental integer. Records are associative arrays with uid and t3ver_oidfields. The pid of the online record is found as "livepid" the pid of the offline record is found in "wspid
      */

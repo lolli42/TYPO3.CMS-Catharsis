@@ -334,7 +334,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             // Browsing box
             if ($resultData['count']) {
                 // could we get this in the view?
-                if ($this->searchData['group'] == 'sections' && $freeIndexUid <= 0) {
+                if ($this->searchData['group'] === 'sections' && $freeIndexUid <= 0) {
                     $resultSectionsCount = count($this->resultSections);
                     $result['sectionText'] = sprintf(LocalizationUtility::translate('result.' . ($resultSectionsCount > 1 ? 'inNsections' : 'inNsection'), 'IndexedSearch'), $resultSectionsCount);
                 }
@@ -382,8 +382,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         }
         $resultRows = $newResultRows;
         $this->resultSections = [];
-        if ($freeIndexUid <= 0 && $this->searchData['group'] == 'sections') {
-            $rl2flag = substr($this->searchData['sections'], 0, 2) == 'rl';
+        if ($freeIndexUid <= 0 && $this->searchData['group'] === 'sections') {
+            $rl2flag = substr($this->searchData['sections'], 0, 2) === 'rl';
             $sections = [];
             foreach ($resultRows as $row) {
                 $id = $row['rl0'] . '-' . $row['rl1'] . ($rl2flag ? '-' . $row['rl2'] : '');
@@ -657,7 +657,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             } else {
                 // Default creation / finding of icon:
                 $icon = '';
-                if ($imageType === '0' || substr($imageType, 0, 2) == '0:') {
+                if ($imageType === '0' || substr($imageType, 0, 2) === '0:') {
                     if (is_array($specRowConf['pageIcon'])) {
                         $this->iconFileNameCache[$imageType] = $GLOBALS['TSFE']->cObj->cObjGetSingle('IMAGE', $specRowConf['pageIcon']);
                     } else {
@@ -758,7 +758,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         foreach ($parts as $k => $strP) {
             if ($k % 2 == 0) {
                 // Find length of the summary part:
-                $strLen = $this->charsetConverter->strlen('utf-8', $parts[$k]);
+                $strLen = mb_strlen($parts[$k], 'utf-8');
                 $output[$k] = $parts[$k];
                 // Possibly shorten string:
                 if (!$k) {
@@ -776,7 +776,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                         $output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $this->charsetConverter->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $this->charsetConverter->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
                     }
                 }
-                $summaryLgd += $this->charsetConverter->strlen('utf-8', $output[$k]);
+                $summaryLgd += mb_strlen($output[$k], 'utf-8');
                 // Protect output:
                 $output[$k] = htmlspecialchars($output[$k]);
                 // If summary lgd is exceed, break the process:
@@ -784,7 +784,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                     break;
                 }
             } else {
-                $summaryLgd += $this->charsetConverter->strlen('utf-8', $strP);
+                $summaryLgd += mb_strlen($strP, 'utf-8');
                 $output[$k] = '<strong class="tx-indexedsearch-redMarkup">' . htmlspecialchars($parts[$k]) . '</strong>';
             }
         }
@@ -817,7 +817,11 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             'tstamp' => $GLOBALS['EXEC_TIME']
         ];
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('index_search_stat');
-        $connection->insert('index_stat_search', $insertFields);
+        $connection->insert(
+            'index_stat_search',
+            $insertFields,
+            ['searchoptions' => Connection::PARAM_LOB]
+        );
         $newId = $connection->lastInsertId('index_stat_search');
         if ($newId) {
             $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('index_stat_word');
@@ -880,9 +884,9 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                     ['-', 'AND NOT'],
                     // Add operators for various languages
                     // Converts the operators to lowercase
-                    [$this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandAnd', 'IndexedSearch'), 'toLower'), 'AND'],
-                    [$this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandOr', 'IndexedSearch'), 'toLower'), 'OR'],
-                    [$this->charsetConverter->conv_case('utf-8', LocalizationUtility::translate('localizedOperandNot', 'IndexedSearch'), 'toLower'), 'AND NOT']
+                    [mb_strtolower(LocalizationUtility::translate('localizedOperandAnd', 'IndexedSearch'), 'utf-8'), 'AND'],
+                    [mb_strtolower(LocalizationUtility::translate('localizedOperandOr', 'IndexedSearch'), 'utf-8'), 'OR'],
+                    [mb_strtolower(LocalizationUtility::translate('localizedOperandNot', 'IndexedSearch'), 'utf-8'), 'AND NOT']
                 ];
                 $swordArray = \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::getExplodedSearchString($searchWords, $defaultOperator == 1 ? 'OR' : 'AND', $operatorTranslateTable);
                 if (is_array($swordArray)) {

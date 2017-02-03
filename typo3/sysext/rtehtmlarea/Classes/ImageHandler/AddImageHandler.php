@@ -161,7 +161,7 @@ class AddImageHandler implements LinkParameterProviderInterface, LinkHandlerInte
         $backendUser = $this->getBackendUser();
 
         // The key number 3 of the bparams contains the "allowed" string. Disallowed is not passed to
-        // the element browser at all but only filtered out in TCEMain afterwards
+        // the element browser at all but only filtered out in DataHandler afterwards
         $bparams = explode('|', $this->selectImageController->getUrlParameters()['bparams']);
         if (isset($bparams[3])) {
             $allowedFileExtensions = GeneralUtility::trimExplode(',', $bparams[3], true);
@@ -477,7 +477,7 @@ class AddImageHandler implements LinkParameterProviderInterface, LinkHandlerInte
                     $addParams,
                     'id="checkDisplayThumbs"'
                 )
-                              . htmlspecialchars($lang->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:displayThumbs')) . '</label></div>';
+                              . htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:displayThumbs')) . '</label></div>';
             $out .= $thumbNailCheck;
         } else {
             $out .= '<div style="padding-top: 15px;"></div>';

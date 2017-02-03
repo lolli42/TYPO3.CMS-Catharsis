@@ -6,7 +6,6 @@ return [
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
         'versioningWS' => true,
-        'versioning_followPages' => true,
         'origUid' => 't3_origuid',
         'languageField' => 'sys_language_uid',
         'transOrigPointerField' => 'l18n_parent',
@@ -24,15 +23,15 @@ return [
     'columns' => [
         'sys_language_uid' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.language',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.language',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'foreign_table' => 'sys_language',
                 'foreign_table_where' => 'ORDER BY sys_language.title',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.allLanguages', -1],
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.default_value', 0]
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.allLanguages', -1],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.default_value', 0]
                 ],
                 'default' => 0
             ]
@@ -40,7 +39,7 @@ return [
         'l18n_parent' => [
             'displayCond' => 'FIELD:sys_language_uid:>:0',
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.l18n_parent',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.l18n_parent',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -59,7 +58,7 @@ return [
         ],
         't3ver_label' => [
             'displayCond' => 'FIELD:t3ver_label:REQ:true',
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.versionLabel',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.versionLabel',
             'config' => [
                 'type'=>'none',
                 'cols' => 27
@@ -67,14 +66,14 @@ return [
         ],
         'hidden' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xml:LGL.hidden',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xml:LGL.hidden',
             'config' => [
                 'type' => 'check'
             ]
         ],
         'fe_group' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.fe_group',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.fe_group',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectMultipleSideBySide',
@@ -82,15 +81,15 @@ return [
                 'maxitems' => 20,
                 'items' => [
                     [
-                        'LLL:EXT:lang/locallang_general.xlf:LGL.hide_at_login',
+                        'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.hide_at_login',
                         -1,
                     ],
                     [
-                        'LLL:EXT:lang/locallang_general.xlf:LGL.any_login',
+                        'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.any_login',
                         -2,
                     ],
                     [
-                        'LLL:EXT:lang/locallang_general.xlf:LGL.usergroups',
+                        'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.usergroups',
                         '--div--',
                     ],
                 ],
@@ -127,7 +126,6 @@ return [
                 'allowed' => $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'],
                 'max_size' => 3000,
                 'uploadfolder' => 'uploads/pics',
-                'show_thumbs' => true,
                 'size' => 1,
                 'maxitems' => 1,
                 'minitems' => 0
@@ -141,7 +139,6 @@ return [
                 'foreign_table' => 'tx_blogexample_domain_model_post',
                 'foreign_field' => 'blog',
                 'foreign_sortby' => 'sorting',
-                'maxitems' => 999999,
                 'appearance' => [
                     'collapseAll' => 1,
                     'expandSingle' => 1,
@@ -159,33 +156,18 @@ return [
                 'items' => [
                     ['--none--', 0],
                 ],
-                'wizards' => [
-                     '_VERTICAL' => 1,
-                     'edit' => [
-                         'type' => 'popup',
-                         'title' => 'Edit',
-                         'module' => [
-                             'name' => 'wizard_edit',
-                         ],
-                         'icon' => 'actions-open',
-                         'popup_onlyOpenIfSelected' => 1,
-                         'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1',
-                     ],
-                     'add' => [
-                         'type' => 'script',
-                         'title' => 'Create new',
-                         'icon' => 'actions-add',
-                         'params' => [
-                             'table'=>'fe_users',
-                             'pid' => '###CURRENT_PID###',
-                             'setValue' => 'prepend'
-                         ],
-                         'module' => [
-                             'name' => 'wizard_add',
-                         ],
-                     ],
-                 ]
-            ]
+                'fieldControl' => [
+                    'editPopup' => [
+                        'disabled' => false,
+                    ],
+                    'addRecord' => [
+                        'disabled' => false,
+                        'options' => [
+                            'setValue' => 'prepend',
+                        ],
+                    ],
+                ],
+            ],
         ],
     ],
     'types' => [

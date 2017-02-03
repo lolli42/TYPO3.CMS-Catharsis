@@ -852,26 +852,14 @@ hideNonTranslated : If this keyword is used a record that has no translation wil
 ]]></default>
 		</property>
 		<property name="sys_language_softExclude" type="string">
-			<description><![CDATA[Setting additional "exclude" flags for l10n_mode in TCA for frontend rendering. Works exactly like sys_language_softMergeIfNotBlank (see that for details - same Syntax!).
-
-Fields set in this property will override if the same field is set for "sys_language_softMergeIfNotBlank".]]></description>
-			<default><![CDATA[
-]]></default>
-		</property>
-		<property name="sys_language_softMergeIfNotBlank" type="string">
-			<description><![CDATA[Setting additional "mergeIfNotBlank" fields from TypoScript.
-
-Background:
-In TCA you can configure "l10n_mode" - localization mode - for each field. Two of the options affect how the frontend displays content; The values "exclude" and "mergeIfNotBlank" (see "TYPO3 Core API" document for details). The first ("exclude") simply means that the field when found in a translation of a record will not be overlaid the default records field value. The second ("mergeIfNotBlank") means that it will be overlaid only if it has a non-blank value.
-Since it might be practical to set up fields for "mergeIfNotBlank" on a per-site basis this options allows you to override additional fields from tables.
+			<description><![CDATA[Setting additional "exclude" flags for l10n_mode in TCA for frontend rendering.
 
 Syntax:
  [table]:[field],  [table]:[field],  [table]:[field], ...
 
 Example:
-config.sys_language_softMergeIfNotBlank = tt_content:image , tt_content:header
-
-This setting means that the header and image field of content elements will be used from the translation only if they had a non-blank value. For the image field this might be very practical because it means that the image(s) from the default translation will be used unless other images are inserted!]]></description>
+config.sys_language_softExclude = tt_content:image , tt_content:header
+]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>
@@ -7215,9 +7203,9 @@ status=1,menubar=1,scrollbars=1,resizable=1,location=1,directories=1,toolbar=1]]
 ]]></default>
 		</property>
 		<property name="addQueryString" type="boolean">
-			<description><![CDATA[Add the QUERY_STRING to the start of the link. Notice that this does not check for any duplicate parameters! This is not a problem (only the last parameter of the same name will be applied), but enable "config.uniqueLinkVars" if you still don't like it.
+			<description><![CDATA[Add the QUERY_STRING to the start of the link. Notice that this does not check for any duplicate parameters! This is not a problem (only the last parameter of the same name will be applied).
 
-.method: If set to to GET or POST then then the parsed query arguments (GET or POST data) will be used. This settings are useful if you use URL processing extensions like Real URL, which translate part of the path into query arguments.
+.method: If set to GET or POST then then the parsed query arguments (GET or POST data) will be used. This settings are useful if you use URL processing extensions like Real URL, which translate part of the path into query arguments.
 It's also possible to get both, POST and GET data, on setting this to
 "POST,GET" or "GET,POST". The last method in this sequence takes
 precedence and overwrites the parts that are also present for the first

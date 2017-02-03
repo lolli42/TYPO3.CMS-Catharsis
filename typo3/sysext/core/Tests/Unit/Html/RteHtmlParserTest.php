@@ -17,7 +17,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Html;
 /**
  * Testcase for \TYPO3\CMS\Core\Html\RteHtmlParser
  */
-class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class RteHtmlParserTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var \TYPO3\CMS\Core\Html\RteHtmlParser
@@ -28,9 +28,7 @@ class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $this->subject = new \TYPO3\CMS\Core\Html\RteHtmlParser();
         $this->subject->procOptions = [
-            'dontConvBRtoParagraph' => '1',
             'allowTagsOutside' => 'hr, address',
-            'disableUnifyLineBreaks' => '0',
             'overruleMode' => 'ts_css'
         ];
     }
@@ -197,7 +195,7 @@ class RteHtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
         return [
             'external url with @ sign' => [
                 '<link http://www.example.org/at@sign>link text</link>',
-                '<p><a href="http://www.example.org/at@sign" data-htmlarea-external="1">link text</a></p>'
+                '<p><a href="http://www.example.org/at@sign">link text</a></p>'
             ],
             'email address with @ sign' => [
                 '<link name@example.org - mail "Opens window for sending email">link text</link>',

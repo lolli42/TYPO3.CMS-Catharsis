@@ -22,6 +22,7 @@ use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Type\File\ImageInfo;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -65,11 +66,6 @@ class BackendController
     protected $toolbarItems = [];
 
     /**
-     * @var int
-     */
-    protected $menuWidth = 190;
-
-    /**
      * @var bool
      */
     protected $debug;
@@ -78,6 +74,11 @@ class BackendController
      * @var string
      */
     protected $templatePath = 'EXT:backend/Resources/Private/Templates/';
+
+    /**
+     * @var string
+     */
+    protected $partialPath = 'EXT:backend/Resources/Private/Partials/';
 
     /**
      * @var \TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository
@@ -104,7 +105,7 @@ class BackendController
      */
     public function __construct()
     {
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_misc.xlf');
         $this->backendModuleRepository = GeneralUtility::makeInstance(BackendModuleRepository::class);
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
@@ -117,16 +118,13 @@ class BackendController
         $this->pageRenderer->loadExtJS();
         // included for the module menu JavaScript, please note that this is subject to change
         $this->pageRenderer->loadJquery();
-        $this->pageRenderer->addJsInlineCode('consoleOverrideWithDebugPanel', '//already done', false);
         $this->pageRenderer->addExtDirectCode();
         // Add default BE javascript
         $this->jsFiles = [
             'locallang' => $this->getLocalLangFileName(),
             'md5' => 'EXT:backend/Resources/Public/JavaScript/md5.js',
-            'modulemenu' => 'EXT:backend/Resources/Public/JavaScript/modulemenu.js',
             'evalfield' => 'EXT:backend/Resources/Public/JavaScript/jsfunc.evalfield.js',
             'backend' => 'EXT:backend/Resources/Public/JavaScript/backend.js',
-            'iframepanel' => 'EXT:backend/Resources/Public/JavaScript/iframepanel.js',
         ];
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LoginRefresh', 'function(LoginRefresh) {
 			LoginRefresh.setIntervalTime(' . MathUtility::forceIntegerInRange((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['sessionTimeout'] - 60, 60) . ');
@@ -134,6 +132,9 @@ class BackendController
 			LoginRefresh.setLogoutUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('logout')) . ');
 			LoginRefresh.initialize();
 		}');
+
+        // load module menu
+        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ModuleMenu');
 
         // load Toolbar class
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar');
@@ -164,9 +165,6 @@ class BackendController
         $this->css = '';
 
         $this->initializeToolbarItems();
-        if (isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'])) {
-            $this->menuWidth = (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'];
-        }
         $this->executeHook('constructPostProcess');
         $this->includeLegacyBackendItems();
     }
@@ -269,37 +267,8 @@ class BackendController
         // Prepare the scaffolding, at this point extension may still add javascript and css
         $view = $this->getFluidTemplateObject($this->templatePath . 'Backend/Main.html');
 
-        // Extension Configuration to find the TYPO3 logo in the left corner
-        $extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['backend'], ['allowed_classes' => false]);
-        $logoPath = '';
-        if (!empty($extConf['backendLogo'])) {
-            $customBackendLogo = GeneralUtility::getFileAbsFileName($extConf['backendLogo']);
-            if (!empty($customBackendLogo)) {
-                $logoPath = $customBackendLogo;
-            }
-        }
-        // if no custom logo was set or the path is invalid, use the original one
-        if (empty($logoPath)) {
-            $logoPath = GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Public/Images/typo3_logo_orange.svg');
-            $logoWidth = 22;
-            $logoHeight = 22;
-        } else {
-            list($logoWidth, $logoHeight) = @getimagesize($logoPath);
-
-            // High-resolution?
-            if (strpos($logoPath, '@2x.') !== false) {
-                $logoWidth /= 2;
-                $logoHeight /= 2;
-            }
-        }
-
-        $view->assign('logoUrl', PathUtility::getAbsoluteWebPath($logoPath));
-        $view->assign('logoWidth', $logoWidth);
-        $view->assign('logoHeight', $logoHeight);
-        $view->assign('applicationVersion', TYPO3_version);
-        $view->assign('siteName', $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
         $view->assign('moduleMenu', $this->generateModuleMenu());
-        $view->assign('toolbar', $this->renderToolbar());
+        $view->assign('topbar', $this->renderTopbar());
 
         /******************************************************
          * Now put the complete backend document together
@@ -320,30 +289,75 @@ class BackendController
         $this->generateJavascript();
         $this->pageRenderer->addJsInlineCode('BackendInlineJavascript', $this->js, false);
         $this->loadResourcesForRegisteredNavigationComponents();
-
-        // Add state provider
-        $this->getDocumentTemplate()->setExtDirectStateProvider();
-        $states = $this->getBackendUser()->uc['BackendComponents']['States'];
-        // Save states in BE_USER->uc
-        $extOnReadyCode = '
-			Ext.state.Manager.setProvider(new TYPO3.state.ExtDirectProvider({
-				key: "BackendComponents.States",
-				autoRead: false
-			}));
-		';
-
-        if ($states) {
-            $extOnReadyCode .= 'Ext.state.Manager.getProvider().initState(' . json_encode($states) . ');';
-        }
-
-        $this->pageRenderer->addExtOnReadyCode($extOnReadyCode);
-
+        // @todo: remove this when ExtJS is removed
+        $this->pageRenderer->addExtOnReadyCode('
+            var TYPO3ExtJSStateProviderBridge = function() {};
+            Ext.extend(TYPO3ExtJSStateProviderBridge, Ext.state.Provider, {
+                prefix: "BackendComponents.States.",
+                get: function(name, defaultValue) {
+                    return TYPO3.Storage.Persistent.isset(this.prefix + name) ? TYPO3.Storage.Persistent.get(this.prefix + name) : defaultValue;
+                },
+                clear: function(name) {
+                    TYPO3.Storage.Persistent.unset(this.prefix + name);
+                },
+                set: function(name, value) {
+                    TYPO3.Storage.Persistent.set(this.prefix + name, value);
+                }
+            });
+            Ext.state.Manager.setProvider(new TYPO3ExtJSStateProviderBridge());
+	        ');
         // Set document title:
         $title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ? $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . ' [TYPO3 CMS ' . TYPO3_version . ']' : 'TYPO3 CMS ' . TYPO3_version;
         // Renders the module page
         $this->content = $this->getDocumentTemplate()->render($title, $view->render());
         $hookConfiguration = ['content' => &$this->content];
         $this->executeHook('renderPostProcess', $hookConfiguration);
+    }
+
+    /**
+     * Renders the topbar, containing the backend logo, sitename etc.
+     *
+     * @return string
+     */
+    protected function renderTopbar()
+    {
+        $view = $this->getFluidTemplateObject($this->partialPath . 'Backend/Topbar.html');
+
+        // Extension Configuration to find the TYPO3 logo in the left corner
+        $extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['backend'], ['allowed_classes' => false]);
+        $logoPath = '';
+        if (!empty($extConf['backendLogo'])) {
+            $customBackendLogo = GeneralUtility::getFileAbsFileName($extConf['backendLogo']);
+            if (!empty($customBackendLogo)) {
+                $logoPath = $customBackendLogo;
+            }
+        }
+        // if no custom logo was set or the path is invalid, use the original one
+        if (empty($logoPath)) {
+            $logoPath = GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Public/Images/typo3_logo_orange.svg');
+            $logoWidth = 22;
+            $logoHeight = 22;
+        } else {
+            // set width/height for custom logo
+            $imageInfo = GeneralUtility::makeInstance(ImageInfo::class, $logoPath);
+            $logoWidth = $imageInfo->getWidth() ?? '22';
+            $logoHeight = $imageInfo->getHeight() ?? '22';
+
+            // High-resolution?
+            if (strpos($logoPath, '@2x.') !== false) {
+                $logoWidth /= 2;
+                $logoHeight /= 2;
+            }
+        }
+
+        $view->assign('logoUrl', PathUtility::getAbsoluteWebPath($logoPath));
+        $view->assign('logoWidth', $logoWidth);
+        $view->assign('logoHeight', $logoHeight);
+        $view->assign('applicationVersion', TYPO3_version);
+        $view->assign('siteName', $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
+        $view->assign('toolbar', $this->renderToolbar());
+
+        return $view->render();
     }
 
     /**
@@ -369,7 +383,7 @@ class BackendController
                 $info['extKey'] = 'backend';
             }
             $absoluteComponentPath = ExtensionManagementUtility::extPath($info['extKey']) . $componentDirectory;
-            $relativeComponentPath = PathUtility::getAbsoluteWebPath($absoluteComponentPath);
+            $relativeComponentPath = PathUtility::getRelativePath(PATH_site . TYPO3_mainDir, $absoluteComponentPath);
             $cssFiles = GeneralUtility::getFilesInDir($absoluteComponentPath . 'css/', 'css');
             if (file_exists($absoluteComponentPath . 'css/loadorder.txt')) {
                 // Don't allow inclusion outside directory
@@ -483,23 +497,23 @@ class BackendController
     {
         $lang = $this->getLanguageService();
         $coreLabels = [
-            'waitTitle' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_logging_in'),
-            'refresh_login_failed' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_failed'),
-            'refresh_login_failed_message' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_failed_message'),
-            'refresh_login_title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_title'),
-            'login_expired' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_expired'),
-            'refresh_login_username' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_username'),
-            'refresh_login_password' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_password'),
-            'refresh_login_emptyPassword' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_emptyPassword'),
-            'refresh_login_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_button'),
-            'refresh_exit_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_exit_button'),
-            'please_wait' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.please_wait'),
-            'be_locked' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.be_locked'),
-            'login_about_to_expire' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_about_to_expire'),
-            'login_about_to_expire_title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_about_to_expire_title'),
-            'refresh_login_logout_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_logout_button'),
-            'refresh_login_refresh_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_refresh_button'),
-            'csh_tooltip_loading' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:csh_tooltip_loading')
+            'waitTitle' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_logging_in'),
+            'refresh_login_failed' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_failed'),
+            'refresh_login_failed_message' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_failed_message'),
+            'refresh_login_title' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_title'),
+            'login_expired' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.login_expired'),
+            'refresh_login_username' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_username'),
+            'refresh_login_password' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_password'),
+            'refresh_login_emptyPassword' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_emptyPassword'),
+            'refresh_login_button' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_button'),
+            'refresh_exit_button' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_exit_button'),
+            'please_wait' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.please_wait'),
+            'be_locked' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.be_locked'),
+            'login_about_to_expire' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.login_about_to_expire'),
+            'login_about_to_expire_title' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.login_about_to_expire_title'),
+            'refresh_login_logout_button' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_logout_button'),
+            'refresh_login_refresh_button' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.refresh_login_refresh_button'),
+            'csh_tooltip_loading' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:csh_tooltip_loading')
         ];
         $labels = [
             'fileUpload' => [
@@ -584,19 +598,11 @@ class BackendController
             $pageModule = '';
         }
         $t3Configuration = [
-            'siteUrl' => GeneralUtility::getIndpEnv('TYPO3_SITE_URL'),
             'username' => htmlspecialchars($beUser->user['username']),
             'uniqueID' => GeneralUtility::shortMD5(uniqid('', true)),
             'pageModule' => $pageModule,
             'inWorkspace' => $beUser->workspace !== 0,
-            'moduleMenuWidth' => $this->menuWidth - 1,
-            'topBarHeight' => isset($GLOBALS['TBE_STYLES']['dims']['topFrameH']) ? (int)$GLOBALS['TBE_STYLES']['dims']['topFrameH'] : 45,
-            'showRefreshLoginPopup' => isset($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) ? (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup'] : false,
-            'debugInWindow' => $beUser->uc['debugInWindow'] ? 1 : 0,
-            'ContextHelpWindows' => [
-                'width' => 600,
-                'height' => 400
-            ]
+            'showRefreshLoginPopup' => isset($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) ? (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup'] : false
         ];
         $this->js .= '
 	TYPO3.configuration = ' . json_encode($t3Configuration) . ';
@@ -621,7 +627,6 @@ class BackendController
 	function fsModules() {	//
 		this.recentIds=new Array();					// used by frameset modules to track the most recent used id for list frame.
 		this.navFrameHighlightedID=new Array();		// used by navigation frames to track which row id was highlighted last time
-		this.currentMainLoaded="";
 		this.currentBank="0";
 	}
 	var fsMod = new fsModules();
@@ -672,9 +677,18 @@ class BackendController
                 }
             } else {
                 $this->js .= '
-		// Warning about page editing:
-	alert(' . GeneralUtility::quoteJSvalue(sprintf($this->getLanguageService()->getLL('noEditPage'), $editId)) . ');
-			';
+            // Warning about page editing:
+            require(["TYPO3/CMS/Backend/Modal", "TYPO3/CMS/Backend/Severity"], function(Modal, Severity) {
+                Modal.show("", ' . GeneralUtility::quoteJSvalue(sprintf($this->getLanguageService()->getLL('noEditPage'), $editId)) . ', Severity.notice, [{
+                    text: ' . GeneralUtility::quoteJSvalue($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:close')) . ',
+                    active: true,
+                    btnClass: "btn-info",
+                    name: "cancel",
+                    trigger: function () {
+                        Modal.currentModal.trigger("modal-dismiss");
+                    }
+                }])
+            });';
             }
         }
     }
@@ -697,8 +711,6 @@ class BackendController
                 $beUser->writeUC();
             } elseif ($beUser->uc['startModule']) {
                 $startModule = $beUser->uc['startModule'];
-            } elseif ($beUser->uc['startInTaskCenter']) {
-                $startModule = 'user_task';
             }
 
             // check if the start module has additional parameters, so a redirect to a specific
@@ -843,6 +855,19 @@ class BackendController
     }
 
     /**
+     * Returns the toolbar for the AJAX request
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function getTopbar(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $response->getBody()->write(json_encode(['topbar' => $this->renderTopbar()]));
+        return $response;
+    }
+
+    /**
      * returns a new standalone view, shorthand function
      *
      * @param string $templatePathAndFileName optional the path to set the template path and filename
@@ -851,6 +876,7 @@ class BackendController
     protected function getFluidTemplateObject($templatePathAndFileName = null)
     {
         $view = GeneralUtility::makeInstance(StandaloneView::class);
+        $view->setPartialRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Partials')]);
         if ($templatePathAndFileName) {
             $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName($templatePathAndFileName));
         }

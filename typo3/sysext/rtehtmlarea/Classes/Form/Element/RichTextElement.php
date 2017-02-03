@@ -19,7 +19,6 @@ use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Html\RteHtmlParser;
 use TYPO3\CMS\Core\Localization\Locales;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
@@ -61,27 +60,7 @@ class RichTextElement extends AbstractFormElement
     protected $pidOfVersionedMotherRecord;
 
     /**
-     * Native, not further processed TsConfig of RTE section for this record on given pid.
-     *
-     * Example:
-     *
-     * RTE = foo
-     * RTE.bar = xy
-     *
-     * array(
-     * 	'value' => 'foo',
-     * 	'properties' => array(
-     * 		'bar' => 'xy',
-     * 	),
-     * );
-     *
-     * @var array
-     */
-    protected $vanillaRteTsConfig;
-
-    /**
-     * Based on $vanillaRteTsConfig, this property contains "processed" configuration
-     * where table and type specific RTE setup is merged into 'default.' array.
+     * RTE configuration array. Set by TcaText provider.
      *
      * @var array
      */
@@ -93,13 +72,6 @@ class RichTextElement extends AbstractFormElement
      * @var string
      */
     protected $domIdentifier;
-
-    /**
-     * Parsed "defaultExtras" TCA
-     *
-     * @var array
-     */
-    protected $defaultExtras;
 
     /**
      * Some client info containing "user agent", "browser", "version", "system"
@@ -204,6 +176,33 @@ class RichTextElement extends AbstractFormElement
     protected $registeredPlugins = [];
 
     /**
+     * Default field wizards enabled for this element.
+     *
+     * @var array
+     */
+    protected $defaultFieldWizard = [
+        'otherLanguageContent' => [
+            'renderType' => 'otherLanguageContent',
+        ],
+        'defaultLanguageDifferences' => [
+            'renderType' => 'defaultLanguageDifferences',
+            'after' => [
+                'otherLanguageContent',
+            ],
+        ],
+    ];
+
+    /**
+     * Default field control add the full screen RTE control, but is disabled by default
+     */
+    protected $defaultFieldControl = [
+        'fullScreenRichtext' => [
+            'renderType' => 'fullScreenRichtext',
+            'disabled' => true,
+        ],
+    ];
+
+    /**
      * This will render a <textarea> OR RTE area form field,
      * possibly with various control/validation features
      *
@@ -212,24 +211,14 @@ class RichTextElement extends AbstractFormElement
     public function render()
     {
         $table = $this->data['tableName'];
-        $fieldName = $this->data['fieldName'];
         $row = $this->data['databaseRow'];
         $parameterArray = $this->data['parameterArray'];
 
-        $backendUser = $this->getBackendUserAuthentication();
-
         $this->resultArray = $this->initializeResultArray();
-        $this->defaultExtras = BackendUtility::getSpecConfParts($parameterArray['fieldConf']['defaultExtras']);
         $this->pidOfPageRecord = $this->data['effectivePid'];
         BackendUtility::fixVersioningPid($table, $row);
         $this->pidOfVersionedMotherRecord = (int)$row['pid'];
-        $this->vanillaRteTsConfig = $backendUser->getTSConfig('RTE', BackendUtility::getPagesTSconfig($this->pidOfPageRecord));
-        $this->processedRteConfiguration = BackendUtility::RTEsetup(
-            $this->vanillaRteTsConfig['properties'],
-            $table,
-            $fieldName,
-            $this->data['recordTypeValue']
-        );
+        $this->processedRteConfiguration = $parameterArray['fieldConf']['config']['richtextConfiguration'];
         $this->client = $this->clientInfo();
         $this->domIdentifier = preg_replace('/[^a-zA-Z0-9_:.-]/', '_', $parameterArray['itemFormElName']);
         $this->domIdentifier = htmlspecialchars(preg_replace('/^[^a-zA-Z]/', 'x', $this->domIdentifier));
@@ -269,19 +258,7 @@ class RichTextElement extends AbstractFormElement
         // Get RTE init JS code
         $this->resultArray['additionalJavaScriptPost'][] = $this->getRteInitJsCode();
 
-        $html = $this->getMainHtml();
-
-        $this->resultArray['html'] = $this->renderWizards(
-            [$html],
-            $parameterArray['fieldConf']['config']['wizards'],
-            $table,
-            $row,
-            $fieldName,
-            $parameterArray,
-            $parameterArray['itemFormElName'],
-            $this->defaultExtras,
-            true
-        );
+        $this->resultArray['html'] = $this->getMainHtml();
 
         return $this->resultArray;
     }
@@ -294,6 +271,7 @@ class RichTextElement extends AbstractFormElement
     protected function getMainHtml()
     {
         $backendUser = $this->getBackendUserAuthentication();
+        $config = $this->data['parameterArray']['fieldConf']['config'];
 
         if ($this->isInFullScreenMode()) {
             $width = '100%';
@@ -328,25 +306,68 @@ class RichTextElement extends AbstractFormElement
         $rteDivStyle = 'position:relative; left:0px; top:0px; height:' . $height . '; width:' . $width . '; border: 1px solid black; padding: 2 ' . $paddingRight . ' 2 2;';
 
         $itemFormElementName = $this->data['parameterArray']['itemFormElName'];
-
-        // This seems to result in:
-        //	_TRANSFORM_bodytext (the handled field name) in case the field is a direct DB field
-        //	_TRANSFORM_vDEF (constant string) in case the RTE is within a flex form
-        $triggerFieldName = preg_replace('/\\[([^]]+)\\]$/', '[_TRANSFORM_\\1]', $itemFormElementName);
-
         $value = $this->transformDatabaseContentToEditor($this->data['parameterArray']['itemFormElValue']);
 
         $result = [];
-        // The hidden field tells the DataHandler that processing should be done on this value.
-        $result[] = '<input type="hidden" name="' . htmlspecialchars($triggerFieldName) . '" value="RTE" />';
-        $result[] = '<div id="pleasewait' . $this->domIdentifier . '" class="pleasewait" style="display: block;" >';
-        $result[] =    $this->getLanguageService()->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang.xlf:Please wait');
-        $result[] = '</div>';
-        $result[] = '<div id="editorWrap' . $this->domIdentifier . '" class="editorWrap" style="visibility: hidden; width:' . $editorWrapWidth . '; height:100%;">';
-        $result[] =    '<textarea ' . $this->getValidationDataAsDataAttribute($this->data['parameterArray']['fieldConf']['config']) . ' id="RTEarea' . $this->domIdentifier . '" name="' . htmlspecialchars($itemFormElementName) . '" rows="0" cols="0" style="' . htmlspecialchars($rteDivStyle) . '">';
-        $result[] =        htmlspecialchars($value);
-        $result[] =    '</textarea>';
-        $result[] = '</div>';
+        if ($this->isInFullScreenMode()) {
+            $result[] = '<div id="pleasewait' . $this->domIdentifier . '" class="pleasewait" style="display: block;" >';
+            $result[] =     $this->getLanguageService()->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang.xlf:Please wait');
+            $result[] = '</div>';
+            $result[] = '<div id="editorWrap' . $this->domIdentifier . '" class="editorWrap" style="visibility: hidden; width:' . $editorWrapWidth . '; height:100%;">';
+            $result[] =     '<textarea';
+            $result[] =         ' data-formengine-validation-rules="' . htmlspecialchars($this->getValidationDataAsJsonString($config)) . '"';
+            $result[] =         ' id="RTEarea' . $this->domIdentifier . '"';
+            $result[] =         ' name="' . htmlspecialchars($itemFormElementName) . '"';
+            $result[] =         ' rows="0" cols="0" style="' . htmlspecialchars($rteDivStyle) . '"';
+            $result[] =     '>';
+            $result[] =         htmlspecialchars($value);
+            $result[] =     '</textarea>';
+            $result[] = '</div>';
+        } else {
+            $legacyWizards = $this->renderWizards();
+            $legacyFieldControlHtml = implode(LF, $legacyWizards['fieldControl']);
+            $legacyFieldWizardHtml = implode(LF, $legacyWizards['fieldWizard']);
+
+            $fieldControlResult = $this->renderFieldControl();
+            $fieldControlHtml = $legacyFieldControlHtml . $fieldControlResult['html'];
+            $this->resultArray = $this->mergeChildReturnIntoExistingResult($this->resultArray, $fieldControlResult, false);
+
+            $fieldWizardResult = $this->renderFieldWizard();
+            $fieldWizardHtml = $legacyFieldWizardHtml . $fieldWizardResult['html'];
+            $this->resultArray = $this->mergeChildReturnIntoExistingResult($this->resultArray, $fieldWizardResult, false);
+
+            $result[] = '<div class="t3js-formengine-field-item">';
+            $result[] =     '<div class="form-control-wrap">';
+            $result[] =         '<div class="form-wizards-wrap">';
+            $result[] =             '<div class="form-wizards-element">';
+            $result[] =                 '<div id="pleasewait' . $this->domIdentifier . '" class="pleasewait" style="display: block;" >';
+            $result[] =                     $this->getLanguageService()->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang.xlf:Please wait');
+            $result[] =                 '</div>';
+            $result[] =                 '<div id="editorWrap' . $this->domIdentifier . '" class="editorWrap" style="visibility: hidden; width:' . $editorWrapWidth . '; height:100%;">';
+            $result[] =                     '<textarea';
+            $result[] =                         ' data-formengine-validation-rules="' . htmlspecialchars($this->getValidationDataAsJsonString($config)) . '"';
+            $result[] =                         ' id="RTEarea' . $this->domIdentifier . '"';
+            $result[] =                         ' name="' . htmlspecialchars($itemFormElementName) . '"';
+            $result[] =                         ' rows="0" cols="0" style="' . htmlspecialchars($rteDivStyle) . '"';
+            $result[] =                     '>';
+            $result[] =                         htmlspecialchars($value);
+            $result[] =                     '</textarea>';
+            $result[] =                 '</div>';
+            $result[] =             '</div>';
+            $result[] =             '<div class="form-wizards-items-aside">';
+            $result[] =                 '<div class="btn-group">';
+            $result[] =                     $fieldControlHtml;
+            $result[] =                 '</div>';
+            $result[] =             '</div>';
+            $result[] =             '<div class="form-wizards-items-bottom">';
+            $result[] =                 '<div class="btn-group">';
+            $result[] =                     $fieldWizardHtml;
+            $result[] =                 '</div>';
+            $result[] =             '</div>';
+            $result[] =         '</div>';
+            $result[] =     '</div>';
+            $result[] = '</div>';
+        }
 
         return implode(LF, $result);
     }
@@ -369,10 +390,8 @@ class RichTextElement extends AbstractFormElement
                         'contentTypo3Language' => $this->contentTypo3Language,
                         'contentISOLanguage' => $this->contentISOLanguage,
                         'contentLanguageUid' => $this->contentLanguageUid,
-                        'RTEsetup' => $this->vanillaRteTsConfig,
                         'client' => $this->client,
                         'thisConfig' => $this->processedRteConfiguration,
-                        'specConf' => $this->defaultExtras,
                     ];
                     if ($plugin->main($configuration)) {
                         $this->registeredPlugins[$pluginId] = $plugin;
@@ -412,9 +431,6 @@ class RichTextElement extends AbstractFormElement
     {
         $backendUser = $this->getBackendUserAuthentication();
 
-        if ($this->client['browser'] === 'msie' || $this->client['browser'] === 'opera') {
-            $this->processedRteConfiguration['keepButtonGroupTogether'] = 0;
-        }
         $this->defaultToolbarOrder = 'bar, blockstylelabel, blockstyle, textstylelabel, textstyle, linebreak,
 			bar, formattext, bold,  strong, italic, emphasis, big, small, insertedtext, deletedtext, citation, code,'
                 . 'definition, keyboard, monospaced, quotation, sample, variable, bidioverride, strikethrough, subscript, superscript, underline, span,
@@ -459,27 +475,22 @@ class RichTextElement extends AbstractFormElement
         $this->toolbarOrderArray = array_intersect(GeneralUtility::trimExplode(',', $toolbarOrder, true), GeneralUtility::trimExplode(',', $this->defaultToolbarOrder, true));
         $toolbarOrder = array_unique(array_values($this->toolbarOrderArray));
         // Fetching specConf for field from backend
-        $pList = is_array($this->defaultExtras['richtext']['parameters']) ? implode(',', $this->defaultExtras['richtext']['parameters']) : '';
-        if ($pList !== '*') {
-            // If not all
-            $show = is_array($this->defaultExtras['richtext']['parameters']) ? $this->defaultExtras['richtext']['parameters'] : [];
-            if ($this->processedRteConfiguration['showButtons']) {
-                if (!GeneralUtility::inList($this->processedRteConfiguration['showButtons'], '*')) {
-                    $show = array_unique(array_merge($show, GeneralUtility::trimExplode(',', $this->processedRteConfiguration['showButtons'], true)));
-                } else {
-                    $show = array_unique(array_merge($show, $toolbarOrder));
+        // If not all
+        $show = [];
+        if ($this->processedRteConfiguration['showButtons']) {
+            if (!GeneralUtility::inList($this->processedRteConfiguration['showButtons'], '*')) {
+                $show = array_unique(GeneralUtility::trimExplode(',', $this->processedRteConfiguration['showButtons'], true));
+            } else {
+                $show = array_unique($toolbarOrder);
+            }
+        }
+        if (is_array($this->processedRteConfiguration['showButtons.'])) {
+            foreach ($this->processedRteConfiguration['showButtons.'] as $buttonId => $value) {
+                if ($value) {
+                    $show[] = $buttonId;
                 }
             }
-            if (is_array($this->processedRteConfiguration['showButtons.'])) {
-                foreach ($this->processedRteConfiguration['showButtons.'] as $buttonId => $value) {
-                    if ($value) {
-                        $show[] = $buttonId;
-                    }
-                }
-                $show = array_unique($show);
-            }
-        } else {
-            $show = $toolbarOrder;
+            $show = array_unique($show);
         }
         $RTEkeyList = isset($backendUser->userTS['options.']['RTEkeyList']) ? $backendUser->userTS['options.']['RTEkeyList'] : '*';
         if ($RTEkeyList !== '*') {
@@ -644,7 +655,7 @@ class RichTextElement extends AbstractFormElement
         $backendUser = $this->getBackendUserAuthentication();
 
         $jsArray = [];
-        $jsArray[] = 'var HTMLArea = HTMLArea || {};';
+        $jsArray[] = 'window.HTMLArea = window.HTMLArea || {};';
         $jsArray[] = 'if (typeof configureEditorInstance === "undefined") {';
         $jsArray[] = '	configureEditorInstance = new Object();';
         $jsArray[] = '}';
@@ -683,7 +694,6 @@ class RichTextElement extends AbstractFormElement
         $jsArray[] = 'RTEarea[editornumber].disableObjectResizing = ' . (trim($this->processedRteConfiguration['disableObjectResizing']) ? 'true;' : 'false;');
         $jsArray[] = 'RTEarea[editornumber].removeTrailingBR = ' . (trim($this->processedRteConfiguration['removeTrailingBR']) ? 'true;' : 'false;');
         $jsArray[] = 'RTEarea[editornumber].useCSS = ' . (trim($this->processedRteConfiguration['useCSS']) ? 'true' : 'false') . ';';
-        $jsArray[] = 'RTEarea[editornumber].keepButtonGroupTogether = ' . (trim($this->processedRteConfiguration['keepButtonGroupTogether']) ? 'true;' : 'false;');
         $jsArray[] = 'RTEarea[editornumber].disablePCexamples = ' . (trim($this->processedRteConfiguration['disablePCexamples']) ? 'true;' : 'false;');
         $jsArray[] = 'RTEarea[editornumber].showTagFreeClasses = ' . (trim($this->processedRteConfiguration['showTagFreeClasses']) ? 'true;' : 'false;');
         $jsArray[] = 'RTEarea[editornumber].tceformsNested = ' . (!empty($this->data) ? json_encode($this->data['tabAndInlineStack']) : '[]') . ';';
@@ -787,7 +797,7 @@ class RichTextElement extends AbstractFormElement
             }
         } else {
             // Fallback to default content css file if none of the configured files exists and is not empty
-            $contentCssFiles['default'] = PathUtility::getAbsoluteWebPath('EXT:rtehtmlarea/Resources/Public/Css/ContentCss/Default.css');
+            $contentCssFiles['default'] = PathUtility::getAbsoluteWebPath(GeneralUtility::getFileAbsFileName('EXT:rtehtmlarea/Resources/Public/Css/ContentCss/Default.css'));
         }
         return array_unique($contentCssFiles);
     }
@@ -810,7 +820,7 @@ class RichTextElement extends AbstractFormElement
      */
     protected function buildJSClassesArray()
     {
-        $RTEProperties = $this->vanillaRteTsConfig['properties'];
+        $RTEProperties = $this->processedRteConfiguration;
         // Declare sub-arrays
         $classesArray = [
             'labels' => [],
@@ -1218,7 +1228,6 @@ class RichTextElement extends AbstractFormElement
      */
     protected function RTEtsConfigParams()
     {
-        $parameters = BackendUtility::getSpecConfParametersFromArray($this->defaultExtras['rte_transform']['parameters']);
         $result = [
             $this->data['tableName'],
             $this->data['databaseRow']['uid'],
@@ -1226,7 +1235,6 @@ class RichTextElement extends AbstractFormElement
             $this->pidOfVersionedMotherRecord,
             $this->data['recordTypeValue'],
             $this->pidOfPageRecord,
-            $parameters['imgpath'],
         ];
         return implode(':', $result);
     }
@@ -1259,13 +1267,6 @@ class RichTextElement extends AbstractFormElement
         $value = preg_replace('/<(\\/?)strong/i', '<$1b', $value);
         // change <em> to <i>
         $value = preg_replace('/<(\\/?)em([^b>]*>)/i', '<$1i$2', $value);
-
-        if ($this->defaultExtras['rte_transform']) {
-            /** @var RteHtmlParser $parseHTML */
-            $parseHTML = GeneralUtility::makeInstance(RteHtmlParser::class);
-            $parseHTML->init($this->data['table'] . ':' . $this->data['fieldName'], $this->pidOfVersionedMotherRecord);
-            $value = $parseHTML->RTE_transform($value, $this->defaultExtras, 'rte', $this->processedRteConfiguration);
-        }
         return $value;
     }
 
@@ -1276,7 +1277,7 @@ class RichTextElement extends AbstractFormElement
      */
     protected function isInFullScreenMode()
     {
-        return GeneralUtility::_GP('M') === 'wizard_rte';
+        return GeneralUtility::_GP('route') === '/wizard/rte';
     }
 
     /**

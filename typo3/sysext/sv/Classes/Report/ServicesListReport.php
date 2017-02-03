@@ -24,13 +24,10 @@ use TYPO3\CMS\Reports\ReportInterface;
 
 /**
  * This class provides a report displaying a list of all installed services
- * Code inspired by EXT:dam/lib/class.tx_dam_svlist.php by René Fritz
  */
 class ServicesListReport implements ReportInterface
 {
     /**
-     * Back-reference to the calling reports module
-     *
      * @var ReportController
      */
     protected $reportsModule;
@@ -119,14 +116,14 @@ class ServicesListReport implements ReportInterface
             'OperatingSystem' => $serviceInformation['os'] ?: $this->getLanguageService()->getLL('any'),
             'RequiredExecutables' => $serviceInformation['exec'] ?: '-',
             'AvailabilityClass' => 'danger',
-            'Available' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:no'),
+            'Available' => $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:no'),
         ];
 
         try {
             $serviceDetails = ExtensionManagementUtility::findServiceByKey($serviceKey);
             if ($serviceDetails['available']) {
                 $result['AvailabilityClass'] = 'success';
-                $result['Available'] = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:yes');
+                $result['Available'] = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:yes');
             }
         } catch (Exception $e) {
         }
@@ -141,15 +138,14 @@ class ServicesListReport implements ReportInterface
      */
     protected function getExecutablesSearchPathList()
     {
-        $addInvalidSearchPaths = true;
-        $searchPaths = CommandUtility::getPaths($addInvalidSearchPaths);
+        $searchPaths = CommandUtility::getPaths(true);
         $result = [];
 
         foreach ($searchPaths as $path => $isValid) {
             $searchPathData = $this->getServicePathStatus($isValid);
             $result[] = [
                 'class' => $searchPathData['statusCSSClass'],
-                'accessible' => 'LLL:EXT:lang/locallang_common.xlf:' . $searchPathData['accessible'],
+                'accessible' => 'LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:' . $searchPathData['accessible'],
                 'path' => GeneralUtility::fixWindowsFilePath($path),
             ];
         }
@@ -211,18 +207,8 @@ class ServicesListReport implements ReportInterface
     }
 
     /**
-     * Returns LanguageService
-     *
-     * @return \TYPO3\CMS\Lang\LanguageService
-     */
-    protected function getLanguageService()
-    {
-        return $GLOBALS['LANG'];
-    }
-
-    /**
      * Method to check if the service in path is available
-     * @param $isValid
+     * @param bool|string $isValid
      * @return array
      */
     private function getServicePathStatus($isValid): array
@@ -238,5 +224,15 @@ class ServicesListReport implements ReportInterface
             'statusCSSClass' => $statusCSSClass,
             'accessible' => $accessible
         ];
+    }
+
+    /**
+     * Returns LanguageService
+     *
+     * @return \TYPO3\CMS\Lang\LanguageService
+     */
+    protected function getLanguageService()
+    {
+        return $GLOBALS['LANG'];
     }
 }

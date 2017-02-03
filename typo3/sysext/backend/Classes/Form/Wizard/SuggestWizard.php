@@ -14,19 +14,14 @@ namespace TYPO3\CMS\Backend\Form\Wizard;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
- * Wizard for rendering an AJAX selector for records
+ * Wizard for rendering an AJAX selector for records.
+ * See SuggestWizardController for the ajax handling counterpart.
+ *
+ * @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - suggest has been merged to GroupElement directly
  */
 class SuggestWizard
 {
@@ -38,482 +33,85 @@ class SuggestWizard
 
     /**
      * Construct
+     *
+     * @param StandaloneView $view
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
-    public function __construct()
+    public function __construct(StandaloneView $view = null)
     {
-        $this->view = $this->getFluidTemplateObject('SuggestWizard.html');
+        GeneralUtility::logDeprecatedFunction();
+        $this->view = $view ?: $this->getFluidTemplateObject('SuggestWizard.html');
     }
 
     /**
      * Renders an ajax-enabled text field. Also adds required JS
      *
-     * @param string $fieldname The fieldname in the form
-     * @param string $table The table we render this selector for
-     * @param string $field The field we render this selector for
-     * @param array $row The row which is currently edited
-     * @param array $config The TSconfig of the field
+     * @param array $data Main data array from FormEngine
+     * @throws \RuntimeException for incomplete incoming arguments
      * @return string The HTML code for the selector
      */
-    public function renderSuggestSelector($fieldname, $table, $field, array $row, array $config)
+    public function renderSuggestSelector(array $data)
     {
-        $isFlexFormField = $GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] === 'flex';
-        if ($isFlexFormField) {
-            $fieldPattern = 'data[' . $table . '][' . $row['uid'] . '][';
-            $flexformField = str_replace($fieldPattern, '', $fieldname);
-            $flexformField = substr($flexformField, 0, -1);
-            $field = str_replace([']['], '|', $flexformField);
+        $fieldName = $data['fieldName'];
+        $dataStructureIdentifier = '';
+        $flexFormSheetName = '';
+        $flexFormFieldName = '';
+        $flexFormContainerName = '';
+        $flexFormContainerFieldName = '';
+        if ($data['processedTca']['columns'][$fieldName]['config']['type'] === 'flex') {
+            $flexFormConfig = $data['processedTca']['columns'][$fieldName];
+            $dataStructureIdentifier = $flexFormConfig['config']['dataStructureIdentifier'];
+            if (!isset($flexFormConfig['config']['dataStructureIdentifier'])) {
+                throw new \RuntimeException(
+                    'A data structure identifier must be set in [\'config\'] part of a flex form.'
+                    . ' This is usually added by TcaFlexPrepare data processor',
+                    1478604742
+                );
+            }
+            if (isset($data['flexFormSheetName'])) {
+                $flexFormSheetName = $data['flexFormSheetName'];
+            }
+            if (isset($data['flexFormFieldName'])) {
+                $flexFormFieldName = $data['flexFormFieldName'];
+            }
+            if (isset($data['flexFormContainerName'])) {
+                $flexFormContainerName = $data['flexFormContainerName'];
+            }
+            if (isset($data['flexFormContainerFieldName'])) {
+                $flexFormContainerFieldName = $data['flexFormContainerFieldName'];
+            }
         }
 
         // Get minimumCharacters from TCA
         $minChars = 0;
-        if (isset($config['fieldConf']['config']['wizards']['suggest']['default']['minimumCharacters'])) {
-            $minChars = (int)$config['fieldConf']['config']['wizards']['suggest']['default']['minimumCharacters'];
+        $fieldTca = $data['parameterArray']['fieldConf'];
+        if (isset($fieldTca['config']['wizards']['suggest']['default']['minimumCharacters'])) {
+            $minChars = (int)$fieldTca['config']['wizards']['suggest']['default']['minimumCharacters'];
         }
-        // Overwrite it with minimumCharacters from TSConfig (TCEFORM) if given
-        if (isset($config['fieldTSConfig']['suggest.']['default.']['minimumCharacters'])) {
-            $minChars = (int)$config['fieldTSConfig']['suggest.']['default.']['minimumCharacters'];
+        // Overwrite it with minimumCharacters from TSConfig if given
+        $fieldTsConfig = $data['parameterArray']['fieldTSConfig'];
+        if (isset($fieldTsConfig['suggest.']['default.']['minimumCharacters'])) {
+            $minChars = (int)$fieldTsConfig['suggest.']['default.']['minimumCharacters'];
         }
         $minChars = $minChars > 0 ? $minChars : 2;
 
-        // fetch the TCA field type to hand it over to the JS class
-        $type = '';
-        if (isset($config['fieldConf']['config']['type'])) {
-            $type = $config['fieldConf']['config']['type'];
-        }
-
-        $jsRow = '';
-        if ($isFlexFormField || !MathUtility::canBeInterpretedAsInteger($row['uid'])) {
-            // Ff we have a new record, we hand that row over to JS.
-            // This way we can properly retrieve the configuration of our wizard
-            // if it is shown in a flexform
-            $jsRow = serialize($row);
-        }
-
         $this->view->assignMultiple([
-                'placeholder' => 'LLL:EXT:lang/locallang_core.xlf:labels.findRecord',
-                'fieldname' => $fieldname,
-                'table' => $table,
-                'field' => $field,
-                'uid' => $row['uid'],
-                'pid' => (int)$row['pid'],
-                'fieldtype' => $type,
-                'minchars' => (int)$minChars,
-                'recorddata' => $jsRow
-            ]
-        );
+            'placeholder' => 'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.findRecord',
+            'fieldName' => $data['fieldName'],
+            'tableName' => $data['tableName'],
+            'field' => $data['parameterArray']['itemFormElName'],
+            'uid' => $data['databaseRow']['uid'],
+            'pid' => (int)$data['effectivePid'],
+            'dataStructureIdentifier' => $dataStructureIdentifier,
+            'flexFormSheetName' => $flexFormSheetName,
+            'flexFormFieldName' => $flexFormFieldName,
+            'flexFormContainerName' => $flexFormContainerName,
+            'flexFormContainerFieldName' => $flexFormContainerFieldName,
+            'fieldtype' => $fieldTca['config']['type'],
+            'minchars' => (int)$minChars,
+        ]);
 
         return $this->view->render();
-    }
-
-    /**
-     * Ajax handler for the "suggest" feature in FormEngine.
-     *
-     * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
-     * @return ResponseInterface
-     */
-    public function searchAction(ServerRequestInterface $request, ResponseInterface $response)
-    {
-        $parsedBody = $request->getParsedBody();
-        $queryParams = $request->getQueryParams();
-
-        // Get parameters from $_GET/$_POST
-        $search = isset($parsedBody['value']) ? $parsedBody['value'] : $queryParams['value'];
-        $table = isset($parsedBody['table']) ? $parsedBody['table'] : $queryParams['table'];
-        $field = isset($parsedBody['field']) ? $parsedBody['field'] : $queryParams['field'];
-        $uid = isset($parsedBody['uid']) ? $parsedBody['uid'] : $queryParams['uid'];
-        $pageId = (int)(isset($parsedBody['pid']) ? $parsedBody['pid'] : $queryParams['pid']);
-        $newRecordRow = isset($parsedBody['newRecordRow']) ? $parsedBody['newRecordRow'] : $queryParams['newRecordRow'];
-        // If the $uid is numeric, we have an already existing element, so get the
-        // TSconfig of the page itself or the element container (for non-page elements)
-        // otherwise it's a new element, so use given id of parent page (i.e., don't modify it here)
-        if (is_numeric($uid)) {
-            $row = BackendUtility::getRecord($table, $uid);
-            if ($table === 'pages') {
-                $pageId = $uid;
-            } else {
-                $pageId = $row['pid'];
-            }
-        } else {
-            $row = unserialize($newRecordRow);
-        }
-        $TSconfig = BackendUtility::getPagesTSconfig($pageId);
-        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
-        $this->overrideFieldNameAndConfigurationForFlexform($table, $field, $row, $fieldConfig);
-
-        $wizardConfig = $fieldConfig['wizards']['suggest'];
-
-        $queryTables = $this->getTablesToQueryFromFieldConfiguration($fieldConfig);
-        $whereClause = $this->getWhereClause($fieldConfig);
-
-        $resultRows = [];
-
-        // fetch the records for each query table. A query table is a table from which records are allowed to
-        // be added to the TCEForm selector, originally fetched from the "allowed" config option in the TCA
-        foreach ($queryTables as $queryTable) {
-            // if the table does not exist, skip it
-            if (!is_array($GLOBALS['TCA'][$queryTable]) || empty($GLOBALS['TCA'][$queryTable])) {
-                continue;
-            }
-
-            $config = $this->getConfigurationForTable($queryTable, $wizardConfig, $TSconfig, $table, $field);
-
-            // process addWhere
-            if (!isset($config['addWhere']) && $whereClause) {
-                $config['addWhere'] = $whereClause;
-            }
-            if (isset($config['addWhere'])) {
-                $replacement = [
-                    '###THIS_UID###' => (int)$uid,
-                    '###CURRENT_PID###' => (int)$pageId
-                ];
-                if (isset($TSconfig['TCEFORM.'][$table . '.'][$field . '.'])) {
-                    $fieldTSconfig = $TSconfig['TCEFORM.'][$table . '.'][$field . '.'];
-                    if (isset($fieldTSconfig['PAGE_TSCONFIG_ID'])) {
-                        $replacement['###PAGE_TSCONFIG_ID###'] = (int)$fieldTSconfig['PAGE_TSCONFIG_ID'];
-                    }
-                    if (isset($fieldTSconfig['PAGE_TSCONFIG_IDLIST'])) {
-                        $replacement['###PAGE_TSCONFIG_IDLIST###'] =  implode(',', GeneralUtility::intExplode(',', $fieldTSconfig['PAGE_TSCONFIG_IDLIST']));
-                    }
-                    if (isset($fieldTSconfig['PAGE_TSCONFIG_STR'])) {
-                        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($fieldConfig['foreign_table']);
-                        // nasty hack, but it's currently not possible to just quote anything "inside" the value but not escaping
-                        // the whole field as it is not known where it is used in the WHERE clause
-                        $replacement['###PAGE_TSCONFIG_STR###'] = trim($connection->quote($fieldTSconfig['PAGE_TSCONFIG_STR']), '\'');
-                    }
-                }
-                $config['addWhere'] = strtr(' ' . $config['addWhere'], $replacement);
-            }
-
-            // instantiate the class that should fetch the records for this $queryTable
-            $receiverClassName = $config['receiverClass'];
-            if (!class_exists($receiverClassName)) {
-                $receiverClassName = SuggestWizardDefaultReceiver::class;
-            }
-            $receiverObj = GeneralUtility::makeInstance($receiverClassName, $queryTable, $config);
-            $params = ['value' => $search];
-            $rows = $receiverObj->queryTable($params);
-            if (empty($rows)) {
-                continue;
-            }
-            $resultRows = $rows + $resultRows;
-            unset($rows);
-        }
-
-        // Limit the number of items in the result list
-        $maxItems = isset($config['maxItemsInResultList']) ? $config['maxItemsInResultList'] : 10;
-        $maxItems = min(count($resultRows), $maxItems);
-
-        $listItems = $this->createListItemsFromResultRow($resultRows, $maxItems);
-
-        $response->getBody()->write(json_encode($listItems));
-        return $response;
-    }
-
-    /**
-     * Returns TRUE if a table has been marked as hidden in the configuration
-     *
-     * @param array $tableConfig
-     * @return bool
-     */
-    protected function isTableHidden(array $tableConfig)
-    {
-        return (bool)$tableConfig['ctrl']['hideTable'];
-    }
-
-    /**
-     * Checks if the current backend user is allowed to access the given table, based on the ctrl-section of the
-     * table's configuration array (TCA) entry.
-     *
-     * @param array $tableConfig
-     * @return bool
-     */
-    protected function currentBackendUserMayAccessTable(array $tableConfig)
-    {
-        if ($GLOBALS['BE_USER']->isAdmin()) {
-            return true;
-        }
-
-        // If the user is no admin, they may not access admin-only tables
-        if ($tableConfig['ctrl']['adminOnly']) {
-            return false;
-        }
-
-        // allow access to root level pages if security restrictions should be bypassed
-        return !$tableConfig['ctrl']['rootLevel'] || $tableConfig['ctrl']['security']['ignoreRootLevelRestriction'];
-    }
-
-    /**
-     * Checks if the query comes from a Flexform element and if yes, resolves the field configuration from the Flexform
-     * data structure.
-     *
-     * @param string $table
-     * @param string &$field The field identifier, either a simple table field or a Flexform field path separated with |
-     * @param array $row The row we're dealing with; optional (only required for Flexform records)
-     * @param array|NULL &$fieldConfig
-     */
-    protected function overrideFieldNameAndConfigurationForFlexform($table, &$field, array $row, &$fieldConfig)
-    {
-        // check if field is a flexform reference
-        if (strpos($field, '|') === false) {
-            $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
-        } else {
-            $parts = explode('|', $field);
-            if ($GLOBALS['TCA'][$table]['columns'][$parts[0]]['config']['type'] !== 'flex') {
-                return;
-            }
-
-            $flexfieldTCAConfig = $GLOBALS['TCA'][$table]['columns'][$parts[0]]['config'];
-            // @todo: should be done via data preparation, resolveAllSheetsInDS() can be deprecated then
-            if (substr($row['uid'], 0, 3) === 'NEW') {
-                // We have to cleanup record information as they are coming from FormEngines DataProvider
-                $pointerFields = GeneralUtility::trimExplode(',', $flexfieldTCAConfig['ds_pointerField']);
-                foreach ($pointerFields as $pointerField) {
-                    if (is_array($row[$pointerField])) {
-                        $row[$pointerField] = $row[$pointerField][0];
-                    }
-                }
-            }
-            $flexformDSArray = BackendUtility::getFlexFormDS($flexfieldTCAConfig, $row, $table, $parts[0]);
-            $flexformDSArray = GeneralUtility::resolveAllSheetsInDS($flexformDSArray);
-
-            $fieldConfig = $this->getFieldConfiguration($parts, $flexformDSArray);
-            // Flexform field name levels are separated with | instead of encapsulation in [];
-            // reverse this here to be compatible with regular field names.
-            $field = str_replace('|', '][', $field);
-        }
-    }
-
-    /**
-     * Get configuration for given field by traversing the flexform path to field
-     * given in $parts
-     *
-     * @param array $parts
-     * @param array $flexformDSArray
-     * @return array
-     */
-    protected function getFieldConfiguration(array $parts, array $flexformDSArray)
-    {
-        $relevantParts = [];
-        foreach ($parts as $part) {
-            if ($this->isRelevantFlexField($part)) {
-                $relevantParts[] = $part;
-            }
-        }
-        // throw away db field name for flexform field
-        array_shift($relevantParts);
-
-        $flexformElement = array_pop($relevantParts);
-        $sheetName = array_shift($relevantParts);
-        $flexSubDataStructure = $flexformDSArray['sheets'][$sheetName];
-        foreach ($relevantParts as $relevantPart) {
-            $flexSubDataStructure = $this->getSubConfigurationForSections($flexSubDataStructure, $relevantPart);
-        }
-        $fieldConfig = $this->getNestedDsFieldConfig($flexSubDataStructure, $flexformElement);
-        return $fieldConfig;
-    }
-
-    /**
-     * Recursively get sub sections in data structure by name
-     *
-     * @param array $dataStructure
-     * @param string $fieldName
-     * @return array
-     */
-    protected function getSubConfigurationForSections(array $dataStructure, $fieldName)
-    {
-        $fieldConfig = [];
-        $elements = $dataStructure['ROOT']['el'] ? $dataStructure['ROOT']['el'] : $dataStructure['el'];
-        if (is_array($elements)) {
-            foreach ($elements as $k => $ds) {
-                if ($k === $fieldName) {
-                    $fieldConfig = $ds;
-                    break;
-                } elseif (isset($ds['el'][$fieldName])) {
-                    $fieldConfig = $ds['el'][$fieldName];
-                    break;
-                } else {
-                    $fieldConfig = $this->getSubConfigurationForSections($ds, $fieldName);
-                }
-            }
-        }
-        return $fieldConfig;
-    }
-
-    /**
-     * Search a data structure array recursively -- including within nested
-     * (repeating) elements -- for a particular field config.
-     *
-     * @param array $dataStructure The data structure
-     * @param string $fieldName The field name
-     * @return array
-     */
-    protected function getNestedDsFieldConfig(array $dataStructure, $fieldName)
-    {
-        $fieldConfig = [];
-        $elements = $dataStructure['ROOT']['el'] ? $dataStructure['ROOT']['el'] : $dataStructure['el'];
-        if (is_array($elements)) {
-            foreach ($elements as $k => $ds) {
-                if ($k === $fieldName) {
-                    $fieldConfig = $ds['TCEforms']['config'];
-                    break;
-                } elseif (isset($ds['el'][$fieldName]['TCEforms']['config'])) {
-                    $fieldConfig = $ds['el'][$fieldName]['TCEforms']['config'];
-                    break;
-                } else {
-                    $fieldConfig = $this->getNestedDsFieldConfig($ds, $fieldName);
-                }
-            }
-        }
-        return $fieldConfig;
-    }
-
-    /**
-     * Checks whether the field is an actual identifier or just "array filling"
-     *
-     * @param string $fieldName
-     * @return bool
-     */
-    protected function isRelevantFlexField($fieldName)
-    {
-        return !(
-            StringUtility::beginsWith($fieldName, 'ID-') ||
-            $fieldName === 'lDEF' ||
-            $fieldName === 'vDEF' ||
-            $fieldName === 'data' ||
-            $fieldName === 'el'
-        );
-    }
-
-    /**
-     * Returns the configuration for the suggest wizard for the given table. This does multiple overlays from the
-     * TSconfig.
-     *
-     * @param string $queryTable The table to query
-     * @param array $wizardConfig The configuration for the wizard as configured in the data structure
-     * @param array $TSconfig The TSconfig array of the current page
-     * @param string $table The table where the wizard is used
-     * @param string $field The field where the wizard is used
-     * @return array
-     */
-    protected function getConfigurationForTable($queryTable, array $wizardConfig, array $TSconfig, $table, $field)
-    {
-        $config = (array)$wizardConfig['default'];
-
-        if (is_array($wizardConfig[$queryTable])) {
-            ArrayUtility::mergeRecursiveWithOverrule($config, $wizardConfig[$queryTable]);
-        }
-        $globalSuggestTsConfig = $TSconfig['TCEFORM.']['suggest.'];
-        $currentFieldSuggestTsConfig = $TSconfig['TCEFORM.'][$table . '.'][$field . '.']['suggest.'];
-
-        // merge the configurations of different "levels" to get the working configuration for this table and
-        // field (i.e., go from the most general to the most special configuration)
-        if (is_array($globalSuggestTsConfig['default.'])) {
-            ArrayUtility::mergeRecursiveWithOverrule($config, $globalSuggestTsConfig['default.']);
-        }
-
-        if (is_array($globalSuggestTsConfig[$queryTable . '.'])) {
-            ArrayUtility::mergeRecursiveWithOverrule($config, $globalSuggestTsConfig[$queryTable . '.']);
-        }
-
-        // use $table instead of $queryTable here because we overlay a config
-        // for the input-field here, not for the queried table
-        if (is_array($currentFieldSuggestTsConfig['default.'])) {
-            ArrayUtility::mergeRecursiveWithOverrule($config, $currentFieldSuggestTsConfig['default.']);
-        }
-
-        if (is_array($currentFieldSuggestTsConfig[$queryTable . '.'])) {
-            ArrayUtility::mergeRecursiveWithOverrule($config, $currentFieldSuggestTsConfig[$queryTable . '.']);
-        }
-
-        return $config;
-    }
-
-    /**
-     * Creates a list of <li> elements from a list of results returned by the receiver.
-     *
-     * @param array $resultRows
-     * @param int $maxItems
-     * @return array
-     */
-    protected function createListItemsFromResultRow(array $resultRows, $maxItems)
-    {
-        if (empty($resultRows)) {
-            return [];
-        }
-        $listItems = [];
-
-        // traverse all found records and sort them
-        $rowsSort = [];
-        foreach ($resultRows as $key => $row) {
-            $rowsSort[$key] = $row['text'];
-        }
-        asort($rowsSort);
-        $rowsSort = array_keys($rowsSort);
-
-        // put together the selector entries
-        for ($i = 0; $i < $maxItems; ++$i) {
-            $listItems[] = $resultRows[$rowsSort[$i]];
-        }
-        return $listItems;
-    }
-
-    /**
-     * Checks the given field configuration for the tables that should be used for querying and returns them as an
-     * array.
-     *
-     * @param array $fieldConfig
-     * @return array
-     */
-    protected function getTablesToQueryFromFieldConfiguration(array $fieldConfig)
-    {
-        $queryTables = [];
-
-        if (isset($fieldConfig['allowed'])) {
-            if ($fieldConfig['allowed'] !== '*') {
-                // list of allowed tables
-                $queryTables = GeneralUtility::trimExplode(',', $fieldConfig['allowed']);
-            } else {
-                // all tables are allowed, if the user can access them
-                foreach ($GLOBALS['TCA'] as $tableName => $tableConfig) {
-                    if (!$this->isTableHidden($tableConfig) && $this->currentBackendUserMayAccessTable($tableConfig)) {
-                        $queryTables[] = $tableName;
-                    }
-                }
-                unset($tableName, $tableConfig);
-            }
-        } elseif (isset($fieldConfig['foreign_table'])) {
-            // use the foreign table
-            $queryTables = [$fieldConfig['foreign_table']];
-        }
-
-        return $queryTables;
-    }
-
-    /**
-     * Returns the SQL WHERE clause to use for querying records. This is currently only relevant if a foreign_table
-     * is configured and should be used; it could e.g. be used to limit to a certain subset of records from the
-     * foreign table
-     *
-     * @param array $fieldConfig
-     * @return string
-     */
-    protected function getWhereClause(array $fieldConfig)
-    {
-        if (!isset($fieldConfig['foreign_table'])) {
-            return '';
-        }
-
-        // strip ORDER BY clause
-        return trim(preg_replace('/ORDER[[:space:]]+BY.*/i', '', $fieldConfig['foreign_table_where']));
-    }
-
-    /**
-     * @return LanguageService
-     */
-    protected function getLanguageService()
-    {
-        return $GLOBALS['LANG'];
     }
 
     /**
@@ -523,7 +121,7 @@ class SuggestWizard
      *
      * @return StandaloneView
      */
-    protected function getFluidTemplateObject(string $filename = null):StandaloneView
+    protected function getFluidTemplateObject(string $filename = null): StandaloneView
     {
         /** @var StandaloneView $view */
         $view = GeneralUtility::makeInstance(StandaloneView::class);

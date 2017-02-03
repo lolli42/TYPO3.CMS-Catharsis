@@ -104,7 +104,7 @@ class RecordList extends AbstractModule
     public $clear_cache;
 
     /**
-     * Command: Eg. "delete" or "setCB" (for TCEmain / clipboard operations)
+     * Command: Eg. "delete" or "setCB" (for DataHandler / clipboard operations)
      *
      * @var string
      */
@@ -194,7 +194,7 @@ class RecordList extends AbstractModule
     public function __construct()
     {
         parent::__construct();
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_mod_web_list.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf');
         $this->moduleTemplate->getPageRenderer()->loadJquery();
         $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Recordlist/FieldSelectBox');
         $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Recordlist/Recordlist');
@@ -230,7 +230,7 @@ class RecordList extends AbstractModule
         $this->menuConfig();
         // Store session data
         $backendUser->setAndSaveSessionData(self::class, $sessionData);
-        $this->getPageRenderer()->addInlineLanguageLabelFile('EXT:lang/locallang_mod_web_list.xlf');
+        $this->getPageRenderer()->addInlineLanguageLabelFile('EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf');
     }
 
     /**
@@ -352,7 +352,7 @@ class RecordList extends AbstractModule
         // Clipboard actions are handled:
         // CB is the clipboard command array
         $CB = GeneralUtility::_GET('CB');
-        if ($this->cmd == 'setCB') {
+        if ($this->cmd === 'setCB') {
             // CBH is all the fields selected for the clipboard, CBC is the checkbox fields which were checked.
             // By merging we get a full array of checked/unchecked elements
             // This is set to the 'el' array of the CB after being parsed so only the table in question is registered.
@@ -370,12 +370,12 @@ class RecordList extends AbstractModule
         $dblist->clipObj->endClipboard();
         // This flag will prevent the clipboard panel in being shown.
         // It is set, if the clickmenu-layer is active AND the extended view is not enabled.
-        $dblist->dontShowClipControlPanels = ($dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
+        $dblist->dontShowClipControlPanels = ($dblist->clipObj->current === 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
         // If there is access to the page or root page is used for searching, then render the list contents and set up the document template object:
         if ($access || ($this->id === 0 && $this->search_levels !== 0 && $this->search_field !== '')) {
             // Deleting records...:
             // Has not to do with the clipboard but is simply the delete action. The clipboard object is used to clean up the submitted entries to only the selected table.
-            if ($this->cmd == 'delete') {
+            if ($this->cmd === 'delete') {
                 $items = $dblist->clipObj->cleanUpCBC(GeneralUtility::_POST('CBC'), $this->cmd_table, 1);
                 if (!empty($items)) {
                     $cmd = [];
@@ -566,7 +566,7 @@ class RecordList extends AbstractModule
             $searchButton
                 ->setHref('#')
                 ->setClasses('t3js-toggle-search-toolbox')
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchIcon'))
+                ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.title.searchIcon'))
                 ->setIcon($this->iconFactory->getIcon('actions-search', Icon::SIZE_SMALL));
             $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->addButton($searchButton,
                 ButtonBar::BUTTON_POSITION_LEFT, 90);

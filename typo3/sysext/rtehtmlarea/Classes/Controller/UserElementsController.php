@@ -15,6 +15,8 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
  */
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Configuration\Richtext;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -116,7 +118,7 @@ class UserElementsController
         $this->modData = $GLOBALS['BE_USER']->getModuleData('user.php', 'ses');
         if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('OC_key')) {
             $parts = explode('|', \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('OC_key'));
-            $this->modData['openKeys'][$parts[1]] = $parts[0] == 'O' ? 1 : 0;
+            $this->modData['openKeys'][$parts[1]] = $parts[0] === 'O' ? 1 : 0;
             $GLOBALS['BE_USER']->pushModuleData('user.php', $this->modData);
         }
     }
@@ -173,15 +175,33 @@ class UserElementsController
     {
         // Starting content:
         $content = $this->doc->startPage(htmlspecialchars($GLOBALS['LANG']->getLL('Insert Custom Element')));
-        $RTEtsConfigParts = explode(':', \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('RTEtsConfigParams'));
-        $RTEsetup = $GLOBALS['BE_USER']->getTSConfig('RTE', \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($RTEtsConfigParts[5]));
-        $thisConfig = \TYPO3\CMS\Backend\Utility\BackendUtility::RTEsetup($RTEsetup['properties'], $RTEtsConfigParts[0], $RTEtsConfigParts[2], $RTEtsConfigParts[4]);
+
+        // @todo: This needs refactoring to enable sane config in flex form, either transfer parts of 'config', or use data providers
+        $RTEtsConfigParts = explode(':', GeneralUtility::_GP('RTEtsConfigParams'));
+        $table = $RTEtsConfigParts[0];
+        $field = $RTEtsConfigParts[2];
+        $recordType = $RTEtsConfigParts[3];
+        $tcaConfigOfField = $GLOBALS['TCA'][$table][$field]['config'] ?? [];
+        $columnsOverridesConfigOfField = $GLOBALS['TCA'][$table]['types'][$recordType]['columnsOverrides'][$field]['config'] ?? [];
+        if (!empty($columnsOverridesConfigOfField)) {
+            ArrayUtility::mergeRecursiveWithOverrule($tcaConfigOfField, $columnsOverridesConfigOfField);
+        }
+        $richtextConfigurationProvider = GeneralUtility::makeInstance(Richtext::class);
+        $richtextConfiguration = $richtextConfigurationProvider->getConfiguration(
+            $RTEtsConfigParts[0],
+            $RTEtsConfigParts[2],
+            $RTEtsConfigParts[3],
+            $RTEtsConfigParts[4],
+            $tcaConfigOfField
+        );
+        $thisConfig = $richtextConfiguration;
+
         if (is_array($thisConfig['userElements.'])) {
             $categories = [];
             foreach ($thisConfig['userElements.'] as $k => $value) {
                 $ki = (int)$k;
                 $v = $thisConfig['userElements.'][$ki . '.'];
-                if (substr($k, -1) == '.' && is_array($v)) {
+                if (substr($k, -1) === '.' && is_array($v)) {
                     $subcats = [];
                     $openK = $ki;
                     if ($openKeys[$openK]) {
@@ -217,7 +237,7 @@ class UserElementsController
                         }
                         foreach ($v as $k2 => $dummyValue) {
                             $k2i = (int)$k2;
-                            if (substr($k2, -1) == '.' && is_array($v[$k2i . '.'])) {
+                            if (substr($k2, -1) === '.' && is_array($v[$k2i . '.'])) {
                                 $title = trim($v[$k2i]);
                                 if (!$title) {
                                     $title = '[' . htmlspecialchars($GLOBALS['LANG']->getLL('noTitle')) . ']';
@@ -237,7 +257,7 @@ class UserElementsController
                                         break;
                                     case 'processor':
                                         $script = trim($v[$k2i . '.']['submitToScript']);
-                                        if (substr($script, 0, 4) != 'http') {
+                                        if (substr($script, 0, 4) !== 'http') {
                                             $script = $this->siteUrl . $script;
                                         }
                                         if ($script) {

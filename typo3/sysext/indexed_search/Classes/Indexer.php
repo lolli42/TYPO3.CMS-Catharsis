@@ -740,10 +740,10 @@ class Indexer
             $body = '';
             foreach ($expBody as $val) {
                 $part = explode('-->', $val, 2);
-                if (trim($part[0]) == 'begin') {
+                if (trim($part[0]) === 'begin') {
                     $body .= $part[1];
                     $prev = '';
-                } elseif (trim($part[0]) == 'end') {
+                } elseif (trim($part[0]) === 'end') {
                     $body .= $prev;
                 } else {
                     $prev = $val;
@@ -766,7 +766,6 @@ class Indexer
         // Get links:
         $list = $this->extractHyperLinks($content);
         if ($this->indexerConfig['useCrawlerForExternalFiles'] && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('crawler')) {
-            $this->includeCrawlerClass();
             $crawler = GeneralUtility::makeInstance(\tx_crawler_lib::class);
         }
         // Traverse links:
@@ -850,7 +849,7 @@ class Indexer
                 $tagAttributes = $htmlParser->get_tag_attributes($tagData, true);
                 $firstTagName = $htmlParser->getFirstTagName($tagData);
                 if (strtolower($firstTagName) === 'a') {
-                    if ($tagAttributes[0]['href'] && $tagAttributes[0]['href'][0] != '#') {
+                    if ($tagAttributes[0]['href'] && $tagAttributes[0]['href'][0] !== '#') {
                         $hyperLinksData[] = [
                             'tag' => $tagData,
                             'href' => $tagAttributes[0]['href'],
@@ -1050,7 +1049,7 @@ class Indexer
     protected function createLocalPathFromAbsoluteURL($sourcePath)
     {
         $localPath = '';
-        if ($sourcePath[0] == '/') {
+        if ($sourcePath[0] === '/') {
             $sourcePath = substr($sourcePath, 1);
             $localPath = PATH_site . $sourcePath;
             if (!self::isAllowedLocalFile($localPath)) {
@@ -1087,7 +1086,7 @@ class Indexer
     protected static function isRelativeURL($url)
     {
         $urlParts = @parse_url($url);
-        return $urlParts['scheme'] == '' && $urlParts['path'][0] != '/';
+        return $urlParts['scheme'] == '' && $urlParts['path'][0] !== '/';
     }
 
     /**
@@ -1325,7 +1324,7 @@ class Indexer
         if ($maxL) {
             $bodyDescription = preg_replace('/\s+/u', ' ', $contentArr['body']);
             // Shorten the string:
-            $bodyDescription = $this->csObj->strtrunc('utf-8', $bodyDescription, $maxL);
+            $bodyDescription = mb_strcut($bodyDescription, 0, $maxL, 'utf-8');
         }
         return $bodyDescription;
     }
@@ -1481,7 +1480,11 @@ class Indexer
         if (IndexedSearchUtility::isTableUsed('index_phash')) {
             $connection = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getConnectionForTable('index_phash');
-            $connection->insert('index_phash', $fields);
+            $connection->insert(
+                'index_phash',
+                $fields,
+                ['cHashParams' => Connection::PARAM_LOB]
+            );
         }
         // PROCESSING index_section
         $this->submit_section($this->hash['phash'], $this->hash['phash']);
@@ -1649,7 +1652,11 @@ class Indexer
         if (IndexedSearchUtility::isTableUsed('index_phash')) {
             $connection = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getConnectionForTable('index_phash');
-            $connection->insert('index_phash', $fields);
+            $connection->insert(
+                'index_phash',
+                $fields,
+                ['cHashParams' => Connection::PARAM_LOB]
+            );
         }
         // PROCESSING index_fulltext
         $fields = [
@@ -2098,9 +2105,11 @@ class Indexer
      * Includes the crawler class
      *
      * @return void
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, autoloader is taking care of that functionality
      */
     public function includeCrawlerClass()
     {
+        GeneralUtility::logDeprecatedFunction();
         require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('crawler') . 'class.tx_crawler_lib.php';
     }
 

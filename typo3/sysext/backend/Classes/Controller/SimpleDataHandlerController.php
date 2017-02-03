@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  * sending the posted data to the object.
  *
  * Used by many smaller forms/links in TYPO3, including the QuickEdit module.
- * Is not used by FormEngine though (main form rendering script) - that uses the same class (TCEmain) but makes its own initialization (to save the redirect request).
+ * Is not used by FormEngine though (main form rendering script) - that uses the same class (DataHandler) but makes its own initialization (to save the redirect request).
  * For all other cases than FormEngine it is recommended to use this script for submitting your editing forms - but the best solution in any case would probably be to link your application to FormEngine, that will give you easy form-rendering as well.
  */
 class SimpleDataHandlerController
@@ -92,13 +92,6 @@ class SimpleDataHandlerController
     public $CB;
 
     /**
-     * Verification code
-     *
-     * @var string
-     */
-    public $vC;
-
-    /**
      * Boolean. Update Page Tree Trigger. If set and the manipulated records are pages then the update page tree signal will be set.
      *
      * @var int
@@ -138,9 +131,8 @@ class SimpleDataHandlerController
         $this->redirect = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('redirect'));
         $this->prErr = GeneralUtility::_GP('prErr');
         $this->CB = GeneralUtility::_GP('CB');
-        $this->vC = GeneralUtility::_GP('vC');
         $this->uPT = GeneralUtility::_GP('uPT');
-        // Creating TCEmain object
+        // Creating DataHandler object
         $this->tce = GeneralUtility::makeInstance(DataHandler::class);
         // Configuring based on user prefs.
         if ($beUser->uc['recursiveDelete']) {
@@ -196,7 +188,7 @@ class SimpleDataHandlerController
      */
     public function main()
     {
-        // LOAD TCEmain with data and cmd arrays:
+        // LOAD DataHandler with data and cmd arrays:
         $this->tce->start($this->data, $this->cmd);
         if (is_array($this->mirror)) {
             $this->tce->setMirror($this->mirror);
@@ -204,8 +196,8 @@ class SimpleDataHandlerController
         // Checking referer / executing
         $refInfo = parse_url(GeneralUtility::getIndpEnv('HTTP_REFERER'));
         $httpHost = GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY');
-        if ($httpHost != $refInfo['host'] && $this->vC != $this->getBackendUser()->veriCode() && !$GLOBALS['TYPO3_CONF_VARS']['SYS']['doNotCheckReferer']) {
-            $this->tce->log('', 0, 0, 0, 1, 'Referer host "%s" and server host "%s" did not match and veriCode was not valid either!', 1, [$refInfo['host'], $httpHost]);
+        if ($httpHost != $refInfo['host'] && !$GLOBALS['TYPO3_CONF_VARS']['SYS']['doNotCheckReferer']) {
+            $this->tce->log('', 0, 0, 0, 1, 'Referer host "%s" and server host "%s" did not match!', 1, [$refInfo['host'], $httpHost]);
         } else {
             // Register uploaded files
             $this->tce->process_uploads($_FILES);

@@ -17,12 +17,11 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
 use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class TcaInlineTest extends UnitTestCase
+class TcaInlineTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var TcaInline
@@ -85,7 +84,9 @@ class TcaInlineTest extends UnitTestCase
             ->shouldBeCalled()
             ->willReturn(false);
 
-        $this->assertEquals($this->defaultConfig, $this->subject->addData($input));
+        $expected = $this->defaultConfig;
+        $expected['processedTca']['columns']['aField']['children'] = [];
+        $this->assertEquals($expected, $this->subject->addData($input));
     }
 
     /**

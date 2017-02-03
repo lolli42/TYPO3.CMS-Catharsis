@@ -17,13 +17,12 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaRecordTitle;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Test case
  */
-class TcaRecordTitleTest extends UnitTestCase
+class TcaRecordTitleTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var TcaRecordTitle
@@ -366,7 +365,7 @@ class TcaRecordTitleTest extends UnitTestCase
         /** @var LanguageService|ObjectProphecy $languageService */
         $languageService = $this->prophesize(LanguageService::class);
         $GLOBALS['LANG'] = $languageService->reveal();
-        $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
+        $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears')
             ->willReturn(' min| hrs| days| yrs| min| hour| day| year');
         $languageService->sL(Argument::cetera())->willReturnArgument(0);
         $GLOBALS['EXEC_TIME'] = 978912061;
@@ -633,14 +632,21 @@ class TcaRecordTitleTest extends UnitTestCase
                 [
                     'internal_type' => 'db',
                 ],
-                '',
+                [],
                 ''
             ],
             'internal_type: file' => [
                 [
                     'internal_type' => 'file',
                 ],
-                'somePath/aFile.jpg,someOtherPath/anotherFile.png',
+                [
+                    [
+                        'uidOrPath' => 'somePath/aFile.jpg',
+                    ],
+                    [
+                        'uidOrPath' => 'someOtherPath/anotherFile.png',
+                    ],
+                ],
                 'somePath/aFile.jpg, someOtherPath/anotherFile.png',
             ],
             'internal_type: db, single table, single record' => [
@@ -648,7 +654,11 @@ class TcaRecordTitleTest extends UnitTestCase
                     'internal_type' => 'db',
                     'allowed' => 'aTable'
                 ],
-                '1|aValue',
+                [
+                    [
+                        'title' => 'aValue',
+                    ],
+                ],
                 'aValue',
             ],
             'internal_type: db, single table, multiple records' => [
@@ -656,7 +666,14 @@ class TcaRecordTitleTest extends UnitTestCase
                     'internal_type' => 'db',
                     'allowed' => 'aTable'
                 ],
-                '1|aValue,3|anotherValue',
+                [
+                    [
+                        'title' => 'aValue',
+                    ],
+                    [
+                        'title' => 'anotherValue',
+                    ],
+                ],
                 'aValue, anotherValue',
             ],
             'internal_type: db, multiple tables, single record' => [
@@ -664,7 +681,13 @@ class TcaRecordTitleTest extends UnitTestCase
                     'internal_type' => 'db',
                     'allowed' => 'aTable,anotherTable'
                 ],
-                'anotherTable_1|anotherValue',
+                [
+                    [
+                        'uid' => 1,
+                        'table' => 'anotherTable',
+                        'title' => 'anotherValue',
+                    ],
+                ],
                 'anotherValue',
             ],
             'internal_type: db, multiple tables, multiple records' => [
@@ -672,7 +695,18 @@ class TcaRecordTitleTest extends UnitTestCase
                     'internal_type' => 'db',
                     'allowed' => 'aTable,anotherTable'
                 ],
-                'anotherTable_1|anotherValue,aTable_1|aValue',
+                [
+                    [
+                        'uid' => 1,
+                        'table' => 'aTable',
+                        'title' => 'aValue',
+                    ],
+                    [
+                        'uid' => 2,
+                        'table' => 'anotherTable',
+                        'title' => 'anotherValue',
+                    ],
+                ],
                 'aValue, anotherValue',
             ],
         ];
@@ -730,7 +764,18 @@ class TcaRecordTitleTest extends UnitTestCase
             'tableName' => 'aTable',
             'databaseRow' => [
                 'uid' => '1',
-                'aField' => 'aTable_1|aValue,anotherTable_2|anotherValue',
+                'aField' => [
+                    [
+                        'uid' => 1,
+                        'table' => 'aTable',
+                        'title' => 'aValue',
+                    ],
+                    [
+                        'uid' => 2,
+                        'table' => 'anotherTable',
+                        'title' => 'anotherValue',
+                    ],
+                ],
             ],
             'processedTca' => [
                 'ctrl' => [
@@ -783,7 +828,7 @@ class TcaRecordTitleTest extends UnitTestCase
         $languageService->sL(Argument::cetera())->willReturnArgument(0)->shouldBeCalled();
 
         $expected = $input;
-        $expected['recordTitle'] = 'LLL:EXT:lang/locallang_common.xlf:yes';
+        $expected['recordTitle'] = 'LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:yes';
         $this->assertSame($expected, $this->subject->addData($input));
     }
 

@@ -128,6 +128,9 @@
 						<th>
 							<f:translate key="chLog_l_details" />
 						</th>
+						<th>
+							<f:translate key="actions" />
+						</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -196,6 +199,14 @@
 								<belog:historyEntry uid="{logItem.uid}" />
 								<f:if condition="{logItem.detailsNumber} > 0">
 									(msg#{logItem.type}.{logItem.action}.{logItem.detailsNumber})
+								</f:if>
+							</td>
+							<td>
+								<f:if condition="{logItem.error} == 1">
+									<f:link.action action="deleteMessage" arguments="{errorUid:logItem.uid}" class="btn btn-warning"><f:translate key="actions.deleteWarnings" /></f:link.action>
+								</f:if>
+								<f:if condition="{logItem.error} == 2">
+									<f:link.action action="deleteMessage" arguments="{errorUid:logItem.uid}" class="btn btn-danger"><f:translate key="actions.delete" /></f:link.action>
 								</f:if>
 							</td>
 						</tr>

@@ -15,12 +15,11 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  */
 
 use TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineConfiguration;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class TcaInlineConfigurationTest extends UnitTestCase
+class TcaInlineConfigurationTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var TcaInlineConfiguration
@@ -39,7 +38,7 @@ class TcaInlineConfigurationTest extends UnitTestCase
         'type' => 'inline',
         'foreign_table' => 'aForeignTableName',
         'minitems' => 0,
-        'maxitems' => 100000,
+        'maxitems' => 99999,
         'behaviour' => [
             'localizationMode' => 'none',
         ],

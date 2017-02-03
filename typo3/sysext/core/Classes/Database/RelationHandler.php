@@ -437,7 +437,7 @@ class RelationHandler
             // Skip if not dealing with IRRE in a CSV list on a workspace
             if ($configuration['type'] !== 'inline' || empty($configuration['foreign_table']) || !empty($configuration['foreign_field'])
                 || !empty($configuration['MM']) || count($this->tableArray) !== 1 || empty($this->tableArray[$configuration['foreign_table']])
-                || (int)$GLOBALS['BE_USER']->workspace === 0 || !BackendUtility::isTableWorkspaceEnabled($configuration['foreign_table'])) {
+                || $this->getWorkspaceId() === 0 || !BackendUtility::isTableWorkspaceEnabled($configuration['foreign_table'])) {
                 return;
             }
 
@@ -472,7 +472,7 @@ class RelationHandler
     public function sortList($sortby)
     {
         // Sort directly without fetching addional data
-        if ($sortby == 'uid') {
+        if ($sortby === 'uid') {
             usort(
                 $this->itemArray,
                 function ($a, $b) {
@@ -573,12 +573,14 @@ class RelationHandler
                 $queryBuilder->expr()->eq($field, $queryBuilder->createNamedParameter($value, \PDO::PARAM_STR))
             );
         }
-        $queryBuilder->andWhere(
-            $queryBuilder->expr()->eq(
-                $uidLocal_field,
-                $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
-            )
-        );
+        if (MathUtility::canBeInterpretedAsInteger($uid)) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq(
+                    $uidLocal_field,
+                    $queryBuilder->createNamedParameter((int)$uid, \PDO::PARAM_INT)
+                )
+            );
+        }
         $queryBuilder->orderBy($sorting_field);
         $statement = $queryBuilder->execute();
         while ($row = $statement->fetch()) {
@@ -587,7 +589,7 @@ class RelationHandler
                 // If tablesnames columns exists and contain a name, then this value is the table, else it's the firstTable...
                 $theTable = $row['tablenames'] ?: $this->firstTable;
             }
-            if (($row[$uidForeign_field] || $theTable == 'pages') && $theTable && isset($this->tableArray[$theTable])) {
+            if (($row[$uidForeign_field] || $theTable === 'pages') && $theTable && isset($this->tableArray[$theTable])) {
                 $this->itemArray[$key]['id'] = $row[$uidForeign_field];
                 $this->itemArray[$key]['table'] = $theTable;
                 $this->tableArray[$theTable][] = $row[$uidForeign_field];
@@ -692,7 +694,7 @@ class RelationHandler
             // For each item, insert it:
             foreach ($this->itemArray as $val) {
                 $c++;
-                if ($prep || $val['table'] == '_NO_TABLE') {
+                if ($prep || $val['table'] === '_NO_TABLE') {
                     // Insert current table if needed
                     if ($this->MM_is_foreign) {
                         $tablename = $this->currentTable;
@@ -835,9 +837,9 @@ class RelationHandler
                     $this->updateRefIndex($pair[0], $pair[1]);
                 }
             }
-            // Update ref index; In tcemain it is not certain that this will happen because
+            // Update ref index; In DataHandler it is not certain that this will happen because
             // if only the MM field is changed the record itself is not updated and so the ref-index is not either.
-            // This could also have been fixed in updateDB in tcemain, however I decided to do it here ...
+            // This could also have been fixed in updateDB in DataHandler, however I decided to do it here ...
             $this->updateRefIndex($this->currentTable, $uid);
         }
     }
@@ -1066,7 +1068,7 @@ class RelationHandler
             if (!(MathUtility::canBeInterpretedAsInteger($updateToUid) && $updateToUid > 0)) {
                 $updateToUid = 0;
             }
-            $considerWorkspaces = ($GLOBALS['BE_USER']->workspace !== 0 && BackendUtility::isTableWorkspaceEnabled($foreign_table));
+            $considerWorkspaces = BackendUtility::isTableWorkspaceEnabled($foreign_table);
             $fields = 'uid,pid,' . $foreign_field;
             // Consider the symmetric field if defined:
             if ($symmetric_field) {
@@ -1148,21 +1150,7 @@ class RelationHandler
                 if (!empty($updateValues)) {
                     // Update tstamp if any foreign field value has changed
                     if (!empty($GLOBALS['TCA'][$table]['ctrl']['tstamp'])) {
-                        $currentRow = BackendUtility::getRecord($table, $uid, implode(',', array_keys($updateValues)), '', true);
-                        $needTstampUpdate = false;
-                        if (empty($currentRow)) {
-                            $needTstampUpdate = true;
-                        } else {
-                            foreach ($currentRow as $field => $curValue) {
-                                if ((string)$curValue !== (string)$updateValues[$field]) {
-                                    $needTstampUpdate = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if ($needTstampUpdate) {
-                            $updateValues[$GLOBALS['TCA'][$table]['ctrl']['tstamp']] = $GLOBALS['EXEC_TIME'];
-                        }
+                        $updateValues[$GLOBALS['TCA'][$table]['ctrl']['tstamp']] = $GLOBALS['EXEC_TIME'];
                     }
                     $this->getConnectionForTableName($table)
                         ->update(
@@ -1205,7 +1193,7 @@ class RelationHandler
             $prep = $tableC > 1 || $prependTableName;
             // Traverse the array of items:
             foreach ($this->itemArray as $val) {
-                $valueArray[] = ($prep && $val['table'] != '_NO_TABLE' ? $val['table'] . '_' : '') . $val['id'];
+                $valueArray[] = ($prep && $val['table'] !== '_NO_TABLE' ? $val['table'] . '_' : '') . $val['id'];
             }
         }
         // Return the array
@@ -1273,9 +1261,11 @@ class RelationHandler
      * Prepare items from itemArray to be transferred to the TCEforms interface (as a comma list)
      *
      * @return string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function readyForInterface()
     {
+        GeneralUtility::logDeprecatedFunction();
         if (!is_array($this->itemArray)) {
             return false;
         }
@@ -1291,6 +1281,33 @@ class RelationHandler
             }
         }
         return implode(',', $output);
+    }
+
+    /**
+     * This method is typically called after getFromDB().
+     * $this->results holds a list of resolved and valid relations,
+     * $this->itemArray hold a list of "selected" relations from the incoming selection array.
+     * The difference is that "itemArray" may hold a single table/uid combination multiple times,
+     * for instance in a type=group relation having multiple=true, while "results" hold each
+     * resolved relation only once.
+     * The methods creates a sanitized "itemArray" from resolved "results" list, normalized
+     * the return array to always contain both table name and uid, and keep incoming
+     * "itemArray" sort order and keeps "multiple" selections.
+     *
+     * @return array
+     */
+    public function getResolvedItemArray(): array
+    {
+        $itemArray = [];
+        foreach ($this->itemArray as $item) {
+            if (isset($this->results[$item['table']][$item['id']])) {
+                $itemArray[] = [
+                    'table' => $item['table'],
+                    'uid' => $item['id'],
+                ];
+            }
+        }
+        return $itemArray;
     }
 
     /**
@@ -1311,7 +1328,7 @@ class RelationHandler
     /**
      * Update Reference Index (sys_refindex) for a record
      * Should be called any almost any update to a record which could affect references inside the record.
-     * (copied from TCEmain)
+     * (copied from DataHandler)
      *
      * @param string $table Table name
      * @param int $id Record UID

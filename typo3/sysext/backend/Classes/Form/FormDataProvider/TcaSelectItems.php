@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Backend\Form\FormDataProvider;
  */
 
 use TYPO3\CMS\Backend\Form\FormDataProviderInterface;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Resolve select items, set processed item list in processedTca, sanitize and resolve database field
@@ -43,7 +44,10 @@ class TcaSelectItems extends AbstractItemProvider implements FormDataProviderInt
             }
 
             $fieldConfig['config']['items'] = $this->sanitizeItemArray($fieldConfig['config']['items'], $table, $fieldName);
-            $fieldConfig['config']['maxitems'] = $this->sanitizeMaxItems($fieldConfig['config']['maxitems']);
+            $fieldConfig['config']['maxitems'] = MathUtility::forceIntegerInRange($fieldConfig['config']['maxitems'], 0, 99999);
+            if ($fieldConfig['config']['maxitems'] === 0) {
+                $fieldConfig['config']['maxitems'] = 99999;
+            }
 
             $fieldConfig['config']['items'] = $this->addItemsFromSpecial($result, $fieldName, $fieldConfig['config']['items']);
             $fieldConfig['config']['items'] = $this->addItemsFromFolder($result, $fieldName, $fieldConfig['config']['items']);
@@ -125,7 +129,7 @@ class TcaSelectItems extends AbstractItemProvider implements FormDataProviderInt
         $languageService = $this->getLanguageService();
         $noMatchingLabel = isset($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['noMatchingValue_label'])
             ? $languageService->sL(trim($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['noMatchingValue_label']))
-            : '[ ' . $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue') . ' ]';
+            : '[ ' . $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.noMatchingValue') . ' ]';
 
         $unmatchedValues = array_diff(
             array_values($databaseValues),

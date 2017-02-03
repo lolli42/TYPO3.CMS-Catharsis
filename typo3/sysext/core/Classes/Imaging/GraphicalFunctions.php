@@ -361,7 +361,6 @@ class GraphicalFunctions
         }
         // Setting default JPG parameters:
         $this->jpegQuality = MathUtility::forceIntegerInRange($gfxConf['jpg_quality'], 10, 100, 75);
-        $this->cmds['jpg'] = ($this->cmds['jpeg'] = '-colorspace ' . $this->colorspace . ' -sharpen 50 -quality ' . $this->jpegQuality);
         $this->addFrameSelection = (bool)$gfxConf['processor_allowFrameSelection'];
         if ($gfxConf['gdlib_png']) {
             $this->gifExtension = 'png';
@@ -372,14 +371,14 @@ class GraphicalFunctions
         // Effects in Imagemagick 5+ tends to render very slowly!!
         // - therefore must be disabled in order not to perform sharpen, blurring and such.
         $this->NO_IM_EFFECTS = 1;
-        $this->cmds['jpg'] = ($this->cmds['jpeg'] = '-colorspace ' . $this->colorspace . ' -quality ' . $this->jpegQuality);
+        $this->cmds['jpg'] = $this->cmds['jpeg'] = '-colorspace ' . $this->colorspace . ' -quality ' . $this->jpegQuality;
 
         // ... but if 'processor_effects' is set, enable effects
         if ($gfxConf['processor_effects']) {
             $this->NO_IM_EFFECTS = 0;
             $this->V5_EFFECTS = 1;
             if ($gfxConf['processor_effects'] > 0) {
-                $this->cmds['jpg'] = ($this->cmds['jpeg'] = '-colorspace ' . $this->colorspace . ' -quality ' . (int)$gfxConf['jpg_quality'] . $this->v5_sharpen(10));
+                $this->cmds['jpg'] = $this->cmds['jpeg'] = '-colorspace ' . $this->colorspace . ' -quality ' . $this->jpegQuality . $this->v5_sharpen(10);
             }
         }
         // Secures that images are not scaled up.
@@ -816,7 +815,7 @@ class GraphicalFunctions
                 foreach ($utf8Chars as $char) {
                     $charInf = $this->ImageTTFBBoxWrapper($conf['fontSize'], $conf['angle'], $conf['fontFile'], $char, $conf['splitRendering.'], $sF);
                     $charW = $charInf[2] - $charInf[0];
-                    $x += $charW + ($char == ' ' ? $wordSpacing : $spacing);
+                    $x += $charW + ($char === ' ' ? $wordSpacing : $spacing);
                 }
             }
         } elseif (isset($conf['breakWidth']) && $conf['breakWidth'] && $this->getRenderedTextWidth($conf['text'], $conf) > $conf['breakWidth']) {
@@ -934,7 +933,7 @@ class GraphicalFunctions
                 $charInf = $this->ImageTTFBBoxWrapper($fontSize, $angle, $fontFile, $char, $splitRenderingConf, $sF);
                 $charW = $charInf[2] - $charInf[0];
                 $this->ImageTTFTextWrapper($im, $fontSize, $angle, $x, $y, $Fcolor, $fontFile, $char, $splitRenderingConf, $sF);
-                $x += $charW + ($char == ' ' ? $wordSpacing : $spacing);
+                $x += $charW + ($char === ' ' ? $wordSpacing : $spacing);
             }
         }
     }
@@ -1658,7 +1657,7 @@ class GraphicalFunctions
             $effect = strtolower(trim($pairs[0]));
             switch ($effect) {
                 case 'gamma':
-                    $commands .= ' -gamma ' . doubleval($value);
+                    $commands .= ' -gamma ' . (float)$value;
                     break;
                 case 'blur':
                     if (!$this->NO_IM_EFFECTS) {
@@ -2680,7 +2679,7 @@ class GraphicalFunctions
         }
 
         $ext = strtolower(substr($theFile, -4, 4));
-        if ((string)$ext == '.png' && $output_png || (string)$ext == '.gif' && !$output_png) {
+        if ((string)$ext === '.png' && $output_png || (string)$ext === '.gif' && !$output_png) {
             return $theFile;
         }
 
@@ -2763,7 +2762,7 @@ class GraphicalFunctions
      */
     public function gif_or_jpg($type, $w, $h)
     {
-        if ($type == 'ai' || $w * $h < $this->pixelLimitGif) {
+        if ($type === 'ai' || $w * $h < $this->pixelLimitGif) {
             return $this->gifExtension;
         } else {
             return 'jpg';

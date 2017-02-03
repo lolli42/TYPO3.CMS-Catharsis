@@ -433,7 +433,7 @@ class ExtensionManagementUtility
                 }
                 if (
                     isset($fieldArrayWithOptions[$fieldNumber + 1])
-                    && StringUtility::beginsWith($fieldArrayWithOptions[$fieldNumber + 1],  '--palette--')
+                    && strpos($fieldArrayWithOptions[$fieldNumber + 1], '--palette--') === 0
                 ) {
                     // Match for $field and next field is a palette - add fields to this one
                     $paletteName = GeneralUtility::trimExplode(';', $fieldArrayWithOptions[$fieldNumber + 1]);
@@ -1072,10 +1072,10 @@ class ExtensionManagementUtility
     /**
      * Adds a reference to a locallang file with $GLOBALS['TCA_DESCR'] labels
      * FOR USE IN ext_tables.php FILES
-     * eg. \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('pages', 'EXT:lang/locallang_csh_pages.xlf'); for the pages table or \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('_MOD_web_layout', 'EXT:frontend/Resources/Private/Language/locallang_csh_weblayout.xlf'); for the Web > Page module.
+     * eg. \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('pages', 'EXT:lang/Resources/Private/Language/locallang_csh_pages.xlf'); for the pages table or \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('_MOD_web_layout', 'EXT:frontend/Resources/Private/Language/locallang_csh_weblayout.xlf'); for the Web > Page module.
      *
      * @param string $tca_descr_key Description key. Typically a database table (like "pages") but for applications can be other strings, but prefixed with "_MOD_")
-     * @param string $file_ref File reference to locallang file, eg. "EXT:lang/locallang_csh_pages.xlf" (or ".xml")
+     * @param string $file_ref File reference to locallang file, eg. "EXT:lang/Resources/Private/Language/locallang_csh_pages.xlf" (or ".xml")
      * @return void
      */
     public static function addLLrefForTCAdescr($tca_descr_key, $file_ref)
@@ -1199,7 +1199,7 @@ class ExtensionManagementUtility
                 }
                 // Select a subtype randomly
                 // Useful to start a service by service key without knowing his subtypes - for testing purposes
-                if ($serviceSubType == '*') {
+                if ($serviceSubType === '*') {
                     $serviceSubType = key($info['serviceSubTypes']);
                 }
                 // This matches empty subtype too
@@ -1444,7 +1444,7 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Call this method to add an entry in the static template list found in sys_templates
-     * FOR USE IN ext_tables.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
+     * FOR USE IN ext_tables.php FILES or in Configuration/TCA/Overrides/sys_template.php Use the latter to benefit from TCA caching!
      *
      * @param string $extKey Is of course the extension key
      * @param string $path Is the path where the template files (fixed names) include_static.txt (integer list of uids from the table "static_templates"), constants.txt, setup.txt, and include_static_file.txt is found (relative to extPath, eg. 'static/'). The file include_static_file.txt, allows you to include other static templates defined in files, from your static template, and thus corresponds to the field 'include_static_file' in the sys_template table. The syntax for this is a comma separated list of static templates to include, like:  EXT:css_styled_content/static/,EXT:da_newsletter_subscription/static/,EXT:cc_random_image/pi2/static/
@@ -1463,7 +1463,7 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Call this method to add an entry in the pageTSconfig list found in pages
-     * FOR USE in files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
+     * FOR USE in Configuration/TCA/Overrides/pages.php Use the latter to benefit from TCA caching!
      *
      * @param string $extKey The extension key
      * @param string $filePath The path where the TSconfig file is located
@@ -1482,7 +1482,7 @@ tt_content.' . $key . $suffix . ' {
             throw new \InvalidArgumentException('No TCA definition for table "pages".', 1447789492);
         }
 
-        $value = str_replace(',',  '', 'EXT:' . $extKey . '/' . $filePath);
+        $value = str_replace(',', '', 'EXT:' . $extKey . '/' . $filePath);
         $itemArray = [trim($title . ' (' . $extKey . ')'), $value];
         $GLOBALS['TCA']['pages']['columns']['tsconfig_includes']['config']['items'][] = $itemArray;
     }

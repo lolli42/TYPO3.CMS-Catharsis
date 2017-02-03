@@ -14,11 +14,10 @@ namespace TYPO3\CMS\Core\Tests\Unit\Cache\Backend;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface;
 use TYPO3\CMS\Core\Cache\Backend\ApcuBackend;
 use TYPO3\CMS\Core\Cache\Exception;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
-use TYPO3\CMS\Core\Tests\AccessibleObjectInterface;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -27,7 +26,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * NOTE: If you want to execute these tests you need to enable apc in
  * cli context (apc.enable_cli = 1) and disable slam defense (apc.slam_defense = 0)
  */
-class ApcuBackendTest extends UnitTestCase
+class ApcuBackendTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * Set up
@@ -204,6 +203,22 @@ class ApcuBackendTest extends UnitTestCase
         $this->assertTrue($backend->has('BackendAPCUTest1'));
         $this->assertFalse($backend->has('BackendAPCUTest2'));
         $this->assertTrue($backend->has('BackendAPCUTest3'));
+    }
+
+    /**
+     * @test
+     */
+    public function flushByTagsRemovesCacheEntriesWithSpecifiedTags()
+    {
+        $backend = $this->setUpBackend();
+        $data = 'some data' . microtime();
+        $backend->set('BackendAPCUTest1', $data, ['UnitTestTag%test', 'UnitTestTag%boring']);
+        $backend->set('BackendAPCUTest2', $data, ['UnitTestTag%test', 'UnitTestTag%special']);
+        $backend->set('BackendAPCUTest3', $data, ['UnitTestTag%test']);
+        $backend->flushByTags(['UnitTestTag%special', 'UnitTestTag%boring']);
+        $this->assertFalse($backend->has('BackendAPCUTest1'), 'BackendAPCTest1');
+        $this->assertFalse($backend->has('BackendAPCUTest2'), 'BackendAPCTest2');
+        $this->assertTrue($backend->has('BackendAPCUTest3'), 'BackendAPCTest3');
     }
 
     /**

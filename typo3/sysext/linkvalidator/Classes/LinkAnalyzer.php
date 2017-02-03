@@ -165,7 +165,7 @@ class LinkAnalyzer
                     ),
                     $queryBuilder->expr()->in(
                         'link_type',
-                        $queryBuilder->createNamedParameter($checkKeys, Connection::PARAM_INT_ARRAY)
+                        $queryBuilder->createNamedParameter($checkKeys, Connection::PARAM_STR_ARRAY)
                     )
                 )
                 ->execute();
@@ -294,7 +294,7 @@ class LinkAnalyzer
                             // Do processing
                             $resultArray = $softRefObj->findRef($table, $field, $idRecord, $valueField, $spKey, $spParams);
                             if (!empty($resultArray['elements'])) {
-                                if ($spKey == 'typolink_tag') {
+                                if ($spKey === 'typolink_tag') {
                                     $this->analyseTypoLinks($resultArray, $results, $htmlParser, $record, $field, $table);
                                 } else {
                                     $this->analyseLinks($resultArray, $results, $record, $field, $table);

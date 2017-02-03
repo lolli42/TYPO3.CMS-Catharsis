@@ -22,7 +22,6 @@ use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -55,7 +54,7 @@ use TYPO3\CMS\Frontend\Tests\Unit\ContentObject\Fixtures\PageRepositoryFixture;
 /**
  * Testcase for TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
  */
-class ContentObjectRendererTest extends UnitTestCase
+class ContentObjectRendererTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
 
     /**
@@ -64,12 +63,12 @@ class ContentObjectRendererTest extends UnitTestCase
     protected $singletonInstances = [];
 
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+     * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
      */
     protected $subject = null;
 
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject|TypoScriptFrontendController|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
+     * @var \PHPUnit_Framework_MockObject_MockObject|TypoScriptFrontendController|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface
      */
     protected $frontendControllerMock = null;
 
@@ -2584,6 +2583,26 @@ class ContentObjectRendererTest extends UnitTestCase
                 $this->getLibParseFunc_RTE(),
                 '<p class="bodytext">Text with <a href="http://example.com/foo/">external link</a></p>',
             ],
+            'Empty lines are not duplicated' => [
+                LF,
+                $this->getLibParseFunc_RTE(),
+                '<p class="bodytext">&nbsp;</p>',
+            ],
+            'Multiple empty lines with no text' => [
+                LF . LF . LF,
+                $this->getLibParseFunc_RTE(),
+                '<p class="bodytext">&nbsp;</p>' . LF . '<p class="bodytext">&nbsp;</p>' . LF . '<p class="bodytext">&nbsp;</p>',
+            ],
+            'Empty lines are not duplicated at the end of content' => [
+                'test' . LF . LF,
+                $this->getLibParseFunc_RTE(),
+                '<p class="bodytext">test</p>' . LF . '<p class="bodytext">&nbsp;</p>',
+            ],
+            'Empty lines are not trimmed' => [
+                LF . 'test' . LF,
+                $this->getLibParseFunc_RTE(),
+                '<p class="bodytext">&nbsp;</p>' . LF . '<p class="bodytext">test</p>' . LF . '<p class="bodytext">&nbsp;</p>',
+            ],
         ];
     }
 
@@ -4596,7 +4615,7 @@ class ContentObjectRendererTest extends UnitTestCase
         return [
             'empty string from ISO-8859-15' => [
                 '',
-                iconv('UTF-8', 'ISO-8859-15', ''),
+                mb_convert_encoding('', 'ISO-8859-15', 'UTF-8'),
                 ['csConv' => 'ISO-8859-15']
             ],
             'empty string from BIG-5' => [
@@ -4606,7 +4625,7 @@ class ContentObjectRendererTest extends UnitTestCase
             ],
             '"0" from ISO-8859-15' => [
                 '0',
-                iconv('UTF-8', 'ISO-8859-15', '0'),
+                mb_convert_encoding('0', 'ISO-8859-15', 'UTF-8'),
                 ['csConv' => 'ISO-8859-15']
             ],
             '"0" from BIG-5' => [
@@ -4616,7 +4635,7 @@ class ContentObjectRendererTest extends UnitTestCase
             ],
             'euro symbol from ISO-88859-15' => [
                 '€',
-                iconv('UTF-8', 'ISO-8859-15', '€'),
+                mb_convert_encoding('€', 'ISO-8859-15', 'UTF-8'),
                 ['csConv' => 'ISO-8859-15']
             ],
             'good morning from BIG-5' => [

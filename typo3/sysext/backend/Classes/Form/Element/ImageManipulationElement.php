@@ -21,13 +21,30 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
-use TYPO3\CMS\Extbase\Utility\ArrayUtility;
 
 /**
- * Generation of image manipulation TCEform element
+ * Generation of image manipulation FormEngine element.
+ * This is typically used in FAL relations to cut images.
  */
 class ImageManipulationElement extends AbstractFormElement
 {
+    /**
+     * Default field wizards enabled for this element.
+     *
+     * @var array
+     */
+    protected $defaultFieldWizard = [
+        'otherLanguageContent' => [
+            'renderType' => 'otherLanguageContent',
+        ],
+        'defaultLanguageDifferences' => [
+            'renderType' => 'defaultLanguageDifferences',
+            'after' => [
+                'otherLanguageContent',
+            ],
+        ],
+    ];
+
     /**
      * Default element configuration
      *
@@ -38,10 +55,10 @@ class ImageManipulationElement extends AbstractFormElement
         'enableZoom' => false,
         'allowedExtensions' => null, // default: $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']
         'ratios' => [
-            '1.7777777777777777' => 'LLL:EXT:lang/locallang_wizards.xlf:imwizard.ratio.16_9',
-            '1.3333333333333333' => 'LLL:EXT:lang/locallang_wizards.xlf:imwizard.ratio.4_3',
-            '1' => 'LLL:EXT:lang/locallang_wizards.xlf:imwizard.ratio.1_1',
-            'NaN' => 'LLL:EXT:lang/locallang_wizards.xlf:imwizard.ratio.free',
+            '1.7777777777777777' => 'LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.ratio.16_9',
+            '1.3333333333333333' => 'LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.ratio.4_3',
+            '1' => 'LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.ratio.1_1',
+            'NaN' => 'LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.ratio.free',
         ]
     ];
 
@@ -62,7 +79,7 @@ class ImageManipulationElement extends AbstractFormElement
         if (isset($parameterArray['fieldConf']['config']['ratios'])) {
             unset($this->defaultConfig['ratios']);
         }
-        $config = ArrayUtility::arrayMergeRecursiveOverrule($this->defaultConfig, $parameterArray['fieldConf']['config']);
+        $config = array_replace_recursive($this->defaultConfig, $parameterArray['fieldConf']['config']);
 
         // By default we allow all image extensions that can be handled by the GFX functionality
         if ($config['allowedExtensions'] === null) {
@@ -70,15 +87,16 @@ class ImageManipulationElement extends AbstractFormElement
         }
 
         if ($config['readOnly']) {
-            $options = [];
-            $options['parameterArray'] = [
-                'fieldConf' => [
-                    'config' => $config,
-                ],
-                'itemFormElValue' => $parameterArray['itemFormElValue'],
-            ];
-            $options['renderType'] = 'none';
-            return $this->nodeFactory->create($options)->render();
+            $html = [];
+            $html[] = '<div class="t3js-formengine-field-item">';
+            $html[] =   '<div class="form-wizards-wrap">';
+            $html[] =       '<div class="form-wizards-element">';
+            $html[] =           htmlspecialchars($parameterArray['itemFormElValue']);
+            $html[] =       '</div>';
+            $html[] =   '</div>';
+            $html[] = '</div>';
+            $resultArray['html'] = implode(LF, $html);
+            return $resultArray;
         }
 
         $file = $this->getFile($row, $config['file_field']);
@@ -120,7 +138,7 @@ class ImageManipulationElement extends AbstractFormElement
             $button = '<button class="btn btn-default t3js-image-manipulation-trigger"';
             $button .= GeneralUtility::implodeAttributes($buttonAttributes, true, true);
             $button .= '><span class="t3-icon fa fa-crop"></span>';
-            $button .= htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_wizards.xlf:imwizard.open-editor'));
+            $button .= htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.open-editor'));
             $button .= '</button>';
 
             $attributes = [];
@@ -145,7 +163,7 @@ class ImageManipulationElement extends AbstractFormElement
             ];
         }
 
-        $content .= '<p class="text-muted"><em>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_wizards.xlf:imwizard.supported-types-message')) . '<br />';
+        $content .= '<p class="text-muted"><em>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.supported-types-message')) . '<br />';
         $content .= strtoupper(implode(', ', GeneralUtility::trimExplode(',', $config['allowedExtensions'])));
         $content .= '</em></p>';
 
@@ -153,6 +171,36 @@ class ImageManipulationElement extends AbstractFormElement
         $item .= $preview;
         $item .= '<div class="media-body">' . $content . '</div>';
         $item .= '</div>';
+
+        $fieldInformationResult = $this->renderFieldInformation();
+        $fieldInformationHtml = $fieldInformationResult['html'];
+        $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldInformationResult, false);
+
+        $fieldControlResult = $this->renderFieldControl();
+        $fieldControlHtml = $fieldControlResult['html'];
+        $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldControlResult, false);
+
+        $fieldWizardResult = $this->renderFieldWizard();
+        $fieldWizardHtml = $fieldWizardResult['html'];
+        $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldWizardResult, false);
+
+        $html = [];
+        $html[] = '<div class="t3js-formengine-field-item">';
+        $html[] =   $fieldInformationHtml;
+        $html[] =   '<div class="form-wizards-wrap">';
+        $html[] =       '<div class="form-wizards-element">';
+        $html[] =           $item;
+        $html[] =       '</div>';
+        $html[] =      '<div class="form-wizards-items-aside">';
+        $html[] =          '<div class="btn-group">';
+        $html[] =              $fieldControlHtml;
+        $html[] =          '</div>';
+        $html[] =      '</div>';
+        $html[] =       '<div class="form-wizards-items-bottom">';
+        $html[] =           $fieldWizardHtml;
+        $html[] =       '</div>';
+        $html[] =   '</div>';
+        $html[] = '</div>';
 
         $resultArray['html'] = $item;
         return $resultArray;
@@ -169,14 +217,8 @@ class ImageManipulationElement extends AbstractFormElement
     {
         $file = null;
         $fileUid = !empty($row[$fieldName]) ? $row[$fieldName] : null;
-        if (strpos($fileUid, 'sys_file_') === 0) {
-            if (strpos($fileUid, '|')) {
-                // @todo: uid_local is a group field that was resolved to table_uid|target - split here again
-                // @todo: this will vanish if group fields are moved to array
-                $fileUid = explode('|', $fileUid);
-                $fileUid = $fileUid[0];
-            }
-            $fileUid = substr($fileUid, 9);
+        if (is_array($fileUid) && isset($fileUid[0]['uid'])) {
+            $fileUid = $fileUid[0]['uid'];
         }
         if (MathUtility::canBeInterpretedAsInteger($fileUid)) {
             try {
@@ -251,13 +293,13 @@ class ImageManipulationElement extends AbstractFormElement
 
         $content .= '<div class="table-fit-block table-spacer-wrap">';
         $content .= '<table class="table table-no-borders t3js-image-manipulation-info' . ($imageManipulation === null ? ' hide' : '') . '">';
-        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_wizards.xlf:imwizard.crop-x')) . '</td>';
+        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.crop-x')) . '</td>';
         $content .= '<td class="t3js-image-manipulation-info-crop-x">' . $x . 'px</td></tr>';
-        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_wizards.xlf:imwizard.crop-y')) . '</td>';
+        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.crop-y')) . '</td>';
         $content .= '<td class="t3js-image-manipulation-info-crop-y">' . $y . 'px</td></tr>';
-        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_wizards.xlf:imwizard.crop-width')) . '</td>';
+        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.crop-width')) . '</td>';
         $content .= '<td class="t3js-image-manipulation-info-crop-width">' . $width . 'px</td></tr>';
-        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_wizards.xlf:imwizard.crop-height')) . '</td>';
+        $content .= '<tr><td>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.crop-height')) . '</td>';
         $content .= '<td class="t3js-image-manipulation-info-crop-height">' . $height . 'px</td></tr>';
         $content .= '</table>';
         $content .= '</div>';

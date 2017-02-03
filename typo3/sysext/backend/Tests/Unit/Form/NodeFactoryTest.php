@@ -18,12 +18,11 @@ use TYPO3\CMS\Backend\Form\Element;
 use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Form\NodeInterface;
 use TYPO3\CMS\Backend\Form\NodeResolverInterface;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class NodeFactoryTest extends UnitTestCase
+class NodeFactoryTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @test
@@ -311,9 +310,7 @@ class NodeFactoryTest extends UnitTestCase
             'renderType' => 'selectSingle',
             'parameterArray' => [
                 'fieldConf' => [
-                    'config' => [
-                        'maxitems' => 1,
-                    ],
+                    'config' => [],
                 ],
             ],
         ];

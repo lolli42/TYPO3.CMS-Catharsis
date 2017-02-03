@@ -24,7 +24,7 @@ use TYPO3\CMS\Core\Cache\Backend\ApcBackend;
  *
  * This file is a backport from FLOW3
  */
-class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class ApcBackendTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * Sets up this testcase
@@ -210,6 +210,22 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     /**
      * @test
      */
+    public function flushByTagsRemovesCacheEntriesWithSpecifiedTags()
+    {
+        $backend = $this->setUpBackend();
+        $data = 'some data' . microtime();
+        $backend->set('BackendAPCTest1', $data, ['UnitTestTag%test', 'UnitTestTag%boring']);
+        $backend->set('BackendAPCTest2', $data, ['UnitTestTag%test', 'UnitTestTag%special']);
+        $backend->set('BackendAPCTest3', $data, ['UnitTestTag%test']);
+        $backend->flushByTags(['UnitTestTag%special', 'UnitTestTag%boring']);
+        $this->assertFalse($backend->has('BackendAPCTest1'), 'BackendAPCTest1');
+        $this->assertFalse($backend->has('BackendAPCTest2'), 'BackendAPCTest2');
+        $this->assertTrue($backend->has('BackendAPCTest3'), 'BackendAPCTest3');
+    }
+
+    /**
+     * @test
+     */
     public function flushRemovesAllCacheEntries()
     {
         $backend = $this->setUpBackend();
@@ -287,7 +303,7 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
      * Sets up the APC backend used for testing
      *
      * @param bool $accessible TRUE if backend should be encapsulated in accessible proxy otherwise FALSE.
-     * @return \TYPO3\CMS\Core\Tests\AccessibleObjectInterface|ApcBackend
+     * @return \TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|ApcBackend
      */
     protected function setUpBackend($accessible = false)
     {

@@ -15,12 +15,11 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form\FormDataProvider;
  */
 
 use TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class InitializeProcessedTcaTest extends UnitTestCase
+class InitializeProcessedTcaTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var InitializeProcessedTca
@@ -46,6 +45,23 @@ class InitializeProcessedTcaTest extends UnitTestCase
         $GLOBALS['TCA'][$input['tableName']] = $expected;
         $result = $this->subject->addData($input);
         $this->assertEquals($expected, $result['processedTca']);
+    }
+
+    /**
+     * @test
+     */
+    public function addDataKeepsGivenProcessedTca()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'processedTca' => [
+                'columns' => [
+                    'afield' => [],
+                ],
+            ],
+        ];
+        $expected = $input;
+        $this->assertEquals($expected, $this->subject->addData($input));
     }
 
     /**

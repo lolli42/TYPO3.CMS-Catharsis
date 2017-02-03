@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Cache;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Prophecy\Argument;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Exception\InvalidBackendException;
 use TYPO3\CMS\Core\Cache\Exception\InvalidCacheException;
@@ -28,14 +29,13 @@ use TYPO3\CMS\Core\Tests\Unit\Cache\Fixtures\FrontendDefaultFixture;
 use TYPO3\CMS\Core\Tests\Unit\Cache\Fixtures\FrontendFixture;
 use TYPO3\CMS\Core\Tests\Unit\Cache\Fixtures\FrontendIdentifierFixture;
 use TYPO3\CMS\Core\Tests\Unit\Cache\Fixtures\FrontendInitializeObjectFixture;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Testcase for the TYPO3\CMS\Core\Cache\CacheManager
  *
  * This file is a backport from FLOW3
  */
-class CacheManagerTest extends UnitTestCase
+class CacheManagerTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @test
@@ -136,6 +136,28 @@ class CacheManagerTest extends UnitTestCase
         $cache2->expects($this->once())->method('flushByTag')->with($this->equalTo('theTag'));
         $manager->registerCache($cache2);
         $manager->flushCachesByTag('theTag');
+    }
+
+    /**
+     * @test
+     */
+    public function flushCachesByTagsCallsTheFlushByTagsMethodOfAllRegisteredCaches()
+    {
+        $manager = new CacheManager();
+        $cache1 = $this->getMockBuilder(AbstractFrontend::class)
+            ->setMethods(['getIdentifier', 'set', 'get', 'getByTag', 'has', 'remove', 'flush', 'flushByTags'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $cache1->expects($this->atLeastOnce())->method('getIdentifier')->will($this->returnValue('cache1'));
+        $cache1->expects($this->once())->method('flushByTags')->with($this->equalTo(['theTag']));
+        $manager->registerCache($cache1);
+        $cache2 = $this->getMockBuilder(AbstractFrontend::class)
+            ->setMethods(['getIdentifier', 'set', 'get', 'getByTag', 'has', 'remove', 'flush', 'flushByTags'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $cache2->expects($this->once())->method('flushByTags')->with($this->equalTo(['theTag']));
+        $manager->registerCache($cache2);
+        $manager->flushCachesByTags(['theTag']);
     }
 
     /**
@@ -294,7 +316,7 @@ class CacheManagerTest extends UnitTestCase
      */
     public function getCacheCreatesCacheInstanceWithFallbackToDefaultFrontend()
     {
-        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|CacheManager $manager */
+        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|CacheManager $manager */
         $manager = $this->getAccessibleMock(CacheManager::class, ['dummy'], [], '', false);
         $cacheIdentifier = $this->getUniqueId('Test');
         $configuration = [
@@ -320,7 +342,7 @@ class CacheManagerTest extends UnitTestCase
      */
     public function getCacheCreatesCacheInstanceWithFallbackToDefaultBackend()
     {
-        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|CacheManager $manager */
+        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|CacheManager $manager */
         $manager = $this->getAccessibleMock(CacheManager::class, ['dummy'], [], '', false);
         $cacheIdentifier = $this->getUniqueId('Test');
         $configuration = [
@@ -397,5 +419,78 @@ class CacheManagerTest extends UnitTestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionCode(1464557160);
         $manager->getCache($cacheIdentifier);
+    }
+
+    /**
+     * @test
+     */
+    public function flushCachesInGroupByTagsWithEmptyTagsArrayDoesNotFlushCaches()
+    {
+        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|CacheManager $manager */
+        $manager = $this->getAccessibleMock(CacheManager::class, ['dummy'], [], '', false);
+        $cacheIdentifier = 'aTest';
+
+        $cacheGroups = [
+            'group1' => [$cacheIdentifier],
+            'group2' => [$cacheIdentifier],
+        ];
+        $manager->_set('cacheGroups', $cacheGroups);
+
+        $frontend = $this->prophesize(FrontendFixture::class);
+
+        $caches = [
+            $cacheIdentifier => $frontend->reveal()
+        ];
+        $manager->_set('caches', $caches);
+
+        $frontend->flushByTags(Argument::any())->shouldNotBeCalled();
+
+        $configuration = [
+            $cacheIdentifier => [
+                'frontend' => $frontend,
+                'backend' => BackendFixture::class,
+                'options' => [],
+                'groups' => ['group1', 'group2']
+            ],
+        ];
+        $manager->setCacheConfigurations($configuration);
+        $manager->flushCachesInGroupByTags('group2', []);
+    }
+
+    /**
+     * @test
+     */
+    public function flushCachesInGroupByTagsDeletesByTag()
+    {
+        /** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|CacheManager $manager */
+        $manager = $this->getAccessibleMock(CacheManager::class, ['dummy'], [], '', false);
+        $cacheIdentifier = 'aTest';
+
+        $cacheGroups = [
+            'group1' => [$cacheIdentifier],
+            'group2' => [$cacheIdentifier],
+        ];
+        $manager->_set('cacheGroups', $cacheGroups);
+
+        $frontend = $this->prophesize(FrontendFixture::class);
+
+        $caches = [
+            $cacheIdentifier => $frontend->reveal()
+        ];
+        $manager->_set('caches', $caches);
+
+        $tags = ['tag1', 'tag2'];
+        $frontend->flushByTags($tags)->shouldBeCalled();
+
+        $configuration = [
+            $cacheIdentifier => [
+                'frontend' => $frontend,
+                'backend' => BackendFixture::class,
+                'options' => [],
+                'groups' => ['group1', 'group2']
+            ],
+        ];
+        $manager->setCacheConfigurations($configuration);
+        $manager->flushCachesInGroupByTags('group2', $tags);
     }
 }

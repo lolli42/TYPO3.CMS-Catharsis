@@ -29,7 +29,7 @@ use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 /**
  * Repository Class as an abstraction layer to sys_file_metadata
  *
- * Every access to table sys_file_metadata which is not handled by TCEmain
+ * Every access to table sys_file_metadata which is not handled by DataHandler
  * has to use this Repository class
  */
 class MetaDataRepository implements SingletonInterface
@@ -139,7 +139,8 @@ class MetaDataRepository implements SingletonInterface
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($this->tableName);
         $connection->insert(
             $this->tableName,
-            $emptyRecord
+            $emptyRecord,
+            ['l10n_diffsource' => Connection::PARAM_LOB]
         );
 
         $record = $emptyRecord;

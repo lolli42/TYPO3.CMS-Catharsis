@@ -28,7 +28,7 @@ use TYPO3\CMS\Core\Cache\Exception\InvalidDataException;
  * Warning:
  * The unit tests use and flush redis database numbers 0 and 1!
  */
-class RedisBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class RedisBackendTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * If set, the tearDown() method will flush the cache used by this unit test.
@@ -758,6 +758,28 @@ class RedisBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             $this->backend->has($identifier . 'A'),
             $this->backend->has($identifier . 'B'),
             $this->backend->has($identifier . 'C')
+        ];
+        $this->assertSame($expectedResult, $actualResult);
+    }
+
+    /**
+     * @test Functional
+     */
+    public function flushByTagsRemovesEntriesTaggedWithSpecifiedTags()
+    {
+        $this->setUpBackend();
+        $identifier = $this->getUniqueId('identifier');
+        $this->backend->set($identifier . 'A', 'data', ['tag1']);
+        $this->backend->set($identifier . 'B', 'data', ['tag2']);
+        $this->backend->set($identifier . 'C', 'data', ['tag1', 'tag2']);
+        $this->backend->set($identifier . 'D', 'data', ['tag3']);
+        $this->backend->flushByTags(['tag1', 'tag2']);
+        $expectedResult = [false, false, false, true];
+        $actualResult = [
+            $this->backend->has($identifier . 'A'),
+            $this->backend->has($identifier . 'B'),
+            $this->backend->has($identifier . 'C'),
+            $this->backend->has($identifier . 'D')
         ];
         $this->assertSame($expectedResult, $actualResult);
     }

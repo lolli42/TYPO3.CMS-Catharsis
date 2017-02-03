@@ -238,20 +238,17 @@ class TcaRecordTitle implements FormDataProviderInterface
      */
     protected function getRecordTitleForGroupType($value, $fieldConfig)
     {
-        if ($fieldConfig['internal_type'] !== 'db') {
-            return implode(', ', GeneralUtility::trimExplode(',', $value, true));
+        $labelParts = [];
+        foreach ($value as $singleValue) {
+            if (isset($singleValue['uidOrPath'])) {
+                $labelParts[] = $singleValue['uidOrPath'];
+            } elseif (isset($singleValue['folder'])) {
+                $labelParts[] = $singleValue['folder'];
+            } else {
+                $labelParts[] = $singleValue['title'];
+            }
         }
-        $labelParts = array_map(
-            function ($rawLabelItem) {
-                return array_pop(GeneralUtility::trimExplode('|', $rawLabelItem, true, 2));
-            },
-            GeneralUtility::trimExplode(',', $value, true)
-        );
-        if (!empty($labelParts)) {
-            sort($labelParts);
-            return implode(', ', $labelParts);
-        }
-        return '';
+        return implode(', ', $labelParts);
     }
 
     /**
@@ -266,8 +263,8 @@ class TcaRecordTitle implements FormDataProviderInterface
         $languageService = $this->getLanguageService();
         if (empty($fieldConfig['items']) || !is_array($fieldConfig['items'])) {
             $title = (bool)$value
-                ? $languageService->sL('LLL:EXT:lang/locallang_common.xlf:yes')
-                : $languageService->sL('LLL:EXT:lang/locallang_common.xlf:no');
+                ? $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:yes')
+                : $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:no');
         } else {
             $labelParts = [];
             foreach ($fieldConfig['items'] as $key => $val) {
@@ -306,7 +303,7 @@ class TcaRecordTitle implements FormDataProviderInterface
                     $ageDelta = $GLOBALS['EXEC_TIME'] - $value;
                     $calculatedAge = BackendUtility::calcAge(
                         abs($ageDelta),
-                        $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
+                        $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears')
                     );
                     $ageSuffix = ' (' . ($ageDelta > 0 ? '-' : '') . $calculatedAge . ')';
                 }

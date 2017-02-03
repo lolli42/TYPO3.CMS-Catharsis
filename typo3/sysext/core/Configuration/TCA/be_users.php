@@ -4,7 +4,7 @@ return [
         'label' => 'username',
         'descriptionColumn' => 'description',
         'tstamp' => 'tstamp',
-        'title' => 'LLL:EXT:lang/locallang_tca.xlf:be_users',
+        'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users',
         'crdate' => 'crdate',
         'cruser_id' => 'cruser_id',
         'delete' => 'deleted',
@@ -32,7 +32,7 @@ return [
     ],
     'columns' => [
         'username' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.username',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.username',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -42,7 +42,7 @@ return [
             ]
         ],
         'description' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.description',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.description',
             'config' => [
                 'type' => 'text',
                 'rows' => 5,
@@ -51,7 +51,7 @@ return [
             ]
         ],
         'password' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.password',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.password',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -61,7 +61,7 @@ return [
             ]
         ],
         'usergroup' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.usergroup',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.usergroup',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectMultipleSideBySide',
@@ -70,48 +70,31 @@ return [
                 'size' => 5,
                 'maxitems' => 20,
                 'enableMultiSelectFilterTextfield' => true,
-                'wizards' => [
-                    '_VERTICAL' => 1,
-                    'edit' => [
-                        'type' => 'popup',
-                        'title' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.usergroup_edit_title',
-                        'module' => [
-                            'name' => 'wizard_edit',
+                'fieldControl' => [
+                    'editPopup' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.usergroup_edit_title',
                         ],
-                        'popup_onlyOpenIfSelected' => true,
-                        'icon' => 'actions-open',
-                        'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
                     ],
-                    'add' => [
-                        'type' => 'script',
-                        'title' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.usergroup_add_title',
-                        'icon' => 'actions-add',
-                        'params' => [
-                            'table' => 'be_groups',
-                            'pid' => 0,
-                            'setValue' => 'prepend'
+                    'addRecord' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.usergroup_add_title',
+                            'setValue' => 'prepend',
                         ],
-                        'module' => [
-                            'name' => 'wizard_add'
-                        ]
                     ],
-                    'list' => [
-                        'type' => 'script',
-                        'title' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.usergroup_list_title',
-                        'icon' => 'actions-system-list-open',
-                        'params' => [
-                            'table' => 'be_groups',
-                            'pid' => 0
+                    'listModule' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.usergroup_list_title',
                         ],
-                        'module' => [
-                            'name' => 'wizard_list'
-                        ]
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ],
         'avatar' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.avatar',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.avatar',
             'config' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getFileFieldTCAConfig(
                 'avatar',
                 ['maxitems' => 1],
@@ -119,7 +102,7 @@ return [
             )
         ],
         'lockToDomain' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:lockToDomain',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:lockToDomain',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -129,7 +112,7 @@ return [
             ]
         ],
         'db_mountpoints' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.options_db_mounts',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.options_db_mounts',
             'config' => [
                 'type' => 'group',
                 'internal_type' => 'db',
@@ -137,16 +120,10 @@ return [
                 'size' => 3,
                 'maxitems' => 100,
                 'autoSizeMax' => 10,
-                'show_thumbs' => true,
-                'wizards' => [
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ]
-                ]
             ]
         ],
         'file_mountpoints' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.options_file_mounts',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.options_file_mounts',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectMultipleSideBySide',
@@ -155,48 +132,31 @@ return [
                 'size' => 3,
                 'maxitems' => 100,
                 'autoSizeMax' => 10,
-                'wizards' => [
-                    '_VERTICAL' => 1,
-                    'edit' => [
-                        'type' => 'popup',
-                        'title' => 'LLL:EXT:lang/locallang_tca.xlf:file_mountpoints_edit_title',
-                        'module' => [
-                            'name' => 'wizard_edit',
+                'fieldControl' => [
+                    'editPopup' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:file_mountpoints_edit_title',
                         ],
-                        'icon' => 'actions-open',
-                        'popup_onlyOpenIfSelected' => true,
-                        'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
                     ],
-                    'add' => [
-                        'type' => 'script',
-                        'title' => 'LLL:EXT:lang/locallang_tca.xlf:file_mountpoints_add_title',
-                        'icon' => 'actions-add',
-                        'params' => [
-                            'table' => 'sys_filemounts',
-                            'pid' => 0,
-                            'setValue' => 'prepend'
+                    'addRecord' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:file_mountpoints_add_title',
+                            'setValue' => 'prepend',
                         ],
-                        'module' => [
-                            'name' => 'wizard_add'
-                        ]
                     ],
-                    'list' => [
-                        'type' => 'script',
-                        'title' => 'LLL:EXT:lang/locallang_tca.xlf:file_mountpoints_list_title',
-                        'icon' => 'actions-system-list-open',
-                        'params' => [
-                            'table' => 'sys_filemounts',
-                            'pid' => 0
+                    'listModule' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:file_mountpoints_list_title',
                         ],
-                        'module' => [
-                            'name' => 'wizard_list'
-                        ]
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ],
         'email' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.email',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.email',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -206,7 +166,7 @@ return [
             ]
         ],
         'realName' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.name',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.name',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -215,59 +175,59 @@ return [
             ]
         ],
         'disable' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.disable',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.disable',
             'config' => [
                 'type' => 'check'
             ]
         ],
         'disableIPlock' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.disableIPlock',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.disableIPlock',
             'config' => [
                 'type' => 'check'
             ]
         ],
         'admin' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.admin',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.admin',
             'config' => [
                 'type' => 'check',
                 'default' => 0
             ]
         ],
         'options' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.options',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.options',
             'config' => [
                 'type' => 'check',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_users.options_db_mounts', 0],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_users.options_file_mounts', 0]
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.options_db_mounts', 0],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.options_file_mounts', 0]
                 ],
                 'default' => 3
             ]
         ],
         'file_permissions' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_groups.fileoper_perms',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.fileoper_perms',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectCheckBox',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder', '--div--', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_read', 'readFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_write', 'writeFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_add', 'addFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_rename', 'renameFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_move', 'moveFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_copy', 'copyFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_delete', 'deleteFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_recursivedelete', 'recursivedeleteFolder', 'apps-filetree-folder-default'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files', '--div--', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_read', 'readFile', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_write', 'writeFile', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_add', 'addFile', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_rename', 'renameFile', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_replace', 'replaceFile', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_move', 'moveFile', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_copy', 'copyFile', 'mimetypes-other-other'],
-                    ['LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_delete', 'deleteFile', 'mimetypes-other-other']
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder', '--div--', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_read', 'readFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_write', 'writeFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_add', 'addFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_rename', 'renameFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_move', 'moveFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_copy', 'copyFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_delete', 'deleteFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.folder_recursivedelete', 'recursivedeleteFolder', 'apps-filetree-folder-default'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files', '--div--', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_read', 'readFile', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_write', 'writeFile', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_add', 'addFile', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_rename', 'renameFile', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_replace', 'replaceFile', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_move', 'moveFile', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_copy', 'copyFile', 'mimetypes-other-other'],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_groups.file_permissions.files_delete', 'deleteFile', 'mimetypes-other-other']
                 ],
                 'size' => 17,
                 'maxitems' => 17,
@@ -275,29 +235,29 @@ return [
             ]
         ],
         'workspace_perms' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:workspace_perms',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:workspace_perms',
             'config' => [
                 'type' => 'check',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_tca.xlf:workspace_perms_live', 0]
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:workspace_perms_live', 0]
                 ],
                 'default' => 1
             ]
         ],
         'starttime' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.starttime',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.starttime',
             'config' => [
                 'type' => 'input',
-                'size' => 13,
+                'renderType' => 'inputDateTime',
                 'eval' => 'datetime',
                 'default' => 0
             ]
         ],
         'endtime' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.endtime',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.endtime',
             'config' => [
                 'type' => 'input',
-                'size' => 13,
+                'renderType' => 'inputDateTime',
                 'eval' => 'datetime',
                 'default' => 0,
                 'range' => [
@@ -306,7 +266,7 @@ return [
             ]
         ],
         'lang' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.lang',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.lang',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -316,7 +276,7 @@ return [
             ]
         ],
         'userMods' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:userMods',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:userMods',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectCheckBox',
@@ -327,22 +287,22 @@ return [
             ]
         ],
         'allowed_languages' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:allowed_languages',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:allowed_languages',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectCheckBox',
                 'special' => 'languages',
-                'maxitems' => 1000,
             ]
         ],
         'TSconfig' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:TSconfig',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:TSconfig',
             'config' => [
                 'type' => 'text',
                 'cols' => 40,
-                'rows' => 5
+                'rows' => 5,
+                'enableTablator' => true,
+                'fixedFont' => true,
             ],
-            'defaultExtras' => 'fixed-font : enable-tab'
         ],
         'createdByAction' => [
             'config' => [
@@ -350,17 +310,17 @@ return [
             ]
         ],
         'lastlogin' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.lastlogin',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.lastlogin',
             'config' => [
                 'type' => 'input',
+                'renderType' => 'inputDateTime',
                 'readOnly' => true,
-                'size' => 12,
                 'eval' => 'datetime',
                 'default' => 0
             ]
         ],
         'category_perms' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:category_perms',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:category_perms',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectTree',
@@ -376,20 +336,38 @@ return [
                 ],
                 'size' => 20,
                 'minitems' => 0,
-                'maxitems' => 9999
             ]
         ],
     ],
     'types' => [
-        '0' => ['showitem' => 'disable, username, password, description, avatar, usergroup, admin, realName, email, lang, lastlogin,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.rights, userMods, allowed_languages,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.mounts_and_workspaces, workspace_perms, db_mountpoints, options, file_mountpoints, file_permissions, category_perms,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.options, lockToDomain, disableIPlock, TSconfig,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.access, starttime,endtime,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.extended'],
-        '1' => ['showitem' => 'disable, username, password, avatar,description, usergroup, admin, realName, email, lang, lastlogin,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.options, disableIPlock, TSconfig, db_mountpoints, options, file_mountpoints,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.access, starttime,endtime,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.extended']
-    ]
+        '0' => ['showitem' => '
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                admin, username, password, avatar, usergroup, realName, email, lang, lastlogin,
+            --div--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.tabs.rights,
+                userMods, allowed_languages,
+            --div--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.tabs.mounts_and_workspaces,
+                workspace_perms, db_mountpoints, options, file_mountpoints, file_permissions, category_perms,
+            --div--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.tabs.options,
+                lockToDomain, disableIPlock, TSconfig,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                disable,--palette--;;timeRestriction,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        '],
+        '1' => ['showitem' => '
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                admin, username, password, avatar, usergroup, realName, email, lang, lastlogin,
+            --div--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:be_users.tabs.options,
+                disableIPlock, TSconfig, db_mountpoints, options, file_mountpoints,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                disable,--palette--;;timeRestriction,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        ']
+    ],
+    'palettes' => [
+        'timeRestriction' => ['showitem' => 'starttime, endtime']
+    ],
 ];

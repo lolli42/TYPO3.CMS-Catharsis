@@ -8,7 +8,6 @@ return [
         'tstamp'   => 'tstamp',
         'crdate'   => 'crdate',
         'versioningWS' => true,
-        'versioning_followPages' => true,
         'origUid' => 't3_origuid',
         'languageField' => 'sys_language_uid',
         'transOrigPointerField' => 'l18n_parent',
@@ -30,15 +29,15 @@ return [
     'columns' => [
         'sys_language_uid' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.language',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.language',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'foreign_table' => 'sys_language',
                 'foreign_table_where' => 'ORDER BY sys_language.title',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.allLanguages', -1],
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.default_value', 0]
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.allLanguages', -1],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.default_value', 0]
                 ],
                 'default' => 0
             ]
@@ -46,7 +45,7 @@ return [
         'l18n_parent' => [
             'displayCond' => 'FIELD:sys_language_uid:>:0',
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.l18n_parent',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.l18n_parent',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -65,7 +64,7 @@ return [
         ],
         'hidden' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_general.xml:LGL.hidden',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xml:LGL.hidden',
             'config' => [
                 'type' => 'check'
             ]
@@ -106,33 +105,18 @@ return [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'foreign_table' => 'tx_blogexample_domain_model_person',
-                'wizards' => [
-                     '_VERTICAL' => 1,
-                     'edit' => [
-                         'type' => 'popup',
-                         'title' => 'Edit',
-                         'module' => [
-                             'name' => 'wizard_edit',
-                         ],
-                         'icon' => 'actions-open',
-                         'popup_onlyOpenIfSelected' => 1,
-                         'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1',
-                     ],
-                     'add' => [
-                         'type' => 'script',
-                         'title' => 'Create new',
-                         'icon' => 'actions-add',
-                         'params' => [
-                             'table'=>'tx_blogexample_domain_model_person',
-                             'pid' => '###CURRENT_PID###',
-                             'setValue' => 'prepend'
-                         ],
-                         'module' => [
-                             'name' => 'wizard_add',
-                         ],
-                     ],
-                 ]
-            ]
+                'fieldControl' => [
+                    'editPopup' => [
+                        'disabled' => false,
+                    ],
+                    'addRecord' => [
+                        'disabled' => false,
+                        'options' => [
+                            'setValue' => 'prepend',
+                        ],
+                    ],
+                ],
+            ],
         ],
         'content' => [
             'exclude' => true,
@@ -150,7 +134,6 @@ return [
                 'type' => 'inline',
                 'foreign_table' => 'tx_blogexample_domain_model_tag',
                 'MM' => 'tx_blogexample_post_tag_mm',
-                'maxitems' => 9999,
                 'appearance' => [
                     'useCombination' => 1,
                     'useSortable' => 1,
@@ -167,7 +150,6 @@ return [
                 'foreign_table' => 'tx_blogexample_domain_model_comment',
                 'foreign_field' => 'post',
                 'size' => 10,
-                'maxitems' => 9999,
                 'autoSizeMax' => 30,
                 'multiple' => 0,
                 'appearance' => [
@@ -183,7 +165,6 @@ return [
                 'type' => 'select',
                 'renderType' => 'selectMultipleSideBySide',
                 'size' => 10,
-                'maxitems' => 9999,
                 'autoSizeMax' => 30,
                 'multiple' => 0,
                 'foreign_table' => 'tx_blogexample_domain_model_post',

@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Frontend\Authentication;
  */
 
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -39,10 +40,12 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
     protected $sessionDataLifetime = 86400;
 
     /**
-     * if > 0 : session-timeout in seconds.
-     * if FALSE/<0 : no timeout.
-     * if string: The string is field name from the user table where the timeout can be found.
-     * @var string|int
+     * Session timeout (on the server)
+     *
+     * If >0: session-timeout in seconds.
+     * If <=0: Instant logout after login.
+     *
+     * @var int
      */
     public $sessionTimeout = 6000;
 
@@ -152,6 +155,9 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
         $this->sendNoCacheHeaders = false;
         $this->getFallBack = true;
         $this->getMethodEnabled = true;
+        $this->lockIP = $GLOBALS['TYPO3_CONF_VARS']['FE']['lockIP'];
+        $this->checkPid = $GLOBALS['TYPO3_CONF_VARS']['FE']['checkFeUserPid'];
+        $this->lifetime = (int)$GLOBALS['TYPO3_CONF_VARS']['FE']['lifetime'];
     }
 
     /**
@@ -448,7 +454,11 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
                     'tstamp' => $GLOBALS['EXEC_TIME']
                 ];
                 $this->sessionDataTimestamp = $GLOBALS['EXEC_TIME'];
-                $databaseConnection->insert('fe_session_data', $insertFields);
+                $databaseConnection->insert(
+                    'fe_session_data',
+                    $insertFields,
+                    ['content' => Connection::PARAM_LOB]
+                );
                 // Now set the cookie (= fix the session)
                 $this->setSessionCookie();
             } else {
@@ -471,7 +481,8 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
     public function removeSessionData()
     {
         $this->sessionDataTimestamp = null;
-        GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('fe_session_data')->delete(
+        GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('fe_session_data')
+            ->delete(
                 'fe_session_data',
                 ['hash' => $this->id]
             );

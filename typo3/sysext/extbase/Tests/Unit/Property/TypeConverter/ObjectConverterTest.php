@@ -20,14 +20,13 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Property\TypeConverter;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 use TYPO3\CMS\Extbase\Property\PropertyMappingConfiguration;
 use TYPO3\CMS\Extbase\Property\TypeConverter\ObjectConverter;
 
 /**
  * Test case
  */
-class ObjectConverterTest extends UnitTestCase
+class ObjectConverterTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var ObjectConverter
@@ -72,7 +71,7 @@ class ObjectConverterTest extends UnitTestCase
     {
         $this->assertEquals(['array'], $this->converter->getSupportedSourceTypes(), 'Source types do not match');
         $this->assertEquals('object', $this->converter->getSupportedTargetType(), 'Target type does not match');
-        $this->assertEquals(0, $this->converter->getPriority(), 'Priority does not match');
+        $this->assertEquals(10, $this->converter->getPriority(), 'Priority does not match');
     }
 
     /**

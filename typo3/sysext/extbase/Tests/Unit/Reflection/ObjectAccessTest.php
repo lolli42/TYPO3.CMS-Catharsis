@@ -18,7 +18,7 @@ use TYPO3\CMS\Extbase\Reflection\Exception\PropertyNotAccessibleException;
 /**
  * Test case
  */
-class ObjectAccessTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class ObjectAccessTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     protected $dummyObject;
 
@@ -217,6 +217,26 @@ class ObjectAccessTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     /**
      * @test
      */
+    public function getPropertyCanAccessPropertiesOfArrayAccessWithGetterMethodWhenOffsetNotExists()
+    {
+        $arrayAccessInstance = new \TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture\ArrayAccessClass([]);
+        $actual = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($arrayAccessInstance, 'virtual');
+        $this->assertEquals('default-value', $actual, 'getProperty does not work with Array Access property.');
+    }
+
+    /**
+     * @test
+     */
+    public function getPropertyCanAccessPropertiesOfArrayAccessWithPriorityForOffsetIfOffsetExists()
+    {
+        $arrayAccessInstance = new \TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture\ArrayAccessClass(['virtual' => 'overridden-value']);
+        $actual = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($arrayAccessInstance, 'virtual');
+        $this->assertEquals('overridden-value', $actual, 'getProperty does not work with Array Access property.');
+    }
+
+    /**
+     * @test
+     */
     public function getPropertyCanAccessPropertiesOfAnArray()
     {
         $array = ['key' => 'value'];
@@ -288,8 +308,19 @@ class ObjectAccessTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getGettablePropertyNamesReturnsAllPropertiesWhichAreAvailable()
     {
         $gettablePropertyNames = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getGettablePropertyNames($this->dummyObject);
-        $expectedPropertyNames = ['anotherBooleanProperty', 'anotherProperty', 'booleanProperty', 'property', 'property2', 'publicProperty', 'publicProperty2'];
+        $expectedPropertyNames = ['anotherBooleanProperty', 'anotherProperty', 'booleanProperty', 'property', 'property2', 'publicProperty', 'publicProperty2', 'someValue'];
         $this->assertEquals($gettablePropertyNames, $expectedPropertyNames, 'getGettablePropertyNames returns not all gettable properties.');
+    }
+
+    /**
+     * @test
+     */
+    public function getGettablePropertyNamesRespectsMethodArguments()
+    {
+        $dateTimeZone = new \DateTimeZone('+2');
+        $gettablePropertyNames = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getGettablePropertyNames($dateTimeZone);
+        $expectedPropertyNames = ['location', 'name'];
+        $this->assertEquals($gettablePropertyNames, $expectedPropertyNames, 'getGettablePropertyNames does not respect method arguments.');
     }
 
     /**
@@ -328,7 +359,8 @@ class ObjectAccessTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
             'property' => 'string1',
             'property2' => null,
             'publicProperty' => null,
-            'publicProperty2' => 42
+            'publicProperty2' => 42,
+            'someValue' => true,
         ];
         $this->assertEquals($allProperties, $expectedProperties, 'expectedProperties did not return the right values for the properties.');
     }

@@ -180,9 +180,17 @@ class ResourceStorage implements ResourceStorageInterface
         try {
             $this->driver->processConfiguration();
         } catch (Exception\InvalidConfigurationException $e) {
-            // configuration error
-            // mark this storage as permanently unusable
-            $this->markAsPermanentlyOffline();
+            // Configuration error
+            $this->isOnline = false;
+
+            $message = sprintf(
+                'Failed initializing storage [%d] "%s", error: %s',
+                $this->getUid(),
+                $this->getName(),
+                $e->getMessage()
+            );
+
+            $this->getLogger()->error($message);
         }
         $this->driver->initialize();
         $this->capabilities = $this->driver->getCapabilities();
@@ -969,7 +977,7 @@ class ResourceStorage implements ResourceStorageInterface
     {
         // Check if targetFolder is within this storage
         if ($this->getUid() !== $targetFolder->getStorage()->getUid()) {
-            throw new \RuntimeException('The target folder is not in the same storage. Target folder given: "' . $targetFolder . '"', 1422553107);
+            throw new \RuntimeException('The target folder is not in the same storage. Target folder given: "' . $targetFolder->getIdentifier() . '"', 1422553107);
         }
         // Check for a valid file extension
         if (!$this->checkFileExtensionPermission($targetFileName)) {
@@ -2729,7 +2737,7 @@ class ResourceStorage implements ResourceStorageInterface
     /**
      * Returns the destination path/fileName of a unique fileName/foldername in that path.
      * If $theFile exists in $theDest (directory) the file have numbers appended up to $this->maxNumber. Hereafter a unique string will be appended.
-     * This function is used by fx. TCEmain when files are attached to records and needs to be uniquely named in the uploads/* folders
+     * This function is used by fx. DataHandler when files are attached to records and needs to be uniquely named in the uploads/* folders
      *
      * @param Folder $folder
      * @param string $theFile The input fileName to check
@@ -3011,5 +3019,27 @@ class ResourceStorage implements ResourceStorageInterface
     public function isDefault()
     {
         return $this->isDefault;
+    }
+
+    /**
+     * Returns the current BE user.
+     *
+     * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+     */
+    protected function getBackendUser()
+    {
+        return $GLOBALS['BE_USER'];
+    }
+
+    /**
+     * @return \TYPO3\CMS\Core\Log\Logger
+     */
+    protected function getLogger()
+    {
+        /** @var $logManager \TYPO3\CMS\Core\Log\LogManager */
+        $logManager = GeneralUtility::makeInstance(
+            \TYPO3\CMS\Core\Log\LogManager::class
+        );
+        return $logManager->getLogger(get_class($this));
     }
 }

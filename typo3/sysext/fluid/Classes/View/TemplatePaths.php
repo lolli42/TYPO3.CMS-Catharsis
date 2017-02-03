@@ -14,12 +14,14 @@ namespace TYPO3\CMS\Fluid\View;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
-use TYPO3\CMS\Extbase\Utility\ArrayUtility;
 
 /**
  * Class TemplatePaths
@@ -77,6 +79,12 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
         if (empty($extensionKey)) {
             return [];
         }
+        $cache = $this->getRuntimeCache();
+        $cacheIdentifier = 'viewpaths_' . $extensionKey;
+        $configuration = $cache->get($cacheIdentifier);
+        if (!empty($configuration)) {
+            return $configuration;
+        }
 
         $resources = $this->getExtensionPrivateResourcesPath($extensionKey);
         $paths = [
@@ -96,7 +104,7 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
         } else {
             if (empty($this->typoScript)) {
                 $this->typoScript = GeneralUtility::removeDotsFromTS(
-                    $this->getConfigurationManager()->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT)
+                    (array)$this->getConfigurationManager()->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT)
                 );
             }
             $signature = str_replace('_', '', $extensionKey);
@@ -109,11 +117,20 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
 
         foreach ($paths as $name => $defaultPaths) {
             if (!empty($configuredPaths[$name])) {
-                $paths[$name] = (array)$configuredPaths[$name] + $defaultPaths;
+                $paths[$name] = $defaultPaths + (array)$configuredPaths[$name];
             }
         }
 
+        $cache->set($cacheIdentifier, $paths);
         return $paths;
+    }
+
+    /**
+     * @return VariableFrontend
+     */
+    protected function getRuntimeCache()
+    {
+        return GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_runtime');
     }
 
     /**
@@ -219,5 +236,15 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
     public function getPartialPathAndFilename($partialName)
     {
         return parent::getPartialPathAndFilename($partialName);
+    }
+
+    /**
+     * Get absolute path to template file
+     *
+     * @return string Returns the absolute path to a Fluid template file
+     */
+    public function getTemplatePathAndFilename()
+    {
+        return $this->templatePathAndFilename;
     }
 }

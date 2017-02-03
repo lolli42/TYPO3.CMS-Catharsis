@@ -37,10 +37,8 @@ use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 use TYPO3\CMS\Lang\LanguageService;
@@ -84,18 +82,16 @@ class BackendUtility
      */
     public static function deleteClause($table, $tableAlias = '')
     {
+        if (empty($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
+            return '';
+        }
         $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable($table)
             ->expr();
-
-        if (!empty($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
-            return ' AND ' . $expressionBuilder->eq(
-                ($tableAlias ?: $table) . '.' . $GLOBALS['TCA'][$table]['ctrl']['delete'],
-                0
-            );
-        } else {
-            return '';
-        }
+        return ' AND ' . $expressionBuilder->eq(
+            ($tableAlias ?: $table) . '.' . $GLOBALS['TCA'][$table]['ctrl']['delete'],
+            0
+        );
     }
 
     /**
@@ -222,6 +218,7 @@ class BackendUtility
      * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
      * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
      * @param bool $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
+     * @param null|QueryBuilder $queryBuilder The queryBuilder must be provided, if the parameter $whereClause is given and the concept of prepared statement was used. Example within self::firstDomainRecord()
      * @return mixed Multidimensional array with selected records (if any is selected)
      */
     public static function getRecordsByField(
@@ -232,10 +229,14 @@ class BackendUtility
         $groupBy = '',
         $orderBy = '',
         $limit = '',
-        $useDeleteClause = true
+        $useDeleteClause = true,
+        $queryBuilder = null
     ) {
         if (is_array($GLOBALS['TCA'][$theTable])) {
-            $queryBuilder = static::getQueryBuilderForTable($theTable);
+            if (null === $queryBuilder) {
+                $queryBuilder = static::getQueryBuilderForTable($theTable);
+            }
+
             // Show all records except versioning placeholders
             $queryBuilder->getRestrictions()
                 ->removeAll()
@@ -382,9 +383,9 @@ class BackendUtility
     {
         $recordLocalization = false;
 
-        // Check if translations are stored in other table
-        if (isset($GLOBALS['TCA'][$table]['ctrl']['transForeignTable'])) {
-            $table = $GLOBALS['TCA'][$table]['ctrl']['transForeignTable'];
+        // Pages still stores translations in the pages_language_overlay table, all other tables store in themself
+        if ($table === 'pages') {
+            $table = 'pages_language_overlay';
         }
 
         if (self::isTableLocalizable($table)) {
@@ -392,10 +393,9 @@ class BackendUtility
 
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getQueryBuilderForTable($table);
-            $expressionBuilder = $queryBuilder->expr();
 
-            $constraint = $expressionBuilder->andX(
-                $expressionBuilder->eq(
+            $constraint = $queryBuilder->expr()->andX(
+                $queryBuilder->expr()->eq(
                     $tcaCtrl['languageField'],
                     $queryBuilder->createNamedParameter($language, \PDO::PARAM_INT)
                 ),
@@ -409,7 +409,9 @@ class BackendUtility
                 (string)$constraint,
                 '',
                 '',
-                1
+                1,
+                true,
+                $queryBuilder
             );
         }
         return $recordLocalization;
@@ -623,18 +625,15 @@ class BackendUtility
 
     /**
      * Gets the original translation pointer table.
-     * For e.g. pages_language_overlay this would be pages.
+     * That is now the same table, apart from pages_language_overlay
+     * where pages is the original.
      *
      * @param string $table Name of the table
      * @return string Pointer table (if any)
      */
     public static function getOriginalTranslationTable($table)
     {
-        if (!empty($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'])) {
-            $table = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'];
-        }
-
-        return $table;
+        return $table === 'pages_language_overlay' ? 'pages' : $table;
     }
 
     /**
@@ -752,24 +751,34 @@ class BackendUtility
                 }
             }
 
+            // Add palette fields e.g. for a valid RTE transformation
+            $paletteFieldList = [];
+            foreach ($fieldList as $fieldData) {
+                list($pFieldName, $pAltTitle, $pPalette) = GeneralUtility::trimExplode(';', $fieldData);
+                if ($pPalette
+                    && isset($GLOBALS['TCA'][$table]['palettes'][$pPalette])
+                    && is_array($GLOBALS['TCA'][$table]['palettes'][$pPalette])
+                    && isset($GLOBALS['TCA'][$table]['palettes'][$pPalette]['showitem'])
+                ) {
+                    $paletteFields = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['palettes'][$pPalette]['showitem'], true);
+                    foreach ($paletteFields as $paletteField) {
+                        if ($paletteField !== '--linebreak--') {
+                            $paletteFieldList[] = $paletteField;
+                        }
+                    }
+                }
+            }
+            $fieldList = array_merge($fieldList, $paletteFieldList);
+
             $altFieldList = [];
             // Traverse fields in types config and parse the configuration into a nice array:
             foreach ($fieldList as $k => $v) {
                 list($pFieldName, $pAltTitle, $pPalette) = GeneralUtility::trimExplode(';', $v);
-                $defaultExtras = '';
-                if (!empty($typesConf['columnsOverrides'][$pFieldName]['defaultExtras'])) {
-                    // Use defaultExtras from columnsOverrides if given
-                    $defaultExtras = $typesConf['columnsOverrides'][$pFieldName]['defaultExtras'];
-                } elseif (!empty($GLOBALS['TCA'][$table]['columns'][$pFieldName]['defaultExtras'])) {
-                    // Use defaultExtras from columns if given
-                    $defaultExtras = $GLOBALS['TCA'][$table]['columns'][$pFieldName]['defaultExtras'];
-                }
-                $specConfParts = self::getSpecConfParts($defaultExtras);
                 $fieldList[$k] = [
                     'field' => $pFieldName,
                     'title' => $pAltTitle,
                     'palette' => $pPalette,
-                    'spec' => $specConfParts,
+                    'spec' => [],
                     'origString' => $v
                 ];
                 if ($useFieldNameAsKey) {
@@ -864,9 +873,11 @@ class BackendUtility
      *
      * @param string $defaultExtrasString "defaultExtras" string from columns config
      * @return array
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function getSpecConfParts($defaultExtrasString)
     {
+        GeneralUtility::logDeprecatedFunction();
         $specConfParts = GeneralUtility::trimExplode(':', $defaultExtrasString, true);
         $reg = [];
         if (!empty($specConfParts)) {
@@ -892,9 +903,11 @@ class BackendUtility
      *
      * @param array $pArr Array of "[key] = [value]" strings to convert.
      * @return array
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function getSpecConfParametersFromArray($pArr)
     {
+        GeneralUtility::logDeprecatedFunction();
         $out = [];
         if (is_array($pArr)) {
             foreach ($pArr as $k => $v) {
@@ -933,12 +946,13 @@ class BackendUtility
      * @param string $table The table name
      * @param string $fieldName Optional fieldname passed to hook object
      * @param bool $WSOL If set, workspace overlay is applied to records. This is correct behaviour for all presentation and export, but NOT if you want a TRUE reflection of how things are in the live workspace.
-     * @param int $newRecordPidValue SPECIAL CASES: Use this, if the DataStructure may come from a parent record and the INPUT row doesn't have a uid yet (hence, the pid cannot be looked up). Then it is necessary to supply a PID value to search recursively in for the DS (used from TCEmain)
+     * @param int $newRecordPidValue SPECIAL CASES: Use this, if the DataStructure may come from a parent record and the INPUT row doesn't have a uid yet (hence, the pid cannot be looked up). Then it is necessary to supply a PID value to search recursively in for the DS (used from DataHandler)
      * @return mixed If array, the data structure was found and returned as an array. Otherwise (string) it is an error message.
-     * @todo: All those nasty details should be covered with tests, also it is very unfortunate the final $srcPointer is not exposed
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9. This is now integrated as FlexFormTools->getDataStructureIdentifier()
      */
     public static function getFlexFormDS($conf, $row, $table, $fieldName = '', $WSOL = true, $newRecordPidValue = 0)
     {
+        GeneralUtility::logDeprecatedFunction();
         // Get pointer field etc from TCA-config:
         $ds_pointerField = $conf['ds_pointerField'];
         $ds_array = $conf['ds'];
@@ -977,7 +991,7 @@ class BackendUtility
                 $srcPointer = 'default';
             }
             // Get Data Source: Detect if it's a file reference and in that case read the file and parse as XML. Otherwise the value is expected to be XML.
-            if (substr($ds_array[$srcPointer], 0, 5) == 'FILE:') {
+            if (substr($ds_array[$srcPointer], 0, 5) === 'FILE:') {
                 $file = GeneralUtility::getFileAbsFileName(substr($ds_array[$srcPointer], 5));
                 if ($file && @is_file($file)) {
                     $dataStructArray = GeneralUtility::xml2array(file_get_contents($file));
@@ -1083,6 +1097,8 @@ class BackendUtility
             $dataStructArray = 'No proper configuration!';
         }
         // Hook for post-processing the Flexform DS. Introduces the possibility to configure Flexforms via TSConfig
+        // This hook isn't called anymore from within the core, the whole method is deprecated.
+        // There are alternative hooks, see FlexFormTools->getDataStructureIdentifier() and ->parseDataStructureByIdentifier()
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['getFlexFormDSClass'])) {
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['getFlexFormDSClass'] as $classRef) {
                 $hookObj = GeneralUtility::getUserObj($classRef);
@@ -1182,7 +1198,7 @@ class BackendUtility
                     $includeTsConfigFileList = GeneralUtility::trimExplode(',', $v['tsconfig_includes'], true);
                     // Traversing list
                     foreach ($includeTsConfigFileList as $key => $includeTsConfigFile) {
-                        if (StringUtility::beginsWith($includeTsConfigFile, 'EXT:')) {
+                        if (strpos($includeTsConfigFile, 'EXT:') === 0) {
                             list($includeTsConfigFileExtensionKey, $includeTsConfigFilename) = explode(
                                 '/',
                                 substr($includeTsConfigFile, 4),
@@ -1385,7 +1401,7 @@ class BackendUtility
             foreach ($groups as $uid => $row) {
                 $groupN = $uid;
                 $set = 0;
-                if (ArrayUtility::inArray($groupArray, $uid)) {
+                if (in_array($uid, $groupArray, false)) {
                     $groupN = $row['title'];
                     $set = 1;
                 }
@@ -1464,7 +1480,7 @@ class BackendUtility
      * Returns the "age" in minutes / hours / days / years of the number of $seconds inputted.
      *
      * @param int $seconds Seconds could be the difference of a certain timestamp and time()
-     * @param string $labels Labels should be something like ' min| hrs| days| yrs| min| hour| day| year'. This value is typically delivered by this function call: $GLOBALS["LANG"]->sL("LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears")
+     * @param string $labels Labels should be something like ' min| hrs| days| yrs| min| hour| day| year'. This value is typically delivered by this function call: $GLOBALS["LANG"]->sL("LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears")
      * @return string Formatted time
      */
     public static function calcAge($seconds, $labels = ' min| hrs| days| yrs| min| hour| day| year')
@@ -1502,7 +1518,7 @@ class BackendUtility
         if (!$tstamp) {
             return '';
         }
-        $label = static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears');
+        $label = static::getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears');
         $age = ' (' . self::calcAge($prefix * ($GLOBALS['EXEC_TIME'] - $tstamp), $label) . ')';
         return ($date === 'date' ? self::date($tstamp) : self::datetime($tstamp)) . $age;
     }
@@ -1637,7 +1653,7 @@ class BackendUtility
                 if ($fileObject->isMissing()) {
                     $thumbData .= '<span class="label label-danger">'
                         . htmlspecialchars(
-                            static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing')
+                            static::getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.file_missing')
                         )
                         . '</span>&nbsp;' . htmlspecialchars($fileObject->getName()) . '<br />';
                     continue;
@@ -1699,19 +1715,19 @@ class BackendUtility
                         }
                         if ($fileObject->isMissing()) {
                             $thumbData .= '<span class="label label-danger">'
-                                . htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing'))
+                                . htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.file_missing'))
                                 . '</span>&nbsp;' . htmlspecialchars($fileObject->getName()) . '<br />';
                             continue;
                         }
                     } catch (ResourceDoesNotExistException $exception) {
                         $thumbData .= '<span class="label label-danger">'
-                            . htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing'))
+                            . htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.file_missing'))
                             . '</span>&nbsp;' . htmlspecialchars($fileName) . '<br />';
                         continue;
                     }
 
                     $fileExtension = $fileObject->getExtension();
-                    if ($fileExtension == 'ttf'
+                    if ($fileExtension === 'ttf'
                         || GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileExtension)
                     ) {
                         $imageUrl = $fileObject->process(
@@ -1814,7 +1830,7 @@ class BackendUtility
             $parts[] = rtrim($lang->sL($GLOBALS['TCA']['pages']['columns']['nav_hide']['label']), ':');
         }
         if ($row['hidden']) {
-            $parts[] = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.hidden');
+            $parts[] = $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.hidden');
         }
         if ($row['starttime']) {
             $parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['starttime']['label'])
@@ -1868,14 +1884,14 @@ class BackendUtility
      */
     public static function getRecordIconAltText($row, $table = 'pages')
     {
-        if ($table == 'pages') {
+        if ($table === 'pages') {
             $out = self::titleAttribForPages($row, '', 0);
         } else {
             $out = !empty(trim($GLOBALS['TCA'][$table]['ctrl']['descriptionColumn'])) ? $row[$GLOBALS['TCA'][$table]['ctrl']['descriptionColumn']] . ' ' : '';
             $ctrl = $GLOBALS['TCA'][$table]['ctrl']['enablecolumns'];
             // Uid is added
             $out .= 'id=' . $row['uid'];
-            if ($table == 'pages' && $row['alias']) {
+            if ($table === 'pages' && $row['alias']) {
                 $out .= ' / ' . $row['alias'];
             }
             if (static::isTableWorkspaceEnabled($table) && $row['pid'] < 0) {
@@ -1903,15 +1919,15 @@ class BackendUtility
             // Hidden
             $lang = static::getLanguageService();
             if ($ctrl['disabled']) {
-                $out .= $row[$ctrl['disabled']] ? ' - ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.hidden') : '';
+                $out .= $row[$ctrl['disabled']] ? ' - ' . $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.hidden') : '';
             }
             if ($ctrl['starttime']) {
                 if ($row[$ctrl['starttime']] > $GLOBALS['EXEC_TIME']) {
-                    $out .= ' - ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.starttime') . ':' . self::date($row[$ctrl['starttime']]) . ' (' . self::daysUntil($row[$ctrl['starttime']]) . ' ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.days') . ')';
+                    $out .= ' - ' . $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.starttime') . ':' . self::date($row[$ctrl['starttime']]) . ' (' . self::daysUntil($row[$ctrl['starttime']]) . ' ' . $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.days') . ')';
                 }
             }
             if ($row[$ctrl['endtime']]) {
-                $out .= ' - ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.endtime') . ': ' . self::date($row[$ctrl['endtime']]) . ' (' . self::daysUntil($row[$ctrl['endtime']]) . ' ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.days') . ')';
+                $out .= ' - ' . $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.endtime') . ': ' . self::date($row[$ctrl['endtime']]) . ' (' . self::daysUntil($row[$ctrl['endtime']]) . ' ' . $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.days') . ')';
             }
         }
         return htmlspecialchars($out);
@@ -2071,7 +2087,7 @@ class BackendUtility
             $l10n_mode = isset($GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode'])
                 ? $GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode']
                 : '';
-            if ($l10n_mode === 'exclude' || ($l10n_mode === 'mergeIfNotBlank' && trim($row[$field]) === '')) {
+            if ($l10n_mode === 'exclude') {
                 $row[$field] = $originalRow[$field];
             }
         }
@@ -2188,7 +2204,7 @@ class BackendUtility
     public static function getNoRecordTitle($prep = false)
     {
         $noTitle = '[' .
-            htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title'))
+            htmlspecialchars(static::getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.no_title'))
             . ']';
         if ($prep) {
             $noTitle = '<em>' . $noTitle . '</em>';
@@ -2503,7 +2519,7 @@ class BackendUtility
                 break;
             case 'check':
                 if (!is_array($theColConf['items']) || count($theColConf['items']) === 1) {
-                    $l = $value ? $lang->sL('LLL:EXT:lang/locallang_common.xlf:yes') : $lang->sL('LLL:EXT:lang/locallang_common.xlf:no');
+                    $l = $value ? $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:yes') : $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:no');
                 } else {
                     $lA = [];
                     foreach ($theColConf['items'] as $key => $val) {
@@ -2537,7 +2553,7 @@ class BackendUtility
                                 $ageSuffix = ' (' . ($GLOBALS['EXEC_TIME'] - $value > 0 ? '-' : '')
                                     . self::calcAge(
                                         abs(($GLOBALS['EXEC_TIME'] - $value)),
-                                        $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
+                                        $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears')
                                     )
                                     . ')';
                             }
@@ -2635,7 +2651,7 @@ class BackendUtility
             if (is_array($GLOBALS['TCA'][$table])) {
                 if ($fN == $GLOBALS['TCA'][$table]['ctrl']['tstamp'] || $fN == $GLOBALS['TCA'][$table]['ctrl']['crdate']) {
                     $fVnew = self::datetime($fV);
-                } elseif ($fN == 'pid') {
+                } elseif ($fN === 'pid') {
                     // Fetches the path with no regard to the users permissions to select pages.
                     $fVnew = self::getRecordPath($fV, '1=1', 20);
                 } else {
@@ -2724,7 +2740,7 @@ class BackendUtility
                         case 'string':
 
                         case 'short':
-                            $formEl = '<input type="text" name="' . $dataPrefix . '[' . $fname . ']" value="' . $params[$fname] . '"' . static::getDocumentTemplate()->formWidth(($config[0] == 'short' ? 24 : 48)) . ' />';
+                            $formEl = '<input type="text" name="' . $dataPrefix . '[' . $fname . ']" value="' . $params[$fname] . '"' . static::getDocumentTemplate()->formWidth(($config[0] === 'short' ? 24 : 48)) . ' />';
                             break;
                         case 'check':
                             $formEl = '<input type="hidden" name="' . $dataPrefix . '[' . $fname . ']" value="0" /><input type="checkbox" name="' . $dataPrefix . '[' . $fname . ']" value="1"' . ($params[$fname] ? ' checked="checked"' : '') . ' />';
@@ -3077,7 +3093,6 @@ class BackendUtility
         $urlParameters = [
             'prErr' => 1,
             'uPT' => 1,
-            'vC' => static::getBackendUserAuthentication()->veriCode()
         ];
         $url = self::getModuleUrl('tce_db', $urlParameters) . $parameters . '&redirect=';
         if ((int)$redirectUrl === -1) {
@@ -3162,13 +3177,7 @@ class BackendUtility
         // Checks alternate domains
         if (!empty($rootLine)) {
             $urlParts = parse_url($domain);
-            /** @var PageRepository $sysPage */
-            $sysPage = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
-            $page = (array)$sysPage->getPage($pageId);
-            $protocol = 'http';
-            if ($page['url_scheme'] == HttpUtility::SCHEME_HTTPS || $page['url_scheme'] == 0 && GeneralUtility::getIndpEnv('TYPO3_SSL')) {
-                $protocol = 'https';
-            }
+            $protocol = GeneralUtility::getIndpEnv('TYPO3_SSL') ? 'https' : 'http';
             $previewDomainConfig = static::getBackendUserAuthentication()->getTSConfig(
                 'TCEMAIN.previewDomain',
                 self::getPagesTSconfig($pageId)
@@ -3259,7 +3268,7 @@ class BackendUtility
             return '
 
 				<!-- Function Menu of module -->
-				<select name="' . $elementName . '" onchange="' . htmlspecialchars($onChange) . '">
+				<select class="form-control" name="' . $elementName . '" onchange="' . htmlspecialchars($onChange) . '">
 					' . implode('
 					', $options) . '
 				</select>
@@ -3511,6 +3520,13 @@ class BackendUtility
 								if (top && top.TYPO3.ModuleMenu && top.TYPO3.ModuleMenu.App) {
 									top.TYPO3.ModuleMenu.App.refreshMenu();
 								}';
+                        break;
+                    case 'updateTopbar':
+                        $signals[] = '
+								if (top && top.TYPO3.Backend && top.TYPO3.Backend.Topbar) {
+									top.TYPO3.Backend.Topbar.refresh();
+								}';
+                        break;
                 }
             }
         }
@@ -3724,8 +3740,13 @@ class BackendUtility
      */
     public static function isRecordLocked($table, $uid)
     {
-        if (!is_array($GLOBALS['LOCKED_RECORDS'])) {
-            $GLOBALS['LOCKED_RECORDS'] = [];
+        $runtimeCache = self::getRuntimeCache();
+        $cacheId = 'backend-recordLocked-' . md5($table . '_' . $uid);
+        $recordLockedCache = $runtimeCache->get($cacheId);
+        if ($recordLockedCache !== false) {
+            $lockedRecords = $recordLockedCache;
+        } else {
+            $lockedRecords = [];
 
             $queryBuilder = static::getQueryBuilderForTable('sys_lockedrecords');
             $result = $queryBuilder
@@ -3749,6 +3770,7 @@ class BackendUtility
                 )
                 ->execute();
 
+            $lang = static::getLanguageService();
             while ($row = $result->fetch()) {
                 // Get the type of the user that locked this record:
                 if ($row['userid']) {
@@ -3758,38 +3780,39 @@ class BackendUtility
                 } else {
                     $userTypeLabel = 'user';
                 }
-                $lang = static::getLanguageService();
-                $userType = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.' . $userTypeLabel);
+                $userType = $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.' . $userTypeLabel);
                 // Get the username (if available):
                 if ($row['username']) {
                     $userName = $row['username'];
                 } else {
-                    $userName = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.unknownUser');
+                    $userName = $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.unknownUser');
                 }
-                $GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']] = $row;
-                $GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']]['msg'] = sprintf(
-                    $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser'),
+                $lockedRecords[$row['record_table'] . ':' . $row['record_uid']] = $row;
+                $lockedRecords[$row['record_table'] . ':' . $row['record_uid']]['msg'] = sprintf(
+                    $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.lockedRecordUser'),
                     $userType,
                     $userName,
                     self::calcAge(
                         $GLOBALS['EXEC_TIME'] - $row['tstamp'],
-                        $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
+                        $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears')
                     )
                 );
-                if ($row['record_pid'] && !isset($GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_pid']])) {
-                    $GLOBALS['LOCKED_RECORDS']['pages:' . $row['record_pid']]['msg'] = sprintf(
-                        $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser_content'),
+                if ($row['record_pid'] && !isset($lockedRecords[$row['record_table'] . ':' . $row['record_pid']])) {
+                    $lockedRecords['pages:' . $row['record_pid']]['msg'] = sprintf(
+                        $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.lockedRecordUser_content'),
                         $userType,
                         $userName,
                         self::calcAge(
                             $GLOBALS['EXEC_TIME'] - $row['tstamp'],
-                            $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
+                            $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears')
                         )
                     );
                 }
             }
+            $runtimeCache->set($cacheId, $lockedRecords);
         }
-        return $GLOBALS['LOCKED_RECORDS'][$table . ':' . $uid];
+
+        return $lockedRecords[$table . ':' . $uid];
     }
 
     /**
@@ -3949,13 +3972,29 @@ class BackendUtility
      */
     public static function firstDomainRecord($rootLine)
     {
-        $expressionBuilder = $queryBuilder = static::getQueryBuilderForTable('sys_domain')->expr();
-        $constraint = $expressionBuilder->andX(
-            $expressionBuilder->eq('redirectTo', $expressionBuilder->literal('')),
-            $expressionBuilder->eq('hidden', 0)
+        $queryBuilder = static::getQueryBuilderForTable('sys_domain');
+        $constraint = $queryBuilder->expr()->andX(
+            $queryBuilder->expr()->eq(
+                'redirectTo',
+                $queryBuilder->createNamedParameter('', \PDO::PARAM_STR)
+            ),
+            $queryBuilder->expr()->eq(
+                'hidden',
+                $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
+            )
         );
         foreach ($rootLine as $row) {
-            $dRec = self::getRecordsByField('sys_domain', 'pid', $row['uid'], (string)$constraint, '', 'sorting');
+            $dRec = self::getRecordsByField(
+                'sys_domain',
+                'pid',
+                $row['uid'],
+                (string)$constraint,
+                '',
+                'sorting',
+                '',
+                true,
+                $queryBuilder
+            );
             if (is_array($dRec)) {
                 $dRecord = reset($dRec);
                 return rtrim($dRecord['domainName'], '/');
@@ -4022,9 +4061,11 @@ class BackendUtility
      * @param string $type Type value of the current record (like from CType of tt_content)
      * @return array Array with the configuration for the RTE
      * @internal
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9.
      */
     public static function RTEsetup($RTEprop, $table, $field, $type = '')
     {
+        GeneralUtility::logDeprecatedFunction();
         $thisConfig = is_array($RTEprop['default.']) ? $RTEprop['default.'] : [];
         $thisFieldConf = $RTEprop['config.'][$table . '.'][$field . '.'];
         if (is_array($thisFieldConf)) {
@@ -4084,19 +4125,20 @@ class BackendUtility
      *
      * @param string $parserList softRef parser list
      * @return array|bool Array where the parser key is the key and the value is the parameter string, FALSE if no parsers were found
+     * @throws \InvalidArgumentException
      */
     public static function explodeSoftRefParserList($parserList)
     {
-        $runtimeCache = self::getRuntimeCache();
-        $cacheId = 'backend-softRefList-' . md5($parserList);
-        if ($runtimeCache->has($cacheId)) {
-            return $runtimeCache->get($cacheId);
+        // Return immediately if list is blank:
+        if ((string)$parserList === '') {
+            return false;
         }
 
-        // Return immediately if list is blank:
-        if ($parserList === '') {
-            $runtimeCache->set($cacheId, false);
-            return false;
+        $runtimeCache = self::getRuntimeCache();
+        $cacheId = 'backend-softRefList-' . md5($parserList);
+        $parserListCache = $runtimeCache->get($cacheId);
+        if ($parserListCache !== false) {
+            return $parserListCache;
         }
 
         // Otherwise parse the list:
@@ -4159,7 +4201,7 @@ class BackendUtility
                 );
 
             // Look up the path:
-            if ($table == '_FILE') {
+            if ($table === '_FILE') {
                 if (!GeneralUtility::isFirstPartOfStr($ref, PATH_site)) {
                     return '';
                 }
@@ -4198,10 +4240,10 @@ class BackendUtility
     public static function translationCount($table, $ref, $msg = '')
     {
         $count = null;
-        if (empty($GLOBALS['TCA'][$table]['ctrl']['transForeignTable'])
+        if ($table !== 'pages'
             && $GLOBALS['TCA'][$table]['ctrl']['languageField']
             && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
-            && !$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable']
+            && $table !== 'pages_language_overlay'
         ) {
             $queryBuilder = static::getQueryBuilderForTable($table);
             $queryBuilder->getRestrictions()
@@ -4585,6 +4627,9 @@ class BackendUtility
      */
     public static function getLiveVersionIdOfRecord($table, $uid)
     {
+        if (!ExtensionManagementUtility::isLoaded('version')) {
+            return null;
+        }
         $liveVersionId = null;
         if (self::isTableWorkspaceEnabled($table)) {
             $currentRecord = self::getRecord($table, $uid, 'pid,t3ver_oid');
@@ -4728,33 +4773,33 @@ class BackendUtility
 
         if (strlen($loginCopyrightWarrantyProvider) >= 2 && strlen($loginCopyrightWarrantyURL) >= 10) {
             $warrantyNote = sprintf(
-                $lang->sL('LLL:EXT:lang/locallang_login.xlf:warranty.by'),
+                $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:warranty.by'),
                 htmlspecialchars($loginCopyrightWarrantyProvider),
                 '<a href="' . htmlspecialchars($loginCopyrightWarrantyURL) . '" target="_blank">',
                 '</a>'
             );
         } else {
             $warrantyNote = sprintf(
-                $lang->sL('LLL:EXT:lang/locallang_login.xlf:no.warranty'),
+                $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:no.warranty'),
                 '<a href="' . TYPO3_URL_LICENSE . '" target="_blank">',
                 '</a>'
             );
         }
         $cNotice = '<a href="' . TYPO3_URL_GENERAL . '" target="_blank">' .
-            $lang->sL('LLL:EXT:lang/locallang_login.xlf:typo3.cms') . '</a>. ' .
-            $lang->sL('LLL:EXT:lang/locallang_login.xlf:copyright') . ' &copy; '
+            $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:typo3.cms') . '</a>. ' .
+            $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:copyright') . ' &copy; '
             . htmlspecialchars(TYPO3_copyright_year) . ' Kasper Sk&aring;rh&oslash;j. ' .
-            $lang->sL('LLL:EXT:lang/locallang_login.xlf:extension.copyright') . ' ' .
+            $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:extension.copyright') . ' ' .
             sprintf(
-                $lang->sL('LLL:EXT:lang/locallang_login.xlf:details.link'),
+                $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:details.link'),
                 ('<a href="' . TYPO3_URL_GENERAL . '" target="_blank">' . TYPO3_URL_GENERAL . '</a>')
             ) . ' ' .
             strip_tags($warrantyNote, '<a>') . ' ' .
             sprintf(
-                $lang->sL('LLL:EXT:lang/locallang_login.xlf:free.software'),
+                $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:free.software'),
                 ('<a href="' . TYPO3_URL_LICENSE . '" target="_blank">'),
                 '</a> ')
-            . $lang->sL('LLL:EXT:lang/locallang_login.xlf:keep.notice');
+            . $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_login.xlf:keep.notice');
         return $cNotice;
     }
 

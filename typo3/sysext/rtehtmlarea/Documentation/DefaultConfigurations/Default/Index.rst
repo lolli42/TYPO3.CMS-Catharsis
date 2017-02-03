@@ -50,17 +50,6 @@ We assume that CSS Styled Content is used.
 
    overruleMode = ts_css
 
-DO NOT CONVERT BR TAGS INTO LINEBREAKS
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-br tags in the content are assumed to be intentional.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   dontConvBRtoParagraph = 1
-
-
 TAGS ALLOWED OUTSIDE P & DIV
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -95,8 +84,8 @@ Make sure we can set rules on any tag listed in allowTags.
 
    denyTags >
 
-ALLOWED P & DIV ATTRIBUTES
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+ALLOWED P ATTRIBUTES
+^^^^^^^^^^^^^^^^^^^^
 
 Attributes class and align are always preserved
 
@@ -107,14 +96,6 @@ This is a list of additional attributes to keep
 ::
 
    keepPDIVattribs = id, title, dir, lang, xml:lang, itemscope, itemtype, itemprop
-
-ALLOW TO WRITE ABOUT HTML
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   dontUndoHSC_db = 1
-   dontHSC_rte = 1
 
 CONTENT TO DATABASE
 ^^^^^^^^^^^^^^^^^^^
@@ -141,16 +122,6 @@ Make sure we can set rules on any tag listed in allowTags.
 ::
 
    denyTags >
-
-AVOID CONTENT BEING HSC'ed TWICE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-::
-
-   htmlSpecialChars = 0
-
-::
-
-   tags {
 
 REMOVE IMG TAGS
 ^^^^^^^^^^^^^^^
@@ -231,47 +202,3 @@ However, we want to keep xml:lang attribute on most tags and tags from the defau
 
    noAttrib = br
 
-::
-
-   exitHTMLparser_db = 1
-   exitHTMLparser_db {
-
-KEEP ALL TAGS
-^^^^^^^^^^^^^
-
-Unwanted tags were removed on entry.
-
-Without this rule, the parser will remove all tags! Presumably, this rule will be more efficient than repeating the allowTags rule
-
-::
-
-   keepNonMatchedTags = 1
-
-AVOID CONTENT BEING HSC'ed TWICE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   htmlSpecialChars = 0
-
-Use same RTE processing rules in FE
-
-::
-
-   RTE.default.FE.proc < RTE.default.proc
-
-RTE processing rules for bodytext column of tt\_content table
-
-Erase settings from other extensions
-
-::
-
-   RTE.config.tt_content.bodytext >
-
-Make sure we use ts\_css transformation
-
-::
-
-   RTE.config.tt_content.bodytext.proc.overruleMode = ts_css
-   RTE.config.tt_content.bodytext.types.text.proc.overruleMode = ts_css
-   RTE.config.tt_content.bodytext.types.textpic.proc.overruleMode = ts_css

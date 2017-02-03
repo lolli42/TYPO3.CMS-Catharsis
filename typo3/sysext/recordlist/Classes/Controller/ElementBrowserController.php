@@ -71,7 +71,7 @@ class ElementBrowserController
      */
     protected function init()
     {
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_browse_links.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_browse_links.xlf');
 
         $this->mode = GeneralUtility::_GP('mode');
     }
@@ -88,7 +88,7 @@ class ElementBrowserController
     {
         // Fallback for old calls, which use mode "wizard" or "rte" for link selection
         if ($this->mode === 'wizard' || $this->mode === 'rte') {
-            return $response->withStatus(303)->withHeader('Location', BackendUtility::getModuleUrl('wizard_link', $_GET, false, true));
+            return $response->withStatus(303)->withHeader('Location', BackendUtility::getModuleUrl('wizard_link', $_GET));
         }
 
         $response->getBody()->write($this->main());

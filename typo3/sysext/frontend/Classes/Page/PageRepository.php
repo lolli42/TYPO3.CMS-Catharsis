@@ -75,11 +75,6 @@ class PageRepository
     public $versioningPreview = false;
 
     /**
-     * @var string
-     */
-    public $versioningPreview_where_hid_del = '';
-
-    /**
      * Workspace ID for preview
      *
      * @var int
@@ -531,7 +526,7 @@ class PageRepository
      * in records from the same table)
      *
      * @param string $table Table name
-     * @param array $row Record to overlay. Must containt uid, pid and $table]['ctrl']['languageField']
+     * @param array $row Record to overlay. Must contain uid, pid and $table]['ctrl']['languageField']
      * @param int $sys_language_content Pointer to the sys_language uid for content on the site.
      * @param string $OLmode Overlay mode. If "hideNonTranslated" then records without translation will not be returned  un-translated but unset (and return value is FALSE)
      * @throws \UnexpectedValueException
@@ -552,7 +547,7 @@ class PageRepository
             if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']) {
                 // Return record for ALL languages untouched
                 // TODO: Fix call stack to prevent this situation in the first place
-                if (!$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'] && (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] !== -1) {
+                if ($table !== 'pages_language_overlay' && (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] !== -1) {
                     // Will not be able to work with other tables (Just didn't implement it yet;
                     // Requires a scan over all tables [ctrl] part for first FIND the table that
                     // carries localization information for this table (which could even be more
@@ -644,7 +639,7 @@ class PageRepository
 
     /**
      * Returns an array with page rows for subpages of a certain page ID. This is used for menus in the frontend.
-     * If there are mount points in overlay mode the _MP_PARAM field is set to the corret MPvar.
+     * If there are mount points in overlay mode the _MP_PARAM field is set to the correct MPvar.
      *
      * If the $pageId being input does in itself require MPvars to define a correct
      * rootline these must be handled externally to this function.
@@ -685,7 +680,7 @@ class PageRepository
      * Internal method used by getMenu() and getMenuForPages()
      * Returns an array with page rows for subpages with pid is in $pageIds or uid is in $pageIds, depending on $parentPages
      * This is used for menus. If there are mount points in overlay mode
-     * the _MP_PARAM field is set to the corret MPvar.
+     * the _MP_PARAM field is set to the correct MPvar.
      *
      * If the $pageIds being input does in itself require MPvars to define a correct
      * rootline these must be handled externally to this function.
@@ -695,7 +690,7 @@ class PageRepository
      * @param string $sortField The field to sort by. Default is "sorting
      * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
      * @param bool $checkShortcuts Check if shortcuts exist, checks by default
-     * @param bool $parentPages Whether the uid list is meant as list of parent pages or the page itself TRUE means id list is checked agains pid field
+     * @param bool $parentPages Whether the uid list is meant as list of parent pages or the page itself TRUE means id list is checked against pid field
      * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlayed localized fields, if any)
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getPageShortcut(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::makeMenu()
      * @see \TYPO3\CMS\WizardCrpages\Controller\CreatePagesWizardModuleFunctionController, \TYPO3\CMS\WizardSortpages\View\SortPagesWizardModuleFunction
@@ -720,7 +715,10 @@ class PageRepository
             );
 
         if (!empty($sortField)) {
-            $res->orderBy($sortField);
+            $orderBy = QueryHelper::parseOrderBy($sortField);
+            foreach ($orderBy as $order) {
+                $res->orderBy(...$order);
+            }
         }
         $result = $res->execute();
 
@@ -1455,7 +1453,7 @@ class PageRepository
         // If the field is NULL, then OK
         $orChecks[] = $expressionBuilder->isNull($field);
         // If the field contains zero, then OK
-        $orChecks[] = $expressionBuilder->eq($field, 0);
+        $orChecks[] = $expressionBuilder->eq($field, $expressionBuilder->literal('0'));
         foreach ($memberGroups as $value) {
             $orChecks[] = $expressionBuilder->inSet($field, $expressionBuilder->literal($value));
         }
@@ -1493,7 +1491,6 @@ class PageRepository
         if ($this->versioningPreview && is_array($rr) && (int)$rr['pid'] === -1 && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
             $oid = 0;
             $wsid = 0;
-            // Have to hardcode it for "pages" table since TCA is not loaded at this moment!
             // Check values for t3ver_oid and t3ver_wsid:
             if (isset($rr['t3ver_oid']) && isset($rr['t3ver_wsid'])) {
                 // If "t3ver_oid" is already a field, just set this:
@@ -1569,8 +1566,7 @@ class PageRepository
                     $wsAlt['pid'] = $row['pid'];
                     // For versions of single elements or page+content, preserve online UID and PID
                     // (this will produce true "overlay" of element _content_, not any references)
-                    // For page+content the "_ORIG_uid" should actually be used as PID for selection
-                    // of tables with "versioning_followPages" enabled.
+                    // For page+content the "_ORIG_uid" should actually be used as PID for selection.
                     $wsAlt['_ORIG_uid'] = $wsAlt['uid'];
                     $wsAlt['uid'] = $row['uid'];
                     // Translate page alias as well so links are pointing to the _online_ page:
@@ -1820,7 +1816,6 @@ class PageRepository
             $ws = $this->workspaceCache[$wsid];
         } else {
             if ($wsid > 0) {
-                // No $GLOBALS['TCA'] yet!
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                     ->getQueryBuilderForTable('sys_workspace');
                 $queryBuilder->getRestrictions()->removeAll();
@@ -1884,8 +1879,8 @@ class PageRepository
             $localizedId = $element['_PAGES_OVERLAY_UID'];
         }
 
-        if (!empty($GLOBALS['TCA'][$tableName]['ctrl']['transForeignTable'])) {
-            $tableName = $GLOBALS['TCA'][$tableName]['ctrl']['transForeignTable'];
+        if ($tableName === 'pages') {
+            $tableName = 'pages_language_overlay';
         }
 
         $isTableLocalizable = (
@@ -1938,17 +1933,6 @@ class PageRepository
 
         if ($l10n_mode === 'exclude') {
             $shouldFieldBeOverlaid = false;
-        } elseif ($l10n_mode === 'mergeIfNotBlank') {
-            $checkValue = $value;
-
-            // 0 values are considered blank when coming from a group field
-            if (empty($value) && $GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] === 'group') {
-                $checkValue = '';
-            }
-
-            if ($checkValue === [] || !is_array($checkValue) && trim($checkValue) === '') {
-                $shouldFieldBeOverlaid = false;
-            }
         }
 
         return $shouldFieldBeOverlaid;

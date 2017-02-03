@@ -29,6 +29,7 @@ use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Class to render the shortcut menu
@@ -86,7 +87,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
     public function __construct()
     {
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_misc.xlf');
         // Needed to get the correct icons when reloading the menu after saving it
         $this->moduleLoader = GeneralUtility::makeInstance(ModuleLoader::class);
         $this->moduleLoader->load($GLOBALS['TBE_MODULES']);
@@ -105,11 +106,11 @@ class ShortcutToolbarItem implements ToolbarItemInterface
         $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar/ShortcutMenu');
         $languageService = $this->getLanguageService();
         $this->getPageRenderer()->addInlineLanguageLabelArray([
-            'bookmark.delete' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksDelete'),
-            'bookmark.confirmDelete' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.confirmBookmarksDelete'),
-            'bookmark.create' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.createBookmark'),
-            'bookmark.savedTitle' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarkSavedTitle'),
-            'bookmark.savedMessage' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarkSavedMessage'),
+            'bookmark.delete' => $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:toolbarItems.bookmarksDelete'),
+            'bookmark.confirmDelete' => $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:toolbarItems.confirmBookmarksDelete'),
+            'bookmark.create' => $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:toolbarItems.createBookmark'),
+            'bookmark.savedTitle' => $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:toolbarItems.bookmarkSavedTitle'),
+            'bookmark.savedMessage' => $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:toolbarItems.bookmarkSavedMessage'),
         ]);
     }
 
@@ -127,79 +128,37 @@ class ShortcutToolbarItem implements ToolbarItemInterface
      * Render shortcut icon
      *
      * @return string HTML
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\InvalidExtensionNameException
+     * @throws \InvalidArgumentException
      */
     public function getItem()
     {
-        $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks'));
-        $icon = $this->iconFactory->getIcon('apps-toolbar-menu-shortcut', Icon::SIZE_SMALL)->render('inline');
-        return '
-            <span class="toolbar-item-icon" title="' . $title . '">' . $icon . '</span>
-            <span class="toolbar-item-title">' . $title . '</span>
-            ';
+        return $this->getFluidTemplateObject('Item.html')->render();
     }
 
     /**
      * Render drop down content
      *
      * @return string HTML
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\InvalidExtensionNameException
+     * @throws \InvalidArgumentException
      */
     public function getDropDown()
     {
-        $languageService = $this->getLanguageService();
-        $shortcutEdit = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksEdit'));
-        $shortcutDelete = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksDelete'));
-        $editIcon = '<a href="#" class="dropdown-table-actions-btn dropdown-table-actions-btn-edit t3js-shortcut-edit" title="' . $shortcutEdit . '">'
-            . $this->iconFactory->getIcon('actions-open', Icon::SIZE_SMALL)->render('inline') . '</a>';
-        $deleteIcon = '<a href="#" class="dropdown-table-actions-btn dropdown-table-actions-btn-delete t3js-shortcut-delete" title="' . $shortcutDelete . '">'
-            . $this->iconFactory->getIcon('actions-delete', Icon::SIZE_SMALL)->render('inline') . '</a>';
-
         $shortcutMenu = [];
-        $shortcutMenu[] = '<h3 class="dropdown-headline">' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks')) . '</h3>';
-        $shortcutMenu[] = '<hr>';
-
-        // Render groups and the contained shortcuts
         $groups = $this->getGroupsFromShortcuts();
-        $groupCount = 0;
         arsort($groups, SORT_NUMERIC);
         foreach ($groups as $groupId => $groupLabel) {
-            $shortcuts = $this->getShortcutsByGroup($groupId);
-            if (count($shortcuts) > 0) {
-                if ($groupCount !== 0) {
-                    $shortcutMenu[] = '<hr>';
-                }
-                $groupCount++;
-                if ($groupLabel) {
-                    $shortcutMenu[] = '<h3 class="dropdown-headline" id="shortcut-group-' . (int)$groupId . '">' . $groupLabel . '</h3>';
-                }
-                $shortcutMenu[] = '<div class="dropdown-table" data-shortcutgroup="' . (int)$groupId . '">';
-                foreach ($shortcuts as $shortcut) {
-                    $shortcutItem  = '<div class="dropdown-table-row t3js-topbar-shortcut" data-shortcutid="' . (int)$shortcut['raw']['uid'] . '" data-shortcutgroup="' . (int)$groupId . '">';
-                    $shortcutItem .= '<div class="dropdown-table-column dropdown-table-icon">';
-                    $shortcutItem .= $shortcut['icon'];
-                    $shortcutItem .= '</div>';
-                    $shortcutItem .= '<div class="dropdown-table-column dropdown-table-title">';
-                    $shortcutItem .= '<a class="dropdown-table-title-ellipsis" href="#" onclick="' . htmlspecialchars($shortcut['action']) . ' return false;">';
-                    $shortcutItem .= htmlspecialchars($shortcut['label']);
-                    $shortcutItem .= '</a>';
-                    $shortcutItem .= '</div>';
-                    $shortcutItem .= '<div class="dropdown-table-column dropdown-table-actions">' . $editIcon . $deleteIcon . '</div>';
-                    $shortcutItem .= '</div>';
-                    $shortcutMenu[] = $shortcutItem;
-                }
-                $shortcutMenu[] = '</div>';
-            }
+            $shortcutMenu[] = [
+                'id' => (int)$groupId,
+                'title' => $groupLabel,
+                'shortcuts' => $this->getShortcutsByGroup($groupId)
+            ];
         }
 
-        $compiledShortcutMenu = implode(LF, $shortcutMenu);
-        if (count($shortcutMenu) === 2) {
-            // No shortcuts added yet, show a small help message how to add shortcuts
-            $title = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks'));
-            $icon = '<span title="' . $title . '">' . $this->iconFactory->getIcon('actions-system-shortcut-new', Icon::SIZE_SMALL)->render('inline') . '</span>';
-            $label = str_replace('%icon%', $icon, htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_misc.xlf:bookmarkDescription')));
-            $compiledShortcutMenu .= '<p>' . $label . '</p>';
-        }
-
-        return $compiledShortcutMenu;
+        $dropDownView = $this->getFluidTemplateObject('DropDown.html');
+        $dropDownView->assign('shortcutMenu', $shortcutMenu);
+        return $dropDownView->render();
     }
 
     /**
@@ -461,7 +420,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
             $groupId = (int)$groupId;
             $label = $groupLabel;
             if ($groupLabel == '1') {
-                $label = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_misc.xlf:bookmark_group_' . abs($groupId)));
+                $label = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:bookmark_group_' . abs($groupId)));
                 if (empty($label)) {
                     // Fallback label
                     $label = htmlspecialchars($languageService->getLL('bookmark_group')) . ' ' . abs($groupId);
@@ -469,13 +428,14 @@ class ShortcutToolbarItem implements ToolbarItemInterface
             }
             if ($groupId < 0) {
                 // Global group
-                $label = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_misc.xlf:bookmark_global')) . ': ' . (!empty($label) ? $label : abs($groupId));
+                $label = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:bookmark_global')) . ': ' . (!empty($label) ? $label : abs($groupId));
                 if ($groupId === self::SUPERGLOBAL_GROUP) {
                     $label = htmlspecialchars($languageService->getLL('bookmark_global')) . ': ' . htmlspecialchars($languageService->getLL('bookmark_all'));
                 }
             }
             $this->shortcutGroups[$groupId] = $label;
         }
+
         return $this->shortcutGroups;
     }
 
@@ -485,17 +445,18 @@ class ShortcutToolbarItem implements ToolbarItemInterface
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
      * @return ResponseInterface the full HTML for the form
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\InvalidExtensionNameException
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     public function editFormAction(ServerRequestInterface $request, ResponseInterface $response)
     {
-        $languageService = $this->getLanguageService();
         $parsedBody = $request->getParsedBody();
         $queryParams = $request->getQueryParams();
 
-        $selectedShortcutId = (int)(isset($parsedBody['shortcutId']) ? $parsedBody['shortcutId'] : $queryParams['shortcutId']);
-        $selectedShortcutGroupId = (int)(isset($parsedBody['shortcutGroup']) ? $parsedBody['shortcutGroup'] : $queryParams['shortcutGroup']);
+        $selectedShortcutId = (int)($parsedBody['shortcutId'] ?? $queryParams['shortcutId']);
+        $selectedShortcutGroupId = (int)($parsedBody['shortcutGroup'] ?? $queryParams['shortcutGroup']);
         $selectedShortcut = $this->getShortcutById($selectedShortcutId);
-
         $shortcutGroups = $this->shortcutGroups;
         if (!$this->getBackendUser()->isAdmin()) {
             foreach ($shortcutGroups as $groupId => $groupName) {
@@ -505,33 +466,14 @@ class ShortcutToolbarItem implements ToolbarItemInterface
             }
         }
 
-        // build the form
-        $content = '
-			<form class="shortcut-form" role="form" data-shortcutid="' . (int)$selectedShortcutId . '">
-                <h3 class="dropdown-headline">
-                    ' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksEdit')) . '
-                </h3>
-                <hr>
-				<div class="form-group">
-					<input type="text" class="form-control" name="shortcut-title" value="' . htmlspecialchars($selectedShortcut['label']) . '">
-				</div>';
-        $content .= '
-				<div class="form-group">
-					<select class="form-control" name="shortcut-group">';
-        foreach ($shortcutGroups as $shortcutGroupId => $shortcutGroupTitle) {
-            $content .= '<option value="' . (int)$shortcutGroupId . '"' . ($selectedShortcutGroupId == $shortcutGroupId ? ' selected="selected"' : '') . '>' . htmlspecialchars($shortcutGroupTitle) . '</option>';
-        }
-        $content .= '
-					</select>
-				</div>
-                <hr>
-				<input type="button" class="btn btn-default shortcut-form-cancel" value="Cancel">
-				<input type="button" class="btn btn-success shortcut-form-save" value="Save">
-			</form>';
+        $editFormView = $this->getFluidTemplateObject('EditForm.html');
+        $editFormView->assign('selectedShortcutId', $selectedShortcutId);
+        $editFormView->assign('selectedShortcutGroupId', $selectedShortcutGroupId);
+        $editFormView->assign('selectedShortcut', $selectedShortcut);
+        $editFormView->assign('shortcutGroups', $shortcutGroups);
 
-        $response->getBody()->write($content);
-        $response = $response->withHeader('Content-Type', 'text/html; charset=utf-8');
-        return $response;
+        $response->getBody()->write($editFormView->render());
+        return $response->withHeader('Content-Type', 'text/html; charset=utf-8');
     }
 
     /**
@@ -602,10 +544,10 @@ class ShortcutToolbarItem implements ToolbarItemInterface
                 $shortcut['table'] = key($queryParameters['edit']);
                 $shortcut['recordid'] = key($queryParameters['edit'][$shortcut['table']]);
                 $shortcut['pid'] = BackendUtility::getRecord($shortcut['table'], $shortcut['recordid'])['pid'];
-                if ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] == 'edit') {
+                if ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] === 'edit') {
                     $shortcut['type'] = 'edit';
                     $shortcutNamePrepend = htmlspecialchars($languageService->getLL('shortcut_edit'));
-                } elseif ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] == 'new') {
+                } elseif ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] === 'new') {
                     $shortcut['type'] = 'new';
                     $shortcutNamePrepend = htmlspecialchars($languageService->getLL('shortcut_create'));
                 }
@@ -660,6 +602,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
      * @param string $url
      * @param string $shortcutName
      * @return ResponseInterface
+     * @throws \InvalidArgumentException
      */
     protected function tryAddingTheShortcut(ResponseInterface $response, $url, $shortcutName)
     {
@@ -675,8 +618,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
         }
 
         $response->getBody()->write($shortcutCreated);
-        $response = $response->withHeader('Content-Type', 'text/html; charset=utf-8');
-        return $response;
+        return $response->withHeader('Content-Type', 'text/html; charset=utf-8');
     }
 
     /**
@@ -843,22 +785,21 @@ class ShortcutToolbarItem implements ToolbarItemInterface
      * @param array $row
      * @param array $shortcut
      * @return string Shortcut icon as img tag
+     * @throws \InvalidArgumentException
      */
     protected function getShortcutIcon($row, $shortcut)
     {
-        $languageService = $this->getLanguageService();
-        $titleAttribute = htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.shortcut'));
         switch ($row['module_name']) {
             case 'xMOD_alt_doc.php':
                 $table = $shortcut['table'];
                 $recordid = $shortcut['recordid'];
                 $icon = '';
-                if ($shortcut['type'] == 'edit') {
+                if ($shortcut['type'] === 'edit') {
                     // Creating the list of fields to include in the SQL query:
                     $selectFields = $this->fieldArray;
                     $selectFields[] = 'uid';
                     $selectFields[] = 'pid';
-                    if ($table == 'pages') {
+                    if ($table === 'pages') {
                         $selectFields[] = 'module';
                         $selectFields[] = 'extendToSubpages';
                         $selectFields[] = 'doktype';
@@ -893,16 +834,16 @@ class ShortcutToolbarItem implements ToolbarItemInterface
 
                     $row = $queryBuilder->execute()->fetch();
 
-                    $icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIconForRecord($table, (array)$row, Icon::SIZE_SMALL)->render() . '</span>';
-                } elseif ($shortcut['type'] == 'new') {
-                    $icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIconForRecord($table, [], Icon::SIZE_SMALL)->render() . '</span>';
+                    $icon = $this->iconFactory->getIconForRecord($table, (array)$row, Icon::SIZE_SMALL)->render();
+                } elseif ($shortcut['type'] === 'new') {
+                    $icon = $this->iconFactory->getIconForRecord($table, [], Icon::SIZE_SMALL)->render();
                 }
                 break;
             case 'file_edit':
-                $icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIcon('mimetypes-text-html', Icon::SIZE_SMALL)->render() . '</span>';
+                $icon = $this->iconFactory->getIcon('mimetypes-text-html', Icon::SIZE_SMALL)->render();
                 break;
             case 'wizard_rte':
-                $icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIcon('mimetypes-word', Icon::SIZE_SMALL)->render() . '</span>';
+                $icon = $this->iconFactory->getIcon('mimetypes-word', Icon::SIZE_SMALL)->render();
                 break;
             default:
                 $iconIdentifier = '';
@@ -916,8 +857,9 @@ class ShortcutToolbarItem implements ToolbarItemInterface
                 if (!$iconIdentifier) {
                     $iconIdentifier = 'empty-empty';
                 }
-                $icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIcon($iconIdentifier, Icon::SIZE_SMALL)->render() . '</span>';
+                $icon = $this->iconFactory->getIcon($iconIdentifier, Icon::SIZE_SMALL)->render();
         }
+
         return $icon;
     }
 
@@ -932,7 +874,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
     protected function getShortcutIconTitle($shortcutLabel, $moduleName, $parentModuleName = '')
     {
         $languageService = $this->getLanguageService();
-        if (substr($moduleName, 0, 5) == 'xMOD_') {
+        if (substr($moduleName, 0, 5) === 'xMOD_') {
             $title = substr($moduleName, 5);
         } else {
             list($mainModule, $subModule) = explode('_', $moduleName);
@@ -999,5 +941,28 @@ class ShortcutToolbarItem implements ToolbarItemInterface
     protected function getLanguageService()
     {
         return $GLOBALS['LANG'];
+    }
+
+    /**
+     * returns a new standalone view, shorthand function
+     *
+     * @param string $templateFilename
+     * @return StandaloneView
+     * @throws \TYPO3\CMS\Extbase\Mvc\Exception\InvalidExtensionNameException
+     * @throws \InvalidArgumentException
+     * @internal param string $templateFile
+     */
+    protected function getFluidTemplateObject(string $templateFilename)
+    {
+        /** @var StandaloneView $view */
+        $view = GeneralUtility::makeInstance(StandaloneView::class);
+        $view->setLayoutRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Layouts')]);
+        $view->setPartialRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Partials')]);
+        $view->setTemplateRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates')]);
+
+        $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/ShortcutToolbarItem/' . $templateFilename));
+
+        $view->getRequest()->setControllerExtensionName('Backend');
+        return $view;
     }
 }

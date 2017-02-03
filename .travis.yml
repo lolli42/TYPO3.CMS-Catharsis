@@ -16,9 +16,6 @@ addons:
   apt:
     packages:
       - parallel
-      - ack-grep
-      - nginx
-      - realpath
 
 cache:
   directories:
@@ -46,32 +43,27 @@ before_script:
   - echo "extension = memcached.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - composer install
-  - mkdir -p typo3temp/var/tests
   - export typo3DatabaseName="typo3"
   - export typo3DatabaseHost="localhost"
   - export typo3DatabaseUsername="root"
   - export typo3DatabasePassword=""
 
-before_install:
-    - export DISPLAY=:99.0
-    - sh -e /etc/init.d/xvfb start
-
 script:
   - >
     if [[ "$UNIT_TESTS" == "yes" ]]; then
-      ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+      ./bin/phpunit -c components/testing_framework/core/Build/UnitTests.xml
     fi
 
   - >
     if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
-      ./typo3/sysext/core/Build/Scripts/splitFunctionalTests.sh 10
-      parallel --jobs 4 -a <(seq 0 9) --gnu './bin/phpunit -c typo3/sysext/core/Build/FunctionalTests-Job-{}.xml'
+      ./components/testing_framework/core/Build/Scripts/splitFunctionalTests.sh 14
+      parallel --jobs 4 -a <(seq 0 13) --gnu './bin/phpunit -c components/testing_framework/core/Build/FunctionalTests-Job-{}.xml'
     fi
 
   - >
     if [[ "$JSUNIT_TESTS" == "yes" ]]; then
       cd Build && npm update -g npm && npm install && cd ..
-      ./Build/node_modules/karma/bin/karma start typo3/sysext/core/Build/Configuration/JSUnit/karma.conf.js --single-run
+      ./Build/node_modules/karma/bin/karma start components/testing_framework/core/Build/Configuration/JSUnit/karma.conf.js --single-run
     fi
 
   - >

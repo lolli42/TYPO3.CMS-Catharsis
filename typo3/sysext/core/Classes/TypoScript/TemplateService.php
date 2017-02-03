@@ -28,7 +28,6 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -78,11 +77,6 @@ class TemplateService
      * @var bool
      */
     public $matchAll = false;
-
-    /**
-     * @var bool
-     */
-    public $backend_info = false;
 
     /**
      * Externally set breakpoints (used by Backend Modules)
@@ -475,7 +469,8 @@ class TemplateService
     public function start($theRootLine)
     {
         if (is_array($theRootLine)) {
-            $setupData = '';
+            $constantsData = [];
+            $setupData = [];
             $cacheIdentifier = '';
             // Flag that indicates that the existing data in cache_pagesection
             // could be used (this is the case if $TSFE->all is set, and the
@@ -522,10 +517,15 @@ class TemplateService
             }
             if ($cacheIdentifier) {
                 // Get TypoScript setup array
-                $setupData = $this->getCacheEntry($cacheIdentifier);
+                $cachedData = $this->getCacheEntry($cacheIdentifier);
+                if (is_array($cachedData)) {
+                    $constantsData = $cachedData['constants'];
+                    $setupData = $cachedData['setup'];
+                }
             }
-            if (is_array($setupData) && !$this->forceTemplateParsing) {
-                // If TypoScript setup structure was cached we unserialize it here:
+            if (!empty($setupData) && !$this->forceTemplateParsing) {
+                // TypoScript constants + setup are found in the cache
+                $this->setup_constants = $constantsData;
                 $this->setup = $setupData;
                 if ($this->tt_track) {
                     $this->getTimeTracker()->setTSlogMessage('Using cached TS template data');
@@ -547,7 +547,7 @@ class TemplateService
                 ksort($cc);
                 $cacheIdentifier = md5(serialize($cc));
                 // This stores the data.
-                $this->setCacheEntry($cacheIdentifier, $this->setup, 'TS_TEMPLATE');
+                $this->setCacheEntry($cacheIdentifier, ['constants' => $this->setup_constants, 'setup' => $this->setup], 'TS_TEMPLATE');
                 if ($this->tt_track) {
                     $this->getTimeTracker()->setTSlogMessage('TS template size, serialized: ' . strlen(serialize($this->setup)) . ' bytes');
                 }
@@ -659,6 +659,20 @@ class TemplateService
                 }
             }
             $this->rootLine[] = $this->absoluteRootLine[$a];
+        }
+
+        // Hook into the default TypoScript to add custom typoscript logic
+        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['Core/TypoScript/TemplateService']['runThroughTemplatesPostProcessing'])) {
+            $hookParameters = [
+                'extensionStaticsProcessed' => &$this->extensionStaticsProcessed,
+                'isDefaultTypoScriptAdded'  => &$this->isDefaultTypoScriptAdded,
+                'absoluteRootLine' => &$this->absoluteRootLine,
+                'rootLine'         => &$this->rootLine,
+                'startTemplateUid' => $start_template_uid,
+            ];
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['Core/TypoScript/TemplateService']['runThroughTemplatesPostProcessing'] as $listener) {
+                GeneralUtility::callUserFunction($listener, $hookParameters, $this);
+            }
         }
 
         // Process extension static files if not done yet, but explicitly requested
@@ -888,7 +902,7 @@ class TemplateService
         }
         // If "Default (include before if root flag is set)" is set OR
         // "Always include before this template record" AND root-flag are set
-        if ($row['static_file_mode'] == 1 || $row['static_file_mode'] == 0 && substr($templateID, 0, 4) == 'sys_' && $row['root']) {
+        if ($row['static_file_mode'] == 1 || $row['static_file_mode'] == 0 && substr($templateID, 0, 4) === 'sys_' && $row['root']) {
             $this->addExtensionStatics($idList, $templateID, $pid, $row);
         }
         // Include Static Template Records after all other TypoScript has been included.
@@ -1093,10 +1107,8 @@ class TemplateService
         $this->parserErrors['config'] = $config->errors;
         // Transfer the TypoScript array from the parser object to the internal $this->setup array:
         $this->setup = $config->setup;
-        if ($this->backend_info) {
-            // Used for backend purposes only
-            $this->setup_constants = $constants->setup;
-        }
+        // Do the same for the constants
+        $this->setup_constants = $constants->setup;
         // ****************************************************************
         // Final processing of the $this->setup TypoScript Template array
         // Basically: This is unsetting/setting of certain reserved keys.
@@ -1110,7 +1122,7 @@ class TemplateService
         unset($this->setup['types']);
         if (is_array($this->setup)) {
             foreach ($this->setup as $key => $value) {
-                if ($value == 'PAGE') {
+                if ($value === 'PAGE') {
                     // Set the typeNum of the current page object:
                     if (isset($this->setup[$key . '.']['typeNum'])) {
                         $typeNum = $this->setup[$key . '.']['typeNum'];
@@ -1212,7 +1224,7 @@ class TemplateService
     protected function mergeConstantsFromIncludedTsConfigFiles($filesToInclude, $TSdataArray)
     {
         foreach ($filesToInclude as $key => $file) {
-            if (!StringUtility::beginsWith($file, 'EXT:')) {
+            if (strpos($file, 'EXT:') !== 0) {
                 continue;
             }
 
@@ -1246,8 +1258,8 @@ class TemplateService
     {
         if (is_array($setupArray)) {
             foreach ($setupArray as $key => $val) {
-                if ($prefix || !StringUtility::beginsWith($key, 'TSConstantEditor')) {
-                    // We don't want 'TSConstantEditor' in the flattend setup on the first level (190201)
+                if ($prefix || strpos($key, 'TSConstantEditor') !== 0) {
+                    // We don't want 'TSConstantEditor' in the flattened setup on the first level (190201)
                     if (is_array($val)) {
                         $this->flattenSetup($val, $prefix . $key);
                     } else {
@@ -1484,7 +1496,7 @@ class TemplateService
     public function removeQueryString($url)
     {
         GeneralUtility::logDeprecatedFunction();
-        if (substr($url, -1) == '?') {
+        if (substr($url, -1) === '?') {
             return substr($url, 0, -1);
         } else {
             return $url;
@@ -1644,7 +1656,7 @@ class TemplateService
             // Traverse rootpoints:
             foreach ($rootPoints as $p) {
                 $initMParray = [];
-                if ($p == 'root') {
+                if ($p === 'root') {
                     $p = $this->rootLine[0]['uid'];
                     if ($this->rootLine[0]['_MOUNT_OL'] && $this->rootLine[0]['_MP_PARAM']) {
                         $initMParray[] = $this->rootLine[0]['_MP_PARAM'];

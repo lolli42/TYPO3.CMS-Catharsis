@@ -27,7 +27,7 @@ use TYPO3\CMS\Extbase\Tests\Unit\Property\TypeConverter\Fixtures\DateTimeSubFixt
 /**
  * Test case
  */
-class DateTimeConverterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class DateTimeConverterTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var \TYPO3\CMS\Extbase\Property\TypeConverter\DateTimeConverter
@@ -46,7 +46,7 @@ class DateTimeConverterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     {
         $this->assertEquals(['string', 'integer', 'array'], $this->converter->getSupportedSourceTypes(), 'Source types do not match');
         $this->assertEquals('DateTime', $this->converter->getSupportedTargetType(), 'Target type does not match');
-        $this->assertEquals(1, $this->converter->getPriority(), 'Priority does not match');
+        $this->assertEquals(10, $this->converter->getPriority(), 'Priority does not match');
     }
 
     /** String to DateTime testcases  **/

@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\Resource\File;
 /**
  * TestCase for \TYPO3\CMS\Core\Imaging\IconFactory
  */
-class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
+class IconFactoryTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var \TYPO3\CMS\Core\Imaging\IconFactory
@@ -385,7 +385,7 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
     public function getIconForResourceWithOpenFolderReturnsOpenFolderIcon()
     {
         $folderObject = $this->getTestSubjectFolderObject('/test');
-        $result = $this->subject->getIconForResource($folderObject, Icon::SIZE_DEFAULT, null,  ['folder-open' => true])->render();
+        $result = $this->subject->getIconForResource($folderObject, Icon::SIZE_DEFAULT, null, ['folder-open' => true])->render();
         $this->assertContains('<span class="t3js-icon icon icon-size-default icon-state-default icon-apps-filetree-folder-opened" data-identifier="apps-filetree-folder-opened">', $result);
     }
 

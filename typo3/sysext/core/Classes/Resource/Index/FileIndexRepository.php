@@ -30,7 +30,7 @@ use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 /**
  * Repository Class as an abstraction layer to sys_file
  *
- * Every access to table sys_file_metadata which is not handled by TCEmain
+ * Every access to table sys_file_metadata which is not handled by DataHandler
  * has to use this Repository class.
  *
  * This is meant for FAL internal use only!.
@@ -268,12 +268,19 @@ class FileIndexRepository implements SingletonInterface
             );
 
         if (isset($fileName)) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->like(
-                    'name',
-                    $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards($fileName) . '%', \PDO::PARAM_STR)
-                )
-            );
+            $nameParts = str_getcsv($fileName, ' ');
+            foreach ($nameParts as $part) {
+                $part = trim($part);
+                if ($part !== '') {
+                    $queryBuilder->andWhere(
+                        $queryBuilder->expr()->like(
+                            'name',
+                            $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards($part) . '%',
+                                \PDO::PARAM_STR)
+                        )
+                    );
+                }
+            }
         }
 
         if (!$includeMissing) {

@@ -544,10 +544,6 @@ class Bootstrap
                 'TYPO3.Components.PageTree.ContextMenuDataProvider',
                 \TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class
             );
-            ExtensionManagementUtility::registerExtDirectComponent(
-                'TYPO3.ExtDirectStateProvider.ExtDirect',
-                \TYPO3\CMS\Backend\InterfaceState\ExtDirect\DataProvider::class
-            );
         }
         return $this;
     }
@@ -1012,19 +1008,14 @@ class Bootstrap
     /**
      * Initialize backend user object in globals
      *
+     * @param string $className usually \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class but can be used for CLI
      * @return Bootstrap
      * @internal This is not a public API method, do not use in own extensions
      */
-    public function initializeBackendUser()
+    public function initializeBackendUser($className = \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class)
     {
         /** @var $backendUser \TYPO3\CMS\Core\Authentication\BackendUserAuthentication */
-        $backendUser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
-        $backendUser->warningEmail = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
-        $backendUser->lockIP = $GLOBALS['TYPO3_CONF_VARS']['BE']['lockIP'];
-        $backendUser->sessionTimeout = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['sessionTimeout'];
-        if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) {
-            $backendUser->dontSetCookie = true;
-        }
+        $backendUser = GeneralUtility::makeInstance($className);
         // The global must be available very early, because methods below
         // might trigger code which relies on it. See: #45625
         $GLOBALS['BE_USER'] = $backendUser;

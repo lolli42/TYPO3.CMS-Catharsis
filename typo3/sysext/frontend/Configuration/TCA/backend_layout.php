@@ -49,7 +49,7 @@ return [
             ]
         ],
         'hidden' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.disable',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.disable',
             'exclude' => true,
             'config' => [
                 'type' => 'check',
@@ -64,7 +64,6 @@ return [
                 'internal_type' => 'file',
                 'allowed' => 'jpg,gif,png',
                 'uploadfolder' => 'uploads/media',
-                'show_thumbs' => true,
                 'size' => 1,
                 'maxitems' => 1
             ]
@@ -72,9 +71,15 @@ return [
     ],
     'types' => [
         '1' => [
-            'showitem' => 'title,icon,config,
-            --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.tabs.access, hidden,
-            --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.tabs.extended, description',
+            'showitem' => '
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                    title,icon,config,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                    hidden,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                    description,
+                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+            ',
         ],
     ]
 ];

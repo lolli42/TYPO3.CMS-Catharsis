@@ -247,7 +247,8 @@ define([
 		message += '<form>';
 		var i = 0;
 		$.each(data.updateComments, function(version, comment) {
-			message += '<h3><input type="radio" ' + (i == 0 ? 'checked="checked" ' : '') + 'name="version" value="' + version + '" /> ' + version + '</h3>';
+			comment = comment.replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br />$2');
+			message += '<h3><input type="radio" ' + (i === 0 ? 'checked="checked" ' : '') + 'name="version" value="' + version + '" /> ' + version + '</h3>';
 			message += '<div>' + comment + '</div>';
 			i++;
 		});
@@ -516,7 +517,7 @@ define([
 					]);
 					Modal.currentModal.on('shown.bs.modal', function() {
 						var $actionButton = Modal.currentModal.find('.t3js-dependencies');
-						top.TYPO3.jQuery('input[name=unlockDependencyIgnoreButton]').on('change', function() {
+						$('input[name=unlockDependencyIgnoreButton]').on('change', function() {
 							$actionButton.toggleClass('disabled', !$(this).prop('checked'));
 						});
 					});
@@ -755,7 +756,7 @@ define([
 				success: ExtensionManager.updateExtension
 			});
 		}).on('change', 'input[name=unlockDependencyIgnoreButton]', function() {
-			var $actionButton = TYPO3.jQuery('.t3js-dependencies');
+			var $actionButton = $('.t3js-dependencies');
 			$actionButton.toggleClass('disabled', !$(this).prop('checked'));
 		});
 

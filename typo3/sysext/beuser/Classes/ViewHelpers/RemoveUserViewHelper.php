@@ -73,7 +73,6 @@ class RemoveUserViewHelper extends AbstractViewHelper
 
         $urlParameters = [
             'cmd[be_users][' . $backendUser->getUid() . '][delete]' => 1,
-            'vC' => $beUser->veriCode(),
             'prErr' => 1,
             'uPT' => 1,
             'redirect' => GeneralUtility::getIndpEnv('REQUEST_URI')
@@ -81,10 +80,11 @@ class RemoveUserViewHelper extends AbstractViewHelper
         $url = BackendUtility::getModuleUrl('tce_db', $urlParameters);
 
         return '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($url) . '"'
+            . ' title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xlf:delete')) . '"'
             . ' data-severity="warning"'
-            . ' data-title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_alt_doc.xlf:label.confirm.delete_record.title')) . '"'
+            . ' data-title="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_alt_doc.xlf:label.confirm.delete_record.title')) . '"'
             . ' data-content="' . htmlspecialchars(LocalizationUtility::translate('confirm', 'beuser', [$backendUser->getUserName()])) . '" '
-            . ' data-button-close-text="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:cancel')) . '"'
+            . ' data-button-close-text="' . htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:cancel')) . '"'
             . '>' . $iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
     }
 }

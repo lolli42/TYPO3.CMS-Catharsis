@@ -385,10 +385,10 @@ class ExtendedFileUtility extends BasicFileUtility
             $flashMessage = GeneralUtility::makeInstance(
                 FlashMessage::class,
                 sprintf(
-                    $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileNotFound'),
+                    $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.description.fileNotFound'),
                     $cmds['data']
                 ),
-                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileNotFound'),
+                $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.header.fileNotFound'),
                 FlashMessage::ERROR,
                 true
             );
@@ -442,8 +442,8 @@ class ExtendedFileUtility extends BasicFileUtility
                     // render a message that the file has broken references
                     $flashMessage = GeneralUtility::makeInstance(
                         FlashMessage::class,
-                        sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileHasBrokenReferences'), count($brokenReferences)),
-                        $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileHasBrokenReferences'),
+                        sprintf($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.description.fileHasBrokenReferences'), count($brokenReferences)),
+                        $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.header.fileHasBrokenReferences'),
                         FlashMessage::INFO,
                         true
                     );
@@ -453,8 +453,8 @@ class ExtendedFileUtility extends BasicFileUtility
                     // render a message that the file could not be deleted
                     $flashMessage = GeneralUtility::makeInstance(
                         FlashMessage::class,
-                        sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileNotDeletedHasReferences'), $fileObject->getName()) . ' ' . implode(', ', $shortcutContent),
-                        $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileNotDeletedHasReferences'),
+                        sprintf($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.description.fileNotDeletedHasReferences'), $fileObject->getName()) . ' ' . implode(', ', $shortcutContent),
+                        $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.header.fileNotDeletedHasReferences'),
                         FlashMessage::WARNING,
                         true
                     );
@@ -470,8 +470,8 @@ class ExtendedFileUtility extends BasicFileUtility
                     // show the user that the file was deleted
                     $flashMessage = GeneralUtility::makeInstance(
                         FlashMessage::class,
-                        sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileDeleted'), $fileObject->getName()),
-                        $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileDeleted'),
+                        sprintf($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.description.fileDeleted'), $fileObject->getName()),
+                        $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.header.fileDeleted'),
                         FlashMessage::OK,
                         true
                     );
@@ -499,8 +499,8 @@ class ExtendedFileUtility extends BasicFileUtility
                         /** @var FlashMessage $flashMessage */
                         $flashMessage = GeneralUtility::makeInstance(
                             FlashMessage::class,
-                            sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.description.folderDeleted'), $fileObject->getName()),
-                            $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.header.folderDeleted'),
+                            sprintf($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.description.folderDeleted'), $fileObject->getName()),
+                            $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.header.folderDeleted'),
                             FlashMessage::OK,
                             true
                         );
@@ -573,8 +573,8 @@ class ExtendedFileUtility extends BasicFileUtility
             /** @var FlashMessage $flashMessage */
             $flashMessage = GeneralUtility::makeInstance(
                 FlashMessage::class,
-                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.description.folderNotDeletedHasFilesWithReferences'),
-                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:message.header.folderNotDeletedHasFilesWithReferences'),
+                $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.description.folderNotDeletedHasFilesWithReferences'),
+                $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:message.header.folderNotDeletedHasFilesWithReferences'),
                 FlashMessage::WARNING,
                 true
             );
@@ -844,7 +844,11 @@ class ExtendedFileUtility extends BasicFileUtility
                 // Try to rename the File
                 $resultObject = $sourceFileObject->rename($targetFile);
                 $this->writeLog(5, 0, 1, 'File renamed from "%s" to "%s"', [$sourceFile, $targetFile]);
-                $this->addMessageToFlashMessageQueue('FileUtility.FileRenamedFromTo', [$sourceFile, $targetFile], FlashMessage::OK);
+                if ($sourceFile === $targetFile) {
+                    $this->addMessageToFlashMessageQueue('FileUtility.FileRenamedSameName', [$sourceFile], FlashMessage::INFO);
+                } else {
+                    $this->addMessageToFlashMessageQueue('FileUtility.FileRenamedFromTo', [$sourceFile, $targetFile], FlashMessage::OK);
+                }
             } catch (InsufficientUserPermissionsException $e) {
                 $this->writeLog(5, 1, 102, 'You are not allowed to rename files!', []);
                 $this->addMessageToFlashMessageQueue('FileUtility.YouAreNotAllowedToRenameFiles');
@@ -867,7 +871,11 @@ class ExtendedFileUtility extends BasicFileUtility
                 // Try to rename the Folder
                 $resultObject = $sourceFileObject->rename($targetFile);
                 $this->writeLog(5, 0, 2, 'Directory renamed from "%s" to "%s"', [$sourceFile, $targetFile]);
-                $this->addMessageToFlashMessageQueue('FileUtility.DirectoryRenamedFromTo', [$sourceFile, $targetFile], FlashMessage::OK);
+                if ($sourceFile === $targetFile) {
+                    $this->addMessageToFlashMessageQueue('FileUtility.DirectoryRenamedSameName', [$sourceFile], FlashMessage::INFO);
+                } else {
+                    $this->addMessageToFlashMessageQueue('FileUtility.DirectoryRenamedFromTo', [$sourceFile, $targetFile], FlashMessage::OK);
+                }
             } catch (InsufficientUserPermissionsException $e) {
                 $this->writeLog(5, 1, 111, 'You are not allowed to rename directories!', []);
                 $this->addMessageToFlashMessageQueue('FileUtility.YouAreNotAllowedToRenameDirectories');

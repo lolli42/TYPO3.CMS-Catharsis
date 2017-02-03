@@ -175,8 +175,7 @@ abstract class AbstractTreeView
     public $domIdPrefix = 'row';
 
     /**
-     * If TRUE, HTML code is also accumulated in ->tree array during rendering of the tree.
-     * If 2, then also the icon prefix code (depthData) is stored
+     * If 1, HTML code is also accumulated in ->tree array during rendering of the tree
      *
      * @var int
      */
@@ -698,7 +697,7 @@ abstract class AbstractTreeView
     public function getTitleStr($row, $titleLen = 30)
     {
         $title = htmlspecialchars(GeneralUtility::fixed_lgd_cs($row['title'], $titleLen));
-        $title = trim($row['title']) === '' ? '<em>[' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title')) . ']</em>' : $title;
+        $title = trim($row['title']) === '' ? '<em>[' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.no_title')) . ']</em>' : $title;
         return $title;
     }
 

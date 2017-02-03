@@ -105,6 +105,13 @@ class FormDataCompiler
             );
         }
 
+        if (!empty($result['renderData'])) {
+            throw new \RuntimeException(
+                'Array \'renderData\' not empty. Data providers must not add data here',
+                1485201279
+            );
+        }
+
         $resultKeysAfterFormDataGroup = array_keys($result);
 
         if ($resultKeysAfterFormDataGroup !== $resultKeysBeforeFormDataGroup) {
@@ -190,7 +197,7 @@ class FormDataCompiler
             // can be shown. This array holds those additional language records, Array key is sys_language_uid.
             'additionalLanguageRows' => [],
             // The tca record type value of the record. Forced to string, there can be "named" type values.
-            'recordTypeValue' => '0',
+            'recordTypeValue' => '',
             // TCA of table with processed fields. After processing, this array contains merged and resolved
             // array data, items were resolved, only used types are set, renderTypes are set.
             'processedTca' => [],
@@ -203,6 +210,15 @@ class FormDataCompiler
             // of the record this flex form is embedded in is transferred in case features like single fields
             // itemsProcFunc need to have this data at hand to do their job.
             'flexParentDatabaseRow' => [],
+            // If not empty, it tells the TcaFlexProcess data provider to not calculate existing flex fields and
+            // existing flex container sections, but to instead prepare field values and the data structure TCA
+            // for a new container section. This is used by FormFlexAjaxController, the array contains details
+            // which container of which flex field should be created.
+            'flexSectionContainerPreparation' => [],
+
+            // If true, TcaSelectTreeItems data provider will compile tree items. This is false by default since
+            // on opening a record items are not calculated but are fetch in an ajax request, see FormSelectTreeAjaxController.
+            'selectTreeCompileItems' => false,
 
             // BackendUser->uc['inlineView'] - This array holds status of expand / collapsed inline items
             // This array is "flat", an inline structure with parent uid 1 having firstChild uid 2 having secondChild uid 3
@@ -266,13 +282,17 @@ class FormDataCompiler
 
             // @todo: keys below must be handled / further defined
             'elementBaseName' => '',
-            'flexFormFieldIdentifierPrefix' => 'ID',
             'tabAndInlineStack' => [],
             'inlineData' => [],
             'inlineStructure' => [],
             // This array of fields will be set as hidden-fields instead of rendered normally!
             // This is used by EditDocumentController to force some field values if set as "overrideVals" in _GP
             'overrideValues' => [],
+
+            // This array must NOT be set / manipulated by data providers but is instead used by the render part
+            // of FormEngine to add runtime data. Containers and elements add data here which is given to
+            // sub-containers, elements, controls and wizards.
+            'renderData' => [],
         ];
     }
 }

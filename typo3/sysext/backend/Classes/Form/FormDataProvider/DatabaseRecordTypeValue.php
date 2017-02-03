@@ -46,6 +46,11 @@ class DatabaseRecordTypeValue implements FormDataProviderInterface
             );
         }
 
+        // Guard clause to suppress any calculation if record type value has been set from outside already
+        if ($result['recordTypeValue'] !== '') {
+            return $result;
+        }
+
         $recordTypeValue = '0';
         if (!empty($result['processedTca']['ctrl']['type'])) {
             $tcaTypeField = $result['processedTca']['ctrl']['type'];
@@ -93,11 +98,9 @@ class DatabaseRecordTypeValue implements FormDataProviderInterface
                             1438253614
                         );
                     }
-                    // Extract UID from value formed like {table_name}_{uid}|{default_value}
-                    // @todo: This needs adaption as soon as the group format is changed
-                    if (!MathUtility::canBeInterpretedAsInteger($foreignUid)) {
-                        list($foreignUid) = explode('|', $foreignUid);
-                        $foreignUid = str_replace($foreignTable . '_', '', $foreignUid);
+                    if (!MathUtility::canBeInterpretedAsInteger($foreignUid) && is_array($foreignUid[0])) {
+                        // A group relation - has been resolved to array by TcaGroup data provider already
+                        $foreignUid = $foreignUid[0]['uid'];
                     }
                     // Fetch field of this foreign row from db
                     $foreignRow = $this->getDatabaseRow($foreignTable, $foreignUid, $foreignTableTypeField);
@@ -105,7 +108,6 @@ class DatabaseRecordTypeValue implements FormDataProviderInterface
                         // @todo: It might be necessary to fetch the value from default language record as well here,
                         // @todo: this was buggy in the "old" implementation and never worked. It was therefor left out here for now.
                         // @todo: To implement that, see if the foreign row is a localized overlay, fetch default and merge exclude
-                        // @todo: and mergeIfNotBlank if needed.
                         $recordTypeValue = $foreignRow[$foreignTableTypeField];
                     }
                 }
@@ -147,10 +149,10 @@ class DatabaseRecordTypeValue implements FormDataProviderInterface
 
         return $row ?: [];
     }
+
     /**
      * If a localized row is handled, the field value of the default language record
-     * is used instead if tca is configured as "exclude" or "mergeIfNotBlank" with
-     * empty localized value.
+     * is used instead if tca is configured as "exclude" with empty localized value.
      *
      * @param array $result Main "$result" data array
      * @param string $field Field name to fetch value for
@@ -165,16 +167,8 @@ class DatabaseRecordTypeValue implements FormDataProviderInterface
             && $result['databaseRow'][$result['processedTca']['ctrl']['languageField']] > 0
             // l10n_mode for field is configured
             && !empty($result['processedTca']['columns'][$field]['l10n_mode'])
-            && (
-                // is exclude -> fall back to value of default record
-                $result['processedTca']['columns'][$field]['l10n_mode'] === 'exclude'
-                // is mergeIfNotBlank and own value is empty -> fall back to value of default record
-                || (
-                    $result['processedTca']['columns'][$field]['l10n_mode'] === 'mergeIfNotBlank'
-                    // 0 means "not empty"
-                    && $result['databaseRow'][$field] === ''
-                )
-            )
+            // is exclude -> fall back to value of default record
+            && $result['processedTca']['columns'][$field]['l10n_mode'] === 'exclude'
         ) {
             $value = $result['defaultLanguageRow'][$field];
         }

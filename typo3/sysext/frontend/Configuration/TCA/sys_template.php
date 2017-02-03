@@ -5,7 +5,7 @@ return [
         'descriptionColumn' => 'description',
         'tstamp' => 'tstamp',
         'sortby' => 'sorting',
-        'prependAtCopy' => 'LLL:EXT:lang/locallang_general.xlf:LGL.prependAtCopy',
+        'prependAtCopy' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.prependAtCopy',
         'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template',
         'versioningWS' => true,
         'origUid' => 't3_origuid',
@@ -40,7 +40,7 @@ return [
             ]
         ],
         'hidden' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.disable',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.disable',
             'exclude' => true,
             'config' => [
                 'type' => 'check',
@@ -48,21 +48,21 @@ return [
             ]
         ],
         'starttime' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.starttime',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.starttime',
             'exclude' => true,
             'config' => [
                 'type' => 'input',
-                'size' => 13,
+                'renderType' => 'inputDateTime',
                 'eval' => 'datetime',
                 'default' => 0
             ]
         ],
         'endtime' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.endtime',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.endtime',
             'exclude' => true,
             'config' => [
                 'type' => 'input',
-                'size' => 13,
+                'renderType' => 'inputDateTime',
                 'eval' => 'datetime',
                 'default' => 0,
                 'range' => [
@@ -101,10 +101,11 @@ return [
                 'type' => 'text',
                 'cols' => 48,
                 'rows' => 10,
-                'wrap' => 'OFF',
+                'wrap' => 'off',
+                'enableTabulator' => true,
+                'fixedFont' => true,
                 'softref' => 'email[subst],url[subst]'
             ],
-            'defaultExtras' => 'fixed-font : enable-tab'
         ],
         'nextLevel' => [
             'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.nextLevel',
@@ -112,16 +113,10 @@ return [
                 'type' => 'group',
                 'internal_type' => 'db',
                 'allowed' => 'sys_template',
-                'show_thumbs' => true,
                 'size' => 1,
                 'maxitems' => 1,
                 'minitems' => 0,
                 'default' => '',
-                'wizards' => [
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ]
-                ]
             ]
         ],
         'include_static_file' => [
@@ -142,41 +137,25 @@ return [
                 'type' => 'group',
                 'internal_type' => 'db',
                 'allowed' => 'sys_template',
-                'show_thumbs' => true,
-                'size' => 3,
                 'maxitems' => 50,
                 'autoSizeMax' => 10,
                 'minitems' => 0,
                 'default' => '',
-                'wizards' => [
-                    '_VERTICAL' => 1,
-                    'suggest' => [
-                        'type' => 'suggest'
-                    ],
-                    'edit' => [
-                        'type' => 'popup',
-                        'title' => 'Edit template',
-                        'module' => [
-                            'name' => 'wizard_edit',
+                'fieldControl' => [
+                    'editPopup' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.basedOn_edit',
                         ],
-                        'popup_onlyOpenIfSelected' => 1,
-                        'icon' => 'actions-open',
-                        'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
                     ],
-                    'add' => [
-                        'type' => 'script',
-                        'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.basedOn_add',
-                        'icon' => 'actions-add',
-                        'params' => [
-                            'table' => 'sys_template',
-                            'pid' => '###CURRENT_PID###',
+                    'addRecord' => [
+                        'disabled' => false,
+                        'options' => [
+                            'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.basedOn_add',
                             'setValue' => 'prepend'
                         ],
-                        'module' => [
-                            'name' => 'wizard_add'
-                        ]
-                    ]
-                ]
+                    ],
+                ],
             ]
         ],
         'includeStaticAfterBasedOn' => [
@@ -193,10 +172,11 @@ return [
                 'type' => 'text',
                 'rows' => 10,
                 'cols' => 48,
-                'wrap' => 'OFF',
+                'wrap' => 'off',
+                'enableTabulator' => true,
+                'fixedFont' => true,
                 'softref' => 'email[subst],url[subst]'
             ],
-            'defaultExtras' => 'fixed-font : enable-tab'
         ],
         'description' => [
             'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.description',
@@ -221,7 +201,7 @@ return [
             ]
         ],
         't3ver_label' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.versionLabel',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.versionLabel',
             'config' => [
                 'type' => 'input',
                 'size' => 30,
@@ -231,9 +211,20 @@ return [
     ],
     'types' => [
         '1' => ['showitem' => '
-			hidden, title, sitetitle, constants, config, description,
-			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.tabs.options, clear, root, nextLevel,
-			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.tabs.include, includeStaticAfterBasedOn, include_static_file, basedOn, static_file_mode,
-			--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.tabs.access, starttime, endtime']
-    ]
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                title, sitetitle, constants, config,
+            --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.tabs.options,
+                clear, root, nextLevel,
+            --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:sys_template.tabs.include,
+                includeStaticAfterBasedOn, include_static_file, basedOn, static_file_mode,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                hidden,--palette--;;timeRestriction,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+                description,
+            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+        ']
+    ],
+    'palettes' => [
+        'timeRestriction' => ['showitem' => 'starttime, endtime'],
+    ],
 ];

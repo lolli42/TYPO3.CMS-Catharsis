@@ -732,7 +732,7 @@ class GeneralUtility
      * Returns a proper HMAC on a given input string and secret TYPO3 encryption key.
      *
      * @param string $input Input string to create HMAC from
-     * @param string $additionalSecret additionalSecret to prevent hmac beeing used in a different context
+     * @param string $additionalSecret additionalSecret to prevent hmac being used in a different context
      * @return string resulting (hexadecimal) HMAC currently with a length of 40 (HMAC-SHA-1)
      */
     public static function hmac($input, $additionalSecret = '')
@@ -1034,7 +1034,7 @@ class GeneralUtility
      *
      * @param string $str Input string
      * @return string Uppercase String
-     * @deprecated since TYPO3 CMS v8, this method will be removed in TYPO3 CMS v9, Use \TYPO3\CMS\Core\Charset\CharsetConverter->conv_case() instead
+     * @deprecated since TYPO3 CMS v8, this method will be removed in TYPO3 CMS v9, use mb_strtoupper() instead
      */
     public static function strtoupper($str)
     {
@@ -1050,7 +1050,7 @@ class GeneralUtility
      *
      * @param string $str Input string
      * @return string Lowercase String
-     * @deprecated since TYPO3 CMS v8, this method will be removed in TYPO3 CMS v9, Use \TYPO3\CMS\Core\Charset\CharsetConverter->conv_case() instead
+     * @deprecated since TYPO3 CMS v8, this method will be removed in TYPO3 CMS v9, use mb_strtolower() instead
      */
     public static function strtolower($str)
     {
@@ -1136,9 +1136,8 @@ class GeneralUtility
      */
     public static function camelCaseToLowerCaseUnderscored($string)
     {
-        $charsetConverter = self::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
         $value = preg_replace('/(?<=\\w)([A-Z])/', '_\\1', $string);
-        return $charsetConverter->conv_case('utf-8', $value, 'toLower');
+        return mb_strtolower($value, 'utf-8');
     }
 
     /**
@@ -1444,7 +1443,7 @@ class GeneralUtility
         $attributes = [];
         foreach ($components as $key => $val) {
             // Only if $name is set (if there is an attribute, that waits for a value), that valuemode is enabled. This ensures that the attribute is assigned it's value
-            if ($val != '=') {
+            if ($val !== '=') {
                 if ($valuemode) {
                     if ($name) {
                         $attributes[$name] = $val;
@@ -1592,7 +1591,7 @@ class GeneralUtility
         foreach ($vals as $key => $val) {
             $type = $val['type'];
             // open tag:
-            if ($type == 'open' || $type == 'complete') {
+            if ($type === 'open' || $type === 'complete') {
                 $stack[$stacktop++] = $tagi;
                 if ($depth == $stacktop) {
                     $startPoint = $key;
@@ -1606,7 +1605,7 @@ class GeneralUtility
                 }
             }
             // finish tag:
-            if ($type == 'complete' || $type == 'close') {
+            if ($type === 'complete' || $type === 'close') {
                 $oldtagi = $tagi;
                 $tagi = $stack[--$stacktop];
                 $oldtag = $oldtagi['tag'];
@@ -1623,7 +1622,7 @@ class GeneralUtility
                 unset($oldtagi);
             }
             // cdata
-            if ($type == 'cdata') {
+            if ($type === 'cdata') {
                 $tagi['values'][] = $val['value'];
             }
         }
@@ -1754,7 +1753,7 @@ class GeneralUtility
                     // Otherwise, just htmlspecialchar the stuff:
                     $content = htmlspecialchars($v);
                     $dType = gettype($v);
-                    if ($dType == 'string') {
+                    if ($dType === 'string') {
                         if ($options['useCDATA'] && $content != $v) {
                             $content = '<![CDATA[' . $v . ']]>';
                         }
@@ -1795,7 +1794,7 @@ class GeneralUtility
         if (!empty($firstLevelCache[$identifier])) {
             $array = $firstLevelCache[$identifier];
         } else {
-            $array = self::xml2arrayProcess($string, $NSprefix, $reportDocTag);
+            $array = self::xml2arrayProcess(trim($string), $NSprefix, $reportDocTag);
             // Store content in first level cache
             $firstLevelCache[$identifier] = $array;
         }
@@ -1926,14 +1925,14 @@ class GeneralUtility
         foreach ($vals as $val) {
             $type = $val['type'];
             // Open tag:
-            if ($type == 'open' || $type == 'complete') {
+            if ($type === 'open' || $type === 'complete') {
                 $XMLcontent .= '<' . $val['tag'];
                 if (isset($val['attributes'])) {
                     foreach ($val['attributes'] as $k => $v) {
                         $XMLcontent .= ' ' . $k . '="' . htmlspecialchars($v) . '"';
                     }
                 }
-                if ($type == 'complete') {
+                if ($type === 'complete') {
                     if (isset($val['value'])) {
                         $XMLcontent .= '>' . htmlspecialchars($val['value']) . '</' . $val['tag'] . '>';
                     } else {
@@ -1942,16 +1941,16 @@ class GeneralUtility
                 } else {
                     $XMLcontent .= '>';
                 }
-                if ($type == 'open' && isset($val['value'])) {
+                if ($type === 'open' && isset($val['value'])) {
                     $XMLcontent .= htmlspecialchars($val['value']);
                 }
             }
             // Finish tag:
-            if ($type == 'close') {
+            if ($type === 'close') {
                 $XMLcontent .= '</' . $val['tag'] . '>';
             }
             // Cdata
-            if ($type == 'cdata') {
+            if ($type === 'cdata') {
                 $XMLcontent .= htmlspecialchars($val['value']);
             }
         }
@@ -2346,7 +2345,7 @@ class GeneralUtility
             if (!is_link($path) && is_dir($path)) {
                 if ($removeNonEmpty == true && ($handle = @opendir($path))) {
                     while ($OK && false !== ($file = readdir($handle))) {
-                        if ($file == '.' || $file == '..') {
+                        if ($file === '.' || $file === '..') {
                             continue;
                         }
                         $OK = static::rmdir($path . '/' . $file, $removeNonEmpty);
@@ -2419,7 +2418,7 @@ class GeneralUtility
                 $dir = scandir($path);
                 $dirs = [];
                 foreach ($dir as $entry) {
-                    if (is_dir($path . '/' . $entry) && $entry != '..' && $entry != '.') {
+                    if (is_dir($path . '/' . $entry) && $entry !== '..' && $entry !== '.') {
                         $dirs[] = $entry;
                     }
                 }
@@ -2632,7 +2631,7 @@ class GeneralUtility
      */
     public static function getBytesFromSizeMeasurement($measurement)
     {
-        $bytes = doubleval($measurement);
+        $bytes = (float)$measurement;
         if (stripos($measurement, 'G')) {
             $bytes *= 1024 * 1024 * 1024;
         } elseif (stripos($measurement, 'M')) {
@@ -2677,7 +2676,7 @@ class GeneralUtility
         $path = self::resolveBackPath(self::dirname(PATH_thisScript) . '/' . $lookupFile[0]);
 
         $doNothing = false;
-        if (TYPO3_MODE == 'FE') {
+        if (TYPO3_MODE === 'FE') {
             $mode = strtolower($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['versionNumberInFilename']);
             if ($mode === 'embed') {
                 $mode = true;
@@ -3005,7 +3004,7 @@ class GeneralUtility
                 } elseif (defined('PATH_thisScript') && defined('PATH_site')) {
                     $lPath = PathUtility::stripPathSitePrefix(dirname(PATH_thisScript)) . '/';
                     $siteUrl = substr($url, 0, -strlen($lPath));
-                    if (substr($siteUrl, -1) != '/') {
+                    if (substr($siteUrl, -1) !== '/') {
                         $siteUrl .= '/';
                     }
                     $retVal = $siteUrl;
@@ -3019,7 +3018,7 @@ class GeneralUtility
                 break;
             case 'TYPO3_SSL':
                 $proxySSL = trim($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxySSL']);
-                if ($proxySSL == '*') {
+                if ($proxySSL === '*') {
                     $proxySSL = $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyIP'];
                 }
                 if (self::cmpIP($_SERVER['REMOTE_ADDR'], $proxySSL)) {
@@ -3179,29 +3178,29 @@ class GeneralUtility
             // Browser version
             switch ($bInfo['BROWSER']) {
                 case 'net':
-                    $bInfo['VERSION'] = doubleval(substr($useragent, 8));
+                    $bInfo['VERSION'] = (float)substr($useragent, 8);
                     if (strpos($useragent, 'Netscape6/') !== false) {
-                        $bInfo['VERSION'] = doubleval(substr(strstr($useragent, 'Netscape6/'), 10));
+                        $bInfo['VERSION'] = (float)substr(strstr($useragent, 'Netscape6/'), 10);
                     }
                     // Will we ever know if this was a typo or intention...?! :-(
                     if (strpos($useragent, 'Netscape/6') !== false) {
-                        $bInfo['VERSION'] = doubleval(substr(strstr($useragent, 'Netscape/6'), 10));
+                        $bInfo['VERSION'] = (float)substr(strstr($useragent, 'Netscape/6'), 10);
                     }
                     if (strpos($useragent, 'Netscape/7') !== false) {
-                        $bInfo['VERSION'] = doubleval(substr(strstr($useragent, 'Netscape/7'), 9));
+                        $bInfo['VERSION'] = (float)substr(strstr($useragent, 'Netscape/7'), 9);
                     }
                     break;
                 case 'msie':
                     $tmp = strstr($useragent, 'MSIE');
-                    $bInfo['VERSION'] = doubleval(preg_replace('/^[^0-9]*/', '', substr($tmp, 4)));
+                    $bInfo['VERSION'] = (float)preg_replace('/^[^0-9]*/', '', substr($tmp, 4));
                     break;
                 case 'opera':
                     $tmp = strstr($useragent, 'Opera');
-                    $bInfo['VERSION'] = doubleval(preg_replace('/^[^0-9]*/', '', substr($tmp, 5)));
+                    $bInfo['VERSION'] = (float)preg_replace('/^[^0-9]*/', '', substr($tmp, 5));
                     break;
                 case 'konqu':
                     $tmp = strstr($useragent, 'Konqueror/');
-                    $bInfo['VERSION'] = doubleval(substr($tmp, 10));
+                    $bInfo['VERSION'] = (float)substr($tmp, 10);
                     break;
             }
             // Client system
@@ -3314,12 +3313,11 @@ class GeneralUtility
      * @param string $theFile File path to evaluate
      * @return bool TRUE, $theFile is allowed path string, FALSE otherwise
      * @see http://php.net/manual/en/security.filesystem.nullbytes.php
-     * @todo Possible improvement: Should it rawurldecode the string first to check if any of these characters is encoded?
      */
     public static function validPathStr($theFile)
     {
         return strpos($theFile, '//') === false && strpos($theFile, '\\') === false
-            && !preg_match('#(?:^\\.\\.|/\\.\\./|[[:cntrl:]])#u', $theFile);
+            && preg_match('#(?:^\\.\\.|/\\.\\./|[[:cntrl:]])#u', $theFile) === 0;
     }
 
     /**
@@ -3519,7 +3517,7 @@ class GeneralUtility
             self::mkdir_deep($temporaryPath);
         }
         if ($fileSuffix === '') {
-            $tempFileName = static::fixWindowsFilePath(tempnam($temporaryPath, $filePrefix));
+            $tempFileName = $temporaryPath . basename(tempnam($temporaryPath, $filePrefix));
         } else {
             do {
                 $tempFileName = $temporaryPath . $filePrefix . mt_rand(1, PHP_INT_MAX) . $fileSuffix;
@@ -3638,9 +3636,11 @@ class GeneralUtility
      * @param array $dataStructArray Input data structure, possibly with a sheet-definition and references to external data source files.
      * @param string $sheet The sheet to return, preferably.
      * @return array An array with two num. keys: key0: The data structure is returned in this key (array) UNLESS an error occurred in which case an error string is returned (string). key1: The used sheet key value!
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9. This is now integrated in FlexFormTools->parseDataStructureByIdentifier()
      */
     public static function resolveSheetDefInDS($dataStructArray, $sheet = 'sDEF')
     {
+        self::logDeprecatedFunction();
         if (!is_array($dataStructArray)) {
             return 'Data structure must be an array';
         }
@@ -3676,9 +3676,11 @@ class GeneralUtility
      *
      * @param array $dataStructArray Input data structure, possibly with a sheet-definition and references to external data source files.
      * @return array Output data structure with all sheets resolved as arrays.
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9. This is now integrated in FlexFormTools->parseDataStructureByIdentifier()
      */
     public static function resolveAllSheetsInDS(array $dataStructArray)
     {
+        self::logDeprecatedFunction();
         if (is_array($dataStructArray['sheets'])) {
             $out = ['sheets' => []];
             foreach ($dataStructArray['sheets'] as $sheetId => $sDat) {
@@ -3737,6 +3739,10 @@ class GeneralUtility
         }
         // Check for persistent object token, "&"
         if ($funcRef[0] === '&') {
+            self::deprecationLog('Using the persistent object token "&" when resolving "' . $funcRef . '"  for '
+                . 'GeneralUtility::callUserFunc() is deprecated since TYPO3 v8. Make sure to implement '
+                . 'SingletonInterface to achieve the same functionality. This functionality will be removed in TYPO3 v9 '
+                . 'and will then result in a fatal PHP error.');
             $funcRef = substr($funcRef, 1);
             $storePersistentObject = true;
         } else {
@@ -3802,7 +3808,8 @@ class GeneralUtility
     }
 
     /**
-     * This method should be avoided, as it will be deprecated soon. Instead use makeInstance() directly.
+     * This method should be avoided, as it will be deprecated completely in TYPO3 v9, and will be removed in TYPO3 v10.
+     * Instead use makeInstance() directly.
      *
      * Creates and returns reference to a user defined object.
      * This function can return an object reference if you like.
@@ -3825,19 +3832,16 @@ class GeneralUtility
             self::deprecationLog('Using file references to resolve "' . $classRef . '" has been deprecated in TYPO3 v8 '
                 . 'when calling GeneralUtility::getUserObj(), make sure the class is available via the class loader. '
                 . 'This functionality will be removed in TYPO3 v9.');
-            list($file, $class) = self::revExplode(':', $classRef, 2);
+            list($file, $classRef) = self::revExplode(':', $classRef, 2);
             $requireFile = self::getFileAbsFileName($file);
             if ($requireFile) {
                 require_once $requireFile;
             }
-        } else {
-            $class = $classRef;
         }
 
         // Check if class exists:
-        if (class_exists($class)) {
-            $classObj = self::makeInstance($class);
-            return $classObj;
+        if (class_exists($classRef)) {
+            return self::makeInstance($classRef);
         }
     }
 
@@ -4271,8 +4275,8 @@ class GeneralUtility
         // Init TYPO3 logging
         foreach (explode(';', $GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLog'], 2) as $log) {
             list($type, $destination) = explode(',', $log, 3);
-            if ($type == 'syslog') {
-                if (TYPO3_OS == 'WIN') {
+            if ($type === 'syslog') {
+                if (TYPO3_OS === 'WIN') {
                     $facility = LOG_USER;
                 } else {
                     $facility = constant('LOG_' . strtoupper($destination));
@@ -4329,14 +4333,14 @@ class GeneralUtility
             }
             $msgLine = ' - ' . $extKey . ': ' . $msg;
             // Write message to a file
-            if ($type == 'file') {
+            if ($type === 'file') {
                 $file = fopen($destination, 'a');
                 if ($file) {
                     fwrite($file, date(($dateFormat . ' ' . $timeFormat)) . $msgLine . LF);
                     fclose($file);
                     self::fixPermissions($destination);
                 }
-            } elseif ($type == 'mail') {
+            } elseif ($type === 'mail') {
                 list($to, $from) = explode('/', $destination);
                 if (!self::validEmail($from)) {
                     $from = MailUtility::getSystemFrom();
@@ -4345,9 +4349,9 @@ class GeneralUtility
                 $mail = self::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
                 $mail->setTo($to)->setFrom($from)->setSubject('Warning - error in TYPO3 installation')->setBody('Host: ' . $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['systemLogHost'] . LF . 'Extension: ' . $extKey . LF . 'Severity: ' . $severity . LF . LF . $msg);
                 $mail->send();
-            } elseif ($type == 'error_log') {
+            } elseif ($type === 'error_log') {
                 error_log($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['systemLogHost'] . $msgLine, 0);
-            } elseif ($type == 'syslog') {
+            } elseif ($type === 'syslog') {
                 $priority = [LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT];
                 syslog($priority[(int)$severity], $msgLine);
             }

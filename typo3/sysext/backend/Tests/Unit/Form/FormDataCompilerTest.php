@@ -18,12 +18,11 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroupInterface;
-use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
  * Test case
  */
-class FormDataCompilerTest extends UnitTestCase
+class FormDataCompilerTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
 {
     /**
      * @var FormDataCompiler
@@ -146,6 +145,19 @@ class FormDataCompilerTest extends UnitTestCase
         $this->formDataGroupProphecy->compile(Argument::cetera())->willReturn(null);
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionCode(1446664764);
+        $this->subject->compile([]);
+    }
+
+    /**
+     * @test
+     */
+    public function compileThrowsExceptionIfRenderDataIsNotEmpty()
+    {
+        $this->formDataGroupProphecy->compile(Argument::cetera())->willReturn([
+            'renderData' => [ 'foo' ],
+        ]);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1485201279);
         $this->subject->compile([]);
     }
 

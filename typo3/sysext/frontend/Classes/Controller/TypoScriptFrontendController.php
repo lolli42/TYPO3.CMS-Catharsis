@@ -44,7 +44,6 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\Http\UrlHandlerInterface;
@@ -282,7 +281,7 @@ class TypoScriptFrontendController
      * configuration of the current page. Saved with the cached pages.
      * @var array
      */
-    public $config = '';
+    public $config = [];
 
     /**
      * The TypoScript template object. Used to parse the TypoScript template
@@ -993,9 +992,6 @@ class TypoScriptFrontendController
     public function initFEuser()
     {
         $this->fe_user = GeneralUtility::makeInstance(FrontendUserAuthentication::class);
-        $this->fe_user->lockIP = $GLOBALS['TYPO3_CONF_VARS']['FE']['lockIP'];
-        $this->fe_user->checkPid = $GLOBALS['TYPO3_CONF_VARS']['FE']['checkFeUserPid'];
-        $this->fe_user->lifetime = (int)$GLOBALS['TYPO3_CONF_VARS']['FE']['lifetime'];
         // List of pid's acceptable
         $pid = GeneralUtility::_GP('pid');
         $this->fe_user->checkPid_value = $pid ? implode(',', GeneralUtility::intExplode(',', $pid)) : 0;
@@ -1016,7 +1012,7 @@ class TypoScriptFrontendController
             }
         }
         $this->fe_user->start();
-        $this->fe_user->unpack_uc('');
+        $this->fe_user->unpack_uc();
         // Gets session data
         $this->fe_user->fetchSessionData();
         $recs = GeneralUtility::_GP('recs');
@@ -1176,10 +1172,9 @@ class TypoScriptFrontendController
             // disable login-attempts to the backend account through this script
             // New backend user object
             $BE_USER = GeneralUtility::makeInstance(FrontendBackendUserAuthentication::class);
-            $BE_USER->lockIP = $GLOBALS['TYPO3_CONF_VARS']['BE']['lockIP'];
             // Object is initialized
             $BE_USER->start();
-            $BE_USER->unpack_uc('');
+            $BE_USER->unpack_uc();
             if (!empty($BE_USER->user['uid'])) {
                 $BE_USER->fetchGroupData();
                 $this->beUserLogin = true;
@@ -1321,7 +1316,7 @@ class TypoScriptFrontendController
         if (!$this->loginAllowedInBranch) {
             // Only if there is a login will we run this...
             if ($this->isUserOrGroupSet()) {
-                if ($this->loginAllowedInBranch_mode == 'all') {
+                if ($this->loginAllowedInBranch_mode === 'all') {
                     // Clear out user and group:
                     $this->fe_user->hideActiveLogin();
                     $this->gr_list = '0,-1';
@@ -1462,23 +1457,6 @@ class TypoScriptFrontendController
                 4 => 'The requested page alias does not exist'
             ];
             $this->pageNotFoundAndExit($pNotFoundMsg[$this->pageNotFound]);
-        }
-        if ($this->page['url_scheme'] > 0) {
-            $newUrl = '';
-            $requestUrlScheme = parse_url(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), PHP_URL_SCHEME);
-            if ((int)$this->page['url_scheme'] === HttpUtility::SCHEME_HTTP && $requestUrlScheme == 'https') {
-                $newUrl = 'http://' . substr(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 8);
-            } elseif ((int)$this->page['url_scheme'] === HttpUtility::SCHEME_HTTPS && $requestUrlScheme == 'http') {
-                $newUrl = 'https://' . substr(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 7);
-            }
-            if ($newUrl !== '') {
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $headerCode = HttpUtility::HTTP_STATUS_303;
-                } else {
-                    $headerCode = HttpUtility::HTTP_STATUS_301;
-                }
-                HttpUtility::redirect($newUrl, $headerCode);
-            }
         }
         // Set no_cache if set
         if ($this->page['no_cache']) {
@@ -2239,10 +2217,8 @@ class TypoScriptFrontendController
         }
         $GET = GeneralUtility::_GET();
         if ($this->cHash && is_array($GET)) {
-            if (!isset($GET['id'])) {
-                // id not in $_GET -> home page -> use already determined id
-                $GET['id'] = $this->id;
-            }
+            // Make sure we use the page uid and not the page alias
+            $GET['id'] = $this->id;
             $this->cHash_array = $this->cacheHash->getRelevantParameters(GeneralUtility::implodeArrayForUrl('', $GET));
             $cHash_calc = $this->cacheHash->calculateCacheHash($this->cHash_array);
             if ($cHash_calc != $this->cHash) {
@@ -2308,7 +2284,7 @@ class TypoScriptFrontendController
         // clearing the content-variable, which will hold the pagecontent
         $this->content = '';
         // Unsetting the lowlevel config
-        unset($this->config);
+        $this->config = [];
         $this->cacheContentFlag = false;
 
         if ($this->no_cache) {
@@ -2534,7 +2510,7 @@ class TypoScriptFrontendController
     public function getConfigArray()
     {
         // If config is not set by the cache (which would be a major mistake somewhere) OR if INTincScripts-include-scripts have been registered, then we must parse the template in order to get it
-        if (!is_array($this->config) || is_array($this->config['INTincScript']) || $this->forceTemplateParsing) {
+        if (empty($this->config) || is_array($this->config['INTincScript']) || $this->forceTemplateParsing) {
             $timeTracker = $this->getTimeTracker();
             $timeTracker->push('Parse template', '');
             // Force parsing, if set?:
@@ -2586,6 +2562,9 @@ class TypoScriptFrontendController
                     // Processing for the config_array:
                     $this->config['rootLine'] = $this->tmpl->rootLine;
                     $this->config['mainScript'] = trim($this->config['config']['mainScript']) ?: 'index.php';
+                    if (isset($this->config['config']['mainScript']) || $this->config['mainScript'] !== 'index.php') {
+                        $this->logDeprecatedTyposcript('config.mainScript', 'Setting the frontend script to something else than index.php is deprecated as of TYPO3 v8, and will not be possible in TYPO3 v9 without a custom extension');
+                    }
                     // Class for render Header and Footer parts
                     if ($this->pSetup['pageHeaderFooterTemplateFile']) {
                         $file = $this->tmpl->getFileName($this->pSetup['pageHeaderFooterTemplateFile']);
@@ -2728,16 +2707,10 @@ class TypoScriptFrontendController
             if (!empty($this->config['config']['sys_language_isocode_default'])) {
                 $this->sys_language_isocode = $this->config['config']['sys_language_isocode_default'];
             } else {
-                $this->sys_language_isocode = $this->lang != 'default' ? $this->lang : 'en';
+                $this->sys_language_isocode = $this->lang !== 'default' ? $this->lang : 'en';
             }
         }
 
-        // Setting softMergeIfNotBlank:
-        $table_fields = GeneralUtility::trimExplode(',', $this->config['config']['sys_language_softMergeIfNotBlank'], true);
-        foreach ($table_fields as $TF) {
-            list($tN, $fN) = explode(':', $TF);
-            $GLOBALS['TCA'][$tN]['columns'][$fN]['l10n_mode'] = 'mergeIfNotBlank';
-        }
         // Setting softExclude:
         $table_fields = GeneralUtility::trimExplode(',', $this->config['config']['sys_language_softExclude'], true);
         foreach ($table_fields as $TF) {
@@ -2781,7 +2754,7 @@ class TypoScriptFrontendController
                 // As str_* methods are locale aware and turkish has no upper case I
                 // Class autoloading and other checks depending on case changing break with turkish locale LC_CTYPE
                 // @see http://bugs.php.net/bug.php?id=35050
-                if (substr($this->config['config']['locale_all'], 0, 2) != 'tr') {
+                if (substr($this->config['config']['locale_all'], 0, 2) !== 'tr') {
                     setlocale(LC_CTYPE, ...$availableLocales);
                 }
                 setlocale(LC_MONETARY, ...$availableLocales);
@@ -4175,7 +4148,7 @@ class TypoScriptFrontendController
             // This is a hack to work around ___FILE___ resolving symbolic links
             $PATH_site_real = dirname(realpath(PATH_site . 'typo3')) . '/';
             $file = $trace[0]['file'];
-            if (StringUtility::beginsWith($file, $PATH_site_real)) {
+            if (strpos($file, $PATH_site_real) === 0) {
                 $file = str_replace($PATH_site_real, '', $file);
             } else {
                 $file = str_replace(PATH_site, '', $file);

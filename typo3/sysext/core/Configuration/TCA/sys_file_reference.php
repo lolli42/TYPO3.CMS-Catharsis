@@ -1,7 +1,7 @@
 <?php
 return [
     'ctrl' => [
-        'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference',
+        'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference',
         'label' => 'uid_local',
         'formattedLabel_userFunc' => 'TYPO3\\CMS\\Core\\Resource\\Service\\UserFileInlineLabelService->getInlineLabel',
         'formattedLabel_userFunc_options' => [
@@ -41,7 +41,7 @@ return [
     ],
     'columns' => [
         't3ver_label' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.versionLabel',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.versionLabel',
             'config' => [
                 'type' => 'input',
                 'size' => 30,
@@ -49,23 +49,27 @@ return [
             ]
         ],
         'sys_language_uid' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.language',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.language',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'foreign_table' => 'sys_language',
                 'foreign_table_where' => 'ORDER BY sys_language.title',
                 'items' => [
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.allLanguages', -1],
-                    ['LLL:EXT:lang/locallang_general.xlf:LGL.default_value', 0]
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.allLanguages', -1],
+                    ['LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.default_value', 0]
                 ],
                 'default' => 0,
-                'showIconTable' => true,
+                'fieldWizard' => [
+                    'selectIcons' => [
+                        'disabled' => false,
+                    ],
+                ],
             ]
         ],
         'l10n_parent' => [
             'displayCond' => 'FIELD:sys_language_uid:>:0',
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.l18n_parent',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.l18n_parent',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
@@ -84,14 +88,14 @@ return [
             ]
         ],
         'hidden' => [
-            'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.hidden',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.hidden',
             'config' => [
                 'type' => 'check',
                 'default' => 0
             ]
         ],
         'uid_local' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.uid_local',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.uid_local',
             'config' => [
                 'type' => 'group',
                 'internal_type' => 'db',
@@ -99,11 +103,12 @@ return [
                 'eval' => 'int',
                 'maxitems' => 1,
                 'minitems' => 0,
-                'allowed' => 'sys_file'
+                'allowed' => 'sys_file',
+                'hideSuggest' => true,
             ]
         ],
         'uid_foreign' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.uid_foreign',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.uid_foreign',
             'config' => [
                 'type' => 'input',
                 'size' => 10,
@@ -111,7 +116,7 @@ return [
             ]
         ],
         'tablenames' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.tablenames',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.tablenames',
             'config' => [
                 'type' => 'input',
                 'size' => 30,
@@ -119,28 +124,24 @@ return [
             ]
         ],
         'fieldname' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.fieldname',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.fieldname',
             'config' => [
                 'type' => 'input',
                 'size' => 30
             ]
         ],
         'sorting_foreign' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.sorting_foreign',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.sorting_foreign',
             'config' => [
                 'type' => 'input',
                 'size' => 4,
                 'max' => 4,
                 'eval' => 'int',
-                'range' => [
-                    'upper' => '1000',
-                    'lower' => '10'
-                ],
                 'default' => 0
             ]
         ],
         'table_local' => [
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.table_local',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.table_local',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -150,7 +151,7 @@ return [
         'title' => [
             'l10n_mode' => 'prefixLangTitle',
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.title',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.title',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -162,21 +163,18 @@ return [
         ],
         'link' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.link',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.link',
             'config' => [
                 'type' => 'input',
+                'renderType' => 'inputLink',
                 'size' => 20,
                 'max' => 1024,
-                'wizards' => [
-                    'link' => [
-                        'type' => 'popup',
-                        'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.link',
-                        'icon' => 'actions-wizard-link',
-                        'module' => [
-                            'name' => 'wizard_link',
+                'fieldControl' => [
+                    'linkPopup' => [
+                        'options' => [
+                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.link',
                         ],
-                        'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
-                    ]
+                    ],
                 ],
                 'softref' => 'typolink'
             ]
@@ -185,7 +183,7 @@ return [
             // This is used for captions in the frontend
             'l10n_mode' => 'prefixLangTitle',
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.description',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.description',
             'config' => [
                 'type' => 'text',
                 'cols' => 20,
@@ -199,7 +197,7 @@ return [
         'alternative' => [
             'l10n_mode' => 'prefixLangTitle',
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.alternative',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.alternative',
             'config' => [
                 'type' => 'input',
                 'size' => 20,
@@ -211,14 +209,14 @@ return [
         ],
         'crop' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.crop',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.crop',
             'config' => [
                 'type' => 'imageManipulation'
             ]
         ],
         'autoplay' => [
             'exclude' => true,
-            'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.autoplay',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.autoplay',
             'config' => [
                 'type' => 'check',
                 'default' => 0
@@ -230,32 +228,32 @@ return [
         // We leave the extensive definition of each type here anyway, to make clear that you can use it to differentiate between the types.
         '0' => [
             'showitem' => '
-				--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
+				--palette--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
 				--palette--;;filePalette'
         ],
         \TYPO3\CMS\Core\Resource\File::FILETYPE_TEXT => [
             'showitem' => '
-				--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
+				--palette--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
 				--palette--;;filePalette'
         ],
         \TYPO3\CMS\Core\Resource\File::FILETYPE_IMAGE => [
             'showitem' => '
-				--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
+				--palette--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
 				--palette--;;filePalette'
         ],
         \TYPO3\CMS\Core\Resource\File::FILETYPE_AUDIO => [
             'showitem' => '
-				--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
+				--palette--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
 				--palette--;;filePalette'
         ],
         \TYPO3\CMS\Core\Resource\File::FILETYPE_VIDEO => [
             'showitem' => '
-				--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
+				--palette--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
 				--palette--;;filePalette'
         ],
         \TYPO3\CMS\Core\Resource\File::FILETYPE_APPLICATION => [
             'showitem' => '
-				--palette--;LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
+				--palette--;LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:sys_file_reference.basicoverlayPalette;basicoverlayPalette,
 				--palette--;;filePalette'
         ]
     ],

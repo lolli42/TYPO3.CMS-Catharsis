@@ -23,9 +23,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -190,6 +188,9 @@ class PagePositionMap
                     }
                     // Then set the current prevPid
                     $prevPid = -$prev_dat['row']['pid'];
+                    if ($prevPid !== $dat['row']['pid']) {
+                        $lines[] = '</ul>';
+                    }
                 } else {
                     // In on the same level
                     $prevPid = -$prev_dat['row']['uid'];
@@ -200,9 +201,6 @@ class PagePositionMap
             }
             // print arrow on the same level
             if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($dat['row']['pid'])) {
-                if (!empty($prev_dat) && $prev_dat['invertedDepth'] < $dat['invertedDepth']) {
-                    $lines[] = '</ul>';
-                }
                 $lines[] = '<span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'], 3)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span>';
             }
             // The line with the icon and title:
@@ -262,8 +260,8 @@ class PagePositionMap
     /**
      * Creates the onclick event for the insert-icons.
      *
-     * TSconfig mod.web_list.newPageWiz.overrideWithExtension may contain an extension which provides a module
-     * to be used instead of the normal create new page wizard.
+     * TSconfig mod.newPageWizard.override may contain an alternative module / route which can be
+     * used instead of the normal create new page wizard.
      *
      * @param int $pid The pid.
      * @param int $newPagePID New page id.
@@ -271,12 +269,16 @@ class PagePositionMap
      */
     public function onClickEvent($pid, $newPagePID)
     {
-        $TSconfigProp = $this->getModConfig($newPagePID);
-        if ($TSconfigProp['overrideWithExtension']) {
-            if (ExtensionManagementUtility::isLoaded($TSconfigProp['overrideWithExtension'])) {
-                $onclick = 'window.location.href=' . GeneralUtility::quoteJSvalue(PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath($TSconfigProp['overrideWithExtension'])) . 'mod1/index.php?cmd=crPage&positionPid=' . $pid) . ';';
-                return $onclick;
-            }
+        $TSconfig = BackendUtility::getModTSconfig($newPagePID, 'mod.newPageWizard');
+        $TSconfig = $TSconfig['properties'];
+        if (isset($TSconfig['override']) && !empty($TSconfig['override'])) {
+            $url = BackendUtility::getModuleUrl($TSconfig['override'], [
+                'positionPid' => $pid,
+                'newPageId'   => $newPagePID,
+                'cmd'         => 'crPage',
+                'returnUrl'   => GeneralUtility::getIndpEnv('REQUEST_URI')]
+            );
+            return 'window.location.href=' . GeneralUtility::quoteJSvalue($url) . ';';
         }
         $params = '&edit[pages][' . $pid . ']=new&returnNewPageId=1';
         return BackendUtility::editOnClick($params, '', $this->R_URI);
@@ -557,9 +559,9 @@ class PagePositionMap
     {
         $table = 'tt_content';
         if (is_array($row)) {
-            $location = BackendUtility::getModuleUrl('tce_db') . '&cmd[' . $table . '][' . $moveUid . '][' . $this->moveOrCopy . ']=-' . $row['uid'] . '&prErr=1&uPT=1&vC=' . $this->getBackendUser()->veriCode();
+            $location = BackendUtility::getModuleUrl('tce_db') . '&cmd[' . $table . '][' . $moveUid . '][' . $this->moveOrCopy . ']=-' . $row['uid'] . '&prErr=1&uPT=1';
         } else {
-            $location = BackendUtility::getModuleUrl('tce_db') . '&cmd[' . $table . '][' . $moveUid . '][' . $this->moveOrCopy . ']=' . $pid . '&data[' . $table . '][' . $moveUid . '][colPos]=' . $vv . '&prErr=1&vC=' . $this->getBackendUser()->veriCode();
+            $location = BackendUtility::getModuleUrl('tce_db') . '&cmd[' . $table . '][' . $moveUid . '][' . $this->moveOrCopy . ']=' . $pid . '&data[' . $table . '][' . $moveUid . '][colPos]=' . $vv . '&prErr=1';
         }
         $location .= '&redirect=' . rawurlencode($this->R_URI);
         // returns to prev. page

@@ -60,9 +60,9 @@ class ClearCacheToolbarItem implements ToolbarItemInterface
         if ($backendUser->isAdmin() || $backendUser->getTSConfigVal('options.clearCache.pages')) {
             $this->cacheActions[] = [
                 'id' => 'pages',
-                'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesTitle')),
-                'description' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesDescription')),
-                'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'pages']),
+                'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:flushPageCachesTitle')),
+                'description' => htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:flushPageCachesDescription')),
+                'href' => BackendUtility::getModuleUrl('tce_db', ['cacheCmd' => 'pages']),
                 'icon' => $this->iconFactory->getIcon('actions-system-cache-clear-impact-low', Icon::SIZE_SMALL)->render()
             ];
             $this->optionValues[] = 'pages';
@@ -74,9 +74,9 @@ class ClearCacheToolbarItem implements ToolbarItemInterface
         if ($backendUser->getTSConfigVal('options.clearCache.all') || ($backendUser->isAdmin() && $backendUser->getTSConfigVal('options.clearCache.all') !== '0')) {
             $this->cacheActions[] = [
                 'id' => 'all',
-                'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushAllCachesTitle2')),
-                'description' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushAllCachesDescription2')),
-                'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'all']),
+                'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:flushAllCachesTitle2')),
+                'description' => htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:flushAllCachesDescription2')),
+                'href' => BackendUtility::getModuleUrl('tce_db', ['cacheCmd' => 'all']),
                 'icon' => $this->iconFactory->getIcon('actions-system-cache-clear-impact-high', Icon::SIZE_SMALL)->render()
             ];
             $this->optionValues[] = 'all';
@@ -122,14 +122,22 @@ class ClearCacheToolbarItem implements ToolbarItemInterface
      */
     public function getItem()
     {
-        $icon = $this->iconFactory->getIcon('apps-toolbar-menu-cache', Icon::SIZE_SMALL)->render('inline');
-
-        $view = $this->getFluidTemplateObject('ClearCacheToolbarItem.html');
-        $view->assignMultiple([
-                'title' => 'LLL:EXT:lang/locallang_core.xlf:rm.clearCache_clearCache',
+        if ($this->hasDropDown()) {
+            $templateReference = 'ClearCacheToolbarItem.html';
+            $icon = $this->iconFactory->getIcon('apps-toolbar-menu-cache', Icon::SIZE_SMALL)->render('inline');
+            $variables = [
+                'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.clearCache_clearCache',
                 'icon' => $icon
-            ]
-        );
+            ];
+        } else {
+            $templateReference = 'ClearCacheToolbarItemSingle.html';
+            $cacheAction = end($this->cacheActions);
+            $variables['link'] = $cacheAction['href'];
+            $variables['title'] = $cacheAction['title'];
+            $variables['icon'] = $cacheAction['icon'];
+        }
+        $view = $this->getFluidTemplateObject($templateReference);
+        $view->assignMultiple($variables);
 
         return $view->render();
     }
@@ -143,7 +151,7 @@ class ClearCacheToolbarItem implements ToolbarItemInterface
     {
         $view = $this->getFluidTemplateObject('ClearCacheToolbarItemDropDown.html');
         $view->assignMultiple([
-                'title' =>  'LLL:EXT:lang/locallang_core.xlf:rm.clearCache_clearCache',
+                'title' =>  'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.clearCache_clearCache',
                 'cacheActions' => $this->cacheActions,
             ]
         );
@@ -168,7 +176,7 @@ class ClearCacheToolbarItem implements ToolbarItemInterface
      */
     public function hasDropDown()
     {
-        return true;
+        return count($this->cacheActions) > 1;
     }
 
     /**

@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Core\Resource;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Compressor
@@ -284,7 +283,7 @@ class ResourceCompressor
                 $filename = PathUtility::stripPathSitePrefix($filenameAbsolute);
                 $contents = file_get_contents($filenameAbsolute);
                 // remove any UTF-8 byte order mark (BOM) from files
-                if (StringUtility::beginsWith($contents, "\xEF\xBB\xBF")) {
+                if (strpos($contents, "\xEF\xBB\xBF") === 0) {
                     $contents = substr($contents, 3);
                 }
                 // only fix paths if files aren't already in typo3temp (already processed)
@@ -416,13 +415,38 @@ class ResourceCompressor
      * Finds the relative path to a file, relative to the root path.
      *
      * @param string $filename the name of the file
-     * @return string the path to the file relative to the root path
+     * @return string the path to the file relative to the root path ($this->rootPath)
      */
     protected function getFilenameFromMainDir($filename)
     {
+        /*
+         * The various paths may have those values (e.g. if TYPO3 is installed in a subdir)
+         * - docRoot = /var/www/html/
+         * - PATH_site = /var/www/html/sites/site1/
+         * - $this->rootPath = /var/www/html/sites/site1/typo3
+         *
+         * The file names passed into this function may be either:
+         * - relative to $this->rootPath
+         * - relative to PATH_site
+         * - relative to docRoot
+         */
+        $docRoot = GeneralUtility::getIndpEnv('TYPO3_DOCUMENT_ROOT');
+        $fileNameWithoutSlash = ltrim($filename, '/');
+
+        // if the file is an absolute reference within the docRoot
+        $absolutePath = $docRoot . '/' . $fileNameWithoutSlash;
+        if (is_file($absolutePath)) {
+            if (strpos($absolutePath, $this->rootPath) === 0) {
+                // the path is within the current root path, simply strip rootPath off
+                return substr($absolutePath, strlen($this->rootPath));
+            }
+            // the path is not within the root path, strip off the site path, the remaining logic below
+            // takes care about adjusting the path correctly.
+            $filename = substr($absolutePath, strlen(PATH_site));
+        }
         // if the file exists in the root path, just return the $filename
-        if (is_file($this->rootPath . ltrim($filename, '/'))) {
-            return ltrim($filename, '/');
+        if (is_file($this->rootPath . $fileNameWithoutSlash)) {
+            return $fileNameWithoutSlash;
         }
         // if the file is from a special TYPO3 internal directory, add the missing typo3/ prefix
         if (is_file(realpath(PATH_site . TYPO3_mainDir . $filename))) {
@@ -434,7 +458,7 @@ class ResourceCompressor
         } elseif (strpos($filename, '../') === 0) {
             $file = GeneralUtility::resolveBackPath(PATH_typo3 . $filename);
         } else {
-            $file = PATH_site . ltrim($filename, '/');
+            $file = PATH_site . $fileNameWithoutSlash;
         }
 
         // check if the file exists, and if so, return the path relative to TYPO3_mainDir
@@ -614,9 +638,9 @@ class ResourceCompressor
     {
         $externalContent = GeneralUtility::getUrl($url);
         $filename = $this->targetDirectory . 'external-' . md5($url);
-        // write only if file does not exist and md5 of the content is not the same as fetched one
+        // Write only if file does not exist OR md5 of the content is not the same as fetched one
         if (!file_exists(PATH_site . $filename)
-            && (md5($externalContent) !== md5(file_get_contents(PATH_site . $filename)))
+            || (md5($externalContent) !== md5(file_get_contents(PATH_site . $filename)))
         ) {
             GeneralUtility::writeFile(PATH_site . $filename, $externalContent);
         }

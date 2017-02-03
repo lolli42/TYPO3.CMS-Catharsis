@@ -45,7 +45,6 @@ use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MailUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
@@ -1496,9 +1495,11 @@ class ContentObjectRenderer
      * @param string $addParams Additional parameters (attributes). Default is empty alt and title tags.
      * @return string If jpg,gif,jpeg,png: returns image_tag with picture in. If html,txt: returns content string
      * @see FILE()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use file_get_contents() directly
      */
     public function fileResource($fName, $addParams = 'alt="" title=""')
     {
+        GeneralUtility::logDeprecatedFunction();
         $tsfe = $this->getTypoScriptFrontendController();
         $incFile = $tsfe->tmpl->getFileName($fName);
         if ($incFile && file_exists($incFile)) {
@@ -3657,7 +3658,7 @@ class ContentObjectRenderer
         if (is_object($d)) {
             $count = 0;
             while ($entry = $d->read()) {
-                if ($entry != '.' && $entry != '..') {
+                if ($entry !== '.' && $entry !== '..') {
                     // Because of odd PHP-error where <br />-tag is sometimes placed after a filename!!
                     $wholePath = $path . '/' . $entry;
                     if (file_exists($wholePath) && filetype($wholePath) === 'file') {
@@ -3692,7 +3693,7 @@ class ContentObjectRenderer
         }
         // Sort if required
         if (!empty($items['sorting'])) {
-            if (strtolower(trim($data_arr[3])) != 'r') {
+            if (strtolower(trim($data_arr[3])) !== 'r') {
                 asort($items['sorting']);
             } else {
                 arsort($items['sorting']);
@@ -3828,13 +3829,11 @@ class ContentObjectRenderer
      */
     public function substring($content, $options)
     {
-        /** @var CharsetConverter $charsetConverter */
-        $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
         $options = GeneralUtility::intExplode(',', $options . ',');
         if ($options[1]) {
-            return $charsetConverter->substr('utf-8', $content, $options[0], $options[1]);
+            return mb_substr($content, $options[0], $options[1], 'utf-8');
         } else {
-            return $charsetConverter->substr('utf-8', $content, $options[0]);
+            return mb_substr($content, $options[0], null, 'utf-8');
         }
     }
 
@@ -3854,18 +3853,16 @@ class ContentObjectRenderer
         $afterstring = trim($options[1]);
         $crop2space = trim($options[2]);
         if ($chars) {
-            /** @var CharsetConverter $charsetConverter */
-            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
-            if ($charsetConverter->strlen('utf-8', $content) > abs($chars)) {
+            if (mb_strlen($content, 'utf-8') > abs($chars)) {
                 $truncatePosition = false;
                 if ($chars < 0) {
-                    $content = $charsetConverter->substr('utf-8', $content, $chars);
+                    $content = mb_substr($content, $chars, null, 'utf-8');
                     if ($crop2space) {
                         $truncatePosition = strpos($content, ' ');
                     }
                     $content = $truncatePosition ? $afterstring . substr($content, $truncatePosition) : $afterstring . $content;
                 } else {
-                    $content = $charsetConverter->substr('utf-8', $content, 0, $chars);
+                    $content = mb_substr($content, 0, $chars, 'utf-8');
                     if ($crop2space) {
                         $truncatePosition = strrpos($content, ' ');
                     }
@@ -3947,13 +3944,11 @@ class ContentObjectRenderer
         $strLen = 0;
         // This is the offset of the content item which was cropped.
         $croppedOffset = null;
-        /** @var CharsetConverter $charsetConverter */
-        $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
         $countSplittedContent = count($splittedContent);
         for ($offset = 0; $offset < $countSplittedContent; $offset++) {
             if ($offset % 2 === 0) {
                 $tempContent = $splittedContent[$offset];
-                $thisStrLen = $charsetConverter->strlen('utf-8', html_entity_decode($tempContent, ENT_COMPAT, 'UTF-8'));
+                $thisStrLen = mb_strlen(html_entity_decode($tempContent, ENT_COMPAT, 'UTF-8'), 'utf-8');
                 if ($strLen + $thisStrLen > $absChars) {
                     $croppedOffset = $offset;
                     $cropPosition = $absChars - $strLen;
@@ -4495,7 +4490,7 @@ class ContentObjectRenderer
     {
         $decimals = isset($conf['decimals.']) ? $this->stdWrap($conf['decimals'], $conf['decimals.']) : $conf['decimals'];
         $type = isset($conf['roundType.']) ? $this->stdWrap($conf['roundType'], $conf['roundType.']) : $conf['roundType'];
-        $floatVal = floatval($content);
+        $floatVal = (float)$content;
         switch ($type) {
             case 'ceil':
                 $content = ceil($floatVal);
@@ -4524,7 +4519,7 @@ class ContentObjectRenderer
         $decimals = isset($conf['decimals.']) ? (int)$this->stdWrap($conf['decimals'], $conf['decimals.']) : (int)$conf['decimals'];
         $dec_point = isset($conf['dec_point.']) ? $this->stdWrap($conf['dec_point'], $conf['dec_point.']) : $conf['dec_point'];
         $thousands_sep = isset($conf['thousands_sep.']) ? $this->stdWrap($conf['thousands_sep'], $conf['thousands_sep.']) : $conf['thousands_sep'];
-        return number_format(floatval($content), $decimals, $dec_point, $thousands_sep);
+        return number_format((float)$content, $decimals, $dec_point, $thousands_sep);
     }
 
     /**
@@ -4771,7 +4766,7 @@ class ContentObjectRenderer
                 // tags
                 $len = strcspn(substr($theValue, $pointer), '>') + 1;
                 $data = substr($theValue, $pointer, $len);
-                if (StringUtility::endsWith($data, '/>') && !StringUtility::beginsWith($data, '<link ')) {
+                if (StringUtility::endsWith($data, '/>') && strpos($data, '<link ') !== 0) {
                     $tagContent = substr($data, 1, -2);
                 } else {
                     $tagContent = substr($data, 1, -1);
@@ -4843,7 +4838,7 @@ class ContentObjectRenderer
                 } else {
                     // If a tag was not a typo tag, then it is just added to the content
                     $stripNL = false;
-                    if (GeneralUtility::inList($allowTags, $tag[0]) || $denyTags != '*' && !GeneralUtility::inList($denyTags, $tag[0])) {
+                    if (GeneralUtility::inList($allowTags, $tag[0]) || $denyTags !== '*' && !GeneralUtility::inList($denyTags, $tag[0])) {
                         $contentAccum[$contentAccumP] .= $data;
                     } else {
                         $contentAccum[$contentAccumP] .= htmlspecialchars($data);
@@ -4881,15 +4876,23 @@ class ContentObjectRenderer
      */
     public function encaps_lineSplit($theValue, $conf)
     {
+        if ((string)$theValue === '') {
+            return '';
+        }
         $lParts = explode(LF, $theValue);
+
+        // When the last element is an empty linebreak we need to remove it, otherwise we will have a duplicate empty line.
+        $lastPartIndex = count($lParts) - 1;
+        if ($lParts[$lastPartIndex] === '' && trim($lParts[$lastPartIndex - 1], CR) === '') {
+            array_pop($lParts);
+        }
+
         $encapTags = GeneralUtility::trimExplode(',', strtolower($conf['encapsTagList']), true);
         $nonWrappedTag = $conf['nonWrappedTag'];
         $defaultAlign = isset($conf['defaultAlign.'])
             ? trim($this->stdWrap($conf['defaultAlign'], $conf['defaultAlign.']))
             : trim($conf['defaultAlign']);
-        if ((string)$theValue === '') {
-            return '';
-        }
+
         $str_content = '';
         foreach ($lParts as $k => $l) {
             $sameBeginEnd = 0;
@@ -5181,7 +5184,7 @@ class ContentObjectRenderer
                 } catch (Exception $exception) {
                     /** @var \TYPO3\CMS\Core\Log\Logger $logger */
                     $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
-                    $logger->warning('The image "' . $file . '" could not be found and won\'t be included in frontend output');
+                    $logger->warning('The image "' . $file . '" could not be found and won\'t be included in frontend output', ['exception' => $exception]);
                     return null;
                 }
             }
@@ -5516,7 +5519,7 @@ class ContentObjectRenderer
         } catch (Exception $exception) {
             /** @var \TYPO3\CMS\Core\Log\Logger $logger */
             $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
-            $logger->warning('The file "' . $fileUidOrCurrentKeyword . '" could not be found and won\'t be included in frontend output');
+            $logger->warning('The file "' . $fileUidOrCurrentKeyword . '" could not be found and won\'t be included in frontend output', ['exception' => $exception]);
             $fileObject = null;
         }
 
@@ -5709,7 +5712,7 @@ class ContentObjectRenderer
         }
 
         // Resolve FAL-api "file:UID-of-sys_file-record" and "file:combined-identifier"
-        if ($linkHandlerKeyword === 'file' && !StringUtility::beginsWith($linkParameterParts['url'], 'file://')) {
+        if ($linkHandlerKeyword === 'file' && strpos($linkParameterParts['url'], 'file://') !== 0) {
             try {
                 $fileOrFolderObject = $this->getResourceFactory()->retrieveFileOrFolderObject($linkHandlerValue);
                 // Link to a folder or file
@@ -5849,7 +5852,7 @@ class ContentObjectRenderer
                     $linkLocation = $fileOrFolderObject->getPublicUrl();
                     // Setting title if blank value to link
                     $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, rawurldecode($linkLocation));
-                    $linkLocation = (!StringUtility::beginsWith($linkLocation, '/') ? $tsfe->absRefPrefix : '') . $linkLocation;
+                    $linkLocation = (strpos($linkLocation, '/') !== 0 ? $tsfe->absRefPrefix : '') . $linkLocation;
                     $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_FILE, $linkLocation, $conf);
                     $this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
 
@@ -5871,29 +5874,12 @@ class ContentObjectRenderer
 
             // Link to a page
             case LinkService::TYPE_PAGE:
-                $enableLinksAcrossDomains = $tsfe->config['config']['typolinkEnableLinksAcrossDomains'];
-                if ($conf['no_cache.']) {
-                    $conf['no_cache'] = $this->stdWrap($conf['no_cache'], $conf['no_cache.']);
-                }
                 // Checking if the id-parameter is an alias.
                 if (!empty($linkDetails['pagealias'])) {
                     $linkDetails['pageuid'] = $tsfe->sys_page->getPageIdFromAlias($linkDetails['pagealias']);
                 } elseif (empty($linkDetails['pageuid']) || $linkDetails['pageuid'] === 'current') {
                     // If no id or alias is given
                     $linkDetails['pageuid'] = $tsfe->id;
-                }
-                $sectionMark = trim(isset($conf['section.']) ? $this->stdWrap($conf['section'], $conf['section.']) : $conf['section']);
-                if ($sectionMark === '' && isset($linkDetails['fragment'])) {
-                    $sectionMark = $linkDetails['fragment'];
-                }
-                if ($sectionMark !== '') {
-                    $sectionMark = '#' . (MathUtility::canBeInterpretedAsInteger($sectionMark) ? 'c' : '') . $sectionMark;
-                }
-                // Overruling 'type'
-                $pageType = $linkDetails['pagetype'] ?? 0;
-
-                if (isset($linkDetails['parameters'])) {
-                    $conf['additionalParams'] .= '&' . ltrim($linkDetails['parameters'], '&');
                 }
 
                 // Link to page even if access is missing?
@@ -5902,9 +5888,39 @@ class ContentObjectRenderer
                 } else {
                     $disableGroupAccessCheck = (bool)$tsfe->config['config']['typolinkLinkAccessRestrictedPages'];
                 }
+
                 // Looking up the page record to verify its existence:
                 $page = $tsfe->sys_page->getPage($linkDetails['pageuid'], $disableGroupAccessCheck);
+
                 if (!empty($page)) {
+                    if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typolinkProcessing']['typolinkModifyParameterForPageLinks'])) {
+                        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typolinkProcessing']['typolinkModifyParameterForPageLinks'] as $classData) {
+                            $hookObject = GeneralUtility::makeInstance($classData);
+                            if (!$hookObject instanceof TypolinkModifyLinkConfigForPageLinksHookInterface) {
+                                throw new \UnexpectedValueException('$hookObject must implement interface ' . TypolinkModifyLinkConfigForPageLinksHookInterface::class, 1483114905);
+                            }
+                            /** @var $hookObject TypolinkModifyLinkConfigForPageLinksHookInterface */
+                            $conf = $hookObject->modifyPageLinkConfiguration($conf, $linkDetails, $page);
+                        }
+                    }
+                    $enableLinksAcrossDomains = $tsfe->config['config']['typolinkEnableLinksAcrossDomains'];
+                    if ($conf['no_cache.']) {
+                        $conf['no_cache'] = $this->stdWrap($conf['no_cache'], $conf['no_cache.']);
+                    }
+
+                    $sectionMark = trim(isset($conf['section.']) ? $this->stdWrap($conf['section'], $conf['section.']) : $conf['section']);
+                    if ($sectionMark === '' && isset($linkDetails['fragment'])) {
+                        $sectionMark = $linkDetails['fragment'];
+                    }
+                    if ($sectionMark !== '') {
+                        $sectionMark = '#' . (MathUtility::canBeInterpretedAsInteger($sectionMark) ? 'c' : '') . $sectionMark;
+                    }
+                    // Overruling 'type'
+                    $pageType = $linkDetails['pagetype'] ?? 0;
+
+                    if (isset($linkDetails['parameters'])) {
+                        $conf['additionalParams'] .= '&' . ltrim($linkDetails['parameters'], '&');
+                    }
                     // MointPoints, look for closest MPvar:
                     $MPvarAcc = [];
                     if (!$tsfe->config['config']['MP_disableTypolinkClosestMPvalue']) {
@@ -5930,16 +5946,6 @@ class ContentObjectRenderer
                     $addQueryParams .= isset($conf['additionalParams.']) ? trim($this->stdWrap($conf['additionalParams'], $conf['additionalParams.'])) : trim($conf['additionalParams']);
                     if ($addQueryParams === '&' || $addQueryParams[0] !== '&') {
                         $addQueryParams = '';
-                    }
-                    if ($conf['useCacheHash']) {
-                        $params = $tsfe->linkVars . $addQueryParams . '&id=' . $linkDetails['pageuid'];
-                        if (trim($params, '& ') != '') {
-                            /** @var $cacheHash CacheHashCalculator */
-                            $cacheHash = GeneralUtility::makeInstance(CacheHashCalculator::class);
-                            $cHash = $cacheHash->generateForParameters($params);
-                            $addQueryParams .= $cHash ? '&cHash=' . $cHash : '';
-                        }
-                        unset($params);
                     }
                     $targetDomain = '';
                     $currentDomain = (string)$this->getEnvironmentVariable('HTTP_HOST');
@@ -5982,14 +5988,22 @@ class ContentObjectRenderer
                             $targetDomain = '';
                         }
                     }
+                    if ($conf['useCacheHash']) {
+                        $params = $tsfe->linkVars . $addQueryParams . '&id=' . $page['uid'];
+                        if (trim($params, '& ') != '') {
+                            /** @var $cacheHash CacheHashCalculator */
+                            $cacheHash = GeneralUtility::makeInstance(CacheHashCalculator::class);
+                            $cHash = $cacheHash->generateForParameters($params);
+                            $addQueryParams .= $cHash ? '&cHash=' . $cHash : '';
+                        }
+                        unset($params);
+                    }
                     $absoluteUrlScheme = 'http';
                     // URL shall be absolute:
-                    if (isset($conf['forceAbsoluteUrl']) && $conf['forceAbsoluteUrl'] || $page['url_scheme'] > 0) {
+                    if (isset($conf['forceAbsoluteUrl']) && $conf['forceAbsoluteUrl']) {
                         // Override scheme:
                         if (isset($conf['forceAbsoluteUrl.']['scheme']) && $conf['forceAbsoluteUrl.']['scheme']) {
                             $absoluteUrlScheme = $conf['forceAbsoluteUrl.']['scheme'];
-                        } elseif ($page['url_scheme'] > 0) {
-                            $absoluteUrlScheme = (int)$page['url_scheme'] === HttpUtility::SCHEME_HTTP ? 'http' : 'https';
                         } elseif ($this->getEnvironmentVariable('TYPO3_SSL')) {
                             $absoluteUrlScheme = 'https';
                         }
@@ -6112,7 +6126,7 @@ class ContentObjectRenderer
                     $linkLocation = $linkDetails['file'];
                     // Setting title if blank value to link
                     $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, rawurldecode($linkLocation));
-                    $linkLocation = (!StringUtility::beginsWith($linkLocation, '/') ? $tsfe->absRefPrefix : '') . $linkLocation;
+                    $linkLocation = (strpos($linkLocation, '/') !== 0 ? $tsfe->absRefPrefix : '') . $linkLocation;
                     $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_FILE, $linkLocation, $conf);
                     $this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
                     if (empty($target)) {
@@ -6199,7 +6213,8 @@ class ContentObjectRenderer
                 'conf' => &$conf,
                 'linktxt' => &$linkText,
                 'finalTag' => &$finalAnchorTag,
-                'finalTagParts' => &$finalTagParts
+                'finalTagParts' => &$finalTagParts,
+                'linkDetails' => &$linkDetails
             ];
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typoLink_PostProc'] as $_funcRef) {
                 GeneralUtility::callUserFunction($_funcRef, $_params, $this);
@@ -6261,7 +6276,7 @@ class ContentObjectRenderer
             $isUrlModified = false;
             // Set scheme and host if not yet part of the URL:
             if (empty($urlParts['host'])) {
-                $urlParts['scheme'] = 'http';
+                $urlParts['scheme'] = $this->getEnvironmentVariable('TYPO3_SSL') ? 'https' : 'http';
                 $urlParts['host'] = $this->getEnvironmentVariable('HTTP_HOST');
                 $urlParts['path'] = '/' . ltrim($urlParts['path'], '/');
                 // absRefPrefix has been prepended to $url beforehand
@@ -6760,13 +6775,13 @@ class ContentObjectRenderer
         $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
         switch (strtolower($case)) {
             case 'upper':
-                $theValue = $charsetConverter->conv_case('utf-8', $theValue, 'toUpper');
+                $theValue = mb_strtoupper($theValue, 'utf-8');
                 break;
             case 'lower':
-                $theValue = $charsetConverter->conv_case('utf-8', $theValue, 'toLower');
+                $theValue = mb_strtolower($theValue, 'utf-8');
                 break;
             case 'capitalize':
-                $theValue = $charsetConverter->convCapitalize('utf-8', $theValue);
+                $theValue = mb_convert_case($theValue, MB_CASE_TITLE, 'utf-8');
                 break;
             case 'ucfirst':
                 $theValue = $charsetConverter->convCaseFirst('utf-8', $theValue, 'toUpper');
@@ -7782,7 +7797,7 @@ class ContentObjectRenderer
         }
 
         // Static_* tables are allowed to be fetched from root page
-        if (StringUtility::beginsWith($table, 'static_')) {
+        if (strpos($table, 'static_') === 0) {
             $pid_uid_flag++;
         }
 
@@ -8098,7 +8113,7 @@ class ContentObjectRenderer
                     $markerValues[$marker] = (int)$tempValue;
                 } else {
                     // Handle float
-                    $markerValues[$marker] = floatval($tempValue);
+                    $markerValues[$marker] = (float)$tempValue;
                 }
             } elseif (is_null($tempValue)) {
                 // It represents NULL
@@ -8114,7 +8129,7 @@ class ContentObjectRenderer
                             if ((int)$listValue == $listValue) {
                                 $tempArray[] = (int)$listValue;
                             } else {
-                                $tempArray[] = floatval($listValue);
+                                $tempArray[] = (float)$listValue;
                             }
                         } else {
                             // If quoted, remove quotes before

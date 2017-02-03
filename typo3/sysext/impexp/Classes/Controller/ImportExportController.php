@@ -77,11 +77,6 @@ class ImportExportController extends BaseScriptClass
     protected $fileProcessor;
 
     /**
-     * @var string
-     */
-    protected $vC = '';
-
-    /**
      * @var LanguageService
      */
     protected $lang = null;
@@ -167,7 +162,6 @@ class ImportExportController extends BaseScriptClass
     {
         $this->MCONF['name'] = $this->moduleName;
         parent::init();
-        $this->vC = GeneralUtility::_GP('vC');
         $this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
         $this->lang = $this->getLanguageService();
     }
@@ -314,13 +308,13 @@ class ImportExportController extends BaseScriptClass
         if ($this->returnUrl) {
             $backButton = $buttonBar->makeLinkButton()
                 ->setHref($this->returnUrl)
-                ->setTitle($this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack'))
+                ->setTitle($this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
                 ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($backButton);
         }
         // Input data grabbed:
         $inData = GeneralUtility::_GP('tx_impexp');
-        if ((string)$inData['action'] == 'import') {
+        if ((string)$inData['action'] === 'import') {
             if ($this->id && is_array($this->pageinfo) || $this->getBackendUser()->user['admin'] && !$this->id) {
                 if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
                     // View
@@ -330,7 +324,7 @@ class ImportExportController extends BaseScriptClass
                         BackendUtility::BEgetRootLine($this->pageinfo['uid'])
                     );
                     $viewButton = $buttonBar->makeLinkButton()
-                        ->setTitle($this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage'))
+                        ->setTitle($this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.showPage'))
                         ->setHref('#')
                         ->setIcon($this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL))
                         ->setOnClick($onClick);
@@ -363,7 +357,7 @@ class ImportExportController extends BaseScriptClass
         $inData['maxFileSize'] = MathUtility::forceIntegerInRange($inData['maxFileSize'], 1, 1000000, 1000);
         $inData['filename'] = trim(preg_replace('/[^[:alnum:]._-]*/', '', preg_replace('/\\.(t3d|xml)$/', '', $inData['filename'])));
         if (strlen($inData['filename'])) {
-            $inData['filename'] .= $inData['filetype'] == 'xml' ? '.xml' : '.t3d';
+            $inData['filename'] .= $inData['filetype'] === 'xml' ? '.xml' : '.t3d';
         }
         // Set exclude fields in export object:
         if (!is_array($inData['exclude'])) {
@@ -603,7 +597,7 @@ class ImportExportController extends BaseScriptClass
             return;
         }
         foreach ($GLOBALS['TCA'] as $table => $value) {
-            if ($table != 'pages' && (in_array($table, $tables) || in_array('_ALL', $tables))) {
+            if ($table !== 'pages' && (in_array($table, $tables) || in_array('_ALL', $tables))) {
                 if ($this->getBackendUser()->check('tables_select', $table) && !$GLOBALS['TCA'][$table]['ctrl']['is_static']) {
                     $statement = $this->exec_listQueryPid($table, $k, MathUtility::forceIntegerInRange($maxNumber, 1));
                     while ($subTrow = $statement->fetch()) {
@@ -689,12 +683,12 @@ class ImportExportController extends BaseScriptClass
             $opt = [
                 '-2' => $this->lang->getLL('makeconfig_tablesOnThisPage'),
                 '-1' => $this->lang->getLL('makeconfig_expandedTree'),
-                '0' => $this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_0'),
-                '1' => $this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_1'),
-                '2' => $this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_2'),
-                '3' => $this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_3'),
-                '4' => $this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_4'),
-                '999' => $this->lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_infi'),
+                '0' => $this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.depth_0'),
+                '1' => $this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.depth_1'),
+                '2' => $this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.depth_2'),
+                '3' => $this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.depth_3'),
+                '4' => $this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.depth_4'),
+                '999' => $this->lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.depth_infi'),
             ];
             $this->standaloneView->assign('levelSelectOptions', $opt);
             $this->standaloneView->assign('tableSelectOptions', $this->getTableSelectOptions('pages'));
@@ -738,9 +732,9 @@ class ImportExportController extends BaseScriptClass
                         $iconAndTitle = $this->iconFactory->getIconForRecord('pages', $record, Icon::SIZE_SMALL)->render()
                             . BackendUtility::getRecordTitle('pages', $record, true);
                     }
+
                     $tableList[] = [
-                        'tableName' => $tableName,
-                        'iconAndTitle' => $iconAndTitle,
+                        'iconAndTitle' => sprintf($this->lang->getLL('makeconfig_tableListEntry'), $tableName, $iconAndTitle),
                         'reference' => $reference
                     ];
                 }
@@ -893,7 +887,7 @@ class ImportExportController extends BaseScriptClass
                         }
                     }
                     $import->display_import_pid_record = $this->pageinfo;
-                    $this->standaloneView->assign('contentOverview',  $import->displayContentOverview());
+                    $this->standaloneView->assign('contentOverview', $import->displayContentOverview());
                 }
                 // Compile messages which are inhibiting a proper import and add them to output.
                 if (!empty($importInhibitedMessages)) {
@@ -966,7 +960,6 @@ class ImportExportController extends BaseScriptClass
         if (
             $httpHost != $refInfo['host']
             && !$GLOBALS['$TYPO3_CONF_VARS']['SYS']['doNotCheckReferer']
-            && $this->vC != $this->getBackendUser()->veriCode()
         ) {
             $this->fileProcessor->writeLog(0, 2, 1, 'Referer host "%s" and server host "%s" did not match!', [$refInfo['host'], $httpHost]);
         } else {

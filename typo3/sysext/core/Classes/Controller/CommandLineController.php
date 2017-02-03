@@ -14,8 +14,11 @@ namespace TYPO3\CMS\Core\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * TYPO3 cli script basis
+ * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use a custom Command instead
  */
 class CommandLineController
 {
@@ -58,9 +61,11 @@ class CommandLineController
      * Make sure child classes also call this!
      *
      * @return void
+     * @deprecated the CommandLineController is deprecated since TYPO3 v8 and will be removed in TYPO3 v9, use a separate CLI Command instead
      */
     public function __construct()
     {
+        GeneralUtility::logDeprecatedFunction();
         // Loads the cli_args array with command line arguments
         $this->cli_setArguments($_SERVER['argv']);
     }
@@ -155,7 +160,7 @@ class CommandLineController
                 foreach ($argSplit as $i => $v) {
                     $ii = $i;
                     if ($i > 0) {
-                        if (!isset($cli_args_copy[$argSplit[0]][$i - 1]) && $v[0] != '[') {
+                        if (!isset($cli_args_copy[$argSplit[0]][$i - 1]) && $v[0] !== '[') {
                             // Using "[]" around a parameter makes it optional
                             echo 'ERROR: Option "' . $argSplit[0] . '" requires a value ("' . $v . '") on position ' . $i . LF;
                             die;

@@ -204,7 +204,7 @@ class TranslationConfigurationProvider
      */
     public function isTranslationInOwnTable($table)
     {
-        return $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] && !$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'];
+        return $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] && $table !== 'pages_language_overlay';
     }
 
     /**
@@ -215,17 +215,7 @@ class TranslationConfigurationProvider
      */
     public function foreignTranslationTable($table)
     {
-        $translationTable = $GLOBALS['TCA'][$table]['ctrl']['transForeignTable'];
-        if (
-            !$translationTable ||
-            !$GLOBALS['TCA'][$translationTable] ||
-            !$GLOBALS['TCA'][$translationTable]['ctrl']['languageField'] ||
-            !$GLOBALS['TCA'][$translationTable]['ctrl']['transOrigPointerField'] ||
-            $GLOBALS['TCA'][$translationTable]['ctrl']['transOrigPointerTable'] !== $table
-        ) {
-            $translationTable = '';
-        }
-        return $translationTable;
+        return $table === 'pages' ? 'pages_language_overlay' : '';
     }
 
     /**
@@ -249,9 +239,9 @@ class TranslationConfigurationProvider
     protected function getDefaultLanguageLabel(array $modSharedTSconfig)
     {
         if (strlen($modSharedTSconfig['properties']['defaultLanguageLabel'])) {
-            $defaultLanguageLabel = $modSharedTSconfig['properties']['defaultLanguageLabel'] . ' (' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage') . ')';
+            $defaultLanguageLabel = $modSharedTSconfig['properties']['defaultLanguageLabel'] . ' (' . $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:defaultLanguage') . ')';
         } else {
-            $defaultLanguageLabel = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage');
+            $defaultLanguageLabel = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf:defaultLanguage');
         }
         return $defaultLanguageLabel;
     }

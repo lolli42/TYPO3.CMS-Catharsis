@@ -158,8 +158,8 @@ class FileListController extends ActionController
     public function initializeObject()
     {
         $this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_mod_file_list.xlf');
-        $this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf');
+        $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_misc.xlf');
 
         // Setting GPvars:
         $this->id = ($combinedIdentifier = GeneralUtility::_GP('id'));
@@ -349,7 +349,7 @@ class FileListController extends ActionController
             $this->filelist->clipObj->fileMode = 1;
             $this->filelist->clipObj->initializeClipboard();
             $CB = GeneralUtility::_GET('CB');
-            if ($this->cmd == 'setCB') {
+            if ($this->cmd === 'setCB') {
                 $CB['el'] = $this->filelist->clipObj->cleanUpCBC(array_merge(GeneralUtility::_POST('CBH'),
                     (array)GeneralUtility::_POST('CBC')), '_FILE');
             }
@@ -361,7 +361,7 @@ class FileListController extends ActionController
             // Saves
             $this->filelist->clipObj->endClipboard();
             // If the "cmd" was to delete files from the list (clipboard thing), do that:
-            if ($this->cmd == 'delete') {
+            if ($this->cmd === 'delete') {
                 $items = $this->filelist->clipObj->cleanUpCBC(GeneralUtility::_POST('CBC'), '_FILE', 1);
                 if (!empty($items)) {
                     // Make command array:
@@ -395,14 +395,14 @@ class FileListController extends ActionController
                 }
                 ');
             $pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileDelete');
-            $pageRenderer->addInlineLanguageLabelFile('EXT:lang/locallang_alt_doc.xlf', 'buttons');
+            $pageRenderer->addInlineLanguageLabelFile('EXT:lang/Resources/Private/Language/locallang_alt_doc.xlf', 'buttons');
 
             // Include DragUploader only if we have write access
             if ($this->folderObject->getStorage()->checkUserActionPermission('add', 'File')
                 && $this->folderObject->checkActionPermission('write')
             ) {
                 $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
-                $pageRenderer->addInlineLanguageLabelFile('EXT:lang/locallang_core.xlf', 'file_upload');
+                $pageRenderer->addInlineLanguageLabelFile('EXT:lang/Resources/Private/Language/locallang_core.xlf', 'file_upload');
                 $pageRenderer->addInlineLanguageLabelArray([
                     'permissions.read' => $this->getLanguageService()->getLL('read'),
                     'permissions.write' => $this->getLanguageService()->getLL('write'),
@@ -492,14 +492,13 @@ class FileListController extends ActionController
 
         $this->view->assign('searchWord', $searchWord);
         $this->view->assign('files', $fileFacades);
-        $this->view->assign('veriCode', $this->getBackendUser()->veriCode());
         $this->view->assign('deleteUrl', BackendUtility::getModuleUrl('tce_file'));
         $this->view->assign('settings', [
             'jsConfirmationDelete' => $this->getBackendUser()->jsConfirmation(JsConfirmation::DELETE)
         ]);
 
         $pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileDelete');
-        $pageRenderer->addInlineLanguageLabelFile('EXT:lang/locallang_alt_doc.xlf', 'buttons');
+        $pageRenderer->addInlineLanguageLabelFile('EXT:lang/Resources/Private/Language/locallang_alt_doc.xlf', 'buttons');
     }
 
     /**
@@ -569,7 +568,7 @@ class FileListController extends ActionController
         );
         $refreshButton = $buttonBar->makeLinkButton()
             ->setHref($refreshLink)
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload'))
+            ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.reload'))
             ->setIcon($iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL));
         $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_RIGHT);
 
@@ -585,7 +584,7 @@ class FileListController extends ActionController
                 $levelUpButton = $buttonBar->makeLinkButton()
                     ->setHref(BackendUtility::getModuleUrl('file_FilelistList', ['id' => $parentFolder->getCombinedIdentifier()]))
                     ->setOnClick($levelUpClick)
-                    ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.upOneLevel'))
+                    ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.upOneLevel'))
                     ->setIcon($iconFactory->getIcon('actions-view-go-up', Icon::SIZE_SMALL));
                 $buttonBar->addButton($levelUpButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
             }
@@ -611,7 +610,7 @@ class FileListController extends ActionController
                     ]
                 ))
                 ->setClasses('t3js-drag-uploader-trigger')
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload'))
+                ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.upload'))
                 ->setIcon($iconFactory->getIcon('actions-edit-upload', Icon::SIZE_SMALL));
             $buttonBar->addButton($uploadButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
         }
@@ -629,7 +628,7 @@ class FileListController extends ActionController
                         'returnUrl' => $this->filelist->listURL(),
                     ]
                 ))
-                ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:cm.new'))
+                ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.new'))
                 ->setIcon($iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL));
             $buttonBar->addButton($newButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
         }

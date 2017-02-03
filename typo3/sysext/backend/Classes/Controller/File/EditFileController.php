@@ -21,10 +21,10 @@ use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Script Class for rendering the file editing screen
@@ -84,7 +84,6 @@ class EditFileController extends AbstractModule
     public function __construct()
     {
         parent::__construct();
-        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
         $GLOBALS['SOBE'] = $this;
         $this->init();
     }
@@ -108,8 +107,8 @@ class EditFileController extends AbstractModule
         }
         // Cleaning and checking target directory
         if (!$this->fileObject) {
-            $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:paramError'));
-            $message = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_mod_file_list.xlf:targetNoDir'));
+            $title = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:paramError');
+            $message = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:targetNoDir');
             throw new \RuntimeException($title . ': ' . $message, 1294586841);
         }
         if ($this->fileObject->getStorage()->getUid() === 0) {
@@ -120,7 +119,7 @@ class EditFileController extends AbstractModule
         }
 
         // Setting the title and the icon
-        $icon = $this->iconFactory->getIcon('apps-filetree-root', Icon::SIZE_SMALL)->render();
+        $icon = $this->moduleTemplate->getIconFactory()->getIcon('apps-filetree-root', Icon::SIZE_SMALL)->render();
         $this->title = $icon
             . htmlspecialchars(
                 $this->fileObject->getStorage()->getName()
@@ -146,7 +145,7 @@ class EditFileController extends AbstractModule
     public function main()
     {
         $this->getButtons();
-        // Hook	before compiling the output
+        // Hook: before compiling the output
         if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['preOutputProcessingHook'])) {
             $preOutputProcessingHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['preOutputProcessingHook'];
             if (is_array($preOutputProcessingHook)) {
@@ -160,12 +159,10 @@ class EditFileController extends AbstractModule
             }
         }
 
-        $pageContent = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" id="EditFileController" name="editform">';
-        $pageContent .= '<h1>'
-            . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.pagetitle')
-            . ' ' . htmlspecialchars($this->fileObject->getName()) . '</h1>';
+        $assigns = [];
+        $assigns['moduleUrlTceFile'] = BackendUtility::getModuleUrl('tce_file');
+        $assigns['fileName'] = $this->fileObject->getName();
 
-        $code = '';
         $extList = $GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'];
         try {
             if (!$extList || !GeneralUtility::inList($extList, $this->fileObject->getExtension())) {
@@ -180,24 +177,24 @@ class EditFileController extends AbstractModule
                 'target' => $this->origTarget,
                 'returnUrl' => $this->returnUrl
             ]);
-            $code .= '
-                <div id="c-edit">
-					<textarea rows="30" name="file[editfile][0][data]" wrap="off"  class="form-control text-monospace t3js-enable-tab">' . htmlspecialchars($fileContent) . '</textarea>
-					<input type="hidden" name="file[editfile][0][target]" value="' . $this->fileObject->getUid() . '" />
-					<input type="hidden" name="redirect" value="' . htmlspecialchars($hValue) . '" />
-				</div>
-				<br />';
+            $assigns['uid'] = $this->fileObject->getUid();
+            $assigns['fileContent'] = $fileContent;
+            $assigns['hValue'] = $hValue;
         } catch (\Exception $e) {
-            $code .= sprintf(
-                $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.coundNot'),
-                $extList
-            );
+            $assigns['extList'] = $extList;
         }
 
-        // Ending of section and outputting editing form:
-        $pageContent .= $code;
+        // Rendering of the output via fluid
+        $view = GeneralUtility::makeInstance(StandaloneView::class);
+        $view->setTemplateRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates')]);
+        $view->setPartialRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Partials')]);
+        $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName(
+            'EXT:backend/Resources/Private/Templates/File/EditFile.html'
+        ));
+        $view->assignMultiple($assigns);
+        $pageContent = $view->render();
 
-        // Hook	after compiling the output
+        // Hook: after compiling the output
         if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['postOutputProcessingHook'])) {
             $postOutputProcessingHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['postOutputProcessingHook'];
             if (is_array($postOutputProcessingHook)) {
@@ -210,9 +207,8 @@ class EditFileController extends AbstractModule
                 }
             }
         }
-        $pageContent .= '</form>';
-        $this->content = $pageContent;
 
+        $this->content .= $pageContent;
         $this->moduleTemplate->setContent($this->content);
     }
 
@@ -252,7 +248,7 @@ class EditFileController extends AbstractModule
             ->setName('_save')
             ->setValue('1')
             ->setOnClick('document.editform.submit();')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.submit'))
+            ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_edit.php.submit'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL));
 
         // Save and Close button
@@ -264,7 +260,7 @@ class EditFileController extends AbstractModule
                 . GeneralUtility::quoteJSvalue($this->returnUrl)
                 . '; document.editform.submit();'
             )
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.saveAndClose'))
+            ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_edit.php.saveAndClose'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
                 'actions-document-save-close',
                 Icon::SIZE_SMALL
@@ -279,7 +275,7 @@ class EditFileController extends AbstractModule
         $closeButton = $buttonBar->makeLinkButton()
             ->setHref('#')
             ->setOnClick('backToList(); return false;')
-            ->setTitle($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.cancel'))
+            ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.cancel'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
         $buttonBar->addButton($closeButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
 

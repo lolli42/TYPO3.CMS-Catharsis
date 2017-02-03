@@ -37,16 +37,18 @@
 		"ext-session": "*",
 		"ext-xml": "*",
 		"psr/log": "~1.0.0",
-		"swiftmailer/swiftmailer": "~5.4.3",
-		"symfony/console": ">=2.7 <3.1",
-		"symfony/finder": ">=2.7 <3.1",
+		"swiftmailer/swiftmailer": "~5.4.5",
+		"symfony/console": "^2.7 || ^3.0",
+		"symfony/finder": "^2.7 || ^3.0",
+		"symfony/yaml": "^2.7 || ^3.0",
+		"symfony/polyfill-mbstring": "^1.2",
 		"doctrine/instantiator": "~1.0.4",
 		"typo3/class-alias-loader": "^1.0",
 		"typo3/cms-composer-installers": "^1.2.8",
 		"psr/http-message": "~1.0",
 		"cogpowered/finediff": "~0.3.1",
 		"mso/idna-convert": "^1.1.0",
-		"typo3fluid/fluid": "^2.0",
+		"typo3fluid/fluid": "^2.2",
 		"guzzlehttp/guzzle": "^6.2.1",
 		"doctrine/dbal": "~2.5.4"
 	},
@@ -56,7 +58,7 @@
 		"codeception/codeception": "^2.2",
 		"se/selenium-server-standalone": "~2.53",
 		"7elix/styleguide": "~8.0.0",
-		"friendsofphp/php-cs-fixer": "^1.12",
+		"friendsofphp/php-cs-fixer": "^2.0",
 		"fiunchinho/phpunit-randomizer": "~2.0.3"
 	},
 	"suggest": {
@@ -73,6 +75,7 @@
 			"always-add-alias-loader": true,
 			"class-alias-maps": [
 				"typo3/sysext/fluid/Migrations/Code/ClassAliasMap.php",
+				"typo3/sysext/rtehtmlarea/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/version/Migrations/Code/ClassAliasMap.php"
 			]
 		},
@@ -116,6 +119,7 @@
 		"typo3/cms-recycler": "self.version",
 		"typo3/cms-reports": "self.version",
 		"typo3/cms-rsaauth": "self.version",
+		"typo3/cms-rte-ckeditor": "self.version",
 		"typo3/cms-rtehtmlarea": "self.version",
 		"typo3/cms-saltedpasswords": "self.version",
 		"typo3/cms-scheduler": "self.version",
@@ -124,7 +128,6 @@
 		"typo3/cms-sys-action": "self.version",
 		"typo3/cms-sys-note": "self.version",
 		"typo3/cms-t3editor": "self.version",
-		"typo3/cms-t3skin": "self.version",
 		"typo3/cms-taskcenter": "self.version",
 		"typo3/cms-tstemplate": "self.version",
 		"typo3/cms-version": "self.version",
@@ -168,6 +171,7 @@
 			"TYPO3\\CMS\\Recycler\\": "typo3/sysext/recycler/Classes/",
 			"TYPO3\\CMS\\Reports\\": "typo3/sysext/reports/Classes/",
 			"TYPO3\\CMS\\Rsaauth\\": "typo3/sysext/rsaauth/Classes/",
+			"TYPO3\\CMS\\RteCKEditor\\": "typo3/sysext/rte_ckeditor/Classes/",
 			"TYPO3\\CMS\\Rtehtmlarea\\": "typo3/sysext/rtehtmlarea/Classes/",
 			"TYPO3\\CMS\\Saltedpasswords\\": "typo3/sysext/saltedpasswords/Classes/",
 			"TYPO3\\CMS\\Scheduler\\": "typo3/sysext/scheduler/Classes/",
@@ -182,7 +186,10 @@
 			"TYPO3\\CMS\\Viewpage\\": "typo3/sysext/viewpage/Classes/",
 			"TYPO3\\CMS\\WizardCrpages\\": "typo3/sysext/wizard_crpages/Classes/",
 			"TYPO3\\CMS\\WizardSortpages\\": "typo3/sysext/wizard_sortpages/Classes/",
-			"TYPO3\\CMS\\Workspaces\\": "typo3/sysext/workspaces/Classes/"
+			"TYPO3\\CMS\\Workspaces\\": "typo3/sysext/workspaces/Classes/",
+			"TYPO3\\Components\\TestingFramework\\": "components/testing_framework/Classes/",
+			"TYPO3\\CMS\\Core\\Tests\\": "components/testing_framework/compat/core/",
+			"TYPO3\\CMS\\Fluid\\Tests\\": "components/testing_framework/compat/fluid/"
 		},
 		"classmap": [
 			"typo3/sysext/core/Resources/PHP/"
@@ -197,11 +204,14 @@
 			"TYPO3\\CMS\\Belog\\Tests\\": "typo3/sysext/belog/Tests/",
 			"TYPO3\\CMS\\Beuser\\Tests\\": "typo3/sysext/beuser/Tests/",
 			"TYPO3\\CMS\\Core\\Tests\\": "typo3/sysext/core/Tests/",
+			"TYPO3\\CMS\\CssStyledContent\\Tests\\": "typo3/sysext/css_styled_content/Tests/",
 			"TYPO3\\CMS\\Documentation\\Tests\\": "typo3/sysext/documentation/Tests/",
 			"TYPO3\\CMS\\Extbase\\Tests\\": "typo3/sysext/extbase/Tests/",
 			"TYPO3\\CMS\\Extensionmanager\\Tests\\": "typo3/sysext/extensionmanager/Tests/",
 			"TYPO3\\CMS\\Felogin\\Tests\\": "typo3/sysext/felogin/Tests/",
+			"TYPO3\\CMS\\Filemetadata\\Tests\\": "typo3/sysext/filemetadata/Tests/",
 			"TYPO3\\CMS\\Fluid\\Tests\\": "typo3/sysext/fluid/Tests/",
+			"TYPO3\\CMS\\FluidStyledContent\\Tests\\": "typo3/sysext/fluid_styled_content/Tests/",
 			"TYPO3\\CMS\\Form\\Tests\\": "typo3/sysext/form/Tests/",
 			"TYPO3\\CMS\\Frontend\\Tests\\": "typo3/sysext/frontend/Tests/",
 			"TYPO3\\CMS\\Impexp\\Tests\\": "typo3/sysext/impexp/Tests/",
@@ -212,9 +222,12 @@
 			"TYPO3\\CMS\\Recordlist\\Tests\\": "typo3/sysext/recordlist/Tests/",
 			"TYPO3\\CMS\\Reports\\Tests\\": "typo3/sysext/reports/Tests/",
 			"TYPO3\\CMS\\Rsaauth\\Tests\\": "typo3/sysext/rsaauth/Tests/",
+			"TYPO3\\CMS\\Rtehtmlarea\\Tests\\": "typo3/sysext/rtehtmlarea/Tests/",
 			"TYPO3\\CMS\\Saltedpasswords\\Tests\\": "typo3/sysext/saltedpasswords/Tests/",
 			"TYPO3\\CMS\\Scheduler\\Tests\\": "typo3/sysext/scheduler/Tests/",
 			"TYPO3\\CMS\\Sv\\Tests\\": "typo3/sysext/sv/Tests/",
+			"TYPO3\\CMS\\SysAction\\Tests\\": "typo3/sysext/sys_action/Tests/",
+			"TYPO3\\CMS\\SysNote\\Tests\\": "typo3/sysext/sys_note/Tests/",
 			"TYPO3\\CMS\\Workspaces\\Tests\\": "typo3/sysext/workspaces/Tests/",
 			"TYPO3\\CMS\\Recycler\\Tests\\": "typo3/sysext/recycler/Tests/"
 		},

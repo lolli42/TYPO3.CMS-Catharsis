@@ -120,20 +120,32 @@ class RenderingContext extends \TYPO3Fluid\Fluid\Core\Rendering\RenderingContext
      */
     public function __construct(ViewInterface $view = null)
     {
-        $objectManager = GeneralUtility::makeInstance(ObjectManager::class);
-        if ($view) {
-            $this->view = $view;
+        if ($view !== null) {
+            // Note: if $view is received here this indicates internal framework instancing
+            // and it is safe to call the parent constructor. Custom, non-view-providing
+            // usages will only perform the initialisation below (which is sufficient mind you!)
+            parent::__construct($view);
+        } else {
+            // Reproduced partial initialisation from parent::__construct; minus the custom
+            // implementations we attach below.
+            $this->setTemplateParser(new TemplateParser());
+            $this->setTemplateCompiler(new TemplateCompiler());
+            $this->setViewHelperInvoker(new ViewHelperInvoker());
+            $this->setViewHelperVariableContainer(new ViewHelperVariableContainer());
         }
-        $this->setTemplateParser(new TemplateParser());
-        $this->setTemplateCompiler(new TemplateCompiler());
-        $this->setViewHelperInvoker(new ViewHelperInvoker());
-        $this->setViewHelperVariableContainer(new ViewHelperVariableContainer());
+
+        $objectManager = GeneralUtility::makeInstance(ObjectManager::class);
         $this->setTemplatePaths($objectManager->get(TemplatePaths::class));
         $this->setViewHelperResolver($objectManager->get(ViewHelperResolver::class));
         $this->setVariableProvider($objectManager->get(CmsVariableProvider::class));
-        $this->setTemplateProcessors([
-            $objectManager->get(XmlnsNamespaceTemplatePreProcessor::class),
-        ]);
+        $this->setTemplateProcessors(
+            array_merge(
+                parent::getTemplateProcessors(),
+                [
+                    $objectManager->get(XmlnsNamespaceTemplatePreProcessor::class),
+                ]
+            )
+        );
         /** @var FluidTemplateCache $cache */
         $cache = $objectManager->get(CacheManager::class)->getCache('fluid_template');
         if (is_a($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['fluid_template']['frontend'], FluidTemplateCache::class, true)) {
@@ -226,9 +238,12 @@ class RenderingContext extends \TYPO3Fluid\Fluid\Core\Rendering\RenderingContext
      */
     public function setControllerAction($action)
     {
-        $action = lcfirst(pathinfo($action, PATHINFO_FILENAME));
+        $dotPosition = strpos($action, '.');
+        if ($dotPosition !== false) {
+            $action = substr($action, 0, $dotPosition);
+        }
         parent::setControllerAction($action);
-        $this->controllerContext->getRequest()->setControllerActionName($action);
+        $this->controllerContext->getRequest()->setControllerActionName(lcfirst($action));
     }
 
     /**

@@ -307,6 +307,27 @@ class ActionService
     /**
      * @param string $tableName
      * @param int $uid
+     * @param int $languageId
+     * @return array
+     */
+    public function copyRecordToLanguage($tableName, $uid, $languageId)
+    {
+        $commandMap = [
+            $tableName => [
+                $uid => [
+                    'copyToLanguage' => $languageId,
+                ],
+            ],
+        ];
+        $this->createDataHandler();
+        $this->dataHandler->start([], $commandMap);
+        $this->dataHandler->process_cmdmap();
+        return $this->dataHandler->copyMappingArray;
+    }
+
+    /**
+     * @param string $tableName
+     * @param int $uid
      * @param string $fieldName
      * @param array $referenceIds
      */
@@ -337,7 +358,7 @@ class ActionService
     /**
      * @param array $tableLiveUids
      * @param bool $throwException
-     * @throws \TYPO3\CMS\Core\Tests\Exception
+     * @throws \TYPO3\Components\TestingFramework\Core\Exception
      */
     public function publishRecords(array $tableLiveUids, $throwException = true)
     {
@@ -347,7 +368,7 @@ class ActionService
                 $versionedUid = $this->getVersionedId($tableName, $liveUid);
                 if (empty($versionedUid)) {
                     if ($throwException) {
-                        throw new \TYPO3\CMS\Core\Tests\Exception('Versioned UID could not be determined', 1476049592);
+                        throw new \TYPO3\Components\TestingFramework\Core\Exception('Versioned UID could not be determined', 1476049592);
                     } else {
                         continue;
                     }
@@ -430,10 +451,9 @@ class ActionService
     /**
      * @param string $tableName
      * @param int $liveUid
-     * @param bool $useDeleteClause
      * @return NULL|int
      */
-    protected function getVersionedId($tableName, $liveUid, $useDeleteClause = false)
+    protected function getVersionedId($tableName, $liveUid)
     {
         $versionedId = null;
         $liveUid = (int)$liveUid;

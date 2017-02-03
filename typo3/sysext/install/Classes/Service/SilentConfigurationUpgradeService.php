@@ -84,7 +84,10 @@ class SilentConfigurationUpgradeService
         // #77411
         'SYS/caching/cacheConfigurations/extbase_typo3dbbackend_tablecolumns',
         // #77460
-        'SYS/caching/cacheConfigurations/extbase_typo3dbbackend_queries'
+        'SYS/caching/cacheConfigurations/extbase_typo3dbbackend_queries',
+        // #79513
+        'FE/lockHashKeyWords',
+        'BE/lockHashKeyWords'
     ];
 
     public function __construct(ConfigurationManager $configurationManager = null)
@@ -111,6 +114,7 @@ class SilentConfigurationUpgradeService
         $this->migrateLockSslSetting();
         $this->migrateDatabaseConnectionSettings();
         $this->migrateDatabaseConnectionCharset();
+        $this->migrateDatabaseDriverOptions();
     }
 
     /**
@@ -652,7 +656,9 @@ class SilentConfigurationUpgradeService
             $value = $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/driverOptions');
             $confManager->setLocalConfigurationValueByPath(
                 'DB/Connections/Default/driverOptions',
-                (bool)$value ? MYSQLI_CLIENT_COMPRESS : 0
+                [
+                    'flags' => (bool)$value ? MYSQLI_CLIENT_COMPRESS : 0,
+                ]
             );
         }
 
@@ -703,6 +709,27 @@ class SilentConfigurationUpgradeService
             }
         } catch (\RuntimeException $e) {
             // no incompatible charset configuration found, so nothing needs to be modified
+        }
+    }
+
+    /**
+     * Migrate the configuration setting DB/Connections/Default/driverOptions to array type.
+     *
+     * @return void
+     */
+    protected function migrateDatabaseDriverOptions()
+    {
+        $confManager = $this->configurationManager;
+        try {
+            $options = $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/driverOptions');
+            if (!is_array($options)) {
+                $confManager->setLocalConfigurationValueByPath(
+                    'DB/Connections/Default/driverOptions',
+                    ['flags' => (int)$options]
+                );
+            }
+        } catch (\RuntimeException $e) {
+            // no driver options found, nothing needs to be modified
         }
     }
 }

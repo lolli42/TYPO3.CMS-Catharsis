@@ -15,14 +15,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -40,7 +40,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -60,7 +60,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -74,7 +74,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -88,7 +88,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -102,7 +102,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -116,7 +116,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -129,11 +129,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -152,7 +151,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -179,14 +178,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -204,7 +203,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -224,7 +223,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -238,7 +237,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -252,7 +251,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -266,7 +265,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -280,7 +279,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -293,11 +292,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -316,7 +314,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -343,14 +341,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -368,7 +366,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -388,7 +386,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -402,7 +400,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -416,7 +414,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -430,7 +428,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -444,7 +442,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -457,11 +455,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -480,7 +477,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -507,14 +504,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -532,7 +529,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -552,7 +549,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -566,7 +563,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -580,7 +577,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -594,7 +591,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -608,7 +605,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -621,11 +618,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -644,7 +640,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -671,14 +667,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -696,7 +692,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -716,7 +712,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -730,7 +726,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -744,7 +740,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -758,7 +754,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -772,7 +768,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -785,11 +781,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -808,7 +803,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -835,14 +830,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -860,7 +855,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -880,7 +875,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -894,7 +889,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -908,7 +903,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -922,7 +917,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -936,7 +931,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -949,11 +944,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -972,7 +966,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -999,14 +993,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -1024,7 +1018,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -1044,7 +1038,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -1058,7 +1052,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -1072,7 +1066,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -1086,7 +1080,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -1100,7 +1094,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -1113,11 +1107,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -1136,7 +1129,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -1163,14 +1156,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -1188,7 +1181,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -1208,7 +1201,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -1222,7 +1215,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -1236,7 +1229,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -1250,7 +1243,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -1264,7 +1257,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -1277,11 +1270,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -1300,7 +1292,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -1327,14 +1319,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -1352,7 +1344,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -1372,7 +1364,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -1386,7 +1378,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -1400,7 +1392,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -1414,7 +1406,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -1428,7 +1420,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -1441,11 +1433,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -1464,7 +1455,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -1491,14 +1482,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -1516,7 +1507,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -1536,7 +1527,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -1550,7 +1541,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -1564,7 +1555,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -1578,7 +1569,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -1592,7 +1583,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -1605,11 +1596,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -1628,7 +1618,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -1655,14 +1645,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -1680,7 +1670,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -1700,7 +1690,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -1714,7 +1704,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -1728,7 +1718,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -1742,7 +1732,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -1756,7 +1746,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -1769,11 +1759,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -1792,7 +1781,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -1819,14 +1808,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -1844,7 +1833,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -1864,7 +1853,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -1878,7 +1867,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -1892,7 +1881,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -1906,7 +1895,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -1920,7 +1909,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -1933,11 +1922,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -1956,7 +1944,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -1983,14 +1971,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -2008,7 +1996,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -2028,7 +2016,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -2042,7 +2030,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -2056,7 +2044,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -2070,7 +2058,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -2084,7 +2072,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -2097,11 +2085,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -2120,7 +2107,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">
@@ -2147,14 +2134,14 @@
 				<thead>
 				<tr data-uid="0" data-l10nparent="0">
 					<th nowrap="nowrap" class="col-icon"></th>
-					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_filepath' )}</th>
-					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_file' )}</th>
+					<th nowrap="nowrap" class="col-path">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_filepath' )}</th>
+					<th nowrap="nowrap" class="col-title">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_file' )}</th>
 					<th nowrap="nowrap" class="col-control"></th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_fileext' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_tstamp' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_size' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c_rw' )}</th>
-					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:c__REF_' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_fileext' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_tstamp' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_size' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c_rw' )}</th>
+					<th nowrap="nowrap">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:c__REF_' )}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -2172,7 +2159,7 @@
 							<f:if condition="{file.isMetadataEditable}">
 								<f:then>
 									<a href="#" class="filelist-file-title"
-										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editMetadata' )}"
+										 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata' )}"
 										 data-url="{fl:uri.editSysFileMetadataRecord( uid:file.metadataUid, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 									>
 										{file.name->f:format.crop( maxCharacters:30 )}
@@ -2192,7 +2179,7 @@
 								<f:if condition="{file.isEditable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-edit"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.editcontent' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editcontent' )}"
 											 data-url="{fl:uri.editFileContent( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-page-open" />
@@ -2206,7 +2193,7 @@
 								<f:if condition="{file.publicUrl}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-view"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.view' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view' )}"
 											 data-url="{file.publicUrl}"
 										>
 											<core:icon identifier="actions-document-view" />
@@ -2220,7 +2207,7 @@
 								<f:if condition="{file.isReplaceable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-replace"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.replace' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.replace' )}"
 											 data-url="{fl:uri.replaceFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-replace" />
@@ -2234,7 +2221,7 @@
 								<f:if condition="{file.isRenamable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-rename"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.rename' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.rename' )}"
 											 data-url="{fl:uri.renameFile( file:file.resource, returnUrl:'{f:uri.action( action:\'search\', arguments:{ searchWord:\'{searchWord->f:format.htmlentities()}\' } )}' )}"
 										>
 											<core:icon identifier="actions-edit-rename" />
@@ -2248,7 +2235,7 @@
 								<f:if condition="{file.isReadable}">
 									<f:then>
 										<a href="#" class="btn btn-default filelist-file-info"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.info' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info' )}"
 											 data-identifier="{file.combinedIdentifier}"
 										>
 											<core:icon identifier="actions-document-info" />
@@ -2261,11 +2248,10 @@
 								<f:if condition="{file.isDeletable}">
 									<f:then>
 										<a href="#" class="btn btn-default t3js-filelist-delete"
-											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
+											 title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
 											 data-identifier="{file.identifier}"
-											 data-veri-code="{veriCode}"
-											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:cm.delete' )}"
-											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
+											 data-title="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete' )}"
+											 data-content="{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.delete', arguments: {0:file.name} )}"
 											 data-check="{f:if(condition:settings.jsConfirmationDelete, then:'1', else:'0')}"
 											 data-delete-url="{deleteUrl}"
 											 data-delete-type="delete_file"
@@ -2284,7 +2270,7 @@
 						<td nowrap="nowrap">{file.lastModified}</td>
 						<td nowrap="nowrap">{file.size}</td>
 						<td nowrap="nowrap">
-							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/locallang_mod_file_list.xlf:write' )}</strong></f:if>
+							<f:if condition="{file.isReadable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:read' )}</strong></f:if><f:if condition="{file.isWritable}"><strong class="text-danger">{f:translate( htmlEscape:'true', key:'LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:write' )}</strong></f:if>
 						</td>
 						<td nowrap="nowrap">
 							<f:if condition="{file.referenceCount} > 0">

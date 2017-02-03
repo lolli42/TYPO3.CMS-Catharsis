@@ -22,7 +22,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Data Provider of the Page Tree
  */
-class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTree
+class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractTree
 {
     /**
      * Data Provider
@@ -155,31 +155,13 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
     }
 
     /**
-     * Returns
-     *
-     * @return array
-     */
-    public function getIndicators()
-    {
-        /** @var $indicatorProvider \TYPO3\CMS\Backend\Tree\Pagetree\Indicator */
-        $indicatorProvider = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\Pagetree\Indicator::class);
-        $indicatorHtmlArr = $indicatorProvider->getAllIndicators();
-        $indicator = [
-            'html' => implode(' ', $indicatorHtmlArr),
-            '_COUNT' => count($indicatorHtmlArr)
-        ];
-        return $indicator;
-    }
-
-    /**
      * Returns the language labels and configuration options for the pagetree
      *
      * @return array
      */
     public function loadResources()
     {
-        $file = 'LLL:EXT:lang/locallang_core.xlf:';
-        $indicators = $this->getIndicators();
+        $file = 'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:';
         $configuration = [
             'LLL' => [
                 'copyHint' => htmlspecialchars($GLOBALS['LANG']->sL($file . 'tree.copyHint')),
@@ -202,7 +184,6 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
                 'displayDeleteConfirmation' => $GLOBALS['BE_USER']->jsConfirmation(JsConfirmation::DELETE),
                 'canDeleteRecursivly' => $GLOBALS['BE_USER']->uc['recursiveDelete'] == true,
                 'disableIconLinkToContextmenu' => $GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.disableIconLinkToContextmenu'),
-                'indicator' => $indicators['html'],
                 'temporaryMountPoint' => Commands::getMountPointPath()
             ],
             'Icons' => [
