@@ -18,10 +18,16 @@ use TYPO3\CMS\Extbase\Reflection\Exception\PropertyNotAccessibleException;
 /**
  * Test case
  */
-class ObjectAccessTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class ObjectAccessTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
+    /**
+     * @var \TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture\DummyClassWithGettersAndSetters
+     */
     protected $dummyObject;
 
+    /**
+     * Set up
+     */
     protected function setUp()
     {
         $this->dummyObject = new \TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture\DummyClassWithGettersAndSetters();
@@ -409,6 +415,7 @@ class ObjectAccessTest extends \TYPO3\Components\TestingFramework\Core\UnitTestC
     /**
      * @dataProvider propertyGettableTestValues
      * @test
+     *
      * @param string $property
      * @param bool $expected
      */

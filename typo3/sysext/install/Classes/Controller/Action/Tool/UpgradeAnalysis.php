@@ -38,8 +38,19 @@ class UpgradeAnalysis extends AbstractAction
     {
         $documentationFileService = new DocumentationFile();
         $documentationFiles = $documentationFileService->findDocumentationFiles(
-            PATH_site . ExtensionManagementUtility::siteRelPath('core') . 'Documentation/Changelog'
+            realpath(PATH_site . ExtensionManagementUtility::siteRelPath('core') . 'Documentation/Changelog')
         );
+
+        /** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
+        $formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
+            \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection::class
+        );
+        $saveIgnoredItemsToken = $formProtection->generateToken('installTool', 'saveIgnoredItems');
+        $removeIgnoredItemsToken = $formProtection->generateToken('installTool', 'removeIgnoredItems');
+        $this->view->assignMultiple([
+            'saveIgnoredItemsToken' => $saveIgnoredItemsToken,
+            'removeIgnoredItemsToken' => $removeIgnoredItemsToken,
+        ]);
 
         $this->view->assign('files', $documentationFiles);
         return $this->view->render();

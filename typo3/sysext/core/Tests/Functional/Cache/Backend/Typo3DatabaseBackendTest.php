@@ -22,7 +22,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 /**
  * Test case
  */
-class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
 
     /**
@@ -393,13 +393,15 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
     {
         $subject = $this->getSubjectObject();
 
-        $this->assertSame(['idA' => 'idA'], $subject->findIdentifiersByTag('tagA'));
-        $this->assertSame(['idA' => 'idA', 'idB' => 'idB'], $subject->findIdentifiersByTag('tagB'));
-        $this->assertSame(['idB' => 'idB', 'idC' => 'idC'], $subject->findIdentifiersByTag('tagC'));
+        $this->assertEquals(['idA' => 'idA'], $subject->findIdentifiersByTag('tagA'));
+        $this->assertEquals(['idA' => 'idA', 'idB' => 'idB'], $subject->findIdentifiersByTag('tagB'));
+        $this->assertEquals(['idB' => 'idB', 'idC' => 'idC'], $subject->findIdentifiersByTag('tagC'));
     }
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function flushByTagWorksWithEmptyCacheTablesWithMysql()
     {
@@ -409,6 +411,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function flushByTagsWorksWithEmptyCacheTablesWithMysql()
     {
@@ -418,6 +422,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function flushByTagRemovesCorrectRowsFromDatabaseWithMysql()
     {
@@ -436,6 +442,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function flushByTagsRemovesCorrectRowsFromDatabaseWithMysql()
     {
@@ -508,6 +516,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function collectGarbageWorksWithEmptyTableWithMysql()
     {
@@ -517,6 +527,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function collectGarbageRemovesCacheEntryWithExpiredLifetimeWithMysql()
     {
@@ -546,6 +558,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function collectGarbageRemovesTagEntriesForCacheEntriesWithExpiredLifetimeWithMysql()
     {
@@ -575,6 +589,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\Components\TestingFramework\Core\F
 
     /**
      * @test
+     *
+     * @group mysql
      */
     public function collectGarbageRemovesOrphanedTagEntriesFromTagsTableWithMysql()
     {

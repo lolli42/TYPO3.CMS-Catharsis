@@ -28,7 +28,7 @@ use TYPO3\CMS\Core\Cache\Exception\InvalidDataException;
  * Warning:
  * The unit tests use and flush redis database numbers 0 and 1!
  */
-class RedisBackendTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class RedisBackendTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
     /**
      * If set, the tearDown() method will flush the cache used by this unit test.
@@ -64,7 +64,6 @@ class RedisBackendTest extends \TYPO3\Components\TestingFramework\Core\UnitTestC
     /**
      * Sets up the redis backend used for testing
      *
-     * @param array $backendOptions Options for the redis backend
      */
     protected function setUpBackend(array $backendOptions = [])
     {

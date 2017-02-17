@@ -1,10 +1,9 @@
 {namespace be = TYPO3\CMS\Backend\ViewHelpers}
 {namespace bu = TYPO3\CMS\Beuser\ViewHelpers}
-{namespace core = TYPO3\CMS\Core\ViewHelpers}
 
 <tr>
 	<td>
-		<a href="#" class="t3-js-clickmenutrigger" data-table="be_users" data-uid="{backendUser.uid}" data-listframe="1" title="{f:if(condition: '{backendUser.description}', then: '{backendUser.description} ')}(id={backendUser.uid})">
+		<a href="#" class="t3js-contextmenutrigger" data-table="be_users" data-uid="{backendUser.uid}" title="{f:if(condition: '{backendUser.description}', then: '{backendUser.description} ')}(id={backendUser.uid})">
 			<be:avatar backendUser="{backendUser.uid}" showIcon="TRUE" />
 		</a>
 	</td>

@@ -12,7 +12,7 @@ config {
 
 	watcher {
 		tableFields {
-			pages = uid,_ORIG_uid,pid,sorting,title
+			pages = uid,_ORIG_uid,pid,sorting,title,tx_irretutorial_hotels
 			sys_category = uid,_ORIG_uid,_LOCALIZED_UID,pid,sys_language_uid,title,parent,items,sys_language_uid
 			sys_file = uid,_ORIG_uid,_LOCALIZED_UID,pid,title,sys_language_uid
 			sys_file_reference = uid,_ORIG_uid,_LOCALIZED_UID,title,description,alternative,link,missing,identifier,file,pid,sys_language_uid,title,parent,items,sys_language_uid,uid_local,uid_foreign,tablenames,fieldname,table_local
@@ -33,7 +33,7 @@ lib.watcherDataObject {
 	1 = LOAD_REGISTER
 	1.watcher.dataWrap = |
 	2 = USER
-	2.userFunc = TYPO3\Components\TestingFramework\Core\Functional\Framework\Frontend\Collector->addRecordData
+	2.userFunc = TYPO3\TestingFramework\Core\Functional\Framework\Frontend\Collector->addRecordData
 	99 = RESTORE_REGISTER
 }
 
@@ -42,7 +42,7 @@ lib.watcherFileObject {
 	1 = LOAD_REGISTER
 	1.watcher.dataWrap = |
 	2 = USER
-	2.userFunc = TYPO3\Components\TestingFramework\Core\Functional\Framework\Frontend\Collector->addFileData
+	2.userFunc = TYPO3\TestingFramework\Core\Functional\Framework\Frontend\Collector->addFileData
 	99 = RESTORE_REGISTER
 }
 
@@ -53,7 +53,7 @@ page {
 		1 = LOAD_REGISTER
 		1.watcher.dataWrap = pages:{field:uid}
 		2 = USER
-		2.userFunc = TYPO3\Components\TestingFramework\Core\Functional\Framework\Frontend\Collector->addRecordData
+		2.userFunc = TYPO3\TestingFramework\Core\Functional\Framework\Frontend\Collector->addRecordData
 		10 = CONTENT
 		10 {
 			stdWrap.required = 1
@@ -67,6 +67,19 @@ page {
 			renderObj < lib.watcherDataObject
 			renderObj.1.watcher.dataWrap = {register:watcher}|.__pages/pages:{field:uid}
 		}
+        15 = CONTENT
+        15 {
+            if.isTrue.field = tx_irretutorial_hotels
+            table = tx_irretutorial_1nff_hotel
+            select {
+                orderBy = sorting
+                where.field = uid
+                where.intval = 1
+                where.wrap = parenttable="pages" AND parentid=|
+            }
+            renderObj < lib.watcherDataObject
+            renderObj.1.watcher.dataWrap = {register:watcher}|.tx_irretutorial_hotels/tx_irretutorial_1nff_hotel:{field:uid}
+        }
 		20 = CONTENT
 		20 {
 			table = tt_content
@@ -219,11 +232,18 @@ page {
 				}
 			}
 		}
-		stdWrap.postUserFunc = TYPO3\Components\TestingFramework\Core\Functional\Framework\Frontend\Collector->attachSection
+		stdWrap.postUserFunc = TYPO3\TestingFramework\Core\Functional\Framework\Frontend\Collector->attachSection
 		stdWrap.postUserFunc.as = Default
 	}
-	stdWrap.postUserFunc = TYPO3\Components\TestingFramework\Core\Functional\Framework\Frontend\Renderer->renderSections
+	stdWrap.postUserFunc = TYPO3\TestingFramework\Core\Functional\Framework\Frontend\Renderer->renderSections
 }
+
+[globalVar = LIT:postgresql = {$databasePlatform}]
+page.10.20.select.where = "colPos" = 0
+page.10.20.renderObj.20.select.where.wrap = "parenttable" = 'tt_content' AND "parentid" = |
+page.10.20.renderObj.20.renderObj.10.select.where.wrap = "parenttable" = 'tx_irretutorial_1nff_hotel' AND "parentid" = |
+page.10.20.renderObj.20.renderObj.10.renderObj.10.select.where.wrap = "parenttable" = 'tx_irretutorial_1nff_offer' AND "parentid" = |
+[end]
 
 [globalVar = GP:L = 1]
 config.sys_language_uid = 1

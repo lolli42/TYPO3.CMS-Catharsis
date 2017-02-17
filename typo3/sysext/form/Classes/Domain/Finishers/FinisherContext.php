@@ -17,7 +17,9 @@ namespace TYPO3\CMS\Form\Domain\Finishers;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Form\Domain\Runtime\FormRuntime;
 
 /**
@@ -53,13 +55,30 @@ class FinisherContext
     protected $controllerContext;
 
     /**
+     * The assigned controller context which might be needed by the finisher.
+     *
+     * @var FinisherVariableProvider
+     */
+    protected $finisherVariableProvider;
+
+    /**
      * @param FormRuntime $formRuntime
+     * @param ControllerContext $controllerContext
      * @internal
      */
     public function __construct(FormRuntime $formRuntime, ControllerContext $controllerContext)
     {
         $this->formRuntime = $formRuntime;
         $this->controllerContext = $controllerContext;
+    }
+
+    /**
+     * @api
+     */
+    public function initializeObject()
+    {
+        $this->finisherVariableProvider = GeneralUtility::makeInstance(ObjectManager::class)
+            ->get(FinisherVariableProvider::class);
     }
 
     /**
@@ -113,5 +132,14 @@ class FinisherContext
     public function getControllerContext(): ControllerContext
     {
         return $this->controllerContext;
+    }
+
+    /**
+     * @return FinisherVariableProvider
+     * @api
+     */
+    public function getFinisherVariableProvider(): FinisherVariableProvider
+    {
+        return $this->finisherVariableProvider;
     }
 }

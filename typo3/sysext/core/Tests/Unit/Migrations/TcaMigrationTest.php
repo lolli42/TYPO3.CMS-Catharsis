@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Migrations\TcaMigration;
 /**
  * Test case
  */
-class TcaMigrationTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class TcaMigrationTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
     /**
      * @test
@@ -2121,6 +2121,11 @@ class TcaMigrationTest extends \TYPO3\Components\TestingFramework\Core\UnitTestC
                     'aTable' => [
                         'columns' => [
                             'aColumn' => [
+                                'config' => [
+                                    'behaviour' => [
+                                        'allowLanguageSynchronization' => true,
+                                    ]
+                                ]
                             ],
                         ],
                     ],
@@ -2133,7 +2138,7 @@ class TcaMigrationTest extends \TYPO3\Components\TestingFramework\Core\UnitTestC
      * @param array $givenConfig
      * @param array $expectedConfig
      * @test
-     * @dataProvider migrateTranslationTableDataProvider
+     * @dataProvider migrateL10nModeDefinitionsDataProvider
      */
     public function migrateL10nModeDefinitions(array $givenConfig, array $expectedConfig)
     {
@@ -5464,6 +5469,134 @@ class TcaMigrationTest extends \TYPO3\Components\TestingFramework\Core\UnitTestC
      * @dataProvider migrateSelectSingleShowIconTableDataProvider
      */
     public function migrateSelectSingleShowIconTable(array $input, array $expected)
+    {
+        $this->assertEquals($expected, (new TcaMigration())->migrate($input));
+    }
+
+    /**
+     * @return array
+     */
+    public function migrateImageManipulationRatiosDataProvider()
+    {
+        return [
+            'enableZoom is removed' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'type' => 'imageManipulation',
+                                    'enableZoom' => true,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'type' => 'imageManipulation',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'ratios migration ignored if cropVariants config is present' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'type' => 'imageManipulation',
+                                    'ratios' => [
+                                        4 / 3 => '4:3',
+                                    ],
+                                    'cropVariants' => [],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'type' => 'imageManipulation',
+                                    'cropVariants' => [],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'ratios are migrated' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'type' => 'imageManipulation',
+                                    'ratios' => [
+                                        '1.3333333333333333' => '4:3',
+                                        '1.7777777777777777' => '16:9',
+                                        '1' => '1:1',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aField' => [
+                                'config' => [
+                                    'type' => 'imageManipulation',
+                                    'cropVariants' => [
+                                        'default' => [
+                                            'title' => 'LLL:EXT:lang/Resources/Private/Language/locallang_wizards.xlf:imwizard.crop_variant.default',
+                                            'allowedAspectRatios' => [
+                                                '1.33' => [
+                                                    'title' => '4:3',
+                                                    'value' => 4 / 3,
+                                                ],
+                                                '1.78' => [
+                                                    'title' => '16:9',
+                                                    'value' => 16 / 9,
+                                                ],
+                                                '1.00' => [
+                                                    'title' => '1:1',
+                                                    'value' => 1.0,
+                                                ],
+                                            ],
+                                            'cropArea' => [
+                                                'x' => 0.0,
+                                                'y' => 0.0,
+                                                'width' => 1.0,
+                                                'height' => 1.0,
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param array $input
+     * @param array $expected
+     * @test
+     * @dataProvider migrateImageManipulationRatiosDataProvider
+     */
+    public function migrateImageManipulationRatios(array $input, array $expected)
     {
         $this->assertEquals($expected, (new TcaMigration())->migrate($input));
     }

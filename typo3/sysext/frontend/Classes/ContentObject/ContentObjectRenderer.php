@@ -263,121 +263,6 @@ class ContentObjectRenderer
     protected $contentObjectClassMap = [];
 
     /**
-     * Holds ImageMagick parameters and extensions used for compression
-     *
-     * @var array
-     * @see IMGTEXT()
-     */
-    public $image_compression = [
-        10 => [
-            'params' => '',
-            'ext' => 'gif'
-        ],
-        11 => [
-            'params' => '-colors 128',
-            'ext' => 'gif'
-        ],
-        12 => [
-            'params' => '-colors 64',
-            'ext' => 'gif'
-        ],
-        13 => [
-            'params' => '-colors 32',
-            'ext' => 'gif'
-        ],
-        14 => [
-            'params' => '-colors 16',
-            'ext' => 'gif'
-        ],
-        15 => [
-            'params' => '-colors 8',
-            'ext' => 'gif'
-        ],
-        20 => [
-            'params' => '-quality 100',
-            'ext' => 'jpg'
-        ],
-        21 => [
-            'params' => '-quality 90',
-            'ext' => 'jpg'
-        ],
-        22 => [
-            'params' => '-quality 80',
-            'ext' => 'jpg'
-        ],
-        23 => [
-            'params' => '-quality 70',
-            'ext' => 'jpg'
-        ],
-        24 => [
-            'params' => '-quality 60',
-            'ext' => 'jpg'
-        ],
-        25 => [
-            'params' => '-quality 50',
-            'ext' => 'jpg'
-        ],
-        26 => [
-            'params' => '-quality 40',
-            'ext' => 'jpg'
-        ],
-        27 => [
-            'params' => '-quality 30',
-            'ext' => 'jpg'
-        ],
-        28 => [
-            'params' => '-quality 20',
-            'ext' => 'jpg'
-        ],
-        30 => [
-            'params' => '-colors 256',
-            'ext' => 'png'
-        ],
-        31 => [
-            'params' => '-colors 128',
-            'ext' => 'png'
-        ],
-        32 => [
-            'params' => '-colors 64',
-            'ext' => 'png'
-        ],
-        33 => [
-            'params' => '-colors 32',
-            'ext' => 'png'
-        ],
-        34 => [
-            'params' => '-colors 16',
-            'ext' => 'png'
-        ],
-        35 => [
-            'params' => '-colors 8',
-            'ext' => 'png'
-        ],
-        39 => [
-            'params' => '',
-            'ext' => 'png'
-        ]
-    ];
-
-    /**
-     * ImageMagick parameters for image effects
-     *
-     * @var array
-     * @see IMGTEXT()
-     */
-    public $image_effects = [
-        1 => '-rotate 90',
-        2 => '-rotate 270',
-        3 => '-rotate 180',
-        10 => '-colorspace GRAY',
-        11 => '-sharpen 70',
-        20 => '-normalize',
-        23 => '-contrast',
-        25 => '-gamma 1.3',
-        26 => '-gamma 0.8'
-    ];
-
-    /**
      * Loaded with the current data-record.
      *
      * If the instance of this class is used to render records from the database those records are found in this array.
@@ -651,9 +536,9 @@ class ContentObjectRenderer
      * This method is private API, please use configuration
      * $GLOBALS['TYPO3_CONF_VARS']['FE']['ContentObjects'] to add new content objects
      *
-     * @internal
      * @param string $className
      * @param string $contentObjectName
+     * @internal
      */
     public function registerContentObjectClass($className, $contentObjectName)
     {
@@ -2934,7 +2819,6 @@ class ContentObjectRenderer
      * according to the doctype
      *
      * @param string $content Input value undergoing processing in this function.
-     * @param array $conf stdWrap properties for br.
      * @return string The processed input value
      */
     public function stdWrap_br($content = '')
@@ -4205,8 +4089,8 @@ class ContentObjectRenderer
                         $urlPrefix = $tsfe->absRefPrefix;
                     }
                     $icon = '<img src="' . htmlspecialchars($urlPrefix . $icon) . '"' .
-                            ' width="' . (int)$sizeParts[0] . '" height="' . (int)$sizeParts[1] . '" ' .
-                            $this->getBorderAttr(' border="0"') . '' . $this->getAltParam($conf) . ' />';
+                        ' width="' . (int)$sizeParts[0] . '" height="' . (int)$sizeParts[1] . '" ' .
+                        $this->getBorderAttr(' border="0"') . '' . $this->getAltParam($conf) . ' />';
                 }
             } else {
                 $conf['icon.']['widthAttribute'] = isset($conf['icon.']['widthAttribute.'])
@@ -5692,8 +5576,9 @@ class ContentObjectRenderer
      * @param string $linkText The string (text) to link
      * @param string $mixedLinkParameter destination data like "15,13 _blank myclass &more=1" used to create the link
      * @param array $configuration TypoScript configuration
-     * @return array | string
+     * @return array|string
      * @see typoLink()
+     * @todo the whole thing does not work like this anymore. remove the whole function. forge #79647
      */
     protected function resolveMixedLinkParameter($linkText, $mixedLinkParameter, &$configuration = [])
     {
@@ -6119,6 +6004,39 @@ class ContentObjectRenderer
                     return $linkText;
                 }
             break;
+            case LinkService::TYPE_RECORD:
+                $tsfe = $this->getTypoScriptFrontendController();
+                $configurationKey = $linkDetails['identifier'] . '.';
+                $configuration = $tsfe->tmpl->setup['config.']['recordLinks.'];
+                $linkHandlerConfiguration = $tsfe->pagesTSconfig['TCEMAIN.']['linkHandler.'];
+
+                if (!isset($configuration[$configurationKey]) || !isset($linkHandlerConfiguration[$configurationKey])) {
+                    return $linkText;
+                }
+                $typoScriptConfiguration = $configuration[$configurationKey]['typolink.'];
+                $linkHandlerConfiguration = $linkHandlerConfiguration[$configurationKey]['configuration.'];
+
+                if ($configuration[$configurationKey]['forceLink']) {
+                    $record = $tsfe->sys_page->getRawRecord($linkHandlerConfiguration['table'], $linkDetails['uid']);
+                } else {
+                    $record = $tsfe->sys_page->checkRecord($linkHandlerConfiguration['table'], $linkDetails['uid']);
+                }
+                if ($record === 0) {
+                    return $linkText;
+                }
+
+                // Build the full link to the record
+                $localContentObjectRenderer = GeneralUtility::makeInstance(self::class);
+                $localContentObjectRenderer->start($record, $linkHandlerConfiguration['table']);
+                $localContentObjectRenderer->parameters = $this->parameters;
+                $link = $localContentObjectRenderer->typoLink($linkText, $typoScriptConfiguration);
+
+                $this->lastTypoLinkLD = $localContentObjectRenderer->lastTypoLinkLD;
+                $this->lastTypoLinkUrl = $localContentObjectRenderer->lastTypoLinkUrl;
+                $this->lastTypoLinkTarget = $localContentObjectRenderer->lastTypoLinkTarget;
+
+                return $link;
+                break;
 
             // Legacy files or something else
             case LinkService::TYPE_UNKNOWN:
@@ -6158,7 +6076,7 @@ class ContentObjectRenderer
                     $finalTagParts['targetParams'] = $target ? ' target="' . $target . '"' : '';
                     $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_URL);
                 }
-            break;
+                break;
         }
 
         $finalTagParts['TYPE'] = $linkDetails['type'];
@@ -7692,10 +7610,10 @@ class ContentObjectRenderer
             $knownAliases[$tableReference] = true;
 
             $fromClauses[$tableReference] = $tableSql . $this->getQueryArrayJoinHelper(
-                $tableReference,
-                $queryBuilder->getQueryPart('join'),
-                $knownAliases
-            );
+                    $tableReference,
+                    $queryBuilder->getQueryPart('join'),
+                    $knownAliases
+                );
         }
 
         $queryParts['SELECT'] = implode(', ', $queryBuilder->getQueryPart('select'));

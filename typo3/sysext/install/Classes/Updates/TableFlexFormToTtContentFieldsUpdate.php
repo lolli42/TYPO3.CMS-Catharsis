@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Install\Updates;
 
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -37,7 +36,7 @@ class TableFlexFormToTtContentFieldsUpdate extends AbstractUpdate
      */
     public function checkForUpdate(&$description)
     {
-        if ($this->isWizardDone() || ExtensionManagementUtility::isLoaded('css_styled_content')) {
+        if ($this->isWizardDone()) {
             return false;
         }
 
@@ -64,10 +63,10 @@ class TableFlexFormToTtContentFieldsUpdate extends AbstractUpdate
      * Performs the database update if CType 'table' still has content in pi_flexform
      *
      * @param array &$databaseQueries Queries done in this update
-     * @param mixed &$customMessages Custom messages
+     * @param string &$customMessage Custom message
      * @return bool
      */
-    public function performUpdate(array &$databaseQueries, &$customMessages)
+    public function performUpdate(array &$databaseQueries, &$customMessage)
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('tt_content');
         $queryBuilder = $connection->createQueryBuilder();
@@ -146,6 +145,12 @@ class TableFlexFormToTtContentFieldsUpdate extends AbstractUpdate
             'table_tfoot' => [
                 'sheet' => 'sDEF',
                 'fieldName' => 'acctables_tfoot',
+                'default' => 0,
+                'values' => 'passthrough'
+            ],
+            'table_class' => [
+                'sheet' => 'sDEF',
+                'fieldName' => 'acctables_tableclass',
                 'default' => 0,
                 'values' => 'passthrough'
             ]

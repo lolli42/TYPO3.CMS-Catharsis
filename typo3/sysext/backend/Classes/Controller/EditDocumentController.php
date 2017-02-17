@@ -796,7 +796,7 @@ class EditDocumentController extends AbstractModule
             $javascript . $previewCode
         );
         // Setting up the context sensitive menu:
-        $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
+        $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ContextMenu');
 
         $this->emitFunctionAfterSignal(__FUNCTION__);
     }
@@ -1607,9 +1607,6 @@ class EditDocumentController extends AbstractModule
                     }
                     $languageMenu = $this->moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
                     $languageMenu->setIdentifier('_langSelector');
-                    $languageMenu->setLabel(htmlspecialchars($this->getLanguageService()->sL(
-                        'LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.language'
-                    )));
                     foreach ($langRows as $lang) {
                         if ($this->getBackendUser()->checkLanguageAccess($lang['uid'])) {
                             $newTranslation = isset($rowsByLang[$lang['uid']]) ? '' : ' [' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.new')) . ']';

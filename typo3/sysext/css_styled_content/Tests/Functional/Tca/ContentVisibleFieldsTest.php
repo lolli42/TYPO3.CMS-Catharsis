@@ -18,18 +18,21 @@ use TYPO3\CMS\Backend\Tests\Functional\Form\FormTestService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
-class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+class ContentVisibleFieldsTest extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
+    /**
+     * @var array
+     */
     protected $coreExtensionsToLoad = ['css_styled_content'];
 
+    /**
+     * @var array
+     */
     protected static $commonContentFields = [
         'CType',
         'colPos',
         'sys_language_uid',
         'layout',
-        'spaceBefore',
-        'spaceAfter',
-        'section_frame',
         'hidden',
         'sectionIndex',
         'linkToTop',
@@ -41,6 +44,9 @@ class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\F
         'categories',
     ];
 
+    /**
+     * @var array
+     */
     protected static $headerFields = [
         'header',
         'header_layout',
@@ -49,19 +55,22 @@ class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\F
         'header_link',
     ];
 
+    /**
+     * @var array
+     */
     protected static $imageFields = [
         'image',
         'image_zoom',
         'imagewidth',
         'imageheight',
         'imageborder',
-        'image_compression',
-        'image_effects',
         'imageorient',
         'imagecols',
-        'image_noRows',
     ];
 
+    /**
+     * @var array
+     */
     protected static $contentFieldsByType = [
         'header' => [
             'additionalFields' => ['subheader'],
@@ -82,7 +91,6 @@ class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\F
             'additionalFields' => [
                 'cols',
                 'bodytext',
-                'pi_flexform',
             ],
         ],
         'uploads' => [
@@ -91,15 +99,6 @@ class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\F
                 'file_collections',
                 'filelink_sorting',
                 'target',
-            ],
-        ],
-        'menu' => [
-            'additionalFields' => [
-                'menu_type',
-                'pages',
-                'accessibility_title',
-                'accessibility_bypass',
-                'accessibility_bypass_text',
             ],
         ],
         'shortcut' => [

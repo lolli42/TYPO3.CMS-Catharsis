@@ -44,29 +44,19 @@ CREATE TABLE fe_groups (
 	KEY parent (pid)
 );
 
-#
-# Table structure for table 'fe_session_data'
-#
-CREATE TABLE fe_session_data (
-	hash varchar(32) DEFAULT '' NOT NULL,
-	content mediumblob,
-	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
-
-	PRIMARY KEY (hash),
-	KEY tstamp (tstamp)
-) ENGINE=InnoDB;
 
 #
 # Table structure for table 'fe_sessions'
 #
 CREATE TABLE fe_sessions (
 	ses_id varchar(32) DEFAULT '' NOT NULL,
-	ses_name varchar(255) DEFAULT '' NOT NULL,
+	ses_name varchar(100) DEFAULT '' NOT NULL,
 	ses_iplock varchar(39) DEFAULT '' NOT NULL,
 	ses_userid int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_tstamp int(11) unsigned DEFAULT '0' NOT NULL,
-	ses_data blob,
+	ses_data mediumblob,
 	ses_permanent tinyint(1) unsigned DEFAULT '0' NOT NULL,
+	ses_anonymous tinyint(1) unsigned DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (ses_id,ses_name),
 	KEY ses_tstamp (ses_tstamp)
@@ -249,19 +239,27 @@ CREATE TABLE tt_content (
 	sorting int(11) unsigned DEFAULT '0' NOT NULL,
 	CType varchar(255) DEFAULT '' NOT NULL,
 	header varchar(255) DEFAULT '' NOT NULL,
+	header_position varchar(6) DEFAULT '' NOT NULL,
 	rowDescription text,
 	bodytext mediumtext,
-
+	bullets_type tinyint(3) unsigned DEFAULT '0' NOT NULL,
+	uploads_description tinyint(1) unsigned DEFAULT '0' NOT NULL,
+	uploads_type tinyint(3) unsigned DEFAULT '0' NOT NULL,
+	assets int(11) unsigned DEFAULT '0' NOT NULL,
 	image int(11) unsigned DEFAULT '0' NOT NULL,
-
 	imagewidth mediumint(11) unsigned DEFAULT '0' NOT NULL,
 	imageorient tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	imagecols tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	imageborder tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	media int(11) unsigned DEFAULT '0' NOT NULL,
 	layout int(11) unsigned DEFAULT '0' NOT NULL,
+	frame_class varchar(60) DEFAULT 'default' NOT NULL,
 	deleted tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	cols int(11) unsigned DEFAULT '0' NOT NULL,
+	spaceBefore smallint(5) unsigned DEFAULT '0' NOT NULL,
+	spaceAfter smallint(5) unsigned DEFAULT '0' NOT NULL,
+	space_before_class varchar(60) DEFAULT '' NOT NULL,
+	space_after_class varchar(60) DEFAULT '' NOT NULL,
 	records text,
 	pages text,
 	starttime int(11) unsigned DEFAULT '0' NOT NULL,
@@ -272,7 +270,6 @@ CREATE TABLE tt_content (
 	header_link varchar(1024) DEFAULT '' NOT NULL,
 	image_zoom tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	header_layout varchar(30) DEFAULT '0' NOT NULL,
-	menu_type varchar(30) DEFAULT '0' NOT NULL,
 	list_type varchar(255) DEFAULT '' NOT NULL,
 	sectionIndex tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	linkToTop tinyint(3) unsigned DEFAULT '0' NOT NULL,
@@ -293,6 +290,7 @@ CREATE TABLE tt_content (
 	l10n_source int(11) DEFAULT '0' NOT NULL,
 	selected_categories text,
 	category_field varchar(64) DEFAULT '' NOT NULL,
+	table_class varchar(60) DEFAULT '' NOT NULL,
 	table_caption varchar(255) DEFAULT NULL,
 	table_delimiter smallint(6) unsigned DEFAULT '0' NOT NULL,
 	table_enclosure smallint(6) unsigned DEFAULT '0' NOT NULL,

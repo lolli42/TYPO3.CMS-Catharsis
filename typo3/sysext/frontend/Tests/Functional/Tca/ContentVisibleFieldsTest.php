@@ -18,7 +18,7 @@ use TYPO3\CMS\Backend\Tests\Functional\Form\FormTestService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
-class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+class ContentVisibleFieldsTest extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
     protected static $commonContentFields = [
         'CType',
@@ -49,11 +49,8 @@ class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\F
         'imagewidth',
         'imageheight',
         'imageborder',
-        'image_compression',
-        'image_effects',
         'imageorient',
         'imagecols',
-        'image_noRows',
     ];
 
     protected static $contentFieldsByType = [
@@ -81,15 +78,6 @@ class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\F
                 'file_collections',
                 'filelink_sorting',
                 'target',
-            ],
-        ],
-        'menu' => [
-            'additionalFields' => [
-                'menu_type',
-                'pages',
-                'accessibility_title',
-                'accessibility_bypass',
-                'accessibility_bypass_text',
             ],
         ],
         'shortcut' => [

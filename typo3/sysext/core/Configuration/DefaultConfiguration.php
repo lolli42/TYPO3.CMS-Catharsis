@@ -50,6 +50,21 @@ return [
                 'xlf' => \TYPO3\CMS\Core\Localization\Parser\XliffParser::class
             ]
         ],
+        'session' => [
+            'BE' => [
+                'backend' => \TYPO3\CMS\Core\Session\Backend\DatabaseSessionBackend::class,
+                'options' => [
+                    'table' => 'be_sessions'
+                ]
+            ],
+            'FE' => [
+                'backend' => \TYPO3\CMS\Core\Session\Backend\DatabaseSessionBackend::class,
+                'options' => [
+                    'table' => 'fe_sessions',
+                    'has_anonymous' => true,
+                ]
+            ]
+        ],
         'fileCreateMask' => '0664',                        // File mode mask for Unix file systems (when files are uploaded/created).
         'folderCreateMask' => '2775',                    // As above, but for folders.
         'createGroup' => '',                            // Group for newly created files and folders (Unix only). Group ownership can be changed on Unix file systems (see above). Set this if you want to change the group ownership of created files/folders to a specific group. This makes sense in all cases where the webserver is running with a different user/group as you do. Create a new group on your system and add you and the webserver user to the group. Now you can safely set the last bit in fileCreateMask/folderCreateMask to 0 (e.g. 770). Important: The user who is running your webserver needs to be a member of the group you specify here! Otherwise you might get some error messages.
@@ -275,6 +290,9 @@ return [
         'fluid' => [
             'interceptors' => [],
             'namespaces' => [
+                'core' => [
+                    'TYPO3\\CMS\\Core\\ViewHelpers'
+                ],
                 'f' => [
                     'TYPO3Fluid\\Fluid\\ViewHelpers',
                     'TYPO3\\CMS\\Fluid\\ViewHelpers'
@@ -287,6 +305,7 @@ return [
             'folder' => \TYPO3\CMS\Core\LinkHandling\FolderLinkHandler::class,
             'url'    => \TYPO3\CMS\Core\LinkHandling\UrlLinkHandler::class,
             'email'  => \TYPO3\CMS\Core\LinkHandling\EmailLinkHandler::class,
+            'record' => \TYPO3\CMS\Core\LinkHandling\RecordLinkHandler::class,
         ],
         'livesearch' => [],    // Array: keywords used for commands to search for specific tables
         'isInitialInstallationInProgress' => false,        // Boolean: If TRUE, the installation is 'in progress'. This value is handled within the install tool step installer internally.
@@ -769,6 +788,8 @@ return [
         'disable_exec_function' => false,                // Boolean: Don't use exec() function (except for ImageMagick which is disabled by <a href="#GFX-im">[GFX][im]</a>=0). If set, all fileoperations are done by the default PHP-functions. This is necessary under Windows! On Unix the system commands by exec() can be used, unless this is disabled.
         'compressionLevel' => 0,                        // Determines output compression of BE output. Makes output smaller but slows down the page generation depending on the compression level. Requires a) zlib in your PHP installation and b) special rewrite rules for .css.gzip and .js.gzip (please see _.htacces for an example). Range 1-9, where 1 is least compression and 9 is greatest compression. 'true' as value will set the compression based on the PHP default settings (usually 5). Suggested and most optimal value is 5.
         'installToolPassword' => '',                    // String: This is the md5-hashed, salted password for the Install Tool. Set this to '' and access will be totally denied. You may consider to externally protect the typo3/sysext/install/ folder, eg. with a .htaccess file.
+        'checkStoredRecords' => true, // Boolean: If set, values of the record are validated after saving in DataHandler. Disable only if using a database in strict mode.
+        'checkStoredRecordsLoose' => true, // Boolean: If set, make a loose comparison ('' equals 0) when validating record values after saving in DataHandler.
         'pageTree' => [
             'preloadLimit' => 50
         ],
@@ -782,243 +803,17 @@ return [
 
 			options.contextMenu {
 				table {
-					virtual_root {
-						disableItems =
-
-						items {
-							100 = ITEM
-							100 {
-								name = history
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:CM_history
-								iconName = actions-document-history-open
-								displayCondition = canShowHistory != 0
-								callbackAction = openHistoryPopUp
-							}
-						}
-					}
-
-					pages_root {
-						disableItems =
-
-						items {
-							100 = ITEM
-							100 {
-								name = view
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view
-								iconName = actions-document-view
-								displayCondition = canBeViewed != 0
-								callbackAction = viewPage
-							}
-
-							200 = ITEM
-							200 {
-								name = new
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.new
-								iconName = actions-page-new
-								displayCondition = canCreateNewPages != 0
-								callbackAction = newPageWizard
-							}
-
-							300 = DIVIDER
-
-							400 = ITEM
-							400 {
-								name = history
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:CM_history
-								iconName = actions-document-history-open
-								displayCondition = canShowHistory != 0
-								callbackAction = openHistoryPopUp
-							}
-						}
-					}
-
 					pages {
 						disableItems =
-
-						items {
-							100 = ITEM
-							100 {
-								name = view
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view
-								iconName = actions-document-view
-								displayCondition = canBeViewed != 0
-								callbackAction = viewPage
-							}
-
-							200 = DIVIDER
-
-							300 = ITEM
-							300 {
-								name = disable
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:disable
-								iconName = actions-edit-hide
-								displayCondition = getRecord|hidden = 0 && canBeDisabledAndEnabled != 0
-								callbackAction = disablePage
-							}
-
-							400 = ITEM
-							400 {
-								name = enable
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:enable
-								iconName = actions-edit-unhide
-								displayCondition = getRecord|hidden = 1 && canBeDisabledAndEnabled != 0
-								callbackAction = enablePage
-							}
-
-							500 = ITEM
-							500 {
-								name = edit
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.edit
-								iconName = actions-page-open
-								displayCondition = canBeEdited != 0
-								callbackAction = editPageProperties
-							}
-
-							600 = ITEM
-							600 {
-								name = info
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.info
-								iconName = actions-document-info
-								displayCondition = canShowInfo != 0
-								callbackAction = openInfoPopUp
-							}
-
-							700 = ITEM
-							700 {
-								name = history
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:CM_history
-								iconName = actions-document-history-open
-								displayCondition = canShowHistory != 0
-								callbackAction = openHistoryPopUp
-							}
-
-							800 = DIVIDER
-
-							900 = SUBMENU
-							900 {
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.copyPasteActions
-
-								100 = ITEM
-								100 {
-									name = new
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.new
-									iconName = actions-page-new
-									displayCondition = canCreateNewPages != 0
-									callbackAction = newPageWizard
-								}
-
-								200 = DIVIDER
-
-								300 = ITEM
-								300 {
-									name = cut
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.cut
-									iconName = actions-edit-cut
-									displayCondition = isInCutMode = 0 && canBeCut != 0 && isMountPoint != 1
-									callbackAction = enableCutMode
-								}
-
-								400 = ITEM
-								400 {
-									name = cut
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.cut
-									iconName = actions-edit-cut-release
-									displayCondition = isInCutMode = 1 && canBeCut != 0
-									callbackAction = disableCutMode
-								}
-
-								500 = ITEM
-								500 {
-									name = copy
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.copy
-									iconName = actions-edit-copy
-									displayCondition = isInCopyMode = 0
-									callbackAction = enableCopyMode
-								}
-
-								600 = ITEM
-								600 {
-									name = copy
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.copy
-									iconName = actions-edit-copy-release
-									displayCondition = isInCopyMode = 1
-									callbackAction = disableCopyMode
-								}
-
-								700 = ITEM
-								700 {
-									name = pasteInto
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.pasteinto
-									iconName = actions-document-paste-into
-									displayCondition = getContextInfo|inCopyMode = 1 || getContextInfo|inCutMode = 1 && canBePastedInto != 0
-									callbackAction = pasteIntoNode
-								}
-
-								800 = ITEM
-								800 {
-									name = pasteAfter
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.pasteafter
-									iconName = actions-document-paste-after
-									displayCondition = getContextInfo|inCopyMode = 1 || getContextInfo|inCutMode = 1 && canBePastedAfter != 0
-									callbackAction = pasteAfterNode
-								}
-
-								900 = DIVIDER
-
-								1000 = ITEM
-								1000 {
-									name = delete
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.delete
-									iconName = actions-edit-delete
-									displayCondition = canBeRemoved != 0 && isMountPoint != 1
-									callbackAction = removeNode
-								}
-
-								1100 = DIVIDER
-
-								1200 = ITEM
-								1200 {
-									name = clearCache
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.clear_cache
-									iconName = actions-system-cache-clear
-									callbackAction = clearCacheOfPage
-								}
-							}
-
-							1000 = SUBMENU
-							1000 {
-								label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.branchActions
-
-								100 = ITEM
-								100 {
-									name = mountAsTreeroot
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.tempMountPoint
-									iconName = actions-pagetree-mountroot
-									displayCondition = canBeTemporaryMountPoint != 0 && isMountPoint = 0
-									callbackAction = mountAsTreeRoot
-								}
-
-								200 = DIVIDER
-
-								300 = ITEM
-								300 {
-									name = expandBranch
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.expandBranch
-									iconName = actions-pagetree-expand
-									displayCondition =
-									callbackAction = expandBranch
-								}
-
-								400 = ITEM
-								400 {
-									name = collapseBranch
-									label = LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.collapseBranch
-									iconName = actions-pagetree-collapse
-									displayCondition =
-									callbackAction = collapseBranch
-								}
-							}
-						}
+						tree.disableItems =
+					}
+					sys_file {
+						disableItems =
+						tree.disableItems =
+					}
+					sys_filemounts {
+						disableItems =
+						tree.disableItems =
 					}
 				}
 			}
@@ -1110,8 +905,8 @@ return [
         'loginSecurityLevel' => '',        // See description for <a href="#BE-loginSecurityLevel">[BE][loginSecurityLevel]</a>. Default state for frontend is "normal". Alternative authentication services can implement higher levels if preferred. For example, "rsa" level uses RSA password encryption (only if the rsaauth extension is installed)
         'lifetime' => 0,        // Integer: positive. If >0 and the option permalogin is >=0, the cookie of FE users will have a lifetime of the number of seconds this value indicates. Otherwise it will be a session cookie (deleted when browser is shut down). Setting this value to 604800 will result in automatic login of FE users during a whole week, 86400 will keep the FE users logged in for a day.
         'sessionDataLifetime' => 86400,        // Integer: positive. If >0, the session data will timeout and be removed after the number of seconds given (86400 seconds represents 24 hours).
+        'maxSessionDataSize' => 10000,        // Integer: Setting (deprecated) the maximum size (bytes) of frontend session data stored in the table fe_session_data. Set to zero (0) means no limit, but this is not recommended since it also disables a check that session data is stored only if a confirmed cookie is set. @deprecated since TYPO3 v8, will be removed in TYPO3 v9
         'permalogin' => 0,        // <p>Integer:</p><dl><dt>-1</dt><dd>Permanent login for FE users disabled.</dd><dt>0</dt><dd>By default permalogin is disabled for FE users but can be enabled by a form control in the login form.</dd><dt>1</dt><dd>Permanent login is by default enabled but can be disabled by a form control in the login form.</dd><dt>2</dt><dd>Permanent login is forced to be enabled.// In any case, permanent login is only possible if <a href="#FE-lifetime">[FE][lifetime]</a> lifetime is > 0.</dd></dl>
-        'maxSessionDataSize' => 10000,        // Integer: Setting the maximum size (bytes) of frontend session data stored in the table fe_session_data. Set to zero (0) means no limit, but this is not recommended since it also disables a check that session data is stored only if a confirmed cookie is set.
         'cookieDomain' => '',        // Same as <a href="#SYS-cookieDomain">$TYPO3_CONF_VARS['SYS']['cookieDomain']</a> but only for FE cookies. If empty, $TYPO3_CONF_VARS['SYS']['cookieDomain'] value will be used.
         'cookieName' => 'fe_typo_user',        // String: Set the name for the cookie used for the front-end user session
         'defaultUserTSconfig' => '',        // String (textarea). Enter lines of default frontend user/group TSconfig.

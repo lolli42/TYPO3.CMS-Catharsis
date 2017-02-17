@@ -54,7 +54,7 @@ use TYPO3\CMS\Frontend\Tests\Unit\ContentObject\Fixtures\PageRepositoryFixture;
 /**
  * Testcase for TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
  */
-class ContentObjectRendererTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
 
     /**
@@ -63,12 +63,12 @@ class ContentObjectRendererTest extends \TYPO3\Components\TestingFramework\Core\
     protected $singletonInstances = [];
 
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+     * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface|\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
      */
     protected $subject = null;
 
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject|TypoScriptFrontendController|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface
+     * @var \PHPUnit_Framework_MockObject_MockObject|TypoScriptFrontendController|\TYPO3\TestingFramework\Core\AccessibleObjectInterface
      */
     protected $frontendControllerMock = null;
 
@@ -820,7 +820,7 @@ class ContentObjectRendererTest extends \TYPO3\Components\TestingFramework\Core\
      *  - Otherwise rounds like round() and decimals can be applied.
      *  - Always returns float.
      *
-     * @param float $expected The expected output.
+     * @param float $expect The expected output.
      * @param mixed $content The given content.
      * @param array $conf The given configuration of 'round.'.
      * @return void

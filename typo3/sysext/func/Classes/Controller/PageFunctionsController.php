@@ -129,7 +129,7 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
                 'WebFuncInLineJS',
                 'if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';');
             // Setting up the context sensitive menu:
-            $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
+            $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ContextMenu');
 
             $this->view = $this->getFluidTemplateObject('func', 'func');
             $this->view->assign('moduleName', BackendUtility::getModuleUrl('web_func'));
@@ -240,7 +240,7 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
      * returns a new standalone view, shorthand function
      *
      * @param string $extensionName
-     * @param string $controllerExtensionname
+     * @param string $controllerExtensionName
      * @param string $templateName
      * @return StandaloneView
      */

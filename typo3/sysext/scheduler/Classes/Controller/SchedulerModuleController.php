@@ -21,6 +21,7 @@ use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -88,6 +89,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
     protected $moduleTemplate;
 
     /**
+     * @var IconFactory
+     */
+    protected $iconFactory;
+
+    /**
      * @return \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController
      */
     public function __construct()
@@ -103,6 +109,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         $this->view->getRequest()->setControllerExtensionName('scheduler');
         $this->view->setPartialRootPaths([ExtensionManagementUtility::extPath('scheduler') . 'Resources/Private/Partials/Backend/SchedulerModule/']);
         $this->moduleUri = BackendUtility::getModuleUrl($this->moduleName);
+        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
         $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
         $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
@@ -634,6 +641,14 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         $this->getPageRenderer()->loadJquery();
         $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Scheduler/Scheduler');
         $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/DateTimePicker');
+        $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Scheduler/PageBrowser');
+        $this->getPageRenderer()->addJsInlineCode('browse-button', '
+            function setFormValueFromBrowseWin(fieldReference, elValue, elName) {
+                var res = elValue.split("_");
+                var element = document.getElementById(fieldReference);
+                element.value = res[1];
+            }
+        ');
 
         // Start rendering the add/edit form
         $this->view->assign('uid', htmlspecialchars($this->submittedData['uid']));
@@ -796,11 +811,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                 foreach ($fields as $fieldID => $fieldInfo) {
                     $label = '<label>' . $this->getLanguageService()->sL($fieldInfo['label']) . '</label>';
                     $htmlClassName = strtolower(str_replace('\\', '-', $class));
-
                     $table[] =
                         '<div class="form-section extraFields extra_fields_' . $htmlClassName . '" ' . $additionalFieldsStyle . ' id="' . $fieldID . '_row"><div class="form-group">'
                             . BackendUtility::wrapInHelp($fieldInfo['cshKey'], $fieldInfo['cshLabel'], $label)
                             . '<div class="form-control-wrap">' . $fieldInfo['code'] . '</div>'
+                            . $this->getBrowseButton($fieldID, $fieldInfo)
                         . '</div></div>';
                 }
             }
@@ -810,6 +825,29 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         $this->view->assign('now', $this->getServerTime());
 
         return $this->view->render();
+    }
+
+    /**
+     * @param string $fieldID The id of the field witch contains the page id
+     * @param array $fieldInfo The array with the field info, contains the page title shown beside the button
+     * @return string HTML code for the browse button
+     */
+    protected function getBrowseButton($fieldID, array $fieldInfo)
+    {
+        if (isset($fieldInfo['browser']) && ($fieldInfo['browser'] === 'page')) {
+            $url = BackendUtility::getModuleUrl('wizard_element_browser',
+                ['mode' => 'db', 'bparams' => $fieldID . '|||pages|']);
+            $title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.browse_db'));
+            return '
+                <div><a href="#" data-url=' . htmlspecialchars($url) . ' class="btn btn-default t3js-pageBrowser" title="' . $title . '">
+                    <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-insert-record" data-identifier="actions-insert-record">
+                        <span class="icon-markup">' . $this->iconFactory->getIcon('actions-insert-record',
+                    Icon::SIZE_SMALL)->render() . '</span>
+                    </span>
+                </a><span id="page_' . $fieldID . '">&nbsp;' . htmlspecialchars($fieldInfo['pageTitle']) . '</span></div>';
+        } else {
+            return '';
+        }
     }
 
     /**
@@ -926,6 +964,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
         $this->getPageRenderer()->loadJquery();
         $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Scheduler/Scheduler');
+        $this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Tooltip');
         $table = [];
         // Header row
         $table[] =
@@ -942,19 +981,28 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             . '</tr></thead>';
 
         $registeredClasses = $this->getRegisteredClasses();
-        foreach ($temporaryResult as $taskGroup) {
+        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        $collapseIcon = $iconFactory->getIcon('actions-view-list-collapse', Icon::SIZE_SMALL)->render();
+        $expandIcon = $iconFactory->getIcon('actions-view-list-expand', Icon::SIZE_SMALL)->render();
+        foreach ($temporaryResult as $taskIndex => $taskGroup) {
+            $collapseExpandIcons = '<span class="taskGroup_' . $taskIndex . '">' . $collapseIcon . '</span>'
+                . '<span class="taskGroup_' . $taskIndex . '" style="display: none;">' . $expandIcon . '</span>';
             if (!empty($taskGroup['groupName'])) {
                 $groupText = '<strong>' . htmlspecialchars($taskGroup['groupName']) . '</strong>';
                 if (!empty($taskGroup['groupDescription'])) {
                     $groupText .= '<br>' . nl2br(htmlspecialchars($taskGroup['groupDescription']));
                 }
-                $table[] = '<tr><td colspan="9">' . $groupText . '</td></tr>';
+                $table[] = '<tr class="taskGroup" data-task-group-id="' . $taskIndex . '"><td colspan="8">' . $groupText . '</td><td style="text-align:right;">' . $collapseExpandIcons . '</td></tr>';
+            } else {
+                if (count($temporaryResult) > 1) {
+                    $table[] = '<tr class="taskGroup" data-task-group-id="0"><td colspan="8"><strong>' . htmlspecialchars($this->getLanguageService()->getLL('label.noGroup')) . '</strong></td><td style="text-align:right;">' . $collapseExpandIcons . '</td></tr>';
+                }
             }
 
             foreach ($taskGroup['tasks'] as $schedulerRecord) {
                 // Define action icons
                 $link = htmlspecialchars($this->moduleUri . '&CMD=edit&tx_scheduler[uid]=' . $schedulerRecord['uid']);
-                $editAction = '<a class="btn btn-default" href="' . $link . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:edit')) . '" class="icon">' .
+                $editAction = '<a data-toggle="tooltip" data-container="body" class="btn btn-default" href="' . $link . '" title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:edit')) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('actions-open', Icon::SIZE_SMALL)->render() . '</a>';
                 if ((int)$schedulerRecord['disable'] === 1) {
                     $translationKey = 'enable';
@@ -963,27 +1011,27 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                     $translationKey = 'disable';
                     $icon = $this->moduleTemplate->getIconFactory()->getIcon('actions-edit-hide', Icon::SIZE_SMALL);
                 }
-                $toggleHiddenAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri
+                $toggleHiddenAction = '<a data-toggle="tooltip" data-container="body" class="btn btn-default" href="' . htmlspecialchars($this->moduleUri
                     . '&CMD=toggleHidden&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="'
                     . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:' . $translationKey))
                     . '" class="icon">' . $icon->render() . '</a>';
-                $deleteAction = '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($this->moduleUri . '&CMD=delete&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" '
+                $deleteAction = '<a data-toggle="tooltip" data-container="body" class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($this->moduleUri . '&CMD=delete&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" '
                     . ' data-severity="warning"'
                     . ' data-title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:delete')) . '"'
                     . ' data-button-close-text="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:cancel')) . '"'
                     . ' data-content="' . htmlspecialchars($this->getLanguageService()->getLL('msg.delete')) . '"'
                     . ' title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:delete')) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('actions-edit-delete', Icon::SIZE_SMALL)->render() . '</a>';
-                $stopAction = '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($this->moduleUri . '&CMD=stop&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" '
+                $stopAction = '<a data-toggle="tooltip" data-container="body" class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($this->moduleUri . '&CMD=stop&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" '
                     . ' data-severity="warning"'
                     . ' data-title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:stop')) . '"'
                     . ' data-button-close-text="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:cancel')) . '"'
                     . ' data-content="' . htmlspecialchars($this->getLanguageService()->getLL('msg.stop')) . '"'
                     . ' title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:stop')) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL)->render() . '</a>';
-                $runAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&tx_scheduler[execute][]=' . $schedulerRecord['uid']) . '" title="' . htmlspecialchars($this->getLanguageService()->getLL('action.run_task')) . '" class="icon">' .
+                $runAction = '<a class="btn btn-default" data-toggle="tooltip" data-container="body" href="' . htmlspecialchars($this->moduleUri . '&tx_scheduler[execute][]=' . $schedulerRecord['uid']) . '" title="' . htmlspecialchars($this->getLanguageService()->getLL('action.run_task')) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('extensions-scheduler-run-task', Icon::SIZE_SMALL)->render() . '</a>';
-                $runCronAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&CMD=setNextExecutionTime&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->getLL('action.run_task_cron', true) . '" class="icon">' .
+                $runCronAction = '<a class="btn btn-default" data-toggle="tooltip" data-container="body" href="' . htmlspecialchars($this->moduleUri . '&CMD=setNextExecutionTime&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->getLL('action.run_task_cron', true) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('extensions-scheduler-run-task-cron', Icon::SIZE_SMALL)->render() . '</a>';
 
                 // Define some default values
@@ -1084,7 +1132,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                     if ($isRunning) {
                         $actions = '<div class="btn-group" role="group">' . $stopAction . '</div>';
                     } else {
-                        $actions .= '&nbsp;<div class="btn-group" role="group">' . $runAction . $runCronAction . '</div>';
+                        $actions .= '&nbsp;<div class="btn-group" role="group">' . $runCronAction . $runAction . '</div>';
                     }
 
                     // Check if the last run failed
@@ -1113,16 +1161,16 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                     $taskName = '<span class="name"><a href="' . $link . '">' . $name . '</a></span>';
 
                     $table[] =
-                        '<tr class="' . ($showAsDisabled ? 'disabled' : '') . '">'
-                            . '<td>' . $startExecutionElement . '</td>'
-                            . '<td class="right">' . $schedulerRecord['uid'] . '</td>'
-                            . '<td>' . $this->makeStatusLabel($labels) . $taskName . $taskDesc . '</td>'
-                            . '<td>' . $execType . '</td>'
-                            . '<td>' . $frequency . '</td>'
-                            . '<td>' . $multiple . '</td>'
-                            . '<td>' . $lastExecution . '</td>'
-                            . '<td>' . $nextDate . '</td>'
-                            . '<td nowrap="nowrap">' . $actions . '</td>'
+                        '<tr class="' . ($showAsDisabled ? 'disabled' : '') . ' taskGroup_' . $taskIndex . '">'
+                            . '<td><span class="t-span">' . $startExecutionElement . '</span></td>'
+                            . '<td class="right"><span class="t-span">' . $schedulerRecord['uid'] . '</span></td>'
+                            . '<td><span class="t-span">' . $this->makeStatusLabel($labels) . $taskName . $taskDesc . '</span></td>'
+                            . '<td><span class="t-span">' . $execType . '</span></td>'
+                            . '<td><span class="t-span">' . $frequency . '</span></td>'
+                            . '<td><span class="t-span">' . $multiple . '</span></td>'
+                            . '<td><span class="t-span">' . $lastExecution . '</span></td>'
+                            . '<td><span class="t-span">' . $nextDate . '</span></td>'
+                            . '<td nowrap="nowrap"><span class="t-span">' . $actions . '</span></td>'
                         . '</tr>';
                 } else {
                     // The task object is not valid

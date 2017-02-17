@@ -19,8 +19,11 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 /**
  * Action handler test
  */
-class ActionHandlerTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+class ActionHandlerTest extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
+    /**
+     * @var array
+     */
     protected $coreExtensionsToLoad = ['version', 'workspaces'];
 
     /**

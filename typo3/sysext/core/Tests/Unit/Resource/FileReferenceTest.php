@@ -18,7 +18,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Resource;
  * Testcase for the file class of the TYPO3 FAL
  *
  */
-class FileReferenceTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class FileReferenceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
     /**
      * @var array A backup of registered singleton instances
@@ -40,7 +40,7 @@ class FileReferenceTest extends \TYPO3\Components\TestingFramework\Core\UnitTest
     /**
      * @param array $fileReferenceProperties
      * @param array $originalFileProperties
-     * @return \TYPO3\CMS\Core\Resource\FileReference|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface
+     * @return \TYPO3\CMS\Core\Resource\FileReference|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface
      */
     protected function prepareFixture(array $fileReferenceProperties, array $originalFileProperties)
     {

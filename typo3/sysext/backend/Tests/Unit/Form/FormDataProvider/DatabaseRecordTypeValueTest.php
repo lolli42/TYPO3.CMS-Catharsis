@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Database\DatabaseConnection;
 /**
  * Test case
  */
-class DatabaseRecordTypeValueTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class DatabaseRecordTypeValueTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
     /**
      * @var DatabaseRecordTypeValue|\PHPUnit_Framework_MockObject_MockObject
@@ -257,42 +257,6 @@ class DatabaseRecordTypeValueTest extends \TYPO3\Components\TestingFramework\Cor
         $this->expectExceptionCode(1438185437);
 
         $this->subject->addData($input);
-    }
-
-    /**
-     * @test
-     */
-    public function addDataSetsRecordTypeValueToValueOfDefaultLanguageRecordIfConfiguredAsExclude()
-    {
-        $input = [
-            'recordTypeValue' => '',
-            'processedTca' => [
-                'ctrl' => [
-                    'languageField' => 'sys_language_uid',
-                    'type' => 'aField',
-                ],
-                'columns' => [
-                    'aField' => [
-                        'l10n_mode' => 'exclude',
-                    ],
-                ],
-                'types' => [
-                    '3' => 'foo',
-                ],
-            ],
-            'databaseRow' => [
-                'sys_language_uid' => 2,
-                'aField' => 4,
-            ],
-            'defaultLanguageRow' => [
-                'aField' => 3,
-            ],
-        ];
-
-        $expected = $input;
-        $expected['recordTypeValue'] = '3';
-
-        $this->assertSame($expected, $this->subject->addData($input));
     }
 
     /**

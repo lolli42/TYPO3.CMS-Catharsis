@@ -31,10 +31,16 @@ use TYPO3\CMS\Extbase\Tests\Unit\Property\Fixtures\DataProviderTwoInterface;
 /**
  * Test case
  */
-class PropertyMapperTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class PropertyMapperTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
+    /**
+     * @var \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationBuilder|\PHPUnit_Framework_MockObject_MockObject
+     */
     protected $mockConfigurationBuilder;
 
+    /**
+     * @var \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
     protected $mockConfiguration;
 
     /**
@@ -70,7 +76,7 @@ class PropertyMapperTest extends \TYPO3\Components\TestingFramework\Core\UnitTes
      */
     public function sourceTypeCanBeCorrectlyDetermined($source, $sourceType)
     {
-        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface */
+        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface */
         $propertyMapper = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Property\PropertyMapper::class, ['dummy']);
         $this->assertEquals($sourceType, $propertyMapper->_call('determineSourceType', $source));
     }
@@ -96,7 +102,7 @@ class PropertyMapperTest extends \TYPO3\Components\TestingFramework\Core\UnitTes
     {
         $this->expectException(InvalidSourceException::class);
         $this->expectExceptionCode(1297773150);
-        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface */
+        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface */
         $propertyMapper = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Property\PropertyMapper::class, ['dummy']);
         $propertyMapper->_call('determineSourceType', $source);
     }
@@ -126,7 +132,7 @@ class PropertyMapperTest extends \TYPO3\Components\TestingFramework\Core\UnitTes
     {
         $mockTypeConverter = $this->getMockTypeConverter();
         $this->mockConfiguration->expects($this->any())->method('getTypeConverter')->will($this->returnValue($mockTypeConverter));
-        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface */
+        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface */
         $propertyMapper = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Property\PropertyMapper::class, ['dummy']);
         $this->assertSame($mockTypeConverter, $propertyMapper->_call('findTypeConverter', 'someSource', 'someTargetType', $this->mockConfiguration));
     }
@@ -361,7 +367,7 @@ class PropertyMapperTest extends \TYPO3\Components\TestingFramework\Core\UnitTes
      */
     public function findFirstEligibleTypeConverterInObjectHierarchyShouldReturnNullIfSourceTypeIsUnknown()
     {
-        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface */
+        /** @var \TYPO3\CMS\Extbase\Property\PropertyMapper|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface */
         $propertyMapper = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Property\PropertyMapper::class, ['dummy']);
         $this->assertNull($propertyMapper->_call('findFirstEligibleTypeConverterInObjectHierarchy', 'source', 'unknownSourceType', \TYPO3\CMS\Extbase\Core\Bootstrap::class));
     }

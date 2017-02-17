@@ -18,10 +18,16 @@ use TYPO3\CMS\Backend\Tests\Functional\Form\FormTestService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
-class ContentVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+class ContentVisibleFieldsTest extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
+    /**
+     * @var array
+     */
     protected $coreExtensionsToLoad = ['fluid_styled_content'];
 
+    /**
+     * @var array
+     */
     protected static $contentFields = [
         'CType',
         'colPos',

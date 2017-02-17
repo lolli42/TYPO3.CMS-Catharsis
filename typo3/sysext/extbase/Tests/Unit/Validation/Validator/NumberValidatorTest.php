@@ -24,8 +24,11 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 /**
  * Test case
  */
-class NumberValidatorTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class NumberValidatorTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
+    /**
+     * @var string
+     */
     protected $validatorClassName = \TYPO3\CMS\Extbase\Validation\Validator\NumberValidator::class;
 
     /**

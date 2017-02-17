@@ -22,7 +22,7 @@ use TYPO3\CMS\Lang\LanguageService;
 /**
  * Test case
  */
-class TcaRecordTitleTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class TcaRecordTitleTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
     /**
      * @var TcaRecordTitle
@@ -613,6 +613,42 @@ class TcaRecordTitleTest extends \TYPO3\Components\TestingFramework\Core\UnitTes
 
         $expected = $input;
         $expected['recordTitle'] = 'bar';
+        $this->assertSame($expected, $this->subject->addData($input));
+    }
+
+    /**
+     * @test
+     */
+    public function addDataReturnsRecordTitleForInlineType()
+    {
+        $input = [
+            'tableName' => 'aTable',
+            'databaseRow' => [
+                'uid' => '1',
+                'aField' => '2',
+            ],
+            'processedTca' => [
+                'ctrl' => [
+                    'label' => 'aField'
+                ],
+                'columns' => [
+                    'aField' => [
+                        'config' => [
+                            'type' => 'inline'
+                        ],
+                        'children' => [
+                            [
+                                'recordTitle' => 'foo',
+                                'vanillaUid' => 2
+                            ]
+                        ]
+                    ]
+                ],
+            ]
+        ];
+
+        $expected = $input;
+        $expected['recordTitle'] = 'foo';
         $this->assertSame($expected, $this->subject->addData($input));
     }
 

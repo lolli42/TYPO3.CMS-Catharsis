@@ -297,6 +297,9 @@
 			<trans-unit id="imwizard.ratio.16_9">
 				<source>16:9</source>
 			</trans-unit>
+			<trans-unit id="imwizard.ratio.3_2">
+				<source>3:2</source>
+			</trans-unit>
 			<trans-unit id="imwizard.ratio.4_3">
 				<source>4:3</source>
 			</trans-unit>
@@ -306,29 +309,29 @@
 			<trans-unit id="imwizard.ratio.free">
 				<source>Free</source>
 			</trans-unit>
-			<trans-unit id="imwizard.zoom">
-				<source>Zoom</source>
-			</trans-unit>
-			<trans-unit id="imwizard.zoom-in">
-				<source>Zoom in</source>
-			</trans-unit>
-			<trans-unit id="imwizard.zoom-out">
-				<source>Zoom out</source>
+			<trans-unit id="imwizard.crop_variant.default">
+				<source>Default</source>
 			</trans-unit>
 			<trans-unit id="imwizard.selection">
 				<source>Selected Size</source>
-			</trans-unit>
-			<trans-unit id="imwizard.crop-x">
-				<source>x:</source>
-			</trans-unit>
-			<trans-unit id="imwizard.crop-y">
-				<source>y:</source>
 			</trans-unit>
 			<trans-unit id="imwizard.crop-width">
 				<source>width:</source>
 			</trans-unit>
 			<trans-unit id="imwizard.crop-height">
 				<source>height:</source>
+			</trans-unit>
+			<trans-unit id="localizationStateSelector.header">
+			    <source>Translation behavior</source>
+			</trans-unit>
+			<trans-unit id="localizationStateSelector.customValue">
+			    <source>Custom value</source>
+			</trans-unit>
+			<trans-unit id="localizationStateSelector.defaultLanguageValue">
+			    <source>Value of default language</source>
+			</trans-unit>
+			<trans-unit id="localizationStateSelector.sourceLanguageValue">
+			    <source>Value of %1s language</source>
 			</trans-unit>
 		</body>
 	</file>

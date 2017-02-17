@@ -32,7 +32,7 @@ use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 /**
  * Test case
  */
-class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class UriBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
     /**
      * @var ConfigurationManagerInterface
@@ -55,7 +55,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
     protected $mockExtensionService;
 
     /**
-     * @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface
+     * @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface
      */
     protected $uriBuilder;
 
@@ -251,7 +251,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
                     'M',
                     'id'
                 ],
-                '/typo3/index.php?moduleToken=dummyToken&foo=bar&foo2=bar2'
+                '/typo3/index.php?M=&moduleToken=dummyToken&foo=bar&foo2=bar2'
             ],
             'Arguments to be excluded in the end' => [
                 [
@@ -266,7 +266,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
                     'M',
                     'id'
                 ],
-                '/typo3/index.php?moduleToken=dummyToken&foo=bar&foo2=bar2'
+                '/typo3/index.php?M=&moduleToken=dummyToken&foo=bar&foo2=bar2'
             ],
             'Arguments in nested array to be excluded' => [
                 [
@@ -419,7 +419,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
         ];
         $this->uriBuilder->setAddQueryString(true);
         $this->uriBuilder->setAddQueryStringMethod('POST,GET');
-        $expectedResult = $this->rawUrlEncodeSquareBracketsInUrl('/typo3/index.php?moduleToken=dummyToken&key1=POST1&key2=GET2&key3[key31]=POST31&key3[key32]=GET32&key3[key33][key331]=GET331&key3[key33][key332]=POST332');
+        $expectedResult = $this->rawUrlEncodeSquareBracketsInUrl('/typo3/index.php?M=&moduleToken=dummyToken&key1=POST1&key2=GET2&key3[key31]=POST31&key3[key32]=GET32&key3[key33][key331]=GET331&key3[key33][key332]=POST332');
         $actualResult = $this->uriBuilder->buildBackendUri();
         $this->assertEquals($expectedResult, $actualResult);
     }
@@ -452,7 +452,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
         ];
         $this->uriBuilder->setAddQueryString(true);
         $this->uriBuilder->setAddQueryStringMethod('GET,POST');
-        $expectedResult = $this->rawUrlEncodeSquareBracketsInUrl('/typo3/index.php?moduleToken=dummyToken&key1=GET1&key2=POST2&key3[key31]=GET31&key3[key32]=POST32&key3[key33][key331]=POST331&key3[key33][key332]=GET332');
+        $expectedResult = $this->rawUrlEncodeSquareBracketsInUrl('/typo3/index.php?M=&moduleToken=dummyToken&key1=GET1&key2=POST2&key3[key31]=GET31&key3[key32]=POST32&key3[key33][key331]=POST331&key3[key33][key332]=GET332');
         $actualResult = $this->uriBuilder->buildBackendUri();
         $this->assertEquals($expectedResult, $actualResult);
     }
@@ -473,7 +473,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
      */
     public function buildFrontendUriCreatesTypoLink()
     {
-        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
+        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
         $uriBuilder = $this->getAccessibleMock(UriBuilder::class, ['buildTypolinkConfiguration']);
         $uriBuilder->_set('contentObject', $this->mockContentObject);
         $uriBuilder->expects($this->once())->method('buildTypolinkConfiguration')->will($this->returnValue(['someTypoLinkConfiguration']));
@@ -508,7 +508,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
      */
     public function buildFrontendUriCreatesAbsoluteUrisIfSpecified()
     {
-        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
+        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
         $uriBuilder = $this->getAccessibleMock(UriBuilder::class, ['buildTypolinkConfiguration']);
         $uriBuilder->_set('contentObject', $this->mockContentObject);
         $uriBuilder->expects($this->once())->method('buildTypolinkConfiguration')->will($this->returnValue(['foo' => 'bar']));
@@ -524,7 +524,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
      */
     public function buildFrontendUriSetsAbsoluteUriSchemeIfSpecified()
     {
-        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
+        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
         $uriBuilder = $this->getAccessibleMock(UriBuilder::class, ['buildTypolinkConfiguration']);
         $uriBuilder->_set('contentObject', $this->mockContentObject);
         $uriBuilder->expects($this->once())->method('buildTypolinkConfiguration')->will($this->returnValue(['foo' => 'bar']));
@@ -541,7 +541,7 @@ class UriBuilderTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCas
      */
     public function buildFrontendUriDoesNotSetAbsoluteUriSchemeIfCreateAbsoluteUriIsFalse()
     {
-        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
+        /** @var UriBuilder|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface $uriBuilder */
         $uriBuilder = $this->getAccessibleMock(UriBuilder::class, ['buildTypolinkConfiguration']);
         $uriBuilder->_set('contentObject', $this->mockContentObject);
         $uriBuilder->expects($this->once())->method('buildTypolinkConfiguration')->will($this->returnValue(['foo' => 'bar']));

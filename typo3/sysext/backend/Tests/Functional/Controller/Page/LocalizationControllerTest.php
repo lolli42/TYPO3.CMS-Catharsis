@@ -22,7 +22,7 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 /**
  * Test case for TYPO3\CMS\Backend\Controller\Page\LocalizationController
  */
-class LocalizationControllerTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+class LocalizationControllerTest extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
     /**
      * @var LocalizationController
@@ -99,9 +99,10 @@ class LocalizationControllerTest extends \TYPO3\Components\TestingFramework\Core
                     )
                 )
             )
+            ->orderBy('uid')
             ->execute()
             ->fetchAll();
-        $this->assertSame($expectedResults, $results);
+        $this->assertEquals($expectedResults, $results);
     }
 
     /**
@@ -157,9 +158,10 @@ class LocalizationControllerTest extends \TYPO3\Components\TestingFramework\Core
                     )
                 )
             )
+            ->orderBy('uid')
             ->execute()
             ->fetchAll();
-        $this->assertSame($expectedResults, $results);
+        $this->assertEquals($expectedResults, $results);
     }
 
     /**
@@ -213,9 +215,10 @@ class LocalizationControllerTest extends \TYPO3\Components\TestingFramework\Core
                     )
                 )
             )
+            ->orderBy('uid')
             ->execute()
             ->fetchAll();
-        $this->assertSame($expectedResults, $results);
+        $this->assertEquals($expectedResults, $results);
     }
 
     /**
@@ -271,9 +274,10 @@ class LocalizationControllerTest extends \TYPO3\Components\TestingFramework\Core
                     )
                 )
             )
+            ->orderBy('uid')
             ->execute()
             ->fetchAll();
-        $this->assertSame($expectedResults, $results);
+        $this->assertEquals($expectedResults, $results);
     }
 
     /**
@@ -358,9 +362,10 @@ class LocalizationControllerTest extends \TYPO3\Components\TestingFramework\Core
                         $queryBuilder->createNamedParameter(1, \PDO::PARAM_INT)
                     )
                 )
-            )->orderBy('sorting', 'ASC')
+            )
+            ->orderBy('sorting', 'ASC')
             ->execute()
             ->fetchAll();
-        $this->assertSame($expectedResults, $results);
+        $this->assertEquals($expectedResults, $results);
     }
 }

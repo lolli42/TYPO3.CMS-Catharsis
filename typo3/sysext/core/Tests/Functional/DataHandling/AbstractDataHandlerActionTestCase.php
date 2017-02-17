@@ -18,11 +18,12 @@ use Doctrine\DBAL\DBALException;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Tests\Functional\DataHandling\Framework\DataSet;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\TestingFramework\Core\Testbase;
 
 /**
  * Functional test for the DataHandler
  */
-abstract class AbstractDataHandlerActionTestCase extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+abstract class AbstractDataHandlerActionTestCase extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
     const VALUE_BackendUserId = 1;
 
@@ -114,15 +115,15 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\Components\Testi
         $dataSet = DataSet::read($fileName, true);
 
         foreach ($dataSet->getTableNames() as $tableName) {
+            $connection = $this->getConnectionPool()->getConnectionForTable($tableName);
             foreach ($dataSet->getElements($tableName) as $element) {
-                $connection = $this->getConnectionPool()
-                    ->getConnectionForTable($tableName);
                 try {
                     $connection->insert($tableName, $element);
                 } catch (DBALException $e) {
                     $this->fail('SQL Error for table "' . $tableName . '": ' . LF . $e->getMessage());
                 }
             }
+            Testbase::resetTableSequences($connection, $tableName);
         }
     }
 
@@ -364,34 +365,34 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\Components\Testi
     }
 
     /**
-     * @return \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\HasRecordConstraint
+     * @return \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\HasRecordConstraint
      */
     protected function getRequestSectionHasRecordConstraint()
     {
-        return new \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\HasRecordConstraint();
+        return new \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\HasRecordConstraint();
     }
 
     /**
-     * @return \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\DoesNotHaveRecordConstraint
+     * @return \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\DoesNotHaveRecordConstraint
      */
     protected function getRequestSectionDoesNotHaveRecordConstraint()
     {
-        return new \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\DoesNotHaveRecordConstraint();
+        return new \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\DoesNotHaveRecordConstraint();
     }
 
     /**
-     * @return \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureHasRecordConstraint
+     * @return \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureHasRecordConstraint
      */
     protected function getRequestSectionStructureHasRecordConstraint()
     {
-        return new \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureHasRecordConstraint();
+        return new \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureHasRecordConstraint();
     }
 
     /**
-     * @return \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureDoesNotHaveRecordConstraint
+     * @return \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureDoesNotHaveRecordConstraint
      */
     protected function getRequestSectionStructureDoesNotHaveRecordConstraint()
     {
-        return new \TYPO3\Components\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureDoesNotHaveRecordConstraint();
+        return new \TYPO3\TestingFramework\Core\Functional\Framework\Constraint\RequestSection\StructureDoesNotHaveRecordConstraint();
     }
 }

@@ -14,7 +14,7 @@ namespace TYPO3\CMS\Core\Tests\Acceptance\Backend\Template;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\Components\TestingFramework\Core\Acceptance\Step\Backend\Admin;
+use TYPO3\TestingFramework\Core\Acceptance\Step\Backend\Admin;
 
 /**
  * Template tests
@@ -59,9 +59,8 @@ class TemplateCest
         $I->wantTo('show templates overview on website root page (uid = 1 and pid = 0)');
         $I->switchToIFrame();
         // click on website root page
-        $I->click('#extdd-2');
+        $I->click('#extdd-3');
         $I->switchToIFrame('list_frame');
-        $I->waitForElementVisible('#ts-overview');
         $I->waitForElement('#TypoScriptTemplateModuleController');
         $I->see('No template');
         $I->see('There was no template on this page!');
@@ -85,9 +84,8 @@ class TemplateCest
     {
         $I->wantTo('create a new site template');
         $I->switchToIFrame();
-        $I->click('#extdd-2');
+        $I->click('#extdd-3');
         $I->switchToIFrame('list_frame');
-        $I->waitForElementVisible('#ts-overview');
         $I->waitForElement('#TypoScriptTemplateModuleController');
         $I->click("//input[@name='newWebsite']");
         $I->waitForElement('#TypoScriptTemplateModuleController');

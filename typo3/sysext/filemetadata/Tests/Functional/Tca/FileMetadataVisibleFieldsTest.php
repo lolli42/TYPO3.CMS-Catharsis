@@ -19,10 +19,16 @@ use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
-class FileMetadataVisibleFieldsTest extends \TYPO3\Components\TestingFramework\Core\FunctionalTestCase
+class FileMetadataVisibleFieldsTest extends \TYPO3\TestingFramework\Core\Functional\FunctionalTestCase
 {
+    /**
+     * @var array
+     */
     protected $coreExtensionsToLoad = ['filemetadata'];
 
+    /**
+     * @var array
+     */
     protected static $fileMetadataFields = [
         File::FILETYPE_UNKNOWN => [
             'sys_language_uid',

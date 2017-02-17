@@ -17,10 +17,10 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\Page;
 /**
  * Test case
  */
-class PageRepositoryTest extends \TYPO3\Components\TestingFramework\Core\UnitTestCase
+class PageRepositoryTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
     /**
-     * @var \TYPO3\CMS\Frontend\Page\PageRepository|\TYPO3\Components\TestingFramework\Core\AccessibleObjectInterface
+     * @var \TYPO3\CMS\Frontend\Page\PageRepository|\TYPO3\TestingFramework\Core\AccessibleObjectInterface
      */
     protected $pageSelectObject;
 
@@ -126,11 +126,11 @@ class PageRepositoryTest extends \TYPO3\Components\TestingFramework\Core\UnitTes
     public function getShouldFieldBeOverlaidData()
     {
         return [
-            ['default',               'fake_table', 'foobar', true,  'default is to merge non-empty string'],
-            ['default',               'fake_table', '',       true,  'default is to merge empty string'],
+            ['default',               'fake_table', 'foobar', true,  'default is to overlay non-empty string'],
+            ['default',               'fake_table', '',       true,  'default is to overlay empty string'],
 
-            ['exclude',               'fake_table', '',       false, 'exclude field with empty string'],
-            ['exclude',               'fake_table', 'foobar', false, 'exclude field with non-empty string'],
+            ['exclude',               'fake_table', '',       true, 'exclude field with empty string'],
+            ['exclude',               'fake_table', 'foobar', true, 'exclude field with non-empty string'],
 
             ['prefixLangTitle',       'fake_table', 'foobar', true,  'prefixLangTitle is merged with non-empty string'],
             ['prefixLangTitle',       'fake_table', '',       true,  'prefixLangTitle is merged with empty string'],

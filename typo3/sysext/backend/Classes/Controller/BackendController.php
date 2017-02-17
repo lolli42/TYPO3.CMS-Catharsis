@@ -148,6 +148,9 @@ class BackendController
         // load Modals
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
 
+        // load ContextMenu
+        $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ContextMenu');
+
         // load the storage API and fill the UC into the PersistentStorage, so no additional AJAX call is needed
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Storage', 'function(Storage) {
 			Storage.Persistent.load(' . json_encode($this->getBackendUser()->uc) . ');
@@ -290,10 +293,31 @@ class BackendController
         $this->pageRenderer->addJsInlineCode('BackendInlineJavascript', $this->js, false);
         $this->loadResourcesForRegisteredNavigationComponents();
         // @todo: remove this when ExtJS is removed
+        $states = $this->getBackendUser()->uc['BackendComponents']['States'];
         $this->pageRenderer->addExtOnReadyCode('
             var TYPO3ExtJSStateProviderBridge = function() {};
             Ext.extend(TYPO3ExtJSStateProviderBridge, Ext.state.Provider, {
+                state: {},
+                queue: [],
+                dirty: false,
                 prefix: "BackendComponents.States.",
+                initState: function(state) {
+                    if (Ext.isArray(state)) {
+                        Ext.each(state, function(item) {
+                            this.state[item.name] = item.value;
+                        }, this);
+                    } else if (Ext.isObject(state)) {
+                        Ext.iterate(state, function(key, value) {
+                            this.state[key] = value;
+                        }, this);
+                    } else {
+                        this.state = {};
+                    }
+                    var me = this;
+                    window.setInterval(function() {
+                        me.submitState(me)
+                    }, 750);
+                },
                 get: function(name, defaultValue) {
                     return TYPO3.Storage.Persistent.isset(this.prefix + name) ? TYPO3.Storage.Persistent.get(this.prefix + name) : defaultValue;
                 },
@@ -301,11 +325,56 @@ class BackendController
                     TYPO3.Storage.Persistent.unset(this.prefix + name);
                 },
                 set: function(name, value) {
-                    TYPO3.Storage.Persistent.set(this.prefix + name, value);
+                    if (!name) {
+                        return;
+                    }
+                    this.queueChange(name, value);
+                },
+                queueChange: function(name, value) {
+                    var o = {};
+                    var i;
+                    var found = false;
+
+                    var lastValue = this.state[name];
+                    for (i = 0; i < this.queue.length; i++) {
+                        if (this.queue[i].name === name) {
+                            lastValue = this.queue[i].value;
+                        }
+                    }
+                    var changed = undefined === lastValue || lastValue !== value;
+
+                    if (changed) {
+                        o.name = name;
+                        o.value = value;
+                        for (i = 0; i < this.queue.length; i++) {
+                            if (this.queue[i].name === o.name) {
+                                this.queue[i] = o;
+                                found = true;
+                            }
+                        }
+                        if (false === found) {
+                            this.queue.push(o);
+                        }
+                        this.dirty = true;
+                    }
+                },
+                submitState: function(context) {
+                    if (!context.dirty) {
+                        return;
+                    }
+                    for (var i = 0; i < context.queue.length; ++i) {
+                        TYPO3.Storage.Persistent.set(context.prefix + context.queue[i].name, context.queue[i].value).done(function() {
+                            if (!context.dirty) {
+                                context.queue = [];
+                            }
+                        });
+                    }
+                    context.dirty = false;
                 }
             });
             Ext.state.Manager.setProvider(new TYPO3ExtJSStateProviderBridge());
-	        ');
+            Ext.state.Manager.getProvider().initState(' . (!empty($states) ? json_encode($states) : []) . ');
+            ');
         // Set document title:
         $title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ? $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . ' [TYPO3 CMS ' . TYPO3_version . ']' : 'TYPO3 CMS ' . TYPO3_version;
         // Renders the module page
@@ -407,6 +476,8 @@ class BackendController
             $this->pageRenderer->addInlineSetting('RecordHistory', 'moduleUrl', BackendUtility::getModuleUrl('record_history'));
             $this->pageRenderer->addInlineSetting('NewRecord', 'moduleUrl', BackendUtility::getModuleUrl('db_new'));
             $this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', BackendUtility::getModuleUrl('record_edit'));
+            $this->pageRenderer->addInlineSetting('RecordCommit', 'moduleUrl', BackendUtility::getModuleUrl('tce_db'));
+            $this->pageRenderer->addInlineSetting('WebLayout', 'moduleUrl', BackendUtility::getModuleUrl('web_layout'));
         }
     }
 

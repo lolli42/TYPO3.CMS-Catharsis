@@ -55,8 +55,14 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
      * @var array
      */
     protected $defaultFieldWizard = [
+        'localizationStateSelector' => [
+            'renderType' => 'localizationStateSelector',
+        ],
         'otherLanguageContent' => [
             'renderType' => 'otherLanguageContent',
+            'after' => [
+                'localizationStateSelector'
+            ],
         ],
         'defaultLanguageDifferences' => [
             'renderType' => 'defaultLanguageDifferences',
@@ -212,7 +218,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
         $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldWizardResult, false);
 
         $html = [];
-        $html[] = '<div class="t3js-formengine-field-item">';
+        $html[] = '<div class="formengine-field-item t3js-formengine-field-item">';
         $html[] =   $fieldInformationHtml;
         $html[] =   '<div class="form-wizards-wrap">';
         $html[] =       '<div class="form-wizards-element">';
@@ -364,7 +370,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement
         }
 
         $html = [];
-        $html[] = '<div class="t3js-formengine-field-item">';
+        $html[] = '<div class="formengine-field-item t3js-formengine-field-item">';
         $html[] =   '<div class="form-wizards-wrap">';
         $html[] =       '<div class="form-wizards-element">';
         $html[] =           '<label>';

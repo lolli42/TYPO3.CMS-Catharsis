@@ -187,6 +187,9 @@ class FormDataCompiler
             'pageLanguageOverlayRows' => [],
             // If the handled row is a localized row, this entry hold the default language row array
             'defaultLanguageRow' => null,
+            // If the handled row is a localived row and $TCA[<tableName>]['ctrl']['translationSource'] is configured,
+            // This entry holds the row of the language source record.
+            'sourceLanguageRow' => null,
             // If the handled row is a localized row and a transOrigDiffSourceField is defined, this
             // is the unserialized version of it. The diff source field is basically a shadow version
             // of the default language record at the time when the language overlay record was created.
@@ -293,6 +296,12 @@ class FormDataCompiler
             // of FormEngine to add runtime data. Containers and elements add data here which is given to
             // sub-containers, elements, controls and wizards.
             'renderData' => [],
+
+            // A place for non-core, additional, custom data providers to add data. If a data provider needs to add
+            // additional data to the data array that doesn't fit elsewhere, it can place it here to use it in the
+            // render part again. Data in here should be namespaced in a way that it does not collide with other
+            // data providers adding further data here. Using the extension key as array key could be a good idea.
+            'customData' => [],
         ];
     }
 }

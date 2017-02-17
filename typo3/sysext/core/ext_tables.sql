@@ -37,7 +37,7 @@ CREATE TABLE be_groups (
 #
 CREATE TABLE be_sessions (
 	ses_id varchar(32) DEFAULT '' NOT NULL,
-	ses_name varchar(255) DEFAULT '' NOT NULL,
+	ses_name varchar(100) DEFAULT '' NOT NULL,
 	ses_iplock varchar(39) DEFAULT '' NOT NULL,
 	ses_userid int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_tstamp int(11) unsigned DEFAULT '0' NOT NULL,
@@ -174,7 +174,7 @@ CREATE TABLE sys_registry (
 	uid int(11) unsigned NOT NULL auto_increment,
 	entry_namespace varchar(128) DEFAULT '' NOT NULL,
 	entry_key varchar(128) DEFAULT '' NOT NULL,
-	entry_value blob,
+	entry_value mediumblob,
 	PRIMARY KEY (uid),
 	UNIQUE KEY entry_identifier (entry_namespace,entry_key)
 );
@@ -619,7 +619,8 @@ CREATE TABLE sys_log (
 	KEY event (userid,event_pid),
 	KEY recuidIdx (recuid,uid),
 	KEY user_auth (type,action,tstamp),
-	KEY request (request_id)
+	KEY request (request_id),
+	KEY combined_1 (tstamp, type, userid)
 ) ENGINE=InnoDB;
 
 #

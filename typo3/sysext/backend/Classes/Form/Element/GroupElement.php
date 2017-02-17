@@ -82,9 +82,13 @@ class GroupElement extends AbstractFormElement
             'renderType' => 'fileUpload',
             'after' => [ 'recordsOverview' ],
         ],
+        'localizationStateSelector' => [
+            'renderType' => 'localizationStateSelector',
+            'after' => [ 'fileUpload' ],
+        ],
         'otherLanguageContent' => [
             'renderType' => 'otherLanguageContent',
-            'after' => [ 'fileUpload' ],
+            'after' => [ 'localizationStateSelector' ],
         ],
         'defaultLanguageDifferences' => [
             'renderType' => 'defaultLanguageDifferences',
@@ -174,7 +178,7 @@ class GroupElement extends AbstractFormElement
         if (isset($config['readOnly']) && $config['readOnly']) {
             // Return early if element is read only
             $html = [];
-            $html[] = '<div class="t3js-formengine-field-item">';
+            $html[] = '<div class="formengine-field-item t3js-formengine-field-item">';
             $html[] =   '<div class="form-wizards-wrap">';
             $html[] =       '<div class="form-wizards-element">';
             $html[] =           '<select';
@@ -210,17 +214,17 @@ class GroupElement extends AbstractFormElement
                     1485206970
                 );
             }
-            if (isset($data['flexFormSheetName'])) {
-                $flexFormSheetName = $data['flexFormSheetName'];
+            if (isset($this->data['flexFormSheetName'])) {
+                $flexFormSheetName = $this->data['flexFormSheetName'];
             }
-            if (isset($data['flexFormFieldName'])) {
-                $flexFormFieldName = $data['flexFormFieldName'];
+            if (isset($this->data['flexFormFieldName'])) {
+                $flexFormFieldName = $this->data['flexFormFieldName'];
             }
-            if (isset($data['flexFormContainerName'])) {
-                $flexFormContainerName = $data['flexFormContainerName'];
+            if (isset($this->data['flexFormContainerName'])) {
+                $flexFormContainerName = $this->data['flexFormContainerName'];
             }
-            if (isset($data['flexFormContainerFieldName'])) {
-                $flexFormContainerFieldName = $data['flexFormContainerFieldName'];
+            if (isset($this->data['flexFormContainerFieldName'])) {
+                $flexFormContainerFieldName = $this->data['flexFormContainerFieldName'];
             }
         }
         // Get minimum characters for suggest from TCA and override by TsConfig
@@ -300,7 +304,7 @@ class GroupElement extends AbstractFormElement
         $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldWizardResult, false);
 
         $html = [];
-        $html[] = '<div class="t3js-formengine-field-item">';
+        $html[] = '<div class="formengine-field-item t3js-formengine-field-item">';
         $html[] =   $fieldInformationHtml;
         $html[] =   '<div class="form-wizards-wrap">';
         if ($internalType === 'db' && (!isset($config['hideSuggest']) || (bool)$config['hideSuggest'] !== true)) {
