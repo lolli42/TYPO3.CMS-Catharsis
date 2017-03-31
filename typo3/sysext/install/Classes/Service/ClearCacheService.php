@@ -35,8 +35,6 @@ class ClearCacheService
      * After that ext_tables and ext_localconf of extensions are loaded, those
      * may register additional caches in the caching framework with different
      * backend, and will then clear them with the usual flush() method.
-     *
-     * @return void
      */
     public function clearAll()
     {
@@ -76,7 +74,8 @@ class ClearCacheService
             ->defineLoggingAndExceptionConstants()
             ->unsetReservedGlobalVariables()
             ->initializeTypo3DbGlobal()
-            ->loadExtensionTables(false);
+            ->loadBaseTca(false)
+            ->loadExtTables(false);
 
         // The cache manager is already instantiated in the install tool
         // with some hacked settings to disable caching of extbase and fluid.

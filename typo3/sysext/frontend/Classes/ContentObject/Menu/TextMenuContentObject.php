@@ -13,6 +13,8 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Extension class creating text based menus
@@ -23,7 +25,6 @@ class TextMenuContentObject extends AbstractMenuContentObject
      * Calls procesItemStates() so that the common configuration for the menu items are resolved into individual configuration per item.
      * Sets the result for the new "normal state" in $this->result
      *
-     * @return void
      * @see AbstractMenuContentObject::procesItemStates()
      */
     public function generate()
@@ -58,7 +59,8 @@ class TextMenuContentObject extends AbstractMenuContentObject
         $this->WMresult = '';
         $this->INPfixMD5 = substr(md5(microtime() . 'tmenu'), 0, 4);
         $this->WMmenuItems = count($this->result);
-        $this->WMsubmenuObjSuffixes = $this->tmpl->splitConfArray(['sOSuffix' => $this->mconf['submenuObjSuffixes']], $this->WMmenuItems);
+        $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+        $this->WMsubmenuObjSuffixes = $typoScriptService->explodeConfigurationForOptionSplit(['sOSuffix' => $this->mconf['submenuObjSuffixes']], $this->WMmenuItems);
         $this->extProc_init();
         foreach ($this->result as $key => $val) {
             $GLOBALS['TSFE']->register['count_HMENU_MENUOBJ']++;
@@ -202,7 +204,6 @@ class TextMenuContentObject extends AbstractMenuContentObject
      * Called right before the traversing of $this->result begins.
      * Can be used for various initialization
      *
-     * @return void
      * @access private
      * @see writeMenu()
      */
@@ -214,7 +215,6 @@ class TextMenuContentObject extends AbstractMenuContentObject
      * Called right before the creation of the link for the menu item
      *
      * @param int $key Pointer to $this->menuArr[$key] where the current menu element record is found
-     * @return void
      * @access private
      * @see writeMenu()
      */
@@ -227,7 +227,6 @@ class TextMenuContentObject extends AbstractMenuContentObject
      * This function MUST set $this->WMresult.=[HTML for menu item] to add the generated menu item to the internal accumulation of items.
      *
      * @param int $key Pointer to $this->menuArr[$key] where the current menu element record is found
-     * @return void
      * @access private
      * @see writeMenu()
      */

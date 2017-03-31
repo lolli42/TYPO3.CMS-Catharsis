@@ -368,7 +368,6 @@ abstract class AbstractUserAuthentication
      * If a user is authenticated the database record of the user (array) will be set in the ->user internal variable.
      *
      * @throws Exception
-     * @return void
      */
     public function start()
     {
@@ -469,7 +468,6 @@ abstract class AbstractUserAuthentication
     /**
      * Sets the session cookie for the current disposal.
      *
-     * @return void
      * @throws Exception
      */
     protected function setSessionCookie()
@@ -486,11 +484,9 @@ abstract class AbstractUserAuthentication
             $cookieExpire = $isRefreshTimeBasedCookie ? $GLOBALS['EXEC_TIME'] + $this->lifetime : 0;
             // Use the secure option when the current request is served by a secure connection:
             $cookieSecure = (bool)$settings['cookieSecure'] && GeneralUtility::getIndpEnv('TYPO3_SSL');
-            // Deliver cookies only via HTTP and prevent possible XSS by JavaScript:
-            $cookieHttpOnly = (bool)$settings['cookieHttpOnly'];
             // Do not set cookie if cookieSecure is set to "1" (force HTTPS) and no secure channel is used:
             if ((int)$settings['cookieSecure'] !== 1 || GeneralUtility::getIndpEnv('TYPO3_SSL')) {
-                setcookie($this->name, $this->id, $cookieExpire, $cookiePath, $cookieDomain, $cookieSecure, $cookieHttpOnly);
+                setcookie($this->name, $this->id, $cookieExpire, $cookiePath, $cookieDomain, $cookieSecure, true);
                 $this->cookieWasSetOnCurrentRequest = true;
             } else {
                 throw new Exception('Cookie was not set since HTTPS was forced in $TYPO3_CONF_VARS[SYS][cookieSecure].', 1254325546);
@@ -570,7 +566,6 @@ abstract class AbstractUserAuthentication
      * Checks if a submission of username and password is present or use other authentication by auth services
      *
      * @throws \RuntimeException
-     * @return void
      * @internal
      */
     public function checkAuthentication()
@@ -788,16 +783,21 @@ abstract class AbstractUserAuthentication
             if ($this->writeDevLog && !$activeLogin) {
                 GeneralUtility::devLog('User ' . $tempuser[$this->username_column] . ' authenticated from ' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . ' (' . GeneralUtility::getIndpEnv('REMOTE_HOST') . ')', self::class, -1);
             }
-        } elseif ($anonymousSession) {
+        } else {
             // User was not authenticated, so we should reuse the existing anonymous session
-            $this->user = $authInfo['userSession'];
-        } elseif ($activeLogin || !empty($tempuserArr)) {
-            $this->loginFailure = true;
-            if ($this->writeDevLog && empty($tempuserArr) && $activeLogin) {
-                GeneralUtility::devLog('Login failed: ' . GeneralUtility::arrayToLogString($loginData), self::class, 2);
+            if ($anonymousSession) {
+                $this->user = $authInfo['userSession'];
             }
-            if ($this->writeDevLog && !empty($tempuserArr)) {
-                GeneralUtility::devLog('Login failed: ' . GeneralUtility::arrayToLogString($tempuser, [$this->userid_column, $this->username_column]), self::class, 2);
+
+            // Mark the current login attempt as failed
+            if ($activeLogin || !empty($tempuserArr)) {
+                $this->loginFailure = true;
+                if ($this->writeDevLog && empty($tempuserArr) && $activeLogin) {
+                    GeneralUtility::devLog('Login failed: ' . GeneralUtility::arrayToLogString($loginData), self::class, 2);
+                }
+                if ($this->writeDevLog && !empty($tempuserArr)) {
+                    GeneralUtility::devLog('Login failed: ' . GeneralUtility::arrayToLogString($tempuser, [$this->userid_column, $this->username_column]), self::class, 2);
+                }
             }
         }
 
@@ -942,7 +942,6 @@ abstract class AbstractUserAuthentication
 
         return [
             'ses_id' => $this->id,
-            'ses_name' => $this->name,
             'ses_iplock' => $sessionIpLock,
             'ses_userid' => $tempuser[$this->userid_column] ?? 0,
             'ses_tstamp' => $GLOBALS['EXEC_TIME'],
@@ -998,7 +997,7 @@ abstract class AbstractUserAuthentication
                 $sessionUpdateGracePeriod = 61;
                 if (!$skipSessionUpdate && $GLOBALS['EXEC_TIME'] > ($userRecord['ses_tstamp'] + $sessionUpdateGracePeriod)) {
                     // Update the session timestamp by writing a dummy update. (Backend will update the timestamp)
-                    $updatesSession = $this->getSessionBackend()->update($this->id, ['ses_name' => $userRecord['ses_name']]);
+                    $updatesSession = $this->getSessionBackend()->update($this->id, []);
                     $userRecord = array_merge($userRecord, $updatesSession);
                 }
             } else {
@@ -1014,8 +1013,6 @@ abstract class AbstractUserAuthentication
      * Log out current user!
      * Removes the current session record, sets the internal ->user array to a blank string;
      * Thereby the current user (if any) is effectively logged out!
-     *
-     * @return void
      */
     public function logoff()
     {
@@ -1047,8 +1044,6 @@ abstract class AbstractUserAuthentication
      * Perform the logoff action. Called from logoff() as a way to allow subclasses to override
      * what happens when a user logs off, without needing to reproduce the hook calls and logging
      * that happens in the public logoff() API method.
-     *
-     * @return void
      */
     protected function performLogoff()
     {
@@ -1062,7 +1057,6 @@ abstract class AbstractUserAuthentication
      * Empty / unset the cookie
      *
      * @param string $cookieName usually, this is $this->name
-     * @return void
      */
     public function removeCookie($cookieName)
     {
@@ -1218,7 +1212,6 @@ abstract class AbstractUserAuthentication
      * If $variable is not an array, $this->uc is saved!
      *
      * @param array|string $variable An array you want to store for the user as session data. If $variable is not supplied (is null), the internal variable, ->uc, is stored by default
-     * @return void
      */
     public function writeUC($variable = '')
     {
@@ -1246,7 +1239,6 @@ abstract class AbstractUserAuthentication
      * If $theUC is FALSE, the 'uc' content from the ->user array will be unserialized and restored in ->uc
      *
      * @param mixed $theUC If an array, then set as ->uc, otherwise load from user record
-     * @return void
      */
     public function unpack_uc($theUC = '')
     {
@@ -1266,7 +1258,6 @@ abstract class AbstractUserAuthentication
      * @param string $module Is the name of the module ($MCONF['name'])
      * @param mixed $data Is the data you want to store for that module (array, string, ...)
      * @param bool|int $noSave If $noSave is set, then the ->uc array (which carries all kinds of user data) is NOT written immediately, but must be written by some subsequent call.
-     * @return void
      */
     public function pushModuleData($module, $data, $noSave = 0)
     {
@@ -1310,7 +1301,6 @@ abstract class AbstractUserAuthentication
      *
      * @param string $key A non empty string to store the data under
      * @param mixed $data Data store store in session
-     * @return void
      */
     public function setSessionData($key, $data)
     {
@@ -1326,7 +1316,6 @@ abstract class AbstractUserAuthentication
      *
      * @param string $key Pointer to an associative key in the session data array which is stored serialized in the field "ses_data" of the session table.
      * @param mixed $data The data to store in index $key
-     * @return void
      */
     public function setAndSaveSessionData($key, $data)
     {
@@ -1440,7 +1429,7 @@ abstract class AbstractUserAuthentication
         $authInfo['db_user']['userident_column'] = $this->userident_column;
         $authInfo['db_user']['usergroup_column'] = $this->usergroup_column;
         $authInfo['db_user']['enable_clause'] = $this->userConstraints()->buildExpression(
-            [$this->user_table],
+            [$this->user_table => $this->user_table],
             $expressionBuilder
         );
         if ($this->checkPid && $this->checkPid_value !== null) {
@@ -1473,7 +1462,6 @@ abstract class AbstractUserAuthentication
     /**
      * Garbage collector, removing old expired sessions.
      *
-     * @return void
      * @internal
      */
     public function gc()
@@ -1493,7 +1481,6 @@ abstract class AbstractUserAuthentication
      * @param string $tablename Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
      * @param int $recuid Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
      * @param int $recpid Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
-     * @return void
      */
     public function writelog($type, $action, $error, $details_nr, $details, $data, $tablename, $recuid, $recpid)
     {
@@ -1505,7 +1492,6 @@ abstract class AbstractUserAuthentication
      * @param string $email Email address
      * @param int $secondsBack Number of sections back in time to check. This is a kind of limit for how many failures an hour for instance
      * @param int $maxFailures Max allowed failures before a warning mail is sent
-     * @return void
      * @ignore
      */
     public function checkLogFailures($email, $secondsBack, $maxFailures)
@@ -1521,7 +1507,6 @@ abstract class AbstractUserAuthentication
      * Will check the users for disabled, start/endtime, etc. ($this->user_where_clause())
      *
      * @param int $uid The UID of the backend user to set in ->user
-     * @return void
      * @internal
      * @see SC_mod_tools_be_user_index::compareUsers(), \TYPO3\CMS\Setup\Controller\SetupModuleController::simulateUser(), freesite_admin::startCreate()
      */
@@ -1534,7 +1519,6 @@ abstract class AbstractUserAuthentication
      * Raw initialization of the be_user with username=$name
      *
      * @param string $name The username to look up.
-     * @return void
      * @see \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::setBeUserByUid()
      * @internal
      */

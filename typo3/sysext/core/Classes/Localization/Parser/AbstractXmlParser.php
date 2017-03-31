@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Core\Localization\Parser;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Localization\Exception\FileNotFoundException;
 use TYPO3\CMS\Core\Localization\Exception\InvalidXmlFileException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -35,16 +34,11 @@ abstract class AbstractXmlParser implements LocalizationParserInterface
     protected $languageKey;
 
     /**
-     * @var string
-     */
-    protected $charset;
-
-    /**
      * Returns parsed representation of XML file.
      *
      * @param string $sourcePath Source file path
      * @param string $languageKey Language key
-     * @param string $charset File charset
+     * @param string $charset File charset, not in use anymore and deprecated since TYPO3 v8, will be removed in TYPO3 v9 as UTF-8 is expected for all language files
      * @return array
      * @throws \TYPO3\CMS\Core\Localization\Exception\FileNotFoundException
      */
@@ -52,7 +46,6 @@ abstract class AbstractXmlParser implements LocalizationParserInterface
     {
         $this->sourcePath = $sourcePath;
         $this->languageKey = $languageKey;
-        $this->charset = $this->getCharset($charset);
         if ($this->languageKey !== 'default') {
             $this->sourcePath = GeneralUtility::getFileAbsFileName(GeneralUtility::llXmlAutoFileName($this->sourcePath, $this->languageKey));
             if (!@is_file($this->sourcePath)) {
@@ -69,21 +62,6 @@ abstract class AbstractXmlParser implements LocalizationParserInterface
     }
 
     /**
-     * Gets the character set to use.
-     *
-     * @param string $charset
-     * @return string
-     */
-    protected function getCharset($charset = '')
-    {
-        if ($charset !== '') {
-            return GeneralUtility::makeInstance(CharsetConverter::class)->parse_charset($charset);
-        } else {
-            return 'utf-8';
-        }
-    }
-
-    /**
      * Loads the current XML file before processing.
      *
      * @return array An array representing parsed XML file (structure depends on concrete parser)
@@ -97,7 +75,11 @@ abstract class AbstractXmlParser implements LocalizationParserInterface
         $rootXmlNode = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NOWARNING);
         libxml_disable_entity_loader($previousValueOfEntityLoader);
         if (!isset($rootXmlNode) || $rootXmlNode === false) {
-            throw new InvalidXmlFileException('The path provided does not point to existing and accessible well-formed XML file.', 1278155988);
+            $xmlError = libxml_get_last_error();
+            throw new InvalidXmlFileException(
+                'The path provided does not point to existing and accessible well-formed XML file. Reason: ' . $xmlError->message . ' in ' . $this->sourcePath . ', line ' . $xmlError->line,
+                1278155988
+            );
         }
         return $this->doParsingFromRoot($rootXmlNode);
     }

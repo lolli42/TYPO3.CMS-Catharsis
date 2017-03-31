@@ -47,8 +47,6 @@ class QueryBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 
     /**
      * Create a new database connection mock object for every test.
-     *
-     * @return void
      */
     protected function setUp()
     {
@@ -1078,5 +1076,37 @@ class QueryBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             ->shouldBeCalled();
 
         $subject->execute();
+    }
+
+    /**
+     * @test
+     */
+    public function getQueriedTablesReturnsSameTableTwiceForInnerJoin()
+    {
+        $this->concreteQueryBuilder->getQueryPart('from')
+            ->shouldBeCalled()
+            ->willReturn([
+                [
+                    'table' => 'aTable',
+                ],
+            ]);
+        $this->concreteQueryBuilder->getQueryPart('join')
+            ->shouldBeCalled()
+            ->willReturn([
+                'aTable' => [
+                    [
+                        'joinType' => 'inner',
+                        'joinTable' => 'aTable',
+                        'joinAlias' => 'aTable_alias'
+                    ]
+                ]
+            ]);
+        $result = $this->callInaccessibleMethod($this->subject, 'getQueriedTables');
+
+        $expected = [
+            'aTable' => 'aTable',
+            'aTable_alias' => 'aTable'
+        ];
+        $this->assertEquals($expected, $result);
     }
 }

@@ -14,10 +14,12 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Install\Controller\Action\AbstractAction;
+
 /**
  * General purpose Step controller action
  */
-abstract class AbstractStepAction extends \TYPO3\CMS\Install\Controller\Action\AbstractAction implements StepInterface
+abstract class AbstractStepAction extends AbstractAction implements StepInterface
 {
     /**
      * @var int Current step position
@@ -34,7 +36,6 @@ abstract class AbstractStepAction extends \TYPO3\CMS\Install\Controller\Action\A
      *
      * @param int $current The current position
      * @param int $total The total number of steps
-     * @return void
      */
     public function setStepsCounter($current, $total)
     {
@@ -63,7 +64,7 @@ abstract class AbstractStepAction extends \TYPO3\CMS\Install\Controller\Action\A
     }
 
     /**
-     * @return void
+     * Define the steps to the view.
      */
     protected function assignSteps()
     {

@@ -17,10 +17,10 @@ namespace TYPO3\CMS\Frontend\Page;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\Type\File\ImageInfo;
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
-use TYPO3\CMS\Extbase\Service\TypoScriptService;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
@@ -41,10 +41,11 @@ class PageGenerator
     /**
      * Setting some vars in TSFE, primarily based on TypoScript config settings.
      *
-     * @return void
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function pagegenInit()
     {
+        GeneralUtility::logDeprecatedFunction();
         /** @var TypoScriptFrontendController $tsfe */
         $tsfe = $GLOBALS['TSFE'];
         if ($tsfe->page['content_from_pid'] > 0) {
@@ -95,7 +96,7 @@ class PageGenerator
             $tsfe->absRefPrefix = '';
         }
         if ($tsfe->type && $tsfe->config['config']['frameReloadIfNotInFrameset']) {
-            \TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+            GeneralUtility::deprecationLog(
                 'frameReloadIfNotInFrameset has been marked as deprecated since TYPO3 v8, ' .
                 'and will be removed in TYPO3 v9.'
             );
@@ -111,9 +112,17 @@ class PageGenerator
         $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_allowUpscaling'] = (bool)(isset($tsfe->config['config']['noScaleUp']) ? !$tsfe->config['config']['noScaleUp'] : $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_allowUpscaling']);
         $tsfe->ATagParams = trim($tsfe->config['config']['ATagParams']) ? ' ' . trim($tsfe->config['config']['ATagParams']) : '';
         if ($tsfe->config['config']['setJS_mouseOver']) {
+            $tsfe->logDeprecatedTyposcript(
+                'config.setJS_mouseOver',
+                'The TypoScript property "config.setJS_mouseOver" is deprecated since TYPO3 v8 and will be removed in TYPO3 v9. Please include the JavaScript snippet directly via TypoScript page.jsInline.'
+            );
             $tsfe->setJS('mouseOver');
         }
         if ($tsfe->config['config']['setJS_openPic']) {
+            $tsfe->logDeprecatedTyposcript(
+                'config.setJS_openPic',
+                'The TypoScript property "config.setJS_openPic" is deprecated since TYPO3 v8 and will be removed in TYPO3 v9. Please include the JavaScript snippet directly via TypoScript page.jsInline.'
+            );
             $tsfe->setJS('openPic');
         }
         static::initializeSearchWordDataInTsfe();
@@ -145,7 +154,7 @@ class PageGenerator
                     $tsfe->xhtmlVersion = 100;
                     break;
                 case 'xhtml_frames':
-                    \TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+                    GeneralUtility::deprecationLog(
                         'xhtmlDoctype = xhtml_frames  and doctype = xhtml_frames have been marked as deprecated since TYPO3 v8, ' .
                         'and will be removed in TYPO3 v9.'
                     );
@@ -170,8 +179,6 @@ class PageGenerator
 
     /**
      * Rendering the page content
-     *
-     * @return void
      */
     public static function renderContent()
     {
@@ -206,7 +213,6 @@ class PageGenerator
      * Rendering normal HTML-page with header by wrapping the generated content ($pageContent) in body-tags and setting the header accordingly.
      *
      * @param string $pageContent The page content which TypoScript objects has generated
-     * @return void
      */
     public static function renderContentWithHeader($pageContent)
     {
@@ -401,12 +407,12 @@ class PageGenerator
                             $cssPageStyle = $tsfe->cObj->stdWrap($cssPageStyle, $iCSScode['_CSS_PAGE_STYLE.']);
                         }
                         $cssPageStyle = '/* specific page styles for extension "' . substr($key, 0, -1) . '" */' . LF . $cssPageStyle;
-                        self::addCssToPageRenderer($cssPageStyle, true);
+                        self::addCssToPageRenderer($cssPageStyle, true, 'InlinePageCss');
                     }
                 }
             }
             if (!empty($stylesFromPlugins)) {
-                self::addCssToPageRenderer($stylesFromPlugins);
+                self::addCssToPageRenderer($stylesFromPlugins, false, 'InlineDefaultCss');
             }
         }
         if ($tsfe->pSetup['stylesheet']) {
@@ -488,6 +494,13 @@ class PageGenerator
         // Stylesheets
         $style = '';
         if ($tsfe->pSetup['insertClassesFromRTE']) {
+            $tsfe->logDeprecatedTyposcript(
+                'page.insertClassesFromRTE',
+                'Loading CSS classes from the RTE directly is discouraged in TYPO3 v8, as CSS classes should be '
+                . 'defined in CSS/LESS/SASS files instead, ensuring to load only what is necessary for a page, and '
+                . 'speeding up page rendering ("above the fold"). Additionally CSS should be defined in CSS files or '
+                . 'TypoScript and not via magic of pageTSconfig, overlaid by userTSconfig.'
+            );
             $pageTSConfig = $tsfe->getPagesTSconfig();
             $RTEclasses = $pageTSConfig['RTE.']['classes.'];
             if (is_array($RTEclasses)) {
@@ -873,7 +886,7 @@ class PageGenerator
         }
         // Header complete, now add content
         if ($tsfe->pSetup['frameSet.']) {
-            \TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+            GeneralUtility::deprecationLog(
                 'frameSet, FRAME and FRAMESET have been marked as deprecated since TYPO3 v8 ' .
                 'and will be removed in TYPO3 v9.'
             );
@@ -1016,8 +1029,6 @@ class PageGenerator
      * Takes the settings [config][noPageTitle], [config][pageTitleFirst], [config][titleTagFunction]
      * [config][pageTitleSeparator] and [config][noPageTitle] into account.
      * Furthermore $GLOBALS[TSFE]->altPageTitle is observed.
-     *
-     * @return void
      */
     public static function generatePageTitle()
     {

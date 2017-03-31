@@ -144,11 +144,6 @@ class GraphicalFunctions
     /**
      * @var bool
      */
-    public $V5_EFFECTS = 0;
-
-    /**
-     * @var bool
-     */
     public $mayScaleUp = 1;
 
     /**
@@ -218,6 +213,7 @@ class GraphicalFunctions
      * The temp-directory where to store the files. Normally relative to PATH_site but is allowed to be the absolute path AS LONG AS it is a subdir to PATH_site.
      *
      * @var string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public $tempPath = 'typo3temp/';
 
@@ -328,8 +324,6 @@ class GraphicalFunctions
     /**
      * Init function. Must always call this when using the class.
      * This function will read the configuration information from $GLOBALS['TYPO3_CONF_VARS']['GFX'] can set some values in internal variables.
-     *
-     * @return void
      */
     public function init()
     {
@@ -376,10 +370,8 @@ class GraphicalFunctions
         // ... but if 'processor_effects' is set, enable effects
         if ($gfxConf['processor_effects']) {
             $this->NO_IM_EFFECTS = 0;
-            $this->V5_EFFECTS = 1;
-            if ($gfxConf['processor_effects'] > 0) {
-                $this->cmds['jpg'] = $this->cmds['jpeg'] = '-colorspace ' . $this->colorspace . ' -quality ' . $this->jpegQuality . $this->v5_sharpen(10);
-            }
+            $this->cmds['jpg'] .= $this->v5_sharpen(10);
+            $this->cmds['jpeg'] .= $this->v5_sharpen(10);
         }
         // Secures that images are not scaled up.
         if (!$gfxConf['processor_allowUpscaling']) {
@@ -401,7 +393,6 @@ class GraphicalFunctions
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make()
      */
     public function maskImageOntoImage(&$im, $conf, $workArea)
@@ -488,7 +479,6 @@ class GraphicalFunctions
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make(), maskImageOntoImage()
      */
     public function copyImageOntoImage(&$im, $conf, $workArea)
@@ -511,7 +501,6 @@ class GraphicalFunctions
      * @param resource $cpImg GDlib image pointer, source (top image)
      * @param array $conf TypoScript array with the properties for the IMAGE GIFBUILDER object. Only used for the "tile" property value.
      * @param array $workArea Work area
-     * @return void Works on the $im image pointer
      * @access private
      */
     public function copyGifOntoGif(&$im, $cpImg, $conf, $workArea)
@@ -591,7 +580,6 @@ class GraphicalFunctions
      * @param int $dstHeight Destination height
      * @param int $srcWidth Source width
      * @param int $srcHeight Source height
-     * @return void
      * @access private
      */
     public function imagecopyresized(&$dstImg, $srcImg, $dstX, $dstY, $srcX, $srcY, $dstWidth, $dstHeight, $srcWidth, $srcHeight)
@@ -621,7 +609,6 @@ class GraphicalFunctions
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make()
      */
     public function makeText(&$im, $conf, $workArea)
@@ -682,11 +669,7 @@ class GraphicalFunctions
                 } else {
                     $command = trim($conf['niceText.']['before'] . ' ' . $this->scalecmd . ' ' . $w . 'x' . $h . '! ' . $conf['niceText.']['after'] . ' -negate');
                     if ($conf['niceText.']['sharpen']) {
-                        if ($this->V5_EFFECTS) {
-                            $command .= $this->v5_sharpen($conf['niceText.']['sharpen']);
-                        } else {
-                            $command .= ' -sharpen ' . MathUtility::forceIntegerInRange($conf['niceText.']['sharpen'], 1, 99);
-                        }
+                        $command .= $this->v5_sharpen($conf['niceText.']['sharpen']);
                     }
                 }
                 $this->imageMagickExec($fileMask, $fileMask, $command);
@@ -856,7 +839,6 @@ class GraphicalFunctions
      *
      * @param array $cords Coordinates for a polygon image map as created by ->calcTextCordsForMap()
      * @param array $conf Configuration for "imgMap." property of a TEXT GIFBUILDER object.
-     * @return void
      * @access private
      * @see makeText(), calcTextCordsForMap()
      */
@@ -910,7 +892,6 @@ class GraphicalFunctions
      * @param int $wordSpacing The spacing of words in pixels
      * @param array $splitRenderingConf Array
      * @param int $sF Scale factor
-     * @return void
      * @access private
      */
     public function SpacedImageTTFText(&$im, $fontSize, $angle, $x, $y, $Fcolor, $fontFile, $text, $spacing, $wordSpacing, $splitRenderingConf, $sF = 1)
@@ -1007,7 +988,7 @@ class GraphicalFunctions
                  */
                 $try = 0;
                 do {
-                    $calc = imagettfbbox(GeneralUtility::freetypeDpiComp($sF * $strCfg['fontSize']), $angle, $fontFile, $strCfg['str']);
+                    $calc = imagettfbbox($this->compensateFontSizeiBasedOnFreetypeDpi($sF * $strCfg['fontSize']), $angle, $fontFile, $strCfg['str']);
                 } while ($calc[2] < 0 && $try++ < 10);
                 // Calculate offsets:
                 if (empty($offsetInfo)) {
@@ -1039,7 +1020,6 @@ class GraphicalFunctions
      * @param string $string (See argument for PHP function imageTTFtext()). UTF-8 string, possibly with entities in.
      * @param array $splitRendering Split-rendering configuration
      * @param int $sF Scale factor
-     * @return void
      */
     public function ImageTTFTextWrapper($im, $fontSize, $angle, $x, $y, $color, $fontFile, $string, $splitRendering, $sF = 1)
     {
@@ -1065,9 +1045,9 @@ class GraphicalFunctions
             $fontFile = GeneralUtility::getFileAbsFileName($strCfg['fontFile']);
             if (is_readable($fontFile)) {
                 // Render part:
-                imagettftext($im, GeneralUtility::freetypeDpiComp($sF * $strCfg['fontSize']), $angle, $x, $y, $colorIndex, $fontFile, $strCfg['str']);
+                imagettftext($im, $this->compensateFontSizeiBasedOnFreetypeDpi($sF * $strCfg['fontSize']), $angle, $x, $y, $colorIndex, $fontFile, $strCfg['str']);
                 // Calculate offset to apply:
-                $wordInf = imagettfbbox(GeneralUtility::freetypeDpiComp($sF * $strCfg['fontSize']), $angle, GeneralUtility::getFileAbsFileName($strCfg['fontFile']), $strCfg['str']);
+                $wordInf = imagettfbbox($this->compensateFontSizeiBasedOnFreetypeDpi($sF * $strCfg['fontSize']), $angle, GeneralUtility::getFileAbsFileName($strCfg['fontFile']), $strCfg['str']);
                 $x += $wordInf[2] - $wordInf[0] + (int)$splitRendering['compX'] + (int)$strCfg['xSpaceAfter'];
                 $y += $wordInf[5] - $wordInf[7] - (int)$splitRendering['compY'] - (int)$strCfg['ySpaceAfter'];
             } else {
@@ -1265,7 +1245,6 @@ class GraphicalFunctions
      * @param array $splitRendering Split-rendering configuration
      * @param array $conf The configuration
      * @param int $sF Scale factor
-     * @return void
      */
     protected function renderTTFText(&$im, $fontSize, $angle, $x, $y, $color, $fontFile, $string, $splitRendering, $conf, $sF = 1)
     {
@@ -1370,7 +1349,6 @@ class GraphicalFunctions
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
      * @param array $txtConf TypoScript array with configuration for the associated TEXT GIFBUILDER object.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make(), makeText()
      */
     public function makeOutline(&$im, $conf, $workArea, $txtConf)
@@ -1429,7 +1407,6 @@ class GraphicalFunctions
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
      * @param array $txtConf TypoScript array with configuration for the associated TEXT GIFBUILDER object.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make(), makeShadow()
      */
     public function makeEmboss(&$im, $conf, $workArea, $txtConf)
@@ -1452,7 +1429,6 @@ class GraphicalFunctions
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
      * @param array $txtConf TypoScript array with configuration for the associated TEXT GIFBUILDER object.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make(), makeText(), makeEmboss()
      */
     public function makeShadow(&$im, $conf, $workArea, $txtConf)
@@ -1491,18 +1467,7 @@ class GraphicalFunctions
             $this->ImageWrite($blurTextImg, $fileMask);
             // Destroy
             imagedestroy($blurTextImg);
-            $command = '';
-            if ($this->V5_EFFECTS) {
-                $command .= $this->v5_blur($blurRate + 1);
-            } else {
-                // Blurring of the mask
-                // How many blur-commands that is executed. Min = 1;
-                $times = ceil($blurRate / 10);
-                // Building blur-command
-                for ($a = 0; $a < $times; $a++) {
-                    $command .= ' -blur ' . $blurRate;
-                }
-            }
+            $command = $this->v5_blur($blurRate + 1);
             $this->imageMagickExec($fileMask, $fileMask, $command . ' +matte');
             // The mask is loaded again
             $blurTextImg_tmp = $this->imageCreateFromFile($fileMask);
@@ -1564,7 +1529,6 @@ class GraphicalFunctions
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make()
      */
     public function makeBox(&$im, $conf, $workArea)
@@ -1604,7 +1568,6 @@ class GraphicalFunctions
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
      * @param array $workArea The current working area coordinates.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make()
      */
     public function makeEllipse(&$im, array $conf, array $workArea)
@@ -1625,7 +1588,6 @@ class GraphicalFunctions
      *
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make(), applyImageMagickToPHPGif()
      */
     public function makeEffect(&$im, $conf)
@@ -1661,20 +1623,12 @@ class GraphicalFunctions
                     break;
                 case 'blur':
                     if (!$this->NO_IM_EFFECTS) {
-                        if ($this->V5_EFFECTS) {
-                            $commands .= $this->v5_blur($value);
-                        } else {
-                            $commands .= ' -blur ' . MathUtility::forceIntegerInRange($value, 1, 99);
-                        }
+                        $commands .= $this->v5_blur($value);
                     }
                     break;
                 case 'sharpen':
                     if (!$this->NO_IM_EFFECTS) {
-                        if ($this->V5_EFFECTS) {
-                            $commands .= $this->v5_sharpen($value);
-                        } else {
-                            $commands .= ' -sharpen ' . MathUtility::forceIntegerInRange($value, 1, 99);
-                        }
+                        $commands .= $this->v5_sharpen($value);
                     }
                     break;
                 case 'rotate':
@@ -1727,7 +1681,6 @@ class GraphicalFunctions
      *
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make(), autoLevels(), outputLevels(), inputLevels()
      */
     public function adjust(&$im, $conf)
@@ -1763,7 +1716,6 @@ class GraphicalFunctions
      *
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make()
      */
     public function crop(&$im, $conf)
@@ -1802,7 +1754,6 @@ class GraphicalFunctions
      *
      * @param resource $im GDlib image pointer
      * @param array $conf TypoScript array with configuration for the GIFBUILDER object.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make()
      */
     public function scale(&$im, $conf)
@@ -1835,7 +1786,6 @@ class GraphicalFunctions
      * Setting internal working area boundaries (->workArea)
      *
      * @param string $workArea Working area dimensions, comma separated
-     * @return void
      * @access private
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::make()
      */
@@ -1860,7 +1810,6 @@ class GraphicalFunctions
      * Apply auto-levels to input image pointer
      *
      * @param resource $im GDlib Image Pointer
-     * @return void
      */
     public function autolevels(&$im)
     {
@@ -1891,7 +1840,6 @@ class GraphicalFunctions
      * @param int $low The "low" value (close to 0)
      * @param int $high The "high" value (close to 255)
      * @param bool $swap If swap, then low and high are swapped. (Useful for negated masks...)
-     * @return void
      */
     public function outputLevels(&$im, $low, $high, $swap = false)
     {
@@ -1921,7 +1869,6 @@ class GraphicalFunctions
      * @param resource $im GDlib Image Pointer
      * @param int $low The "low" value (close to 0)
      * @param int $high The "high" value (close to 255)
-     * @return void
      */
     public function inputLevels(&$im, $low, $high)
     {
@@ -1987,7 +1934,7 @@ class GraphicalFunctions
     }
 
     /**
-     * Returns the IM command for sharpening with ImageMagick 5 (when $this->V5_EFFECTS is set).
+     * Returns the IM command for sharpening with ImageMagick 5
      * Uses $this->im5fx_sharpenSteps for translation of the factor to an actual command.
      *
      * @param int $factor The sharpening factor, 0-100 (effectively in 10 steps)
@@ -2006,7 +1953,7 @@ class GraphicalFunctions
     }
 
     /**
-     * Returns the IM command for blurring with ImageMagick 5 (when $this->V5_EFFECTS is set).
+     * Returns the IM command for blurring with ImageMagick 5.
      * Uses $this->im5fx_blurSteps for translation of the factor to an actual command.
      *
      * @param int $factor The blurring factor, 0-100 (effectively in 10 steps)
@@ -2025,15 +1972,15 @@ class GraphicalFunctions
     }
 
     /**
-     * Returns a random filename prefixed with "temp_" and then 32 char md5 hash (without extension) from $this->tempPath.
-     * Used by functions in this class to create truely temporary files for the on-the-fly processing. These files will most likely be deleted right away.
+     * Returns a random filename prefixed with "temp_" and then 32 char md5 hash (without extension).
+     * Used by functions in this class to create truly temporary files for the on-the-fly processing. These files will most likely be deleted right away.
      *
      * @return string
      */
     public function randomName()
     {
-        $this->createTempSubDir('var/transient/');
-        return $this->tempPath . 'var/transient/' . md5(uniqid('', true));
+        GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/transient/');
+        return 'typo3temp/var/transient/' . md5(uniqid('', true));
     }
 
     /**
@@ -2246,8 +2193,8 @@ class GraphicalFunctions
             $this->imageMagickConvert_forceFileNameBody = '';
         }
         // Making the temporary filename:
-        $this->createTempSubDir('assets/images/');
-        $output = $this->absPrefix . $this->tempPath . 'assets/images/' . $this->filenamePrefix . $theOutputName . '.' . $newExt;
+        GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/assets/images/');
+        $output = $this->absPrefix . 'typo3temp/assets/images/' . $this->filenamePrefix . $theOutputName . '.' . $newExt;
         if ($this->dontCheckForExistingTempFile || !file_exists($output)) {
             $this->imageMagickExec($imagefile, $output, $command, $frame);
         }
@@ -2709,9 +2656,11 @@ class GraphicalFunctions
      *
      * @param string $dirName Name of sub directory
      * @return bool Result of \TYPO3\CMS\Core\Utility\GeneralUtility::mkdir(), TRUE if it went well.
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use GeneralUtility::mkdir_deep() directly.
      */
     public function createTempSubDir($dirName)
     {
+        GeneralUtility::logDeprecatedFunction();
         // Checking if the this->tempPath is already prefixed with PATH_site and if not, prefix it with that constant.
         if (GeneralUtility::isFirstPartOfStr($this->tempPath, PATH_site)) {
             $tmpPath = $this->tempPath;
@@ -2731,7 +2680,6 @@ class GraphicalFunctions
      *
      * @param resource $im The image pointer (reference)
      * @param string $command The ImageMagick parameters. Like effects, scaling etc.
-     * @return void
      */
     public function applyImageMagickToPHPGif(&$im, $command)
     {
@@ -2821,7 +2769,6 @@ class GraphicalFunctions
     /**
      * Destroy internal image pointer, $this->im
      *
-     * @return void
      * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::gifBuild()
      */
     public function destroy()
@@ -3012,7 +2959,6 @@ class GraphicalFunctions
      * @param string $textline1 Text line 1
      * @param string $textline2 Text line 2
      * @param string $textline3 Text line 3
-     * @return void
      * @throws \RuntimeException
      */
     public function getTemporaryImageWithText($filename, $textline1, $textline2, $textline3)
@@ -3051,5 +2997,17 @@ class GraphicalFunctions
         } else {
             imagegif($im, $filename);
         }
+    }
+
+    /**
+     * Function to compensate for DPI resolution.
+     * FreeType 2 always has 96 dpi, so it is hard-coded at this place.
+     *
+     * @param float $fontSize font size for freetype function call
+     * @return float compensated font size based on 96 dpi
+     */
+    protected function compensateFontSizeiBasedOnFreetypeDpi($fontSize)
+    {
+        return $fontSize / 96.0 * 72;
     }
 }

@@ -35,8 +35,13 @@ class SendmailPreset extends Configuration\AbstractPreset
      * @var array Configuration values handled by this preset
      */
     protected $configurationValues = [
+        'MAIL/transport' => 'sendmail',
         'MAIL/transport_sendmail_command' => '',
-    ];
+        'MAIL/transport_smtp_server' => '',
+        'MAIL/transport_smtp_encrypt' => '',
+        'MAIL/transport_smtp_username' => '',
+        'MAIL/transport_smtp_password' => '',
+        ];
 
     /**
      * Get configuration values to activate prefix
@@ -47,6 +52,9 @@ class SendmailPreset extends Configuration\AbstractPreset
     {
         $configurationValues = $this->configurationValues;
         $configurationValues['MAIL/transport_sendmail_command'] = $this->getSendmailPath();
+        if ($this->postValues['Mail']['enable'] === 'Sendmail') {
+            $configurationValues['MAIL/transport'] = 'sendmail';
+        }
         return $configurationValues;
     }
 

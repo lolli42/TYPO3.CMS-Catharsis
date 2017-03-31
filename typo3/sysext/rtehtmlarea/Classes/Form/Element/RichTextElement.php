@@ -181,8 +181,14 @@ class RichTextElement extends AbstractFormElement
      * @var array
      */
     protected $defaultFieldWizard = [
+        'localizationStateSelector' => [
+            'renderType' => 'localizationStateSelector',
+        ],
         'otherLanguageContent' => [
             'renderType' => 'otherLanguageContent',
+            'after' => [
+                'localizationStateSelector'
+            ],
         ],
         'defaultLanguageDifferences' => [
             'renderType' => 'defaultLanguageDifferences',
@@ -374,8 +380,6 @@ class RichTextElement extends AbstractFormElement
 
     /**
      * Add registered plugins to the array of enabled plugins
-     *
-     * @return void
      */
     protected function enableRegisteredPlugins()
     {
@@ -424,8 +428,6 @@ class RichTextElement extends AbstractFormElement
 
     /**
      * Set the toolbar config (only in this PHP-Object, not in JS):
-     *
-     * @return void
      */
     protected function setToolbar()
     {
@@ -532,8 +534,6 @@ class RichTextElement extends AbstractFormElement
 
     /**
      * Disable some plugins
-     *
-     * @return void
      */
     protected function setPlugins()
     {
@@ -590,8 +590,6 @@ class RichTextElement extends AbstractFormElement
 
     /**
      * Add RTE main scripts and plugin scripts
-     *
-     * @return void
      */
     protected function loadRequireModulesForRTE()
     {
@@ -647,8 +645,6 @@ class RichTextElement extends AbstractFormElement
 
     /**
      * Return the Javascript code for configuring the RTE
-     *
-     * @return void
      */
     protected function addInstanceJavaScriptRegistration()
     {
@@ -1095,8 +1091,6 @@ class RichTextElement extends AbstractFormElement
 
     /**
      * Return the Javascript code for copying the HTML code from the editor into the hidden input field.
-     *
-     * @return void
      */
     protected function addOnSubmitJavaScriptCode()
     {
@@ -1134,8 +1128,6 @@ class RichTextElement extends AbstractFormElement
 
     /**
      * Initialize a couple of language related local properties
-     *
-     * @return void
      */
     public function initializeLanguageRelatedProperties()
     {
@@ -1194,7 +1186,6 @@ class RichTextElement extends AbstractFormElement
      * @param string $deprecatedProperty: Name of deprecated property
      * @param string $useProperty: Name of property to use instead
      * @param string $version: Version of TYPO3 in which the property will be removed
-     * @return void
      */
     protected function logDeprecatedProperty($deprecatedProperty, $useProperty, $version)
     {

@@ -30,8 +30,6 @@ class Md5SaltTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 
     /**
      * Sets up the fixtures for this testcase.
-     *
-     * @return void
      */
     protected function setUp()
     {
@@ -115,6 +113,33 @@ class Md5SaltTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $this->assertTrue($this->objectInstance->isValidSalt($salt), $this->getWarningWhenMethodUnavailable());
         $saltedHashPassword = $this->objectInstance->getHashedPassword($password, $salt);
         $this->assertTrue($this->objectInstance->isValidSaltedPW($saltedHashPassword), $this->getWarningWhenMethodUnavailable());
+    }
+
+    /**
+     * Tests authentication procedure with fixed password and fixed (pre-generated) hash.
+     *
+     * Checks if a "plain-text password" is every time mapped to the
+     * same "salted password hash" when using the same fixed salt.
+     *
+     * @test
+     */
+    public function authenticationWithValidAlphaCharClassPasswordAndFixedHash()
+    {
+        $password = 'password';
+        $saltedHashPassword = '$1$GNu9HdMt$RwkPb28pce4nXZfnplVZY/';
+        $this->assertTrue($this->objectInstance->checkPassword($password, $saltedHashPassword), $this->getWarningWhenMethodUnavailable());
+    }
+
+    /**
+     * Tests that authentication procedure fails with broken hash to compare to
+     *
+     * @test
+     */
+    public function authenticationFailsWithBrokenHash()
+    {
+        $password = 'password';
+        $saltedHashPassword = '$1$GNu9HdMt$RwkPb28pce4nXZfnplVZY';
+        $this->assertFalse($this->objectInstance->checkPassword($password, $saltedHashPassword), $this->getWarningWhenMethodUnavailable());
     }
 
     /**

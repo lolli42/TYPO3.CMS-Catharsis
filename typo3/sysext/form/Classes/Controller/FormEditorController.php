@@ -55,7 +55,6 @@ class FormEditorController extends AbstractBackendController
      *
      * @param string $formPersistenceIdentifier
      * @param string $prototypeName
-     * @return void
      * @throws PersistenceManagerException
      * @internal
      */
@@ -142,6 +141,22 @@ class FormEditorController extends AbstractBackendController
     {
         $formDefinition = ArrayUtility::stripTagsFromValuesRecursive($formDefinition);
         $formDefinition = $this->convertJsonArrayToAssociativeArray($formDefinition);
+
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'beforeFormSave')) {
+                    $formDefinition = $hookObj->beforeFormSave(
+                        $formPersistenceIdentifier,
+                        $formDefinition
+                    );
+                }
+            }
+        }
+
         $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
         return '';
     }
@@ -192,16 +207,15 @@ class FormEditorController extends AbstractBackendController
                 $formElementsByGroup[$formElementConfiguration['group']] = [];
             }
 
+            $formElementConfiguration = TranslationService::getInstance()->translateValuesRecursive(
+                $formElementConfiguration,
+                $this->prototypeConfiguration['formEditor']['translationFile']
+            );
+
             $formElementsByGroup[$formElementConfiguration['group']][] = [
                 'key' => $formElementName,
                 'cssKey' => preg_replace('/[^a-z0-9]/', '-', strtolower($formElementName)),
-                'label' => TranslationService::getInstance()->translate(
-                    $formElementConfiguration['label'],
-                    null,
-                    $this->prototypeConfiguration['formEditor']['translationFile'],
-                    null,
-                    $formElementConfiguration['label']
-                ),
+                'label' => $formElementConfiguration['label'],
                 'sorting' => $formElementConfiguration['groupSorting'],
                 'iconIdentifier' => $formElementConfiguration['iconIdentifier'],
             ];
@@ -218,16 +232,15 @@ class FormEditorController extends AbstractBackendController
             });
             unset($formElementsByGroup[$groupName]['sorting']);
 
+            $groupConfiguration = TranslationService::getInstance()->translateValuesRecursive(
+                $groupConfiguration,
+                $this->prototypeConfiguration['formEditor']['translationFile']
+            );
+
             $formGroups[] = [
                 'key' => $groupName,
                 'elements' => $formElementsByGroup[$groupName],
-                'label' => TranslationService::getInstance()->translate(
-                    $groupConfiguration['label'],
-                    null,
-                    $this->prototypeConfiguration['formEditor']['translationFile'],
-                    null,
-                    $groupConfiguration['label']
-                ),
+                'label' => $groupConfiguration['label'],
             ];
         }
 
@@ -291,7 +304,7 @@ class FormEditorController extends AbstractBackendController
                 ->setHref(BackendUtility::getModuleUrl('web_FormFormbuilder'))
                 ->setClasses('t3-form-element-close-form-button hidden')
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.closeDoc'))
-                ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
+                ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-close', Icon::SIZE_SMALL));
 
             $saveButton = $buttonBar->makeInputButton()
                 ->setDataAttributes(['identifier' => 'saveButton'])

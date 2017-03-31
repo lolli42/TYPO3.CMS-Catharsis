@@ -25,6 +25,7 @@ use Symfony\Component\Console\Output\ConsoleOutput as SymfonyConsoleOutput;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * A wrapper for Symfony ConsoleOutput and related helpers
@@ -58,8 +59,6 @@ class ConsoleOutput
 
     /**
      * Creates and initializes the Symfony I/O instances
-     *
-     * @return void
      */
     public function __construct()
     {
@@ -88,7 +87,6 @@ class ConsoleOutput
      *
      * @param string $text Text to output
      * @param array $arguments Optional arguments to use for sprintf
-     * @return void
      */
     public function output($text, array $arguments = [])
     {
@@ -103,7 +101,6 @@ class ConsoleOutput
      *
      * @param string $text Text to output
      * @param array $arguments Optional arguments to use for sprintf
-     * @return void
      * @see output()
      * @see outputLines()
      */
@@ -119,7 +116,6 @@ class ConsoleOutput
      * @param string $text Text to output
      * @param array $arguments Optional arguments to use for sprintf
      * @param int $leftPadding The number of spaces to use for indentation
-     * @return void
      * @see outputLine()
      */
     public function outputFormatted($text = '', array $arguments = [], $leftPadding = 0)
@@ -154,12 +150,17 @@ class ConsoleOutput
      * @param array $choices List of choices to pick from
      * @param bool $default The default answer if the user enters nothing
      * @param bool $multiSelect If TRUE the result will be an array with the selected options. Multiple options can be given separated by commas
-     * @param bool|int $attempts Max number of times to ask before giving up (false by default, which means infinite)
+     * @param null|bool|int $attempts Max number of times to ask before giving up (null by default, which means infinite)
      * @return int|string|array The selected value or values (the key of the choices array)
      * @throws \InvalidArgumentException
      */
-    public function select($question, $choices, $default = null, $multiSelect = false, $attempts = false)
+    public function select($question, $choices, $default = null, $multiSelect = false, $attempts = null)
     {
+        // boolean option is @deprecated in TYPO3 v8, will be removed in TYPO3 v9
+        if ($attempts === false) {
+            GeneralUtility::deprecationLog('CLI output select() asks for infinite attempts by setting the value to "false", but should be null by default. Use "null" instead in your CommandController.');
+            $attempts = null;
+        }
         $question = (new ChoiceQuestion($question, $choices, $default))
             ->setMultiselect($multiSelect)
             ->setMaxAttempts($attempts)
@@ -227,14 +228,19 @@ class ConsoleOutput
      *
      * @param string|array $question The question to ask. If an array each array item is turned into one line of a multi-line question
      * @param callable $validator A PHP callback that gets a value and is expected to return the (transformed) value or throw an exception if it wasn't valid
-     * @param int|bool $attempts Max number of times to ask before giving up (false by default, which means infinite)
+     * @param int|null|bool $attempts Max number of times to ask before giving up (null by default, which means infinite)
      * @param string $default The default answer if none is given by the user
      * @param array $autocomplete List of values to autocomplete. This only works if "stty" is installed
      * @return mixed
      * @throws \Exception When any of the validators return an error
      */
-    public function askAndValidate($question, $validator, $attempts = false, $default = null, array $autocomplete = null)
+    public function askAndValidate($question, $validator, $attempts = null, $default = null, array $autocomplete = null)
     {
+        // boolean option is @deprecated in TYPO3 v8, will be removed in TYPO3 v9
+        if ($attempts === false) {
+            GeneralUtility::deprecationLog('CLI output askAndValidate() sets infinite attempts by setting the value to "false", but should be null by default. Use "null" instead in your CommandController.');
+            $attempts = null;
+        }
         $question = (new Question($question, $default))
             ->setValidator($validator)
             ->setMaxAttempts($attempts)
@@ -273,7 +279,6 @@ class ConsoleOutput
      * Starts the progress output
      *
      * @param int $max Maximum steps. If NULL an indeterminate progress bar is rendered
-     * @return void
      */
     public function progressStart($max = null)
     {
@@ -284,7 +289,6 @@ class ConsoleOutput
      * Advances the progress output X steps
      *
      * @param int $step Number of steps to advance
-     * @return void
      * @throws \LogicException
      */
     public function progressAdvance($step = 1)
@@ -296,7 +300,6 @@ class ConsoleOutput
      * Sets the current progress
      *
      * @param int $current The current progress
-     * @return void
      * @throws \LogicException
      */
     public function progressSet($current)
@@ -306,8 +309,6 @@ class ConsoleOutput
 
     /**
      * Finishes the progress output
-     *
-     * @return void
      */
     public function progressFinish()
     {

@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Localization\Locales;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
+use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -235,6 +236,11 @@ class AbstractPlugin
     protected $databaseConnection;
 
     /**
+     * @var MarkerBasedTemplateService
+     */
+    protected $templateService;
+
+    /**
      * Class Constructor (true constructor)
      * Initializes $this->piVars if $this->prefixId is set to any value
      * Will also set $this->LLkey based on the config.language setting.
@@ -246,6 +252,7 @@ class AbstractPlugin
     {
         $this->databaseConnection = $databaseConnection ?: $GLOBALS['TYPO3_DB'];
         $this->frontendController = $frontendController ?: $GLOBALS['TSFE'];
+        $this->templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
         // Setting piVars:
         if ($this->prefixId) {
             $this->piVars = GeneralUtility::_GPmerged($this->prefixId);
@@ -317,8 +324,6 @@ class AbstractPlugin
 
     /**
      * If internal TypoScript property "_DEFAULT_PI_VARS." is set then it will merge the current $this->piVars array onto these default values.
-     *
-     * @return void
      */
     public function pi_setPiVarDefaults()
     {
@@ -677,7 +682,7 @@ class AbstractPlugin
                 $markerArray['###CURRENT_PAGE###'] = $this->cObj->wrap($pointer + 1, $wrapper['showResultsNumbersWrap']);
                 $markerArray['###TOTAL_PAGES###'] = $this->cObj->wrap($totalPages, $wrapper['showResultsNumbersWrap']);
                 // Substitute markers
-                $resultCountMsg = $this->cObj->substituteMarkerArray($this->pi_getLL('pi_list_browseresults_displays', 'Displaying results ###FROM### to ###TO### out of ###OUT_OF###'), $markerArray);
+                $resultCountMsg = $this->templateService->substituteMarkerArray($this->pi_getLL('pi_list_browseresults_displays', 'Displaying results ###FROM### to ###TO### out of ###OUT_OF###'), $markerArray);
             } else {
                 // Render the resultcount in the "traditional" way using sprintf
                 $resultCountMsg = sprintf(str_replace('###SPAN_BEGIN###', '<span' . $this->pi_classParam('browsebox-strong') . '>', $this->pi_getLL('pi_list_browseresults_displays', 'Displaying results ###SPAN_BEGIN###%s to %s</span> out of ###SPAN_BEGIN###%s</span>')), $count > 0 ? $pR1 : 0, min($count, $pR2), $count);
@@ -989,7 +994,6 @@ class AbstractPlugin
      * Supported file extensions xlf, xml
      *
      * @param string $languageFilePath path to the plugin language file in format EXT:....
-     * @return void
      */
     public function pi_loadLL($languageFilePath = '')
     {
@@ -1362,7 +1366,6 @@ class AbstractPlugin
      * Converts $this->cObj->data['pi_flexform'] from XML string to flexForm array.
      *
      * @param string $field Field name to convert
-     * @return void
      */
     public function pi_initPIflexForm($field = 'pi_flexform')
     {

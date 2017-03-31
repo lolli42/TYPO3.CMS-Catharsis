@@ -156,7 +156,7 @@ class ImportExportController extends BaseScriptClass
     }
 
     /**
-     * @return void
+     * Initializes the module and defining necessary variables for this module to run.
      */
     public function init()
     {
@@ -172,7 +172,6 @@ class ImportExportController extends BaseScriptClass
      * @throws \BadFunctionCallException
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
-     * @return void
      */
     public function main()
     {
@@ -346,7 +345,6 @@ class ImportExportController extends BaseScriptClass
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
      * @throws \TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException
-     * @return void
      */
     public function exportData($inData)
     {
@@ -589,7 +587,6 @@ class ImportExportController extends BaseScriptClass
      * @param int $k Page id for which to select records to add
      * @param array $tables Array of table names to select from
      * @param int $maxNumber Max amount of records to select
-     * @return void
      */
     public function addRecordsForPid($k, $tables, $maxNumber)
     {
@@ -671,7 +668,6 @@ class ImportExportController extends BaseScriptClass
      * Create configuration form
      *
      * @param array $inData Form configuration data
-     * @return void
      */
     public function makeConfigurationForm($inData)
     {
@@ -752,7 +748,6 @@ class ImportExportController extends BaseScriptClass
      * Sets content in $this->content
      *
      * @param array $inData Form configurat data
-     * @return void
      */
     public function makeAdvancedOptionsForm($inData)
     {
@@ -766,7 +761,6 @@ class ImportExportController extends BaseScriptClass
      * Create configuration form
      *
      * @param array $inData Form configuration data
-     * @return void
      */
     public function makeSaveForm($inData)
     {
@@ -808,7 +802,6 @@ class ImportExportController extends BaseScriptClass
      * @throws \BadFunctionCallException
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
-     * @return void Setting content in $this->content
      */
     public function importData($inData)
     {
@@ -944,7 +937,6 @@ class ImportExportController extends BaseScriptClass
      *
      * @throws \InvalidArgumentException
      * @throws \UnexpectedValueException
-     * @return void
      */
     public function checkUpload()
     {

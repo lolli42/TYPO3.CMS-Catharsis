@@ -453,28 +453,32 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
             $userCanEditPage = $this->getBackendUser()->check('tables_modify', 'pages_language_overlay');
         }
         if ($userCanEditPage) {
-            $languageOverlayId = 0;
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getConnectionForTable('pages_language_overlay')
-                ->createQueryBuilder();
-            $constraint = $queryBuilder->expr()->eq(
-                'sys_language_uid',
-                $queryBuilder->createNamedParameter($this->tt_contentConfig['sys_language_uid'], \PDO::PARAM_INT)
-            );
-            $pageOverlayRecord = BackendUtility::getRecordsByField(
-                'pages_language_overlay',
-                'pid',
-                (int)$this->id,
-                $constraint,
-                '',
-                '',
-                '',
-                true,
-                $queryBuilder
-            );
-            if (!empty($pageOverlayRecord[0]['uid'])) {
-                $languageOverlayId = $pageOverlayRecord[0]['uid'];
-            }
+                ->getQueryBuilderForTable('pages_language_overlay');
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+            $queryBuilder->select('uid')
+                ->from('pages_language_overlay')
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'pid',
+                        $queryBuilder->createNamedParameter((int)$this->id, \PDO::PARAM_INT)
+                    ),
+                    $queryBuilder->expr()->eq(
+                        'sys_language_uid',
+                        $queryBuilder->createNamedParameter(
+                            $this->tt_contentConfig['sys_language_uid'],
+                            \PDO::PARAM_INT
+                        )
+                    )
+                )
+                ->setMaxResults(1);
+
+            $languageOverlayId = (int)$queryBuilder->execute()->fetchColumn(0);
+
             $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/PageActions', 'function(PageActions) {
                 PageActions.setPageId(' . (int)$this->id . ');
                 PageActions.setLanguageOverlayId(' . $languageOverlayId . ');
@@ -725,16 +729,18 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                 // in language mode process the content elements, but only fill $languageColumn. output will be generated later
                 $sortedLanguageColumn = [];
                 foreach ($cList as $columnId) {
-                    $languageColumn[$columnId][$lP] = $head[$columnId] . $content[$columnId];
-                    if (!$this->defLangBinding) {
-                        $languageColumn[$columnId][$lP] .= $this->newLanguageButton(
-                            $this->getNonTranslatedTTcontentUids($defaultLanguageElementsByColumn[$columnId], $id, $lP),
-                            $lP,
-                            $columnId
-                        );
+                    if (GeneralUtility::inList($this->tt_contentConfig['activeCols'], $columnId)) {
+                        $languageColumn[$columnId][$lP] = $head[$columnId] . $content[$columnId];
+                        if (!$this->defLangBinding) {
+                            $languageColumn[$columnId][$lP] .= $this->newLanguageButton(
+                                $this->getNonTranslatedTTcontentUids($defaultLanguageElementsByColumn[$columnId], $id, $lP),
+                                $lP,
+                                $columnId
+                            );
+                        }
+                        // We sort $languageColumn again according to $cList as it may contain data already from above.
+                        $sortedLanguageColumn[$columnId] = $languageColumn[$columnId];
                     }
-                    // We sort $languageColumn again according to $cList as it may contain data already from above.
-                    $sortedLanguageColumn[$columnId] = $languageColumn[$columnId];
                 }
                 $languageColumn = $sortedLanguageColumn;
             } else {
@@ -853,7 +859,29 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                 }
                 // Language overlay page header:
                 if ($lP) {
-                    list($lpRecord) = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id, 'AND sys_language_uid=' . $lP);
+                    $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getQueryBuilderForTable('pages_language_overlay');
+                    $queryBuilder->getRestrictions()
+                        ->removeAll()
+                        ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                        ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+                    $lpRecord = $queryBuilder->select('*')
+                        ->from('pages_language_overlay')
+                        ->where(
+                            $queryBuilder->expr()->eq(
+                                'pid',
+                                $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)
+                            ),
+                            $queryBuilder->expr()->eq(
+                                'sys_language_uid',
+                                $queryBuilder->createNamedParameter($lP, \PDO::PARAM_INT)
+                            )
+                        )
+                        ->setMaxResults(1)
+                        ->execute()
+                        ->fetch();
+
                     BackendUtility::workspaceOL('pages_language_overlay', $lpRecord);
                     $recordIcon = BackendUtility::wrapClickMenuOnIcon(
                         $this->iconFactory->getIconForRecord('pages_language_overlay', $lpRecord, Icon::SIZE_SMALL)->render(),
@@ -1558,7 +1586,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                     $params = '&data[tt_content][' . ($row['_ORIG_uid'] ? $row['_ORIG_uid'] : $row['uid'])
                         . '][' . $hiddenField . ']=' . $value;
                     $out .= '<a class="btn btn-default" href="' . htmlspecialchars(BackendUtility::getLinkToDataHandlerAction($params))
-                        . '" title="' . htmlspecialchars($this->getLanguageService()->getLL($label)) . '">'
+                        . '#element-tt_content-' . $row['uid'] . '" title="' . htmlspecialchars($this->getLanguageService()->getLL($label)) . '">'
                         . $this->iconFactory->getIcon('actions-edit-' . strtolower($label), Icon::SIZE_SMALL)->render() . '</a>';
                 }
                 // Delete
@@ -1968,7 +1996,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 
         if (isset($this->contentElementCache[$lP][$colPos]) && is_array($this->contentElementCache[$lP][$colPos])) {
             foreach ($this->contentElementCache[$lP][$colPos] as $record) {
-                $key = array_search($record['t3_origuid'], $defaultLanguageUids);
+                $key = array_search($record['l10n_source'], $defaultLanguageUids);
                 if ($key !== false) {
                     unset($defaultLanguageUids[$key]);
                 }
@@ -2041,7 +2069,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                         $row['uid'] => 'edit'
                     ]
                 ],
-                'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+                'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI') . '#element-tt_content-' . $row['uid']
             ];
             $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
             // Return link
@@ -2211,7 +2239,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
     /**
      * Initializes the clipboard for generating paste links
      *
-     * @return void
      *
      * @see \TYPO3\CMS\Recordlist\RecordList::main()
      * @see \TYPO3\CMS\Backend\Controller\ContextMenuController::clipboardAction()
@@ -2239,7 +2266,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
      * Generates the data for previous and next elements which is needed for movements.
      *
      * @param array $rowArray
-     * @return void
      */
     protected function generateTtContentDataArray(array $rowArray)
     {
@@ -2343,7 +2369,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
      * @param string $fieldList Comma separated list of fields.
      * @param array $row Record from which to take values for processing.
      * @param array $info Array to which the processed values are added.
-     * @return void
      */
     public function getProcessedValue($table, $fieldList, array $row, array &$info)
     {

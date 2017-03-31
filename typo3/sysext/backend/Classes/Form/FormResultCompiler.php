@@ -93,7 +93,6 @@ class FormResultCompiler
      * Merge existing data with the given result array
      *
      * @param array $resultArray Array returned by child
-     * @return void
      * @internal Temporary method to use FormEngine class as final data merger
      */
     public function mergeResult(array $resultArray)
@@ -135,7 +134,7 @@ class FormResultCompiler
                 }
             }
         }
-        $this->inlineData = $resultArray['inlineData'];
+
         foreach ($resultArray['additionalHiddenFields'] as $element) {
             $this->hiddenFieldAccum[] = $element;
         }
@@ -215,11 +214,10 @@ class FormResultCompiler
         $pageRenderer->addJsFile('EXT:backend/Resources/Public/JavaScript/md5.js');
         // load the main module for FormEngine with all important JS functions
         $this->requireJsModules['TYPO3/CMS/Backend/FormEngine'] = 'function(FormEngine) {
-			FormEngine.setBrowserUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('wizard_element_browser')) . ');
-		}';
-        $this->requireJsModules['TYPO3/CMS/Backend/FormEngineValidation'] = 'function(FormEngineValidation) {
-			FormEngineValidation.setUsMode(' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ');
-			FormEngineValidation.registerReady();
+			FormEngine.initialize(
+				' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('wizard_element_browser')) . ',
+				' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . '
+			);
 		}';
         $this->requireJsModules['TYPO3/CMS/Backend/FormEngineReview'] = null;
 
@@ -235,8 +233,8 @@ class FormResultCompiler
         $beUserAuth = $this->getBackendUserAuthentication();
 
         // define the window size of the element browser etc.
-        $popupWindowWidth  = 700;
-        $popupWindowHeight = 750;
+        $popupWindowWidth  = 800;
+        $popupWindowHeight = 600;
         $popupWindowSize = trim($beUserAuth->getTSConfigVal('options.popupWindowSize'));
         if (!empty($popupWindowSize)) {
             list($popupWindowWidth, $popupWindowHeight) = GeneralUtility::intExplode('x', $popupWindowSize);
@@ -247,8 +245,8 @@ class FormResultCompiler
         if (!empty($rtePopupWindowSize)) {
             list($rtePopupWindowWidth, $rtePopupWindowHeight) = GeneralUtility::trimExplode('x', $rtePopupWindowSize);
         }
-        $rtePopupWindowWidth  = !empty($rtePopupWindowWidth) ? (int)$rtePopupWindowWidth : ($popupWindowWidth-100);
-        $rtePopupWindowHeight = !empty($rtePopupWindowHeight) ? (int)$rtePopupWindowHeight : ($popupWindowHeight-150);
+        $rtePopupWindowWidth  = !empty($rtePopupWindowWidth) ? (int)$rtePopupWindowWidth : ($popupWindowWidth);
+        $rtePopupWindowHeight = !empty($rtePopupWindowHeight) ? (int)$rtePopupWindowHeight : ($popupWindowHeight);
 
         // Make textareas resizable and flexible ("autogrow" in height)
         $textareaSettings = [

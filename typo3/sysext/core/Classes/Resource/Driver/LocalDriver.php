@@ -23,7 +23,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * Driver for the local file system
- *
  */
 class LocalDriver extends AbstractHierarchicalFilesystemDriver
 {
@@ -90,8 +89,6 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
 
     /**
      * Processes the configuration for this driver.
-     *
-     * @return void
      */
     public function processConfiguration()
     {
@@ -106,8 +103,6 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
     /**
      * Initializes this object. This is called by the storage after the driver
      * has been attached.
-     *
-     * @return void
      */
     public function initialize()
     {
@@ -116,8 +111,6 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
     /**
      * Determines the base URL for this driver, from the configuration or
      * the TypoScript frontend object
-     *
-     * @return void
      */
     protected function determineBaseUrl()
     {
@@ -361,7 +354,6 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
         if ($iterator->count() === 0) {
             return [];
         }
-        $iterator->seek($start);
 
         // $c is the counter for how many items we still have to fetch (-1 is unlimited)
         $c = $numberOfItems > 0 ? $numberOfItems : - 1;
@@ -372,22 +364,28 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
             // go on to the next iterator item now as we might skip this one early
             $iterator->next();
 
-            if (
+            try {
+                if (
                 !$this->applyFilterMethodsToDirectoryItem(
                     $filterMethods,
                     $iteratorItem['name'],
                     $iteratorItem['identifier'],
                     $this->getParentFolderIdentifierOfIdentifier($iteratorItem['identifier'])
                 )
-            ) {
-                continue;
+                ) {
+                    continue;
+                }
+                if ($start > 0) {
+                    $start--;
+                } else {
+                    $items[$iteratorItem['identifier']] = $iteratorItem['identifier'];
+                    // Decrement item counter to make sure we only return $numberOfItems
+                    // we cannot do this earlier in the method (unlike moving the iterator forward) because we only add the
+                    // item here
+                    --$c;
+                }
+            } catch (Exception\InvalidPathException $e) {
             }
-
-            $items[$iteratorItem['identifier']] = $iteratorItem['identifier'];
-            // Decrement item counter to make sure we only return $numberOfItems
-            // we cannot do this earlier in the method (unlike moving the iterator forward) because we only add the
-            // item here
-            --$c;
         }
         return $items;
     }
@@ -1378,7 +1376,6 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
      * buffer before. Will be taken care of by the Storage.
      *
      * @param string $identifier
-     * @return void
      */
     public function dumpFileContents($identifier)
     {

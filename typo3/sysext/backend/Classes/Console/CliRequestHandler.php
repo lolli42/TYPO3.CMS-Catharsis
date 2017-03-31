@@ -27,6 +27,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Resolves the "cliKey" which is registered inside $TYPO3_CONF_VARS[SC_OPTIONS][GLOBAL][cliKeys]
  * and includes the CLI-based script or exits if no valid "cliKey" is found.
  * Also logs into the system as a backend user which needs to be added to the database called _CLI_mymodule
+ *
+ * This class is deprecated in favor of the Core-based CommandRequestHandler, which uses Symfony Commands.
  */
 class CliRequestHandler implements RequestHandlerInterface
 {
@@ -50,10 +52,11 @@ class CliRequestHandler implements RequestHandlerInterface
      * Handles any commandline request
      *
      * @param InputInterface $input
-     * @return void
      */
     public function handleRequest(InputInterface $input)
     {
+        GeneralUtility::deprecationLog('Using cli_dispatch.phpsh as entry point for CLI commands has been marked '
+        . 'as deprecated and will be removed in TYPO3 v9. Please use the new CLI entrypoint via /typo3/sysext/core/bin/typo3 instead.');
         $output = GeneralUtility::makeInstance(ConsoleOutput::class);
         $exitCode = 0;
 
@@ -100,7 +103,8 @@ class CliRequestHandler implements RequestHandlerInterface
     protected function boot()
     {
         $this->bootstrap
-            ->loadExtensionTables()
+            ->loadBaseTca()
+            ->loadExtTables()
             ->initializeBackendUser(CommandLineUserAuthentication::class);
 
         // Checks for a user _CLI_, if non exists, will create one

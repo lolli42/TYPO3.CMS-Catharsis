@@ -19,10 +19,8 @@ use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\FrontendEditing\FrontendEditingController;
 use TYPO3\CMS\Core\Http\RequestHandlerInterface;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\MonitorUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Page\PageGenerator;
 use TYPO3\CMS\Frontend\Utility\CompressionUtility;
@@ -113,6 +111,8 @@ class RequestHandler implements RequestHandlerInterface
         $this->bootstrap->endOutputBufferingAndCleanPreviousOutput();
         $this->initializeOutputCompression();
 
+        $this->bootstrap->loadBaseTca();
+
         // Initializing the Frontend User
         $this->timeTracker->push('Front End user initialized', '');
         $this->controller->initFEuser();
@@ -131,9 +131,7 @@ class RequestHandler implements RequestHandlerInterface
             $GLOBALS['BE_USER']->initializeAdminPanel();
             $this->bootstrap
                     ->initializeBackendRouter()
-                    ->loadExtensionTables();
-        } else {
-            ExtensionManagementUtility::loadBaseTca();
+                    ->loadExtTables();
         }
         $this->controller->checkAlternativeIdMethods();
         $this->controller->clear_preview();
@@ -206,9 +204,7 @@ class RequestHandler implements RequestHandlerInterface
             if ($temp_theScript) {
                 include $temp_theScript;
             } else {
-                PageGenerator::pagegenInit();
-                // Global content object
-                $this->controller->newCObj();
+                $this->controller->preparePageContentGeneration();
                 // Content generation
                 if (!$this->controller->isINTincScript()) {
                     PageGenerator::renderContent();
@@ -217,9 +213,7 @@ class RequestHandler implements RequestHandlerInterface
             }
             $this->controller->generatePage_postProcessing();
         } elseif ($this->controller->isINTincScript()) {
-            PageGenerator::pagegenInit();
-            // Global content object
-            $this->controller->newCObj();
+            $this->controller->preparePageContentGeneration();
         }
         $this->controller->releaseLocks();
         $this->timeTracker->pull();
@@ -243,14 +237,15 @@ class RequestHandler implements RequestHandlerInterface
         $this->controller->storeSessionData();
         // Statistics
         $GLOBALS['TYPO3_MISC']['microtime_end'] = microtime(true);
-        $this->controller->setParseTime();
-        if (isset($this->controller->config['config']['debug'])) {
-            $debugParseTime = (bool)$this->controller->config['config']['debug'];
-        } else {
-            $debugParseTime = !empty($GLOBALS['TYPO3_CONF_VARS']['FE']['debug']);
-        }
-        if ($this->controller->isOutputting() && $debugParseTime) {
-            $this->controller->content .= LF . '<!-- Parsetime: ' . $this->controller->scriptParseTime . 'ms -->';
+        if ($this->controller->isOutputting()) {
+            if (isset($this->controller->config['config']['debug'])) {
+                $debugParseTime = (bool)$this->controller->config['config']['debug'];
+            } else {
+                $debugParseTime = !empty($GLOBALS['TYPO3_CONF_VARS']['FE']['debug']);
+            }
+            if ($debugParseTime) {
+                $this->controller->content .= LF . '<!-- Parsetime: ' . $this->getParseTime() . 'ms -->';
+            }
         }
         $this->controller->redirectToExternalUrl();
         // Preview info
@@ -259,10 +254,6 @@ class RequestHandler implements RequestHandlerInterface
         $this->controller->hook_eofe();
         // Finish timetracking
         $this->timeTracker->pull();
-        // Check memory usage
-        MonitorUtility::peakMemoryUsage();
-        // beLoginLinkIPList
-        echo $this->controller->beLoginLinkIPList();
 
         // Admin panel
         if ($this->controller->isBackendUserLoggedIn() && $GLOBALS['BE_USER'] instanceof FrontendBackendUserAuthentication) {
@@ -324,8 +315,6 @@ class RequestHandler implements RequestHandlerInterface
 
     /**
      * Timetracking started depending if a Backend User is logged in
-     *
-     * @return void
      */
     protected function initializeTimeTracker()
     {
@@ -338,8 +327,6 @@ class RequestHandler implements RequestHandlerInterface
 
     /**
      * Creates an instance of TSFE and sets it as a global variable
-     *
-     * @return void
      */
     protected function initializeController()
     {
@@ -360,5 +347,23 @@ class RequestHandler implements RequestHandlerInterface
         // that the $controller member always works on the same object as the global variable.
         // This is a dirty workaround and bypasses the protected access modifier of the controller member.
         $GLOBALS['TSFE'] = &$this->controller;
+    }
+
+    /**
+     * Calculates the parsetime of the page and returns it.
+     *
+     * @return int the parse time of the page
+     */
+    protected function getParseTime()
+    {
+        // Compensates for the time consumed with Back end user initialization.
+        $processStart = isset($GLOBALS['TYPO3_MISC']['microtime_start']) ? $GLOBALS['TYPO3_MISC']['microtime_start'] : null;
+        $processEnd = isset($GLOBALS['TYPO3_MISC']['microtime_end']) ? $GLOBALS['TYPO3_MISC']['microtime_end'] : null;
+        $beUserInitializationStart = isset($GLOBALS['TYPO3_MISC']['microtime_BE_USER_start']) ? $GLOBALS['TYPO3_MISC']['microtime_BE_USER_start'] : null;
+        $beUserInitializationEnd = isset($GLOBALS['TYPO3_MISC']['microtime_BE_USER_end']) ? $GLOBALS['TYPO3_MISC']['microtime_BE_USER_end'] : null;
+        return $this->timeTracker->getMilliseconds($processStart)
+                - $this->timeTracker->getMilliseconds($processEnd)
+                - ($this->timeTracker->getMilliseconds($beUserInitializationStart)
+                - $this->timeTracker->getMilliseconds($beUserInitializationEnd));
     }
 }

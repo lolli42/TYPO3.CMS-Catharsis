@@ -14,6 +14,7 @@ namespace TYPO3\CMS\CssStyledContent\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -269,6 +270,9 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
         if (!$renderMethod || $renderMethod === 'table') {
             return $this->cObj->cObjGetSingle('IMGTEXT', $conf);
         }
+
+        $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+
         $restoreRegisters = false;
         if (isset($conf['preRenderRegisters.'])) {
             $restoreRegisters = true;
@@ -416,7 +420,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
         // Fetches pictures
         $splitArr = [];
         $splitArr['imgObjNum'] = $conf['imgObjNum'];
-        $splitArr = $this->frontendController->tmpl->splitConfArray($splitArr, $imgCount);
+        $splitArr = $typoScriptService->explodeConfigurationForOptionSplit($splitArr, (int)$imgCount);
         // Contains the width of every image row
         $imageRowsFinalWidths = [];
         // Array index of $imgsTag will be the same as in $imgs, but $imgsTag only contains the images that are actually shown
@@ -569,13 +573,13 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
             if (isset($conf['addClassesCol.'])) {
                 $addClassesCol = $this->cObj->stdWrap($addClassesCol, $conf['addClassesCol.']);
             }
-            $addClassesColConf = $this->frontendController->tmpl->splitConfArray(['addClassesCol' => $addClassesCol], $colCount);
+            $addClassesColConf = $typoScriptService->explodeConfigurationForOptionSplit(['addClassesCol' => $addClassesCol], $colCount);
             // Apply optionSplit to the list of classes that we want to add to each image
             $addClassesImage = $conf['addClassesImage'];
             if (isset($conf['addClassesImage.'])) {
                 $addClassesImage = $this->cObj->stdWrap($addClassesImage, $conf['addClassesImage.']);
             }
-            $addClassesImageConf = $this->frontendController->tmpl->splitConfArray(['addClassesImage' => $addClassesImage], $imagesInColumns);
+            $addClassesImageConf = $typoScriptService->explodeConfigurationForOptionSplit(['addClassesImage' => $addClassesImage], $imagesInColumns);
             $rows = [];
             $currentImage = 0;
             // Iterate over the rows
@@ -614,13 +618,13 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
                             // Get the caption
                             if (!$renderGlobalCaption) {
                                 $imageMarkers['caption'] = $this->cObj->stdWrap($this->cObj->cObjGet($conf['caption.'], 'caption.'), $conf['caption.']);
-                                $imageMarkers['caption'] = $this->cObj->substituteMarkerArray($imageMarkers['caption'], $captionMarkers, '###|###', 1, 1);
+                                $imageMarkers['caption'] = $this->templateService->substituteMarkerArray($imageMarkers['caption'], $captionMarkers, '###|###', 1, 1);
                             }
                             if ($addClassesImageConf[$imagesCounter - 1]['addClassesImage']) {
                                 $imageMarkers['classes'] = ' ' . $addClassesImageConf[$imagesCounter - 1]['addClassesImage'];
                             }
                         }
-                        $columnImages[] = $this->cObj->substituteMarkerArray($single, $imageMarkers, '###|###', 1, 1);
+                        $columnImages[] = $this->templateService->substituteMarkerArray($single, $imageMarkers, '###|###', 1, 1);
                         $currentImage++;
                     }
                     $rowColumn = $this->cObj->stdWrap(implode(LF, $columnImages), $conf['columnStdWrap.']);
@@ -629,7 +633,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
                     if ($addClassesColConf[$columnCounter - 1]['addClassesCol']) {
                         $columnMarkers['classes'] = ' ' . $addClassesColConf[$columnCounter - 1]['addClassesCol'];
                     }
-                    $rowColumns[] = $this->cObj->substituteMarkerArray($rowColumn, $columnMarkers, '###|###', 1, 1);
+                    $rowColumns[] = $this->templateService->substituteMarkerArray($rowColumn, $columnMarkers, '###|###', 1, 1);
                 }
                 if ($rowCounter == $rowCount) {
                     $rowConfiguration = $conf['lastRowStdWrap.'];
@@ -639,7 +643,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
                 $row = $this->cObj->stdWrap(implode(LF, $rowColumns), $rowConfiguration);
                 // Start filling the markers for columnStdWrap
                 $rowMarkers = [];
-                $rows[] = $this->cObj->substituteMarkerArray($row, $rowMarkers, '###|###', 1, 1);
+                $rows[] = $this->templateService->substituteMarkerArray($row, $rowMarkers, '###|###', 1, 1);
             }
             $images = $this->cObj->stdWrap(implode(LF, $rows), $conf['allStdWrap.']);
             // Start filling the markers for allStdWrap
@@ -681,14 +685,14 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
                 $class = ' ' . implode(' ', $classes);
             }
             // Fill the markers for the allStdWrap
-            $images = $this->cObj->substituteMarkerArray($images, $allMarkers, '###|###', 1, 1);
+            $images = $this->templateService->substituteMarkerArray($images, $allMarkers, '###|###', 1, 1);
         } else {
             // Apply optionSplit to the list of classes that we want to add to each image
             $addClassesImage = $conf['addClassesImage'];
             if (isset($conf['addClassesImage.'])) {
                 $addClassesImage = $this->cObj->stdWrap($addClassesImage, $conf['addClassesImage.']);
             }
-            $addClassesImageConf = $this->frontendController->tmpl->splitConfArray(['addClassesImage' => $addClassesImage], $colCount);
+            $addClassesImageConf = $typoScriptService->explodeConfigurationForOptionSplit(['addClassesImage' => $addClassesImage], $colCount);
             // Render the images
             $images = '';
             for ($c = 0; $c < $imageWrapCols; $c++) {
@@ -826,7 +830,6 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
      *
      * @param int $fileUid The UID of the file or file reference (depending on $treatAsReference) that should be loaded.
      * @param bool $treatAsReference If TRUE the given UID will be used to load a file reference otherwise it will be used to load a regular file.
-     * @return void
      */
     protected function initializeCurrentFileInContentObjectRenderer($fileUid, $treatAsReference)
     {
@@ -956,7 +959,6 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
      *
      * @param string $selector The selector
      * @param string $declaration The declaration
-     * @return void
      */
     protected function addPageStyle($selector, $declaration)
     {

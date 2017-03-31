@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 use TYPO3\CMS\Core\Imaging\ImageManipulation\CropVariantCollection;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
-use TYPO3\CMS\Core\Resource\FileReference;
 
 /**
  * Resizes a given image (if required) and renders the respective img tag
@@ -84,8 +83,6 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
 
     /**
      * Initialize arguments.
-     *
-     * @return void
      */
     public function initializeArguments()
     {
@@ -133,6 +130,7 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
             }
             $cropVariantCollection = CropVariantCollection::create((string)$cropString);
             $cropVariant = $this->arguments['cropVariant'] ?: 'default';
+            $cropArea = $cropVariantCollection->getCropArea($cropVariant);
             $processingInstructions = [
                 'width' => $this->arguments['width'],
                 'height' => $this->arguments['height'],
@@ -140,13 +138,16 @@ class ImageViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedV
                 'minHeight' => $this->arguments['minHeight'],
                 'maxWidth' => $this->arguments['maxWidth'],
                 'maxHeight' => $this->arguments['maxHeight'],
-                'crop' => $cropVariantCollection->getCropArea($cropVariant)->makeAbsoluteBasedOnFile($image),
+                'crop' => $cropArea->isEmpty() ? null : $cropArea->makeAbsoluteBasedOnFile($image),
             ];
             $processedImage = $this->imageService->applyProcessingInstructions($image, $processingInstructions);
             $imageUri = $this->imageService->getImageUri($processedImage, $this->arguments['absolute']);
 
-            if (!$cropVariantCollection->getFocusArea($cropVariant)->isEmpty()) {
-                $this->tag->addAttribute('data-focus-area', $cropVariantCollection->getFocusArea($cropVariant)->makeAbsoluteBasedOnFile($image));
+            if (!$this->tag->hasAttribute('data-focus-area')) {
+                $focusArea = $cropVariantCollection->getFocusArea($cropVariant);
+                if (!$focusArea->isEmpty()) {
+                    $this->tag->addAttribute('data-focus-area', $focusArea->makeAbsoluteBasedOnFile($image));
+                }
             }
             $this->tag->addAttribute('src', $imageUri);
             $this->tag->addAttribute('width', $processedImage->getProperty('width'));

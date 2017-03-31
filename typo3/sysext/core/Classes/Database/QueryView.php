@@ -23,6 +23,7 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageRendererResolver;
+use TYPO3\CMS\Core\Utility\CsvUtility;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -575,7 +576,7 @@ class QueryView
                 $valueArray[$key] = $this->getProcessedValueExtra($table, $key, $val, $conf, ';');
             }
         }
-        return GeneralUtility::csvValues($valueArray, $delim, $quote);
+        return CsvUtility::csvValues($valueArray, $delim, $quote);
     }
 
     /**
@@ -1058,6 +1059,7 @@ class QueryView
                         }
                         $useSelectLabels = 1;
                     }
+                    $altLabelFieldSelect = [];
                     if ($GLOBALS['TCA'][$from_table]['columns'][$altLabelField]['config']['items']) {
                         $items = $GLOBALS['TCA'][$from_table]['columns'][$altLabelField]['config']['items'];
                         foreach ($items as $altLabelArray) {
@@ -1251,7 +1253,6 @@ class QueryView
      * Sets the current name of the input form.
      *
      * @param string $formName The name of the form.
-     * @return void
      */
     public function setFormName($formName)
     {

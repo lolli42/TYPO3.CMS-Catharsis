@@ -402,7 +402,11 @@ define(['jquery',
             });
 
             $(getHelper().getDomElementDataIdentifierSelector('buttonStageNewElementBottom')).on('click', function(e) {
-                getPublisherSubscriber().publish('view/stage/abstract/button/newElement/clicked', ['view/insertElements/perform/bottom']);
+                getPublisherSubscriber().publish(
+                    'view/stage/abstract/button/newElement/clicked', [
+                        'view/insertElements/perform/bottom'
+                    ]
+                );
             });
 
             $(getHelper().getDomElementDataIdentifierSelector('buttonHeaderNewPage')).on('click', function(e) {
@@ -612,7 +616,7 @@ define(['jquery',
             if (getUtility().isUndefinedOrNull(title)) {
                 title = $('<span></span>')
                     .text((getRootFormElement().get('label') ? getRootFormElement().get('label') : getRootFormElement().get('identifier')))
-                    .html();
+                    .text();
             }
             getStructureRootElement().text(title);
         };
@@ -717,10 +721,11 @@ define(['jquery',
          * @public
          *
          * @param string targetEvent
+         * @param object configuration
          * @return void
          */
-        function showInsertElementsModal(targetEvent) {
-            getModals().showInsertElementsModal(targetEvent);
+        function showInsertElementsModal(targetEvent, configuration) {
+            getModals().showInsertElementsModal(targetEvent, configuration);
         };
 
         /**
@@ -1200,7 +1205,24 @@ define(['jquery',
          * @publish view/collectionElement/removed
          */
         function removePropertyCollectionElement(collectionElementIdentifier, collectionName, formElement, disablePublishersOnSet) {
+            var collectionElementConfiguration;
+
             getFormEditorApp().removePropertyCollectionElement(collectionElementIdentifier, collectionName, formElement);
+
+            collectionElementConfiguration = getFormEditorApp().getPropertyCollectionElementConfiguration(
+                collectionElementIdentifier,
+                collectionName
+            );
+            if ('array' === $.type(collectionElementConfiguration['editors'])) {
+                for (var i = 0, len1 = collectionElementConfiguration['editors'].length; i < len1; ++i) {
+                    if ('array' === $.type(collectionElementConfiguration['editors'][i]['additionalElementPropertyPaths'])) {
+                        for (var j = 0, len2 = collectionElementConfiguration['editors'][i]['additionalElementPropertyPaths'].length; j < len2; ++j) {
+                            getCurrentlySelectedFormElement().unset(collectionElementConfiguration['editors'][i]['additionalElementPropertyPaths'][j], true);
+                        }
+                    }
+                }
+            }
+
             if (!!!disablePublishersOnSet) {
                 getPublisherSubscriber().publish('view/collectionElement/removed', [
                     collectionElementIdentifier,

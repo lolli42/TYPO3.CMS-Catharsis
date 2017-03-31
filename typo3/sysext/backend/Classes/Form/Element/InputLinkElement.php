@@ -14,11 +14,11 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Form\FieldWizard\DefaultLanguageDifferences;
-use TYPO3\CMS\Backend\Form\FieldWizard\OtherLanguageContent;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\LinkHandling\LinkService;
+use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
+use TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -202,17 +202,18 @@ class InputLinkElement extends AbstractFormElement
 
         $linkExplanation = $this->getLinkExplanation($itemValue ?: '');
         $explanation = htmlspecialchars($linkExplanation['text']);
+        $toggleButtonTitle = $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:buttons.toggleLinkExplanation');
 
         $expansionHtml = [];
         $expansionHtml[] = '<div class="form-control-wrap" style="max-width: ' . $width . 'px">';
         $expansionHtml[] =  '<div class="form-wizards-wrap">';
         $expansionHtml[] =      '<div class="form-wizards-element">';
-        $expansionHtml[] =          '<div class="input-group t3js-form-field-inputlink" data-toggle="tooltip" data-title="' . $explanation . '">';
+        $expansionHtml[] =          '<div class="input-group t3js-form-field-inputlink">';
         $expansionHtml[] =              '<span class="input-group-addon">' . $linkExplanation['icon'] . '</span>';
-        $expansionHtml[] =              '<input class="form-control t3js-form-field-inputlink-explanation" disabled value="' . $explanation . '">';
+        $expansionHtml[] =              '<input class="form-control form-field-inputlink-explanation t3js-form-field-inputlink-explanation" data-toggle="tooltip" data-title="' . $explanation . '" value="' . $explanation . '" readonly>';
         $expansionHtml[] =              '<input type="text"' . GeneralUtility::implodeAttributes($attributes, true) . ' />';
         $expansionHtml[] =              '<span class="input-group-btn">';
-        $expansionHtml[] =                  '<button class="btn btn-default t3js-form-field-inputlink-explanation-toggle" type="button">';
+        $expansionHtml[] =                  '<button class="btn btn-default t3js-form-field-inputlink-explanation-toggle" type="button" title="' . htmlspecialchars($toggleButtonTitle) . '">';
         $expansionHtml[] =                      $this->iconFactory->getIcon('actions-version-workspaces-preview-link', Icon::SIZE_SMALL)->render();
         $expansionHtml[] =                  '</button>';
         $expansionHtml[] =              '</span>';
@@ -305,11 +306,20 @@ class InputLinkElement extends AbstractFormElement
         if (empty($itemValue)) {
             return [];
         }
-        $data = [];
+        $data = ['text' => '', 'icon' => ''];
+        $linkData = [];
         $typolinkService = GeneralUtility::makeInstance(TypoLinkCodecService::class);
         $linkParts = $typolinkService->decode($itemValue);
         $linkService = GeneralUtility::makeInstance(LinkService::class);
-        $linkData = $linkService->resolve($linkParts['url']);
+
+        try {
+            $linkData = $linkService->resolve($linkParts['url']);
+        } catch (FileDoesNotExistException $e) {
+            return $data;
+        } catch (FolderDoesNotExistException $e) {
+            return $data;
+        }
+
         switch ($linkData['type']) {
             case LinkService::TYPE_PAGE:
                 $pageRecord = BackendUtility::readPageAccess($linkData['pageuid'], '1=1');
@@ -329,7 +339,7 @@ class InputLinkElement extends AbstractFormElement
                 break;
             case LinkService::TYPE_URL:
                 $data = [
-                    'text' => $linkData['url'],
+                    'text' => $this->getDomainByUrl($linkData['url']),
                     'icon' => $this->iconFactory->getIcon('apps-pagetree-page-shortcut-external', Icon::SIZE_SMALL)->render()
 
                 ];
@@ -396,6 +406,17 @@ class InputLinkElement extends AbstractFormElement
         $data['additionalAttributes'] = '<div class="help-block">' . implode(' - ', $additionalAttributes) . '</div>';
 
         return $data;
+    }
+
+    /**
+     * @param string $uriString
+     *
+     * @return string
+     */
+    protected function getDomainByUrl(string $uriString): string
+    {
+        $data = parse_url($uriString);
+        return $data['host'] ?? '';
     }
 
     /**

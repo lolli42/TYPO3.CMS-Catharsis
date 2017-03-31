@@ -83,7 +83,7 @@ class DependencyOrderingService
      * @param array $dependencies
      * @param string $beforeKey The key to use in a dependency which specifies the "before"-relation. eg. 'sortBefore', 'loadBefore'
      * @param string $afterKey The key to use in a dependency which specifies the "after"-relation. eg. 'sortAfter', 'loadAfter'
-     * @return \bool[][] The dependency graph
+     * @return bool[][] The dependency graph
      */
     public function buildDependencyGraph(array $dependencies, $beforeKey = 'before', $afterKey = 'after')
     {
@@ -157,7 +157,7 @@ class DependencyOrderingService
             }
             unset($rootIds[$currentId]);
 
-            array_push($sortedIds, $currentId);
+            $sortedIds[] = $currentId;
 
             // Process the dependencies of the current node
             foreach (array_filter($dependencyGraph[$currentId]) as $dependingId => $_) {

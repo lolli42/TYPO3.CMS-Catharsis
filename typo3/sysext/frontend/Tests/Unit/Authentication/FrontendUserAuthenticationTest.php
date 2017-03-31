@@ -233,7 +233,6 @@ class FrontendUserAuthenticationTest extends UnitTestCase
             'newSessionId',
             [
                 'ses_id' => 'newSessionId',
-                'ses_name' => 'fe_typo_user',
                 'ses_iplock' => '',
                 'ses_userid' => 0,
                 'ses_tstamp' => $currentTime,
@@ -290,7 +289,6 @@ class FrontendUserAuthenticationTest extends UnitTestCase
             [
                 'ses_id' => $uniqueSessionId,
                 'ses_userid' => 1,
-                'ses_name' => 'fe_typo_user',
                 'ses_iplock' => '[DISABLED]',
                 'ses_tstamp' => $currentTime,
                 'ses_data' => serialize(['foo' => 'bar']),
@@ -507,7 +505,6 @@ class FrontendUserAuthenticationTest extends UnitTestCase
      * @test
      *
      * If a user has an anonymous session, and its data is set to null, then the record is removed
-     *
      */
     public function destroysAnonymousSessionIfDataIsNull()
     {
@@ -561,7 +558,6 @@ class FrontendUserAuthenticationTest extends UnitTestCase
     /**
      * @test
      * Any session data set when logged in should be preserved when logging out
-     *
      */
     public function sessionDataShouldBePreservedOnLogout()
     {

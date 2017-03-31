@@ -510,14 +510,16 @@ define([
 							text: TYPO3.lang['button.resolveDependenciesIgnore'],
 							btnClass: 'btn-danger disabled t3js-dependencies',
 							trigger: function() {
-								Repository.getResolveDependenciesAndInstallResult(data.skipDependencyUri);
-								Modal.dismiss();
+								if (!$(this).hasClass('disabled')) {
+									Repository.getResolveDependenciesAndInstallResult(data.skipDependencyUri);
+									Modal.dismiss();
+								}
 							}
 						}
 					]);
 					Modal.currentModal.on('shown.bs.modal', function() {
 						var $actionButton = Modal.currentModal.find('.t3js-dependencies');
-						$('input[name=unlockDependencyIgnoreButton]').on('change', function() {
+						$('input[name="unlockDependencyIgnoreButton"]', Modal.currentModal).on('change', function() {
 							$actionButton.toggleClass('disabled', !$(this).prop('checked'));
 						});
 					});

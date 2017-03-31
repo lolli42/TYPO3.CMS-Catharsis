@@ -1,0 +1,18 @@
+//
+// Badges
+//
+.badge-info {
+    @include label-variant($label-info-bg);
+}
+
+.badge-success {
+    @include label-variant($label-success-bg);
+}
+
+.badge-warning {
+    @include label-variant($label-warning-bg);
+}
+
+.badge-danger {
+    @include label-variant($label-danger-bg);
+}

@@ -27,7 +27,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Version\View\VersionView;
 
 /**
  * A class taking care of the "outer" HTML of a module, especially
@@ -205,7 +204,6 @@ class ModuleTemplate
      * Set content
      *
      * @param string $content Content of the module
-     * @return void
      */
     public function setContent($content)
     {
@@ -252,8 +250,6 @@ class ModuleTemplate
 
     /**
      * Loads all necessary Javascript Files
-     *
-     * @return void
      */
     protected function loadJavaScripts()
     {
@@ -266,8 +262,6 @@ class ModuleTemplate
 
     /**
      * Loads all necessary stylesheets
-     *
-     * @return void
      */
     protected function loadStylesheets()
     {
@@ -281,8 +275,6 @@ class ModuleTemplate
 
     /**
      * Sets mandatory parameters for the view (pageRenderer)
-     *
-     * @return void
      */
     protected function setupPage()
     {
@@ -295,8 +287,6 @@ class ModuleTemplate
 
     /**
      * Wrapper function for adding JS inline blocks
-     *
-     * @return void
      */
     protected function setJavaScriptCodeArray()
     {
@@ -310,8 +300,6 @@ class ModuleTemplate
      *
      * @param string $name Javascript code block name
      * @param string $code Inline Javascript
-     *
-     * @return void
      */
     public function addJavaScriptCode($name = '', $code = '')
     {
@@ -372,8 +360,6 @@ class ModuleTemplate
      * Set form tag
      *
      * @param string $formTag Form tag to add
-     *
-     * @return void
      */
     public function setForm($formTag = '')
     {
@@ -384,8 +370,6 @@ class ModuleTemplate
      * Sets the ModuleId
      *
      * @param string $moduleId ID of the module
-     *
-     * @return void
      */
     public function setModuleId($moduleId)
     {
@@ -397,8 +381,6 @@ class ModuleTemplate
      * Sets the ModuleName
      *
      * @param string $moduleName Name of the module
-     *
-     * @return void
      */
     public function setModuleName($moduleName)
     {
@@ -480,7 +462,6 @@ class ModuleTemplate
      * @param string $lib Library name. Call it with the full path like
      * "sysext/core/Resources/Public/JavaScript/QueryGenerator.js" to load it
      *
-     * @return void
      * @internal
      */
     public function loadJavascriptLib($lib)
@@ -585,18 +566,20 @@ class ModuleTemplate
      *
      * @return string
      * @internal
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function getVersionSelector($id, $noAction = false)
     {
         if (ExtensionManagementUtility::isLoaded('version')
+            && ExtensionManagementUtility::isLoaded('compatibility7')
             && !ExtensionManagementUtility::isLoaded('workspaces')
         ) {
             /**
              * For Code Completion
              *
-             * @var $versionGuiObj VersionView
+             * @var $versionGuiObj \TYPO3\CMS\Compatibility7\View\VersionView
              */
-            $versionGuiObj = GeneralUtility::makeInstance(VersionView::class);
+            $versionGuiObj = GeneralUtility::makeInstance(\TYPO3\CMS\Compatibility7\View\VersionView::class);
             return $versionGuiObj->getVersionSelector($id, $noAction);
         }
         return '';
@@ -709,7 +692,6 @@ class ModuleTemplate
      * @param string $messageTitle Optional message title
      * @param int $severity Optional severity, must be one of \TYPO3\CMS\Core\Messaging\FlashMessage constants
      * @param bool $storeInSession Optional, defines whether the message should be stored in the session (default)
-     * @return void
      * @throws \InvalidArgumentException if the message body is no string
      */
     public function addFlashMessage($messageBody, $messageTitle = '', $severity = AbstractMessage::OK, $storeInSession = true)

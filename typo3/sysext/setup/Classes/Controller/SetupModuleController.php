@@ -318,8 +318,6 @@ class SetupModuleController extends AbstractModule
      ******************************/
     /**
      * Initializes the module for display of the settings form.
-     *
-     * @return void
      */
     public function init()
     {
@@ -359,8 +357,6 @@ class SetupModuleController extends AbstractModule
 
     /**
      * Generate the main settings form:
-     *
-     * @return void
      */
     public function main()
     {
@@ -740,8 +736,6 @@ class SetupModuleController extends AbstractModule
     /**
      * Will make the simulate-user selector if the logged in user is administrator.
      * It will also set the GLOBAL(!) BE_USER to the simulated user selected if any (and set $this->OLD_BE_USER to logged in user)
-     *
-     * @return void
      */
     public function simulateUser()
     {
@@ -960,6 +954,11 @@ class SetupModuleController extends AbstractModule
             return;
         }
 
+        // If user is not allowed to modify avatar $fileUid is empty - so don't overwrite existing avatar
+        if (empty($fileUid)) {
+            return;
+        }
+
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_file_reference');
         $queryBuilder->getRestrictions()->removeAll();
         $queryBuilder
@@ -983,6 +982,11 @@ class SetupModuleController extends AbstractModule
                 )
             )
             ->execute();
+
+        // If Avatar is marked for delete => set it to empty string so it will be updated properly
+        if ($fileUid === 'delete') {
+            $fileUid = '';
+        }
 
         // Create new reference
         if ($fileUid) {
@@ -1035,7 +1039,7 @@ class SetupModuleController extends AbstractModule
             function clearExistingImage() {
                 $(' . GeneralUtility::quoteJSvalue('#image_' . htmlspecialchars($fieldName)) . ').hide();
                 $(' . GeneralUtility::quoteJSvalue('#clear_button_' . htmlspecialchars($fieldName)) . ').hide();
-                $(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(\'\');
+                $(' . GeneralUtility::quoteJSvalue('#field_' . htmlspecialchars($fieldName)) . ').val(\'delete\');
             }
 
             function setFileUid(field, value, fileUid) {
@@ -1070,8 +1074,6 @@ class SetupModuleController extends AbstractModule
 
     /**
      * Add FlashMessages for various actions
-     *
-     * @return void
      */
     protected function addFlashMessages()
     {
@@ -1115,7 +1117,6 @@ class SetupModuleController extends AbstractModule
     /**
      * @param array $flashMessages
      * @throws \TYPO3\CMS\Core\Exception
-     * @return void
      */
     protected function enqueueFlashMessages(array $flashMessages)
     {

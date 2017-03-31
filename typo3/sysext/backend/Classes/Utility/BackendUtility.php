@@ -28,11 +28,13 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Imaging\ImageManipulation\CropVariantCollection;
 use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -189,9 +191,11 @@ class BackendUtility
      * @param string $where WHERE clause
      * @param string $fields $fields is a list of fields to select, default is '*'
      * @return array|bool First row found, if any, FALSE otherwise
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public static function getRecordRaw($table, $where = '', $fields = '*')
     {
+        GeneralUtility::logDeprecatedFunction();
         $queryBuilder = static::getQueryBuilderForTable($table);
         $queryBuilder->getRestrictions()->removeAll();
 
@@ -220,6 +224,7 @@ class BackendUtility
      * @param bool $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
      * @param null|QueryBuilder $queryBuilder The queryBuilder must be provided, if the parameter $whereClause is given and the concept of prepared statement was used. Example within self::firstDomainRecord()
      * @return mixed Multidimensional array with selected records (if any is selected)
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function getRecordsByField(
         $theTable,
@@ -232,6 +237,7 @@ class BackendUtility
         $useDeleteClause = true,
         $queryBuilder = null
     ) {
+        GeneralUtility::logDeprecatedFunction();
         if (is_array($GLOBALS['TCA'][$theTable])) {
             if (null === $queryBuilder) {
                 $queryBuilder = static::getQueryBuilderForTable($theTable);
@@ -393,27 +399,32 @@ class BackendUtility
 
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getQueryBuilderForTable($table);
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
 
-            $constraint = $queryBuilder->expr()->andX(
-                $queryBuilder->expr()->eq(
-                    $tcaCtrl['languageField'],
-                    $queryBuilder->createNamedParameter($language, \PDO::PARAM_INT)
-                ),
-                QueryHelper::stripLogicalOperatorPrefix($andWhereClause)
-            );
+            $queryBuilder->select('*')
+                ->from($table)
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        $tcaCtrl['transOrigPointerField'],
+                        $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
+                    ),
+                    $queryBuilder->expr()->eq(
+                        $tcaCtrl['languageField'],
+                        $queryBuilder->createNamedParameter((int)$language, \PDO::PARAM_INT)
+                    )
+                )
+                ->setMaxResults(1);
 
-            $recordLocalization = self::getRecordsByField(
-                $table,
-                $tcaCtrl['transOrigPointerField'],
-                $uid,
-                (string)$constraint,
-                '',
-                '',
-                1,
-                true,
-                $queryBuilder
-            );
+            if ($andWhereClause) {
+                $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($andWhereClause));
+            }
+
+            $recordLocalization = $queryBuilder->execute()->fetchAll();
         }
+
         return $recordLocalization;
     }
 
@@ -554,7 +565,6 @@ class BackendUtility
      *
      * @param int $pid Page id.
      * @param bool $clearExpansion If set, then other open branches are closed.
-     * @return void
      */
     public static function openPageTree($pid, $clearExpansion)
     {
@@ -660,6 +670,7 @@ class BackendUtility
      * @param string $table The name of the table to lookup in TCA
      * @param mixed $fieldOrConfig The fieldname (string) or the configuration of the field to check (array)
      * @return mixed If table is localizable, the set localizationMode is returned (if property is not set, 'select' is returned by default); if table is not localizable, FALSE is returned
+     * @deprecated: IRRE 'localizationMode' is deprecated and will be removed in TYPO3 CMS 9, migrate to l10n_mode or allowLanguageSynchronization
      */
     public static function getInlineLocalizationMode($table, $fieldOrConfig)
     {
@@ -1124,7 +1135,6 @@ class BackendUtility
      * @param string $hash 32 bit hash string (eg. a md5 hash of a serialized array identifying the data being stored)
      * @param mixed $data The data to store
      * @param string $ident $ident is just a textual identification in order to inform about the content!
-     * @return void
      */
     public static function storeHash($hash, $data, $ident)
     {
@@ -1666,12 +1676,14 @@ class BackendUtility
                         $fileReferenceObject->getExtension()
                     )
                 ) {
+                    $cropVariantCollection = CropVariantCollection::create((string)$fileReferenceObject->getProperty('crop'));
+                    $cropArea = $cropVariantCollection->getCropArea();
                     $processedImage = $fileObject->process(
                         ProcessedFile::CONTEXT_IMAGECROPSCALEMASK,
                         [
                             'width' => $sizeParts[0],
                             'height' => $sizeParts[1] . 'c',
-                            'crop' => $fileReferenceObject->getProperty('crop')
+                            'crop' => $cropArea->isEmpty() ? null : $cropArea->makeAbsoluteBasedOnFile($fileReferenceObject)
                         ]
                     );
                     $imageUrl = $processedImage->getPublicUrl(true);
@@ -2071,9 +2083,11 @@ class BackendUtility
      * @param string $table Table name
      * @param array $row Row to fill with original language values
      * @return array Row with values from the original language
+     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9
      */
     protected static function replaceL10nModeFields($table, array $row)
     {
+        GeneralUtility::logDeprecatedFunction();
         $originalUidField = isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])
             ? $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
             : '';
@@ -2120,10 +2134,6 @@ class BackendUtility
                 GeneralUtility::callUserFunction($GLOBALS['TCA'][$table]['ctrl']['label_userFunc'], $params, $null);
                 $recordTitle = $params['title'];
             } else {
-                if (is_array($row)) {
-                    $row = self::replaceL10nModeFields($table, $row);
-                }
-
                 // No userFunc: Build label
                 $recordTitle = self::getProcessedValue(
                     $table,
@@ -2355,6 +2365,7 @@ class BackendUtility
                                 $queryBuilder = static::getQueryBuilderForTable($theColConf['foreign_table']);
                                 $queryBuilder->getRestrictions()
                                     ->removeAll()
+                                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
                                     ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
                                 $constraints = [
                                     $queryBuilder->expr()->eq(
@@ -3004,6 +3015,9 @@ class BackendUtility
         if ($alternativeUrl) {
             $previewUrl = $viewScript;
         } else {
+            $permissionClause = $GLOBALS['BE_USER']->getPagePermsClause(Permission::PAGE_SHOW);
+            $pageInfo = self::readPageAccess($pageUid, $permissionClause);
+            $additionalGetVars .= self::ADMCMD_previewCmds($pageInfo);
             $previewUrl = self::createPreviewUrl($pageUid, $rootLine, $anchorSection, $additionalGetVars, $viewScript);
         }
 
@@ -3441,7 +3455,6 @@ class BackendUtility
      *
      * @param string $set Key to set the update signal. When setting, this value contains strings telling WHAT to set. At this point it seems that the value "updatePageTree" is the only one it makes sense to set. If empty, all update signals will be removed.
      * @param mixed $params Additional information for the update signal, used to only refresh a branch of the tree
-     * @return void
      * @see BackendUtility::getUpdateSignalCode()
      */
     public static function setUpdateSignal($set = '', $params = '')
@@ -3685,7 +3698,6 @@ class BackendUtility
      * @param string $table Table name
      * @param int $uid Record uid
      * @param int $pid Record pid
-     * @return void
      * @internal
      */
     public static function lockRecords($table = '', $uid = 0, $pid = 0)
@@ -3967,31 +3979,37 @@ class BackendUtility
     public static function firstDomainRecord($rootLine)
     {
         $queryBuilder = static::getQueryBuilderForTable('sys_domain');
-        $constraint = $queryBuilder->expr()->andX(
-            $queryBuilder->expr()->eq(
-                'redirectTo',
-                $queryBuilder->createNamedParameter('', \PDO::PARAM_STR)
-            ),
-            $queryBuilder->expr()->eq(
-                'hidden',
-                $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+        $queryBuilder->select('domainName')
+            ->from('sys_domain')
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'pid',
+                    $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT, ':pid')
+                ),
+                $queryBuilder->expr()->eq(
+                    'redirectTo',
+                    $queryBuilder->createNamedParameter('', \PDO::PARAM_STR)
+                ),
+                $queryBuilder->expr()->eq(
+                    'hidden',
+                    $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
+                )
             )
-        );
+            ->setMaxResults(1)
+            ->orderBy('sorting');
+
         foreach ($rootLine as $row) {
-            $dRec = self::getRecordsByField(
-                'sys_domain',
-                'pid',
-                $row['uid'],
-                (string)$constraint,
-                '',
-                'sorting',
-                '',
-                true,
-                $queryBuilder
-            );
-            if (is_array($dRec)) {
-                $dRecord = reset($dRec);
-                return rtrim($dRecord['domainName'], '/');
+            $domainName = $queryBuilder->setParameter('pid', $row['uid'], \PDO::PARAM_INT)
+                ->execute()
+                ->fetchColumn(0);
+
+            if ($domainName) {
+                return rtrim($domainName, '/');
             }
         }
         return null;
@@ -4381,7 +4399,6 @@ class BackendUtility
      * @param string $table Table name
      * @param array $rr Record array passed by reference. As minimum, "pid" and "uid" fields must exist! "t3ver_oid" and "t3ver_wsid" is nice and will save you a DB query.
      * @param bool $ignoreWorkspaceMatch Ignore workspace match
-     * @return void
      * @see PageRepository::fixVersioningPid()
      */
     public static function fixVersioningPid($table, &$rr, $ignoreWorkspaceMatch = false)
@@ -4444,7 +4461,6 @@ class BackendUtility
      * @param array $row Record array passed by reference. As minimum, the "uid" and  "pid" fields must exist! Fake fields cannot exist since the fields in the array is used as field names in the SQL look up. It would be nice to have fields like "t3ver_state" and "t3ver_mode_id" as well to avoid a new lookup inside movePlhOL().
      * @param int $wsid Workspace ID, if not specified will use static::getBackendUserAuthentication()->workspace
      * @param bool $unsetMovePointers If TRUE the function does not return a "pointer" row for moved records in a workspace
-     * @return void
      * @see fixVersioningPid()
      */
     public static function workspaceOL($table, &$row, $wsid = -99, $unsetMovePointers = false)
@@ -4806,19 +4822,28 @@ class BackendUtility
      */
     public static function ADMCMD_previewCmds($pageInfo)
     {
+        $tableNameFeGroup = 'fe_groups';
         $simUser = '';
         $simTime = '';
-        if ($pageInfo['fe_group'] > 0) {
-            $simUser = '&ADMCMD_simUser=' . $pageInfo['fe_group'];
-        } elseif ((int)$pageInfo['fe_group'] === -2) {
+        if ($pageInfo[$tableNameFeGroup] > 0) {
+            $simUser = '&ADMCMD_simUser=' . $pageInfo[$tableNameFeGroup];
+        } elseif ((int)$pageInfo[$tableNameFeGroup] === -2) {
             // -2 means "show at any login". We simulate first available fe_group.
             /** @var PageRepository $sysPage */
             $sysPage = GeneralUtility::makeInstance(PageRepository::class);
-            $activeFeGroupRow = self::getRecordRaw(
-                'fe_groups',
-                '1=1' . $sysPage->enableFields('fe_groups'),
-                'uid'
-            );
+
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable($tableNameFeGroup);
+            $queryBuilder->getRestrictions()->removeAll();
+
+            $activeFeGroupRow = $queryBuilder->select('uid')
+                ->from($tableNameFeGroup)
+                ->where(
+                    QueryHelper::stripLogicalOperatorPrefix('1=1' . $sysPage->enableFields('fe_groups'))
+                )
+                ->execute()
+                ->fetch();
+
             if (!empty($activeFeGroupRow)) {
                 $simUser = '&ADMCMD_simUser=' . $activeFeGroupRow['uid'];
             }

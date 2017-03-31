@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\RootLevelRestriction;
@@ -35,7 +36,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * This class contains the configuration of the database fields used plus some
  * functions for the authentication process of backend users.
  */
-class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication
+class BackendUserAuthentication extends AbstractUserAuthentication
 {
     /**
      * Should be set to the usergroup-column (id-list) in the user-record
@@ -588,12 +589,8 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      */
     public function check($type, $value)
     {
-        if (isset($this->groupData[$type])) {
-            if ($this->isAdmin() || GeneralUtility::inList($this->groupData[$type], $value)) {
-                return true;
-            }
-        }
-        return false;
+        return isset($this->groupData[$type])
+            && ($this->isAdmin() || GeneralUtility::inList($this->groupData[$type], $value));
     }
 
     /**
@@ -701,15 +698,30 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
                 $pointerField = $GLOBALS['TCA'][$l10nTable]['ctrl']['transOrigPointerField'];
                 $pointerValue = $record[$pointerField] > 0 ? $record[$pointerField] : $record['uid'];
             }
-            $recordLocalizations = BackendUtility::getRecordsByField($l10nTable, $pointerField, $pointerValue, '', '', '', '1');
-            if (is_array($recordLocalizations)) {
-                foreach ($recordLocalizations as $localization) {
-                    $recordLocalizationAccess = $recordLocalizationAccess
-                        && $this->checkLanguageAccess($localization[$GLOBALS['TCA'][$l10nTable]['ctrl']['languageField']]);
-                    if (!$recordLocalizationAccess) {
-                        break;
-                    }
-                }
+
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($l10nTable);
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+            $recordLocalization = $queryBuilder->select('*')
+                ->from($l10nTable)
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        $pointerField,
+                        $queryBuilder->createNamedParameter($pointerValue, \PDO::PARAM_INT)
+                    )
+                )
+                ->setMaxResults(1)
+                ->execute()
+                ->fetch();
+
+            if (is_array($recordLocalization)) {
+                $languageAccess = $this->checkLanguageAccess(
+                    $recordLocalization[$GLOBALS['TCA'][$l10nTable]['ctrl']['languageField']]
+                );
+                $recordLocalizationAccess = $recordLocalizationAccess && $languageAccess;
             }
         }
         return $recordLocalizationAccess;
@@ -1227,7 +1239,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      *
      * @param array $mountPointUids Page UIDs that should be used as web mountpoints
      * @param bool $append If TRUE the given mount point will be appended. Otherwise the current mount points will be replaced.
-     * @return void
      */
     public function setWebmounts(array $mountPointUids, $append = false)
     {
@@ -1267,7 +1278,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * if the backend user login has verified OK.
      * Generally this is required initialization of a backend user.
      *
-     * @return void
      * @access private
      * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
      */
@@ -1412,7 +1422,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      *
      * @param string $grList Commalist of be_groups uid numbers
      * @param string $idList List of already processed be_groups-uids so the function will not fall into an eternal recursion.
-     * @return void
      * @access private
      */
     public function fetchGroups($grList, $idList = '')
@@ -1518,7 +1527,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * a representation of the exact groups/subgroups which the BE_USER has membership with.
      *
      * @param string $cList The newly compiled group-list which must be compared with the current list in the user record and possibly stored if a difference is detected.
-     * @return void
      * @access private
      */
     public function setCachedList($cList)
@@ -1535,8 +1543,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
     /**
      * Sets up all file storages for a user.
      * Needs to be called AFTER the groups have been loaded.
-     *
-     * @return void
      */
     protected function initializeFileStorages()
     {
@@ -1765,8 +1771,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * Adds filters based on what the user has set
      * this should be done in this place, and called whenever needed,
      * but only when needed
-     *
-     * @return void
      */
     public function evaluateUserSpecificFileFilterSettings()
     {
@@ -2014,7 +2018,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * Initializing workspace.
      * Called from within this function, see fetchGroupData()
      *
-     * @return void
      * @see fetchGroupData()
      */
     public function workspaceInit()
@@ -2031,8 +2034,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 
     /**
      * Limiting the DB mountpoints if there any selected in the workspace record
-     *
-     * @return void
      */
     protected function initializeDbMountpointsInWorkspace()
     {
@@ -2159,7 +2160,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * Setting workspace ID
      *
      * @param int $workspaceId ID of workspace to set for backend user. If not valid the default workspace for BE user is found and set.
-     * @return void
      */
     public function setWorkspace($workspaceId)
     {
@@ -2203,8 +2203,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 
     /**
      * Sets the default workspace in the context of the current backend user.
-     *
-     * @return void
      */
     public function setDefaultWorkspace()
     {
@@ -2216,7 +2214,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * Setting workspace preview state for user:
      *
      * @param bool $previewState State of user preview.
-     * @return void
      */
     public function setWorkspacePreview($previewState)
     {
@@ -2361,7 +2358,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
      * @param string $email Email address
      * @param int $secondsBack Number of sections back in time to check. This is a kind of limit for how many failures an hour for instance.
      * @param int $max Max allowed failures before a warning mail is sent
-     * @return void
      * @access private
      */
     public function checkLogFailures($email, $secondsBack = 3600, $max = 3)
@@ -2436,10 +2432,9 @@ This is a dump of the failures:
                         ) . ':  ' . @sprintf($row['details'], (string)$theData[0], (string)$theData[1], (string)$theData[2]);
                     $email_body .= LF;
                 }
-                $from = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFrom();
                 /** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
                 $mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
-                $mail->setTo($email)->setFrom($from)->setSubject($subject)->setBody($email_body);
+                $mail->setTo($email)->setSubject($subject)->setBody($email_body);
                 $mail->send();
                 // Logout written to log
                 $this->writelog(255, 4, 0, 3, 'Failure warning (%s failures within %s seconds) sent by email to %s', [$result->rowCount(), $secondsBack, $email]);
@@ -2465,21 +2460,20 @@ This is a dump of the failures:
     /**
      * If TYPO3_CONF_VARS['BE']['enabledBeUserIPLock'] is enabled and
      * an IP-list is found in the User TSconfig objString "options.lockToIP",
-     * then make an IP comparison with REMOTE_ADDR and return the outcome (TRUE/FALSE)
+     * then make an IP comparison with REMOTE_ADDR and check if the IP address matches
      *
-     * @return bool TRUE, if IP address validates OK (or no check is done at all)
+     * @return bool TRUE, if IP address validates OK (or no check is done at all because no restriction is set)
      */
     public function checkLockToIP()
     {
-        $out = 1;
+        $isValid = true;
         if ($GLOBALS['TYPO3_CONF_VARS']['BE']['enabledBeUserIPLock']) {
             $IPList = $this->getTSConfigVal('options.lockToIP');
             if (trim($IPList)) {
-                $baseIP = GeneralUtility::getIndpEnv('REMOTE_ADDR');
-                $out = GeneralUtility::cmpIP($baseIP, $IPList);
+                $isValid = GeneralUtility::cmpIP(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $IPList);
             }
         }
-        return $out;
+        return $isValid;
     }
 
     /**
@@ -2490,7 +2484,6 @@ This is a dump of the failures:
      *
      * @param bool $proceedIfNoUserIsLoggedIn if this option is set, then there won't be a redirect to the login screen of the Backend - used for areas in the backend which do not need user rights like the login page.
      * @throws \RuntimeException
-     * @return void
      */
     public function backendCheckLogin($proceedIfNoUserIsLoggedIn = false)
     {
@@ -2523,7 +2516,6 @@ This is a dump of the failures:
      * Initialize the internal ->uc array for the backend user
      * Will make the overrides if necessary, and write the UC back to the be_users record if changes has happened
      *
-     * @return void
      * @internal
      */
     public function backendSetUC()
@@ -2573,7 +2565,6 @@ This is a dump of the failures:
      * Override: Call this function every time the uc is updated.
      * That is 1) by reverting to default values, 2) in the setup-module, 3) userTS changes (userauthgroup)
      *
-     * @return void
      * @internal
      */
     public function overrideUC()
@@ -2584,7 +2575,6 @@ This is a dump of the failures:
     /**
      * Clears the user[uc] and ->uc to blank strings. Then calls ->backendSetUC() to fill it again with reset contents
      *
-     * @return void
      * @internal
      */
     public function resetUC()
@@ -2598,7 +2588,6 @@ This is a dump of the failures:
      * Will send an email notification to warning_email_address/the login users email address when a login session is just started.
      * Depends on various parameters whether mails are send and to whom.
      *
-     * @return void
      * @access private
      */
     private function emailAtLogin()
@@ -2631,19 +2620,17 @@ This is a dump of the failures:
                     $prefix = '[AdminLoginWarning]';
                 }
                 if ($warn) {
-                    $from = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFrom();
                     /** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
                     $mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
-                    $mail->setTo($GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'])->setFrom($from)->setSubject($prefix . ' ' . $subject)->setBody($msg);
+                    $mail->setTo($GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'])->setSubject($prefix . ' ' . $subject)->setBody($msg);
                     $mail->send();
                 }
             }
             // If An email should be sent to the current user, do that:
             if ($this->uc['emailMeAtLogin'] && strstr($this->user['email'], '@')) {
-                $from = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFrom();
                 /** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
                 $mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
-                $mail->setTo($this->user['email'])->setFrom($from)->setSubject($subject)->setBody($msg);
+                $mail->setTo($this->user['email'])->setSubject($subject)->setBody($msg);
                 $mail->send();
             }
         }

@@ -139,8 +139,6 @@ class EditFileController extends AbstractModule
 
     /**
      * Main function, redering the actual content of the editing page
-     *
-     * @return void
      */
     public function main()
     {
@@ -276,7 +274,7 @@ class EditFileController extends AbstractModule
             ->setHref('#')
             ->setOnClick('backToList(); return false;')
             ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.cancel'))
-            ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
+            ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-close', Icon::SIZE_SMALL));
         $buttonBar->addButton($closeButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
 
         // Make shortcut:

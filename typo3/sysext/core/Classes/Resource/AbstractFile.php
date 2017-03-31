@@ -445,8 +445,6 @@ abstract class AbstractFile implements FileInterface
     /**
      * Marks this file as deleted. This should only be used inside the
      * File Abstraction Layer, as it is a low-level API method.
-     *
-     * @return void
      */
     public function setDeleted()
     {
@@ -468,15 +466,15 @@ abstract class AbstractFile implements FileInterface
      *
      * @param string $newName The new file name
      *
-     * @throws \RuntimeException
-     * @return File
+     * @param string $conflictMode
+     * @return FileInterface
      */
-    public function rename($newName)
+    public function rename($newName, $conflictMode = DuplicationBehavior::RENAME)
     {
         if ($this->deleted) {
             throw new \RuntimeException('File has been deleted.', 1329821482);
         }
-        return $this->getStorage()->renameFile($this, $newName);
+        return $this->getStorage()->renameFile($this, $newName, $conflictMode);
     }
 
     /**

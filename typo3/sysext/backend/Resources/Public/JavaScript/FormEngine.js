@@ -21,38 +21,32 @@
  */
 
 // add legacy functions to be accessible in the global scope
-var setFormValueOpenBrowser
-	,setFormValueFromBrowseWin
-	,setHiddenFromList
-	,setFormValueManipulate
-	,setFormValue_getFObj;
+var setFormValueOpenBrowser,
+	setFormValueFromBrowseWin,
+	setHiddenFromList,
+	setFormValueManipulate,
+	setFormValue_getFObj;
 
 /**
  * Module: TYPO3/CMS/Backend/FormEngine
  */
 define(['jquery',
+		'TYPO3/CMS/Backend/FormEngineValidation',
 		'TYPO3/CMS/Backend/Modal',
 		'TYPO3/CMS/Backend/Severity'
-	   ], function ($, Modal, Severity) {
+	   ], function ($, FormEngineValidation, Modal, Severity) {
 
 	/**
 	 *
-	 * @type {{formName: *, openedPopupWindow: null, legacyFieldChangedCb: Function, browserUrl: string}}
+	 * @type {{Validation: object, formName: *, openedPopupWindow: window, legacyFieldChangedCb: Function, browserUrl: string}}
 	 * @exports TYPO3/CMS/Backend/FormEngine
 	 */
 	var FormEngine = {
-		formName: TYPO3.settings.FormEngine.formName
-		,openedPopupWindow: null
-		,legacyFieldChangedCb: function() { !$.isFunction(TYPO3.settings.FormEngine.legacyFieldChangedCb) || TYPO3.settings.FormEngine.legacyFieldChangedCb(); }
-		,browserUrl: ''
-	};
-
-	/**
-	 *
-	 * @param {String} browserUrl
-	 */
-	FormEngine.setBrowserUrl = function(browserUrl) {
-		FormEngine.browserUrl = browserUrl;
+		Validation: FormEngineValidation,
+		formName: TYPO3.settings.FormEngine.formName,
+		openedPopupWindow: null,
+		legacyFieldChangedCb: function() { !$.isFunction(TYPO3.settings.FormEngine.legacyFieldChangedCb) || TYPO3.settings.FormEngine.legacyFieldChangedCb(); },
+		browserUrl: ''
 	};
 
 	// functions to connect the db/file browser with this document and the formfields on it!
@@ -90,9 +84,11 @@ define(['jquery',
 		exclusiveValues = String(exclusiveValues);
 
 		var $fieldEl,
-			$originalFieldEl = $fieldEl = FormEngine.getFieldElement(fieldName),
+			$originalFieldEl,
 			isMultiple = false,
 			isList = false;
+
+		$originalFieldEl = $fieldEl = FormEngine.getFieldElement(fieldName);
 
 		if ($originalFieldEl.length === 0 || value === '--div--') {
 			return;
@@ -585,10 +581,6 @@ define(['jquery',
 	 * as it using deferrer methods only
 	 */
 	FormEngine.initializeEvents = function() {
-
-		FormEngine.initializeRemainingCharacterViews();
-		FormEngine.initializeSelectCheckboxes();
-
 		$(document).on('click', '.t3js-btn-moveoption-top, .t3js-btn-moveoption-up, .t3js-btn-moveoption-down, .t3js-btn-moveoption-bottom, .t3js-btn-removeoption', function(evt) {
 			evt.preventDefault();
 
@@ -729,6 +721,9 @@ define(['jquery',
 				$input.val($(this).attr('data-original-language-value')).trigger('change');
 				$input.data('last-l10n-state', $(this).val());
 			}
+		}).on('formengine.dp.change', function(event, $field) {
+			FormEngine.Validation.validate();
+			FormEngine.Validation.markFieldAsChanged($field);
 		});
 	};
 
@@ -737,7 +732,7 @@ define(['jquery',
 	 */
 	FormEngine.initializeRemainingCharacterViews = function() {
 		// all fields with a "maxlength" attribute
-		var $maxlengthElements = $('[maxlength]').not('.t3js-datetimepicker');
+		var $maxlengthElements = $('[maxlength]').not('.t3js-datetimepicker').not('.t3js-charcounter-initialized');
 		$maxlengthElements.on('focus', function(e) {
 			var $field = $(this),
 				$parent = $field.parents('.t3js-formengine-field-item:first'),
@@ -759,6 +754,7 @@ define(['jquery',
 			// change class and value
 			$parent.find('.t3js-charcounter span').removeClass().addClass(maxlengthProperties.labelClass).text(TYPO3.lang['FormEngine.remainingCharacters'].replace('{0}', maxlengthProperties.remainingCharacters))
 		});
+		$maxlengthElements.addClass('t3js-charcounter-initialized');
 		$(':password').on('focus', function() {
 			$(this).attr('type', 'text').select();
 		}).on('blur', function() {
@@ -985,6 +981,7 @@ define(['jquery',
 		FormEngine.initializeNullWithPlaceholderCheckboxes();
 		FormEngine.initializeInputLinkToggle();
 		FormEngine.initializeLocalizationStateSelector();
+		FormEngine.initializeRemainingCharacterViews();
 	};
 
 	/**
@@ -1004,21 +1001,51 @@ define(['jquery',
 	 * Toggle for input link explanation
 	 */
 	FormEngine.initializeInputLinkToggle = function() {
-		$(document).on('click', '.t3js-form-field-inputlink-explanation-toggle', function(e) {
+		var toggleClass = '.t3js-form-field-inputlink-explanation-toggle',
+			inputFieldClass = '.t3js-form-field-inputlink-input',
+			explanationClass = '.t3js-form-field-inputlink-explanation';
+
+		// if empty, show input field
+		$(explanationClass).filter(function () {
+			return !$.trim($(this).val());
+		}).each(function () {
+			var $group = $(this).closest('.t3js-form-field-inputlink'),
+				$inputField = $group.find(inputFieldClass),
+				$explanationField = $group.find(explanationClass),
+				explanationShown;
+			explanationShown = !$explanationField.hasClass('hidden');
+			$explanationField.toggleClass('hidden', explanationShown);
+			$inputField.toggleClass('hidden', !explanationShown);
+			$group.find('.form-control-clearable button.close').toggleClass('hidden', !explanationShown)
+		});
+
+		$(document).on('click', toggleClass, function (e) {
 			e.preventDefault();
 
 			var $group = $(this).closest('.t3js-form-field-inputlink'),
-				$inputField = $group.find('.t3js-form-field-inputlink-input'),
-				$explanationField = $group.find('.t3js-form-field-inputlink-explanation'),
+				$inputField = $group.find(inputFieldClass),
+				$explanationField = $group.find(explanationClass),
 				explanationShown;
 
 			explanationShown = !$explanationField.hasClass('hidden');
 			$explanationField.toggleClass('hidden', explanationShown);
 			$inputField.toggleClass('hidden', !explanationShown);
 			$group.find('.form-control-clearable button.close').toggleClass('hidden', !explanationShown)
-		}).on('change', '.t3js-form-field-inputlink-input', function() {
-			var $group = $(this).closest('.t3js-form-field-inputlink');
-			$group.find('.t3js-form-field-inputlink-explanation, .t3js-form-field-inputlink-explanation-toggle').remove();
+		});
+
+		$(inputFieldClass).on('change', function () {
+			var $group = $(this).closest('.t3js-form-field-inputlink'),
+				$inputField = $group.find(inputFieldClass),
+				$explanationField = $group.find(explanationClass),
+				explanationShown;
+
+			if (!$explanationField.hasClass('hidden')) {
+
+				explanationShown = !$explanationField.hasClass('hidden');
+				$explanationField.toggleClass('hidden', explanationShown);
+				$inputField.toggleClass('hidden', !explanationShown);
+				$group.find('.form-control-clearable button.close').toggleClass('hidden', !explanationShown)
+			}
 		});
 	};
 
@@ -1051,7 +1078,7 @@ define(['jquery',
 				}
 			});
 		} else {
-			FormEngine.closeDocument()
+			FormEngine.closeDocument();
 		}
 	};
 
@@ -1088,13 +1115,32 @@ define(['jquery',
 	};
 
 	/**
+	 * Main init function called from outside
+	 *
+	 * Sets some options and registers the DOMready handler to initialize further things
+	 *
+	 * @param {String} browserUrl
+	 * @param {Number} mode
+	 */
+	FormEngine.initialize = function(browserUrl, mode) {
+		FormEngine.browserUrl = browserUrl;
+		FormEngine.Validation.setUsMode(mode);
+
+		$(function() {
+			FormEngine.initializeSelectCheckboxes();
+			FormEngine.Validation.initialize();
+			FormEngine.reinitialize();
+		});
+	};
+
+	/**
 	 * initialize function, always require possible post-render hooks return the main object
 	 */
 
-	// the functions are both using delegates, thus no need to be called again
+	// the events are only bound to the document, which is already present for sure.
+	// no need to have it in DOMready handler
 	FormEngine.initializeEvents();
 	FormEngine.SelectBoxFilter.initializeEvents();
-	FormEngine.reinitialize();
 
 	// load required modules to hook in the post initialize function
 	if (undefined !== TYPO3.settings.RequireJS && undefined !== TYPO3.settings.RequireJS.PostInitializationModules['TYPO3/CMS/Backend/FormEngine']) {
@@ -1103,7 +1149,7 @@ define(['jquery',
 		});
 	}
 
-	// make the form engine object publically visible for other objects in the TYPO3 namespace
+	// make the form engine object publicly visible for other objects in the TYPO3 namespace
 	TYPO3.FormEngine = FormEngine;
 
 	// return the object in the global space

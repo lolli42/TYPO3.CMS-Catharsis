@@ -49,7 +49,7 @@ use TYPO3\CMS\Frontend\ContentObject\TextContentObject;
 use TYPO3\CMS\Frontend\ContentObject\UserContentObject;
 use TYPO3\CMS\Frontend\ContentObject\UserInternalContentObject;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
-use TYPO3\CMS\Frontend\Tests\Unit\ContentObject\Fixtures\PageRepositoryFixture;
+use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * Testcase for TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
@@ -71,6 +71,11 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @var \PHPUnit_Framework_MockObject_MockObject|TypoScriptFrontendController|\TYPO3\TestingFramework\Core\AccessibleObjectInterface
      */
     protected $frontendControllerMock = null;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject|CacheFrontendInterface
+     */
+    protected $cacheFrontendMock = null;
 
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject|TemplateService
@@ -118,8 +123,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             $this->getMockBuilder(TemplateService::class)
             ->setMethods(['getFileName', 'linkData'])->getMock();
         $pageRepositoryMock =
-            $this->getMockBuilder(PageRepositoryFixture::class)
-            ->setMethods(['getRawRecord', 'getMountPointInfo'])->getMock();
+            $this->getAccessibleMock(PageRepository::class, ['getRawRecord', 'getMountPointInfo']);
         $this->frontendControllerMock =
             $this->getAccessibleMock(TypoScriptFrontendController::class,
             ['dummy'], [], '', false);
@@ -352,13 +356,13 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $getQueryArgumentsConfiguration['exclude'][] = 'key3[key32][key321]';
         $getQueryArgumentsConfiguration['exclude'] = implode(',', $getQueryArgumentsConfiguration['exclude']);
         $overruleArguments = [
-            // Should be overriden
+            // Should be overridden
             'key2' => 'value2Overruled',
             'key3' => [
                 'key32' => [
                     // Shouldn't be set: Parameter is excluded and not forced
                     'key321' => 'value321Overruled',
-                    // Should be overriden: Parameter is not excluded
+                    // Should be overridden: Parameter is not excluded
                     'key322' => 'value322Overruled',
                     // Shouldn't be set: Parameter doesn't exist in source array and is not forced
                     'key323' => 'value323Overruled'
@@ -397,7 +401,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $getQueryArgumentsConfiguration['exclude'][] = 'key3[key32][key322]';
         $getQueryArgumentsConfiguration['exclude'] = implode(',', $getQueryArgumentsConfiguration['exclude']);
         $overruleArguments = [
-            // Should be overriden
+            // Should be overridden
             'key2' => 'value2Overruled',
             'key3' => [
                 'key32' => [
@@ -753,7 +757,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expect The expected cropped output.
      * @param string $content The given input.
      * @param string $conf The given configuration.
-     * @return void
      */
     public function cropHTML($expect, $content, $conf)
     {
@@ -823,7 +826,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param float $expect The expected output.
      * @param mixed $content The given content.
      * @param array $conf The given configuration of 'round.'.
-     * @return void
      * @dataProvider roundDataProvider
      * @test
      */
@@ -991,7 +993,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $content The given input.
      * @param string $expects The expected result.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function replacement($expects, $content, $conf)
     {
@@ -1045,7 +1046,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param int $expect
      * @param int $timestamp
      * @param string $labels
-     * @return void
      */
     public function calcAge($expect, $timestamp, $labels)
     {
@@ -1115,7 +1115,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expect The expected output.
      * @param string $content The given input.
      * @param array $conf The given configutation.
-     * @return void
      */
     public function substring($expect, $content, $conf)
     {
@@ -3113,224 +3112,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     }
 
     /**
-     * @return array
-     */
-    public function substituteMarkerArrayCachedReturnsExpectedContentDataProvider()
-    {
-        return [
-            'no markers defined' => [
-                'dummy content with ###UNREPLACED### marker',
-                [],
-                [],
-                [],
-                'dummy content with ###UNREPLACED### marker',
-                false,
-                false
-            ],
-            'no markers used' => [
-                'dummy content with no marker',
-                [
-                    '###REPLACED###' => '_replaced_'
-                ],
-                [],
-                [],
-                'dummy content with no marker',
-                true,
-                false
-            ],
-            'one marker' => [
-                'dummy content with ###REPLACED### marker',
-                [
-                    '###REPLACED###' => '_replaced_'
-                ],
-                [],
-                [],
-                'dummy content with _replaced_ marker'
-            ],
-            'one marker with lots of chars' => [
-                'dummy content with ###RE.:##-=_()LACED### marker',
-                [
-                    '###RE.:##-=_()LACED###' => '_replaced_'
-                ],
-                [],
-                [],
-                'dummy content with _replaced_ marker'
-            ],
-            'markers which are special' => [
-                'dummy ###aa##.#######A### ######',
-                [
-                    '###aa##.###' => 'content ',
-                    '###A###' => 'is',
-                    '######' => '-is not considered-'
-                ],
-                [],
-                [],
-                'dummy content #is ######'
-            ],
-            'two markers in content, but more defined' => [
-                'dummy ###CONTENT### with ###REPLACED### marker',
-                [
-                    '###REPLACED###' => '_replaced_',
-                    '###CONTENT###' => 'content',
-                    '###NEVERUSED###' => 'bar'
-                ],
-                [],
-                [],
-                'dummy content with _replaced_ marker'
-            ],
-            'one subpart' => [
-                'dummy content with ###ASUBPART### around some text###ASUBPART###.',
-                [],
-                [
-                    '###ASUBPART###' => 'some other text'
-                ],
-                [],
-                'dummy content with some other text.'
-            ],
-            'one wrapped subpart' => [
-                'dummy content with ###AWRAPPEDSUBPART### around some text###AWRAPPEDSUBPART###.',
-                [],
-                [],
-                [
-                    '###AWRAPPEDSUBPART###' => [
-                        'more content',
-                        'content'
-                    ]
-                ],
-                'dummy content with more content around some textcontent.'
-            ],
-            'one subpart with markers, not replaced recursively' => [
-                'dummy ###CONTENT### with ###ASUBPART### around ###SOME### text###ASUBPART###.',
-                [
-                    '###CONTENT###' => 'content',
-                    '###SOME###' => '-this should never make it into output-',
-                    '###OTHER_NOT_REPLACED###' => '-this should never make it into output-'
-                ],
-                [
-                    '###ASUBPART###' => 'some ###OTHER_NOT_REPLACED### text'
-                ],
-                [],
-                'dummy content with some ###OTHER_NOT_REPLACED### text.'
-            ],
-        ];
-    }
-
-    /**
-     * @test
-     * @dataProvider substituteMarkerArrayCachedReturnsExpectedContentDataProvider
-     *
-     * @param string $content
-     * @param array $markContentArray
-     * @param array $subpartContentArray
-     * @param array $wrappedSubpartContentArray
-     * @param string $expectedContent
-     * @param bool $shouldQueryCache
-     * @param bool $shouldStoreCache
-     */
-    public function substituteMarkerArrayCachedReturnsExpectedContent($content, array $markContentArray, array $subpartContentArray, array $wrappedSubpartContentArray, $expectedContent, $shouldQueryCache = true, $shouldStoreCache = true)
-    {
-        /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->frontendControllerMock->sys_page;
-        $pageRepo->resetCallCount();
-
-        $resultContent = $this->subject->substituteMarkerArrayCached($content, $markContentArray, $subpartContentArray, $wrappedSubpartContentArray);
-
-        $this->assertSame((int)$shouldQueryCache, $pageRepo::$getHashCallCount, 'getHash call count mismatch');
-        $this->assertSame((int)$shouldStoreCache, $pageRepo::$storeHashCallCount, 'storeHash call count mismatch');
-        $this->assertSame($expectedContent, $resultContent);
-    }
-
-    /**
-     * @test
-     */
-    public function substituteMarkerArrayCachedRetrievesCachedValueFromRuntimeCache()
-    {
-        /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->frontendControllerMock->sys_page;
-        $pageRepo->resetCallCount();
-
-        $content = 'Please tell me this ###FOO###.';
-        $markContentArray = [
-            '###FOO###' => 'foo',
-            '###NOTUSED###' => 'blub'
-        ];
-        $storeKey = md5('substituteMarkerArrayCached_storeKey:' . serialize([$content, array_keys($markContentArray)]));
-        $this->subject->substMarkerCache[$storeKey] = [
-            'c' => [
-                'Please tell me this ',
-                '.'
-            ],
-            'k' => [
-                '###FOO###'
-            ],
-        ];
-        $resultContent = $this->subject->substituteMarkerArrayCached($content, $markContentArray);
-        $this->assertSame(0, $pageRepo::$getHashCallCount);
-        $this->assertSame('Please tell me this foo.', $resultContent);
-    }
-
-    /**
-     * @test
-     */
-    public function substituteMarkerArrayCachedRetrievesCachedValueFromDbCache()
-    {
-        /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->frontendControllerMock->sys_page;
-        $pageRepo->resetCallCount();
-
-        $content = 'Please tell me this ###FOO###.';
-        $markContentArray = [
-            '###FOO###' => 'foo',
-            '###NOTUSED###' => 'blub'
-        ];
-        $pageRepo::$dbCacheContent = [
-            'c' => [
-                'Please tell me this ',
-                '.'
-            ],
-            'k' => [
-                '###FOO###'
-            ],
-        ];
-        $resultContent = $this->subject->substituteMarkerArrayCached($content, $markContentArray);
-        $this->assertSame(1, $pageRepo::$getHashCallCount, 'getHash call count mismatch');
-        $this->assertSame(0, $pageRepo::$storeHashCallCount, 'storeHash call count mismatch');
-        $this->assertSame('Please tell me this foo.', $resultContent);
-    }
-
-    /**
-     * @test
-     */
-    public function substituteMarkerArrayCachedStoresResultInCaches()
-    {
-        /** @var PageRepositoryFixture|\PHPUnit_Framework_MockObject_MockObject $pageRepo */
-        $pageRepo = $this->frontendControllerMock->sys_page;
-        $pageRepo->resetCallCount();
-
-        $content = 'Please tell me this ###FOO###.';
-        $markContentArray = [
-            '###FOO###' => 'foo',
-            '###NOTUSED###' => 'blub'
-        ];
-        $resultContent = $this->subject->substituteMarkerArrayCached($content, $markContentArray);
-
-        $storeKey = md5('substituteMarkerArrayCached_storeKey:' . serialize([$content, array_keys($markContentArray)]));
-        $storeArr = [
-            'c' => [
-                'Please tell me this ',
-                '.'
-            ],
-            'k' => [
-                '###FOO###'
-            ],
-        ];
-        $this->assertSame(1, $pageRepo::$getHashCallCount);
-        $this->assertSame('Please tell me this foo.', $resultContent);
-        $this->assertSame($storeArr, $this->subject->substMarkerCache[$storeKey]);
-        $this->assertSame(1, $pageRepo::$storeHashCallCount);
-    }
-
-    /**
      * Check if calculateCacheKey works properly.
      *
      * @return array Order: expect, conf, times, with, withWrap, will
@@ -3393,7 +3174,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param int $times Times called mocked method.
      * @param array $with Parameter passed to mocked method.
      * @param string $will Return value of mocked method.
-     * @return void
      */
     public function calculateCacheKey($expect, $conf, $times, $with, $withWrap, $will)
     {
@@ -3440,7 +3220,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $cacheKey Return from calculateCacheKey mock.
      * @param int $times Times the cache is expected to be called (0 or 1).
      * @param string $cached Return from cacheFrontend mock.
-     * @return void
      */
     public function getFromCache($expect, $conf, $cacheKey, $times, $cached)
     {
@@ -3539,7 +3318,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider getFieldValDataProvider
      * @param string $expect The expected string.
      * @param string $fields Field names divides by //.
-     * @return void
      */
     public function getFieldVal($expect, $fields)
     {
@@ -3653,7 +3431,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
       * @param string $case The given type of conversion.
       * @param array $with Consecutive args expected by caseshift.
       * @param array $will Consecutive return values of caseshfit.
-      * @return void
       */
     public function HTMLcaseshift($expect, $content, $case, $with, $will)
     {
@@ -3682,7 +3459,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Their amount is 91.
      *
      * @test
-     * @return void
      */
     public function allStdWrapProcessorsAreCallable()
     {
@@ -3722,7 +3498,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  that it is an issue.
      *
      * @test
-     * @return void
      */
     public function notAllStdWrapProcessorsAreCallableWithEmptyConfiguration()
     {
@@ -3797,7 +3572,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider fourTypesOfStdWrapHookObjectProcessorsDataProvider
      * @param string $stdWrapMethod: The method to cover.
      * @param string $hookObjectCall: The expected hook object call.
-     * @return void
      */
     public function fourTypesOfStdWrapHookObjectProcessors(
         $stdWrapMethod, $hookObjectCall)
@@ -3870,7 +3644,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param array $conf The given configuration.
      * @param int $times Times HTMLparser_TSbridge is called (0 or 1).
      * @param string $will Return of HTMLparser_TSbridge.
-     * @return void.
      */
     public function stdWrap_HTMLparser(
         $expect, $content, $conf, $times, $will)
@@ -3933,7 +3706,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  @param mixed $conf The the given configuration.
      *  @param int $times Times TCAlookup is called.
      *  @param string $will Return value of TCAlookup.
-     *  @return void.
      */
     public function stdWrap_TCAselectItem(
         $expect, $content, $conf, $times, $will)
@@ -3996,7 +3768,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_addParams()
     {
@@ -4028,7 +3799,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_age()
     {
@@ -4060,7 +3830,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value appended to $content.
      *
      * @test
-     * @return void
      */
     public function stdWrap_append()
     {
@@ -4119,7 +3888,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param string $xhtmlDoctype Xhtml document type.
-     * @return void
      * @test
      * @dataProvider stdWrapBrDataProvider
      */
@@ -4223,7 +3991,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expect The expected output.
      * @param string $content The given input.
      * @param array $conf The given configuration for 'bytes.'.
-     * @return void
      */
     public function stdWrap_bytes($expect, $content, $conf)
     {
@@ -4250,7 +4017,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_cObject()
     {
@@ -4321,7 +4087,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param array $firstConf Parameter 2 expected by first call to stdWrap.
      * @param array $secondConf Parameter 2 expected by second call to stdWrap.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_orderedStdWrap($firstConf, $secondConf, $conf)
     {
@@ -4384,7 +4149,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param int $times Times called mocked method.
      * @param array $with Parameter passed to mocked method.
      * @param string|false $will Return value of mocked method.
-     * @return void
      */
     public function stdWrap_cacheRead(
         $expect, $input, $conf, $times, $with, $will)
@@ -4442,7 +4206,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param int $timesCCK Times calculateCacheKey is called.
      * @param string  $key The return value of calculateCacheKey.
      * @param int $times Times the other methods are called.
-     * @return void
      */
     public function stdWrap_cacheStore(
         $confCache, $timesCCK, $key, $times)
@@ -4507,7 +4270,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_case()
     {
@@ -4532,7 +4294,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * Check if stdWrap_char works properly.
      *
      * @test
-     * @return void
      */
     public function stdWrap_char()
     {
@@ -4552,7 +4313,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_crop()
     {
@@ -4584,7 +4344,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_cropHTML()
     {
@@ -4654,7 +4413,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $value The input value.
      * @param array $conf Property: csConv
-     * @return void
      */
     public function stdWrap_csConv($expected, $input, $conf)
     {
@@ -4672,7 +4430,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - the key defaults to 'currentValue_kidjls9dksoje'
      *
      * @test
-     * @return void
      */
     public function stdWrap_current()
     {
@@ -4727,7 +4484,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $expect Expect either $data or $alternativeData.
      * @param array $data The data.
      * @param mixed $alt The alternativeData.
-     * @return void
      */
     public function stdWrap_data($expect, $data, $alt)
     {
@@ -4757,7 +4513,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_dataWrap()
     {
@@ -4827,7 +4582,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $content The given input.
      * @param array $conf The given configuration.
      * @param int $now Fictive execution time.
-     * @return void
      */
     public function stdWrap_date($expected, $content, $conf, $now)
     {
@@ -4840,7 +4594,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * Check if stdWrap_debug works properly.
      *
      * @test
-     * @return void
      */
     public function stdWrap_debug()
     {
@@ -4875,7 +4628,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *   implementation at all. It can't even indirectly be tested.
      *
      * @test
-     * @return void
      */
     public function stdWrap_debugData()
     {
@@ -4937,7 +4689,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider stdWrap_debugFuncDataProvider
      * @param bool $expectArray If cast to array is expected.
      * @param mixed $confDebugFunc The configuration for $conf['debugFunc'].
-     * @return void
      */
     public function stdWrap_debugFunc($expectArray, $confDebugFunc)
     {
@@ -5025,7 +4776,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $config The property 'doubleBrTag'.
-     * @return void
      */
     public function stdWrap_doubleBrTag($expected, $input, $config)
     {
@@ -5102,7 +4852,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param int $times Times editIcons is called (0 or 1).
      * @param array $param3 The expected third parameter.
      * @param string $will Return value of editIcons.
-     * @return void
      */
     public function stdWrap_editIcons(
         $expect, $content, $conf, $login, $times, $param3, $will)
@@ -5130,7 +4879,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
      public function stdWrap_encapsLines()
      {
@@ -5190,7 +4938,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param bool $login Simulate backend user login.
      * @param int $times Times editPanel is called (0 or 1).
      * @param string $will Return value of editPanel.
-     * @return void
      */
     public function stdWrap_editPanel(
         $expect, $content, $login, $times, $will)
@@ -5247,7 +4994,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider stdWrap_encodeForJavaScriptValueDataProvider
      * @param string $expect The expected output.
      * @param string $content The given input.
-     * @return void
      */
     public function stdWrap_encodeForJavaScriptValue($expect, $content)
     {
@@ -5279,9 +5025,8 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *
      * @test
      * @dataProvider stdWrap_expandListDataProvider
-     * @param string $expected The expeced output.
+     * @param string $expected The expected output.
      * @param string $content The given content.
-     * @return void
      */
     public function stdWrap_expandList($expected, $content)
     {
@@ -5298,7 +5043,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - passes conf['field'] as parameter
      *
      * @test
-     * @return void
      */
     public function stdWrap_field()
     {
@@ -5378,7 +5122,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param bool $stop Expect stop further rendering.
      * @param mixed $content The given input.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_fieldRequired($expect, $stop, $content, $conf)
     {
@@ -5414,7 +5157,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_filelink()
     {
@@ -5441,7 +5183,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_filelist()
     {
@@ -5505,7 +5246,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expect The expected output.
      * @param string $content The given content.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_hash($expect, $content, $conf)
     {
@@ -5552,7 +5292,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $conf htmlSpecialChars.preserveEntities
-     * @return void
      */
     public function stdWrap_htmlSpecialChars($expected, $input, $conf)
     {
@@ -5618,7 +5357,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $config The given configuration.
      * @param int $times Times checkIf is called (0 or 1).
      * @param bool|null $will Return of checkIf (null if not called).
-     * @return void
      */
     public function stdWrap_if($expect, $stop, $content, $conf, $times, $will)
     {
@@ -5674,7 +5412,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $expected The expected output.
      * @param mixed $content The given input.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_ifBlank($expect, $content, $conf)
     {
@@ -5727,7 +5464,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $expect The expected output.
      * @param mixed $content The given content.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_ifEmpty($expect, $content, $conf)
     {
@@ -5770,7 +5506,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $expected The expected output.
      * @param mixed $content The given input.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_ifNull($expect, $content, $conf)
     {
@@ -5823,7 +5558,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $conf Property: innerWrap
-     * @return void
      * @test
      * @dataProvider stdWrap_innerWrapDataProvider
      */
@@ -5878,7 +5612,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $conf Property: innerWrap2
-     * @return void
      * @test
      * @dataProvider stdWrap_innerWrap2DataProvider
      */
@@ -5898,7 +5631,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void
      */
     public function stdWrap_insertData()
     {
@@ -5961,7 +5693,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider stdWrap_intvalDataProvider
      * @param int $expect The expected output.
      * @param string $content The given input.
-     * @return void
      */
     public function stdWrap_intval($expect, $content)
     {
@@ -6018,7 +5749,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *
      * @param string $expected The expected value.
      * @param string $input The input value.
-     * @return void
      * @test
      * @dataProvider stdWrapKeywordsDataProvider
      */
@@ -6095,7 +5825,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $input The input value.
      * @param array $conf Properties: lang.xy.
      * @param string $language For $TSFE->config[config][language].
-     * @return void
      * @test
      * @dataProvider stdWrap_langDataProvider
      */
@@ -6121,7 +5850,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_listNum()
     {
@@ -6225,7 +5953,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expect The expected output.
      * @param string $content The given input.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_noTrimWrap($expect, $content, $conf)
     {
@@ -6243,7 +5970,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_numRows()
     {
@@ -6270,7 +5996,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_numberFormat()
     {
@@ -6336,7 +6061,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $conf Property: outerWrap
-     * @return void
      * @test
      * @dataProvider stdWrap_outerWrapDataProvider
      */
@@ -6400,7 +6124,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider stdWrap_overrideDataProvider
      * @param string $input The input value.
      * @param array $conf Property: setCurrent
-     * @return void
      */
     public function stdWrap_override($expect, $content, $conf)
     {
@@ -6420,7 +6143,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return.
      *
      * @test
-     * @return void
      */
     public function stdWrap_parseFunc()
     {
@@ -6453,7 +6175,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value appended by $content.
      *
      * @test
-     * @return void
      */
     public function stdWrap_postCObject()
     {
@@ -6485,7 +6206,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_postUserFunc()
     {
@@ -6523,7 +6243,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns "<!-- $substKey -->".
      *
      * @test
-     * @return void
      */
     public function stdWrap_postUserFuncInt()
     {
@@ -6568,7 +6287,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value appended by $content.
      *
      * @test
-     * @return void
      */
     public function stdWrap_preCObject()
     {
@@ -6602,7 +6320,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_preIfEmptyListNum()
     {
@@ -6666,7 +6383,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *
      *  @test
      *  @dataProvider stdWrap_prefixCommentDataProvider
-     *  @return void
      */
     public function stdWrap_prefixComment(
         $expect, $content, $conf, $disable, $times, $will)
@@ -6696,7 +6412,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value prepended to $content.
      *
      * @test
-     * @return void
      */
     public function stdWrap_prepend()
     {
@@ -6753,7 +6468,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $expect The expected output.
      * @param string $content The given content.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_prioriCalc($expect, $content, $conf)
     {
@@ -6773,7 +6487,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_preUserFunc()
     {
@@ -6817,7 +6530,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider stdWrap_rawUrlEncodeDataProvider
      * @param string $expect The expected output.
      * @param string $content The given input.
-     * @return void
      */
     public function stdWrap_rawUrlEncode($expect, $content)
     {
@@ -6836,7 +6548,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_replacement()
     {
@@ -6895,7 +6606,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $expect The expected output.
      * @param bool $stop Expect stop further rendering.
      * @param mixed $content The given input.
-     * @return void
      */
     public function stdWrap_required($expect, $stop, $content)
     {
@@ -6917,7 +6627,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_round()
     {
@@ -6941,7 +6650,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * Check if stdWrap_setContentToCurrent works properly.
      *
      * @test
-     * @return void
      */
     public function stdWrap_setContentToCurrent()
     {
@@ -6998,7 +6706,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider stdWrap_setCurrentDataProvider
      * @param string $input The input value.
      * @param array $conf Property: setCurrent
-     * @return void
      */
     public function stdWrap_setCurrent($input, $conf)
     {
@@ -7024,7 +6731,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_space()
     {
@@ -7059,7 +6765,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_spaceAfter()
     {
@@ -7095,7 +6800,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_spaceBefore()
     {
@@ -7128,7 +6832,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
      public function stdWrap_split()
      {
@@ -7159,7 +6862,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_stdWrap()
     {
@@ -7346,7 +7048,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expect The expected output.
      * @param string $content The given input.
      * @param array $conf The configuration of 'strPad.'.
-     * @return void
      */
     public function stdWrap_strPad($expect, $content, $conf)
     {
@@ -7395,7 +7096,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param mixed $content The given input.
      * @param array $conf The given configuration.
      * @param int $now Fictive execution time.
-     * @return void
      */
     public function stdWrap_strftime($expect, $content, $conf, $now)
     {
@@ -7468,7 +7168,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param int $expect The expected output.
      * @param mixed $content The given input.
      * @param array $conf The given configuration.
-     * @return void
      */
     public function stdWrap_strtotime($expect, $content, $conf)
     {
@@ -7498,7 +7197,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * - Returns the return value.
      *
      * @test
-     * @return void
      */
     public function stdWrap_substring()
     {
@@ -7576,7 +7274,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @dataProvider stdWrap_trimDataProvider
      * @param string $expected The expected output.
      * @param mixed $content The given content.
-     * @return void
      */
     public function stdWrap_trim($expect, $content)
     {
@@ -7594,7 +7291,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  - Returns the return value.
      *
      *  @test
-     *  @return void.
      */
     public function stdWrap_typolink()
     {
@@ -7669,7 +7365,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $conf Properties: wrap, wrap.splitChar
-     * @return void
      * @test
      * @dataProvider stdWrap_wrapDataProvider
      */
@@ -7734,7 +7429,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $conf Properties: wrap2, wrap2.splitChar
-     * @return void
      * @test
      * @dataProvider stdWrap_wrap2DataProvider
      */
@@ -7798,7 +7492,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expected The expected value.
      * @param string $input The input value.
      * @param array $conf Properties: wrap3, wrap3.splitChar
-     * @return void
      * @test
      * @dataProvider stdWrap_wrap3DataProvider
      */
@@ -7841,7 +7534,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $expect The expected output.
      * @param string $content The given content.
      * @param mixed $wrapAlignConf The given input.
-     * @return void
      */
     public function stdWrap_wrapAlign($expect, $content, $wrapAlignConf)
     {
@@ -7856,4 +7548,75 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     /***************************************************************************
     * End of tests of stdWrap in alphabetical order
     ***************************************************************************/
+
+    /***************************************************************************
+     * Begin: Mixed tests
+     *
+     * - Add new tests here that still don't have a better place in this class.
+     * - Place tests in alphabetical order.
+     * - Place data provider above test method.
+     ***************************************************************************/
+
+    /**
+     * Data provider for prefixComment.
+     *
+     * @return array [$expect, $comment, $content]
+     */
+    public function prefixCommentDataProvider()
+    {
+        $comment = $this->getUniqueId();
+        $content = $this->getUniqueId();
+        $format = '%s';
+        $format .= '%%s<!-- %%s [begin] -->%s';
+        $format .= '%%s%s%%s%s';
+        $format .= '%%s<!-- %%s [end] -->%s';
+        $format .= '%%s%s';
+        $format = sprintf($format, LF, LF, TAB, LF, LF, TAB);
+        $indent1 = TAB;
+        $indent2 = TAB . TAB;
+        return [
+            'indent one tab' => [
+                sprintf($format,
+                    $indent1, $comment,
+                    $indent1, $content,
+                    $indent1, $comment,
+                    $indent1),
+                '1|' . $comment, $content ],
+            'indent two tabs' => [
+                sprintf($format,
+                    $indent2, $comment,
+                    $indent2, $content,
+                    $indent2, $comment,
+                    $indent2),
+                '2|' . $comment, $content ],
+            'htmlspecialchars applies for comment only' => [
+                sprintf($format,
+                    $indent1, '&lt;' . $comment . '&gt;',
+                    $indent1, '<' . $content . '>',
+                    $indent1, '&lt;' . $comment . '&gt;',
+                    $indent1),
+                '1|' . '<' . $comment . '>', '<' . $content . '>' ],
+        ];
+    }
+
+    /**
+     * Check if prefixComment works properly.
+     *
+     * @test
+     * @dataProvider prefixCommentDataProvider
+     * @param string $expect The expected output.
+     * @param string $comment The parameter $comment.
+     * @param string $content The parameter $content.
+     */
+    public function prefixComment($expect, $comment, $content)
+    {
+        // The parameter $conf is never used. Just provide null.
+        // Consider to improve the signature and deprecate the old one.
+        $result = $this->subject->prefixComment($comment, null, $content);
+        $this->assertEquals($expect, $result);
+    }
+
+    /***************************************************************************
+     * End: Mixed tests
+     ***************************************************************************/
 }

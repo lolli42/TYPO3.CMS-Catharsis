@@ -42,7 +42,6 @@ interface RenderableInterface extends RootRenderableInterface
      * This method should also register itself at the parent form, if possible.
      *
      * @param CompositeRenderableInterface $renderable
-     * @return void
      * @internal
      */
     public function setParentRenderable(CompositeRenderableInterface $renderable);
@@ -51,7 +50,6 @@ interface RenderableInterface extends RootRenderableInterface
      * Set the index of this renderable inside the parent renderable
      *
      * @param int $index
-     * @return void
      * @internal
      */
     public function setIndex(int $index);
@@ -70,7 +68,6 @@ interface RenderableInterface extends RootRenderableInterface
      * like reseting $this->parentRenderable or deregistering the renderable
      * at the form.
      *
-     * @return void
      * @internal
      */
     public function onRemoveFromParentRenderable();
@@ -79,15 +76,14 @@ interface RenderableInterface extends RootRenderableInterface
      * This is a callback that is invoked by the Form Factory after the whole form has been built.
      * It can be used to add new form elements as children for complex form elements.
      *
-     * @return void
      * @api
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function onBuildingFinished();
 
     /**
      * Register this element at the parent form, if there is a connection to the parent form.
      *
-     * @return void
      * @internal
      */
     public function registerInFormIfPossible();

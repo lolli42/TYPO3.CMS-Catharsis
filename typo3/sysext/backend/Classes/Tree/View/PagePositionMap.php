@@ -172,7 +172,7 @@ class PagePositionMap
                     // 1) It must be allowed to create a new page and 2) If there are subpages there is no need to render a subpage icon here - it'll be done over the subpages...
                     if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($id) && !($prev_dat['invertedDepth'] > $pageTree->tree[$cc]['invertedDepth'])) {
                         end($lines);
-                        $lines[] = '<li><span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($id, $id, 1)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span></li>';
+                        $lines[] = '<li><span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($id, $id)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span></li>';
                     }
                 }
                 // If going down
@@ -184,7 +184,7 @@ class PagePositionMap
                     if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($prev_dat['row']['pid'])) {
                         $prevPid = -$prev_dat['row']['uid'];
                         end($lines);
-                        $lines[] = '<li><span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $prev_dat['row']['pid'], 2)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span></li>';
+                        $lines[] = '<li><span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $prev_dat['row']['pid'])) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span></li>';
                     }
                     // Then set the current prevPid
                     $prevPid = -$prev_dat['row']['pid'];
@@ -201,7 +201,7 @@ class PagePositionMap
             }
             // print arrow on the same level
             if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($dat['row']['pid'])) {
-                $lines[] = '<span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'], 3)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span>';
+                $lines[] = '<span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'])) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span>';
             }
             // The line with the icon and title:
             $toolTip = BackendUtility::getRecordToolTip($dat['row'], 'pages');
@@ -213,7 +213,7 @@ class PagePositionMap
         $prev_dat = end($pageTree->tree);
         if ($prev_dat['row']['uid'] == $id) {
             if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($id)) {
-                $lines[] = '<ul class="list-tree" style="margin-left: 25px"><li><span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($id, $id, 4)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span></li></ul>';
+                $lines[] = '<ul class="list-tree" style="margin-left: 25px"><li><span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($id, $id)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span></li></ul>';
             }
         }
         for ($a = $latestInvDepth; $a <= $this->depth; $a++) {
@@ -223,7 +223,7 @@ class PagePositionMap
                 if ($latestInvDepth < $dat['invertedDepth']) {
                     $lines[] = '</ul>';
                 }
-                $lines[] = '<span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'], 5)) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span>';
+                $lines[] = '<span class="text-nowrap"><a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'])) . '"><i class="t3-icon fa fa-long-arrow-left" title="' . $this->insertlabel() . '"></i></a></span>';
             }
         }
 
@@ -245,7 +245,7 @@ class PagePositionMap
      * Wrap $t_code in bold IF the $dat uid matches $id
      *
      * @param string $t_code Title string
-     * @param array $dat Infomation array with record array inside.
+     * @param array $dat Information array with record array inside.
      * @param int $id The current id.
      * @return string The title string.
      */
@@ -326,7 +326,7 @@ class PagePositionMap
      * Returns module configuration for a pid.
      *
      * @param int $pid Page id for which to get the module configuration.
-     * @return array The properties of teh module configuration for the page id.
+     * @return array The properties of the module configuration for the page id.
      * @see onClickEvent()
      */
     public function getModConfig($pid)
@@ -581,7 +581,7 @@ class PagePositionMap
     }
 
     /**
-     * Create record header (includes teh record icon, record title etc.)
+     * Create record header (includes the record icon, record title etc.)
      *
      * @param array $row Record row.
      * @return string HTML

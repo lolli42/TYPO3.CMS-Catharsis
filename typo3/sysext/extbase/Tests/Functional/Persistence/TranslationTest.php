@@ -57,7 +57,7 @@ class TranslationTest extends \TYPO3\TestingFramework\Core\Functional\Functional
          *   -> EN: Post2
          * Post3
          */
-        $this->importDataSet(ORIGINAL_ROOT . 'components/testing_framework/Resources/Core/Functional/Fixtures/pages.xml');
+        $this->importDataSet('PACKAGE:typo3/testing-framework/Resources/Core/Functional/Fixtures/pages.xml');
         $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/extbase/Tests/Functional/Persistence/Fixtures/blogs.xml');
         $this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/extbase/Tests/Functional/Persistence/Fixtures/translated-posts.xml');
 
@@ -162,12 +162,14 @@ class TranslationTest extends \TYPO3\TestingFramework\Core\Functional\Functional
         $querySettings->setRespectSysLanguage(true);
         $querySettings->setLanguageUid(1);
 
+        $query->setOrderings(['title' => QueryInterface::ORDER_ASCENDING]);
+
         /** @var Post[] $posts */
         $posts = $query->execute()->toArray();
 
         $this->assertCount(3, $posts);
-        $this->assertSame('B EN:Post1', $posts[0]->getTitle());
-        $this->assertSame('A EN:Post2', $posts[1]->getTitle());
+        $this->assertSame('A EN:Post2', $posts[0]->getTitle());
+        $this->assertSame('B EN:Post1', $posts[1]->getTitle());
         $this->assertSame('Post3', $posts[2]->getTitle());
     }
 
@@ -182,6 +184,8 @@ class TranslationTest extends \TYPO3\TestingFramework\Core\Functional\Functional
         $querySettings->setStoragePageIds([1]);
         $querySettings->setRespectSysLanguage(true);
         $querySettings->setLanguageUid(2);
+
+        $query->setOrderings(['title' => QueryInterface::ORDER_ASCENDING]);
 
         /** @var Post[] $posts */
         $posts = $query->execute()->toArray();

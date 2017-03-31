@@ -67,8 +67,6 @@ class CleanFlexFormsCommand extends Command
      *
      * @param InputInterface $input
      * @param OutputInterface $output
-     *
-     * @return void
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -219,7 +217,18 @@ class CleanFlexFormsCommand extends Command
         $flexObj = GeneralUtility::makeInstance(FlexFormTools::class);
         foreach ($GLOBALS['TCA'][$tableName]['columns'] as $columnName => $columnConfiguration) {
             if ($columnConfiguration['config']['type'] === 'flex') {
-                $fullRecord = BackendUtility::getRecordRaw($tableName, 'uid=' . (int)$uid);
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable($tableName);
+                $queryBuilder->getRestrictions()->removeAll();
+
+                $fullRecord = $queryBuilder->select('*')
+                    ->from($tableName)
+                    ->where(
+                        $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT))
+                    )
+                    ->execute()
+                    ->fetch();
+
                 if ($fullRecord[$columnName]) {
                     // Clean XML and check against the record fetched from the database
                     $newXML = $flexObj->cleanFlexFormXML($tableName, $columnName, $fullRecord);
@@ -238,7 +247,6 @@ class CleanFlexFormsCommand extends Command
      * @param array $records
      * @param bool $dryRun
      * @param SymfonyStyle $io
-     * @return void
      */
     protected function cleanFlexFormRecords(array $records, bool $dryRun, SymfonyStyle $io)
     {

@@ -1,0 +1,353 @@
+//
+// Install Tool
+// =========
+// Contains all needed styles for the TYPO3 Intall Tool.
+//
+
+//
+// Load global Variables
+//
+@import "variables/main";
+$grid-float-breakpoint: $screen-md-min;
+
+//
+// Load minimal Setup including variables
+//
+@import "minimal";
+
+//
+// Include chosen CSS file
+//
+@import "libs/chosen";
+
+.content-area {
+    padding-bottom: 35px;
+
+    > h3 {
+        margin-top: 0;
+    }
+
+    > *:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.logo-pageheader {
+    img {
+        padding-bottom: 3px;
+    }
+}
+
+img.logo {
+    vertical-align: bottom;
+}
+
+.typo3-message > h4 {
+    margin-bottom: 0;
+}
+
+.typo3-message p {
+    margin-top: 9px;
+}
+
+.t3-install-displaytwinimageimages {
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.t3-install-displaytwinimagetextarea {
+    pre {
+        border-top: 0;
+    }
+}
+
+.bg-transparent-emulation {
+    padding: 10px;
+    text-align: center;
+    background: url("#{$path-sysext}/install/Resources/Public/Images/bg_transparent_emulation.png");
+
+    img {
+        max-width: 300px;
+    }
+}
+
+.alert-notice {
+    @include alert-variant($btn-default-bg, $btn-default-border, $btn-default-color);
+}
+
+.nav-pills > li > a {
+    border-radius: 0;
+}
+
+h1:first-child {
+    margin-top: 0;
+}
+
+.typo3-docheader {
+    &-functions,
+    &-buttons {
+        min-height: 20px;
+    }
+}
+
+.item {
+    margin: 1em;
+    border: 1px solid $panel-default-heading-bg;
+}
+
+.item .item-heading {
+    padding: 1em;
+    background-color: $panel-default-heading-bg;
+}
+
+.item .item-body {
+    padding: 1em;
+}
+
+.list-group-item {
+    a {
+        display: block;
+    }
+
+    &.active {
+        a {
+            color: #fff;
+        }
+    }
+}
+
+.caret {
+    border: 0;
+    padding-left: 10px;
+
+    &:after {
+        position: relative;
+        top: -8px;
+        left: -10px;
+        content: $fa-var-caret-down;
+        font-family: FontAwesome;
+    }
+}
+
+.collapsed .caret {
+    &:after {
+        content: $fa-var-caret-right;
+        font-family: FontAwesome;
+    }
+}
+
+.panel-heading {
+    position: relative;
+
+    .panel-checkbox {
+        margin: 0;
+        position: absolute;
+        left: 1em;
+        top: 50%;
+        transform: translate(0, -50%);
+    }
+
+    .panel-checkbox + .panel-title {
+        padding-left: 18px;
+    }
+}
+
+a[data-toggle="collapse"] {
+    display: block;
+}
+
+@media (min-width: $screen-md-min) {
+    .affix-bottom {
+        position: absolute;
+    }
+
+    body.standalone .affix-top {
+        position: relative;
+    }
+
+    .affix {
+        position: fixed;
+        top: 35px;
+    }
+
+    body.backend .affix-top {
+        position: fixed;
+        top: 35px;
+    }
+
+    body.backend .leftNavigation {
+        min-height: 425px;
+    }
+}
+
+hr {
+    border-top-color: $panel-default-heading-bg;
+}
+
+.copyright .panel-default:last-child {
+    margin-bottom: 0;
+}
+
+#fixed-footer-handler {
+    height: 32px;
+}
+
+.fixed {
+    position: fixed;
+    bottom: 0;
+    background-color: grey;
+
+    .footer-innerWrap {
+        padding: 1.5em;
+    }
+}
+
+// override 'position: fixed' (set by bootstrap affix via JS) if viewport < MD
+// menu is placed above the content
+#menuWrapper {
+    @media (max-width: $screen-sm-max) {
+        position: relative !important;
+        margin-bottom: 30px;
+    }
+}
+
+#install-menu-button {
+    float: right;
+    margin-bottom: 20px;
+    .navbar-toggle {
+        border: 0;
+        background: #fff;
+        .icon-bar {
+            display: block;
+            width: 22px;
+            height: 2px;
+            border-radius: 1px;
+            background-color: black;
+            & + .icon-bar {
+                margin-top: 4px;
+            }
+        }
+    }
+}
+
+
+//
+// Styles for the "clearable" jquery plugin.
+//
+.form-control-clearable {
+    position: relative;
+
+    .form-control {
+        padding-right: 2.3em;
+    }
+
+    .close {
+        position: absolute;
+        height: 16px;
+        z-index: 3;
+        top: 50%;
+        right: 0.5em;
+        transform: translate(0, -50%);
+
+        .icon {
+            vertical-align: 0;
+        }
+    }
+}
+
+.input-group {
+    .form-control-clearable {
+        display: table-cell;
+
+        .form-control {
+            display: block;
+        }
+    }
+}
+
+@mixin panel-risk-levels($high-color, $medium-color) {
+    &.risk-high > .panel-heading {
+        background: $high-color;
+        color: $gray-lighter;
+    }
+    &.risk-medium > .panel-heading {
+        background: $medium-color;
+        color: $gray-darker;
+    }
+    &.risk-low > .panel-heading {
+        background: white;
+        color: $gray-darker;
+    }
+}
+
+
+a[data-toggle="collapse"] {
+    text-decoration: none;
+}
+
+
+.panel-group-rst {
+
+    .panel-body {
+        padding-right: 0;
+    }
+
+    .panel-rst,
+    .panel-version {
+        border: 0;
+        border-left: 2px solid $gray-light;
+        border-radius: 0;
+        margin: 0;
+
+        &.panel-default .panel-heading {
+            background: $gray-lighter;
+        }
+
+        &.panel-breaking {
+            @include panel-variant($brand-danger, #fff, $brand-danger, $brand-danger);
+            @include panel-risk-levels($brand-danger, lighten($brand-danger,40) );
+        }
+
+        &.panel-deprecation {
+            @include panel-variant($brand-warning, #fff, $brand-warning, $brand-warning);
+            @include panel-risk-levels($brand-warning, lighten($brand-warning,30));
+        }
+
+        &.panel-feature {
+            @include panel-variant($brand-success, #fff, $brand-success, $brand-success);
+            @include panel-risk-levels($brand-success, lighten($brand-success,40));
+        }
+
+        &.panel-important {
+            @include panel-variant($brand-info, #fff, $brand-info, $brand-info);
+            @include panel-risk-levels($brand-info, lighten($brand-info,30));
+        }
+
+        .panel-heading {
+            position: relative;
+
+            a.link-action {
+                cursor: pointer;
+            }
+
+            strong {
+                line-height: 1.5em;
+            }
+        }
+
+        pre {
+            margin: 0;
+            border-radius: 0;
+            border: 0;
+            border-top: 1px solid $gray-light;
+            white-space: pre-wrap;
+            word-break: normal;
+            word-wrap: normal;
+        }
+    }
+}
+
+
+.upgrade_analysis_item_to_filter pre a {
+    text-decoration: underline;
+}

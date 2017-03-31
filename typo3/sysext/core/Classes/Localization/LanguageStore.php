@@ -57,8 +57,6 @@ class LanguageStore implements \TYPO3\CMS\Core\SingletonInterface
 
     /**
      * Initializes the current class.
-     *
-     * @return void
      */
     public function initialize()
     {
@@ -157,7 +155,7 @@ class LanguageStore implements \TYPO3\CMS\Core\SingletonInterface
         ];
         $fileWithoutExtension = GeneralUtility::getFileAbsFileName($this->getFileReferenceWithoutExtension($fileReference));
         foreach ($this->supportedExtensions as $extension) {
-            if (@is_file(($fileWithoutExtension . '.' . $extension))) {
+            if (@is_file($fileWithoutExtension . '.' . $extension)) {
                 $this->configuration[$fileReference]['fileReference'] = $fileWithoutExtension . '.' . $extension;
                 $this->configuration[$fileReference]['fileExtension'] = $extension;
                 break;

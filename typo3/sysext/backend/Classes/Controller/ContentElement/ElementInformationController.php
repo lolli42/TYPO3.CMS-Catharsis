@@ -115,8 +115,6 @@ class ElementInformationController
     /**
      * Determines if table/uid point to database record or file and
      * if user has access to view information
-     *
-     * @return void
      */
     public function init()
     {
@@ -200,7 +198,8 @@ class ElementInformationController
     }
 
     /**
-     * @return void
+     * Compiles the whole content to be outputted, which is then set as content to the moduleTemplate
+     * There is a hook to do a custom rendering of a record.
      */
     public function main()
     {

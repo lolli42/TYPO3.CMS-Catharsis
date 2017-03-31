@@ -133,7 +133,6 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
 
     /**
      * @param \TYPO3\CMS\Extbase\Security\Cryptography\HashService $hashService
-     * @return void
      * @internal
      */
     public function injectHashService(\TYPO3\CMS\Extbase\Security\Cryptography\HashService $hashService)
@@ -170,7 +169,6 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     }
 
     /**
-     * @return void
      * @internal
      */
     public function initializeObject()
@@ -187,7 +185,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     }
 
     /**
-     * @return void
+     * Initializes the current state of the form, based on the request
      */
     protected function initializeFormStateFromRequest()
     {
@@ -201,12 +199,28 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     }
 
     /**
-     * @return void
+     * Initializes the current page data based on the current request, also modifiable by a hook
      */
     protected function initializeCurrentPageFromRequest()
     {
         if (!$this->formState->isFormSubmitted()) {
             $this->currentPage = $this->formDefinition->getPageByIndex(0);
+            if (
+                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
+                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
+            ) {
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'] as $className) {
+                    $hookObj = GeneralUtility::makeInstance($className);
+                    if (method_exists($hookObj, 'afterInitializeCurrentPage')) {
+                        $this->currentPage = $hookObj->afterInitializeCurrentPage(
+                            $this,
+                            $this->currentPage,
+                            null,
+                            $this->request->getArguments()
+                        );
+                    }
+                }
+            }
             return;
         }
         $this->lastDisplayedPage = $this->formDefinition->getPageByIndex($this->formState->getLastDisplayedPageIndex());
@@ -225,10 +239,27 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
         } else {
             $this->currentPage = $this->formDefinition->getPageByIndex($currentPageIndex);
         }
+
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'afterInitializeCurrentPage')) {
+                    $this->currentPage = $hookObj->afterInitializeCurrentPage(
+                        $this,
+                        $this->currentPage,
+                        $this->lastDisplayedPage,
+                        $this->request->getArguments()
+                    );
+                }
+            }
+        }
     }
 
     /**
-     * @return void
+     * Checks if the honey pot is active, and adds a validator if so.
      */
     protected function initializeHoneypotFromRequest()
     {
@@ -255,7 +286,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     }
 
     /**
-     * @return void
+     * Renders a hidden field if the honey pot is active.
      */
     protected function renderHoneypot()
     {
@@ -323,7 +354,6 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     /**
      * @param Page $page
      * @param string $honeypotName
-     * @return void
      */
     protected function setHoneypotNameInSession(Page $page, string $honeypotName)
     {
@@ -363,7 +393,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     }
 
     /**
-     * @return void
+     * Runs throuh all validations
      */
     protected function processSubmittedFormValues()
     {
@@ -406,14 +436,53 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
         };
 
         $value = null;
+
+        GeneralUtility::deprecationLog('EXT:form - calls for "onSubmit" are deprecated since TYPO3 v8 and will be removed in TYPO3 v9');
         $page->onSubmit($this, $value, $requestArguments);
+
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'afterSubmit')) {
+                    $value = $hookObj->afterSubmit(
+                        $this,
+                        $page,
+                        $value,
+                        $requestArguments
+                    );
+                }
+            }
+        }
+
         foreach ($page->getElementsRecursively() as $element) {
             try {
                 $value = ArrayUtility::getValueByPath($requestArguments, $element->getIdentifier(), '.');
             } catch (\RuntimeException $exception) {
                 $value = null;
             }
+
+            GeneralUtility::deprecationLog('EXT:form - calls for "onSubmit" are deprecated since TYPO3 v8 and will be removed in TYPO3 v9');
             $element->onSubmit($this, $value, $requestArguments);
+
+            if (
+                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
+                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
+            ) {
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'] as $className) {
+                    $hookObj = GeneralUtility::makeInstance($className);
+                    if (method_exists($hookObj, 'afterSubmit')) {
+                        $value = $hookObj->afterSubmit(
+                            $this,
+                            $element,
+                            $value,
+                            $requestArguments
+                        );
+                    }
+                }
+            }
 
             $this->formState->setFormValue($element->getIdentifier(), $value);
             $registerPropertyPaths($element->getIdentifier());
@@ -454,7 +523,6 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
      * some kind of "preview" of the form.
      *
      * @param int $pageIndex
-     * @return void
      * @api
      */
     public function overrideCurrentPage(int $pageIndex)
@@ -478,7 +546,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
 
         $this->formState->setLastDisplayedPageIndex($this->currentPage->getIndex());
 
-        if ($this->formDefinition->getRendererClassName() === null) {
+        if ($this->formDefinition->getRendererClassName() === '') {
             throw new RenderingException(sprintf('The form definition "%s" does not have a rendererClassName set.', $this->formDefinition->getIdentifier()), 1326095912);
         }
         $rendererClassName = $this->formDefinition->getRendererClassName();
@@ -496,8 +564,6 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
 
     /**
      * Executes all finishers of this form
-     *
-     * @return void
      */
     protected function invokeFinishers()
     {
@@ -667,7 +733,6 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     /**
      * @param string $identifier
      * @param mixed $value
-     * @return void
      * @internal
      */
     public function offsetSet($identifier, $value)
@@ -677,7 +742,6 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
 
     /**
      * @param string $identifier
-     * @return void
      * @internal
      */
     public function offsetUnset($identifier)
@@ -781,11 +845,12 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
      * is outputted to the browser.
      *
      * @param FormRuntime $formRuntime
-     * @return void
      * @api
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function beforeRendering(FormRuntime $formRuntime)
     {
+        GeneralUtility::logDeprecatedFunction();
     }
 
     /**

@@ -2149,6 +2149,306 @@ class TcaMigrationTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     /**
      * @return array
      */
+    public function migratePageLocalizationDefinitionsDataProvider()
+    {
+        return [
+            'missing l10n_mode' => [
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                ],
+                                'l10n_mode' => 'any-possible-value',
+                            ],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                ],
+                            ],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                ],
+                                'l10n_mode' => 'any-possible-value',
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+            'missing allowLanguageSynchronization' => [
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                    'behaviour' => [
+                                        'allowLanguageSynchronization' => true,
+                                    ]
+                                ],
+                            ],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                    'behaviour' => []
+                                ],
+                            ],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                    'behaviour' => [
+                                        'allowLanguageSynchronization' => true,
+                                    ]
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+            'superfluous l10n_mode' => [
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                ],
+                                'l10n_mode' => 'any-possible-value',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+            'superfluous allowLanguageSynchronization' => [
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                    'behaviour' => [
+                                        'allowLanguageSynchronization' => true,
+                                    ]
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'pages' => [
+                        'columns' => [
+                            'aColumn' => [],
+                        ],
+                    ],
+                    'pages_language_overlay' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'input',
+                                    'behaviour' => []
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+        ];
+    }
+
+    /**
+     * @param array $givenConfig
+     * @param array $expectedConfig
+     * @test
+     * @dataProvider migratePageLocalizationDefinitionsDataProvider
+     */
+    public function migratePageLocalizationDefinitions(array $givenConfig, array $expectedConfig)
+    {
+        $subject = new TcaMigration();
+        $this->assertEquals($expectedConfig, $subject->migrate($givenConfig));
+    }
+
+    /**
+     * @return array
+     */
+    public function migrateInlineLocalizationModeDataProvider()
+    {
+        return [
+            'remove counter-productive localizationMode=keep' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'behaviour' => [
+                                        'localizationMode' => 'keep',
+                                        'allowLanguageSynchronization' => true,
+                                    ],
+                                ]
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'behaviour' => [
+                                        'allowLanguageSynchronization' => true,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+            'keep deprecated localizationMode=keep' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'behaviour' => [
+                                        'localizationMode' => 'keep',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'behaviour' => [
+                                        'localizationMode' => 'keep',
+                                    ],
+                                ]
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+            'keep deprecated localizationMode=select' => [
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'behaviour' => [
+                                        'localizationMode' => 'select',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'aTable' => [
+                        'columns' => [
+                            'aColumn' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'behaviour' => [
+                                        'localizationMode' => 'select',
+                                    ],
+                                ]
+                            ],
+                        ],
+                    ],
+                ]
+            ],
+        ];
+    }
+
+    /**
+     * @param array $givenConfig
+     * @param array $expectedConfig
+     * @test
+     * @dataProvider migrateInlineLocalizationModeDataProvider
+     */
+    public function migrateInlineLocalizationMode(array $givenConfig, array $expectedConfig)
+    {
+        $subject = new TcaMigration();
+        $this->assertEquals($expectedConfig, $subject->migrate($givenConfig));
+        $this->assertNotEmpty($subject->getMessages());
+    }
+
+    /**
+     * @return array
+     */
     public function migrateMovesRequestUpdateCtrlFieldToColumnsDataProvider()
     {
         return [
@@ -4853,7 +5153,7 @@ class TcaMigrationTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     public function migrateSuggestWizardDataProvider()
     {
         return [
-            'no suggest wizard in main field but configured in columnOverrides' => [
+            'no suggest wizard in main field but configured in columnsOverrides' => [
                 [
                     'aTable' => [
                         'columns' => [
@@ -4908,7 +5208,7 @@ class TcaMigrationTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                     ],
                 ],
             ],
-            'no suggest wizard in main field but configured in columnOverrides with options' => [
+            'no suggest wizard in main field but configured in columnsOverrides with options' => [
                 [
                     'aTable' => [
                         'columns' => [
@@ -5599,5 +5899,608 @@ class TcaMigrationTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     public function migrateImageManipulationRatios(array $input, array $expected)
     {
         $this->assertEquals($expected, (new TcaMigration())->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateinputDateTimeMaxNotDefinedAndRenderTypeNotDefined()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input'
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input'
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateinputDateTimeMaxNotDefinedAndRenderTypeNotInputDateTime()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'fooBar'
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'fooBar'
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateinputDateTimeMaxNotDefined()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'inputDateTime'
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'inputDateTime'
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateinputDateTimeMaxDefined()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'inputDateTime',
+                            'max' => 42,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'inputDateTime',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateinputDateTimeMaxDefinedAndRenderTypeNotDefined()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'max' => 42,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'max' => 42,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateinputDateTimeMaxDefinedAndRenderTypeNotDateTime()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'fooBar',
+                            'max' => 42,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'input',
+                            'renderType' => 'fooBar',
+                            'max' => 42,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateForeignTypesOverride()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'foreign_types' => [
+                                '0' => [
+                                    'showitem' => 'bar'
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'overrideChildTca' => [
+                                'types' => [
+                                    '0' => [
+                                        'showitem' => 'bar'
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateOfChildOverrideIsSkippedWhenNewConfigIsFound()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'foreign_types' => [
+                                '0' => [
+                                    'showitem' => 'bar'
+                                ],
+                            ],
+                            'overrideChildTca' => [
+                                'types' => [
+                                    '0' => [
+                                        'showitem' => 'baz'
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $expected = $input;
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateForeignDefaultsOverride()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'foreign_record_defaults' => [
+                                'aField' => 'overriddenValue',
+                                'bField' => 'overriddenValue',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'overrideChildTca' => [
+                                'columns' => [
+                                    'aField' => [
+                                        'config' => [
+                                            'default' => 'overriddenValue'
+                                        ],
+                                    ],
+                                    'bField' => [
+                                        'config' => [
+                                            'default' => 'overriddenValue'
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateForeignSelectorOverrides()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'foreign_selector' => 'uid_local',
+                            'foreign_selector_fieldTcaOverride' => [
+                                'label' => 'aDifferentLabel',
+                                'config' => [
+                                    'aGivenSetting' => 'overrideValue',
+                                    'aNewSetting' => 'anotherNewValue',
+                                    'appearance' => [
+                                        'elementBrowserType' => 'file',
+                                        'elementBrowserAllowed' => 'jpg,png'
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'foo' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'foreign_selector' => 'uid_local',
+                            'overrideChildTca' => [
+                                'columns' => [
+                                    'uid_local' => [
+                                        'label' => 'aDifferentLabel',
+                                        'config' => [
+                                            'aGivenSetting' => 'overrideValue',
+                                            'aNewSetting' => 'anotherNewValue',
+                                            'appearance' => [
+                                                'elementBrowserType' => 'file',
+                                                'elementBrowserAllowed' => 'jpg,png'
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migrateAllOverridesFromColumnOverride()
+    {
+        $input = [
+            'aTable' => [
+                'types' => [
+                    'textmedia' => [
+                        'columnsOverrides' => [
+                            'assets' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'foreign_selector' => 'uid_local',
+                                    'foreign_types' => [
+                                        '0' => [
+                                            'showitem' => 'bar'
+                                        ],
+                                    ],
+                                    'foreign_selector_fieldTcaOverride' => [
+                                        'label' => 'aDifferentLabel',
+                                        'config' => [
+                                            'aGivenSetting' => 'overrideValue',
+                                            'aNewSetting' => 'anotherNewValue',
+                                            'appearance' => [
+                                                'elementBrowserType' => 'file',
+                                                'elementBrowserAllowed' => 'jpg,png'
+                                            ],
+                                        ],
+                                    ],
+                                    'foreign_record_defaults' => [
+                                        'aField' => 'overriddenValue',
+                                        'bField' => 'overriddenValue',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $expected = [
+            'aTable' => [
+                'types' => [
+                    'textmedia' => [
+                        'columnsOverrides' => [
+                            'assets' => [
+                                'config' => [
+                                    'type' => 'inline',
+                                    'foreign_selector' => 'uid_local',
+                                    'overrideChildTca' => [
+                                        'types' => [
+                                            '0' => [
+                                                'showitem' => 'bar'
+                                            ],
+                                        ],
+                                        'columns' => [
+                                            'uid_local' => [
+                                                'label' => 'aDifferentLabel',
+                                                'config' => [
+                                                    'aGivenSetting' => 'overrideValue',
+                                                    'aNewSetting' => 'anotherNewValue',
+                                                    'appearance' => [
+                                                        'elementBrowserType' => 'file',
+                                                        'elementBrowserAllowed' => 'jpg,png'
+                                                    ],
+                                                ],
+                                            ],
+                                            'aField' => [
+                                                'config' => [
+                                                    'default' => 'overriddenValue'
+                                                ],
+                                            ],
+                                            'bField' => [
+                                                'config' => [
+                                                    'default' => 'overriddenValue'
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
+    }
+
+    /**
+     * @test
+     */
+    public function migratePartlyOverridesFromColumnOverride()
+    {
+        $input = [
+            'aTable' => [
+                'columns' => [
+                    'assets' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'foreign_selector' => 'uid_local',
+                            'overrideChildTca' => [
+                                'types' => [
+                                    '0' => [
+                                        'showitem' => 'foo'
+                                    ],
+                                ],
+                                'columns' => [
+                                    'uid_local' => [
+                                        'label' => 'Label',
+                                        'config' => [
+                                            'appearance' => [
+                                                'elementBrowserType' => 'file',
+                                                'elementBrowserAllowed' => 'jpg,png'
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'types' => [
+                    'textmedia' => [
+                        'columnsOverrides' => [
+                            'assets' => [
+                                'config' => [
+                                    'foreign_types' => [
+                                        '0' => [
+                                            'showitem' => 'bar'
+                                        ],
+                                    ],
+                                    'foreign_selector_fieldTcaOverride' => [
+                                        'config' => [
+                                            'appearance' => [
+                                                'elementBrowserAllowed' => 'jpg,png'
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $expected = [
+            'aTable' => [
+                'columns' => [
+                    'assets' => [
+                        'config' => [
+                            'type' => 'inline',
+                            'foreign_selector' => 'uid_local',
+                            'overrideChildTca' => [
+                                'types' => [
+                                    '0' => [
+                                        'showitem' => 'foo'
+                                    ],
+                                ],
+                                'columns' => [
+                                    'uid_local' => [
+                                        'label' => 'Label',
+                                        'config' => [
+                                            'appearance' => [
+                                                'elementBrowserType' => 'file',
+                                                'elementBrowserAllowed' => 'jpg,png'
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'types' => [
+                    'textmedia' => [
+                        'columnsOverrides' => [
+                            'assets' => [
+                                'config' => [
+                                    'overrideChildTca' => [
+                                        'types' => [
+                                            '0' => [
+                                                'showitem' => 'bar'
+                                            ],
+                                        ],
+                                        'columns' => [
+                                            'uid_local' => [
+                                                'config' => [
+                                                    'appearance' => [
+                                                        'elementBrowserAllowed' => 'jpg,png'
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $subject = new TcaMigration();
+        $this->assertEquals($expected, $subject->migrate($input));
     }
 }

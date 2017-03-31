@@ -21,12 +21,22 @@ TYPO3:
                 10: 'TYPO3.CMS.Form.mixins.formElementMixins.BaseFormElementMixin'
               rendererClassName: 'TYPO3\CMS\Form\Domain\Renderer\FluidFormRenderer'
               renderingOptions:
+                __inheritances:
+                  10: 'TYPO3.CMS.Form.mixins.translationSettingsMixin'
                 templateRootPaths:
                   10: 'EXT:form/Resources/Private/Frontend/Templates/'
                 partialRootPaths:
                   10: 'EXT:form/Resources/Private/Frontend/Partials/'
                 layoutRootPaths:
                   10: 'EXT:form/Resources/Private/Frontend/Layouts/'
+                addQueryString: false
+                argumentsToBeExcludedFromQueryString: []
+                additionalParams: []
+                controllerAction: perform
+                httpMethod: post
+                httpEnctype: 'multipart/form-data'
+                _isCompositeFormElement: false
+                _isTopLevelFormElement: true
 
                 honeypot:
                   enable: true
@@ -40,15 +50,66 @@ TYPO3:
               __inheritances:
                 10: 'TYPO3.CMS.Form.mixins.formElementMixins.BaseFormElementMixin'
               implementationClassName: 'TYPO3\CMS\Form\Domain\Model\FormElements\Page'
- 
+              renderingOptions:
+                _isTopLevelFormElement: true
+                _isCompositeFormElement: true
+
             SummaryPage:
               __inheritances:
                 10: 'TYPO3.CMS.Form.prototypes.standard.formElementsDefinition.Page'
+              renderingOptions:
+                _isTopLevelFormElement: true
+                _isCompositeFormElement: false
 
             Fieldset:
               __inheritances:
                 10: 'TYPO3.CMS.Form.mixins.formElementMixins.FormElementMixin'
               implementationClassName: 'TYPO3\CMS\Form\Domain\Model\FormElements\Section'
+              renderingOptions:
+                _isCompositeFormElement: true
+
+            GridContainer:
+              __inheritances:
+                10: 'TYPO3.CMS.Form.mixins.formElementMixins.FormElementMixin'
+              implementationClassName: 'TYPO3\CMS\Form\Domain\Model\FormElements\GridContainer'
+              renderingOptions:
+                _isCompositeFormElement: true
+                _isGridContainerFormElement: true
+              properties:
+                elementClassAttribute: 'container'
+                # overrules 'GridRow.properties.gridColumnClassAutoConfiguration'
+                gridColumnClassAutoConfiguration:
+                  gridSize: 12
+                  viewPorts:
+                    xs:
+                      classPattern: 'col-xs-{@numbersOfColumnsToUse}'
+                    sm:
+                      classPattern: 'col-sm-{@numbersOfColumnsToUse}'
+                    md:
+                      classPattern: 'col-md-{@numbersOfColumnsToUse}'
+                    lg:
+                      classPattern: 'col-lg-{@numbersOfColumnsToUse}'
+
+            GridRow:
+              __inheritances:
+                10: 'TYPO3.CMS.Form.mixins.formElementMixins.FormElementMixin'
+              implementationClassName: 'TYPO3\CMS\Form\Domain\Model\FormElements\GridRow'
+              properties:
+                elementClassAttribute: 'row'
+                gridColumnClassAutoConfiguration:
+                  gridSize: 12
+                  viewPorts:
+                    xs:
+                      classPattern: 'col-xs-{@numbersOfColumnsToUse}'
+                    sm:
+                      classPattern: 'col-sm-{@numbersOfColumnsToUse}'
+                    md:
+                      classPattern: 'col-md-{@numbersOfColumnsToUse}'
+                    lg:
+                      classPattern: 'col-lg-{@numbersOfColumnsToUse}'
+              renderingOptions:
+                _isCompositeFormElement: true
+                _isGridRowFormElement: true
 
             ### FORM ELEMENTS: INPUT ###
             Text:
@@ -62,6 +123,9 @@ TYPO3:
             AdvancedPassword:
               __inheritances:
                 10: 'TYPO3.CMS.Form.prototypes.standard.formElementsDefinition.Password'
+              # implementationClassName 'TYPO3\CMS\Form\Domain\Model\FormElements\AdvancedPassword'
+              # is deprecated since TYPO3 v8 and will be removed in TYPO3 v9
+              # will be 'TYPO3\CMS\Form\Domain\Model\FormElements\GenericFormElement' in TYPO3 v9
               implementationClassName: 'TYPO3\CMS\Form\Domain\Model\FormElements\AdvancedPassword'
               properties:
                 elementClassAttribute: 'input-medium'
@@ -82,6 +146,10 @@ TYPO3:
               properties:
                 renderAsHiddenField: false
                 styleAttribute: 'position:absolute; margin:0 0 0 -999em;'
+
+            Hidden:
+              __inheritances:
+                10: 'TYPO3.CMS.Form.mixins.formElementMixins.FormElementMixin'
 
             ### FORM ELEMENTS: SELECT ###
             Checkbox:
@@ -131,10 +199,6 @@ TYPO3:
               properties:
                 text: ''
 
-            Hidden:
-              __inheritances:
-                10: 'TYPO3.CMS.Form.mixins.formElementMixins.FormElementMixin'
-
             ContentElement:
               __inheritances:
                 10: 'TYPO3.CMS.Form.mixins.formElementMixins.ReadOnlyFormElementMixin'
@@ -162,15 +226,11 @@ TYPO3:
 
           finishersDefinition:
             Closure:
-              __inheritances:
-                10: 'TYPO3.CMS.Form.mixins.finishersTranslationSettingsMixin'
               implementationClassName: 'TYPO3\CMS\Form\Domain\Finishers\ClosureFinisher'
               options:
                 #closure:
 
             Confirmation:
-              __inheritances:
-                10: 'TYPO3.CMS.Form.mixins.finishersTranslationSettingsMixin'
               implementationClassName: 'TYPO3\CMS\Form\Domain\Finishers\ConfirmationFinisher'
               #options:
                 #message: ''
@@ -187,8 +247,6 @@ TYPO3:
               implementationClassName: 'TYPO3\CMS\Form\Domain\Finishers\DeleteUploadsFinisher'
 
             FlashMessage:
-              __inheritances:
-                10: 'TYPO3.CMS.Form.mixins.finishersTranslationSettingsMixin'
               implementationClassName: 'TYPO3\CMS\Form\Domain\Finishers\FlashMessageFinisher'
               #options:
                 #messageBody: ''
@@ -262,20 +320,11 @@ TYPO3:
         translationSettingsMixin:
           translation:
             translationFile: 'EXT:form/Resources/Private/Language/locallang.xlf'
-            translatePropertyValueIfEmpty: true
-
-        finishersTranslationSettingsMixin:
-          options:
-            __inheritances:
-              10: 'TYPO3.CMS.Form.mixins.translationSettingsMixin'
+            #translatePropertyValueIfEmpty: true
 
         ########### FORM ELEMENT MIXINS ###########
         formElementMixins:
-          BaseFormElementMixin:
-            renderingOptions:
-              __inheritances:
-                10: 'TYPO3.CMS.Form.mixins.translationSettingsMixin'
-
+          BaseFormElementMixin: []
               # The form element type is chosen as the template name by default.
               # If you want another name you can set it with 'templateName'
               #templateName: 'CustomTemplateName'
@@ -293,6 +342,16 @@ TYPO3:
               containerClassAttribute: 'input'
               elementClassAttribute: ''
               elementErrorClassAttribute: 'error'
+              #gridColumnClassAutoConfiguration:
+              #  viewPorts:
+              #    xs:
+              #      numbersOfColumnsToUse: ''
+              #    sm:
+              #      numbersOfColumnsToUse: ''
+              #    md:
+              #      numbersOfColumnsToUse: ''
+              #    lg:
+              #      numbersOfColumnsToUse: ''
 
           TextMixin:
             __inheritances:
@@ -318,8 +377,6 @@ TYPO3:
               saveToFileMount: '1:/user_upload/'
 
         finishersEmailMixin:
-          __inheritances:
-            10: 'TYPO3.CMS.Form.mixins.finishersTranslationSettingsMixin'
           implementationClassName: 'TYPO3\CMS\Form\Domain\Finishers\EmailFinisher'
           options:
             #subject: ''

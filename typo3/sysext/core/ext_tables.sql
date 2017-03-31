@@ -37,13 +37,12 @@ CREATE TABLE be_groups (
 #
 CREATE TABLE be_sessions (
 	ses_id varchar(32) DEFAULT '' NOT NULL,
-	ses_name varchar(100) DEFAULT '' NOT NULL,
 	ses_iplock varchar(39) DEFAULT '' NOT NULL,
 	ses_userid int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_data longblob,
 	ses_backuserid int(11) NOT NULL default '0',
-	PRIMARY KEY (ses_id,ses_name),
+	PRIMARY KEY (ses_id),
 	KEY ses_tstamp (ses_tstamp)
 );
 
@@ -410,7 +409,7 @@ CREATE TABLE sys_file_reference (
 	# Local usage overlay fields
 	title tinytext,
 	description text,
-	alternative tinytext,
+	alternative text,
 	link varchar(1024) DEFAULT '' NOT NULL,
 	crop varchar(4000) DEFAULT '' NOT NULL,
 	autoplay tinyint(4) DEFAULT '0' NOT NULL,
@@ -420,7 +419,8 @@ CREATE TABLE sys_file_reference (
 	KEY tablenames_fieldname (tablenames(32),fieldname(12)),
 	KEY deleted (deleted),
 	KEY uid_local (uid_local),
-	KEY uid_foreign (uid_foreign)
+	KEY uid_foreign (uid_foreign),
+	KEY combined_1 (l10n_parent, t3ver_oid, t3ver_wsid, t3ver_state, deleted)
 );
 
 
@@ -582,9 +582,9 @@ CREATE TABLE sys_refindex (
 	ref_string varchar(1024) DEFAULT '' NOT NULL,
 
 	PRIMARY KEY (hash),
-	KEY lookup_rec (tablename,recuid),
-	KEY lookup_uid (ref_table,ref_uid),
-	KEY lookup_string (ref_string)
+	KEY lookup_rec (tablename(240),recuid),
+	KEY lookup_uid (ref_table(240),ref_uid),
+	KEY lookup_string (ref_string(255))
 );
 
 #

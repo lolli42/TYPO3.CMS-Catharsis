@@ -47,7 +47,7 @@ class OtherLanguageContent extends AbstractNode
             || $fieldConfig['config']['type'] === 'inline'
             || $fieldConfig['config']['type'] === 'flex'
             || ($fieldConfig['config']['type'] === 'group' && isset($fieldConfig['config']['MM']))
-            || ($fieldConfig['config']['type'] === 'selecet' && isset($fieldConfig['config']['MM']))
+            || ($fieldConfig['config']['type'] === 'select' && isset($fieldConfig['config']['MM']))
         ) {
             // Early return if there is no default language row or the display is disabled
             return $result;
@@ -139,7 +139,7 @@ class OtherLanguageContent extends AbstractNode
                         '',
                         $config['config']['uploadfolder'], 0, ' align="middle"'
                     ) .
-                    ($absFilePath ? BackendUtility::wrapClickMenuOnIcon($fileIcon, $absFilePath, 0, 1, '', '+copy,info,edit,view') : $fileIcon) .
+                    ($absFilePath ? BackendUtility::wrapClickMenuOnIcon($fileIcon, $absFilePath, 0) : $fileIcon) .
                     $imgPath .
                     '</span>';
             }

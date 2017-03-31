@@ -258,7 +258,7 @@ class EvaluateDisplayConditions implements FormDataProviderInterface
      */
     protected function parseSingleConditionString(string $conditionString, array $databaseRow, array $flexContext = []): array
     {
-        $conditionArray = GeneralUtility::trimExplode(':', $conditionString);
+        $conditionArray = GeneralUtility::trimExplode(':', $conditionString, false, 4);
         $namedConditionArray = [
             'type' => $conditionArray[0],
         ];
@@ -415,10 +415,10 @@ class EvaluateDisplayConditions implements FormDataProviderInterface
                         1481382954
                     );
                 }
-                $namedConditionArray['function'] = $namedConditionArray[1];
-                array_shift($namedConditionArray);
-                array_shift($namedConditionArray);
-                $namedConditionArray['parameters'] = $namedConditionArray;
+                $namedConditionArray['function'] = $conditionArray[1];
+                array_shift($conditionArray);
+                array_shift($conditionArray);
+                $namedConditionArray['parameters'] = $conditionArray;
                 $namedConditionArray['record'] = $databaseRow;
                 break;
             default:

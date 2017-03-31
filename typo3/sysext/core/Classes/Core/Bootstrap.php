@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 /**
  * This class encapsulates bootstrap related methods.
  * It is required directly as the very first thing in entry scripts and
- * used to define all base things like constants and pathes and so on.
+ * used to define all base things like constants and paths and so on.
  *
  * Most methods in this class have dependencies to each other. They can
  * not be called in arbitrary order. The methods are ordered top down, so
@@ -179,7 +179,7 @@ class Bootstrap
     }
 
     /**
-     * Run the base setup that checks server environment, determines pathes,
+     * Run the base setup that checks server environment, determines paths,
      * populates base files and sets common configuration.
      *
      * Script execution will be aborted if something fails here.
@@ -320,15 +320,16 @@ class Bootstrap
     {
         if ($this->response instanceof \Psr\Http\Message\ResponseInterface) {
             if (!headers_sent()) {
-                foreach ($this->response->getHeaders() as $name => $values) {
-                    header($name . ': ' . implode(', ', $values));
-                }
                 // If the response code was not changed by legacy code (still is 200)
                 // then allow the PSR-7 response object to explicitly set it.
                 // Otherwise let legacy code take precedence.
                 // This code path can be deprecated once we expose the response object to third party code
                 if (http_response_code() === 200) {
                     header('HTTP/' . $this->response->getProtocolVersion() . ' ' . $this->response->getStatusCode() . ' ' . $this->response->getReasonPhrase());
+                }
+
+                foreach ($this->response->getHeaders() as $name => $values) {
+                    header($name . ': ' . implode(', ', $values));
                 }
             }
             echo $this->response->getBody()->__toString();
@@ -343,7 +344,6 @@ class Bootstrap
      *
      * @param string $objectName Object name, as later used by the Object Manager
      * @param object $instance The instance to register
-     * @return void
      * @internal This is not a public API method, do not use in own extensions
      */
     public function setEarlyInstance($objectName, $instance)
@@ -571,7 +571,6 @@ class Bootstrap
             'cachedParametersWhiteList' => GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashOnlyForParameters'], true),
             'excludedParameters' => GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParameters'], true),
             'requireCacheHashPresenceParameters' => GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashRequiredParameters'], true),
-            'includePageId' => $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashIncludePageId']
         ];
         if (trim($GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParametersIfEmpty']) === '*') {
             $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludeAllEmptyParameters'] = true;
@@ -911,10 +910,42 @@ class Bootstrap
      * @param bool $allowCaching True, if reading compiled ext_tables file from cache is allowed
      * @return Bootstrap
      * @internal This is not a public API method, do not use in own extensions
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function loadExtensionTables($allowCaching = true)
     {
+        GeneralUtility::logDeprecatedFunction();
+        $this->loadBaseTca($allowCaching)->loadExtTables($allowCaching);
+        return $this;
+    }
+
+    /**
+     * Load $TCA
+     *
+     * This will mainly set up $TCA through extMgm API.
+     *
+     * @param bool $allowCaching True, if loading TCA from cache is allowed
+     * @return Bootstrap
+     * @internal This is not a public API method, do not use in own extensions
+     */
+    public function loadBaseTca(bool $allowCaching = true): Bootstrap
+    {
         ExtensionManagementUtility::loadBaseTca($allowCaching);
+        return $this;
+    }
+
+    /**
+     * Load ext_tables and friends.
+     *
+     * This will mainly load and execute ext_tables.php files of loaded extensions
+     * or the according cache file if exists.
+     *
+     * @param bool $allowCaching True, if reading compiled ext_tables file from cache is allowed
+     * @return Bootstrap
+     * @internal This is not a public API method, do not use in own extensions
+     */
+    public function loadExtTables(bool $allowCaching = true): Bootstrap
+    {
         ExtensionManagementUtility::loadExtTables($allowCaching);
         $this->runExtTablesPostProcessingHooks();
         return $this;
@@ -924,7 +955,6 @@ class Bootstrap
      * Check for registered ext tables hooks and run them
      *
      * @throws \UnexpectedValueException
-     * @return void
      */
     protected function runExtTablesPostProcessingHooks()
     {

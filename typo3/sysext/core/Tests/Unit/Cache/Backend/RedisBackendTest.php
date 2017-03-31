@@ -63,7 +63,6 @@ class RedisBackendTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 
     /**
      * Sets up the redis backend used for testing
-     *
      */
     protected function setUpBackend(array $backendOptions = [])
     {
@@ -159,6 +158,28 @@ class RedisBackendTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $this->expectExceptionCode(1289679155);
 
         $this->setUpBackend(['compressionLevel' => 11]);
+    }
+
+    /**
+     * @test Functional
+     */
+    public function setConnectionTimeoutThrowsExceptionIfConnectionTimeoutIsNotInteger()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionCode(1487849315);
+
+        $this->setUpBackend(['connectionTimeout' => 'foo']);
+    }
+
+    /**
+     * @test Functional
+     */
+    public function setConnectionTimeoutThrowsExceptionIfConnectionTimeoutIsNegative()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionCode(1487849326);
+
+        $this->setUpBackend(['connectionTimeout' => -1]);
     }
 
     /**

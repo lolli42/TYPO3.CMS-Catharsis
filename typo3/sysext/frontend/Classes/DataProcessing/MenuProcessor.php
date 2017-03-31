@@ -54,7 +54,6 @@ use TYPO3\CMS\Frontend\ContentObject\DataProcessorInterface;
  *     }
  *   }
  * }
- *
  */
 class MenuProcessor implements DataProcessorInterface
 {
@@ -292,7 +291,7 @@ class MenuProcessor implements DataProcessorInterface
     }
 
     /**
-     * @return void
+     * Prepare configuration for a certain menu level in the hierarchy
      */
     public function prepareLevelConfiguration()
     {
@@ -307,7 +306,7 @@ class MenuProcessor implements DataProcessorInterface
     }
 
     /**
-     * @return void
+     * Prepare the configuration when rendering a language menu
      */
     public function prepareLevelLanguageConfiguration()
     {
@@ -338,7 +337,7 @@ class MenuProcessor implements DataProcessorInterface
     }
 
     /**
-     * @return void
+     * Build the menu configuration so it can be treated by HMENU cObject
      */
     public function buildConfiguration()
     {
@@ -488,7 +487,6 @@ class MenuProcessor implements DataProcessorInterface
      *
      * @param array $menuItem
      * @param array $conf
-     * @return void
      */
     public function replacePlaceholderInRenderedMenuItem($menuItem, $conf)
     {

@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Form\Domain\Model\FormElements;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Validation\Validator\NotEmptyValidator;
 use TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface;
 
@@ -42,11 +43,23 @@ class Section extends AbstractSection implements FormElementInterface
      * Will be called as soon as the element is (tried to be) added to a form
      * @see registerInFormIfPossible()
      *
-     * @return void
      * @internal
      */
     public function initializeFormElement()
     {
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['initializeFormElement'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['initializeFormElement'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['initializeFormElement'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'initializeFormElement')) {
+                    $hookObj->initializeFormElement(
+                        $this
+                    );
+                }
+            }
+        }
     }
 
     /**
@@ -104,7 +117,6 @@ class Section extends AbstractSection implements FormElementInterface
      *
      * @param string $key
      * @param mixed $value
-     * @return void
      * @api
      */
     public function setProperty(string $key, $value)
@@ -141,7 +153,6 @@ class Section extends AbstractSection implements FormElementInterface
      * Add a validator to the element
      *
      * @param ValidatorInterface $validator
-     * @return void
      * @api
      */
     public function addValidator(ValidatorInterface $validator)

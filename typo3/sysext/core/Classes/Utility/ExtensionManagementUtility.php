@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Core\Utility;
  */
 
 use TYPO3\CMS\Core\Category\CategoryRegistry;
-use TYPO3\CMS\Core\Imaging\IconProvider\BitmapIconProvider;
 use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Migrations\TcaMigration;
 use TYPO3\CMS\Core\Package\PackageManager;
@@ -215,8 +214,6 @@ class ExtensionManagementUtility
 
     /**
      * Clears the extension key map.
-     *
-     * @return void
      */
     public static function clearExtensionKeyMap()
     {
@@ -263,7 +260,6 @@ class ExtensionManagementUtility
      *
      * @param string $table The table name of a table already present in $GLOBALS['TCA'] with a columns section
      * @param array $columnArray The array with the additional columns (typical some fields an extension wants to add)
-     * @return void
      */
     public static function addTCAcolumns($table, $columnArray)
     {
@@ -285,7 +281,6 @@ class ExtensionManagementUtility
      * @param string $newFieldsString Field list to add.
      * @param string $typeList List of specific types to add the field list to. (If empty, all type entries are affected)
      * @param string $position Insert fields before (default) or after one, or replace a field
-     * @return void
      */
     public static function addToAllTCAtypes($table, $newFieldsString, $typeList = '', $position = '')
     {
@@ -405,7 +400,6 @@ class ExtensionManagementUtility
      * @param string $field Name of the field that has the palette to be extended
      * @param string $addFields List of fields to be added to the palette
      * @param string $insertionPosition Insert fields before (default) or after one
-     * @return void
      */
     public static function addFieldsToAllPalettesOfField($table, $field, $addFields, $insertionPosition = '')
     {
@@ -458,7 +452,6 @@ class ExtensionManagementUtility
      * @param string $palette Name of the palette to be extended
      * @param string $addFields List of fields to be added to the palette
      * @param string $insertionPosition Insert fields before (default) or after one
-     * @return void
      */
     public static function addFieldsToPalette($table, $palette, $addFields, $insertionPosition = '')
     {
@@ -499,7 +492,6 @@ class ExtensionManagementUtility
      * @param array $item New item to add
      * @param string $relativeToField Add item relative to existing field
      * @param string $relativePosition Valid keywords: 'before', 'after'
-     * @return void
      */
     public static function addTcaSelectItem($table, $field, array $item, $relativeToField = '', $relativePosition = '')
     {
@@ -571,13 +563,17 @@ class ExtensionManagementUtility
             ],
             'foreign_label' => 'uid_local',
             'foreign_selector' => 'uid_local',
-            'foreign_selector_fieldTcaOverride' => [
-                'config' => [
-                    'appearance' => [
-                        'elementBrowserType' => 'file',
-                        'elementBrowserAllowed' => $allowedFileExtensions
-                    ]
-                ]
+            'overrideChildTca' => [
+                'columns' => [
+                    'uid_local' => [
+                        'config' => [
+                            'appearance' => [
+                                'elementBrowserType' => 'file',
+                                'elementBrowserAllowed' => $allowedFileExtensions
+                            ],
+                        ],
+                    ],
+                ],
             ],
             'filter' => [
                 [
@@ -595,10 +591,6 @@ class ExtensionManagementUtility
                     'width' => '45',
                     'height' => '45c',
                 ],
-                'showPossibleLocalizationRecords' => false,
-                'showRemovedLocalizationRecords' => false,
-                'showSynchronizationLink' => false,
-                'showAllLocalizationLink' => false,
 
                 'enabledControls' => [
                     'info' => true,
@@ -607,11 +599,9 @@ class ExtensionManagementUtility
                     'sort' => false,
                     'hide' => true,
                     'delete' => true,
-                    'localize' => true,
                 ],
             ],
             'behaviour' => [
-                'localizationMode' => 'select',
                 'localizeChildrenAtParentLocalization' => true,
             ],
         ];
@@ -626,7 +616,6 @@ class ExtensionManagementUtility
      *
      * @param string $addFields List of fields to be added to the user settings
      * @param string $insertionPosition Insert fields before (default) or after one
-     * @return void
      */
     public static function addFieldsToUserSettings($addFields, $insertionPosition = '')
     {
@@ -814,7 +803,6 @@ class ExtensionManagementUtility
      * FOR USE IN ext_tables.php FILES
      *
      * @param string $table Table name
-     * @return void
      */
     public static function allowTableOnStandardPages($table)
     {
@@ -831,9 +819,11 @@ class ExtensionManagementUtility
      * @param string $position Passed to \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModule, see reference there
      * @param array $moduleConfiguration Icon with array keys: access, icon, labels to configure the module
      * @throws \InvalidArgumentException
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use addModule instead for a regular module, as ExtJS usage is discouraged,
      */
     public static function addExtJSModule($extensionName, $mainModuleName, $subModuleName = '', $position = '', array $moduleConfiguration = [])
     {
+        GeneralUtility::logDeprecatedFunction();
         if (empty($extensionName)) {
             throw new \InvalidArgumentException('The extension name must not be empty', 1325938973);
         }
@@ -880,11 +870,14 @@ class ExtensionManagementUtility
 
         // Register the icon and move it too "iconIdentifier"
         if (!empty($moduleConfiguration['icon'])) {
-            $iconIdentifier = 'module-' . $moduleSignature;
             $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
-            $iconRegistry->registerIcon($iconIdentifier, BitmapIconProvider::class, [
-                'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'])
-            ]);
+            $iconIdentifier = 'module-' . $moduleSignature;
+            $iconProvider = $iconRegistry->detectIconProvider($moduleConfiguration['icon']);
+            $iconRegistry->registerIcon(
+                $iconIdentifier,
+                $iconProvider,
+                [ 'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon']) ]
+            );
             $moduleConfiguration['iconIdentifier'] = $iconIdentifier;
             unset($moduleConfiguration['icon']);
         }
@@ -901,7 +894,6 @@ class ExtensionManagementUtility
      * @param string $position Can be used to set the position of the $sub module within the list of existing submodules for the main module. $position has this syntax: [cmd]:[submodule-key]. cmd can be "after", "before" or "top" (or blank which is default). If "after"/"before" then submodule will be inserted after/before the existing submodule with [submodule-key] if found. If not found, the bottom of list. If "top" the module is inserted in the top of the submodule list.
      * @param string $path The absolute path to the module. Was used prior to TYPO3 v8, use $moduleConfiguration[routeTarget] now
      * @param array $moduleConfiguration additional configuration, previously put in "conf.php" of the module directory
-     * @return void
      */
     public static function addModule($main, $sub = '', $position = '', $path = null, $moduleConfiguration = [])
     {
@@ -948,11 +940,14 @@ class ExtensionManagementUtility
             }
 
             if (!empty($moduleConfiguration['icon'])) {
-                $iconIdentifier = 'module-' . $fullModuleSignature;
                 $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
-                $iconRegistry->registerIcon($iconIdentifier, BitmapIconProvider::class, [
-                    'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon'])
-                ]);
+                $iconIdentifier = 'module-' . $fullModuleSignature;
+                $iconProvider = $iconRegistry->detectIconProvider($moduleConfiguration['icon']);
+                $iconRegistry->registerIcon(
+                    $iconIdentifier,
+                    $iconProvider,
+                    [ 'source' => GeneralUtility::getFileAbsFileName($moduleConfiguration['icon']) ]
+                );
                 $moduleConfiguration['iconIdentifier'] = $iconIdentifier;
                 unset($moduleConfiguration['icon']);
             }
@@ -968,7 +963,7 @@ class ExtensionManagementUtility
      * @param string $callbackClass
      * @param string $moduleName Optional: must be <mainmodule> or <mainmodule>_<submodule>
      * @param string $accessLevel Optional: can be 'admin' or 'user,group'
-     * @return void
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function registerExtDirectComponent($endpointName, $callbackClass, $moduleName = null, $accessLevel = null)
     {
@@ -1008,7 +1003,6 @@ class ExtensionManagementUtility
      * @param string $title Title of module
      * @param string $MM_key Menu array key - default is "function
      * @param string $WS Workspace conditions. Blank means all workspaces, any other string can be a comma list of "online", "offline" and "custom
-     * @return void
      * @see \TYPO3\CMS\Backend\Module\BaseScriptClass::mergeExternalItems()
      */
     public static function insertModuleFunction($modname, $className, $classPath = null, $title, $MM_key = 'function', $WS = '')
@@ -1029,10 +1023,11 @@ class ExtensionManagementUtility
      * @param string $group The group ('FE', 'BE', 'SYS' ...)
      * @param string $key The key of this setting within the group
      * @param string $content The text to add (include leading "\n" in case of multi-line entries)
-     * @return void
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public static function appendToTypoConfVars($group, $key, $content)
     {
+        GeneralUtility::logDeprecatedFunction();
         $GLOBALS['TYPO3_CONF_VARS_extensionAdded'][$group][$key] .= $content;
         $GLOBALS['TYPO3_CONF_VARS'][$group][$key] .= $content;
     }
@@ -1043,13 +1038,12 @@ class ExtensionManagementUtility
      * FOR USE IN ext_tables.php/ext_localconf.php FILES
      *
      * @param string $content Page TSconfig content
-     * @return void
      */
     public static function addPageTSConfig($content)
     {
-        self::appendToTypoConfVars('BE', 'defaultPageTSconfig', '
+        $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig'] .= '
 [GLOBAL]
-' . $content);
+' . $content;
     }
 
     /**
@@ -1058,13 +1052,12 @@ class ExtensionManagementUtility
      * FOR USE IN ext_tables.php/ext_localconf.php FILES
      *
      * @param string $content User TSconfig content
-     * @return void
      */
     public static function addUserTSConfig($content)
     {
-        self::appendToTypoConfVars('BE', 'defaultUserTSconfig', '
+        $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultUserTSconfig'] .= '
 [GLOBAL]
-' . $content);
+' . $content;
     }
 
     /**
@@ -1074,7 +1067,6 @@ class ExtensionManagementUtility
      *
      * @param string $tca_descr_key Description key. Typically a database table (like "pages") but for applications can be other strings, but prefixed with "_MOD_")
      * @param string $file_ref File reference to locallang file, eg. "EXT:lang/Resources/Private/Language/locallang_csh_pages.xlf" (or ".xml")
-     * @return void
      */
     public static function addLLrefForTCAdescr($tca_descr_key, $file_ref)
     {
@@ -1096,7 +1088,6 @@ class ExtensionManagementUtility
      * @param string $componentId
      * @param string $extensionKey
      * @throws \RuntimeException
-     *@return void
      */
     public static function addNavigationComponent($module, $componentId, $extensionKey = null)
     {
@@ -1116,7 +1107,6 @@ class ExtensionManagementUtility
      *
      * @param string $module
      * @param string $componentId
-     * @return void
      */
     public static function addCoreNavigationComponent($module, $componentId)
     {
@@ -1136,7 +1126,6 @@ class ExtensionManagementUtility
      * @param string $serviceType Service type, must not be prefixed "tx_" or "Tx_"
      * @param string $serviceKey Service key, must be prefixed "tx_", "Tx_" or "user_"
      * @param array $info Service description array
-     * @return void
      */
     public static function addService($extKey, $serviceType, $serviceKey, $info)
     {
@@ -1280,7 +1269,6 @@ class ExtensionManagementUtility
      *
      * @param string $serviceType Service type
      * @param string $serviceKey Service key
-     * @return void
      */
     public static function deactivateService($serviceType, $serviceKey)
     {
@@ -1304,7 +1292,6 @@ class ExtensionManagementUtility
      * @param string $type Type (eg. "list_type") - basically a field from "tt_content" table
      * @param string $extensionKey The extension key
      * @throws \RuntimeException
-     * @return void
      */
     public static function addPlugin($itemArray, $type = 'list_type', $extensionKey = null)
     {
@@ -1340,7 +1327,6 @@ class ExtensionManagementUtility
      * @param string $piKeyToMatch Plugin key as used in the list_type field. Use the asterisk * to match all list_type values.
      * @param string $value Either a reference to a flex-form XML file (eg. "FILE:EXT:newloginbox/flexform_ds.xml") or the XML directly.
      * @param string $CTypeToMatch Value of tt_content.CType (Content Type) to match. The default is "list" which corresponds to the "Insert Plugin" content element.  Use the asterisk * to match all CType values.
-     * @return void
      * @see addPlugin()
      */
     public static function addPiFlexFormValue($piKeyToMatch, $value, $CTypeToMatch = 'list')
@@ -1358,7 +1344,6 @@ class ExtensionManagementUtility
      * @param string $table Table name to allow for "insert record
      * @param string $content_table Table name TO WHICH the $table name is applied. See $content_field as well.
      * @param string $content_field Field name in the database $content_table in which $table is allowed to be added as a reference ("Insert Record")
-     * @return void
      */
     public static function addToInsertRecords($table, $content_table = 'tt_content', $content_field = 'records')
     {
@@ -1392,8 +1377,6 @@ class ExtensionManagementUtility
      * @param string $suffix Is used as a suffix of the class name (e.g. "_pi1")
      * @param string $type See description above
      * @param int $cached If $cached is set as USER content object (cObject) is created - otherwise a USER_INT object is created.
-     *
-     * @return void
      */
     public static function addPItoST43($key, $_, $suffix = '', $type = 'list_type', $cached = 0)
     {
@@ -1416,10 +1399,10 @@ plugin.' . $cN . $suffix . '.userFunc = ' . $cN . $suffix . '->main
                 break;
             case 'CType':
                 $addLine = trim('
-tt_content.' . $key . $suffix . ' = COA
+tt_content.' . $key . $suffix . ' =< lib.contentElement
 tt_content.' . $key . $suffix . ' {
-	10 = < lib.stdheader
-	20 = < plugin.' . $cN . $suffix . '
+    templateName = Generic
+    20 =< plugin.' . $cN . $suffix . '
 }
 ');
                 break;
@@ -1447,7 +1430,6 @@ tt_content.' . $key . $suffix . ' {
      * @param string $extKey Is of course the extension key
      * @param string $path Is the path where the template files (fixed names) include_static.txt (integer list of uids from the table "static_templates"), constants.txt, setup.txt, and include_static_file.txt is found (relative to extPath, eg. 'static/'). The file include_static_file.txt, allows you to include other static templates defined in files, from your static template, and thus corresponds to the field 'include_static_file' in the sys_template table. The syntax for this is a comma separated list of static templates to include, like:  EXT:css_styled_content/static/,EXT:da_newsletter_subscription/static/,EXT:cc_random_image/pi2/static/
      * @param string $title Is the title in the selector box.
-     * @return void
      * @see addTypoScript()
      */
     public static function addStaticFile($extKey, $path, $title)
@@ -1466,7 +1448,6 @@ tt_content.' . $key . $suffix . ' {
      * @param string $extKey The extension key
      * @param string $filePath The path where the TSconfig file is located
      * @param string $title The title in the selector box
-     * @return void
      */
     public static function registerPageTSConfigFile($extKey, $filePath, $title)
     {
@@ -1491,13 +1472,12 @@ tt_content.' . $key . $suffix . ' {
      * FOR USE IN ext_localconf.php FILES
      *
      * @param string $content TypoScript Setup string
-     * @return void
      */
     public static function addTypoScriptSetup($content)
     {
-        self::appendToTypoConfVars('FE', 'defaultTypoScript_setup', '
+        $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup'] .= '
 [GLOBAL]
-' . $content);
+' . $content;
     }
 
     /**
@@ -1506,13 +1486,12 @@ tt_content.' . $key . $suffix . ' {
      * FOR USE IN ext_localconf.php FILES
      *
      * @param string $content TypoScript Constants string
-     * @return void
      */
     public static function addTypoScriptConstants($content)
     {
-        self::appendToTypoConfVars('FE', 'defaultTypoScript_constants', '
+        $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_constants'] .= '
 [GLOBAL]
-' . $content);
+' . $content;
     }
 
     /**
@@ -1530,8 +1509,6 @@ tt_content.' . $key . $suffix . ' {
      * @param string $type Is either "setup" or "constants" and obviously determines which kind of TypoScript code we are adding.
      * @param string $content Is the TS content, will be prefixed with a [GLOBAL] line and a comment-header.
      * @param int|string $afterStaticUid Is either an integer pointing to a uid of a static_template or a string pointing to the "key" of a static_file template ([reduced extension_key]/[local path]). The points is that the TypoScript you add is included only IF that static template is included (and in that case, right after). So effectively the TypoScript you set can specifically overrule settings from those static templates.
-     *
-     * @return void
      */
     public static function addTypoScript($key, $type, $content, $afterStaticUid = 0)
     {
@@ -1600,7 +1577,6 @@ tt_content.' . $key . $suffix . ' {
      * extensions should not use it!
      *
      * @param bool $allowCaching Whether or not to load / create concatenated cache file
-     * @return void
      * @access private
      */
     public static function loadExtLocalconf($allowCaching = true)
@@ -1622,8 +1598,6 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Execute ext_localconf.php files from extensions
-     *
-     * @return void
      */
     protected static function loadSingleExtLocalconfFiles()
     {
@@ -1644,8 +1618,6 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Create cache entry for concatenated ext_localconf.php files
-     *
-     * @return void
      */
     protected static function createExtLocalconfCacheEntry()
     {
@@ -1704,7 +1676,6 @@ tt_content.' . $key . $suffix . ' {
      * extensions should not use it!
      *
      * @param bool $allowCaching Whether or not to load / create concatenated cache file
-     * @return void
      * @access private
      */
     public static function loadBaseTca($allowCaching = true)
@@ -1732,7 +1703,6 @@ tt_content.' . $key . $suffix . ' {
      * The filename must be the table name in $GLOBALS['TCA'], and the content of
      * the file should return an array with content of a specific table.
      *
-     * @return void
      * @see Extension core, extensionmanager and others for examples.
      */
     protected static function buildBaseTcaFromSingleFiles()
@@ -1820,8 +1790,6 @@ tt_content.' . $key . $suffix . ' {
     /**
      * Cache base $GLOBALS['TCA'] to cache file to require the whole thing in one
      * file for next access instead of cycling through all extensions again.
-     *
-     * @return void
      */
     protected static function createBaseTcaCacheFile()
     {
@@ -1849,7 +1817,6 @@ tt_content.' . $key . $suffix . ' {
      * extensions should not use it!
      *
      * @param bool $allowCaching Whether to load / create concatenated cache file
-     * @return void
      * @access private
      */
     public static function loadExtTables($allowCaching = true)
@@ -1872,8 +1839,6 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Load ext_tables.php as single files
-     *
-     * @return void
      */
     protected static function loadSingleExtTablesFiles()
     {
@@ -1896,8 +1861,6 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Create concatenated ext_tables.php cache file
-     *
-     * @return void
      */
     protected static function createExtTablesCacheEntry()
     {
@@ -1959,8 +1922,6 @@ tt_content.' . $key . $suffix . ' {
      * This method is usually only used by extension that fiddle
      * with the loaded extensions. An example is the extension
      * manager and the install tool.
-     *
-     * @return void
      */
     public static function removeCacheFiles()
     {
@@ -1984,7 +1945,6 @@ tt_content.' . $key . $suffix . ' {
      * localconf.php to LocalConfiguration.php was already run
      *
      * @param string $extensionKey Extension key to load
-     * @return void
      * @throws \RuntimeException
      */
     public static function loadExtension($extensionKey)
@@ -2002,7 +1962,6 @@ tt_content.' . $key . $suffix . ' {
      * localconf.php to LocalConfiguration.php was already run
      *
      * @param string $extensionKey Extension key to remove
-     * @return void
      * @throws \RuntimeException
      */
     public static function unloadExtension($extensionKey)

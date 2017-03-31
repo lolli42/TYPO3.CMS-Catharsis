@@ -65,7 +65,6 @@ class SystemEnvironmentBuilder
      *
      * @internal This method should not be used by 3rd party code. It will change without further notice.
      * @param int $entryPointLevel Number of subdirectories where the entry script is located under the document root
-     * @return void
      */
     public static function run($entryPointLevel = 0)
     {
@@ -79,8 +78,6 @@ class SystemEnvironmentBuilder
 
     /**
      * Define all simple constants that have no dependency to local configuration
-     *
-     * @return void
      */
     protected static function defineBaseConstants()
     {
@@ -147,7 +144,6 @@ class SystemEnvironmentBuilder
      * Calculate all required base paths and set as constants.
      *
      * @param int $entryPointLevel Number of subdirectories where the entry script is located under the document root
-     * @return void
      */
     protected static function definePaths($entryPointLevel = 0)
     {
@@ -164,7 +160,13 @@ class SystemEnvironmentBuilder
         // Absolute path of the document root of the instance with trailing slash
         // Example "/var/www/instance-name/htdocs/"
         if (!defined('PATH_site')) {
-            define('PATH_site', self::getPathSite($entryPointLevel));
+            // Check if the site path has been set by the outside (e.g. dotenv or the composer installer)
+            if (getenv('TYPO3_PATH_ROOT')) {
+                $rootPath = getenv('TYPO3_PATH_ROOT');
+                define('PATH_site', $rootPath . '/');
+            } else {
+                define('PATH_site', self::getPathSite($entryPointLevel));
+            }
         }
         // Absolute path of the typo3 directory of the instance with trailing slash
         // Example "/var/www/instance-name/htdocs/typo3/"
@@ -176,8 +178,6 @@ class SystemEnvironmentBuilder
 
     /**
      * Check if path and script file name calculation was successful, exit if not.
-     *
-     * @return void
      */
     protected static function checkMainPathsExist()
     {
@@ -195,8 +195,6 @@ class SystemEnvironmentBuilder
 
     /**
      * Set up / initialize several globals variables
-     *
-     * @return void
      */
     protected static function initializeGlobalVariables()
     {
@@ -210,8 +208,6 @@ class SystemEnvironmentBuilder
     /**
      * Initialize global time tracking variables.
      * These are helpers to for example output script parsetime at the end of a script.
-     *
-     * @return void
      */
     protected static function initializeGlobalTimeTrackingVariables()
     {
@@ -237,8 +233,6 @@ class SystemEnvironmentBuilder
      * ext_localconf or ext_tables. Since the final error reporting must be set up
      * after those extension files are read, a default configuration is needed to
      * suppress error reporting meanwhile during further bootstrap.
-     *
-     * @return void
      */
     protected static function initializeBasicErrorReporting()
     {

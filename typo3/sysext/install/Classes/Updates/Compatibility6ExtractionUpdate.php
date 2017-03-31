@@ -24,7 +24,7 @@ class Compatibility6ExtractionUpdate extends AbstractDownloadExtensionUpdate
     /**
      * @var string
      */
-    protected $title = 'Installs extension "compatibility6" from TER';
+    protected $title = 'Install extension "compatibility6" from TER';
 
     /**
      * @var string
@@ -37,7 +37,7 @@ class Compatibility6ExtractionUpdate extends AbstractDownloadExtensionUpdate
     protected $extensionDetails = [
         'compatibility6' => [
             'title' => 'Compatibility Mode for TYPO3 CMS 6.x',
-            'description' => 'Provides an additional backwards-compatibility layer with legacy functionality for sites that haven\'t fully migrated to TYPO3 CMS 7 yet.',
+            'description' => 'Provides an additional backwards-compatibility layer with legacy functionality for sites that haven\'t fully migrated to TYPO3 v7 yet.',
             'versionString' => '7.6.4',
         ]
     ];

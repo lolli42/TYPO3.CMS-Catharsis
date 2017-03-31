@@ -27,6 +27,7 @@ class PageTreeView extends AbstractTreeView
     public $fieldArray = [
         'uid',
         'pid',
+        'is_siteroot',
         'title',
         'doktype',
         'nav_title',
@@ -66,7 +67,6 @@ class PageTreeView extends AbstractTreeView
      *
      * @param string $clause Part of where query which will filter out non-readable pages.
      * @param string $orderByFields Record ORDER BY field
-     * @return void
      */
     public function init($clause = '', $orderByFields = '')
     {
@@ -106,7 +106,6 @@ class PageTreeView extends AbstractTreeView
      * Get stored tree structure AND updating it if needed according to incoming PM GET var.
      * - Here we just set it to nothing since we want to just render the tree, nothing more.
      *
-     * @return void
      * @access private
      */
     public function initializePositionSaving()

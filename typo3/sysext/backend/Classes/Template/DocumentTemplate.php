@@ -60,6 +60,7 @@ class DocumentTemplate
      * Additional header code for ExtJS. It will be included in document header and inserted in a Ext.onReady(function()
      *
      * @var string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use PageRenderers's JS methods to inject JavaScript on a backend page.
      */
     public $extJScode = '';
 
@@ -534,7 +535,6 @@ function jumpToUrl(URL) {
      * Defines whether to use the X-UA-Compatible meta tag.
      *
      * @param bool $useCompatibilityTag Whether to use the tag
-     * @return void
      */
     public function useCompatibilityTag($useCompatibilityTag = true)
     {
@@ -605,6 +605,7 @@ function jumpToUrl(URL) {
         }
 
         if ($this->extJScode) {
+            GeneralUtility::deprecationLog('The property DocumentTemplate->extJScode to add ExtJS-based onReadyCode is deprecated since TYPO3 v8, and will be removed in TYPO3 v9. Use the page renderer directly instead to add JavaScript code.');
             $this->pageRenderer->addExtOnReadyCode($this->extJScode);
         }
 
@@ -877,7 +878,6 @@ function jumpToUrl(URL) {
      * @param string $href uri to the style sheet file
      * @param string $title value for the title attribute of the link element
      * @param string $relation value for the rel attribute of the link element
-     * @return void
      */
     public function addStyleSheet($key, $href, $title = '', $relation = 'stylesheet')
     {
@@ -888,7 +888,6 @@ function jumpToUrl(URL) {
      * Add all *.css files of the directory $path to the stylesheets
      *
      * @param string $path directory to add
-     * @return void
      */
     public function addStyleSheetDirectory($path)
     {
@@ -1106,7 +1105,6 @@ function jumpToUrl(URL) {
      * Includes a javascript library that exists in the core /typo3/ directory
      *
      * @param string $lib: Library name. Call it with the full path like "sysext/core/Resources/Public/JavaScript/QueryGenerator.js" to load it
-     * @return void
      * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function loadJavascriptLib($lib)
@@ -1118,7 +1116,6 @@ function jumpToUrl(URL) {
     /**
      * Includes the necessary Javascript function for the clickmenu (context sensitive menus) in the document
      *
-     * @return void
      * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function getContextMenuCode()
@@ -1134,7 +1131,6 @@ function jumpToUrl(URL) {
      *
      * @param string $table indicator of which table the drag and drop function should work on (pages or folders)
      * @param string $additionalJavaScriptCode adds more code to the additional javascript code
-     * @return void
      * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public function getDragDropCode($table, $additionalJavaScriptCode = '')
@@ -1228,9 +1224,10 @@ function jumpToUrl(URL) {
         GeneralUtility::logDeprecatedFunction();
         if (
                 ExtensionManagementUtility::isLoaded('version') &&
+                ExtensionManagementUtility::isLoaded('compatibility7') &&
                 !ExtensionManagementUtility::isLoaded('workspaces')
         ) {
-            $versionGuiObj = GeneralUtility::makeInstance(\TYPO3\CMS\Version\View\VersionView::class);
+            $versionGuiObj = GeneralUtility::makeInstance(\TYPO3\CMS\Compatibility7\View\VersionView::class);
             return $versionGuiObj->getVersionSelector($id, $noAction);
         }
     }
@@ -1267,7 +1264,6 @@ function jumpToUrl(URL) {
      * Define the template for the module
      *
      * @param string $filename filename
-     * @return void
      */
     public function setModuleTemplate($filename)
     {

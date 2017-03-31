@@ -50,7 +50,6 @@ CREATE TABLE fe_groups (
 #
 CREATE TABLE fe_sessions (
 	ses_id varchar(32) DEFAULT '' NOT NULL,
-	ses_name varchar(100) DEFAULT '' NOT NULL,
 	ses_iplock varchar(39) DEFAULT '' NOT NULL,
 	ses_userid int(11) unsigned DEFAULT '0' NOT NULL,
 	ses_tstamp int(11) unsigned DEFAULT '0' NOT NULL,
@@ -58,7 +57,7 @@ CREATE TABLE fe_sessions (
 	ses_permanent tinyint(1) unsigned DEFAULT '0' NOT NULL,
 	ses_anonymous tinyint(1) unsigned DEFAULT '0' NOT NULL,
 
-	PRIMARY KEY (ses_id,ses_name),
+	PRIMARY KEY (ses_id),
 	KEY ses_tstamp (ses_tstamp)
 ) ENGINE=InnoDB;
 
@@ -87,6 +86,7 @@ CREATE TABLE fe_users (
 	cruser_id int(11) unsigned DEFAULT '0' NOT NULL,
 	lockToDomain varchar(50) DEFAULT '' NOT NULL,
 	deleted tinyint(3) unsigned DEFAULT '0' NOT NULL,
+	description text,
 	uc blob,
 	title varchar(40) DEFAULT '' NOT NULL,
 	zip varchar(10) DEFAULT '' NOT NULL,
@@ -169,7 +169,8 @@ CREATE TABLE sys_domain (
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),
-	KEY getSysDomain (redirectTo,hidden)
+	KEY getSysDomain (redirectTo,hidden),
+	KEY getDomainStartPage (pid,hidden,domainName)
 );
 
 #

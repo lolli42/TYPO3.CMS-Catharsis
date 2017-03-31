@@ -55,7 +55,7 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
     protected $numberOfObjects = 0;
 
     /**
-     * @return void
+     * Initializes necessary variables for all actions.
      */
     public function initializeAction()
     {
@@ -68,7 +68,6 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 
     /**
      * @param int $currentPage
-     * @return void
      */
     public function indexAction($currentPage = 1)
     {

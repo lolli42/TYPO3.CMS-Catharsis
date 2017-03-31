@@ -120,8 +120,6 @@ abstract class AbstractItemProvider
     {
         $table = $result['tableName'];
         $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
-        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-
         if (!empty($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['addItems.'])
             && is_array($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['addItems.'])
         ) {
@@ -132,7 +130,7 @@ abstract class AbstractItemProvider
                     continue;
                 }
                 // Check if value "34 = mylabel" also has a "34.icon = myImage.png"
-                $icon = null;
+                $iconIdentifier = null;
                 if (isset($addItemsArray[$value . '.'])
                     && is_array($addItemsArray[$value . '.'])
                     && !empty($addItemsArray[$value . '.']['icon'])
@@ -155,9 +153,8 @@ abstract class AbstractItemProvider
                             );
                         }
                     }
-                    $icon = $iconFactory->getIcon($iconIdentifier, Icon::SIZE_SMALL)->getMarkup('inline');
                 }
-                $items[] = [$label, $value, $icon];
+                $items[] = [$label, $value, $iconIdentifier];
             }
         }
         return $items;
@@ -1051,11 +1048,14 @@ abstract class AbstractItemProvider
                 }
                 $foreignTableClause = implode('', $whereClauseParts);
             }
-            // Use pid from parent page clause if in flex flom context
-            if (strpos($foreignTableClause, '###CURRENT_PID###') !== false
-                && !empty($result['flexParentDatabaseRow']['pid'])
-            ) {
-                $effectivePid = $result['flexParentDatabaseRow']['pid'];
+            if (strpos($foreignTableClause, '###CURRENT_PID###') !== false) {
+                // Use pid from parent page clause if in flex form context
+                if (!empty($result['flexParentDatabaseRow']['pid'])) {
+                    $effectivePid = $result['flexParentDatabaseRow']['pid'];
+                // Use pid from database row if in inline context
+                } elseif (!$effectivePid && !empty($result['databaseRow']['pid'])) {
+                    $effectivePid = $result['databaseRow']['pid'];
+                }
             }
 
             $siteRootUid = 0;

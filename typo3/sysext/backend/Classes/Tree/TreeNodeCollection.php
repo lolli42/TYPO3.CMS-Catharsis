@@ -29,6 +29,7 @@ class TreeNodeCollection extends \ArrayObject
      */
     public function __construct(array $data = [])
     {
+        parent::__construct();
         if (!empty($data)) {
             $this->dataFromArray($data);
         }
@@ -36,8 +37,6 @@ class TreeNodeCollection extends \ArrayObject
 
     /**
      * Sorts the internal nodes array
-     *
-     * @return void
      */
     public function asort()
     {
@@ -48,7 +47,6 @@ class TreeNodeCollection extends \ArrayObject
      * Compares a node with another one
      *
      * @see \TYPO3\CMS\Backend\Tree\TreeNode::compareTo
-     * @return void
      * @noapi
      */
     public function nodeCompare(\TYPO3\CMS\Backend\Tree\TreeNode $node, \TYPO3\CMS\Backend\Tree\TreeNode $otherNode)
@@ -70,7 +68,6 @@ class TreeNodeCollection extends \ArrayObject
      * Initializes the current object with a serialized instance
      *
      * @param string $serializedString
-     * @return void
      * @throws \TYPO3\CMS\Core\Exception if the deserialized is not identical to the current class
      */
     public function unserialize($serializedString)
@@ -104,7 +101,6 @@ class TreeNodeCollection extends \ArrayObject
      * Sets the data of the node collection by a given array
      *
      * @param array $data
-     * @return void
      */
     public function dataFromArray($data)
     {

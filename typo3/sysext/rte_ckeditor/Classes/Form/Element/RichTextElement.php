@@ -17,6 +17,7 @@ namespace TYPO3\CMS\RteCKEditor\Form\Element;
 
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\Locales;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -32,8 +33,14 @@ class RichTextElement extends AbstractFormElement
      * @var array
      */
     protected $defaultFieldWizard = [
+        'localizationStateSelector' => [
+            'renderType' => 'localizationStateSelector',
+        ],
         'otherLanguageContent' => [
             'renderType' => 'otherLanguageContent',
+            'after' => [
+                'localizationStateSelector'
+            ],
         ],
         'defaultLanguageDifferences' => [
             'renderType' => 'defaultLanguageDifferences',
@@ -52,13 +59,6 @@ class RichTextElement extends AbstractFormElement
     protected $rteConfiguration = [];
 
     /**
-     * The path to EXT:rte_ckeditor/Resources/Public/ where all assets etc. are stored.
-     *
-     * @var string
-     */
-    protected $defaultResourcesPath;
-
-    /**
      * Renders the ckeditor element
      *
      * @return array
@@ -69,7 +69,6 @@ class RichTextElement extends AbstractFormElement
         $resultArray = $this->initializeResultArray();
         $parameterArray = $this->data['parameterArray'];
         $config = $parameterArray['fieldConf']['config'];
-        $this->defaultResourcesPath = $this->resolveUrlPath('EXT:rte_ckeditor/Resources/Public/');
 
         $fieldId = $this->sanitizeFieldId($parameterArray['itemFormElName']);
         $itemFormElementName = $this->data['parameterArray']['itemFormElName'];
@@ -185,6 +184,12 @@ class RichTextElement extends AbstractFormElement
         return 'function(CKEDITOR) {
                 ' . $externalPlugins . '
                 CKEDITOR.replace("' . $fieldId . '", ' . json_encode($configuration) . ');
+                require([\'TYPO3/CMS/Backend/FormEngine\'], function(FormEngine) {
+                    CKEDITOR.instances.' . $fieldId . '.on(\'change\', function() {
+                        CKEDITOR.instances.' . $fieldId . '.updateElement();
+                        FormEngine.Validation.validate();
+                    });
+                });
         }';
     }
 
@@ -196,11 +201,13 @@ class RichTextElement extends AbstractFormElement
     protected function getExtraPlugins(): array
     {
         $urlParameters = [
-            'table'      => $this->data['tableName'],
-            'uid'        => $this->data['databaseRow']['uid'],
-            'fieldName'  => $this->data['fieldName'],
-            'recordType' => $this->data['recordTypeValue'],
-            'pid'        => $this->data['effectivePid'],
+            'P' => [
+                'table'      => $this->data['tableName'],
+                'uid'        => $this->data['databaseRow']['uid'],
+                'fieldName'  => $this->data['fieldName'],
+                'recordType' => $this->data['recordTypeValue'],
+                'pid'        => $this->data['effectivePid'],
+            ]
         ];
 
         $pluginConfiguration = [];
@@ -260,18 +267,18 @@ class RichTextElement extends AbstractFormElement
      */
     protected function prepareConfigurationForEditor(): array
     {
-        // Set some good defaults
+        // Ensure custom config is empty so nothing additional is loaded
+        // Of course this can be overridden by the editor configuration below
         $configuration = [
-            'contentsCss' => $this->defaultResourcesPath . 'Css/contents.css',
-            'customConfig' => '', // do not load anything
-            'toolbar' => 'Basic',
-            'uiColor' => '#F8F8F8',
-            'stylesSet' => 'default',
-            'extraPlugins' => '',
+            'customConfig' => '',
         ];
 
         if (is_array($this->rteConfiguration['config'])) {
             $configuration = array_replace_recursive($configuration, $this->rteConfiguration['config']);
+        }
+        // Set the UI language of the editor if not hard-coded by the existing configuration
+        if (empty($configuration['language'])) {
+            $configuration['language'] = $this->getBackendUser()->uc['lang'] ?: ($this->getBackendUser()->user['lang'] ?: 'en');
         }
         $configuration['contentsLanguage'] = $this->getLanguageIsoCodeOfContent();
 
@@ -300,5 +307,13 @@ class RichTextElement extends AbstractFormElement
     {
         $fieldId = preg_replace('/[^a-zA-Z0-9_:.-]/', '_', $itemFormElementName);
         return htmlspecialchars(preg_replace('/^[^a-zA-Z]/', 'x', $fieldId));
+    }
+
+    /**
+     * @return BackendUserAuthentication
+     */
+    protected function getBackendUser()
+    {
+        return $GLOBALS['BE_USER'];
     }
 }

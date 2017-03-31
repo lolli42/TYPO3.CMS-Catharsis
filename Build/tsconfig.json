@@ -20,9 +20,6 @@
             "TYPO3/CMS/Beuser/*": [
                 "../typo3/sysext/beuser/Resources/Public/JavaScript/"
             ],
-            "TYPO3/CMS/Compatibility7/*": [
-                "../typo3/sysext/compatibility7/Resources/Public/JavaScript/"
-            ],
             "TYPO3/CMS/ContextHelp/*": [
                 "../typo3/sysext/context_help/Resources/Public/JavaScript/"
             ],
@@ -134,9 +131,6 @@
             "TYPO3/CMS/T3editor/*": [
                 "../typo3/sysext/t3editor/Resources/Public/JavaScript/"
             ],
-            "TYPO3/CMS/T3skin/*": [
-                "../typo3/sysext/t3skin/Resources/Public/JavaScript/"
-            ],
             "TYPO3/CMS/Taskcenter/*": [
                 "../typo3/sysext/taskcenter/Resources/Public/JavaScript/"
             ],
@@ -171,6 +165,7 @@
     "files": [
         "../typo3/sysext/backend/Resources/Private/TypeScript/ColorPicker.ts",
         "../typo3/sysext/backend/Resources/Private/TypeScript/FormEngineReview.ts",
-        "../typo3/sysext/backend/Resources/Private/TypeScript/ImageManipulation.ts"
+        "../typo3/sysext/backend/Resources/Private/TypeScript/ImageManipulation.ts",
+        "../typo3/sysext/backend/Resources/Private/TypeScript/RenameFile.ts"
     ]
 }

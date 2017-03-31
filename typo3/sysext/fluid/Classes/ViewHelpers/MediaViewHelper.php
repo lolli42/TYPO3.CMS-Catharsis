@@ -60,8 +60,6 @@ class MediaViewHelper extends AbstractTagBasedViewHelper
 
     /**
      * Initialize arguments.
-     *
-     * @return void
      */
     public function initializeArguments()
     {
@@ -122,15 +120,22 @@ class MediaViewHelper extends AbstractTagBasedViewHelper
         $cropVariant = $this->arguments['cropVariant'] ?: 'default';
         $cropString = $image instanceof FileReference ? $image->getProperty('crop') : '';
         $cropVariantCollection = CropVariantCollection::create((string)$cropString);
+        $cropArea = $cropVariantCollection->getCropArea($cropVariant);
         $processingInstructions = [
             'width' => $width,
             'height' => $height,
-            'crop' => $cropVariantCollection->getCropArea($cropVariant)->makeAbsoluteBasedOnFile($image),
+            'crop' => $cropArea->isEmpty() ? null : $cropArea->makeAbsoluteBasedOnFile($image),
         ];
         $imageService = $this->getImageService();
         $processedImage = $imageService->applyProcessingInstructions($image, $processingInstructions);
         $imageUri = $imageService->getImageUri($processedImage);
 
+        if (!$this->tag->hasAttribute('data-focus-area')) {
+            $focusArea = $cropVariantCollection->getFocusArea($cropVariant);
+            if (!$focusArea->isEmpty()) {
+                $this->tag->addAttribute('data-focus-area', $focusArea->makeAbsoluteBasedOnFile($image));
+            }
+        }
         $this->tag->addAttribute('src', $imageUri);
         $this->tag->addAttribute('width', $processedImage->getProperty('width'));
         $this->tag->addAttribute('height', $processedImage->getProperty('height'));

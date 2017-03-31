@@ -23,7 +23,6 @@ class TemplateCest
 {
     /**
      * @param Admin $I
-     * @return void
      */
     public function _before(Admin $I)
     {
@@ -44,7 +43,6 @@ class TemplateCest
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function pagesWithNoTemplateShouldShowButtonsToCreateTemplates(Admin $I)
     {
@@ -66,7 +64,7 @@ class TemplateCest
         $I->see('There was no template on this page!');
         $I->see('You need to create a template record below in order to edit your configuration.');
 
-        // @todo These input fields should be changed to buttons. Shoult be changed to propper HTML.
+        // @todo These input fields should be changed to buttons. Shoult be changed to proper HTML.
         $I->seeInFormFields(
             '#TypoScriptTemplateModuleController',
             [
@@ -78,7 +76,6 @@ class TemplateCest
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function addANewSiteTemplate(Admin $I)
     {

@@ -15,16 +15,19 @@ namespace TYPO3\CMS\Form\Hooks;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\View\PageLayoutViewDrawItemHookInterface;
+use TYPO3\CMS\Core\Error\Exception;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Service\FlexFormService;
+use TYPO3\CMS\Form\Mvc\Configuration\Exception\ParseErrorException;
 use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Contains a preview rendering for the page module of CType="form_formframework"
  */
-class FormPagePreviewRenderer implements \TYPO3\CMS\Backend\View\PageLayoutViewDrawItemHookInterface
+class FormPagePreviewRenderer implements PageLayoutViewDrawItemHookInterface
 {
     /**
      * Preprocesses the preview rendering of the content element "form_formframework".
@@ -34,7 +37,6 @@ class FormPagePreviewRenderer implements \TYPO3\CMS\Backend\View\PageLayoutViewD
      * @param string $headerContent Header content
      * @param string $itemContent Item content
      * @param array $row Record row of tt_content
-     * @return void
      */
     public function preProcess(
         \TYPO3\CMS\Backend\View\PageLayoutView &$parentObject,
@@ -50,16 +52,26 @@ class FormPagePreviewRenderer implements \TYPO3\CMS\Backend\View\PageLayoutViewD
             $flexFormData = GeneralUtility::makeInstance(FlexFormService::class)
                 ->convertFlexFormContentToArray($row['pi_flexform']);
 
-            if (!empty($flexFormData['settings']['persistenceIdentifier'])) {
-                $persistenceIdentifier = $flexFormData['settings']['persistenceIdentifier'];
-                if (empty($persistenceIdentifier)) {
-                    $formLabel = $this->getLanguageService()->sL(
-                        'LLL:EXT:form/Resources/Private/Language/Database.xlf:tt_content.preview.noPersistenceIdentifier'
-                    );
-                } else {
-                    $formPersistenceManager = GeneralUtility::makeInstance(ObjectManager::class)->get(FormPersistenceManagerInterface::class);
+            $persistenceIdentifier = $flexFormData['settings']['persistenceIdentifier'];
+            if (!empty($persistenceIdentifier)) {
+                $formPersistenceManager = GeneralUtility::makeInstance(ObjectManager::class)->get(FormPersistenceManagerInterface::class);
+                try {
                     $formDefinition = $formPersistenceManager->load($persistenceIdentifier);
                     $formLabel = $formDefinition['label'];
+                } catch (ParseErrorException $e) {
+                    $formLabel = sprintf(
+                        $this->getLanguageService()->sL(
+                            'LLL:EXT:form/Resources/Private/Language/Database.xlf:tt_content.preview.invalidPersistenceIdentifier'
+                        ),
+                        $persistenceIdentifier
+                    );
+                } catch (Exception $e) {
+                    $formLabel = sprintf(
+                        $this->getLanguageService()->sL(
+                            'LLL:EXT:form/Resources/Private/Language/Database.xlf:tt_content.preview.notExistingdPersistenceIdentifier'
+                        ),
+                        $persistenceIdentifier
+                    );
                 }
             } else {
                 $formLabel = $this->getLanguageService()->sL(

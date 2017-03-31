@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  */
 
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Cli\CommandArgumentDefinition;
 use TYPO3\CMS\Extbase\Mvc\Cli\ConsoleOutput;
 use TYPO3\CMS\Extbase\Mvc\Cli\Request;
@@ -82,7 +83,6 @@ class CommandController implements CommandControllerInterface
 
     /**
      * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-     * @return void
      */
     public function injectObjectManager(ObjectManagerInterface $objectManager)
     {
@@ -113,7 +113,6 @@ class CommandController implements CommandControllerInterface
      *
      * @param RequestInterface $request The request object
      * @param ResponseInterface $response The response, modified by this handler
-     * @return void
      * @throws UnsupportedRequestTypeException if the controller doesn't support the current request type
      * @api
      */
@@ -159,7 +158,6 @@ class CommandController implements CommandControllerInterface
      * method arguments found in the designated command method.
      *
      * @throws \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentTypeException
-     * @return void
      * @throws InvalidArgumentTypeException
      */
     protected function initializeCommandMethodArguments()
@@ -183,8 +181,6 @@ class CommandController implements CommandControllerInterface
 
     /**
      * Maps arguments delivered by the request object to the local controller arguments.
-     *
-     * @return void
      */
     protected function mapRequestArgumentsToControllerArguments()
     {
@@ -216,7 +212,6 @@ class CommandController implements CommandControllerInterface
      * @param string $commandName
      * @param string $controllerObjectName
      * @param array $arguments
-     * @return void
      * @throws StopActionException
      */
     protected function forward($commandName, $controllerObjectName = null, array $arguments = [])
@@ -238,8 +233,6 @@ class CommandController implements CommandControllerInterface
      * If the command returns a string, it is appended to the content in the
      * response object. If the command doesn't return anything and a valid
      * view exists, the view is rendered automatically.
-     *
-     * @return void
      */
     protected function callCommandMethod()
     {
@@ -248,9 +241,7 @@ class CommandController implements CommandControllerInterface
         foreach ($this->arguments as $argument) {
             $preparedArguments[] = $argument->getValue();
         }
-        $originalRole = $this->ensureAdminRoleIfRequested();
         $commandResult = call_user_func_array([$this, $this->commandMethodName], $preparedArguments);
-        $this->restoreUserRole($originalRole);
         if (is_string($commandResult) && $commandResult !== '') {
             $this->response->appendContent($commandResult);
         } elseif (is_object($commandResult) && method_exists($commandResult, '__toString')) {
@@ -263,9 +254,11 @@ class CommandController implements CommandControllerInterface
      * and returns the original state or NULL
      *
      * @return NULL|int
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, because admin role is always used in CLI mode
      */
     protected function ensureAdminRoleIfRequested()
     {
+        GeneralUtility::logDeprecatedFunction();
         $userAuthentication = $this->getBackendUserAuthentication();
 
         if (!$this->requestAdminPermissions || $userAuthentication === null || !isset($userAuthentication->user['admin'])) {
@@ -281,9 +274,11 @@ class CommandController implements CommandControllerInterface
      * Restores the original user role
      *
      * @param NULL|int $originalRole
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, because admin role is always used in CLI mode
      */
     protected function restoreUserRole($originalRole)
     {
+        GeneralUtility::logDeprecatedFunction();
         $userAuthentication = $this->getBackendUserAuthentication();
 
         if ($originalRole !== null && $userAuthentication !== null) {
@@ -298,7 +293,6 @@ class CommandController implements CommandControllerInterface
      * @see http://www.php.net/sprintf
      * @param string $text Text to output
      * @param array $arguments Optional arguments to use for sprintf
-     * @return void
      */
     protected function output($text, array $arguments = [])
     {
@@ -310,7 +304,6 @@ class CommandController implements CommandControllerInterface
      *
      * @param string $text Text to output
      * @param array $arguments Optional arguments to use for sprintf
-     * @return void
      * @see output()
      */
     protected function outputLine($text = '', array $arguments = [])
@@ -325,7 +318,6 @@ class CommandController implements CommandControllerInterface
      * @param string $text Text to output
      * @param array $arguments Optional arguments to use for sprintf
      * @param int $leftPadding The number of spaces to use for indentation
-     * @return void
      * @see outputLine()
      */
     protected function outputFormatted($text = '', array $arguments = [], $leftPadding = 0)
@@ -339,7 +331,6 @@ class CommandController implements CommandControllerInterface
      *
      * @param int $exitCode Exit code to return on exit
      * @throws StopActionException
-     * @return void
      */
     protected function quit($exitCode = 0)
     {
@@ -352,7 +343,6 @@ class CommandController implements CommandControllerInterface
      * Should be used for commands that flush code caches.
      *
      * @param int $exitCode Exit code to return on exit
-     * @return void
      */
     protected function sendAndExit($exitCode = 0)
     {

@@ -66,7 +66,7 @@ class PaginateController extends AbstractWidgetController
     protected $displayRangeEnd = null;
 
     /**
-     * @return void
+     * Initializes the current information on which page the visitor is.
      */
     public function initializeAction()
     {
@@ -79,7 +79,6 @@ class PaginateController extends AbstractWidgetController
 
     /**
      * @param int $currentPage
-     * @return void
      */
     public function indexAction($currentPage = 1)
     {
@@ -110,8 +109,6 @@ class PaginateController extends AbstractWidgetController
     /**
      * If a certain number of links should be displayed, adjust before and after
      * amounts accordingly.
-     *
-     * @return void
      */
     protected function calculateDisplayRange()
     {
@@ -182,9 +179,10 @@ class PaginateController extends AbstractWidgetController
             return $modifiedObjects;
         } elseif ($this->objects instanceof ObjectStorage) {
             $modifiedObjects = [];
-            $endOfRange = $offset + $itemsPerPage;
+            $objectArray = $this->objects->toArray();
+            $endOfRange = min($offset + $itemsPerPage, count($objectArray));
             for ($i = $offset; $i < $endOfRange; $i++) {
-                $modifiedObjects[] = $this->objects->toArray()[$i];
+                $modifiedObjects[] = $objectArray[$i];
             }
             return $modifiedObjects;
         } elseif (is_array($this->objects)) {

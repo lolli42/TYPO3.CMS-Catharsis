@@ -255,7 +255,7 @@ class SpellCheckingController
         $this->fixPersonalDictionaryCharacterSet();
         $cmd = GeneralUtility::_POST('cmd');
         if ($cmd === 'learn') {
-            // Only availble for BE_USERS, die silently if someone has gotten here by accident
+            // Only available for BE_USERS, die silently if someone has gotten here by accident
             if (TYPO3_MODE !== 'BE' || !is_object($GLOBALS['BE_USER'])) {
                 die('');
             }
@@ -321,6 +321,12 @@ class SpellCheckingController
 <script type="text/javascript">
 /*<![CDATA[*/
 <!--
+var callerWindow;
+if (typeof top.TYPO3.Backend !== "undefined" && typeof top.TYPO3.Backend.ContentContainer.get() !== "undefined") {
+	callerWindow = top.TYPO3.Backend.ContentContainer.get();
+} else {
+	callerWindow = window.parent;
+}
 ';
             // Getting the input content
             $content = GeneralUtility::_POST('content');
@@ -363,7 +369,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 </script>
 </head>
 ';
-            $this->result .= '<body onload="window.parent.RTEarea[' . GeneralUtility::quoteJSvalue(GeneralUtility::_POST('editorId')) . '].editor.getPlugin(\'SpellChecker\').spellCheckComplete();">';
+            $this->result .= '<body onload="callerWindow.RTEarea[' . GeneralUtility::quoteJSvalue(GeneralUtility::_POST('editorId')) . '].editor.getPlugin(\'SpellChecker\').spellCheckComplete();">';
             $this->result .= preg_replace('/' . preg_quote('<?xml') . '.*' . preg_quote('?>') . '[' . preg_quote((LF . CR . chr(32))) . ']*/' . ($this->parserCharset == 'utf-8' ? 'u' : ''), '', $this->text);
             // Closing
             $this->result .= '
@@ -472,8 +478,6 @@ var selectedDictionary = "' . $this->dictionary . '";
 
     /**
      * Ensures that the personal dictionary is utf-8 encoded
-     *
-     * @return void
      */
     protected function fixPersonalDictionaryCharacterSet()
     {

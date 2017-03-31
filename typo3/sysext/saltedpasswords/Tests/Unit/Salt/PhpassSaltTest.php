@@ -30,8 +30,6 @@ class PhpassSaltTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 
     /**
      * Sets up the fixtures for this testcase.
-     *
-     * @return void
      */
     protected function setUp()
     {
@@ -115,6 +113,33 @@ class PhpassSaltTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $this->assertTrue($this->objectInstance->isValidSaltedPW($saltedHashPassword));
         // reset hashcount
         $this->objectInstance->setHashCount(null);
+    }
+
+    /**
+     * Tests authentication procedure with fixed password and fixed (pre-generated) hash.
+     *
+     * Checks if a "plain-text password" is every time mapped to the
+     * same "salted password hash" when using the same fixed salt.
+     *
+     * @test
+     */
+    public function authenticationWithValidAlphaCharClassPasswordAndFixedHash()
+    {
+        $password = 'password';
+        $saltedHashPassword = '$P$C7u7E10SBEie/Jbdz0jDtUcWhzgOPF.';
+        $this->assertTrue($this->objectInstance->checkPassword($password, $saltedHashPassword));
+    }
+
+    /**
+     * Tests that authentication procedure fails with broken hash to compare to
+     *
+     * @test
+     */
+    public function authenticationFailsWithBrokenHash()
+    {
+        $password = 'password';
+        $saltedHashPassword = '$P$C7u7E10SBEie/Jbdz0jDtUcWhzgOPF';
+        $this->assertFalse($this->objectInstance->checkPassword($password, $saltedHashPassword));
     }
 
     /**

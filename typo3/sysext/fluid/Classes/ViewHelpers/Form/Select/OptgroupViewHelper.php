@@ -28,7 +28,7 @@ class OptgroupViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormF
     protected $tagName = 'optgroup';
 
     /**
-     * @return void
+     * Initialize additional arguments available for this tag view helper.
      */
     public function initializeArguments()
     {

@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Form\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Form\Domain\Model\Renderable\RenderableInterface;
 use TYPO3\CMS\Form\Domain\Model\Renderable\RootRenderableInterface;
@@ -45,7 +46,6 @@ class RenderRenderableViewHelper extends AbstractViewHelper
     /**
      * Initialize the arguments.
      *
-     * @return void
      * @internal
      */
     public function initializeArguments()
@@ -63,48 +63,45 @@ class RenderRenderableViewHelper extends AbstractViewHelper
      */
     public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
     {
+
         /** @var FormRuntime $formRuntime */
         $formRuntime =  $renderingContext
             ->getViewHelperVariableContainer()
             ->get(self::class, 'formRuntime');
 
-        // Invoke the beforeRendering callback on the renderable
+        GeneralUtility::deprecationLog('EXT:form - calls for "beforeRendering" are deprecated since TYPO3 v8 and will be removed in TYPO3 v9');
         $arguments['renderable']->beforeRendering($formRuntime);
 
-        $renderable = $arguments['renderable'];
-        $content = $renderChildrenClosure();
-        if (!empty($content)) {
-            $content = static::renderPreviewMode($content, $renderable, $renderingContext, $formRuntime);
-        }
-        return $content;
-    }
-
-    /**
-     * Wrap every renderable with a span with a identifier path data attribute.
-     *
-     * @param string $content
-     * @param RootRenderableInterface $renderable
-     * @param RenderingContextInterface $renderingContext
-     * @param FormRuntime $formRuntime
-     * @return string
-     * @internal
-     */
-    public static function renderPreviewMode(
-        string $content,
-        RootRenderableInterface $renderable,
-        RenderingContextInterface $renderingContext,
-        FormRuntime $formRuntime
-    ): string {
-        $renderingOptions = $formRuntime->getRenderingOptions();
-        $previewMode = isset($renderingOptions['previewMode']) && $renderingOptions['previewMode'] === true;
-        if ($previewMode) {
-            $path = $renderable->getIdentifier();
-            if ($renderable instanceof RenderableInterface) {
-                while ($renderable = $renderable->getParentRenderable()) {
-                    $path = $renderable->getIdentifier() . '/' . $path;
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRendering'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRendering'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRendering'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'beforeRendering')) {
+                    $hookObj->beforeRendering(
+                        $formRuntime,
+                        $arguments['renderable']
+                    );
                 }
             }
-            $content = sprintf('<span data-element-identifier-path="%s">%s</span>', $path, $content);
+        }
+
+        $content = $renderChildrenClosure();
+
+        // Wrap every renderable with a span with a identifier path data attribute if previewMode is active
+        if (!empty($content)) {
+            $renderingOptions = $formRuntime->getRenderingOptions();
+            if (isset($renderingOptions['previewMode']) && $renderingOptions['previewMode'] === true) {
+                $renderable = $arguments['renderable'];
+                $path = $renderable->getIdentifier();
+                if ($renderable instanceof RenderableInterface) {
+                    while ($renderable = $renderable->getParentRenderable()) {
+                        $path = $renderable->getIdentifier() . '/' . $path;
+                    }
+                }
+                $content = '<span data-element-identifier-path="' . $path . '">' . $content . '</span>';
+            }
         }
         return $content;
     }

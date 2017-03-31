@@ -136,7 +136,6 @@ class RteHtmlParser extends HtmlParser
      *
      * @param string $elRef Element reference, eg "tt_content:bodytext
      * @param int $recPid PID of the record (page id)
-     * @return void
      */
     public function init($elRef = '', $recPid = 0)
     {
@@ -548,7 +547,7 @@ class RteHtmlParser extends HtmlParser
             if ($k % 2) {
                 list($tagAttributes) = $this->get_tag_attributes($this->getFirstTag($v), true);
                 $linkService = GeneralUtility::makeInstance(LinkService::class);
-                $linkInformation = $linkService->resolve($tagAttributes['href']);
+                $linkInformation = $linkService->resolve($tagAttributes['href'] ?? '');
 
                 // Modify parameters, this hook should be deprecated
                 if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'])
@@ -1098,7 +1097,8 @@ class RteHtmlParser extends HtmlParser
         } else {
             $curURL = GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
             $urlLength = strlen($url);
-            for ($a = 0; $a < $urlLength; $a++) {
+            $a = 0;
+            for (; $a < $urlLength; $a++) {
                 if ($url[$a] != $curURL[$a]) {
                     break;
                 }

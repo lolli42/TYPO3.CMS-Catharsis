@@ -24,10 +24,11 @@
 	<div class="message-body>">
 		<f:if condition="{preset.isAvailable}">
 			<f:then>
-				If you enable this setting the sendmail command will be set to: <pre>{preset.sendmailPath}</pre>
+				<p>If you enable this setting the sendmail command will be set to:</p>
+				<p><pre>{preset.sendmailPath}</pre></p>
 			</f:then>
 			<f:else>
-				Sendmail was not found in your PHP settings.
+				<p>Sendmail was not found in your PHP settings.</p>
 			</f:else>
 		</f:if>
 	</div>

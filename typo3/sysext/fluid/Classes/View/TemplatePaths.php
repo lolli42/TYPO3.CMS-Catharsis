@@ -139,23 +139,6 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
     }
 
     /**
-     * @param string|array $path
-     * @return string
-     */
-    protected function sanitizePath($path)
-    {
-        if (is_array($path)) {
-            $paths = array_map([$this, 'sanitizePath'], $path);
-            return array_unique($paths);
-        }
-        $path = $this->ensureAbsolutePath($path);
-        if (is_dir($path)) {
-            $path = $this->ensureSuffixedPath($path);
-        }
-        return $path;
-    }
-
-    /**
      * Guarantees that $reference is turned into a
      * correct, absolute path. The input can be a
      * relative path or a FILE: or EXT: reference
@@ -185,7 +168,6 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
      * if not defined, uses fallback paths by convention.
      *
      * @param string $packageName
-     * @return void
      */
     public function fillDefaultsByPackageName($packageName)
     {
@@ -196,7 +178,6 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
      * Overridden setter with enforced sorting behavior
      *
      * @param array $templateRootPaths
-     * @return void
      */
     public function setTemplateRootPaths(array $templateRootPaths)
     {
@@ -209,7 +190,6 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
      * Overridden setter with enforced sorting behavior
      *
      * @param array $layoutRootPaths
-     * @return void
      */
     public function setLayoutRootPaths(array $layoutRootPaths)
     {
@@ -222,7 +202,6 @@ class TemplatePaths extends \TYPO3Fluid\Fluid\View\TemplatePaths
      * Overridden setter with enforced sorting behavior
      *
      * @param array $partialRootPaths
-     * @return void
      */
     public function setPartialRootPaths(array $partialRootPaths)
     {

@@ -96,6 +96,11 @@ class RecordHistory
     protected $pageAccessCache = [];
 
     /**
+     * @var string
+     */
+    protected $rollbackFields = '';
+
+    /**
      * @var IconFactory
      */
     protected $iconFactory;
@@ -164,7 +169,6 @@ class RecordHistory
      * Toggles highlight state of record
      *
      * @param int $uid Uid of sys_history entry
-     * @return void
      */
     public function toggleHighlight($uid)
     {
@@ -284,7 +288,7 @@ class RecordHistory
         }
         // Return to normal operation
         $this->lastSyslogId = false;
-        $this->rollbackFields = false;
+        $this->rollbackFields = '';
         $this->createChangeLog();
         $this->view->assign('reloadPageFrame', $reloadPageFrame);
     }
@@ -911,8 +915,6 @@ class RecordHistory
 
     /**
      * Resolve sh_uid (used from log)
-     *
-     * @return void
      */
     public function resolveShUid()
     {

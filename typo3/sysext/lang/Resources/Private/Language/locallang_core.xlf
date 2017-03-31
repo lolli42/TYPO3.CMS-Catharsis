@@ -613,6 +613,21 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="file_upload.php.number_of_files">
 				<source>Number of files:</source>
 			</trans-unit>
+			<trans-unit id="file_rename.exists.title">
+				<source>File exists already</source>
+			</trans-unit>
+			<trans-unit id="file_rename.exists.description">
+				<source>You want to rename the file "{0}" to "{1}", but such a file already exists. How do you want to proceed?</source>
+			</trans-unit>
+			<trans-unit id="file_rename.actions.cancel">
+				<source>Cancel</source>
+			</trans-unit>
+			<trans-unit id="file_rename.actions.rename">
+				<source>Rename with unique name</source>
+			</trans-unit>
+			<trans-unit id="file_rename.actions.override">
+				<source>Overwrite</source>
+			</trans-unit>
 			<trans-unit id="file_rename.php.pagetitle">
 				<source>Rename</source>
 			</trans-unit>
@@ -954,6 +969,9 @@ Do you want to refresh it now?</source>
 			<trans-unit id="buttons.clipboard">
 				<source>Clipboard</source>
 			</trans-unit>
+			<trans-unit id="buttons.toggleLinkExplanation">
+				<source>Toggle link explanation</source>
+			</trans-unit>
 			<trans-unit id="cm.copy">
 				<source>Copy</source>
 			</trans-unit>
@@ -1133,9 +1151,6 @@ Do you want to refresh it now?</source>
 			</trans-unit>
 			<trans-unit id="warning.install_trustedhosts">
 				<source>The trusted hosts pattern check is disabled. Please define the allowed hosts in the [SYS][trustedHostsPattern] section of the Install Tool.</source>
-			</trans-unit>
-			<trans-unit id="warning.install_cache_flooding">
-				<source>Cache Flooding Protection is disabled. Please enable [FE][cHashIncludePageId] in the Install Tool.</source>
 			</trans-unit>
 			<trans-unit id="warning.install_encryption">
 				<source>The encryption key is not set. Set it in the %sBasic Configuration section%s of the Install Tool.</source>

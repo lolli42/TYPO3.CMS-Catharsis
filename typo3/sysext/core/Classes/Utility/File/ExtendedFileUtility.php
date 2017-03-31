@@ -142,7 +142,6 @@ class ExtendedFileUtility extends BasicFileUtility
      * Set existingFilesConflictMode
      *
      * @param \TYPO3\CMS\Core\Resource\DuplicationBehavior|string $existingFilesConflictMode Instance or constant of \TYPO3\CMS\Core\Resource\DuplicationBehavior
-     * @return void
      * @throws Exception
      */
     public function setExistingFilesConflictMode($existingFilesConflictMode)
@@ -165,7 +164,6 @@ class ExtendedFileUtility extends BasicFileUtility
      * Initialization of the class
      *
      * @param array $fileCmds Array with the commands to execute. See "TYPO3 Core API" document
-     * @return void
      */
     public function start($fileCmds)
     {
@@ -180,7 +178,6 @@ class ExtendedFileUtility extends BasicFileUtility
      * If no argument is given, permissions of the currently logged in backend user are taken into account.
      *
      * @param array $permissions File Permissions.
-     * @return void
      */
     public function setActionPermissions(array $permissions = [])
     {
@@ -289,7 +286,6 @@ class ExtendedFileUtility extends BasicFileUtility
     /**
      * Adds all log error messages from the operations of this script instance to the FlashMessageQueue
      *
-     * @return void
      * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9
      */
     public function pushErrorMessagesToFlashMessageQueue()
@@ -323,7 +319,6 @@ class ExtendedFileUtility extends BasicFileUtility
      * @param int $details_nr This number is unique for every combination of $type and $action. This is the error-message number, which can later be used to translate error messages.
      * @param string $details This is the default, raw error message in english
      * @param array $data Array with special information that may go into $details by "%s" marks / sprintf() when the log is shown
-     * @return void
      */
     public function writeLog($action, $error, $details_nr, $details, $data)
     {
@@ -343,7 +338,6 @@ class ExtendedFileUtility extends BasicFileUtility
      * @param string $localizationKey
      * @param array $replaceMarkers
      * @param int $severity
-     * @return void
      * @throws \InvalidArgumentException
      */
     protected function addMessageToFlashMessageQueue($localizationKey, array $replaceMarkers = [], $severity = FlashMessage::ERROR)
@@ -842,12 +836,12 @@ class ExtendedFileUtility extends BasicFileUtility
         if ($sourceFileObject instanceof File) {
             try {
                 // Try to rename the File
-                $resultObject = $sourceFileObject->rename($targetFile);
+                $resultObject = $sourceFileObject->rename($targetFile, $this->existingFilesConflictMode);
                 $this->writeLog(5, 0, 1, 'File renamed from "%s" to "%s"', [$sourceFile, $targetFile]);
                 if ($sourceFile === $targetFile) {
                     $this->addMessageToFlashMessageQueue('FileUtility.FileRenamedSameName', [$sourceFile], FlashMessage::INFO);
                 } else {
-                    $this->addMessageToFlashMessageQueue('FileUtility.FileRenamedFromTo', [$sourceFile, $targetFile], FlashMessage::OK);
+                    $this->addMessageToFlashMessageQueue('FileUtility.FileRenamedFromTo', [$sourceFile, $resultObject->getName()], FlashMessage::OK);
                 }
             } catch (InsufficientUserPermissionsException $e) {
                 $this->writeLog(5, 1, 102, 'You are not allowed to rename files!', []);
@@ -912,8 +906,8 @@ class ExtendedFileUtility extends BasicFileUtility
             return false;
         }
         $resultObject = null;
+        $folderName = $cmds['data'];
         try {
-            $folderName = $cmds['data'];
             $resultObject = $targetFolderObject->createFolder($folderName);
             $this->writeLog(6, 0, 1, 'Directory "%s" created in "%s"', [$folderName, $targetFolderObject->getIdentifier()]);
             $this->addMessageToFlashMessageQueue('FileUtility.DirectoryCreatedIn', [$folderName, $targetFolderObject->getIdentifier()], FlashMessage::OK);
@@ -989,11 +983,11 @@ class ExtendedFileUtility extends BasicFileUtility
      */
     public function func_edit($cmds)
     {
-        // Example indentifier for $cmds['target'] => "4:mypath/tomyfolder/myfile.jpg"
+        // Example identifier for $cmds['target'] => "4:mypath/tomyfolder/myfile.jpg"
         // for backwards compatibility: the combined file identifier was the path+filename
         $fileIdentifier = $cmds['target'];
         $fileObject = $this->getFileObject($fileIdentifier);
-        // Example indentifier for $cmds['target'] => "2:targetpath/targetfolder/"
+        // Example identifier for $cmds['target'] => "2:targetpath/targetfolder/"
         $content = $cmds['data'];
         if (!$fileObject instanceof File) {
             $this->writeLog(9, 2, 123, 'Target "%s" was not a file!', [$fileIdentifier]);
@@ -1066,7 +1060,7 @@ class ExtendedFileUtility extends BasicFileUtility
             $this->addMessageToFlashMessageQueue('FileUtility.NoFileWasUploaded');
             return false;
         }
-        // Example indentifier for $cmds['target'] => "2:targetpath/targetfolder/"
+        // Example identifier for $cmds['target'] => "2:targetpath/targetfolder/"
         $targetFolderObject = $this->getFileObject($cmds['target']);
         // Uploading with non HTML-5-style, thus, make an array out of it, so we can loop over it
         if (!is_array($uploadedFileData['name'])) {
@@ -1203,7 +1197,6 @@ class ExtendedFileUtility extends BasicFileUtility
      * Add flash message to message queue
      *
      * @param FlashMessage $flashMessage
-     * @return void
      */
     protected function addFlashMessage(FlashMessage $flashMessage)
     {

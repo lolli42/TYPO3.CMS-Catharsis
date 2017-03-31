@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "1fe12bb655c3cb1c01ee8d0e5b945e1e",
+    "content-hash": "0a93bff6ece95bdbe45d883432719012",
     "packages": [
         {
             "name": "cogpowered/finediff",
@@ -1363,16 +1363,16 @@
         },
         {
             "name": "typo3fluid/fluid",
-            "version": "2.2.0",
+            "version": "2.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/TYPO3/Fluid.git",
-                "reference": "48e434663ec3844bd8f8f91f8fa33587b1a643e2"
+                "reference": "117ea779232ff6299c5659e8ee3583509e851eca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/TYPO3/Fluid/zipball/48e434663ec3844bd8f8f91f8fa33587b1a643e2",
-                "reference": "48e434663ec3844bd8f8f91f8fa33587b1a643e2",
+                "url": "https://api.github.com/repos/TYPO3/Fluid/zipball/117ea779232ff6299c5659e8ee3583509e851eca",
+                "reference": "117ea779232ff6299c5659e8ee3583509e851eca",
                 "shasum": ""
             },
             "require": {
@@ -1398,50 +1398,10 @@
                 "LGPL-3.0"
             ],
             "description": "The TYPO3 Fluid template rendering engine",
-            "time": "2017-01-18T15:34:20+00:00"
+            "time": "2017-02-22T05:27:39+00:00"
         }
     ],
     "packages-dev": [
-        {
-            "name": "7elix/styleguide",
-            "version": "8.0.5",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/7elix/TYPO3.CMS.Styleguide.git",
-                "reference": "b6f4459e1ce268b17b46b68a804840440fe8f4f0"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/7elix/TYPO3.CMS.Styleguide/zipball/b6f4459e1ce268b17b46b68a804840440fe8f4f0",
-                "reference": "b6f4459e1ce268b17b46b68a804840440fe8f4f0",
-                "shasum": ""
-            },
-            "type": "typo3-cms-extension",
-            "autoload": {
-                "psr-4": {
-                    "TYPO3\\CMS\\Styleguide\\": "Classes/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "GPL-2.0+"
-            ],
-            "authors": [
-                {
-                    "name": "Felix Kopp",
-                    "email": "felix-source@phorax.com",
-                    "homepage": "http://phorax.com",
-                    "role": "Developer"
-                }
-            ],
-            "description": "TYPO3 CMS Backend Styleguide",
-            "homepage": "https://github.com/7elix/TYPO3.CMS.Styleguide",
-            "keywords": [
-                "style guide",
-                "typo3"
-            ],
-            "time": "2016-11-02T01:46:43+00:00"
-        },
         {
             "name": "behat/gherkin",
             "version": "v4.4.5",
@@ -3418,6 +3378,118 @@
             "description": "Symfony Stopwatch Component",
             "homepage": "https://symfony.com",
             "time": "2017-01-02T20:32:22+00:00"
+        },
+        {
+            "name": "typo3/cms-styleguide",
+            "version": "8.0.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/TYPO3/styleguide.git",
+                "reference": "7f9b8f5b376e981cb59f091d460720bfbde0ce7b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/TYPO3/styleguide/zipball/7f9b8f5b376e981cb59f091d460720bfbde0ce7b",
+                "reference": "7f9b8f5b376e981cb59f091d460720bfbde0ce7b",
+                "shasum": ""
+            },
+            "replace": {
+                "styleguide": "*"
+            },
+            "type": "typo3-cms-extension",
+            "autoload": {
+                "psr-4": {
+                    "TYPO3\\CMS\\Styleguide\\": "Classes/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Felix Kopp",
+                    "email": "felix-source@phorax.com",
+                    "homepage": "http://phorax.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "TYPO3 CMS Core Team",
+                    "homepage": "https://forge.typo3.org/projects/typo3cms-core",
+                    "role": "Developer"
+                }
+            ],
+            "description": "TYPO3 CMS Extension to test everything in the TYPO3 Backend",
+            "homepage": "https://github.com/TYPO3/styleguide",
+            "keywords": [
+                "style guide",
+                "typo3",
+                "typo3 backend"
+            ],
+            "time": "2017-03-14T18:36:19+00:00"
+        },
+        {
+            "name": "typo3/testing-framework",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/TYPO3/testing-framework.git",
+                "reference": "6142661e9ae04ad8fdfd5128b48548af0c89d66d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/TYPO3/testing-framework/zipball/6142661e9ae04ad8fdfd5128b48548af0c89d66d",
+                "reference": "6142661e9ae04ad8fdfd5128b48548af0c89d66d",
+                "shasum": ""
+            },
+            "require": {
+                "mikey179/vfsstream": "~1.6.0",
+                "phpunit/phpunit": "^5.6",
+                "typo3/cms-backend": "^8.5",
+                "typo3/cms-core": "^8.5",
+                "typo3/cms-extbase": "^8.5",
+                "typo3/cms-fluid": "^8.5",
+                "typo3/cms-frontend": "^8.5",
+                "typo3fluid/fluid": "^2.2"
+            },
+            "suggest": {
+                "codeception/codeception": "^2.2",
+                "se/selenium-server-standalone": "~2.53",
+                "typo3/cms-saltedpasswords": "^8.5",
+                "typo3/cms-styleguide": "~8.0.8"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "TYPO3\\TestingFramework\\": "Classes/",
+                    "TYPO3\\CMS\\Core\\Tests\\": "compat/core/",
+                    "TYPO3\\CMS\\Fluid\\Tests\\": "compat/fluid/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "The TYPO3 Community",
+                    "homepage": "https://typo3.org/community/",
+                    "role": "Contributor"
+                },
+                {
+                    "name": "TYPO3 CMS Core Team",
+                    "homepage": "https://forge.typo3.org/projects/typo3cms-core",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The TYPO3 testing framework provides base classes for unit, functional and acceptance testing.",
+            "homepage": "https://typo3.org/",
+            "keywords": [
+                "testing",
+                "tests",
+                "typo3"
+            ],
+            "time": "2017-03-31T14:08:16+00:00"
         },
         {
             "name": "webmozart/assert",

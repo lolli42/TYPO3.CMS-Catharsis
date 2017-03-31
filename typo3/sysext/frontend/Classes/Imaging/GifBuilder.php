@@ -33,7 +33,7 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  * This class allows for advanced rendering of images with various layers of images, text and graphical primitives.
  * The concept is known from TypoScript as "GIFBUILDER" where you can define a "numerical array" (TypoScript term as well) of "GIFBUILDER OBJECTS" (like "TEXT", "IMAGE", etc.) and they will be rendered onto an image one by one.
  * The name "GIFBUILDER" comes from the time where GIF was the only file format supported. PNG is just as well to create today (configured with TYPO3_CONF_VARS[GFX])
- * Not all instances of this class is truely building gif/png files by layers; You may also see the class instantiated for the purpose of using the scaling functions in the parent class.
+ * Not all instances of this class is truly building gif/png files by layers; You may also see the class instantiated for the purpose of using the scaling functions in the parent class.
  *
  * Here is an example of how to use this class (from tslib_content.php, function getImgResource):
  *
@@ -107,7 +107,6 @@ class GifBuilder extends GraphicalFunctions
      *
      * @param array $conf TypoScript properties for the GIFBUILDER session. Stored internally in the variable ->setup
      * @param array $data The current data record from \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer. Stored internally in the variable ->data
-     * @return void
      * @see ContentObjectRenderer::getImgResource(), \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject::makeGifs(), \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject::findLargestDims()
      */
     public function start($conf, $data)
@@ -344,11 +343,11 @@ class GifBuilder extends GraphicalFunctions
     {
         if ($this->setup) {
             // Relative to PATH_site
-            $gifFileName = $this->fileName('images/');
+            $gifFileName = $this->fileName('assets/images/');
             // File exists
             if (!file_exists($gifFileName)) {
                 // Create temporary directory if not done:
-                $this->createTempSubDir('images/');
+                GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/assets/images/');
                 // Create file:
                 $this->make();
                 $this->output($gifFileName);
@@ -365,7 +364,6 @@ class GifBuilder extends GraphicalFunctions
      * Creates a GDlib resource in $this->im and works on that
      * Called by gifBuild()
      *
-     * @return void
      * @access private
      * @see gifBuild()
      */
@@ -707,7 +705,7 @@ class GifBuilder extends GraphicalFunctions
         // shorten prefix to avoid overly long file names
         $filePrefix = substr($filePrefix, 0, 100);
 
-        return $this->tempPath . $pre . $filePrefix . '_' . GeneralUtility::shortMD5(serialize($this->setup)) . '.' . $this->extension();
+        return 'typo3temp/' . $pre . $filePrefix . '_' . GeneralUtility::shortMD5(serialize($this->setup)) . '.' . $this->extension();
     }
 
     /**

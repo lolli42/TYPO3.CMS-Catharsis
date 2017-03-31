@@ -84,7 +84,6 @@ class FinisherContext
     /**
      * Cancels the finisher invocation after the current finisher
      *
-     * @return void
      * @api
      */
     public function cancel()
@@ -93,7 +92,7 @@ class FinisherContext
     }
 
     /**
-     * TRUE if no futher finishers should be invoked. Defaults to FALSE
+     * TRUE if no further finishers should be invoked. Defaults to FALSE
      *
      * @return bool
      * @internal

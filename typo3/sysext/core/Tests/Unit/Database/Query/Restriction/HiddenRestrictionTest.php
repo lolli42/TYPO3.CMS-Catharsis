@@ -20,7 +20,6 @@ use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 class HiddenRestrictionTest extends AbstractRestrictionTestCase
 {
     /**
-     * @return void
      */
     protected function setUp()
     {
@@ -38,7 +37,7 @@ class HiddenRestrictionTest extends AbstractRestrictionTestCase
             ],
         ];
         $subject = new HiddenRestriction();
-        $expression = $subject->buildExpression(['aTable' => ''], $this->expressionBuilder);
+        $expression = $subject->buildExpression(['aTable' => 'aTable'], $this->expressionBuilder);
         $this->assertSame('"aTable"."myHiddenField" = 0', (string)$expression);
     }
 }

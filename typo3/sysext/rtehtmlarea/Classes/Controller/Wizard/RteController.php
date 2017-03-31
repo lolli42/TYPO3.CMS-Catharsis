@@ -83,8 +83,6 @@ class RteController extends AbstractWizardController
 
     /**
      * Initialization of the class
-     *
-     * @return void
      */
     protected function init()
     {
@@ -116,8 +114,6 @@ class RteController extends AbstractWizardController
 
     /**
      * Main function, rendering the document with the iFrame with the RTE in.
-     *
-     * @return void
      */
     public function main()
     {
@@ -274,7 +270,7 @@ class RteController extends AbstractWizardController
             $closeButton = $buttonBar->makeLinkButton()
                 ->setHref($closeUrl)
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.closeDoc'))
-                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL));
+                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-close', Icon::SIZE_SMALL));
             $buttonBar->addButton($closeButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
 
             // Save

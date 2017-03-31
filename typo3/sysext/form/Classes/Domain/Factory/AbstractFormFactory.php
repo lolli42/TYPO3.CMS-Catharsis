@@ -17,6 +17,8 @@ namespace TYPO3\CMS\Form\Domain\Factory;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 
 /**
@@ -51,17 +53,31 @@ use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 abstract class AbstractFormFactory implements FormFactoryInterface
 {
     /**
-     * Helper to be called by every AbstractFormFactory after everything has been built to trigger the "onBuildingFinished"
-     * template method on all form elements.
+     * Helper to be called by every AbstractFormFactory after everything has been built to call the "afterBuildingFinished"
+     * hook on all form elements.
      *
      * @param FormDefinition $form
-     * @return void
      * @api
      */
     protected function triggerFormBuildingFinished(FormDefinition $form)
     {
         foreach ($form->getRenderablesRecursively() as $renderable) {
+            GeneralUtility::deprecationLog('EXT:form - calls for "onBuildingFinished" are deprecated since TYPO3 v8 and will be removed in TYPO3 v9');
             $renderable->onBuildingFinished();
+
+            if (
+                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterBuildingFinished'])
+                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterBuildingFinished'])
+            ) {
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterBuildingFinished'] as $className) {
+                    $hookObj = GeneralUtility::makeInstance($className);
+                    if (method_exists($hookObj, 'afterBuildingFinished')) {
+                        $hookObj->afterBuildingFinished(
+                            $renderable
+                        );
+                    }
+                }
+            }
         }
     }
 }

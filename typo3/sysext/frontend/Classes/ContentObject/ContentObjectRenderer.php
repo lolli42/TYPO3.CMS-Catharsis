@@ -26,6 +26,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\FrontendEditing\FrontendEditingController;
 use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\Imaging\ImageManipulation\CropVariantCollection;
 use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Mail\MailMessage;
@@ -41,6 +42,7 @@ use TYPO3\CMS\Core\Service\DependencyOrderingService;
 use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -372,13 +374,6 @@ class ContentObjectRenderer
     public $lastTypoLinkLD = [];
 
     /**
-     * Caching substituteMarkerArrayCached function
-     *
-     * @var array
-     */
-    public $substMarkerCache = [];
-
-    /**
      * array that registers rendered content elements (or any table) to make sure they are not rendered recursively!
      *
      * @var array
@@ -552,7 +547,6 @@ class ContentObjectRenderer
      *
      * @param array $data The record data that is rendered.
      * @param string $table The table that the data record is from.
-     * @return void
      */
     public function start($data, $table = '')
     {
@@ -625,7 +619,6 @@ class ContentObjectRenderer
      *
      * @param array $data The record array
      * @param string $currentRecord This is set to the [table]:[uid] of the record delivered in the $data-array, if the cObjects CONTENT or RECORD is in operation. Note that $GLOBALS['TSFE']->currentRecord is set to an equal value but always indicating the latest record rendered.
-     * @return void
      * @access private
      */
     public function setParent($data, $currentRecord)
@@ -658,7 +651,6 @@ class ContentObjectRenderer
      * Sets the "current" value.
      *
      * @param mixed $value The variable that you want to set as "current
-     * @return void
      * @see getCurrentVal()
      */
     public function setCurrentVal($value)
@@ -942,7 +934,6 @@ class ContentObjectRenderer
      * Sets the user object type
      *
      * @param mixed $userObjectType
-     * @return void
      */
     public function setUserObjectType($userObjectType)
     {
@@ -951,8 +942,6 @@ class ContentObjectRenderer
 
     /**
      * Requests the current USER object to be converted to USER_INT.
-     *
-     * @return void
      */
     public function convertToUserIntObject()
     {
@@ -974,7 +963,6 @@ class ContentObjectRenderer
      * @param string|array $flexData Flexform data
      * @param array $conf Array to write the data into, by reference
      * @param bool $recursive Is set if called recursive. Don't call function with this parameter, it's used inside the function only
-     * @return void
      */
     public function readFlexformIntoConf($flexData, &$conf, $recursive = false)
     {
@@ -1094,7 +1082,7 @@ class ContentObjectRenderer
             'selfClosingTagSlash' => (!empty($tsfe->xhtmlDoctype) ? ' /' : ''),
         ];
 
-        $theValue = $this->substituteMarkerArray($imageTagTemplate, $imageTagValues, '###|###', true, true);
+        $theValue = $this->templateService->substituteMarkerArray($imageTagTemplate, $imageTagValues, '###|###', true, true);
 
         $linkWrap = isset($conf['linkWrap.']) ? $this->stdWrap($conf['linkWrap'], $conf['linkWrap.']) : $conf['linkWrap'];
         if ($linkWrap) {
@@ -1175,7 +1163,8 @@ class ContentObjectRenderer
 
             // apply option split to configurations
             $tsfe = $this->getTypoScriptFrontendController();
-            $srcLayoutOptionSplitted = $tsfe->tmpl->splitConfArray($conf['layout.'][$layoutKey . '.'], count($activeSourceCollections));
+            $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+            $srcLayoutOptionSplitted = $typoScriptService->explodeConfigurationForOptionSplit((array)$conf['layout.'][$layoutKey . '.'], count($activeSourceCollections));
 
             // render sources
             foreach ($activeSourceCollections as $key => $sourceConfiguration) {
@@ -1233,7 +1222,7 @@ class ContentObjectRenderer
                     $sourceConfiguration['src'] = htmlspecialchars($urlPrefix . $sourceInfo[3]);
                     $sourceConfiguration['selfClosingTagSlash'] = !empty($tsfe->xhtmlDoctype) ? ' /' : '';
 
-                    $oneSourceCollection = $this->substituteMarkerArray($sourceLayout, $sourceConfiguration, '###|###', true, true);
+                    $oneSourceCollection = $this->templateService->substituteMarkerArray($sourceLayout, $sourceConfiguration, '###|###', true, true);
 
                     if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['getImageSourceCollection'])) {
                         foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['getImageSourceCollection'] as $classData) {
@@ -1407,7 +1396,6 @@ class ContentObjectRenderer
      * Therefore you should call this function with the last-changed timestamp of any element you display.
      *
      * @param int $tstamp Unix timestamp (number of seconds since 1970)
-     * @return void
      * @see TypoScriptFrontendController::setSysLastChanged()
      */
     public function lastChanged($tstamp)
@@ -1558,9 +1546,11 @@ class ContentObjectRenderer
      * @param string $content The content stream, typically HTML template content.
      * @param string $marker The marker string, typically on the form "###[the marker string]###
      * @return string The subpart found, if found.
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function getSubpart($content, $marker)
     {
+        GeneralUtility::logDeprecatedFunction();
         return $this->templateService->getSubpart($content, $marker);
     }
 
@@ -1575,9 +1565,11 @@ class ContentObjectRenderer
      * @param mixed $subpartContent The content to insert instead of the subpart found. If a string, then just plain substitution happens (includes removing the HTML comments of the subpart if found). If $subpartContent happens to be an array, it's [0] and [1] elements are wrapped around the EXISTING content of the subpart (fetched by getSubpart()) thereby not removing the original content.
      * @param bool|int $recursive If $recursive is set, the function calls itself with the content set to the remaining part of the content after the second marker. This means that proceding subparts are ALSO substituted!
      * @return string The processed HTML content string.
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function substituteSubpart($content, $marker, $subpartContent, $recursive = 1)
     {
+        GeneralUtility::logDeprecatedFunction();
         return $this->templateService->substituteSubpart($content, $marker, $subpartContent, $recursive);
     }
 
@@ -1587,9 +1579,11 @@ class ContentObjectRenderer
      * @param string $content The content stream, typically HTML template content.
      * @param array $subpartsContent The array of key/value pairs being subpart/content values used in the substitution. For each element in this array the function will substitute a subpart in the content stream with the content.
      * @return string The processed HTML content string.
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function substituteSubpartArray($content, array $subpartsContent)
     {
+        GeneralUtility::logDeprecatedFunction();
         return $this->templateService->substituteSubpartArray($content, $subpartsContent);
     }
 
@@ -1602,9 +1596,11 @@ class ContentObjectRenderer
      * @param mixed $markContent The content to insert instead of the marker string found.
      * @return string The processed HTML content string.
      * @see substituteSubpart()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function substituteMarker($content, $marker, $markContent)
     {
+        GeneralUtility::logDeprecatedFunction();
         return $this->templateService->substituteMarker($content, $marker, $markContent);
     }
 
@@ -1639,109 +1635,12 @@ class ContentObjectRenderer
      * @param array $wrappedSubpartContentArray An array of arrays with 0/1 keys where the subparts pointed to by the main key is wrapped with the 0/1 value alternating.
      * @return string The output content stream
      * @see substituteSubpart(), substituteMarker(), substituteMarkerInObject(), TEMPLATE()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function substituteMarkerArrayCached($content, array $markContentArray = null, array $subpartContentArray = null, array $wrappedSubpartContentArray = null)
     {
-        $timeTracker = $this->getTimeTracker();
-        $timeTracker->push('substituteMarkerArrayCached');
-        // If not arrays then set them
-        if (is_null($markContentArray)) {
-            // Plain markers
-            $markContentArray = [];
-        }
-        if (is_null($subpartContentArray)) {
-            // Subparts being directly substituted
-            $subpartContentArray = [];
-        }
-        if (is_null($wrappedSubpartContentArray)) {
-            // Subparts being wrapped
-            $wrappedSubpartContentArray = [];
-        }
-        // Finding keys and check hash:
-        $sPkeys = array_keys($subpartContentArray);
-        $wPkeys = array_keys($wrappedSubpartContentArray);
-        $keysToReplace = array_merge(array_keys($markContentArray), $sPkeys, $wPkeys);
-        if (empty($keysToReplace)) {
-            $timeTracker->pull();
-            return $content;
-        }
-        asort($keysToReplace);
-        $storeKey = md5('substituteMarkerArrayCached_storeKey:' . serialize([$content, $keysToReplace]));
-        if ($this->substMarkerCache[$storeKey]) {
-            $storeArr = $this->substMarkerCache[$storeKey];
-            $timeTracker->setTSlogMessage('Cached', 0);
-        } else {
-            $storeArrDat = $this->getTypoScriptFrontendController()->sys_page->getHash($storeKey);
-            if (is_array($storeArrDat)) {
-                $storeArr = $storeArrDat;
-                // Setting cache:
-                $this->substMarkerCache[$storeKey] = $storeArr;
-                $timeTracker->setTSlogMessage('Cached from DB', 0);
-            } else {
-                // Finding subparts and substituting them with the subpart as a marker
-                foreach ($sPkeys as $sPK) {
-                    $content = $this->substituteSubpart($content, $sPK, $sPK);
-                }
-                // Finding subparts and wrapping them with markers
-                foreach ($wPkeys as $wPK) {
-                    $content = $this->substituteSubpart($content, $wPK, [
-                        $wPK,
-                        $wPK
-                    ]);
-                }
-
-                $storeArr = [];
-                // search all markers in the content
-                $result = preg_match_all('/###([^#](?:[^#]*+|#{1,2}[^#])+)###/', $content, $markersInContent);
-                if ($result !== false && !empty($markersInContent[1])) {
-                    $keysToReplaceFlipped = array_flip($keysToReplace);
-                    $regexKeys = [];
-                    $wrappedKeys = [];
-                    // Traverse keys and quote them for reg ex.
-                    foreach ($markersInContent[1] as $key) {
-                        if (isset($keysToReplaceFlipped['###' . $key . '###'])) {
-                            $regexKeys[] = preg_quote($key, '/');
-                            $wrappedKeys[] = '###' . $key . '###';
-                        }
-                    }
-                    $regex = '/###(?:' . implode('|', $regexKeys) . ')###/';
-                    $storeArr['c'] = preg_split($regex, $content); // contains all content parts around markers
-                    $storeArr['k'] = $wrappedKeys; // contains all markers incl. ###
-                    // Setting cache:
-                    $this->substMarkerCache[$storeKey] = $storeArr;
-                    // Storing the cached data:
-                    $this->getTypoScriptFrontendController()->sys_page->storeHash($storeKey, $storeArr, 'substMarkArrayCached');
-                }
-                $timeTracker->setTSlogMessage('Parsing', 0);
-            }
-        }
-        if (!empty($storeArr['k']) && is_array($storeArr['k'])) {
-            // Substitution/Merging:
-            // Merging content types together, resetting
-            $valueArr = array_merge($markContentArray, $subpartContentArray, $wrappedSubpartContentArray);
-            $wSCA_reg = [];
-            $content = '';
-            // Traversing the keyList array and merging the static and dynamic content
-            foreach ($storeArr['k'] as $n => $keyN) {
-                // add content before marker
-                $content .= $storeArr['c'][$n];
-                if (!is_array($valueArr[$keyN])) {
-                    // fetch marker replacement from $markContentArray or $subpartContentArray
-                    $content .= $valueArr[$keyN];
-                } else {
-                    if (!isset($wSCA_reg[$keyN])) {
-                        $wSCA_reg[$keyN] = 0;
-                    }
-                    // fetch marker replacement from $wrappedSubpartContentArray
-                    $content .= $valueArr[$keyN][$wSCA_reg[$keyN] % 2];
-                    $wSCA_reg[$keyN]++;
-                }
-            }
-            // add remaining content
-            $content .= $storeArr['c'][count($storeArr['k'])];
-        }
-        $timeTracker->pull();
-        return $content;
+        GeneralUtility::logDeprecatedFunction();
+        return $this->templateService->substituteMarkerArrayCached($content, $markContentArray, $subpartContentArray, $wrappedSubpartContentArray);
     }
 
     /**
@@ -1762,9 +1661,11 @@ class ContentObjectRenderer
      * @param bool $deleteUnused If set, all unused marker are deleted.
      * @return string The processed output stream
      * @see substituteMarker(), substituteMarkerInObject(), TEMPLATE()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function substituteMarkerArray($content, array $markContentArray, $wrap = '', $uppercase = false, $deleteUnused = false)
     {
+        GeneralUtility::logDeprecatedFunction();
         return $this->templateService->substituteMarkerArray($content, $markContentArray, $wrap, $uppercase, $deleteUnused);
     }
 
@@ -1775,15 +1676,17 @@ class ContentObjectRenderer
      * @param array $markContentArray The array of key/value pairs being marker/content values used in the substitution. For each element in this array the function will substitute a marker in the content string/array values.
      * @return mixed The processed input variable.
      * @see substituteMarker()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function substituteMarkerInObject(&$tree, array $markContentArray)
     {
+        GeneralUtility::logDeprecatedFunction();
         if (is_array($tree)) {
             foreach ($tree as $key => $value) {
-                $this->substituteMarkerInObject($tree[$key], $markContentArray);
+                $this->templateService->substituteMarkerInObject($tree[$key], $markContentArray);
             }
         } else {
-            $tree = $this->substituteMarkerArray($tree, $markContentArray);
+            $tree = $this->templateService->substituteMarkerArray($tree, $markContentArray);
         }
         return $tree;
     }
@@ -1797,9 +1700,11 @@ class ContentObjectRenderer
      * @param bool $uppercase
      * @param bool $deleteUnused
      * @return string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function substituteMarkerAndSubpartArrayRecursive($content, array $markersAndSubparts, $wrap = '', $uppercase = false, $deleteUnused = false)
     {
+        GeneralUtility::logDeprecatedFunction();
         return $this->templateService->substituteMarkerAndSubpartArrayRecursive($content, $markersAndSubparts, $wrap, $uppercase, $deleteUnused);
     }
 
@@ -1814,28 +1719,13 @@ class ContentObjectRenderer
      * @param string $prefix Prefix string to the fieldname before it is added as a key in the $markContentArray. Notice that the keys added to the $markContentArray always start and end with "###
      * @param bool $HSC If set, all values are passed through htmlspecialchars() - RECOMMENDED to avoid most obvious XSS and maintain XHTML compliance.
      * @return array The modified $markContentArray
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the MarkerBasedTemplateService instead.
      */
     public function fillInMarkerArray(array $markContentArray, array $row, $fieldList = '', $nl2br = true, $prefix = 'FIELD_', $HSC = false)
     {
+        GeneralUtility::logDeprecatedFunction();
         $tsfe = $this->getTypoScriptFrontendController();
-        if ($fieldList) {
-            $fArr = GeneralUtility::trimExplode(',', $fieldList, true);
-            foreach ($fArr as $field) {
-                $markContentArray['###' . $prefix . $field . '###'] = $nl2br ? nl2br($row[$field], !empty($tsfe->xhtmlDoctype)) : $row[$field];
-            }
-        } else {
-            if (is_array($row)) {
-                foreach ($row as $field => $value) {
-                    if (!MathUtility::canBeInterpretedAsInteger($field)) {
-                        if ($HSC) {
-                            $value = htmlspecialchars($value);
-                        }
-                        $markContentArray['###' . $prefix . $field . '###'] = $nl2br ? nl2br($value, !empty($tsfe->xhtmlDoctype)) : $value;
-                    }
-                }
-            }
-        }
-        return $markContentArray;
+        return $this->templateService->fillInMarkerArray($markContentArray, $row, $fieldList, $nl2br, $prefix, $HSC, !empty($tsfe->xhtmlDoctype));
     }
 
     /**
@@ -2417,20 +2307,21 @@ class ContentObjectRenderer
     }
 
     /**
-     * csConv
-     * Will convert the current chracter set of the content to the one given in csConv
+     * stdWrap csConv: Converts the input to UTF-8
      *
-     * @param string $content Input value undergoing processing in this function.
+     * The character set of the input must be specified. Returns the input if
+     * matters go wrong, for example if an invalid character set is given.
+     *
+     * @param string $content The string to convert.
      * @param array $conf stdWrap properties for csConv.
-     * @return string The processed input value
+     * @return string The processed input.
      */
     public function stdWrap_csConv($content = '', $conf = [])
     {
         if (!empty($conf['csConv'])) {
-            /** @var CharsetConverter $charsetConverter */
             $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
             $output = $charsetConverter->conv($content, $charsetConverter->parse_charset($conf['csConv']), 'utf-8');
-            return $output ?: $content;
+            return $output !== false && $output !== '' ? $output : $content;
         } else {
             return $content;
         }
@@ -3905,7 +3796,7 @@ class ContentObjectRenderer
 
     /**
      * Function for removing malicious HTML code when you want to provide some HTML code user-editable.
-     * The purpose is to avoid XSS attacks and the code will be continously modified to remove such code.
+     * The purpose is to avoid XSS attacks and the code will be continuously modified to remove such code.
      * For a complete reference with javascript-on-events, see http://www.wdvl.com/Authoring/JavaScript/Events/events_target.html
      *
      * @param string $text Input string to be cleaned.
@@ -4330,7 +4221,8 @@ class ContentObjectRenderer
                 } else {
                     // init for replacement
                     $splitCount = preg_match_all($search, $content, $matches);
-                    $replaceArray = $this->getTypoScriptFrontendController()->tmpl->splitConfArray([$replace], $splitCount);
+                    $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+                    $replaceArray = $typoScriptService->explodeConfigurationForOptionSplit([$replace], $splitCount);
                     $replaceCount = 0;
 
                     $replaceCallback = function ($match) use ($replaceArray, $search, &$replaceCount) {
@@ -4348,7 +4240,8 @@ class ContentObjectRenderer
 
                     // init for replacement
                     $splitCount = preg_match_all($searchPreg, $content, $matches);
-                    $replaceArray = $this->getTypoScriptFrontendController()->tmpl->splitConfArray([$replace], $splitCount);
+                    $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+                    $replaceArray = $typoScriptService->explodeConfigurationForOptionSplit([$replace], $splitCount);
                     $replaceCount = 0;
 
                     $replaceCallback = function () use ($replaceArray, $search, &$replaceCount) {
@@ -4751,7 +4644,7 @@ class ContentObjectRenderer
     }
 
     /**
-     * Lets you split the content by LF and proces each line independently. Used to format content made with the RTE.
+     * Lets you split the content by LF and process each line independently. Used to format content made with the RTE.
      *
      * @param string $theValue The input value
      * @param array $conf TypoScript options
@@ -5035,7 +4928,7 @@ class ContentObjectRenderer
             } elseif ($file instanceof FileReference) {
                 $fileObject = $file->getOriginalFile();
                 if (!isset($fileArray['crop'])) {
-                    $fileArray['crop'] = $file->getProperty('crop');
+                    $fileArray['crop'] = $this->getCropArea($file, $fileArray['cropVariant'] ?: 'default');
                 }
             } else {
                 try {
@@ -5052,7 +4945,7 @@ class ContentObjectRenderer
                             $fileReference = $this->getResourceFactory()->getFileReferenceObject($file);
                             $fileObject = $fileReference->getOriginalFile();
                             if (!isset($fileArray['crop'])) {
-                                $fileArray['crop'] = $fileReference->getProperty('crop');
+                                $fileArray['crop'] = $this->getCropArea($fileReference, $fileArray['cropVariant'] ?: 'default');
                             }
                         } else {
                             $fileObject = $this->getResourceFactory()->getFileObject($file);
@@ -5153,6 +5046,20 @@ class ContentObjectRenderer
             }
         }
         return $imageResource;
+    }
+
+    /**
+     * @param FileReference $fileReference
+     * @param string $cropVariant
+     * @return null|\TYPO3\CMS\Core\Imaging\ImageManipulation\Area
+     */
+    protected function getCropArea(FileReference $fileReference, string $cropVariant)
+    {
+        $cropVariantCollection = CropVariantCollection::create(
+            (string)$fileReference->getProperty('crop')
+        );
+        $cropArea = $cropVariantCollection->getCropArea($cropVariant);
+        return $cropArea->isEmpty() ? null : $cropArea->makeAbsoluteBasedOnFile($fileReference);
     }
 
     /***********************************************
@@ -5669,31 +5576,10 @@ class ContentObjectRenderer
 
         $linkParameter = $resolvedLinkParameters['href'];
         $target = $resolvedLinkParameters['target'];
-        $linkClass = $resolvedLinkParameters['class'];
         $title = $resolvedLinkParameters['title'];
 
         if (!$linkParameter) {
             return $linkText;
-        }
-
-        // Check, if the target is coded as a JS open window link:
-        $JSwindowParts = [];
-        $JSwindowParams = '';
-        if ($target && preg_match('/^([0-9]+)x([0-9]+)(:(.*)|.*)$/', $target, $JSwindowParts)) {
-            // Take all pre-configured and inserted parameters and compile parameter list, including width+height:
-            $JSwindow_tempParamsArr = GeneralUtility::trimExplode(',', strtolower($conf['JSwindow_params'] . ',' . $JSwindowParts[4]), true);
-            $JSwindow_paramsArr = [];
-            foreach ($JSwindow_tempParamsArr as $JSv) {
-                list($JSp, $JSv) = explode('=', $JSv, 2);
-                $JSwindow_paramsArr[$JSp] = $JSp . '=' . $JSv;
-            }
-            // Add width/height:
-            $JSwindow_paramsArr['width'] = 'width=' . $JSwindowParts[1];
-            $JSwindow_paramsArr['height'] = 'height=' . $JSwindowParts[2];
-            // Imploding into string:
-            $JSwindowParams = implode(',', $JSwindow_paramsArr);
-            // Resetting the target since we will use onClick.
-            $target = '';
         }
 
         // Detecting kind of link and resolve all necessary parameters
@@ -5704,28 +5590,13 @@ class ContentObjectRenderer
             // If it's a mail address
             case LinkService::TYPE_EMAIL:
                 list($this->lastTypoLinkUrl, $linkText) = $this->getMailTo($linkDetails['email'], $linkText);
-                $finalTagParts['url'] = $this->lastTypoLinkUrl;
             break;
 
             // URL (external)
             case LinkService::TYPE_URL:
-                if (empty($target)) {
-                    if (isset($conf['extTarget'])) {
-                        $target = $conf['extTarget'];
-                    } elseif ($tsfe->dtdAllowsFrames) {
-                        $target = $tsfe->extTarget;
-                    }
-                    if ($conf['extTarget.']) {
-                        $target = $this->stdWrap($target, $conf['extTarget.']);
-                    }
-                }
+                $target = $target ?: $this->resolveTargetAttribute($conf, 'extTarget', true, $tsfe->extTarget);
                 $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, $linkDetails['url']);
-
                 $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_EXTERNAL, $linkDetails['url'], $conf);
-                $this->lastTypoLinkTarget = $target;
-                $finalTagParts['url'] = $this->lastTypoLinkUrl;
-                $finalTagParts['targetParams'] = $target ? ' target="' . htmlspecialchars($target) . '"' : '';
-                $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_URL);
             break;
 
             // File (internal)
@@ -5741,16 +5612,7 @@ class ContentObjectRenderer
                     $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_FILE, $linkLocation, $conf);
                     $this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
 
-                    if (empty($target)) {
-                        $target = isset($conf['fileTarget']) ? $conf['fileTarget'] : $tsfe->fileTarget;
-                        if ($conf['fileTarget.']) {
-                            $target = $this->stdWrap($target, $conf['fileTarget.']);
-                        }
-                    }
-                    $this->lastTypoLinkTarget = $target;
-                    $finalTagParts['url'] = $this->lastTypoLinkUrl;
-                    $finalTagParts['targetParams'] = $target ? ' target="' . htmlspecialchars($target) . '"' : '';
-                    $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_FILE);
+                    $target = $target ?: $this->resolveTargetAttribute($conf, 'fileTarget', false, $tsfe->fileTarget);
                 } else {
                     $this->getTimeTracker()->setTSlogMessage('typolink(): File "' . $linkParameter . '" did not exist, so "' . $linkText . '" was not linked.', 1);
                     return $linkText;
@@ -5904,30 +5766,18 @@ class ContentObjectRenderer
                     }
                     // If target page has a different domain and the current domain's linking scheme (e.g. RealURL/...) should not be used
                     if ($targetDomain !== '' && $targetDomain !== $currentDomain && !$enableLinksAcrossDomains) {
-                        if (empty($target)) {
-                            $target = isset($conf['extTarget']) ? $conf['extTarget'] : $tsfe->extTarget;
-                            if ($conf['extTarget.']) {
-                                $target = $this->stdWrap($target, $conf['extTarget.']);
-                            }
-                        }
+                        $target = $target ?: $this->resolveTargetAttribute($conf, 'extTarget', false, $tsfe->extTarget);
                         $LD['target'] = $target;
                         // Convert IDNA-like domain (if any)
                         if (!preg_match('/^[a-z0-9.\\-]*$/i', $targetDomain)) {
                             $targetDomain =  GeneralUtility::idnaEncode($targetDomain);
                         }
-                        $this->lastTypoLinkUrl = $this->URLqMark($absoluteUrlScheme . '://' . $targetDomain . '/index.php?id=' . $page['uid'], $addQueryParams) . $sectionMark;
+                        $this->lastTypoLinkUrl = $absoluteUrlScheme . '://' . $targetDomain . '/index.php?id=' . $page['uid'] . $addQueryParams . $sectionMark;
                     } else {
                         // Internal link or current domain's linking scheme should be used
                         // Internal target:
                         if (empty($target)) {
-                            if (isset($conf['target'])) {
-                                $target = $conf['target'];
-                            } elseif ($tsfe->dtdAllowsFrames) {
-                                $target = $tsfe->intTarget;
-                            }
-                            if ($conf['target.']) {
-                                $target = $this->stdWrap($target, $conf['target.']);
-                            }
+                            $target = $this->resolveTargetAttribute($conf, 'target', true, $tsfe->intTarget);
                         }
                         $LD = $tsfe->tmpl->linkData($page, $target, $conf['no_cache'], '', '', $addQueryParams, $pageType, $targetDomain);
                         if ($targetDomain !== '') {
@@ -5949,7 +5799,7 @@ class ContentObjectRenderer
                         }
                         $this->lastTypoLinkUrl = $LD['totalURL'] . $sectionMark;
                     }
-                    $this->lastTypoLinkTarget = $LD['target'];
+                    $target = $LD['target'];
                     // If sectionMark is set, there is no baseURL AND the current page is the page the link is to, check if there are any additional parameters or addQueryString parameters and if not, drop the url.
                     if ($sectionMark
                         && !$tsfe->config['config']['baseURL']
@@ -5996,9 +5846,6 @@ class ContentObjectRenderer
                         $this->lastTypoLinkLD['totalUrl'] = $this->lastTypoLinkUrl;
                         $LD = $this->lastTypoLinkLD;
                     }
-                    // Rendering the tag.
-                    $finalTagParts['url'] = $this->lastTypoLinkUrl;
-                    $finalTagParts['targetParams'] = (string)$LD['target'] !== '' ? ' target="' . htmlspecialchars($LD['target']) . '"' : '';
                 } else {
                     $this->getTimeTracker()->setTSlogMessage('typolink(): Page id "' . $linkParameter . '" was not found, so "' . $linkText . '" was not linked.', 1);
                     return $linkText;
@@ -6041,48 +5888,33 @@ class ContentObjectRenderer
             // Legacy files or something else
             case LinkService::TYPE_UNKNOWN:
                 if ($linkDetails['file']) {
+                    $linkDetails['type'] = LinkService::TYPE_FILE;
                     $linkLocation = $linkDetails['file'];
                     // Setting title if blank value to link
                     $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, rawurldecode($linkLocation));
                     $linkLocation = (strpos($linkLocation, '/') !== 0 ? $tsfe->absRefPrefix : '') . $linkLocation;
                     $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_FILE, $linkLocation, $conf);
                     $this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
-                    if (empty($target)) {
-                        $target = isset($conf['fileTarget']) ? $conf['fileTarget'] : $tsfe->fileTarget;
-                        if ($conf['fileTarget.']) {
-                            $target = $this->stdWrap($target, $conf['fileTarget.']);
-                        }
-                    }
-                    $this->lastTypoLinkTarget = $target;
-                    $finalTagParts['url'] = $this->lastTypoLinkUrl;
-                    $finalTagParts['targetParams'] = $target ? ' target="' . $target . '"' : '';
-                    $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_FILE);
+                    $target = $target ?: $this->resolveTargetAttribute($conf, 'fileTarget', false, $tsfe->fileTarget);
                 } elseif ($linkDetails['url']) {
-                    if (empty($target)) {
-                        if (isset($conf['extTarget'])) {
-                            $target = $conf['extTarget'];
-                        } elseif ($tsfe->dtdAllowsFrames) {
-                            $target = $tsfe->extTarget;
-                        }
-                        if ($conf['extTarget.']) {
-                            $target = $this->stdWrap($target, $conf['extTarget.']);
-                        }
-                    }
+                    $linkDetails['type'] = LinkService::TYPE_URL;
+                    $target = $target ?: $this->resolveTargetAttribute($conf, 'extTarget', true, $tsfe->extTarget);
                     $linkText = $this->parseFallbackLinkTextIfLinkTextIsEmpty($linkText, $linkDetails['url']);
-
                     $this->lastTypoLinkUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_EXTERNAL, $linkDetails['url'], $conf);
-                    $this->lastTypoLinkTarget = $target;
-                    $finalTagParts['url'] = $this->lastTypoLinkUrl;
-                    $finalTagParts['targetParams'] = $target ? ' target="' . $target . '"' : '';
-                    $finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], LinkService::TYPE_URL);
                 }
                 break;
         }
 
+        $this->lastTypoLinkTarget = $target;
+        $finalTagParts['url'] = $this->lastTypoLinkUrl;
         $finalTagParts['TYPE'] = $linkDetails['type'];
+        $finalTagParts['aTagParams'] .= $this->extLinkATagParams($this->lastTypoLinkUrl, $linkDetails['type']);
         $this->lastTypoLinkLD = $LD;
 
-        // Title tag
+        // Building the final <a href=".."> tag
+        $tagAttributes = [];
+
+        // Title attribute
         if (empty($title)) {
             $title = $conf['title'];
             if ($conf['title.']) {
@@ -6090,34 +5922,56 @@ class ContentObjectRenderer
             }
         }
 
-        if ($JSwindowParams) {
-            // Create TARGET-attribute only if the right doctype is used
-            $xhtmlDocType = $tsfe->xhtmlDoctype;
-            if ($xhtmlDocType !== 'xhtml_strict' && $xhtmlDocType !== 'xhtml_11') {
-                $target = ' target="FEopenLink"';
-            } else {
-                $target = '';
+        // Check, if the target is coded as a JS open window link:
+        $JSwindowParts = [];
+        $JSwindowParams = '';
+        if ($target && preg_match('/^([0-9]+)x([0-9]+)(:(.*)|.*)$/', $target, $JSwindowParts)) {
+            // Take all pre-configured and inserted parameters and compile parameter list, including width+height:
+            $JSwindow_tempParamsArr = GeneralUtility::trimExplode(',', strtolower($conf['JSwindow_params'] . ',' . $JSwindowParts[4]), true);
+            $JSwindow_paramsArr = [];
+            foreach ($JSwindow_tempParamsArr as $JSv) {
+                list($JSp, $JSv) = explode('=', $JSv, 2);
+                $JSwindow_paramsArr[$JSp] = $JSp . '=' . $JSv;
             }
-            $onClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($tsfe->baseUrlWrap($finalTagParts['url'])) . ',\'FEopenLink\',' . GeneralUtility::quoteJSvalue($JSwindowParams) . ');vHWin.focus();return false;';
-            $finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"'
-                . $target
-                . ' onclick="' . htmlspecialchars($onClick) . '"'
-                . ((string)$title !== '' ? ' title="' . htmlspecialchars($title) . '"' : '')
-                . ($linkClass !== '' ? ' class="' . htmlspecialchars($linkClass) . '"' : '')
-                . $finalTagParts['aTagParams']
-                . '>';
-        } else {
-            if ($tsfe->spamProtectEmailAddresses === 'ascii' && $linkDetails['type'] === LinkService::TYPE_EMAIL) {
-                $finalAnchorTag = '<a href="' . $finalTagParts['url'] . '"';
-            } else {
-                $finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"';
-            }
-            $finalAnchorTag .= ((string)$title !== '' ? ' title="' . htmlspecialchars($title) . '"' : '')
-                . $finalTagParts['targetParams']
-                . ($linkClass ? ' class="' . htmlspecialchars($linkClass) . '"' : '')
-                . $finalTagParts['aTagParams']
-                . '>';
+            // Add width/height:
+            $JSwindow_paramsArr['width'] = 'width=' . $JSwindowParts[1];
+            $JSwindow_paramsArr['height'] = 'height=' . $JSwindowParts[2];
+            // Imploding into string:
+            $JSwindowParams = implode(',', $JSwindow_paramsArr);
         }
+        if (!$JSwindowParams && $linkDetails['type'] === LinkService::TYPE_EMAIL && $tsfe->spamProtectEmailAddresses === 'ascii') {
+            $tagAttributes['href'] = $finalTagParts['url'];
+        } else {
+            $tagAttributes['href'] = htmlspecialchars($finalTagParts['url']);
+        }
+        if (!empty($title)) {
+            $tagAttributes['title'] = htmlspecialchars($title);
+        }
+
+        // Target attribute
+        if (!empty($this->lastTypoLinkTarget)) {
+            $tagAttributes['target'] = htmlspecialchars($this->lastTypoLinkTarget);
+        // Create TARGET-attribute only if the right doctype is used
+        } elseif ($JSwindowParams && !in_array($tsfe->xhtmlDoctype, ['xhtml_strict', 'xhtml_11'], true)) {
+            $tagAttributes['target'] = 'FEopenLink';
+        }
+
+        if ($JSwindowParams) {
+            $onClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($tsfe->baseUrlWrap($finalTagParts['url'])) . ',\'FEopenLink\',' . GeneralUtility::quoteJSvalue($JSwindowParams) . ');vHWin.focus();return false;';
+            $tagAttributes['onclick'] = htmlspecialchars($onClick);
+        }
+
+        if (!empty($resolvedLinkParameters['class'])) {
+            $tagAttributes['class'] = htmlspecialchars($resolvedLinkParameters['class']);
+        }
+
+        $finalAnchorTag = '<a ' . GeneralUtility::implodeAttributes($tagAttributes) . $finalTagParts['aTagParams'] . '>';
+
+        if (!empty($finalTagParts['aTagParams'])) {
+            $tagAttributes = array_merge($tagAttributes, GeneralUtility::get_tag_attributes($finalTagParts['aTagParams']));
+        }
+        // kept for backwards-compatibility in hooks
+        $finalTagParts['targetParams'] = !empty($tagAttributes['target']) ? ' target="' . $tagAttributes['target'] . '"' : '';
 
         // Call user function:
         if ($conf['userFunc']) {
@@ -6132,7 +5986,8 @@ class ContentObjectRenderer
                 'linktxt' => &$linkText,
                 'finalTag' => &$finalAnchorTag,
                 'finalTagParts' => &$finalTagParts,
-                'linkDetails' => &$linkDetails
+                'linkDetails' => &$linkDetails,
+                'tagAttributes' => &$tagAttributes
             ];
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typoLink_PostProc'] as $_funcRef) {
                 GeneralUtility::callUserFunction($_funcRef, $_params, $this);
@@ -6173,6 +6028,33 @@ class ContentObjectRenderer
         } else {
             return $originalLinkText;
         }
+    }
+
+    /**
+     * Creates the value for target="..." in a typolink configuration
+     *
+     * @param array $conf the typolink configuration
+     * @param string $name the key, usually "target", "extTarget" or "fileTarget"
+     * @param bool $respectFrameSetOption if set, then
+     * @param string $fallbackTarget
+     * @return string the value of the target attribute, if there is one
+     */
+    protected function resolveTargetAttribute(array $conf, string $name, bool $respectFrameSetOption = false, string $fallbackTarget = null): string
+    {
+        $tsfe = $this->getTypoScriptFrontendController();
+        $targetAttributeAllowed = (!$respectFrameSetOption || !$tsfe->config['config']['doctype'] ||
+            in_array((string)$tsfe->config['config']['doctype'], ['xhtml_trans', 'xhtml_frames', 'xhtml_basic', 'html5'], true));
+
+        $target = '';
+        if (isset($conf[$name])) {
+            $target = $conf[$name];
+        } elseif ($targetAttributeAllowed) {
+            $target = $fallbackTarget;
+        }
+        if ($conf[$name . '.']) {
+            $target = $this->stdWrap($target, $conf[$name . '.']);
+        }
+        return $target;
     }
 
     /**
@@ -6450,20 +6332,16 @@ class ContentObjectRenderer
         $originalMailToUrl = 'mailto:' . $mailAddress;
         $mailToUrl = $this->processUrl(UrlProcessorInterface::CONTEXT_MAIL, $originalMailToUrl);
 
-        $tsfe = $this->getTypoScriptFrontendController();
-        // no processing happened, therefore
+        // no processing happened, therefore, the default processing kicks in
         if ($mailToUrl === $originalMailToUrl) {
+            $tsfe = $this->getTypoScriptFrontendController();
             if ($tsfe->spamProtectEmailAddresses) {
-                if ($tsfe->spamProtectEmailAddresses === 'ascii') {
-                    $mailToUrl = $tsfe->encryptEmail($mailToUrl);
-                } else {
-                    $mailToUrl = 'javascript:linkTo_UnCryptMailto(' . GeneralUtility::quoteJSvalue($tsfe->encryptEmail($mailToUrl)) . ');';
+                $mailToUrl = $this->encryptEmail($mailToUrl, $tsfe->spamProtectEmailAddresses);
+                if ($tsfe->spamProtectEmailAddresses !== 'ascii') {
+                    $mailToUrl = 'javascript:linkTo_UnCryptMailto(' . GeneralUtility::quoteJSvalue($mailToUrl) . ');';
                 }
-                $atLabel = '';
-                if ($tsfe->config['config']['spamProtectEmailAddresses_atSubst']) {
-                    $atLabel = trim($tsfe->config['config']['spamProtectEmailAddresses_atSubst']);
-                }
-                $spamProtectedMailAddress = str_replace('@', $atLabel ? $atLabel : '(at)', htmlspecialchars($mailAddress));
+                $atLabel = trim($tsfe->config['config']['spamProtectEmailAddresses_atSubst']) ?: '(at)';
+                $spamProtectedMailAddress = str_replace('@', $atLabel, htmlspecialchars($mailAddress));
                 if ($tsfe->config['config']['spamProtectEmailAddresses_lastDotSubst']) {
                     $lastDotLabel = trim($tsfe->config['config']['spamProtectEmailAddresses_lastDotSubst']);
                     $lastDotLabel = $lastDotLabel ? $lastDotLabel : '(dot)';
@@ -6474,6 +6352,105 @@ class ContentObjectRenderer
         }
 
         return [$mailToUrl, $linktxt];
+    }
+
+    /**
+     * Encryption of email addresses for <A>-tags See the spam protection setup in TS 'config.'
+     *
+     * @param string $string Input string to en/decode: "mailto:blabla@bla.com
+     * @param mixed  $type - either "ascii" or a number between -10 and 10, taken from config.spamProtectEmailAddresses
+     * @return string encoded version of $string
+     */
+    protected function encryptEmail($string, $type)
+    {
+        $out = '';
+        // obfuscates using the decimal HTML entity references for each character
+        if ($type === 'ascii') {
+            $stringLength = strlen($string);
+            for ($a = 0; $a < $stringLength; $a++) {
+                $out .= '&#' . ord(substr($string, $a, 1)) . ';';
+            }
+        } else {
+            // like str_rot13() but with a variable offset and a wider character range
+            $len = strlen($string);
+            $offset = (int)$type;
+            for ($i = 0; $i < $len; $i++) {
+                $charValue = ord($string[$i]);
+                // 0-9 . , - + / :
+                if ($charValue >= 43 && $charValue <= 58) {
+                    $out .= $this->encryptCharcode($charValue, 43, 58, $offset);
+                } elseif ($charValue >= 64 && $charValue <= 90) {
+                    // A-Z @
+                    $out .= $this->encryptCharcode($charValue, 64, 90, $offset);
+                } elseif ($charValue >= 97 && $charValue <= 122) {
+                    // a-z
+                    $out .= $this->encryptCharcode($charValue, 97, 122, $offset);
+                } else {
+                    $out .= $string[$i];
+                }
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Decryption of email addresses for <A>-tags See the spam protection setup in TS 'config.'
+     *
+     * @param string $string Input string to en/decode: "mailto:blabla@bla.com
+     * @param mixed  $type - either "ascii" or a number between -10 and 10 taken from config.spamProtectEmailAddresses
+     * @return string decoded version of $string
+     */
+    protected function decryptEmail($string, $type)
+    {
+        $out = '';
+        // obfuscates using the decimal HTML entity references for each character
+        if ($type === 'ascii') {
+            $stringLength = strlen($string);
+            for ($a = 0; $a < $stringLength; $a++) {
+                $out .= '&#' . ord(substr($string, $a, 1)) . ';';
+            }
+        } else {
+            // like str_rot13() but with a variable offset and a wider character range
+            $len = strlen($string);
+            $offset = (int)$type * -1;
+            for ($i = 0; $i < $len; $i++) {
+                $charValue = ord($string[$i]);
+                // 0-9 . , - + / :
+                if ($charValue >= 43 && $charValue <= 58) {
+                    $out .= $this->encryptCharcode($charValue, 43, 58, $offset);
+                } elseif ($charValue >= 64 && $charValue <= 90) {
+                    // A-Z @
+                    $out .= $this->encryptCharcode($charValue, 64, 90, $offset);
+                } elseif ($charValue >= 97 && $charValue <= 122) {
+                    // a-z
+                    $out .= $this->encryptCharcode($charValue, 97, 122, $offset);
+                } else {
+                    $out .= $string[$i];
+                }
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Encryption (or decryption) of a single character.
+     * Within the given range the character is shifted with the supplied offset.
+     *
+     * @param int $n Ordinal of input character
+     * @param int $start Start of range
+     * @param int $end End of range
+     * @param int $offset Offset
+     * @return string encoded/decoded version of character
+     */
+    protected function encryptCharcode($n, $start, $end, $offset)
+    {
+        $n = $n + $offset;
+        if ($offset > 0 && $n > $end) {
+            $n = $start + ($n - $end - 1);
+        } elseif ($offset < 0 && $n < $start) {
+            $n = $end - ($start - $n - 1);
+        }
+        return chr($n);
     }
 
     /**
@@ -6800,13 +6777,10 @@ class ContentObjectRenderer
         $senderName = trim($senderName);
         $senderAddress = trim($senderAddress);
         if ($senderName !== '' && $senderAddress !== '') {
-            $sender = [$senderAddress => $senderName];
+            $mail->setFrom([$senderAddress => $senderName]);
         } elseif ($senderAddress !== '') {
-            $sender = [$senderAddress];
-        } else {
-            $sender = MailUtility::getSystemFrom();
+            $mail->setFrom([$senderAddress]);
         }
-        $mail->setFrom($sender);
         $parsedReplyTo = MailUtility::parseAddresses($replyTo);
         if (!empty($parsedReplyTo)) {
             $mail->setReplyTo($parsedReplyTo);
@@ -6826,12 +6800,13 @@ class ContentObjectRenderer
             }
             $parsedCc = MailUtility::parseAddresses($cc);
             if (!empty($parsedCc)) {
+                $from = $mail->getFrom();
                 /** @var $mail MailMessage */
                 $mail = GeneralUtility::makeInstance(MailMessage::class);
                 if (!empty($parsedReplyTo)) {
                     $mail->setReplyTo($parsedReplyTo);
                 }
-                $mail->setFrom($sender)
+                $mail->setFrom($from)
                     ->setTo($parsedCc)
                     ->setSubject($subject)
                     ->setBody($plainMessage);
@@ -6848,9 +6823,11 @@ class ContentObjectRenderer
      * @param string $url Input URL
      * @param string $params URL parameters
      * @return string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use this functionality by yourself instead of using cObj for that
      */
     public function URLqMark($url, $params)
     {
+        GeneralUtility::logDeprecatedFunction();
         if ($params && !strstr($url, '?')) {
             return $url . '?' . $params;
         } else {
@@ -6865,9 +6842,11 @@ class ContentObjectRenderer
      * @param string $propList List of properties to clear both value/properties for. Eg. "myprop,another_property
      * @return array The TypoScript array
      * @see gifBuilderTextBox()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, as the textbox is built within GifBuilder
      */
     public function clearTSProperties($TSArr, $propList)
     {
+        GeneralUtility::logDeprecatedFunction();
         $list = explode(',', $propList);
         foreach ($list as $prop) {
             $prop = trim($prop);
@@ -6908,9 +6887,11 @@ class ContentObjectRenderer
      * @param array $conf TypoScript properties for this function
      * @param string $text The text string to write onto the GIFBUILDER file
      * @return array The modified $gifbuilderConf array
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, as the textbox is built within GifBuilder
      */
     public function gifBuilderTextBox($gifbuilderConf, $conf, $text)
     {
+        GeneralUtility::logDeprecatedFunction();
         $chars = (int)$conf['chars'] ?: 20;
         $lineDist = (int)$conf['lineDist'] ?: 20;
         $Valign = strtolower(trim($conf['Valign']));
@@ -6959,9 +6940,11 @@ class ContentObjectRenderer
      * @return array array with lines.
      * @access private
      * @see gifBuilderTextBox()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, as the textbox is built within GifBuilder
      */
     public function linebreaks($string, $chars, $maxLines = 0)
     {
+        GeneralUtility::logDeprecatedFunction();
         $lines = explode(LF, $string);
         $lineArr = [];
         $c = 0;
@@ -7392,6 +7375,7 @@ class ContentObjectRenderer
     public function getQuery($table, $conf, $returnQueryArray = false)
     {
         // Resolve stdWrap in these properties first
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($table);
         $properties = [
             'pidInList',
             'uidInList',
@@ -7414,6 +7398,8 @@ class ContentObjectRenderer
             );
             if ($conf[$property] === '') {
                 unset($conf[$property]);
+            } elseif (in_array($property, ['languageField', 'selectFields', 'join', 'leftJoin', 'rightJoin', 'where'], true)) {
+                $conf[$property] = QueryHelper::quoteDatabaseIdentifiers($connection, $conf[$property]);
             }
             if (isset($conf[$property . '.'])) {
                 // stdWrapping already done, so remove the sub-array
@@ -7475,7 +7461,7 @@ class ContentObjectRenderer
 
         $queryParts = $this->getQueryConstraints($table, $conf);
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryBuilder = $connection->createQueryBuilder();
         // @todo Check against getQueryConstraints, can probably use FrontendRestrictions
         // @todo here and remove enableFields there.
         $queryBuilder->getRestrictions()->removeAll();
@@ -7833,6 +7819,7 @@ class ContentObjectRenderer
      */
     public function getWhere($table, $conf, $returnQueryArray = false)
     {
+        GeneralUtility::logDeprecatedFunction();
         // Init:
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
         $queryConstraints = $this->getQueryConstraints($table, $conf);

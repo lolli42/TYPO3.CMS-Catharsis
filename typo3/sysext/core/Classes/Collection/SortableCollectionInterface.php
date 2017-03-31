@@ -33,7 +33,6 @@ interface SortableCollectionInterface
      *
      * @param $callbackFunction
      * @see http://www.php.net/manual/en/function.usort.php
-     * @return void
      */
     public function usort($callbackFunction);
 
@@ -41,11 +40,10 @@ interface SortableCollectionInterface
      * Moves the item within the collection
      *
      * The item at $currentPosition will be moved to
-     * $newPosition. Omiting $newPosition will move to top.
+     * $newPosition. Omitting $newPosition will move to top.
      *
      * @param int $currentPosition
      * @param int $newPosition
-     * @return void
      */
     public function moveItemAt($currentPosition, $newPosition = 0);
 }

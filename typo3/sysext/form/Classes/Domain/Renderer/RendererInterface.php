@@ -39,7 +39,7 @@ interface RendererInterface
     public function setControllerContext(ControllerContext $controllerContext);
 
     /**
-     * Note: This method is expected to invoke the beforeRendering() callback
+     * Note: This method is expected to call the 'beforeRendering' hook
      * on each $renderable
      *
      * @return string the rendered $formRuntime
@@ -49,7 +49,6 @@ interface RendererInterface
 
     /**
      * @param FormRuntime $formRuntime
-     * @return void
      * @api
      */
     public function setFormRuntime(FormRuntime $formRuntime);

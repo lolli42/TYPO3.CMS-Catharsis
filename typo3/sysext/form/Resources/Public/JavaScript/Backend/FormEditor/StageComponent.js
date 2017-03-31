@@ -66,6 +66,8 @@ define(['jquery',
                 'FormElement-ContentElement': 'FormElement-ContentElement',
                 'FormElement-DatePicker': 'FormElement-DatePicker',
                 'FormElement-Fieldset': 'FormElement-Fieldset',
+                'FormElement-GridContainer': 'FormElement-GridContainer',
+                'FormElement-GridRow': 'FormElement-GridRow',
                 'FormElement-FileUpload': 'FormElement-FileUpload',
                 'FormElement-Hidden': 'FormElement-Hidden',
                 'FormElement-ImageUpload': 'FormElement-ImageUpload',
@@ -257,6 +259,8 @@ define(['jquery',
                     renderSimpleTemplateWithValidators(formElement, template);
                     break;
                 case 'Fieldset':
+                case 'GridContainer':
+                case 'GridRow':
                 case 'SummaryPage':
                 case 'Page':
                 case 'StaticText':
@@ -354,6 +358,38 @@ define(['jquery',
                 tolerance: 'pointer',
                 toleranceElement: '> div',
 
+                isAllowed: function (placeholder, placeholderParent, currentItem) {
+                    var formElementIdentifierPath, formElementTypeDefinition, targetFormElementIdentifierPath, targetFormElementTypeDefinition;
+
+                    formElementIdentifierPath = getAbstractViewFormElementIdentifierPathWithinDomElement($(currentItem));
+                    targetFormElementIdentifierPath = getAbstractViewFormElementIdentifierPathWithinDomElement($(placeholderParent));
+                    if (!targetFormElementIdentifierPath) {
+                        targetFormElementIdentifierPath = getFormEditorApp().getCurrentlySelectedPage();
+                    }
+
+                    formElementTypeDefinition = getFormElementDefinition(formElementIdentifierPath);
+                    targetFormElementTypeDefinition = getFormElementDefinition(targetFormElementIdentifierPath);
+
+                    if (
+                        formElementTypeDefinition['_isGridContainerFormElement']
+                        && (
+                            getFormEditorApp().findEnclosingGridContainerFormElement(targetFormElementIdentifierPath)
+                            || getFormEditorApp().findEnclosingGridRowFormElement(targetFormElementIdentifierPath)
+                        )
+                    ) {
+                        return false;
+                    }
+
+                    if (
+                        !formElementTypeDefinition['_isGridContainerFormElement']
+                        && !formElementTypeDefinition['_isGridRowFormElement']
+                        && targetFormElementTypeDefinition['_isGridContainerFormElement']
+                    ) {
+                        return false;
+                    }
+
+                    return true;
+                },
                 start: function(e, o) {
                     getPublisherSubscriber().publish('view/stage/abstract/dnd/start', [$(o.item), $(o.placeholder)]);
                 },
@@ -656,16 +692,82 @@ define(['jquery',
                 getViewModel().hideComponent($(getHelper().getDomElementDataIdentifierSelector('abstractViewToolbarNewElement'), template));
 
                 $(getHelper().getDomElementDataIdentifierSelector('abstractViewToolbarNewElementSplitButtonAfter'), template).on('click', function(e) {
-                    getPublisherSubscriber().publish('view/stage/abstract/elementToolbar/button/newElement/clicked', ['view/insertElements/perform/after']);
+                    var disableElementTypes, onlyEnableElementTypes;
+
+                    disableElementTypes = [];
+                    onlyEnableElementTypes = [];
+                    if (formElementTypeDefinition['_isGridRowFormElement']) {
+                        if (getFormEditorApp().findEnclosingGridContainerFormElement(getCurrentlySelectedFormElement())) {
+                            onlyEnableElementTypes = ['GridRow'];
+                        } else if (getFormEditorApp().findEnclosingGridRowFormElement(getCurrentlySelectedFormElement().get('__parentRenderable'))) {
+                            disableElementTypes = ['GridContainer'];
+                        }
+                    } else {
+                        if (
+                            !formElementTypeDefinition['_isGridContainerFormElement']
+                            && (
+                                getFormEditorApp().findEnclosingGridContainerFormElement(getCurrentlySelectedFormElement())
+                                || getFormEditorApp().findEnclosingGridRowFormElement(getCurrentlySelectedFormElement())
+                            )
+                        ) {
+                            disableElementTypes = ['GridContainer'];
+                        }
+                    }
+
+                    getPublisherSubscriber().publish('view/stage/abstract/elementToolbar/button/newElement/clicked', [
+                            'view/insertElements/perform/after',
+                            {
+                                disableElementTypes: disableElementTypes,
+                                onlyEnableElementTypes: onlyEnableElementTypes
+                            }
+                        ]
+                    );
                 });
                 $(getHelper().getDomElementDataIdentifierSelector('abstractViewToolbarNewElementSplitButtonInside'), template).on('click', function(e) {
-                    getPublisherSubscriber().publish('view/stage/abstract/elementToolbar/button/newElement/clicked', ['view/insertElements/perform/inside']);
+                    var disableElementTypes, onlyEnableElementTypes;
+
+                    disableElementTypes = [];
+                    onlyEnableElementTypes = [];
+                    if (formElementTypeDefinition['_isGridContainerFormElement']) {
+                        onlyEnableElementTypes = ['GridRow'];
+                    } else if (
+                        formElementTypeDefinition['_isGridRowFormElement']
+                        || (
+                            getFormEditorApp().findEnclosingGridContainerFormElement(getCurrentlySelectedFormElement())
+                            || getFormEditorApp().findEnclosingGridRowFormElement(getCurrentlySelectedFormElement())
+                        )
+                    ) {
+                        disableElementTypes = ['GridContainer'];
+                    }
+
+                    getPublisherSubscriber().publish('view/stage/abstract/elementToolbar/button/newElement/clicked', [
+                            'view/insertElements/perform/inside',
+                            {
+                                disableElementTypes: disableElementTypes,
+                                onlyEnableElementTypes: onlyEnableElementTypes
+                            }
+                        ]
+                    );
                 });
             } else {
                 getViewModel().hideComponent($(getHelper().getDomElementDataIdentifierSelector('abstractViewToolbarNewElementSplitButton'), template));
 
                 $(getHelper().getDomElementDataIdentifierSelector('abstractViewToolbarNewElement'), template).on('click', function(e) {
-                    getPublisherSubscriber().publish('view/stage/abstract/elementToolbar/button/newElement/clicked', ['view/insertElements/perform/after']);
+                    var disableElementTypes;
+
+                    disableElementTypes = [];
+                    if (getFormEditorApp().findEnclosingGridRowFormElement(formElement)) {
+                        disableElementTypes = ['GridContainer'];
+                    }
+
+                    getPublisherSubscriber().publish(
+                        'view/stage/abstract/elementToolbar/button/newElement/clicked', [
+                            'view/insertElements/perform/after',
+                            {
+                                disableElementTypes: disableElementTypes
+                            }
+                        ]
+                    );
                 });
             }
 
@@ -776,6 +878,7 @@ define(['jquery',
                 if (
                     !getFormElementDefinition(formElement, '_isTopLevelFormElement')
                     && getFormElementDefinition(formElement, '_isCompositeFormElement')
+                    && !getFormElementDefinition(formElement, '_isGridContainerFormElement')
                 ) {
                     $(this).tooltip({
                         title: 'identifier: ' + formElement.get('identifier') + ' (type: ' + formElement.get('type') + ')',

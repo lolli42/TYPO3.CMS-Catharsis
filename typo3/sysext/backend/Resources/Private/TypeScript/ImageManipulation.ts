@@ -13,13 +13,11 @@
 
 /// <amd-dependency path='TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min' name='ImagesLoaded'>
 /// <amd-dependency path='TYPO3/CMS/Backend/Modal' name='Modal'>
-/// <amd-dependency path='TYPO3/CMS/Backend/Severity' name='Severity'>
 
 import $ = require('jquery');
 import 'jquery-ui/draggable';
 import 'jquery-ui/resizable';
 declare const Modal: any;
-declare const Severity: any;
 declare const ImagesLoaded: any;
 
 declare global {
@@ -151,6 +149,7 @@ class ImageManipulation {
   private cropperCanvas: JQuery;
   private cropInfo: JQuery;
   private cropImageContainerSelector: string = '#t3js-crop-image-container';
+  private imageOriginalSizeFactor: number;
   private cropImageSelector: string = '#t3js-crop-image';
   private coverAreaSelector: string = '.t3js-cropper-cover-area';
   private cropInfoSelector: string = '.t3js-cropper-info-crop';
@@ -214,10 +213,6 @@ class ImageManipulation {
   private initializeCropperModal(): void {
     const image: JQuery = this.currentModal.find(this.cropImageSelector);
     ImagesLoaded(image, (): void => {
-      const modal: JQuery = this.currentModal.find('.modal-dialog');
-      modal.css({marginLeft: 'auto', marginRight: 'auto'});
-      modal.addClass('modal-image-manipulation modal-resize');
-      Modal.center();
       setTimeout((): void => {
         this.init();
       }, 100);
@@ -231,21 +226,54 @@ class ImageManipulation {
    */
   private show(): void {
     const modalTitle: string = this.trigger.data('modalTitle');
+    const buttonPreviewText: string = this.trigger.data('buttonPreviewText');
+    const buttonDismissText: string = this.trigger.data('buttonDismissText');
+    const buttonSaveText: string = this.trigger.data('buttonSaveText');
     const imageUri: string = this.trigger.data('url');
     const initCropperModal: Function = this.initializeCropperModal.bind(this);
 
     /**
      * Open modal with image to crop
      */
-    this.currentModal = Modal.loadUrl(
-      modalTitle,
-      Severity.notice,
-      [],
-      imageUri,
-      initCropperModal,
-      '.modal-content'
-    );
-    this.currentModal.addClass('modal-dark');
+    this.currentModal = Modal.advanced({
+      additionalCssClasses: ['modal-image-manipulation'],
+      ajaxCallback: initCropperModal,
+      buttons: [
+        {
+          btnClass: 'btn-default pull-left',
+          dataAttributes: {
+              method: 'preview',
+          },
+          icon: 'actions-view',
+          text: buttonPreviewText,
+        },
+        {
+          btnClass: 'btn-default',
+          dataAttributes: {
+              method: 'dismiss',
+          },
+          icon: 'actions-close',
+          text: buttonDismissText,
+        },
+        {
+          btnClass: 'btn-primary',
+          dataAttributes: {
+              method: 'save',
+          },
+          icon: 'actions-document-save',
+          text: buttonSaveText,
+        },
+      ],
+      callback: (currentModal: JQuery): void => {
+        currentModal.find('.t3js-modal-body')
+          .addClass('cropper');
+      },
+      content: imageUri,
+      size: Modal.sizes.full,
+      style: Modal.styles.dark,
+      title: modalTitle,
+      type: 'ajax',
+    });
     this.currentModal.on('hide.bs.modal', (e: JQueryEventObject): void => {
       this.destroy();
     });
@@ -394,6 +422,9 @@ class ImageManipulation {
    */
   private cropBuiltHandler = (): void => {
     const imageData: CropperImageData = this.cropper.cropper('getImageData');
+    const image: JQuery = this.currentModal.find(this.cropImageSelector);
+
+    this.imageOriginalSizeFactor = image.data('originalWidth') / imageData.naturalWidth;
 
     // Iterate over the crop variants and set up their respective preview
     this.cropVariantTriggers.each((index: number, elem: Element): void => {
@@ -455,7 +486,9 @@ class ImageManipulation {
     });
     this.updatePreviewThumbnail(this.currentCropVariant, this.activeCropVariantTrigger);
     this.updateCropVariantData(this.currentCropVariant);
-    this.cropInfo.text(`${this.currentCropVariant.cropArea.width}×${this.currentCropVariant.cropArea.height} px`);
+    const naturalWidth: number = Math.round(this.currentCropVariant.cropArea.width * this.imageOriginalSizeFactor);
+    const naturalHeight: number = Math.round(this.currentCropVariant.cropArea.height * this.imageOriginalSizeFactor);
+    this.cropInfo.text(`${naturalWidth}×${naturalHeight} px`);
   };
 
   /**
@@ -769,6 +802,9 @@ class ImageManipulation {
    * @return {boolean}
    */
   private checkFocusAndCoverAreasCollision(focusArea: Area, coverAreas: Area[]): boolean {
+    if (!coverAreas) {
+      return false;
+    }
     return coverAreas
       .some((coverArea: Area): boolean => {
         // noinspection OverlyComplexBooleanExpressionJS
@@ -829,15 +865,18 @@ class ImageManipulation {
       const cropVariant: CropVariant = data[cropVariantId];
       const cropData: Area = this.convertRelativeToAbsoluteCropArea(cropVariant.cropArea, imageData);
 
-      let $preview: JQuery = this.trigger
+      const $preview: JQuery = this.trigger
         .closest('.form-group')
         .find(`.t3js-image-manipulation-preview[data-crop-variant-id="${cropVariantId}"]`);
+      const $previewSelectedRatio: JQuery = this.trigger
+        .closest('.form-group')
+        .find(`.t3js-image-manipulation-selected-ratio[data-crop-variant-id="${cropVariantId}"]`);
 
       if ($preview.length === 0) {
         return;
       }
 
-      let previewWidth: number = $preview.data('preview-width');
+      let previewWidth: number = $preview.width();
       let previewHeight: number = $preview.data('preview-height');
 
       // Adjust aspect ratio of preview width/height
@@ -854,9 +893,12 @@ class ImageManipulation {
         previewHeight = cropData.height;
       }
 
-      let ratio: number = previewWidth / cropData.width;
-
-      let $viewBox: JQuery = $('<div />').html('<img src="' + $image.attr('src') + '">');
+      const ratio: number = previewWidth / cropData.width;
+      const $viewBox: JQuery = $('<div />').html('<img src="' + $image.attr('src') + '">');
+      const $ratioTitleText: JQuery = this.currentModal.find(
+        `.t3-js-ratio-title[data-ratio-id="${cropVariant.id}${cropVariant.selectedRatio}"]`
+      );
+      $previewSelectedRatio.text($ratioTitleText.text());
       $viewBox.addClass('cropper-preview-container');
       $preview.empty().append($viewBox);
       $viewBox.wrap('<span class="thumbnail thumbnail-status"></span>');

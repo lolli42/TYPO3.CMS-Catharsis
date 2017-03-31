@@ -488,6 +488,7 @@ class TypoScriptFrontendController
 
     /**
      * Factor for form-field widths compensation
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      * @var string
      */
     public $compensateFieldWidth = '';
@@ -531,6 +532,7 @@ class TypoScriptFrontendController
      * A string set with a comma list of additional GET vars which should NOT be
      * included in the cHash calculation. These vars should otherwise be detected
      * and involved in caching, eg. through a condition in TypoScript.
+     * @deprecatd since TYPO3 v8, will be removed in TYPO3 v9, this is taken care of via TYPO3_CONF_VARS nowadays
      * @var string
      */
     public $excludeCHashVars = '';
@@ -703,6 +705,7 @@ class TypoScriptFrontendController
 
     /**
      * @var int
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use the calculations in setParseTime() directly
      */
     public $scriptParseTime = 0;
 
@@ -909,7 +912,6 @@ class TypoScriptFrontendController
      *
      * @throws \RuntimeException
      * @throws ServiceUnavailableException
-     * @return void
      */
     public function connectToDB()
     {
@@ -940,8 +942,6 @@ class TypoScriptFrontendController
      * found to be associated with a redirect URL then the redirection
      * is carried out with a 'Location:' header
      * May exit after sending a location-header.
-     *
-     * @return void
      */
     public function sendRedirect()
     {
@@ -976,8 +976,6 @@ class TypoScriptFrontendController
      ********************************************/
     /**
      * Initializes the caching system.
-     *
-     * @return void
      */
     protected function initCaches()
     {
@@ -986,8 +984,6 @@ class TypoScriptFrontendController
 
     /**
      * Initializes the front-end login user.
-     *
-     * @return void
      */
     public function initFEuser()
     {
@@ -1049,8 +1045,6 @@ class TypoScriptFrontendController
     /**
      * Initializes the front-end user groups.
      * Sets ->loginUser and ->gr_list based on front-end user status.
-     *
-     * @return void
      */
     public function initUserGroups()
     {
@@ -1105,8 +1099,6 @@ class TypoScriptFrontendController
      * Two options:
      * 1) Use PATH_INFO (also Apache) to extract id and type from that var. Does not require any special modules compiled with apache. (less typical)
      * 2) Using hook which enables features like those provided from "realurl" extension (AKA "Speaking URLs")
-     *
-     * @return void
      */
     public function checkAlternativeIdMethods()
     {
@@ -1124,8 +1116,6 @@ class TypoScriptFrontendController
      * Clears the preview-flags, sets sim_exec_time to current time.
      * Hidden pages must be hidden as default, $GLOBALS['SIM_EXEC_TIME'] is set to $GLOBALS['EXEC_TIME']
      * in bootstrap initializeGlobalTimeVariables(). Alter it by adding or subtracting seconds.
-     *
-     * @return void
      */
     public function clear_preview()
     {
@@ -1160,32 +1150,28 @@ class TypoScriptFrontendController
                 GeneralUtility::callUserFunction($_funcRef, $_params, $this);
             }
         }
-        /** @var $BE_USER FrontendBackendUserAuthentication */
-        $BE_USER = null;
+        $backendUserObject = null;
         // If the backend cookie is set,
         // we proceed and check if a backend user is logged in.
         if ($_COOKIE[BackendUserAuthentication::getCookieName()]) {
             $GLOBALS['TYPO3_MISC']['microtime_BE_USER_start'] = microtime(true);
             $this->getTimeTracker()->push('Back End user initialized', '');
-            // @todo validate the comment below: is this necessary? if so,
-            //   formfield_status should be set to "" in \TYPO3\CMS\Backend\FrontendBackendUserAuthentication
-            //   which is a subclass of \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
-            // ----
-            // the value this->formfield_status is set to empty in order to
-            // disable login-attempts to the backend account through this script
+            $this->beUserLogin = false;
             // New backend user object
-            $BE_USER = GeneralUtility::makeInstance(FrontendBackendUserAuthentication::class);
-            // Object is initialized
-            $BE_USER->start();
-            $BE_USER->unpack_uc();
-            if (!empty($BE_USER->user['uid'])) {
-                $BE_USER->fetchGroupData();
-                $this->beUserLogin = true;
+            $backendUserObject = GeneralUtility::makeInstance(FrontendBackendUserAuthentication::class);
+            $backendUserObject->start();
+            $backendUserObject->unpack_uc();
+            if (!empty($backendUserObject->user['uid'])) {
+                $backendUserObject->fetchGroupData();
             }
-            // Unset the user initialization.
-            if (!$BE_USER->checkLockToIP() || !$BE_USER->checkBackendAccessSettingsFromInitPhp() || empty($BE_USER->user['uid'])) {
-                $BE_USER = null;
-                $this->beUserLogin = false;
+            // Unset the user initialization if any setting / restriction applies
+            if (!$backendUserObject->checkBackendAccessSettingsFromInitPhp()) {
+                $backendUserObject = null;
+            } elseif (!empty($backendUserObject->user['uid'])) {
+                // If the user is active now, let the controller know
+                $this->beUserLogin = true;
+            } else {
+                $backendUserObject = null;
             }
             $this->getTimeTracker()->pull();
             $GLOBALS['TYPO3_MISC']['microtime_BE_USER_end'] = microtime(true);
@@ -1193,13 +1179,13 @@ class TypoScriptFrontendController
         // POST BE_USER HOOK
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['postBeUser'])) {
             $_params = [
-                'BE_USER' => &$BE_USER
+                'BE_USER' => &$backendUserObject
             ];
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['postBeUser'] as $_funcRef) {
                 GeneralUtility::callUserFunction($_funcRef, $_params, $this);
             }
         }
-        return $BE_USER;
+        return $backendUserObject;
     }
 
     /**
@@ -1207,8 +1193,6 @@ class TypoScriptFrontendController
      * Basically this function is about determining whether a backend user is logged in,
      * if he has read access to the page and if he's previewing the page.
      * That all determines which id to show and how to initialize the id.
-     *
-     * @return void
      */
     public function determineId()
     {
@@ -1392,7 +1376,6 @@ class TypoScriptFrontendController
      * Sets variables such as $this->sys_page, $this->loginUser, $this->gr_list, $this->id, $this->type, $this->domainStartPage
      *
      * @throws ServiceUnavailableException
-     * @return void
      * @access private
      */
     public function fetch_the_id()
@@ -1490,7 +1473,6 @@ class TypoScriptFrontendController
      *
      * @throws ServiceUnavailableException
      * @throws PageNotFoundException
-     * @return void
      * @access private
      */
     public function getPageAndRootline()
@@ -1723,7 +1705,7 @@ class TypoScriptFrontendController
                         $removeTheRestFlag = 1;
                     }
                 } else {
-                    // Dont go here, if there is no backend user logged in.
+                    // Don't go here, if there is no backend user logged in.
                     $removeTheRestFlag = 1;
                 }
             }
@@ -1863,7 +1845,6 @@ class TypoScriptFrontendController
      * If not inside domain, then default to first page in domain.
      *
      * @param int $domainStartPage Page uid of the page where the found domain record is (pid of the domain record)
-     * @return void
      * @access private
      */
     public function getPageAndRootlineWithDomain($domainStartPage)
@@ -1891,7 +1872,6 @@ class TypoScriptFrontendController
     /**
      * Sets sys_page where-clause
      *
-     * @return void
      * @access private
      */
     public function setSysPageWhereClause()
@@ -1937,7 +1917,6 @@ class TypoScriptFrontendController
      *
      * @param string $reason Reason text
      * @param string $header HTTP header to send
-     * @return void Function exits.
      */
     public function pageUnavailableAndExit($reason = '', $header = '')
     {
@@ -1951,7 +1930,6 @@ class TypoScriptFrontendController
      *
      * @param string $reason Reason text
      * @param string $header HTTP header to send
-     * @return void Function exits.
      */
     public function pageNotFoundAndExit($reason = '', $header = '')
     {
@@ -1988,7 +1966,6 @@ class TypoScriptFrontendController
      * @param mixed $code Which type of handling; If a true PHP-boolean or TRUE then a \TYPO3\CMS\Core\Messaging\ErrorpageMessage is outputted. If integer an error message with that number is shown. Otherwise the $code value is expected to be a "Location:" header value.
      * @param string $header If set, this is passed directly to the PHP function, header()
      * @param string $reason If set, error messages will also mention this as the reason for the page-not-found.
-     * @return void (The function exits!)
      */
     public function pageUnavailableHandler($code, $header, $reason)
     {
@@ -2001,7 +1978,6 @@ class TypoScriptFrontendController
      * @param mixed $code Which type of handling; If a true PHP-boolean or TRUE then a \TYPO3\CMS\Core\Messaging\ErrorpageMessage is outputted. If integer an error message with that number is shown. Otherwise the $code value is expected to be a "Location:" header value.
      * @param string $header If set, this is passed directly to the PHP function, header()
      * @param string $reason If set, error messages will also mention this as the reason for the page-not-found.
-     * @return void (The function exits!)
      */
     public function pageNotFoundHandler($code, $header = '', $reason = '')
     {
@@ -2016,7 +1992,6 @@ class TypoScriptFrontendController
      * @param string $header If set, this is passed directly to the PHP function, header()
      * @param string $reason If set, error messages will also mention this as the reason for the page-not-found.
      * @throws \RuntimeException
-     * @return void (The function exits!)
      */
     public function pageErrorHandler($code, $header = '', $reason = '')
     {
@@ -2108,7 +2083,7 @@ class TypoScriptFrontendController
                         }
                     }
                 }
-                // Put <base> if necesary
+                // Put <base> if necessary
                 if ($checkBaseTag) {
                     // If content already has <base> tag, we do not need to do anything
                     if (false === stristr($content, '<base ')) {
@@ -2149,7 +2124,6 @@ class TypoScriptFrontendController
      * Fetches the integer page id for a page alias.
      * Looks if ->id is not an integer and if so it will search for a page alias and if found the page uid of that page is stored in $this->id
      *
-     * @return void
      * @access private
      */
     public function checkAndSetAlias()
@@ -2168,7 +2142,6 @@ class TypoScriptFrontendController
      * Merging values into the global $_GET
      *
      * @param array $GET_VARS Array of key/value pairs that will be merged into the current GET-vars. (Non-escaped values)
-     * @return void
      */
     public function mergingWithGetVars($GET_VARS)
     {
@@ -2209,7 +2182,6 @@ class TypoScriptFrontendController
      * Calculated hash is stored in $this->cHash_array.
      * This is used to cache pages with more parameters than just id and type.
      *
-     * @return void
      * @see reqCHash()
      */
     public function makeCacheHash()
@@ -2244,7 +2216,6 @@ class TypoScriptFrontendController
      * Will disable caching if the cHash value was not set.
      * This function should be called to check the _existence_ of "&cHash" whenever a plugin generating cacheable output is using extra GET variables. If there _is_ a cHash value the validation of it automatically takes place in makeCacheHash() (see above)
      *
-     * @return void
      * @see makeCacheHash(), \TYPO3\CMS\Frontend\Plugin\AbstractPlugin::pi_cHashCheck()
      */
     public function reqCHash()
@@ -2264,8 +2235,6 @@ class TypoScriptFrontendController
 
     /**
      * Initialize the TypoScript template parser
-     *
-     * @return void
      */
     public function initTemplate()
     {
@@ -2508,7 +2477,6 @@ class TypoScriptFrontendController
      * Checks if config-array exists already but if not, gets it
      *
      * @throws ServiceUnavailableException
-     * @return void
      */
     public function getConfigArray()
     {
@@ -2618,7 +2586,6 @@ class TypoScriptFrontendController
      * Setting the language key that will be used by the current page.
      * In this function it should be checked, 1) that this language exists, 2) that a page_overlay_record exists, .. and if not the default language, 0 (zero), should be set.
      *
-     * @return void
      * @access private
      */
     public function settingLanguage()
@@ -2700,7 +2667,7 @@ class TypoScriptFrontendController
             if (is_array($sys_language_row) && !empty($sys_language_row['language_isocode'])) {
                 $this->sys_language_isocode = $sys_language_row['language_isocode'];
             }
-            // the DB value is overriden by TypoScript
+            // the DB value is overridden by TypoScript
             if (!empty($this->config['config']['sys_language_isocode'])) {
                 $this->sys_language_isocode = $this->config['config']['sys_language_isocode'];
             }
@@ -2714,12 +2681,6 @@ class TypoScriptFrontendController
             }
         }
 
-        // Setting softExclude:
-        $table_fields = GeneralUtility::trimExplode(',', $this->config['config']['sys_language_softExclude'], true);
-        foreach ($table_fields as $TF) {
-            list($tN, $fN) = explode(':', $TF);
-            $GLOBALS['TCA'][$tN]['columns'][$fN]['l10n_mode'] = 'exclude';
-        }
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['settingLanguage_postProcess'])) {
             $_params = [];
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_fe.php']['settingLanguage_postProcess'] as $_funcRef) {
@@ -2741,8 +2702,6 @@ class TypoScriptFrontendController
 
     /**
      * Setting locale for frontend rendering
-     *
-     * @return void
      */
     public function settingLocale()
     {
@@ -2773,8 +2732,6 @@ class TypoScriptFrontendController
      * target than the original language page.
      * If that is the case, things get corrected to follow that alternative
      * shortcut
-     *
-     * @return void
      */
     protected function checkTranslatedShortcut()
     {
@@ -2796,8 +2753,6 @@ class TypoScriptFrontendController
     /**
      * Handle data submission
      * This is done at this point, because we need the config values
-     *
-     * @return void
      */
     public function handleDataSubmission()
     {
@@ -2868,7 +2823,6 @@ class TypoScriptFrontendController
      * Sets the URL_ID_TOKEN in the internal var, $this->getMethodUrlIdToken
      * This feature allows sessions to use a GET-parameter instead of a cookie.
      *
-     * @return void
      * @access private
      */
     public function setUrlIdToken()
@@ -2883,8 +2837,6 @@ class TypoScriptFrontendController
     /**
      * Calculates and sets the internal linkVars based upon the current
      * $_GET parameters and the setting "config.linkVars".
-     *
-     * @return void
      */
     public function calculateLinkVars()
     {
@@ -2926,8 +2878,6 @@ class TypoScriptFrontendController
      *
      * If the current page is of type mountpoint and should be overlaid with the contents of the mountpoint page
      * and is accessed directly, the user will be redirected to the mountpoint context.
-     *
-     * @return void
      */
     public function checkPageForMountpointRedirect()
     {
@@ -2941,8 +2891,6 @@ class TypoScriptFrontendController
      *
      * If the current page is of type shortcut and accessed directly via its URL, this function redirects to the
      * Shortcut target using a Location header.
-     *
-     * @return void If page is not a Shortcut, redirects and exits otherwise
      */
     public function checkPageForShortcutRedirect()
     {
@@ -2954,8 +2902,6 @@ class TypoScriptFrontendController
     /**
      * Builds a typolink to the current page, appends the type paremeter if required
      * and redirects the user to the generated URL using a Location header.
-     *
-     * @return void
      */
     protected function redirectToCurrentPage()
     {
@@ -2997,8 +2943,6 @@ class TypoScriptFrontendController
     /**
      * Temp cache content
      * The temporary cache will expire after a few seconds (typ. 30) or will be cleared by the rendered page, which will also clear and rewrite the cache.
-     *
-     * @return void
      */
     public function tempPageCacheContent()
     {
@@ -3053,8 +2997,6 @@ class TypoScriptFrontendController
 
     /**
      * Set cache content to $this->content
-     *
-     * @return void
      */
     public function realPageCacheContent()
     {
@@ -3091,7 +3033,6 @@ class TypoScriptFrontendController
      * @param string $content The content to store in the HTML field of the cache table
      * @param mixed $data The additional cache_data array, fx. $this->config
      * @param int $expirationTstamp Expiration timestamp
-     * @return void
      * @see realPageCacheContent(), tempPageCacheContent()
      */
     public function setPageCacheContent($content, $data, $expirationTstamp)
@@ -3126,8 +3067,6 @@ class TypoScriptFrontendController
 
     /**
      * Clears cache content (for $this->newHash)
-     *
-     * @return void
      */
     public function clearPageCacheContent()
     {
@@ -3138,7 +3077,6 @@ class TypoScriptFrontendController
      * Clears cache content for a list of page ids
      *
      * @param string $pidList A list of INTEGER numbers which points to page uids for which to clear entries in the cache_pages cache (page content cache)
-     * @return void
      */
     public function clearPageCacheContent_pidList($pidList)
     {
@@ -3152,7 +3090,6 @@ class TypoScriptFrontendController
      * Sets sys last changed
      * Setting the SYS_LASTCHANGED value in the pagerecord: This value will thus be set to the highest tstamp of records rendered on the page. This includes all records with no regard to hidden records, userprotection and so on.
      *
-     * @return void
      * @see ContentObjectRenderer::lastChanged()
      */
     public function setSysLastChanged()
@@ -3177,7 +3114,6 @@ class TypoScriptFrontendController
      * Release pending locks
      *
      * @internal
-     * @return void
      */
     public function releaseLocks()
     {
@@ -3190,7 +3126,6 @@ class TypoScriptFrontendController
      * entries by tag
      *
      * @param array $tags An array of tag
-     * @return void
      */
     public function addCacheTags(array $tags)
     {
@@ -3204,8 +3139,6 @@ class TypoScriptFrontendController
      *******************************************/
     /**
      * Does some processing BEFORE the pagegen script is included.
-     *
-     * @return void
      */
     public function generatePage_preProcessing()
     {
@@ -3231,14 +3164,182 @@ class TypoScriptFrontendController
     }
 
     /**
+     * Previously located in static method in PageGenerator::init. Is solely used to set up TypoScript
+     * config. options and set properties in $TSFE for that.
+     */
+    public function preparePageContentGeneration()
+    {
+        if ($this->page['content_from_pid'] > 0) {
+            // make REAL copy of TSFE object - not reference!
+            $temp_copy_TSFE = clone $this;
+            // Set ->id to the content_from_pid value - we are going to evaluate this pid as was it a given id for a page-display!
+            $temp_copy_TSFE->id = $this->page['content_from_pid'];
+            $temp_copy_TSFE->MP = '';
+            $temp_copy_TSFE->getPageAndRootlineWithDomain($this->config['config']['content_from_pid_allowOutsideDomain'] ? 0 : $this->domainStartPage);
+            $this->contentPid = (int)$temp_copy_TSFE->id;
+            unset($temp_copy_TSFE);
+        }
+        if ($this->config['config']['MP_defaults']) {
+            $temp_parts = GeneralUtility::trimExplode('|', $this->config['config']['MP_defaults'], true);
+            foreach ($temp_parts as $temp_p) {
+                list($temp_idP, $temp_MPp) = explode(':', $temp_p, 2);
+                $temp_ids = GeneralUtility::intExplode(',', $temp_idP);
+                foreach ($temp_ids as $temp_id) {
+                    $this->MP_defaults[$temp_id] = $temp_MPp;
+                }
+            }
+        }
+        // Global vars...
+        $this->indexedDocTitle = $this->page['title'];
+        $this->debug = !empty($this->config['config']['debug']);
+        // Base url:
+        if (isset($this->config['config']['baseURL'])) {
+            $this->baseUrl = $this->config['config']['baseURL'];
+        }
+        // Internal and External target defaults
+        $this->intTarget = '' . $this->config['config']['intTarget'];
+        $this->extTarget = '' . $this->config['config']['extTarget'];
+        $this->fileTarget = '' . $this->config['config']['fileTarget'];
+        if ($this->config['config']['spamProtectEmailAddresses'] === 'ascii') {
+            $this->spamProtectEmailAddresses = 'ascii';
+        } else {
+            $this->spamProtectEmailAddresses = MathUtility::forceIntegerInRange($this->config['config']['spamProtectEmailAddresses'], -10, 10, 0);
+        }
+        // calculate the absolute path prefix
+        if (!empty($this->config['config']['absRefPrefix'])) {
+            $absRefPrefix = trim($this->config['config']['absRefPrefix']);
+            if ($absRefPrefix === 'auto') {
+                $this->absRefPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+            } else {
+                $this->absRefPrefix = $absRefPrefix;
+            }
+        } else {
+            $this->absRefPrefix = '';
+        }
+        if ($this->type && $this->config['config']['frameReloadIfNotInFrameset']) {
+            $this->logDeprecatedTyposcript(
+                'config.frameReloadIfNotInFrameset',
+                'frameReloadIfNotInFrameset has been marked as deprecated since TYPO3 v8, ' .
+                'and will be removed in TYPO3 v9.'
+            );
+            $tdlLD = $this->tmpl->linkData($this->page, '_top', $this->no_cache, '');
+            $this->additionalJavaScript['JSCode'] .= 'if(!parent.' . trim($this->sPre) . ' && !parent.view_frame) top.location.href="' . $this->baseUrlWrap($tdlLD['totalURL']) . '"';
+        }
+        $this->compensateFieldWidth = '' . $this->config['config']['compensateFieldWidth'];
+        $this->lockFilePath = '' . $this->config['config']['lockFilePath'];
+        $this->lockFilePath = $this->lockFilePath ?: $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'];
+        if (isset($this->config['config']['noScaleUp'])) {
+            $this->logDeprecatedTyposcript(
+                'config.noScaleUp',
+                'The TypoScript property "config.noScaleUp" is deprecated since TYPO3 v8 and will be removed in TYPO3 v9. ' .
+                'Please use the global TYPO3 configuration setting "GFX/processor_allowUpscaling" instead.'
+            );
+        }
+        $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_allowUpscaling'] = (bool)(isset($this->config['config']['noScaleUp']) ? !$this->config['config']['noScaleUp'] : $GLOBALS['TYPO3_CONF_VARS']['GFX']['processor_allowUpscaling']);
+        $this->ATagParams = trim($this->config['config']['ATagParams']) ? ' ' . trim($this->config['config']['ATagParams']) : '';
+        if ($this->config['config']['setJS_mouseOver']) {
+            $this->logDeprecatedTyposcript(
+                'config.setJS_mouseOver',
+                'The TypoScript property "config.setJS_mouseOver" is deprecated since TYPO3 v8 and will be removed in TYPO3 v9. Please include the JavaScript snippet directly via TypoScript page.jsInline.'
+            );
+            $this->setJS('mouseOver');
+        }
+        if ($this->config['config']['setJS_openPic']) {
+            $this->logDeprecatedTyposcript(
+                'config.setJS_openPic',
+                'The TypoScript property "config.setJS_openPic" is deprecated since TYPO3 v8 and will be removed in TYPO3 v9. Please include the JavaScript snippet directly via TypoScript page.jsInline.'
+            );
+            $this->setJS('openPic');
+        }
+        $this->initializeSearchWordDataInTsfe();
+        // linkVars
+        $this->calculateLinkVars();
+        // dtdAllowsFrames indicates whether to use the target attribute in links
+        $this->dtdAllowsFrames = false;
+        if ($this->config['config']['doctype']) {
+            if (in_array(
+                (string)$this->config['config']['doctype'],
+                ['xhtml_trans', 'xhtml_frames', 'xhtml_basic', 'html5'],
+                true)
+            ) {
+                $this->dtdAllowsFrames = true;
+            }
+        } else {
+            $this->dtdAllowsFrames = true;
+        }
+        // Setting XHTML-doctype from doctype
+        if (!$this->config['config']['xhtmlDoctype']) {
+            $this->config['config']['xhtmlDoctype'] = $this->config['config']['doctype'];
+        }
+        if ($this->config['config']['xhtmlDoctype']) {
+            $this->xhtmlDoctype = $this->config['config']['xhtmlDoctype'];
+            // Checking XHTML-docytpe
+            switch ((string)$this->config['config']['xhtmlDoctype']) {
+                case 'xhtml_trans':
+                case 'xhtml_strict':
+                    $this->xhtmlVersion = 100;
+                    break;
+                case 'xhtml_frames':
+                    $this->logDeprecatedTyposcript(
+                        'config.xhtmlDoctype=frames',
+                        'xhtmlDoctype = xhtml_frames  and doctype = xhtml_frames have been marked as deprecated since TYPO3 v8, ' .
+                        'and will be removed in TYPO3 v9.'
+                    );
+                    $this->xhtmlVersion = 100;
+                    break;
+                case 'xhtml_basic':
+                    $this->xhtmlVersion = 105;
+                    break;
+                case 'xhtml_11':
+                case 'xhtml+rdfa_10':
+                    $this->xhtmlVersion = 110;
+                    break;
+                default:
+                    $this->pageRenderer->setRenderXhtml(false);
+                    $this->xhtmlDoctype = '';
+                    $this->xhtmlVersion = 0;
+            }
+        } else {
+            $this->pageRenderer->setRenderXhtml(false);
+        }
+
+        // Global content object
+        $this->newCObj();
+    }
+
+    /**
+     * Fills the sWordList property and builds the regular expression in TSFE that can be used to split
+     * strings by the submitted search words.
+     *
+     * @see sWordList
+     * @see sWordRegEx
+     */
+    protected function initializeSearchWordDataInTsfe()
+    {
+        $this->sWordRegEx = '';
+        $this->sWordList = GeneralUtility::_GP('sword_list');
+        if (is_array($this->sWordList)) {
+            $space = !empty($this->config['config']['sword_standAlone']) ? '[[:space:]]' : '';
+            foreach ($this->sWordList as $val) {
+                if (trim($val) !== '') {
+                    $this->sWordRegEx .= $space . preg_quote($val, '/') . $space . '|';
+                }
+            }
+            $this->sWordRegEx = rtrim($this->sWordRegEx, '|');
+        }
+    }
+
+    /**
      * Determines to include custom or pagegen.php script
      * returns script-filename if a TypoScript (config) script is defined and should be included instead of pagegen.php
      *
      * @return string|NULL The relative filepath of "config.pageGenScript" if found and allowed
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function generatePage_whichScript()
     {
         if (!$GLOBALS['TYPO3_CONF_VARS']['FE']['noPHPscriptInclude'] && $this->config['config']['pageGenScript']) {
+            GeneralUtility::logDeprecatedFunction();
             return $this->tmpl->getFileName($this->config['config']['pageGenScript']);
         }
         return null;
@@ -3247,8 +3348,6 @@ class TypoScriptFrontendController
     /**
      * Does some processing AFTER the pagegen script is included.
      * This includes caching the page, indexing the page (if configured) and setting sysLastChanged
-     *
-     * @return void
      */
     public function generatePage_postProcessing()
     {
@@ -3300,8 +3399,6 @@ class TypoScriptFrontendController
 
     /**
      * Generate the page title again as TSFE->altPageTitle might have been modified by an inc script
-     *
-     * @return void
      */
     protected function regeneratePageTitle()
     {
@@ -3310,8 +3407,6 @@ class TypoScriptFrontendController
 
     /**
      * Processes the INTinclude-scripts
-     *
-     * @return void
      */
     public function INTincScript()
     {
@@ -3375,7 +3470,6 @@ class TypoScriptFrontendController
      * Processes the INTinclude-scripts and substitue in content.
      *
      * @param array $INTiS_config $GLOBALS['TSFE']->config['INTincScript'] or part of it
-     * @return void
      * @see INTincScript()
      */
     protected function INTincScript_process($INTiS_config)
@@ -3423,8 +3517,6 @@ class TypoScriptFrontendController
 
     /**
      * Loads the JavaScript code for INTincScript
-     *
-     * @return void
      */
     public function INTincScript_loadJSCode()
     {
@@ -3497,8 +3589,6 @@ class TypoScriptFrontendController
      * This includes substituting the "username" comment, sending additional headers
      * (as defined in the TypoScript "config.additionalheaders" object), XHTML cleaning content (if configured)
      * Works on $this->content.
-     *
-     * @return void
      */
     public function processOutput()
     {
@@ -3560,7 +3650,6 @@ class TypoScriptFrontendController
      * Send cache headers good for client/reverse proxy caching
      * This function should not be called if the page content is temporary (like for "Page is being generated..." message, but in that case it is ok because the config-variables are not yet available and so will not allow to send cache headers)
      *
-     * @return void
      * @co-author Ole Tange, Forbrugernes Hus, Denmark
      */
     public function sendCacheHeaders()
@@ -3623,8 +3712,6 @@ class TypoScriptFrontendController
 
     /**
      * Substitute various tokens in content. This should happen only if the content is not cached by proxies or client browsers.
-     *
-     * @return void
      */
     public function contentStrReplace()
     {
@@ -3668,8 +3755,6 @@ class TypoScriptFrontendController
 
     /**
      * Stores session data for the front end user
-     *
-     * @return void
      */
     public function storeSessionData()
     {
@@ -3679,11 +3764,12 @@ class TypoScriptFrontendController
     /**
      * Sets the parsetime of the page.
      *
-     * @return void
      * @access private
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, as the Request Handler is taking care of that now
      */
     public function setParseTime()
     {
+        GeneralUtility::logDeprecatedFunction();
         // Compensates for the time consumed with Back end user initialization.
         $microtime_start = isset($GLOBALS['TYPO3_MISC']['microtime_start']) ? $GLOBALS['TYPO3_MISC']['microtime_start'] : null;
         $microtime_end = isset($GLOBALS['TYPO3_MISC']['microtime_end']) ? $GLOBALS['TYPO3_MISC']['microtime_end'] : null;
@@ -3695,8 +3781,6 @@ class TypoScriptFrontendController
 
     /**
      * Outputs preview info.
-     *
-     * @return void
      */
     public function previewInfo()
     {
@@ -3714,8 +3798,6 @@ class TypoScriptFrontendController
 
     /**
      * End-Of-Frontend hook
-     *
-     * @return void
      */
     public function hook_eofe()
     {
@@ -3732,9 +3814,11 @@ class TypoScriptFrontendController
      * Returns a link to the BE login screen with redirect to the front-end
      *
      * @return string HTML, a tag for a link to the backend.
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function beLoginLinkIPList()
     {
+        GeneralUtility::logDeprecatedFunction();
         if (!empty($this->config['config']['beLoginLinkIPList'])) {
             if (GeneralUtility::cmpIP(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $this->config['config']['beLoginLinkIPList'])) {
                 $label = !$this->beUserLogin ? $this->config['config']['beLoginLinkIPList_login'] : $this->config['config']['beLoginLinkIPList_logout'];
@@ -3753,8 +3837,6 @@ class TypoScriptFrontendController
 
     /**
      * Sends HTTP headers for temporary content. These headers prevent search engines from caching temporary content and asks them to revisit this page again.
-     *
-     * @return void
      */
     public function addTempContentHttpHeaders()
     {
@@ -3779,9 +3861,11 @@ class TypoScriptFrontendController
      * @param int $end End of range
      * @param int $offset Offset
      * @return string encoded/decoded version of character
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, this functionality has been moved to ContentObjectRenderer
      */
     public function encryptCharcode($n, $start, $end, $offset)
     {
+        GeneralUtility::logDeprecatedFunction();
         $n = $n + $offset;
         if ($offset > 0 && $n > $end) {
             $n = $start + ($n - $end - 1);
@@ -3797,9 +3881,11 @@ class TypoScriptFrontendController
      * @param string $string Input string to en/decode: "mailto:blabla@bla.com
      * @param bool $back If set, the process is reversed, effectively decoding, not encoding.
      * @return string encoded/decoded version of $string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, this functionality has been moved to ContentObjectRenderer
      */
     public function encryptEmail($string, $back = false)
     {
+        GeneralUtility::logDeprecatedFunction();
         $out = '';
         // obfuscates using the decimal HTML entity references for each character
         if ($this->spamProtectEmailAddresses === 'ascii') {
@@ -3834,7 +3920,6 @@ class TypoScriptFrontendController
      * Creates an instance of ContentObjectRenderer in $this->cObj
      * This instance is used to start the rendering of the TypoScript template structure
      *
-     * @return void
      * @see pagegen.php
      */
     public function newCObj()
@@ -3846,7 +3931,6 @@ class TypoScriptFrontendController
     /**
      * Converts relative paths in the HTML source to absolute paths for fileadmin/, typo3conf/ext/ and media/ folders.
      *
-     * @return void
      * @access private
      * @see pagegen.php, INTincScript()
      */
@@ -3915,7 +3999,6 @@ class TypoScriptFrontendController
      *
      * @param string $typoScriptProperty Deprecated object or property
      * @param string $explanation Message or additional information
-     * @return void
      */
     public function logDeprecatedTyposcript($typoScriptProperty, $explanation = '')
     {
@@ -3928,7 +4011,6 @@ class TypoScriptFrontendController
      * Updates the tstamp field of a cache_md5params record to the current time.
      *
      * @param string $hash The hash string identifying the cache_md5params record for which to update the "tstamp" field to the current time.
-     * @return void
      * @access private
      */
     public function updateMD5paramsRecord($hash)
@@ -3963,7 +4045,7 @@ class TypoScriptFrontendController
     /**
      * Returns the name of the workspace
      *
-     * @param bool $returnTitle If set, returns title of current workspace being previewed
+     * @param bool $returnTitle If set, returns title of current workspace being previewed, please be aware that this parameter is deprecated as of TYPO3 v8, and will be removed in TYPO3 v9
      * @return string|int|NULL If $returnTitle is set, returns string (title), otherwise workspace integer for which workspace is being preview. NULL if none.
      */
     public function whichWorkspace($returnTitle = false)
@@ -3975,6 +4057,7 @@ class TypoScriptFrontendController
             $ws = $this->getBackendUser()->workspace;
         }
         if ($ws && $returnTitle) {
+            GeneralUtility::deprecationLog('The parameter $returnTitle of $TSFE->whichWorkspace() is marked as deprecated and has no effect anymore. It will be removed in TYPO3 v9.');
             if (ExtensionManagementUtility::isLoaded('workspaces')) {
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                     ->getQueryBuilderForTable('sys_workspace');
@@ -4005,7 +4088,6 @@ class TypoScriptFrontendController
      * Includes a comma-separated list of library files by PHP function include_once.
      *
      * @param array $libraries The libraries to be included.
-     * @return void
      * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use proper class loading instead.
      */
     public function includeLibraries(array $libraries)
@@ -4050,15 +4132,14 @@ class TypoScriptFrontendController
             // Parsing the user TS (or getting from cache)
             $TSdataArray = TypoScriptParser::checkIncludeLines_array($TSdataArray);
             $userTS = implode(LF . '[GLOBAL]' . LF, $TSdataArray);
-            $hash = md5('pageTS:' . $userTS);
-            $cachedContent = $this->sys_page->getHash($hash);
-            if (is_array($cachedContent)) {
-                $this->pagesTSconfig = $cachedContent;
-            } else {
+            $identifier = md5('pageTS:' . $userTS);
+            $contentHashCache = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
+            $this->pagesTSconfig = $contentHashCache->get($identifier);
+            if (!is_array($this->pagesTSconfig)) {
                 $parseObj = GeneralUtility::makeInstance(TypoScriptParser::class);
                 $parseObj->parse($userTS);
                 $this->pagesTSconfig = $parseObj->setup;
-                $this->sys_page->storeHash($hash, $this->pagesTSconfig, 'PAGES_TSconfig');
+                $contentHashCache->set($identifier, $this->pagesTSconfig, ['PAGES_TSconfig'], 0);
             }
         }
         return $this->pagesTSconfig;
@@ -4069,7 +4150,6 @@ class TypoScriptFrontendController
      *
      * @param string $key is the key in the array, for num-key let the value be empty. Note reserved keys 'openPic' and 'mouseOver'
      * @param string $content is the content if you want any
-     * @return void
      * @see \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject::writeMenu(), ContentObjectRenderer::imageLinkWrap()
      */
     public function setJS($key, $content = '')
@@ -4107,7 +4187,6 @@ class TypoScriptFrontendController
      *
      * @param string $key Is the key in the array, for num-key let the value be empty
      * @param string $content Is the content if you want any
-     * @return void
      * @see setJS()
      */
     public function setCSS($key, $content)
@@ -4134,7 +4213,6 @@ class TypoScriptFrontendController
      *
      * @param string $reason An optional reason to be written to the syslog.
      * @param bool $internal Whether the call is done from core itself (should only be used by core).
-     * @return void
      */
     public function set_no_cache($reason = '', $internal = false)
     {
@@ -4173,7 +4251,6 @@ class TypoScriptFrontendController
     /**
      * Disables caching of the current page.
      *
-     * @return void
      * @internal
      */
     protected function disableCache()
@@ -4185,7 +4262,6 @@ class TypoScriptFrontendController
      * Sets the cache-timeout in seconds
      *
      * @param int $seconds Cache-timeout in seconds
-     * @return void
      */
     public function set_cache_timeout_default($seconds)
     {
@@ -4353,8 +4429,6 @@ class TypoScriptFrontendController
 
     /**
      * Initializing the getLL variables needed.
-     *
-     * @return void
      */
     public function initLLvars()
     {
@@ -4429,8 +4503,6 @@ class TypoScriptFrontendController
 
     /**
      * Converts the $_POST array from metaCharset (page HTML charset from input form) to utf-8 (internal processing) IF the two charsets are different.
-     *
-     * @return void
      */
     public function convPOSTCharset()
     {
@@ -4452,9 +4524,9 @@ class TypoScriptFrontendController
         $result = PHP_INT_MAX;
         // Get the configuration
         $tablesToConsider = $this->getCurrentPageCacheConfiguration();
-        // Get the time, rounded to the minute (do not polute MySQL cache!)
+        // Get the time, rounded to the minute (do not pollute MySQL cache!)
         // It is ok that we do not take seconds into account here because this
-        // value will be substracted later. So we never get the time "before"
+        // value will be subtracted later. So we never get the time "before"
         // the cache change.
         $now = $GLOBALS['ACCESS_TIME'];
         // Find timeout by checking every table

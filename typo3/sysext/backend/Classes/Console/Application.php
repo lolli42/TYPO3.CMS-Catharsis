@@ -18,6 +18,10 @@ use TYPO3\CMS\Core\Core\Bootstrap;
 
 /**
  * Entry point for the TYPO3 Command Line for Backend calls
+ *
+ * This class is @deprecated in favor of the Core-based CommandApplication, which has a different
+ * entry-point level, and has a different request handler out-of-the-box. This class will be removed
+ * in TYPO3 v9.
  */
 class Application implements ApplicationInterface
 {
@@ -67,7 +71,6 @@ class Application implements ApplicationInterface
      * Set up the application and shut it down afterwards
      *
      * @param callable $execute
-     * @return void
      */
     public function run(callable $execute = null)
     {
@@ -90,8 +93,6 @@ class Application implements ApplicationInterface
 
     /**
      * Check the script is called from a cli environment.
-     *
-     * @return void
      */
     protected function checkEnvironmentOrDie()
     {
@@ -105,8 +106,6 @@ class Application implements ApplicationInterface
     /**
      * Set up cgi sapi as de facto cli, but check no HTTP
      * environment variables are set.
-     *
-     * @return void
      */
     protected function initializeCgiCompatibilityLayerOrDie()
     {

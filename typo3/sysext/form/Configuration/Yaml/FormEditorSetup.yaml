@@ -41,7 +41,6 @@ TYPO3:
             maximumUndoSteps: 10
 
             stylesheets:
-              # @toDo: move form.less to the TYPO3 Build folder
               200: 'EXT:form/Resources/Public/Css/form.css'
 
             formEditorFluidConfiguration:
@@ -58,6 +57,8 @@ TYPO3:
               FormElement-Page: 'Stage/Page'
               FormElement-SummaryPage: 'Stage/SummaryPage'
               FormElement-Fieldset: 'Stage/Fieldset'
+              FormElement-GridContainer: 'Stage/Fieldset'
+              FormElement-GridRow: 'Stage/Fieldset'
               FormElement-Text: 'Stage/SimpleTemplate'
               FormElement-Password: 'Stage/SimpleTemplate'
               FormElement-AdvancedPassword: 'Stage/SimpleTemplate'
@@ -86,6 +87,7 @@ TYPO3:
               Inspector-PropertyGridEditor: 'Inspector/PropertyGridEditor'
               Inspector-SingleSelectEditor: 'Inspector/SingleSelectEditor'
               Inspector-MultiSelectEditor: 'Inspector/MultiSelectEditor'
+              Inspector-GridColumnViewPortConfigurationEditor: 'Inspector/GridColumnViewPortConfigurationEditor'
               Inspector-TextareaEditor: 'Inspector/TextareaEditor'
               Inspector-RemoveElementEditor: 'Inspector/RemoveElementEditor'
               Inspector-FinishersEditor: 'Inspector/FinishersEditor'
@@ -153,7 +155,7 @@ TYPO3:
                 paginationTitle: 'formEditor.pagination.title'
 
                 iconIdentifier: 'content-elements-mailform'
-                predefinedDefaults:
+                predefinedDefaults: []
                 editors:
                   900:
                     identifier: 'finishers'
@@ -298,12 +300,36 @@ TYPO3:
                     label: 'formEditor.elements.Fieldset.editor.label.label'
                   800: null
 
+            GridContainer:
+              formEditor:
+                label: 'formEditor.elements.GridContainer.label'
+                _isCompositeFormElement: true
+                _isGridContainerFormElement: true
+                iconIdentifier: 't3-form-icon-gridcontainer'
+                editors:
+                  200:
+                    label: 'formEditor.elements.GridContainer.editor.label.label'
+                  800: null
+
+            GridRow:
+              formEditor:
+                label: 'formEditor.elements.GridRow.label'
+                group: container
+                groupSorting: 300
+                _isCompositeFormElement: true
+                _isGridRowFormElement: true
+                iconIdentifier: 't3-form-icon-gridrow'
+                editors:
+                  200:
+                    label: 'formEditor.elements.GridRow.editor.label.label'
+                  800: null
+
             ### FORM ELEMENTS: PAGE TYPES ###
             Page:
               formEditor:
                 __inheritances:
                   10: 'TYPO3.CMS.Form.mixins.formElementMixins.RemovableFormElementMixin'
-                predefinedDefaults:
+                predefinedDefaults: []
                 label: 'formEditor.elements.Page.label'
                 group: page
                 groupSorting: 100
@@ -316,7 +342,7 @@ TYPO3:
 
             SummaryPage:
               formEditor:
-                predefinedDefaults:
+                predefinedDefaults: []
                 label: 'formEditor.elements.SummaryPage.label'
                 group: page
                 groupSorting: 200
@@ -361,6 +387,22 @@ TYPO3:
                     propertyPath: 'properties.confirmationLabel'
                   500: null
 
+            Hidden:
+              formEditor:
+                label: 'formEditor.elements.Hidden.label'
+                group: input
+                groupSorting: 500
+                iconIdentifier: 't3-form-icon-hidden'
+                predefinedDefaults:
+                  defaultValue: ''
+                editors:
+                  300:
+                    identifier: 'defaultValue'
+                    templateName: 'Inspector-TextEditor'
+                    label: 'formEditor.elements.Hidden.editor.defaultValue.label'
+                    propertyPath: 'defaultValue'
+                  800: null
+
             Textarea:
               formEditor:
                 label: 'formEditor.elements.Textarea.label'
@@ -368,6 +410,7 @@ TYPO3:
                 groupSorting: 200
                 iconIdentifier: 't3-form-icon-textarea'
                 editors:
+                  600: null
                   900:
                     selectOptions:
                       # remove email validator
@@ -394,6 +437,14 @@ TYPO3:
                 group: select
                 groupSorting: 400
                 iconIdentifier: 't3-form-icon-multi-select'
+                editors:
+                  250:
+                    identifier: 'inactiveOption'
+                    templateName: 'Inspector-TextEditor'
+                    label: 'formEditor.elements.SelectionMixin.editor.inactiveOption.label'
+                    propertyPath: 'properties.prependOptionLabel'
+                    fieldExplanationText: 'formEditor.elements.SelectionMixin.editor.inactiveOption.fieldExplanationText'
+                    doNotSetIfPropertyValueIsEmpty: true
 
             RadioButton:
               formEditor:
@@ -408,6 +459,14 @@ TYPO3:
                 group: select
                 groupSorting: 200
                 iconIdentifier: 't3-form-icon-single-select'
+                editors:
+                  250:
+                    identifier: 'inactiveOption'
+                    templateName: 'Inspector-TextEditor'
+                    label: 'formEditor.elements.SelectionMixin.editor.inactiveOption.label'
+                    propertyPath: 'properties.prependOptionLabel'
+                    fieldExplanationText: 'formEditor.elements.SelectionMixin.editor.inactiveOption.fieldExplanationText'
+                    doNotSetIfPropertyValueIsEmpty: true
 
             ### FORM ELEMENTS: CUSTOM ###
             DatePicker:
@@ -487,10 +546,10 @@ TYPO3:
                 editors:
                   200: null
                   300:
-                    identifier: 'staticText'
+                    identifier: 'contentElement'
                     templateName: 'Inspector-Typo3WinBrowserEditor'
-                    label: 'formEditor.elements.StaticText.editor.contentElement.label'
-                    buttonLabel: 'formEditor.elements.StaticText.editor.contentElement.buttonLabel'
+                    label: 'formEditor.elements.ContentElement.editor.contentElement.label'
+                    buttonLabel: 'formEditor.elements.ContentElement.editor.contentElement.buttonLabel'
                     browsableType: tt_content
                     propertyPath: 'properties.contentElementUid'
                     propertyValidatorsMode: 'OR'
@@ -718,7 +777,7 @@ TYPO3:
         formElementMixins:
           BaseFormElementMixin:
             formEditor:
-              predefinedDefaults:
+              predefinedDefaults: []
               editors:
                 100:
                   identifier: 'header'
@@ -782,24 +841,50 @@ TYPO3:
               editors:
                 200:
                   label: 'formEditor.elements.FormElement.editor.label.label'
+
+                700:
+                  identifier: 'gridColumnViewPortConfiguration'
+                  templateName: 'Inspector-GridColumnViewPortConfigurationEditor'
+                  label: 'formEditor.elements.FormElement.editor.gridColumnViewPortConfiguration.label'
+                  configurationOptions:
+                    viewPorts:
+                      10:
+                        viewPortIdentifier: 'xs'
+                        label: 'formEditor.elements.FormElement.editor.gridColumnViewPortConfiguration.xs.label'
+                      20:
+                        viewPortIdentifier: 'sm'
+                        label: 'formEditor.elements.FormElement.editor.gridColumnViewPortConfiguration.sm.label'
+                      30:
+                        viewPortIdentifier: 'md'
+                        label: 'formEditor.elements.FormElement.editor.gridColumnViewPortConfiguration.md.label'
+                      40:
+                        viewPortIdentifier: 'lg'
+                        label: 'formEditor.elements.FormElement.editor.gridColumnViewPortConfiguration.lg.label'
+                    numbersOfColumnsToUse:
+                      label: 'formEditor.elements.FormElement.editor.gridColumnViewPortConfiguration.numbersOfColumnsToUse.label'
+                      propertyPath: 'properties.gridColumnClassAutoConfiguration.viewPorts.{@viewPortIdentifier}.numbersOfColumnsToUse'
+                      fieldExplanationText: 'formEditor.elements.FormElement.editor.gridColumnViewPortConfiguration.numbersOfColumnsToUse.fieldExplanationText'
+
                 800:
                   identifier: 'requiredValidator'
                   templateName: 'Inspector-RequiredValidatorEditor'
                   label: 'formEditor.elements.FormElement.editor.requiredValidator.label'
                   validatorIdentifier: 'NotEmpty'
+                  propertyPath: 'properties.fluidAdditionalAttributes.required'
+                  propertyValue: 'required'
 
           TextMixin:
             formEditor:
               predefinedDefaults:
-                properties:
-                  placeholder: ''
                 defaultValue: ''
               editors:
                 400:
                   identifier: 'placeholder'
                   templateName: 'Inspector-TextEditor'
                   label: 'formEditor.elements.TextMixin.editor.placeholder.label'
-                  propertyPath: 'properties.placeholder'
+                  propertyPath: 'properties.fluidAdditionalAttributes.placeholder'
+                  compatibilityPropertyPath: 'properties.placeholder'
+                  doNotSetIfPropertyValueIsEmpty: true
                 500:
                   identifier: 'defaultValue'
                   templateName: 'Inspector-TextEditor'
@@ -862,6 +947,12 @@ TYPO3:
                         20: 'TYPO3.CMS.Form.mixins.formElementMixins.MinimumMaximumEditorsMixin'
                       100:
                         label: 'formEditor.elements.TextMixin.validators.StringLength.editor.header.label'
+                      200:
+                        additionalElementPropertyPaths:
+                          10: 'properties.fluidAdditionalAttributes.minlength'
+                      300:
+                        additionalElementPropertyPaths:
+                          10: 'properties.fluidAdditionalAttributes.maxlength'
                   40:
                     identifier: 'EmailAddress'
                     editors:

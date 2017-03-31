@@ -23,6 +23,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
 
 /**
  * The legendary "t3lib_div" class - Miscellaneous functions for general purpose.
@@ -215,7 +216,6 @@ class GeneralUtility
      *
      * @param mixed $inputGet
      * @param string $key
-     * @return void
      */
     public static function _GETset($inputGet, $key = '')
     {
@@ -254,6 +254,7 @@ class GeneralUtility
      */
     public static function removeXSS($string)
     {
+        static::logDeprecatedFunction();
         return \RemoveXSS::process($string);
     }
 
@@ -1209,7 +1210,7 @@ class GeneralUtility
      *************************/
 
     /**
-     * Explodes a $string delimited by $delim and casts each item in the array to (int).
+     * Explodes a $string delimited by $delimiter and casts each item in the array to (int).
      * Corresponds to \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(), but with conversion to integers for all values.
      *
      * @param string $delimiter Delimiter string to explode with
@@ -1389,15 +1390,12 @@ class GeneralUtility
      * @param string $delim Delimited, default is comma
      * @param string $quote Quote-character to wrap around the values.
      * @return string A single line of CSV
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9.
      */
     public static function csvValues(array $row, $delim = ',', $quote = '"')
     {
-        $out = [];
-        foreach ($row as $value) {
-            $out[] = str_replace($quote, $quote . $quote, $value);
-        }
-        $str = $quote . implode(($quote . $delim . $quote), $out) . $quote;
-        return $str;
+        self::logDeprecatedFunction();
+        return CsvUtility::csvValues($row, $delim, $quote);
     }
 
     /**
@@ -2275,7 +2273,6 @@ class GeneralUtility
      *
      * @param string $directory Target directory to create. Must a have trailing slash
      * @param string $deepDirectory Directory to create. This second parameter
-     * @return void
      * @throws \InvalidArgumentException If $directory or $deepDirectory are not strings
      * @throws \RuntimeException If directory could not be created
      */
@@ -2413,6 +2410,7 @@ class GeneralUtility
      */
     public static function get_dirs($path)
     {
+        $dirs = null;
         if ($path) {
             if (is_dir($path)) {
                 $dir = scandir($path);
@@ -2946,7 +2944,6 @@ class GeneralUtility
             case 'REMOTE_HOST':
 
             case 'QUERY_STRING':
-                $retVal = '';
                 if (isset($_SERVER[$getEnvName])) {
                     $retVal = $_SERVER[$getEnvName];
                 }
@@ -2969,9 +2966,8 @@ class GeneralUtility
                 }
                 $commonEnd = strrev(implode('/', $acc));
                 if ((string)$commonEnd !== '') {
-                    $DR = substr($SFN, 0, -(strlen($commonEnd) + 1));
+                    $retVal = substr($SFN, 0, -(strlen($commonEnd) + 1));
                 }
-                $retVal = $DR;
                 break;
             case 'TYPO3_HOST_ONLY':
                 $httpHost = self::getIndpEnv('HTTP_HOST');
@@ -3962,7 +3958,6 @@ class GeneralUtility
      * @see makeInstance
      * @param string $className
      * @param \TYPO3\CMS\Core\SingletonInterface $instance
-     * @return void
      * @internal
      */
     public static function setSingletonInstance($className, SingletonInterface $instance)
@@ -3984,7 +3979,6 @@ class GeneralUtility
      * @throws \InvalidArgumentException
      * @param string $className
      * @param \TYPO3\CMS\Core\SingletonInterface $instance
-     * @return void
      * @internal
      */
     public static function removeSingletonInstance($className, SingletonInterface $instance)
@@ -4011,7 +4005,6 @@ class GeneralUtility
      *
      * @internal
      * @param array $newSingletonInstances $className => $object
-     * @return void
      */
     public static function resetSingletonInstances(array $newSingletonInstances)
     {
@@ -4051,7 +4044,6 @@ class GeneralUtility
      * @throws \InvalidArgumentException if class extends \TYPO3\CMS\Core\SingletonInterface
      * @param string $className
      * @param object $instance
-     * @return void
      */
     public static function addInstance($className, $instance)
     {
@@ -4072,7 +4064,6 @@ class GeneralUtility
      * @throws \InvalidArgumentException if $className is empty or if $instance is no instance of $className
      * @param string $className a class name
      * @param object $instance an object
-     * @return void
      */
     protected static function checkInstanceClassName($className, $instance)
     {
@@ -4093,7 +4084,6 @@ class GeneralUtility
      * Warning: This is a helper method for unit tests. Do not call this directly in production code!
      *
      * @see makeInstance
-     * @return void
      */
     public static function purgeInstances()
     {
@@ -4106,7 +4096,6 @@ class GeneralUtility
      *
      * Used in unit tests only.
      *
-     * @return void
      * @internal
      */
     public static function flushInternalRuntimeCaches()
@@ -4174,8 +4163,7 @@ class GeneralUtility
      * Useful to require classes from inside other classes (not global scope). A limited set of global variables are available (see function)
      *
      * @param string $requireFile: Path of the file to be included
-     * @return void
-     * @deprecated since TYPO3 CMS 8, this file will be removed in TYPO3 CMS 9
+     * @deprecated since TYPO3 CMS 8, this method will be removed in TYPO3 CMS 9
      */
     public static function requireOnce($requireFile)
     {
@@ -4191,8 +4179,7 @@ class GeneralUtility
      * A limited set of global variables are available (see function)
      *
      * @param string $requireFile: Path of the file to be included
-     * @return void
-     * @deprecated since TYPO3 CMS 8, this file will be removed in TYPO3 CMS 9
+     * @deprecated since TYPO3 CMS 8, this method will be removed in TYPO3 CMS 9
      */
     public static function requireFile($requireFile)
     {
@@ -4242,9 +4229,11 @@ class GeneralUtility
      * @param float $fontSize font size for freetype function call
      *
      * @return float compensated font size based on 96 dpi
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, the functionality is now moved to GraphicalFunctions->compensateFontSizeiBasedOnFreetypeDpi()
      */
     public static function freetypeDpiComp($fontSize)
     {
+        self::logDeprecatedFunction();
         // FreeType 2 always has 96 dpi.
         $dpi = 96.0;
         return $fontSize / $dpi * 72;
@@ -4253,7 +4242,6 @@ class GeneralUtility
     /**
      * Initialize the system log.
      *
-     * @return void
      * @see sysLog()
      */
     public static function initSysLog()
@@ -4297,7 +4285,6 @@ class GeneralUtility
      * @param string $msg Message (in English).
      * @param string $extKey Extension key (from which extension you are calling the log) or "Core
      * @param int $severity \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_* constant
-     * @return void
      */
     public static function sysLog($msg, $extKey, $severity = 0)
     {
@@ -4370,7 +4357,6 @@ class GeneralUtility
      * @param string $extKey Extension key (from which extension you are calling the log)
      * @param int $severity Severity: 0 is info, 1 is notice, 2 is warning, 3 is fatal error, -1 is "OK" message
      * @param mixed $dataVar Additional data you want to pass to the logger.
-     * @return void
      */
     public static function devLog($msg, $extKey, $severity = 0, $dataVar = false)
     {
@@ -4387,7 +4373,6 @@ class GeneralUtility
      * Writes a message to the deprecation log.
      *
      * @param string $msg Message (in English).
-     * @return void
      */
     public static function deprecationLog($msg)
     {
@@ -4423,6 +4408,45 @@ class GeneralUtility
     }
 
     /**
+     * Logs the usage of a deprecated fluid ViewHelper argument.
+     * The log message will be generated automatically and contains the template path.
+     * With the third argument of this method it is possible to append some text to the log message.
+     *
+     * example usage:
+     *  if ($htmlEscape !== null) {
+     *      GeneralUtility::logDeprecatedViewHelperAttribute(
+     *          'htmlEscape',
+     *          $renderingContext,
+     *          'Please wrap the view helper in <f:format.raw> if you want to disable HTML escaping, which is enabled by default now.'
+     *      );
+     *  }
+     *
+     * The example above will create this deprecation log message:
+     * 15-02-17 23:12: [typo3/sysext/backend/Resources/Private/Templates/ToolbarItems/HelpToolbarItemDropDown.html]
+     *   The property "htmlEscape" has been deprecated.
+     *   Please wrap the view helper in <f:format.raw> if you want to disable HTML escaping,
+     *   which is enabled by default now.
+     *
+     * @param string $property
+     * @param RenderingContextInterface $renderingContext
+     * @param string $additionalMessage
+     */
+    public static function logDeprecatedViewHelperAttribute(string $property, RenderingContextInterface $renderingContext, string $additionalMessage = '')
+    {
+        $template = $renderingContext->getTemplatePaths()->resolveTemplateFileForControllerAndActionAndFormat(
+            $renderingContext->getControllerName(),
+            $renderingContext->getControllerAction()
+        );
+        $template = str_replace(PATH_site, '', $template);
+        $message = [];
+        $message[] = '[' . $template . ']';
+        $message[] = 'The property "' . $property . '" has been marked as deprecated.';
+        $message[] = $additionalMessage;
+        $message[] = 'Please check also your partial and layout files of this template';
+        self::deprecationLog(implode(' ', $message));
+    }
+
+    /**
      * Gets the absolute path to the deprecation log file.
      *
      * @return string Absolute path to the deprecation log file
@@ -4435,8 +4459,6 @@ class GeneralUtility
     /**
      * Logs a call to a deprecated function.
      * The log message will be taken from the annotation.
-     *
-     * @return void
      */
     public static function logDeprecatedFunction()
     {
@@ -4563,7 +4585,6 @@ class GeneralUtility
     /**
      * Ends and flushes all output buffers
      *
-     * @return void
      * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
      */
     public static function flushOutputBuffers()
@@ -4596,7 +4617,7 @@ class GeneralUtility
      * because the context shall never be changed on runtime!
      *
      * @param \TYPO3\CMS\Core\Core\ApplicationContext $applicationContext
-     * @throws \RuntimeException if applicationContext is overriden
+     * @throws \RuntimeException if applicationContext is overridden
      * @internal This is not a public API method, do not use in own extensions
      */
     public static function presetApplicationContext(ApplicationContext $applicationContext)

@@ -169,7 +169,6 @@ class IndexSearchRepository
      * @param array $searchData the search data
      * @param array $externalParsers
      * @param string $searchRootPageIdList
-     * @return void
      */
     public function initialize($settings, $searchData, $externalParsers, $searchRootPageIdList)
     {
@@ -1272,7 +1271,7 @@ class IndexSearchRepository
      * or PHP-versions which has varying output from the hexdec function.
      *
      * @param string $str String to hash
-     * @return int Integer intepretation of the md5 hash of input string.
+     * @return int Integer interpretation of the md5 hash of input string.
      */
     protected function md5inthash($str)
     {

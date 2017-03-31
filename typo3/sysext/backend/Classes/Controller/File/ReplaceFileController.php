@@ -19,7 +19,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -81,14 +80,12 @@ class ReplaceFileController extends AbstractModule
     {
         parent::__construct();
         $GLOBALS['SOBE'] = $this;
-        $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
         $this->init();
     }
 
     /**
      * Init
      *
-     * @return void
      * @throws \RuntimeException
      * @throws InsufficientFileAccessPermissionsException
      */
@@ -145,8 +142,6 @@ class ReplaceFileController extends AbstractModule
 
     /**
      * Main function, rendering the content of the rename form
-     *
-     * @return void
      */
     public function main()
     {

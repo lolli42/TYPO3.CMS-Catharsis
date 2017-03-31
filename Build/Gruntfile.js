@@ -13,24 +13,41 @@
 
 module.exports = function(grunt) {
 
+	/**
+	 * Grunt stylefmt task
+	 */
+	grunt.registerMultiTask('formatsass', 'Grunt task for stylefmt', function () {
+		var options = this.options(),
+			done = this.async(),
+			stylefmt = require('stylefmt'),
+			scss = require('postcss-scss'),
+			files = this.filesSrc.filter(function (file) {
+				return grunt.file.isFile(file);
+			}),
+			counter = 0;
+		this.files.forEach(function (file) {
+			file.src.filter(function (filepath) {
+				var content = grunt.file.read(filepath);
+				var settings = {
+					from: filepath,
+					syntax: scss
+				};
+				stylefmt.process(content, settings).then(function (result) {
+					grunt.file.write(file.dest, result.css);
+					grunt.log.success('Source file "' + filepath + '" was processed.');
+					counter++;
+					if (counter >= files.length) done(true);
+				});
+			});
+		});
+	});
+
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		banner: '/*!\n' +
-			' * This file is part of the TYPO3 CMS project.\n' +
-			' *\n' +
-			' * It is free software; you can redistribute it and/or modify it under\n' +
-			' * the terms of the GNU General Public License, either version 2\n' +
-			' * of the License, or any later version.\n' +
-			' *\n' +
-			' * For the full copyright and license information, please read the\n' +
-			' * LICENSE.txt file that was distributed with this source code.\n' +
-			' *\n' +
-			' * The TYPO3 project - inspiring people to share!\n' +
-			' */\n',
 		paths: {
 			resources : 'Resources/',
-			less      : '<%= paths.resources %>Public/Less/',
+			sass      : '<%= paths.resources %>Public/Sass/',
 			root      : '../',
 			sysext    : '<%= paths.root %>typo3/sysext/',
 			form      : '<%= paths.sysext %>form/Resources/',
@@ -47,51 +64,73 @@ module.exports = function(grunt) {
 			t3icons   : '<%= paths.bower %>typo3-icons/dist/',
 			npm       : 'node_modules/'
 		},
-		less: {
+		stylelint: {
 			options: {
-				banner: '<%= banner %>',
-				outputSourceFiles: true
+				configFile: '<%= paths.root %>.stylelintrc',
+			},
+			sass: ['<%= paths.sass %>**/*.scss']
+		},
+		formatsass: {
+			sass: {
+				files: [{
+					expand: true,
+					cwd: '<%= paths.sass %>',
+					src: ['**/*.scss'],
+					dest: '<%= paths.sass %>'
+				}]
+			}
+		},
+		sass: {
+			options: {
+				outputStyle: 'expanded',
+				precision: 8,
+				includePaths: [
+					'bower_components/bootstrap-sass/assets/stylesheets',
+					'bower_components/fontawesome/scss',
+					'bower_components/eonasdan-bootstrap-datetimepicker/src/sass',
+					'node_modules/tagsort'
+				]
 			},
 			backend: {
 				files: {
-					"<%= paths.backend %>Public/Css/backend.css": "<%= paths.less %>backend.less"
+					"<%= paths.backend %>Public/Css/backend.css": "<%= paths.sass %>backend.scss"
 				}
 			},
 			core: {
 				files: {
-					"<%= paths.core %>Public/Css/errorpage.css": "<%= paths.less %>errorpage.less"
+					"<%= paths.core %>Public/Css/errorpage.css": "<%= paths.sass %>errorpage.scss"
 				}
 			},
 			form: {
 				files: {
-					"<%= paths.form %>Public/Css/form.css": "<%= paths.less %>form.less"
+					"<%= paths.form %>Public/Css/form.css": "<%= paths.sass %>form.scss"
 				}
 			},
 			frontend: {
 				files: {
-					"<%= paths.frontend %>Public/Css/adminpanel.css": "<%= paths.less %>adminpanel.less"
+					"<%= paths.frontend %>Public/Css/adminpanel.css": "<%= paths.sass %>adminpanel.scss"
 				}
 			},
 			install: {
 				files: {
-					"<%= paths.install %>Public/Css/install.css": "<%= paths.less %>install.less"
+					"<%= paths.install %>Public/Css/install.css": "<%= paths.sass %>install.scss"
 				}
 			},
 			linkvalidator: {
 				files: {
-					"<%= paths.linkvalidator %>Public/Css/linkvalidator.css": "<%= paths.less %>linkvalidator.less"
+					"<%= paths.linkvalidator %>Public/Css/linkvalidator.css": "<%= paths.sass %>linkvalidator.scss"
 				}
 			},
 			workspaces: {
 				files: {
-					"<%= paths.workspaces %>Public/Css/preview.css": "<%= paths.workspaces %>Private/Less/preview.less"
+					"<%= paths.workspaces %>Public/Css/preview.css": "<%= paths.sass %>workspace.scss"
 				}
 			},
 			t3editor: {
 				files: {
-					'<%= paths.t3editor %>Public/Css/t3editor.css': '<%= paths.t3editor %>Private/Less/t3editor.less',
-					'<%= paths.t3editor %>Public/Css/t3editor_inner.css': '<%= paths.t3editor %>Private/Less/t3editor_inner.less',
-					'<%= paths.t3editor %>Public/Css/t3editor_typoscript_colors.css': '<%= paths.t3editor %>Private/Less/t3editor_typoscript_colors.less'
+					'<%= paths.t3editor %>Public/Css/t3editor.css': '<%= paths.sass %>editor.scss',
+					'<%= paths.t3editor %>Public/Css/t3editor_inner.css': '<%= paths.sass %>editor_inner.scss',
+					'<%= paths.t3editor %>Public/Css/t3editor_typoscript_colors.css': '<%= paths.sass %>editor_typoscript_colors.scss'
 				}
 			}
 		},
@@ -99,12 +138,34 @@ module.exports = function(grunt) {
 			options: {
 				map: false,
 				processors: [
-					require('autoprefixer')({ // add vendor prefixes
+					require('autoprefixer')({
 						browsers: [
-							'Last 2 versions',
-							'Firefox ESR',
-							'IE 11'
+							'Chrome >= 57',
+							'Firefox >= 52',
+							'Edge >= 14',
+							'Explorer >= 11',
+							'iOS >= 9',
+							'Safari >= 8',
+							'Android >= 4',
+							'Opera >= 43'
 						]
+					}),
+					require('postcss-clean')({
+						keepSpecialComments: 0
+					}),
+					require('postcss-banner')({
+						banner: 'This file is part of the TYPO3 CMS project.\n' +
+							'\n' +
+							'It is free software; you can redistribute it and/or modify it under\n' +
+							'the terms of the GNU General Public License, either version 2\n' +
+							'of the License, or any later version.\n' +
+							'\n' +
+							'For the full copyright and license information, please read the\n' +
+							'LICENSE.txt file that was distributed with this source code.\n' +
+							'\n' +
+							'The TYPO3 project - inspiring people to share!',
+						important: true,
+						inline: false
 					})
 				]
 			},
@@ -156,8 +217,8 @@ module.exports = function(grunt) {
 			options: {
 				livereload: true
 			},
-			less: {
-				files: '<%= paths.less %>**/*.less',
+			sass: {
+				files: '<%= paths.sass %>**/*.scss',
 				tasks: 'css'
 			},
 			ts: {
@@ -200,6 +261,7 @@ module.exports = function(grunt) {
 					{ dest: '<%= paths.sysext %>documentation/Resources/Public/Icons/module-documentation.svg', src: '<%= paths.t3icons %>module/module-documentation.svg' },
 					{ dest: '<%= paths.sysext %>extensionmanager/Resources/Public/Icons/module-extensionmanager.svg', src: '<%= paths.t3icons %>module/module-extensionmanager.svg' },
 					{ dest: '<%= paths.sysext %>filelist/Resources/Public/Icons/module-filelist.svg', src: '<%= paths.t3icons %>module/module-filelist.svg' },
+					{ dest: '<%= paths.sysext %>form/Resources/Public/Icons/module-form.svg', src: '<%= paths.t3icons %>module/module-form.svg' },
 					{ dest: '<%= paths.sysext %>func/Resources/Public/Icons/module-func.svg', src: '<%= paths.t3icons %>module/module-func.svg' },
 					{ dest: '<%= paths.sysext %>indexed_search/Resources/Public/Icons/module-indexed_search.svg', src: '<%= paths.t3icons %>module/module-indexed_search.svg' },
 					{ dest: '<%= paths.sysext %>info/Resources/Public/Icons/module-info.svg', src: '<%= paths.t3icons %>module/module-info.svg' },
@@ -219,6 +281,11 @@ module.exports = function(grunt) {
 					{ dest: '<%= paths.sysext %>workspaces/Resources/Public/Icons/module-workspaces.svg', src: '<%= paths.t3icons %>module/module-workspaces.svg' }
 				]
 			},
+			extension_icons: {
+				files: [
+					{ dest: '<%= paths.sysext %>form/Resources/Public/Icons/Extension.svg', src: '<%= paths.t3icons %>module/module-form.svg' }
+				]
+			},
 			fonts: {
 				files: [
 					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.eot', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.eot' },
@@ -230,7 +297,7 @@ module.exports = function(grunt) {
 			},
 			npm: {
 				files: [
-					{dest: '<%= paths.install %>Public/JavaScript/tagsort.min.js', src: '<%= paths.npm %>tagsort/tagsort.js'}
+					{dest: '<%= paths.install %>Public/JavaScript/chosen.jquery.js', src: '<%= paths.npm %>chosen-js/chosen.jquery.js'}
 				]
 			}
 		},
@@ -269,7 +336,7 @@ module.exports = function(grunt) {
 				},
 				files: {
 					'nprogress.js': 'nprogress/nprogress.js',
-					'jquery.matchHeight-min.js': 'matchHeight/jquery.matchHeight-min.js',
+					'jquery.matchHeight-min.js': 'matchHeight/dist/jquery.matchHeight-min.js',
 					'jquery.dataTables.js': 'datatables/media/js/jquery.dataTables.min.js',
 					'require.js': 'requirejs/require.js',
 					'moment.js': 'moment/min/moment-with-locales.min.js',
@@ -285,16 +352,15 @@ module.exports = function(grunt) {
 						see https://github.com/claviska/jquery-minicolors/issues/206
 					'jquery.minicolors.js': 'jquery-minicolors/jquery.minicolors.min.js',
 					 */
-					/* disabled until autocomplete groupBy is fixed by the author
-						see https://github.com/devbridge/jQuery-Autocomplete/pull/387
-					'jquery.autocomplete.js': 'devbridge-autocomplete/src/jquery.autocomplete.js',
+					/* disabled until autocomplete formatGroup is fixed to pass on the index too
+					 'jquery.autocomplete.js': 'devbridge-autocomplete/src/jquery.autocomplete.js',
 					 */
 					'd3/d3.js': 'd3/d3.min.js',
 					/**
 					 * copy needed parts of jquery
 					 */
-					'jquery/jquery-3.1.1.js': 'jquery/dist/jquery.js',
-					'jquery/jquery-3.1.1.min.js': 'jquery/dist/jquery.min.js',
+					'jquery/jquery-3.2.1.js': 'jquery/dist/jquery.js',
+					'jquery/jquery-3.2.1.min.js': 'jquery/dist/jquery.min.js',
 					/**
 					 * copy needed parts of jquery-ui
 					 */
@@ -324,7 +390,7 @@ module.exports = function(grunt) {
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js"],
-					"<%= paths.install %>Public/JavaScript/tagsort.min.js": ["<%= paths.install %>Public/JavaScript/tagsort.min.js"],
+					"<%= paths.install %>Public/JavaScript/chosen.jquery.min.js": ["<%= paths.install %>Public/JavaScript/chosen.jquery.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js": ["<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js"]
 				}
 			}
@@ -350,7 +416,7 @@ module.exports = function(grunt) {
 	});
 
 	// Register tasks
-	grunt.loadNpmTasks('grunt-contrib-less');
+	grunt.loadNpmTasks('grunt-sass');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-bowercopy');
 	grunt.loadNpmTasks('grunt-npm-install');
@@ -361,6 +427,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks("grunt-ts");
 	grunt.loadNpmTasks('grunt-tslint');
+	grunt.loadNpmTasks('grunt-stylelint');
 
 	/**
 	 * grunt default task
@@ -372,15 +439,26 @@ module.exports = function(grunt) {
 	grunt.registerTask('default', ['css']);
 
 	/**
+	 * grunt format
+	 *
+	 * call "$ grunt format"
+	 *
+	 * this task does the following things:
+	 * - formatsass
+	 * - lint
+	 */
+	grunt.registerTask('format', ['formatsass', 'stylelint']);
+
+	/**
 	 * grunt css task
 	 *
 	 * call "$ grunt css"
 	 *
 	 * this task does the following things:
-	 * - less
+	 * - sass
 	 * - postcss
 	 */
-	grunt.registerTask('css', ['less', 'postcss']);
+	grunt.registerTask('css', ['sass', 'postcss']);
 
 	/**
 	 * grunt update task
@@ -407,6 +485,7 @@ module.exports = function(grunt) {
 	grunt.registerTask('scripts', ['tslint', 'tsclean', 'ts', 'copy:ts_files']);
 
 	grunt.task.registerTask('tsclean', function() {
+		grunt.option('force');
 		grunt.file.delete("JavaScript");
 	});
 
@@ -418,10 +497,10 @@ module.exports = function(grunt) {
 	 * this task does the following things:
 	 * - execute update task
 	 * - execute copy task
-	 * - compile less files
+	 * - compile sass files
 	 * - uglify js files
 	 * - minifies svg files
 	 * - compiles TypeScript files
 	 */
-	grunt.registerTask('build', ['update', 'scripts', 'copy', 'css', 'uglify', 'svgmin']);
+	grunt.registerTask('build', ['update', 'scripts', 'copy', 'format', 'css', 'uglify', 'svgmin']);
 };

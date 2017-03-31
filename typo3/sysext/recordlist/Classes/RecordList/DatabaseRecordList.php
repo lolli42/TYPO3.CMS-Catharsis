@@ -22,11 +22,13 @@ use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
+use TYPO3\CMS\Core\Utility\CsvUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -504,7 +506,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
         $rowListArray = GeneralUtility::trimExplode(',', $rowList, true);
         // if no columns have been specified, show description (if configured)
         if (!empty($GLOBALS['TCA'][$table]['ctrl']['descriptionColumn']) && empty($rowListArray)) {
-            array_push($rowListArray, $GLOBALS['TCA'][$table]['ctrl']['descriptionColumn']);
+            $rowListArray[] = $GLOBALS['TCA'][$table]['ctrl']['descriptionColumn'];
         }
         $backendUser = $this->getBackendUserAuthentication();
         $lang = $this->getLanguageService();
@@ -776,9 +778,33 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                                     // $lRow isn't always what we want - if record was moved we've to work with the
                                     // placeholder records otherwise the list is messed up a bit
                                     if ($row['_MOVE_PLH_uid'] && $row['_MOVE_PLH_pid']) {
-                                        $where = 't3ver_move_id="' . (int)$lRow['uid'] . '" AND pid="' . $row['_MOVE_PLH_pid']
-                                            . '" AND t3ver_wsid=' . $row['t3ver_wsid'] . BackendUtility::deleteClause($table);
-                                        $tmpRow = BackendUtility::getRecordRaw($table, $where, $selFieldList);
+                                        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                                            ->getQueryBuilderForTable($table);
+                                        $queryBuilder->getRestrictions()
+                                            ->removeAll()
+                                            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+                                        $predicates = [
+                                            $queryBuilder->expr()->eq(
+                                                't3ver_move_id',
+                                                $queryBuilder->createNamedParameter((int)$lRow['uid'], \PDO::PARAM_INT)
+                                            ),
+                                            $queryBuilder->expr()->eq(
+                                                'pid',
+                                                $queryBuilder->createNamedParameter((int)$row['_MOVE_PLH_pid'], \PDO::PARAM_INT)
+                                            ),
+                                            $queryBuilder->expr()->eq(
+                                                't3ver_wsid',
+                                                $queryBuilder->createNamedParameter((int)$row['t3ver_wsid'], \PDO::PARAM_INT)
+                                            ),
+                                        ];
+
+                                        $tmpRow = $queryBuilder
+                                            ->select(...$selFieldList)
+                                            ->from($table)
+                                            ->andWhere(...$predicates)
+                                            ->execute()
+                                            ->fetch();
+
                                         $lRow = is_array($tmpRow) ? $tmpRow : $lRow;
                                     }
                                     // In offline workspace, look for alternative record:
@@ -853,7 +879,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
     /**
      * Check if all row listing conditions are fulfilled.
      *
-     * This function serves as a dummy method to be overriden in extending classes.
+     * This function serves as a dummy method to be overridden in extending classes.
      *
      * @param string $table Table name
      * @param string[] $row Record
@@ -1109,7 +1135,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                         $onClick = BackendUtility::editOnClick('', '', -1);
                         $onClickArray = explode('?', $onClick, 2);
                         $lastElement = array_pop($onClickArray);
-                        array_push($onClickArray, $params . '&' . $lastElement);
+                        $onClickArray[] = $params . '&' . $lastElement;
                         $onClick = implode('?', $onClickArray);
                         $cells['edit'] = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="'
                             . htmlspecialchars($lang->getLL('clip_editMarked')) . '">'
@@ -1198,7 +1224,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                             $onClick = BackendUtility::editOnClick('', '', -1);
                             $onClickArray = explode('?', $onClick, 2);
                             $lastElement = array_pop($onClickArray);
-                            array_push($onClickArray, $params . '&' . $lastElement);
+                            $onClickArray[] = $params . '&' . $lastElement;
                             $onClick = implode('?', $onClickArray);
                             $icon .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick)
                                 . '" title="' . htmlspecialchars($lang->getLL('editShownColumns')) . '">'
@@ -1244,7 +1270,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                             $onClick = BackendUtility::editOnClick('', '', -1);
                             $onClickArray = explode('?', $onClick, 2);
                             $lastElement = array_pop($onClickArray);
-                            array_push($onClickArray, $params . '&' . $lastElement);
+                            $onClickArray[] = $params . '&' . $lastElement;
                             $onClick = implode('?', $onClickArray);
                             $iTitle = sprintf($lang->getLL('editThisColumn'), $sortLabel);
                             $theData[$fCol] .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick)
@@ -1496,7 +1522,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
                 $href = BackendUtility::getModuleUrl('system_BeuserTxPermission') . '&id=' . $row['uid'] . '&returnId=' . $row['uid'] . '&tx_beuser_system_beusertxpermission[action]=edit';
                 $permsAction = '<a class="btn btn-default" href="' . htmlspecialchars($href) . '" title="'
                     . htmlspecialchars($this->getLanguageService()->getLL('permissions')) . '">'
-                    . $this->iconFactory->getIcon('status-status-locked', Icon::SIZE_SMALL)->render() . '</a>';
+                    . $this->iconFactory->getIcon('actions-lock', Icon::SIZE_SMALL)->render() . '</a>';
                 $this->addActionToCellGroup($cells, $permsAction, 'perms');
             }
             // "New record after" link (ONLY if the records in the table are sorted by a "sortby"-row
@@ -2140,8 +2166,6 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
      ************************************/
     /**
      * Initializes internal csvLines array with the header of field names
-     *
-     * @return void
      */
     protected function initCSV()
     {
@@ -2150,8 +2174,6 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
 
     /**
      * Add header line with field names as CSV line
-     *
-     * @return void
      */
     protected function addHeaderRowToCSV()
     {
@@ -2163,7 +2185,6 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
      * Adds selected columns of one table row as CSV line.
      *
      * @param mixed[] $row Record array, from which the values of fields found in $this->fieldArray will be listed in the CSV output.
-     * @return void
      */
     protected function addToCSV(array $row = [])
     {
@@ -2199,11 +2220,10 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
      * Adds input row of values to the internal csvLines array as a CSV formatted line
      *
      * @param mixed[] $csvRow Array with values to be listed.
-     * @return void
      */
     public function setCsvRow($csvRow)
     {
-        $this->csvLines[] = GeneralUtility::csvValues($csvRow);
+        $this->csvLines[] = CsvUtility::csvValues($csvRow);
     }
 
     /**
@@ -2211,7 +2231,6 @@ class DatabaseRecordList extends AbstractDatabaseRecordList
      * This function exits!
      *
      * @param string $prefix Filename prefix:
-     * @return void EXITS php execution!
      */
     public function outputCSV($prefix)
     {

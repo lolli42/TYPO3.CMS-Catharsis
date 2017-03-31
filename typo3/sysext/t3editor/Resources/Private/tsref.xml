@@ -771,16 +771,6 @@ Another way to solve the problem is using this option in combination with disabl
 			<default><![CDATA[
 ]]></default>
 		</property>
-		<property name="setJS_mouseOver" type="boolean">
-			<description><![CDATA[If set, the over() and out() JavaScript functions are forced to be included]]></description>
-			<default><![CDATA[
-]]></default>
-		</property>
-		<property name="setJS_openPic" type="boolean">
-			<description><![CDATA[If set, the openPic JavaScript function is forced to be included]]></description>
-			<default><![CDATA[
-]]></default>
-		</property>
 		<property name="spamProtectEmailAddresses" type="string">
 			<description><![CDATA["ascii" / -10 to 10
 			If set, then all email addresses in typolinks will be encrypted so spam bots cannot detect them.
@@ -848,18 +838,6 @@ For backend administration this requires that you configure the "Web>Page" modul
 
 Keyword:
 hideNonTranslated : If this keyword is used a record that has no translation will not be shown. The default is that records with no translation will show up in the default language.]]></description>
-			<default><![CDATA[
-]]></default>
-		</property>
-		<property name="sys_language_softExclude" type="string">
-			<description><![CDATA[Setting additional "exclude" flags for l10n_mode in TCA for frontend rendering.
-
-Syntax:
- [table]:[field],  [table]:[field],  [table]:[field], ...
-
-Example:
-config.sys_language_softExclude = tt_content:image , tt_content:header
-]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>
@@ -1743,7 +1721,7 @@ red
 
 Option:
 transparentColor.closest = 1
-This will allow for the closest color to be matched instead. You may need this if you image is not garanteed "clean".
+This will allow for the closest color to be matched instead. You may need this if you image is not guaranteed "clean".
 
 NOTE: You may experience that this doesn't work if you use reduceColors-option or render text with niceText-option.]]></description>
 			<default><![CDATA[
@@ -4161,7 +4139,7 @@ Default is to REMOVE all tags, which are not specifically assigned to be allowed
 ]]></default>
 		</property>
 		<property name="xhtml_cleaning" type="boolean">
-			<description><![CDATA[Cleans up the content for XHTML compliance. Still slightly experimental and supports only some clean up operations (like convertion tags and attributes to lower case).]]></description>
+			<description><![CDATA[Cleans up the content for XHTML compliance. Still slightly experimental and supports only some clean up operations (like conversion tags and attributes to lower case).]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>
@@ -4208,7 +4186,7 @@ Is the value "global" then true nesting in relation to other tags marked for "gl
 ]]></default>
 		</property>
 		<property name="rmTagIfNoAttrib" type="boolean">
-			<description><![CDATA[If set, then the tag is removed if no attributes happend to be there.]]></description>
+			<description><![CDATA[If set, then the tag is removed if no attributes happened to be there.]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>
@@ -6044,7 +6022,7 @@ The property "selectFields" is overridden internally with "count(*)".]]></descri
 	<type id="numberFormat">
 		<property name="decimals" type="stdWrap">
 			<description><![CDATA[integer / stdWrap
-Number of decimals the formated number will have. Defaults to 0, so that your input will be rounded off in that case.
+Number of decimals the formatted number will have. Defaults to 0, so that your input will be rounded off in that case.
 ]]></description>
 			<default><![CDATA[
 ]]></default>
@@ -6572,7 +6550,7 @@ editIcons = header[header_align|date], bodytext
 ]]></default>
 		</property>
 		<property name="encapsLines" type="encapsLines">
-			<description><![CDATA[Lets you split the content by chr(10) and proces each line independently. Used to format content made with the RTE.]]></description>
+			<description><![CDATA[Lets you split the content by chr(10) and process each line independently. Used to format content made with the RTE.]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>
@@ -6924,7 +6902,7 @@ Example:
 			<default><![CDATA[]]></default>
 		</property>
 		<property name="required" type="boolean">
-			<description><![CDATA[This flag requires the content to be set to some value after any content-import and treatment that might have happend now (data, field, current, listNum, trim). Zero's is NOT regarded as empty! Use "if" instead!
+			<description><![CDATA[This flag requires the content to be set to some value after any content-import and treatment that might have happened now (data, field, current, listNum, trim). Zero's is NOT regarded as empty! Use "if" instead!
 If the content i empty, "" is returned immediately.]]></description>
 			<default><![CDATA[
 ]]></default>

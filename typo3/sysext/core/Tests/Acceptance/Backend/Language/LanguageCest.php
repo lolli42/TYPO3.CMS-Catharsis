@@ -23,7 +23,6 @@ class LanguageCest
 {
     /**
      * @param Admin $I
-     * @return void
      */
     public function _before(Admin $I)
     {
@@ -36,13 +35,15 @@ class LanguageCest
         $I->see('Languages');
         $I->click('Languages');
 
+        // Increase duration for notification viewing, avoids vanish before the message is tested
+        $I->executeJS('TYPO3.Notification.duration = 100;');
+
         // switch to content iframe
         $I->switchToIFrame('list_frame');
     }
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function showsHeadingAndListsInstalledLanguages(Admin $I)
     {
@@ -54,7 +55,6 @@ class LanguageCest
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function filterInstalledLanguages(Admin $I)
     {
@@ -74,11 +74,11 @@ class LanguageCest
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function activateAndDeactivateALanguage(Admin $I)
     {
         $I->wantTo('Install a language');
+
         $I->seeElement('#language-da');
         $I->seeElement('#language-da.disabled');
         $I->click('#language-da td a.activateLanguageLink');
@@ -94,7 +94,6 @@ class LanguageCest
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function downloadALanguage(Admin $I)
     {
@@ -119,7 +118,6 @@ class LanguageCest
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function showsHeadingAndListsTranslationOverview(Admin $I)
     {
@@ -131,7 +129,6 @@ class LanguageCest
 
     /**
      * @param Admin $I
-     * @return void
      */
     public function filterTranslationOverview(Admin $I)
     {

@@ -109,8 +109,9 @@ class InlineControlContainer extends AbstractContainer
         $foreign_table = $config['foreign_table'];
 
         $language = 0;
+        $languageFieldName = $GLOBALS['TCA'][$table]['ctrl']['languageField'];
         if (BackendUtility::isTableLocalizable($table)) {
-            $language = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
+            $language = isset($row[$languageFieldName][0]) ? (int)$row[$languageFieldName][0] : (int)$row[$languageFieldName];
         }
 
         // Add the current inline job to the structure stack
@@ -134,7 +135,7 @@ class InlineControlContainer extends AbstractContainer
         if (!empty($newStructureItem['flexform'])
             && isset($this->data['processedTca']['columns'][$field]['config']['dataStructureIdentifier'])
         ) {
-            $config['flexDataStructureIdentifier'] = $this->data['processedTca']['columns'][$field]['config']['dataStructureIdentifier'];
+            $config['dataStructureIdentifier'] = $this->data['processedTca']['columns'][$field]['config']['dataStructureIdentifier'];
         }
 
         // e.g. data[<table>][<uid>][<field>]
@@ -169,7 +170,7 @@ class InlineControlContainer extends AbstractContainer
             ],
             'context' => [
                 'config' => $config,
-                'hmac' => GeneralUtility::hmac(serialize($config)),
+                'hmac' => GeneralUtility::hmac(json_encode($config), 'InlineContext'),
             ],
         ];
         $this->inlineData['nested'][$nameObject] = $this->data['tabAndInlineStack'];
@@ -304,7 +305,7 @@ class InlineControlContainer extends AbstractContainer
 
         $html .= '</div>';
 
-        $fieldWizardResult = $this->renderfieldWizard();
+        $fieldWizardResult = $this->renderFieldWizard();
         $fieldWizardHtml = $fieldWizardResult['html'];
         $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldWizardResult, false);
         $html .= $fieldWizardHtml;

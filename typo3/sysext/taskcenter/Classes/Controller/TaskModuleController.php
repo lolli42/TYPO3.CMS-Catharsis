@@ -64,8 +64,6 @@ class TaskModuleController extends BaseScriptClass
 
     /**
      * Adds items to the ->MOD_MENU array. Used for the function menu selector.
-     *
-     * @return void
      */
     public function menuConfig()
     {
@@ -137,8 +135,6 @@ class TaskModuleController extends BaseScriptClass
     /**
      * Creates the module's content. In this case it rather acts as a kind of #
      * dispatcher redirecting requests to specific tasks.
-     *
-     * @return void
      */
     public function main()
     {
@@ -163,17 +159,16 @@ class TaskModuleController extends BaseScriptClass
     /**
      * Prints out the module's HTML
      *
-     * @return void
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function printContent()
     {
+        GeneralUtility::logDeprecatedFunction();
         echo $this->content;
     }
 
     /**
      * Generates the module content by calling the selected task
-     *
-     * @return void
      */
     protected function renderModuleContent()
     {
@@ -242,8 +237,6 @@ class TaskModuleController extends BaseScriptClass
 
     /**
      * Generates the information content
-     *
-     * @return void
      */
     protected function renderInformationContent()
     {
@@ -416,8 +409,6 @@ class TaskModuleController extends BaseScriptClass
     /**
      * Create the panel of buttons for submitting the form or otherwise
      * perform operations.
-     *
-     * @return void
      */
     protected function getButtons()
     {

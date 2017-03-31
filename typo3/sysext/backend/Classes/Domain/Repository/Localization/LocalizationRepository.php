@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -62,7 +63,7 @@ class LocalizationRepository
                 'tt_content',
                 'tt_content_orig',
                 $queryBuilder->expr()->eq(
-                    'tt_content.t3_origuid',
+                    'tt_content.l10n_source',
                     $queryBuilder->quoteIdentifier('tt_content_orig.uid')
                 )
             )
@@ -82,6 +83,9 @@ class LocalizationRepository
     }
 
     /**
+     * Returns number of localized records in given page, colPos and language
+     * Records which were added to the language directly (not through translation) are not counted.
+     *
      * @param int $pageId
      * @param int $colPos
      * @param int $languageId
@@ -107,7 +111,7 @@ class LocalizationRepository
                     $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
                 ),
                 $queryBuilder->expr()->neq(
-                    'tt_content.t3_origuid',
+                    'tt_content.l10n_source',
                     $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
                 )
             )
@@ -250,7 +254,7 @@ class LocalizationRepository
         $queryBuilder = $this->getQueryBuilderWithWorkspaceRestriction('tt_content');
 
         $originalUidsStatement = $queryBuilder
-            ->select('t3_origuid')
+            ->select('l10n_source')
             ->from('tt_content')
             ->where(
                 $queryBuilder->expr()->eq(
@@ -330,15 +334,32 @@ class LocalizationRepository
             $tcaCtrl = $GLOBALS['TCA'][$table]['ctrl'];
 
             if (isset($tcaCtrl['origUid'])) {
-                $recordLocalization = BackendUtility::getRecordsByField(
-                    $table,
-                    $tcaCtrl['origUid'],
-                    $uid,
-                    'AND ' . $tcaCtrl['languageField'] . '=' . (int)$language . ($andWhereClause ? ' ' . $andWhereClause : ''),
-                    '',
-                    '',
-                    '1'
-                );
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable($table);
+                $queryBuilder->getRestrictions()
+                    ->removeAll()
+                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                    ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+                $queryBuilder->select('*')
+                    ->from($table)
+                    ->where(
+                        $queryBuilder->expr()->eq(
+                            $tcaCtrl['origUid'],
+                            $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
+                        ),
+                        $queryBuilder->expr()->eq(
+                            $tcaCtrl['languageField'],
+                            $queryBuilder->createNamedParameter((int)$language, \PDO::PARAM_INT)
+                        )
+                    )
+                    ->setMaxResults(1);
+
+                if ($andWhereClause) {
+                    $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($andWhereClause));
+                }
+
+                $recordLocalization = $queryBuilder->execute()->fetchAll();
             }
         }
         return $recordLocalization;

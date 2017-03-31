@@ -66,6 +66,8 @@ class TcaMigration
         $tca = $this->migrateWorkspacesOptions($tca);
         $tca = $this->migrateTranslationTable($tca);
         $tca = $this->migrateL10nModeDefinitions($tca);
+        $tca = $this->migratePageLocalizationDefinitions($tca);
+        $tca = $this->migrateInlineLocalizationMode($tca);
         $tca = $this->migrateRequestUpdate($tca);
         $tca = $this->migrateInputDateTimeToRenderType($tca);
         $tca = $this->migrateWizardEnableByTypeConfigToColumnsOverrides($tca);
@@ -83,6 +85,8 @@ class TcaMigration
         $tca = $this->migrateOptionsOfTypeGroup($tca);
         $tca = $this->migrateSelectShowIconTable($tca);
         $tca = $this->migrateImageManipulationConfig($tca);
+        $tca = $this->migrateinputDateTimeMax($tca);
+        $tca = $this->migrateInlineOverrideChildTca($tca);
         return $tca;
     }
 
@@ -953,8 +957,130 @@ class TcaMigration
                     }
                     $this->messages[] = 'The TCA setting \'mergeIfNotBlank\' was removed '
                         . 'in TCA ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'l10n_mode\']'
-                        . ' and changed to ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'behaviour\']'
-                        . '[\'allowLanguageSynchronization\'] = true';
+                        . ' and changed to ' . $table . '[\'columns\'][\'' . $fieldName . '\']'
+                        . '[\'config\'][\'behaviour\'][\'allowLanguageSynchronization\'] = true';
+                }
+            }
+        }
+        return $tca;
+    }
+
+    /**
+     * Migrates localization definitions such as "allowLanguageSynchronization"
+     * or "l10n_mode" for tables pages and pages_language_overlay.
+     *
+     * @param array $tca
+     * @return array Migrated TCA
+     */
+    protected function migratePageLocalizationDefinitions(array $tca)
+    {
+        if (
+            empty($tca['pages']['columns'])
+            ||  empty($tca['pages_language_overlay']['columns'])
+        ) {
+            return $tca;
+        }
+
+        // ensure, that localization settings are defined for
+        // pages_language_overlay and not only for pages
+        foreach ($tca['pages']['columns'] as $fieldName => &$fieldConfig) {
+            $l10nMode = $fieldConfig['l10n_mode'] ?? null;
+            $allowLanguageSynchronization = $fieldConfig['config']['behaviour']['allowLanguageSynchronization'] ?? null;
+
+            $oppositeFieldConfig = $tca['pages_language_overlay']['columns'][$fieldName] ?? [];
+            $oppositeL10nMode = $oppositeFieldConfig['l10n_mode'] ?? null;
+            $oppositeAllowLanguageSynchronization = $oppositeFieldConfig['config']['behaviour']['allowLanguageSynchronization'] ?? null;
+
+            if ($l10nMode !== null) {
+                if (!empty($oppositeFieldConfig) && $oppositeL10nMode !== 'exclude') {
+                    $tca['pages_language_overlay']['columns'][$fieldName]['l10n_mode'] = $l10nMode;
+                    $this->messages[] = 'The TCA setting \'l10n_mode\' was migrated '
+                        . 'to TCA pages_language_overlay[\'columns\'][\'' . $fieldName . '\'][\'l10n_mode\'] '
+                        . 'from TCA pages[\'columns\'][\'' . $fieldName . '\'][\'l10n_mode\']';
+                }
+                unset($fieldConfig['l10n_mode']);
+                $this->messages[] = 'The TCA setting \'l10n_mode\' was removed '
+                    . 'in TCA pages[\'columns\'][\'' . $fieldName . '\'][\'l10n_mode\']';
+            }
+
+            if (!empty($allowLanguageSynchronization)) {
+                if (!empty($oppositeFieldConfig) && empty($oppositeAllowLanguageSynchronization)) {
+                    $tca['pages_language_overlay']['columns'][$fieldName]['config']['behaviour']['allowLanguageSynchronization'] = (bool)$allowLanguageSynchronization;
+                    $this->messages[] = 'The TCA setting \'allowLanguageSynchronization\' was migrated '
+                        . 'to TCA pages_language_overlay[\'columns\'][\'' . $fieldName . '\']'
+                        . '[\'config\'][\'behaviour\'][\'allowLanguageSynchronization\'] '
+                        . 'from TCA pages[\'columns\'][\'' . $fieldName . '\']'
+                        . '[\'config\'][\'behaviour\'][\'allowLanguageSynchronization\']';
+                }
+                unset($fieldConfig['config']['behaviour']['allowLanguageSynchronization']);
+                $this->messages[] = 'The TCA setting \'allowLanguageSynchronization\' was removed '
+                    . 'in TCA pages[\'columns\'][\'' . $fieldName . '\']'
+                    . '[\'config\'][\'behaviour\'][\'allowLanguageSynchronization\']';
+            }
+        }
+
+        // clean up localization settings in pages_language_overlay that cannot
+        // be used since the fields in pages are just not configured/available
+        foreach ($tca['pages_language_overlay']['columns'] as $fieldName => &$fieldConfig) {
+            $l10nMode = $fieldConfig['l10n_mode'] ?? null;
+            $allowLanguageSynchronization = $fieldConfig['config']['behaviour']['allowLanguageSynchronization'] ?? null;
+            $oppositeFieldConfig = $tca['pages']['columns'][$fieldName] ?? [];
+
+            if (!empty($oppositeFieldConfig)) {
+                continue;
+            }
+
+            if ($l10nMode !== null) {
+                unset($fieldConfig['l10n_mode']);
+                $this->messages[] = 'The TCA setting \'l10n_mode\' was removed '
+                    . 'in TCA pages_language_overlay[\'columns\'][\'' . $fieldName . '\'][\'l10n_mode\']';
+            }
+            if (!empty($allowLanguageSynchronization)) {
+                unset($fieldConfig['config']['behaviour']['allowLanguageSynchronization']);
+                $this->messages[] = 'The TCA setting \'allowLanguageSynchronization\' was removed '
+                    . 'in TCA pages[\'columns\'][\'' . $fieldName . '\']'
+                    . '[\'config\'][\'behaviour\'][\'allowLanguageSynchronization\']';
+            }
+        }
+
+        return $tca;
+    }
+
+    /**
+     * Removes "localizationMode" set to "keep" if used in combination with
+     * "allowLanguageSynchronization" - in general "localizationMode" is
+     * deprecated since TYPO3 CMS 8 and will be removed in TYPO3 CMS 9.
+     *
+     * @param array $tca
+     * @return array
+     */
+    protected function migrateInlineLocalizationMode(array $tca)
+    {
+        foreach ($tca as $table => &$tableDefinition) {
+            if (!isset($tableDefinition['columns']) || !is_array($tableDefinition['columns'])) {
+                continue;
+            }
+            foreach ($tableDefinition['columns'] as $fieldName => &$fieldConfig) {
+                if (($fieldConfig['config']['type'] ?? null) !== 'inline') {
+                    continue;
+                }
+
+                $inlineLocalizationMode = ($fieldConfig['config']['behaviour']['localizationMode'] ?? null);
+                if ($inlineLocalizationMode === null) {
+                    continue;
+                }
+
+                $allowLanguageSynchronization = ($fieldConfig['config']['behaviour']['allowLanguageSynchronization'] ?? null);
+                if ($inlineLocalizationMode === 'keep' && $allowLanguageSynchronization) {
+                    unset($fieldConfig['config']['behaviour']['localizationMode']);
+                    $this->messages[] = 'The TCA setting \'localizationMode\' is counter-productive '
+                        . ' if being used in combination with \'allowLanguageSynchronization\' and '
+                        . ' thus has been removed from TCA for ' . $table . '[\'columns\']'
+                        . '[\'' . $fieldName . '\'][\'config\'][\'behaviour\'][\'localizationMode\']';
+                } else {
+                    $this->messages[] = 'The TCA setting \'localizationMode\' is deprecated '
+                        . ' and should be removed from TCA for ' . $table . '[\'columns\']'
+                        . '[\'' . $fieldName . '\'][\'config\'][\'behaviour\'][\'localizationMode\']';
                 }
             }
         }
@@ -1350,7 +1476,7 @@ class TcaMigration
                                     $this->messages[] = 'The link wizard has been migrated to a \'renderType\' => \'inputLink \'. '
                                         . 'It has been migrated from TCA table "'
                                         . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'][\'wizards\'][\'' . $wizardName . '\']" to "'
-                                        . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'] = \'inputLink\'".';
+                                        . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'][\'renderType\'] = \'inputLink\'".';
                                 }
                             }
                         }
@@ -1745,6 +1871,9 @@ class TcaMigration
                 foreach ($tableDefinition['types'] as $typeName => &$typeArray) {
                     if (isset($typeArray['columnsOverrides']) && is_array($typeArray['columnsOverrides'])) {
                         foreach ($typeArray['columnsOverrides'] as $fieldName => &$overrideConfig) {
+                            if (!isset($overrideConfig['defaultExtras'])) {
+                                continue;
+                            }
                             $defaultExtrasArray = GeneralUtility::trimExplode(':', $overrideConfig['defaultExtras'], true);
                             foreach ($defaultExtrasArray as $defaultExtrasSetting) {
                                 if ($defaultExtrasSetting === 'rte_only') {
@@ -2254,6 +2383,122 @@ class TcaMigration
                         }
                     }
                 }
+            }
+        }
+
+        return $tca;
+    }
+
+    /**
+     * Migrate 'max' for renderType='inputDateTime'
+     *
+     * @param array $tca
+     * @return array
+     */
+    protected function migrateinputDateTimeMax(array $tca): array
+    {
+        foreach ($tca as $table => &$tableDefinition) {
+            if (isset($tableDefinition['columns']) && is_array($tableDefinition['columns'])) {
+                foreach ($tableDefinition['columns'] as $fieldName => &$fieldConfig) {
+                    if (isset($fieldConfig['config']['renderType'])) {
+                        if ($fieldConfig['config']['renderType'] === 'inputDateTime') {
+                            if (isset($fieldConfig['config']['max'])) {
+                                unset($fieldConfig['config']['max']);
+                                $this->messages[] = 'The config option \'max\' has been removed from the TCA for renderType=\'inputDateTime\' in ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'][\'max\']';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $tca;
+    }
+
+    /**
+     * Migrate type='inline' properties 'foreign_types', 'foreign_selector_fieldTcaOverride'
+     * and 'foreign_record_defaults' to 'overrideChildTca'
+     *
+     * @param array $tca
+     * @return array
+     */
+    protected function migrateInlineOverrideChildTca(array $tca): array
+    {
+        foreach ($tca as $table => &$tableDefinition) {
+            if (isset($tableDefinition['types']) && is_array($tableDefinition['types'])) {
+                foreach ($tableDefinition['types'] as $typeName => &$typeConfig) {
+                    if (!isset($typeConfig['columnsOverrides']) || !is_array($typeConfig['columnsOverrides'])) {
+                        continue;
+                    }
+                    foreach ($typeConfig['columnsOverrides'] as $fieldName => &$fieldConfig) {
+                        if (isset($fieldConfig['config']['overrideChildTca'])
+                            || (isset($fieldConfig['config']['type']) && $fieldConfig['config']['type'] !== 'inline')
+                            || (!isset($fieldConfig['config']['type']) && $tca[$table]['columns'][$fieldName]['config']['type'] !== 'inline')
+                        ) {
+                            // The new config is either set intentionally for compatibility
+                            // or accidentally. In any case we keep the new config and skip the migration.
+                            continue;
+                        }
+                        if (isset($fieldConfig['config']['foreign_types']) && is_array($fieldConfig['config']['foreign_types'])) {
+                            $fieldConfig['config']['overrideChildTca']['types'] = $fieldConfig['config']['foreign_types'];
+                            unset($fieldConfig['config']['foreign_types']);
+                            $this->messages[] = 'The \'foreign_types\' property from TCA ' . $table . '[\'types\'][\'' . $typeName . '\'][\'columnOverrides\'][\'' . $fieldName . '\'][\'config\']  and has been migrated to ' . $table . '[\'types\'][\'' . $typeName . '\'][\'columnOverrides\'][\'' . $fieldName . '\'][\'config\'][\'overrideChildTca\'][\'types\']';
+                        }
+                        if (isset($fieldConfig['config']['foreign_selector_fieldTcaOverride']) && is_array($fieldConfig['config']['foreign_selector_fieldTcaOverride'])) {
+
+                            if (isset($fieldConfig['config']['foreign_selector']) && is_string($fieldConfig['config']['foreign_selector'])) {
+                                $foreignSelectorFieldName = $fieldConfig['config']['foreign_selector'];
+                            } elseif (isset($tca[$table]['columns'][$fieldName]['config']['foreign_selector']) && is_string($tca[$table]['columns'][$fieldName]['config']['foreign_selector'])) {
+                                $foreignSelectorFieldName = $tca[$table]['columns'][$fieldName]['config']['foreign_selector'];
+                            }
+
+                            if ($foreignSelectorFieldName) {
+                                $fieldConfig['config']['overrideChildTca']['columns'][$foreignSelectorFieldName] = $fieldConfig['config']['foreign_selector_fieldTcaOverride'];
+                                unset($fieldConfig['config']['foreign_selector_fieldTcaOverride']);
+                                $this->messages[] = 'The \'foreign_selector_fieldTcaOverride\' property from TCA ' . $table . '[\'types\'][\'' . $typeName . '\'][\'columnOverrides\'][\'' . $fieldName . '\'][\'config\']  and has been migrated to ' . $table . '[\'types\'][\'' . $typeName . '\'][\'columnOverrides\'][\'' . $fieldName . '\'][\'config\'][\'overrideChildTca\'][\'columns\'][\'' . $foreignSelectorFieldName . '\']';
+                            }
+                        }
+                        if (isset($fieldConfig['config']['foreign_record_defaults']) && is_array($fieldConfig['config']['foreign_record_defaults'])) {
+                            foreach ($fieldConfig['config']['foreign_record_defaults'] as $childFieldName => $defaultValue) {
+                                $fieldConfig['config']['overrideChildTca']['columns'][$childFieldName]['config']['default'] = $defaultValue;
+                                $this->messages[] = 'The \'foreign_record_defaults\' property from TCA ' . $table . '[\'types\'][\'' . $typeName . '\'][\'columnOverrides\'][\'' . $fieldName . '\'][\'config\'][\'' . $childFieldName . '\']  and has been migrated to ' . $table . '[\'types\'][\'' . $typeName . '\'][\'columnOverrides\'][\'' . $fieldName . '\'][\'config\'][\'overrideChildTca\'][\'columns\'][\'' . $childFieldName . '\'][\'config\'][\'default\']';
+                            }
+                            unset($fieldConfig['config']['foreign_record_defaults']);
+                        }
+                    }
+                    unset($fieldConfig);
+                }
+                unset($typeConfig);
+            }
+            if (isset($tableDefinition['columns']) && is_array($tableDefinition['columns'])) {
+                foreach ($tableDefinition['columns'] as $fieldName => &$fieldConfig) {
+                    if (isset($fieldConfig['config']['overrideChildTca'])
+                        || $fieldConfig['config']['type'] !== 'inline'
+                    ) {
+                        // The new config is either set intentionally for compatibility
+                        // or accidentally. In any case we keep the new config and skip the migration.
+                        continue;
+                    }
+                    if (isset($fieldConfig['config']['foreign_types']) && is_array($fieldConfig['config']['foreign_types'])) {
+                        $fieldConfig['config']['overrideChildTca']['types'] = $fieldConfig['config']['foreign_types'];
+                        unset($fieldConfig['config']['foreign_types']);
+                        $this->messages[] = 'The \'foreign_types\' property from TCA ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\']  and has been migrated to ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'][\'overrideChildTca\'][\'types\']';
+                    }
+                    if (isset($fieldConfig['config']['foreign_selector'], $fieldConfig['config']['foreign_selector_fieldTcaOverride']) && is_string($fieldConfig['config']['foreign_selector']) && is_array($fieldConfig['config']['foreign_selector_fieldTcaOverride'])) {
+                        $foreignSelectorFieldName = $fieldConfig['config']['foreign_selector'];
+                        $fieldConfig['config']['overrideChildTca']['columns'][$foreignSelectorFieldName] = $fieldConfig['config']['foreign_selector_fieldTcaOverride'];
+                        unset($fieldConfig['config']['foreign_selector_fieldTcaOverride']);
+                        $this->messages[] = 'The \'foreign_selector_fieldTcaOverride\' property from TCA ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\']  and has been migrated to ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'][\'overrideChildTca\'][\'columns\'][\'' . $foreignSelectorFieldName . '\']';
+                    }
+                    if (isset($fieldConfig['config']['foreign_record_defaults']) && is_array($fieldConfig['config']['foreign_record_defaults'])) {
+                        foreach ($fieldConfig['config']['foreign_record_defaults'] as $childFieldName => $defaultValue) {
+                            $fieldConfig['config']['overrideChildTca']['columns'][$childFieldName]['config']['default'] = $defaultValue;
+                            $this->messages[] = 'The \'foreign_record_defaults\' property from TCA ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'][\'' . $childFieldName . '\']  and has been migrated to ' . $table . '[\'columns\'][\'' . $fieldName . '\'][\'config\'][\'overrideChildTca\'][\'columns\'][\'' . $childFieldName . '\'][\'config\'][\'default\']';
+                        }
+                        unset($fieldConfig['config']['foreign_record_defaults']);
+                    }
+                }
+                unset($fieldConfig);
             }
         }
 

@@ -42,7 +42,7 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
     protected $objectManager;
 
     /**
-     * @var \TYPO3\CMS\Extbase\Service\TypoScriptService
+     * @var \TYPO3\CMS\Core\TypoScript\TypoScriptService
      */
     protected $typoScriptService;
 
@@ -81,9 +81,9 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
     }
 
     /**
-     * @param \TYPO3\CMS\Extbase\Service\TypoScriptService $typoScriptService
+     * @param \TYPO3\CMS\Core\TypoScript\TypoScriptService $typoScriptService
      */
-    public function injectTypoScriptService(\TYPO3\CMS\Extbase\Service\TypoScriptService $typoScriptService)
+    public function injectTypoScriptService(\TYPO3\CMS\Core\TypoScript\TypoScriptService $typoScriptService)
     {
         $this->typoScriptService = $typoScriptService;
     }
@@ -98,7 +98,6 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
 
     /**
      * @param \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject
-     * @return void
      */
     public function setContentObject(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject = null)
     {
@@ -121,7 +120,6 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
      * Note that this is a low level method and only makes sense to be used by Extbase internally.
      *
      * @param array $configuration The new configuration
-     * @return void
      */
     public function setConfiguration(array $configuration = [])
     {
@@ -236,7 +234,6 @@ abstract class AbstractConfigurationManager implements \TYPO3\CMS\Core\Singleton
     /**
      * @param array &$frameworkConfiguration
      * @param array $switchableControllerActions
-     * @return void
      */
     protected function overrideSwitchableControllerActions(array &$frameworkConfiguration, array $switchableControllerActions)
     {

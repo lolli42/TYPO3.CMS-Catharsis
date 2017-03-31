@@ -75,8 +75,7 @@ class BackendLoginCest
         $I->fillField('#t3-username', 'testify');
         $I->fillField('#t3-password', '123456');
         $I->click('#t3-login-submit-section > button');
-        $I->waitForText('Verifying Login Data');
-        $I->waitForElement('#t3-login-error');
+        $I->waitForElement('#t3-login-error', 30);
         $I->see('Your login attempt did not succeed');
     }
 
@@ -114,7 +113,7 @@ class BackendLoginCest
         // can see bookmarks
         $I->seeElement($topBarItemSelector, ['title' => 'Bookmarks']);
 
-        // cant see clear cache
+        // can't see clear cache
         $I->cantSeeElement($topBarItemSelector, ['title' => 'Clear cache']);
 
         $this->logout($I);
@@ -127,7 +126,6 @@ class BackendLoginCest
      * @param \AcceptanceTester $I
      * @param string $username
      * @param string $password
-     * @return void
      */
     protected function login(\AcceptanceTester $I, string $username, string $password)
     {
@@ -148,7 +146,6 @@ class BackendLoginCest
      * Logout user by clicking logout button in toolbar
      *
      * @param \AcceptanceTester $I
-     * @return void
      */
     protected function logout(\AcceptanceTester $I)
     {

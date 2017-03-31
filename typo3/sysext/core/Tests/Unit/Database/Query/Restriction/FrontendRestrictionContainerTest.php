@@ -21,7 +21,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 class FrontendRestrictionContainerTest extends AbstractRestrictionTestCase
 {
     /**
-     * @return void
      */
     protected function setUp()
     {
@@ -174,7 +173,7 @@ class FrontendRestrictionContainerTest extends AbstractRestrictionTestCase
         $GLOBALS['SIM_ACCESS_TIME'] = 42;
 
         $subject = new FrontendRestrictionContainer();
-        $expression = $subject->buildExpression([$tableName => ''], $this->expressionBuilder);
+        $expression = $subject->buildExpression([$tableName => $tableName], $this->expressionBuilder);
         $this->assertSame($expectedSQL, (string)$expression);
     }
 }

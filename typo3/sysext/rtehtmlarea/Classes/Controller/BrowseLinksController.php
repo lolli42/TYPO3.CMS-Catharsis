@@ -203,8 +203,6 @@ class BrowseLinksController extends AbstractLinkBrowserController
 
     /**
      * Initialize document template object
-     *
-     *  @return void
      */
     protected function initDocumentTemplate()
     {
@@ -216,8 +214,6 @@ class BrowseLinksController extends AbstractLinkBrowserController
 
     /**
      * Initialize $this->currentLink and $this->currentLinkHandler
-     *
-     * @return void
      */
     protected function initCurrentUrl()
     {
@@ -352,14 +348,12 @@ class BrowseLinksController extends AbstractLinkBrowserController
      */
     protected function renderCurrentUrl()
     {
-        $removeLink = ' <a href="#" class="btn btn-default t3js-removeCurrentLink">' . htmlspecialchars($this->getLanguageService()->getLL('removeLink')) . '</a>';
+        $removeLink = ' <a href="#" class="t3js-removeCurrentLink">' . htmlspecialchars($this->getLanguageService()->getLL('removeLink')) . '</a>';
         return '
-            <div class="link-browser-section link-browser-current-link">
-                <strong>' .
-                    htmlspecialchars($this->getLanguageService()->getLL('currentLink')) .
-                    ': ' .
-                    htmlspecialchars($this->currentLinkHandler->formatCurrentUrl()) .
-                '</strong>' .
+            <div class="element-browser-panel element-browser-title">' .
+                htmlspecialchars($this->getLanguageService()->getLL('currentLink')) .
+                ': ' .
+                htmlspecialchars($this->currentLinkHandler->formatCurrentUrl()) .
                 '<span class="pull-right">' . $removeLink . '</span>' .
             '</div>';
     }
@@ -478,11 +472,11 @@ class BrowseLinksController extends AbstractLinkBrowserController
 				<form action="" name="ltargetform" id="ltargetform" class="t3js-dummyform form-horizontal">
                     <div class="form-group form-group-sm" ' . ($targetSelectorConfig['disabled'] ? ' style="display: none;"' : '') . '>
                         <label class="col-xs-4 control-label">' . htmlspecialchars($lang->getLL('target')) . '</label>
-						<div class="col-xs-3">
+						<div class="col-xs-4">
 							<input type="text" name="ltarget" class="t3js-linkTarget form-control"
 							    value="' . htmlspecialchars($target) . '" />
 						</div>
-						<div class="col-xs-3">
+						<div class="col-xs-4">
 							' . $targetSelector . '
 						</div>
 					</div>
@@ -500,7 +494,7 @@ class BrowseLinksController extends AbstractLinkBrowserController
         if ($this->linkAttributeValues['title']) {
             $title = $this->linkAttributeValues['title'];
         } else {
-            $title = !$this->classesAnchorDefault[$this->displayedLinkHandlerId] ? '' : $this->classesAnchorDefaultTitle[$this->displayedLinkHandlerId];
+            $title = $this->classesAnchorDefaultTitle[$this->displayedLinkHandlerId] ?: '';
         }
         if (isset($this->buttonConfig[$this->displayedLinkHandlerId . '.']['properties.']['title.']['readOnly'])) {
             $readOnly = (bool)$this->buttonConfig[$this->displayedLinkHandlerId . '.']['properties.']['title.']['readOnly'];
@@ -549,17 +543,19 @@ class BrowseLinksController extends AbstractLinkBrowserController
         $selectClass = '';
         if ($this->classesAnchorJSOptions[$this->displayedLinkHandlerId]) {
             $selectClass = '
-				<form action="" name="lclassform" id="lclassform" class="t3js-dummyform">
-					<table border="0" cellpadding="2" cellspacing="1" id="typo3-linkClass">
-						<tr>
-							<td style="width: 96px;">' . htmlspecialchars($this->getLanguageService()->getLL('anchor_class')) . '</td>
-							<td><select name="lclass" class="t3js-class-selector form-control">
-								' . $this->classesAnchorJSOptions[$this->displayedLinkHandlerId] . '
-							</select></td>
-						</tr>
-					</table>
-				</form>
-				';
+                <form action="" name="lclassform" id="lclassform" class="t3js-dummyform form-horizontal">
+                    <div class="form-group form-group-sm">
+                        <label class="col-xs-4 control-label">
+                            ' . htmlspecialchars($this->getLanguageService()->getLL('anchor_class')) . '
+                        </label>
+                        <div class="col-xs-8">
+                            <select name="lclass" class="t3js-class-selector form-control">
+                                ' . $this->classesAnchorJSOptions[$this->displayedLinkHandlerId] . '
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            ';
         }
         return $selectClass;
     }

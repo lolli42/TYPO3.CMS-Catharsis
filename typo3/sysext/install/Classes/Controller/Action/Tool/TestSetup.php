@@ -187,7 +187,7 @@ class TestSetup extends Action\AbstractAction
         $textColor = imagecolorallocate($image, 233, 14, 91);
         @imagettftext(
             $image,
-            GeneralUtility::freetypeDpiComp(20),
+            20 / 96.0 * 72, // As in  compensateFontSizeiBasedOnFreetypeDpi
             0,
             10,
             20,
@@ -549,7 +549,7 @@ class TestSetup extends Action\AbstractAction
             $conf['niceText'] = 1;
             $conf['shadow.'] = [
                 'offset' => '2,2',
-                'blur' => $imageProcessor->V5_EFFECTS ? '20' : '90',
+                'blur' => $imageProcessor->NO_IM_EFFECTS ? '90' : '20',
                 'opacity' => '50',
                 'color' => 'black'
             ];
@@ -656,7 +656,7 @@ class TestSetup extends Action\AbstractAction
         /** @var GraphicalFunctions $imageProcessor */
         $imageProcessor = GeneralUtility::makeInstance(GraphicalFunctions::class);
         $imageProcessor->init();
-        $imageProcessor->tempPath = PATH_site . 'typo3temp/';
+        $imageProcessor->absPrefix = PATH_site;
         $imageProcessor->dontCheckForExistingTempFile = 1;
         $imageProcessor->filenamePrefix = 'installTool-';
         $imageProcessor->dontCompress = 1;

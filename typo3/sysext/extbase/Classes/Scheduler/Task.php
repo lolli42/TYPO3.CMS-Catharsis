@@ -76,8 +76,6 @@ class Task extends \TYPO3\CMS\Scheduler\Task\AbstractTask
 
     /**
      * Wakeup
-     *
-     * @return void
      */
     public function __wakeup()
     {
@@ -176,7 +174,7 @@ class Task extends \TYPO3\CMS\Scheduler\Task\AbstractTask
             $arguments = [];
             foreach ($this->arguments as $argumentName => $argumentValue) {
                 if ($argumentValue != $this->defaults[$argumentName]) {
-                    array_push($arguments, $argumentName . '=' . $argumentValue);
+                    $arguments[] = $argumentName . '=' . $argumentValue;
                 }
             }
             $label .= ' ' . implode(', ', $arguments);

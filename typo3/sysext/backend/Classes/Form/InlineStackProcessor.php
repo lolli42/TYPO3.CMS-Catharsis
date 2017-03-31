@@ -54,7 +54,6 @@ class InlineStackProcessor
      * - 'unstable': Containing partly filled data (e.g. only table and possibly field)
      *
      * @param string $domObjectId The DOM object-id
-     * @return void
      */
     public function initializeByParsingDomObjectIdString($domObjectId)
     {
@@ -108,26 +107,18 @@ class InlineStackProcessor
     /**
      * Injects configuration via AJAX calls.
      * This is used by inline ajax calls that transfer configuration options back to the stack for initialization
-     * The configuration is validated using HMAC to avoid hijacking.
      *
-     * @param string $contextString Given context string from ajax call
-     * @return void
+     * @param array $config Given config extracted from ajax call
      * @todo: Review this construct - Why can't the ajax call fetch these data on its own and transfers it to client instead?
      */
-    public function injectAjaxConfiguration($contextString = '')
+    public function injectAjaxConfiguration(array $config)
     {
         $level = $this->calculateStructureLevel(-1);
-        if (empty($contextString) || $level === false) {
+        if (empty($config) || $level === false) {
             return;
         }
         $current = &$this->inlineStructure['stable'][$level];
-        $context = json_decode($contextString, true);
-        if (GeneralUtility::hmac(serialize($context['config'])) !== $context['hmac']) {
-            return;
-        }
-        // Remove the data structure pointers, only relevant for the FormInlineAjaxController
-        unset($context['flexDataStructurePointers']);
-        $current['config'] = $context['config'];
+        $current['config'] = $config;
         $current['localizationMode'] = BackendUtility::getInlineLocalizationMode(
             $current['table'],
             $current['config']
@@ -148,7 +139,6 @@ class InlineStackProcessor
      * Add a stable structure to the stack
      *
      * @param array $structureItem
-     * @return void
      */
     public function pushStableStructureItem(array $structureItem = [])
     {

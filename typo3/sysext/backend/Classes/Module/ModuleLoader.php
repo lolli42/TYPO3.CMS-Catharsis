@@ -86,7 +86,6 @@ class ModuleLoader
      *
      * @param array $modulesArray Should be the global var $TBE_MODULES, $BE_USER can optionally be set to an alternative Backend user object than the global var $BE_USER (which is the currently logged in user)
      * @param BackendUserAuthentication $beUser Optional backend user object to use. If not set, the global BE_USER object is used.
-     * @return void
      */
     public function load($modulesArray, BackendUserAuthentication $beUser = null)
     {
@@ -201,7 +200,7 @@ class ModuleLoader
         // check if there is a navigation component (like the pagetree)
         if (is_array($this->navigationComponents[$name])) {
             $finalModuleConfiguration['navigationComponentId'] = $this->navigationComponents[$name]['componentId'];
-        // navigation component can be overriden by the main module component
+        // navigation component can be overridden by the main module component
         } elseif ($mainModule && is_array($this->navigationComponents[$mainModule]) && $setupInformation['configuration']['inheritNavigationComponentFromMainModule'] !== false) {
             $finalModuleConfiguration['navigationComponentId'] = $this->navigationComponents[$mainModule]['componentId'];
         }
@@ -212,7 +211,7 @@ class ModuleLoader
      * fetches the conf.php file of a certain module, and also merges that with
      * some additional configuration
      *
-     * @param \string $moduleName the combined name of the module, can be "web", "web_info", or "tools_log"
+     * @param string $moduleName the combined name of the module, can be "web", "web_info", or "tools_log"
      * @return array an array with subarrays, named "configuration" (aka $MCONF), "labels" (previously known as $MLANG) and the stripped path
      */
     protected function getModuleSetupInformation($moduleName)
@@ -384,6 +383,18 @@ class ModuleLoader
                 $language = $this->getLanguageService()->lang;
             } else {
                 $language = 'default';
+            }
+
+            if (empty($labels)) {
+                if (isset($this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tablabel'])) {
+                    $labels[$language]['labels']['tablabel'] = $this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tablabel'];
+                }
+                if (isset($this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tabdescr'])) {
+                    $labels[$language]['labels']['tabdescr'] = $this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tabdescr'];
+                }
+                if (isset($this->getLanguageService()->moduleLabels['tabs'][$moduleName . '_tab'])) {
+                    $labels[$language]['tabs']['tab'] = $this->getLanguageService()->moduleLabels['tabs'][$moduleName . '_tab'];
+                }
             }
 
             if (isset($labels[$language]['ll_ref'])) {

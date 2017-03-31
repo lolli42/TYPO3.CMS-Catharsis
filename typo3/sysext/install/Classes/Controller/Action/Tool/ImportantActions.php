@@ -15,8 +15,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Tool;
  */
 
 use TYPO3\CMS\Core\Core\Bootstrap;
-use TYPO3\CMS\Core\Core\ClassLoadingInformation;
-use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Schema\SchemaMigrator;
 use TYPO3\CMS\Core\Database\Schema\SqlReader;
@@ -36,26 +34,12 @@ class ImportantActions extends Action\AbstractAction
      */
     protected function executeAction()
     {
-        if (isset($this->postValues['set']['changeEncryptionKey'])) {
-            $this->setNewEncryptionKeyAndLogOut();
-        }
-
         $actionMessages = [];
         if (isset($this->postValues['set']['changeInstallToolPassword'])) {
             $actionMessages[] = $this->changeInstallToolPassword();
         }
-        if (isset($this->postValues['set']['changeSiteName'])) {
-            $actionMessages[] = $this->changeSiteName();
-        }
         if (isset($this->postValues['set']['createAdministrator'])) {
             $actionMessages[] = $this->createAdministrator();
-        }
-        if (isset($this->postValues['set']['clearAllCache'])) {
-            $actionMessages[] = $this->clearAllCache();
-            $actionMessages[] = $this->clearOpcodeCache();
-        }
-        if (isset($this->postValues['set']['dumpAutoload'])) {
-            $actionMessages[] = $this->dumpAutoload();
         }
 
         // Database analyzer handling
@@ -86,9 +70,13 @@ class ImportantActions extends Action\AbstractAction
 
         /** @var \TYPO3\CMS\Install\Service\CoreUpdateService $coreUpdateService */
         $coreUpdateService = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\CoreUpdateService::class);
+        /** @var  $coreVersionService \TYPO3\CMS\Install\Service\CoreVersionService */
+        $coreVersionService = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\CoreVersionService::class);
         $this->view
             ->assign('enableCoreUpdate', $coreUpdateService->isCoreUpdateEnabled())
             ->assign('composerMode', Bootstrap::usesComposerClassLoading())
+            ->assign('isInstalledVersionAReleasedVersion', $coreVersionService->isInstalledVersionAReleasedVersion())
+            ->assign('isSymLinkedCore', is_link(PATH_site . 'typo3_src'))
             ->assign('operatingSystem', $operatingSystem)
             ->assign('cgiDetected', GeneralUtility::isRunningOnCgiServerApi())
             ->assign('extensionCompatibilityTesterProtocolFile', GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . 'typo3temp/assets/ExtensionCompatibilityTester.txt')
@@ -159,99 +147,6 @@ class ImportantActions extends Action\AbstractAction
             $message->setTitle('Install tool password changed');
         }
         return $message;
-    }
-
-    /**
-     * Set new site name
-     *
-     * @return \TYPO3\CMS\Install\Status\StatusInterface
-     */
-    protected function changeSiteName()
-    {
-        $values = $this->postValues['values'];
-        if (isset($values['newSiteName']) && $values['newSiteName'] !== '') {
-            /** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
-            $configurationManager = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class);
-            $configurationManager->setLocalConfigurationValueByPath('SYS/sitename', $values['newSiteName']);
-            /** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
-            $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\OkStatus::class);
-            $message->setTitle('Site name changed');
-            $this->view->assign('siteName', $values['newSiteName']);
-        } else {
-            /** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
-            $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\ErrorStatus::class);
-            $message->setTitle('Site name not changed');
-            $message->setMessage('Site name must be at least one character long.');
-        }
-        return $message;
-    }
-
-    /**
-     * Clear all caches
-     *
-     * @return \TYPO3\CMS\Install\Status\StatusInterface
-     */
-    protected function clearAllCache()
-    {
-        /** @var \TYPO3\CMS\Install\Service\ClearCacheService $clearCacheService */
-        $clearCacheService = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\ClearCacheService::class);
-        $clearCacheService->clearAll();
-        $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\OkStatus::class);
-        $message->setTitle('Successfully cleared all caches');
-        return $message;
-    }
-
-    /**
-     * Clear PHP opcode cache
-     *
-     * @return \TYPO3\CMS\Install\Status\StatusInterface
-     */
-    protected function clearOpcodeCache()
-    {
-        GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive();
-        $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\OkStatus::class);
-        $message->setTitle('Successfully cleared all available opcode caches');
-        return $message;
-    }
-
-    /**
-     * Dumps Extension Autoload Information
-     *
-     * @return \TYPO3\CMS\Install\Status\StatusInterface
-     */
-    protected function dumpAutoload(): \TYPO3\CMS\Install\Status\StatusInterface
-    {
-        if (Bootstrap::usesComposerClassLoading()) {
-            $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\NoticeStatus::class);
-            $message->setTitle('Skipped generating additional class loading information in composer mode.');
-        } else {
-            ClassLoadingInformation::dumpClassLoadingInformation();
-            $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\OkStatus::class);
-            $message->setTitle('Successfully dumped class loading information for extensions.');
-        }
-        return $message;
-    }
-
-    /**
-     * Set new encryption key
-     *
-     * @return void
-     */
-    protected function setNewEncryptionKeyAndLogOut()
-    {
-        $newKey = GeneralUtility::makeInstance(Random::class)->generateRandomHexString(96);
-        /** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
-        $configurationManager = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class);
-        $configurationManager->setLocalConfigurationValueByPath('SYS/encryptionKey', $newKey);
-        /** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
-        $formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
-            \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection::class
-        );
-        $formProtection->clean();
-        /** @var \TYPO3\CMS\Install\Service\SessionService $session */
-        $session = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\SessionService::class);
-        $session->destroySession();
-        \TYPO3\CMS\Core\Utility\HttpUtility::redirect('Install.php?install[context]=' . $this->getContext());
     }
 
     /**

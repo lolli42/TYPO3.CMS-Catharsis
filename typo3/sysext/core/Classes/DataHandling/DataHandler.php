@@ -27,6 +27,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
 use TYPO3\CMS\Core\Database\ReferenceIndex;
@@ -39,6 +40,7 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -522,7 +524,7 @@ class DataHandler
      *
      * @var array
      *
-     * @deprecated since TYPO3 v8, no refereces could be found in class will be removed in TYPO3 v9
+     * @deprecated since TYPO3 v8, no references could be found in class will be removed in TYPO3 v9
      */
     public $checkWorkspaceCache = [];
 
@@ -703,7 +705,7 @@ class DataHandler
     protected $cachePrefixNestedElementCalls = 'core-datahandler-nestedElementCalls-';
 
     /**
-     *
+     * Sets up the data handler cache and some additional options, the main logic is done in the start() method.
      */
     public function __construct()
     {
@@ -728,7 +730,6 @@ class DataHandler
      * @param array $data Data to be modified or inserted in the database
      * @param array $cmd Commands to copy, move, delete, localize, versionize records.
      * @param BackendUserAuthentication|NULL $altUserObject An alternative userobject you can set instead of the default, which is $GLOBALS['BE_USER']
-     * @return void
      */
     public function start($data, $cmd, $altUserObject = null)
     {
@@ -774,7 +775,6 @@ class DataHandler
      * Example: $mirror[table][11] = '22,33' will look for content in $this->datamap[table][11] and copy it to $this->datamap[table][22] and $this->datamap[table][33]
      *
      * @param array $mirror This array has the syntax $mirror[table_name][uid] = [list of uids to copy data-value TO!]
-     * @return void
      */
     public function setMirror($mirror)
     {
@@ -804,7 +804,6 @@ class DataHandler
      * Initializes default values coming from User TSconfig
      *
      * @param array $userTS User TSconfig array
-     * @return void
      */
     public function setDefaultsFromUserTS($userTS)
     {
@@ -831,7 +830,6 @@ class DataHandler
      * It turns out that some versions of PHP arranges submitted data for files different if sent in an array. This function will unify this so the internal array $this->uploadedFileArray will always contain files arranged in the same structure.
      *
      * @param array $postFiles $_FILES array
-     * @return void
      */
     public function process_uploads($postFiles)
     {
@@ -867,7 +865,6 @@ class DataHandler
      * @param array $outputArr $this->uploadedFileArray passed by reference
      * @param array $inputArr Input array  ($_FILES parts)
      * @param string $keyToSet The current $_FILES array key to set on the outermost level.
-     * @return void
      * @access private
      * @see process_uploads()
      */
@@ -899,7 +896,6 @@ class DataHandler
      * @param string $table (reference) The table currently processing data for
      * @param string $id (reference) The record uid currently processing data for, [integer] or [string] (like 'NEW...')
      * @param array $fieldArray (reference) The field array of a record
-     * @return void
      */
     public function hook_processDatamap_afterDatabaseOperations(&$hookObjectsArr, &$status, &$table, &$id, &$fieldArray)
     {
@@ -1354,7 +1350,6 @@ class DataHandler
      *
      * @param string $table Table name
      * @param int $id Record uid
-     * @return void
      */
     public function placeholderShadowing($table, $id)
     {
@@ -2094,7 +2089,7 @@ class DataHandler
                 // For logging..
                 $propArr = $this->getRecordProperties($table, $id);
                 // Get destrination path:
-                $dest = $this->destPathFromUploadFolder($tcaFieldConf['uploadfolder']);
+                $dest = PATH_site . $tcaFieldConf['uploadfolder'];
                 // If we are updating:
                 if ($status === 'update') {
                     // Traverse the input values and convert to absolute filenames in case the update happens to an autoVersionized record.
@@ -2503,7 +2498,7 @@ class DataHandler
         // Example for received data:
         // $value = 45,NEW4555fdf59d154,12,123
         // We need to decide whether we use the stack or can save the relation directly.
-        if (strpos($value, 'NEW') !== false || !MathUtility::canBeInterpretedAsInteger($id)) {
+        if (!empty($value) && (strpos($value, 'NEW') !== false || !MathUtility::canBeInterpretedAsInteger($id))) {
             $this->remapStackRecords[$table][$id] = ['remapStackIndex' => count($this->remapStack)];
             $this->addNewValuesToRemapStackChildIds($valueArray);
             $this->remapStack[] = [
@@ -2630,12 +2625,44 @@ class DataHandler
     public function getRecordsWithSameValue($tableName, $uid, $fieldName, $value, $pageId = 0)
     {
         $result = [];
-        if (!empty($GLOBALS['TCA'][$tableName]['columns'][$fieldName])) {
-            $uid = (int)$uid;
-            $pageId = (int)$pageId;
-            $whereStatement = ' AND uid <> ' . $uid . ' AND ' . ($pageId ? 'pid = ' . $pageId : 'pid >= 0');
-            $result = BackendUtility::getRecordsByField($tableName, $fieldName, $value, $whereStatement);
+        if (empty($GLOBALS['TCA'][$tableName]['columns'][$fieldName])) {
+            return $result;
         }
+
+        $uid = (int)$uid;
+        $pageId = (int)$pageId;
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($tableName);
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+        $queryBuilder->select('*')
+            ->from($tableName)
+            ->where(
+                $queryBuilder->expr()->eq(
+                    $fieldName,
+                    $queryBuilder->createNamedParameter($value, \PDO::PARAM_STR)
+                ),
+                $queryBuilder->expr()->neq(
+                    'uid',
+                    $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
+                )
+            );
+
+        if ($pageId) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT))
+            );
+        } else {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->gte('pid', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
+            );
+        }
+
+        $result = $queryBuilder->execute()->fetchAll();
+
         return $result;
     }
 
@@ -2814,7 +2841,6 @@ class DataHandler
      * @param bool $set TRUE if an update should be done
      * @throws \InvalidArgumentException
      * @throws \TYPO3\CMS\Core\Exception
-     * @return void
      */
     protected function checkValue_input_ValidateEmail($value, &$set)
     {
@@ -2958,7 +2984,6 @@ class DataHandler
      * @param string $callBackFunc Call back function, default is checkValue_SW(). If $this->callBackObj is set to an object, the callback function in that object is called instead.
      * @param string $structurePath
      * @param array $workspaceOptions
-     * @return void
      * @see checkValue_flex_procInData()
      */
     public function checkValue_flex_procInData_travDS(&$dataValues, $dataValues_current, $uploadedFiles, $DSelements, $pParams, $callBackFunc, $structurePath, array $workspaceOptions = [])
@@ -3425,7 +3450,6 @@ class DataHandler
      *
      * @param int $uid Page UID to copy
      * @param int $destPid Destination PID: >=0 then it points to a page-id on which to insert the record (as the first element). <0 then it points to a uid from its own table after which to insert it (works if
-     * @return void
      */
     public function copyPages($uid, $destPid)
     {
@@ -3974,7 +3998,7 @@ class DataHandler
         }
         // Traverse this array of files:
         $uploadFolder = $conf['internal_type'] === 'file' ? $conf['uploadfolder'] : '';
-        $dest = $this->destPathFromUploadFolder($uploadFolder);
+        $dest = PATH_site . $uploadFolder;
         $newValue = [];
         foreach ($theFileValues as $file) {
             if (trim($file)) {
@@ -3998,7 +4022,6 @@ class DataHandler
      *
      * @param string $table Table name
      * @param int $theNewSQLID Record UID
-     * @return void
      */
     public function copyRecord_fixRTEmagicImages($table, $theNewSQLID)
     {
@@ -4104,7 +4127,6 @@ class DataHandler
      * @param bool $first
      * @param array $overrideValues
      * @param string $excludeFields
-     * @return void
      */
     public function copyL10nOverlayRecords($table, $uid, $destPid, $first = false, $overrideValues = [], $excludeFields = '')
     {
@@ -4112,20 +4134,38 @@ class DataHandler
         if (!BackendUtility::isTableLocalizable($table) ||  $table === 'pages' || $table === 'pages_language_overlay') {
             return;
         }
-        $where = '';
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+        $queryBuilder->select('*')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq(
+                    $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'],
+                    $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT, ':pointer')
+                )
+            );
+
         if (isset($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
-            $where = ' AND t3ver_oid=0';
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
+            );
         }
         // If $destPid is < 0, get the pid of the record with uid equal to abs($destPid)
         $tscPID = BackendUtility::getTSconfig_pidValue($table, $uid, $destPid);
         // Get the localized records to be copied
-        $l10nRecords = BackendUtility::getRecordsByField($table, $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'], $uid, $where);
+        $l10nRecords = $queryBuilder->execute()->fetchAll();
         if (is_array($l10nRecords)) {
             $localizedDestPids = [];
             // If $destPid < 0, then it is the uid of the original language record we are inserting after
             if ($destPid < 0) {
                 // Get the localized records of the record we are inserting after
-                $destL10nRecords = BackendUtility::getRecordsByField($table, $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'], abs($destPid), $where);
+                $queryBuilder->setParameter('pointer', abs($destPid), \PDO::PARAM_INT);
+                $destL10nRecords = $queryBuilder->execute()->fetchAll();
                 // Index the localized record uids by language
                 if (is_array($destL10nRecords)) {
                     foreach ($destL10nRecords as $record) {
@@ -4205,7 +4245,6 @@ class DataHandler
      * @param string $table Table name to move
      * @param int $uid Record uid to move
      * @param int $destPid Position to move to: $destPid: >=0 then it points to a page-id on which to insert the record (as the first element). <0 then it points to a uid from its own table after which to insert it (works if
-     * @return void
      */
     public function moveRecord($table, $uid, $destPid)
     {
@@ -4291,7 +4330,6 @@ class DataHandler
      * @param string $table Table name to move
      * @param int $uid Record uid to move
      * @param int $destPid Position to move to: $destPid: >=0 then it points to a page-id on which to insert the record (as the first element). <0 then it points to a uid from its own table after which to insert it (works if
-     * @return void
      * @see moveRecord()
      */
     public function moveRecord_raw($table, $uid, $destPid)
@@ -4445,7 +4483,6 @@ class DataHandler
      * @param string $table Record Table
      * @param string $uid Record UID
      * @param string $destPid Position to move to
-     * @return void
      */
     public function moveRecord_procFields($table, $uid, $destPid)
     {
@@ -4467,7 +4504,6 @@ class DataHandler
      * @param string $field Record field
      * @param string $value Record field value
      * @param array $conf TCA configuration of current field
-     * @return void
      */
     public function moveRecord_procBasedOnFieldType($table, $uid, $destPid, $field, $value, $conf)
     {
@@ -4504,7 +4540,6 @@ class DataHandler
      * @param string $uid Record UID
      * @param string $destPid Position to move to
      * @param string $originalRecordDestinationPid Position to move the original record to
-     * @return void
      */
     public function moveL10nOverlayRecords($table, $uid, $destPid, $originalRecordDestinationPid)
     {
@@ -4512,17 +4547,36 @@ class DataHandler
         if (!BackendUtility::isTableLocalizable($table) || $table === 'pages' || $table === 'pages_language_overlay') {
             return;
         }
-        $where = '';
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+        $queryBuilder->select('*')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq(
+                    $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'],
+                    $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT, ':pointer')
+                )
+            );
+
         if (isset($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
-            $where = ' AND t3ver_oid=0';
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
+            );
         }
-        $l10nRecords = BackendUtility::getRecordsByField($table, $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'], $uid, $where);
+
+        $l10nRecords = $queryBuilder->execute()->fetchAll();
         if (is_array($l10nRecords)) {
             $localizedDestPids = [];
             // If $$originalRecordDestinationPid < 0, then it is the uid of the original language record we are inserting after
             if ($originalRecordDestinationPid < 0) {
                 // Get the localized records of the record we are inserting after
-                $destL10nRecords = BackendUtility::getRecordsByField($table, $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'], abs($originalRecordDestinationPid), $where);
+                $queryBuilder->setParameter('pointer', abs($originalRecordDestinationPid), \PDO::PARAM_INT);
+                $destL10nRecords = $queryBuilder->execute()->fetchAll();
                 // Index the localized record uids by language
                 if (is_array($destL10nRecords)) {
                     foreach ($destL10nRecords as $record) {
@@ -4620,10 +4674,32 @@ class DataHandler
         }
 
         if ($table === 'pages') {
-            $pass = !BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $uid, (' AND ' . $GLOBALS['TCA']['pages_language_overlay']['ctrl']['languageField'] . '=' . (int)$langRec['uid']));
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('pages_language_overlay');
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+            $recordCount = $queryBuilder->count('*')
+                ->from('pages_language_overlay')
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'pid',
+                        $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
+                    ),
+                    $queryBuilder->expr()->eq(
+                        $GLOBALS['TCA']['pages_language_overlay']['ctrl']['languageField'],
+                        $queryBuilder->createNamedParameter((int)$langRec['uid'], \PDO::PARAM_INT)
+                    )
+                )
+                ->execute()
+                ->fetchColumn(0);
+
+            $pass = !$recordCount;
             $Ttable = 'pages_language_overlay';
         } else {
-            $pass = !BackendUtility::getRecordLocalization($table, $uid, $langRec['uid'], ('AND pid=' . (int)$row['pid']));
+            $pass = !BackendUtility::getRecordLocalization($table, $uid, $langRec['uid'], 'AND pid=' . (int)$row['pid']);
             $Ttable = $table;
         }
 
@@ -4735,7 +4811,6 @@ class DataHandler
      * @param string $table The table of the localized parent record
      * @param int $id The uid of the localized parent record
      * @param array|string $command Defines the command to be performed (see example above)
-     * @return void
      */
     protected function inlineLocalizeSynchronize($table, $id, $command)
     {
@@ -4888,7 +4963,6 @@ class DataHandler
      *
      * @param string $table Table name
      * @param int $id Record UID
-     * @return void
      */
     public function deleteAction($table, $id)
     {
@@ -4918,7 +4992,6 @@ class DataHandler
      * @param int $uid Record UID
      * @param bool $noRecordCheck Flag: If $noRecordCheck is set, then the function does not check permission to delete record
      * @param bool $forceHardDelete If TRUE, the "deleted" flag is ignored if applicable for record and the record is deleted COMPLETELY!
-     * @return void
      */
     public function deleteEl($table, $uid, $noRecordCheck = false, $forceHardDelete = false)
     {
@@ -4936,7 +5009,6 @@ class DataHandler
      * @param string $table Table name
      * @param int $uid Record UID
      * @param bool $forceHardDelete If TRUE, the "deleted" flag is ignored if applicable for record and the record is deleted COMPLETELY!
-     * @return void
      */
     public function deleteVersionsForRecord($table, $uid, $forceHardDelete)
     {
@@ -4968,7 +5040,6 @@ class DataHandler
      *
      * @param string $table Table name
      * @param int $uid Record UID
-     * @return void
      */
     public function undeleteRecord($table, $uid)
     {
@@ -4988,7 +5059,6 @@ class DataHandler
      * @param bool $noRecordCheck Flag: If $noRecordCheck is set, then the function does not check permission to delete record
      * @param bool $forceHardDelete If TRUE, the "deleted" flag is ignored if applicable for record and the record is deleted COMPLETELY!
      * @param bool $undeleteRecord If TRUE, the "deleted" flag is set to 0 again and thus, the item is undeleted.
-     * @return void
      */
     public function deleteRecord($table, $uid, $noRecordCheck = false, $forceHardDelete = false, $undeleteRecord = false)
     {
@@ -5050,7 +5120,24 @@ class DataHandler
                 switch ($conf['type']) {
                     case 'flex':
                         $flexObj = GeneralUtility::makeInstance(FlexFormTools::class);
-                        $flexObj->traverseFlexFormXMLData($table, $fieldName, BackendUtility::getRecordRaw($table, 'uid=' . (int)$uid), $this, 'deleteRecord_flexFormCallBack');
+
+                        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                            ->getQueryBuilderForTable($table);
+                        $queryBuilder->getRestrictions()->removeAll();
+
+                        $files = $queryBuilder
+                            ->select('*')
+                            ->from($table)
+                            ->where(
+                                $queryBuilder->expr()->eq(
+                                    'uid',
+                                    $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
+                                )
+                            )
+                            ->execute()
+                            ->fetch();
+
+                        $flexObj->traverseFlexFormXMLData($table, $fieldName, $files, $this, 'deleteRecord_flexFormCallBack');
                         break;
                 }
             }
@@ -5069,7 +5156,7 @@ class DataHandler
                     // MISSING: Support for MM file relations!
                     foreach ($fArray as $theField) {
                         // This deletes files that belonged to this record.
-                        $this->extFileFunctions($table, $theField, $row[$theField], 'deleteAll');
+                        $this->extFileFunctions($table, $theField, $row[$theField]);
                     }
                 } elseif ($this->enableLogging) {
                     $this->log($table, $uid, 3, 0, 100, 'Delete: Zero rows in result when trying to read filenames from record which should be deleted');
@@ -5139,7 +5226,6 @@ class DataHandler
      * @param array $PA
      * @param string $structurePath not used
      * @param object $pObj not used
-     * @return void
      */
     public function deleteRecord_flexFormCallBack($dsArr, $dataValue, $PA, $structurePath, $pObj)
     {
@@ -5161,12 +5247,11 @@ class DataHandler
     }
 
     /**
-     * Used to delete page because it will check for branch below pages and unallowed tables on the page as well.
+     * Used to delete page because it will check for branch below pages and disallowed tables on the page as well.
      *
      * @param int $uid Page id
      * @param bool $force If TRUE, pages are not checked for permission.
      * @param bool $forceHardDelete If TRUE, the "deleted" flag is ignored if applicable for record and the record is deleted COMPLETELY!
-     * @return void
      */
     public function deletePages($uid, $force = false, $forceHardDelete = false)
     {
@@ -5177,9 +5262,9 @@ class DataHandler
         }
         // Getting list of pages to delete:
         if ($force) {
-            // Returns the branch WITHOUT permission checks (0 secures that)
-            $brExist = $this->doesBranchExist('', $uid, 0, 1);
-            $res = GeneralUtility::trimExplode(',', $brExist . $uid, true);
+            // Returns the branch WITHOUT permission checks (0 secures that), so it cannot return -1
+            $pageIdsInBranch = $this->doesBranchExist('', $uid, 0, true);
+            $res = GeneralUtility::intExplode(',', $pageIdsInBranch . $uid, true);
         } else {
             $res = $this->canDeletePage($uid);
         }
@@ -5193,7 +5278,6 @@ class DataHandler
             $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $res, '', FlashMessage::ERROR, true);
             /** @var $flashMessageService FlashMessageService */
             $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
-            /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
             $flashMessageService->getMessageQueueByIdentifier()->addMessage($flashMessage);
 
             if ($this->enableLogging) {
@@ -5207,7 +5291,6 @@ class DataHandler
      *
      * @param int $uid Page id
      * @param bool $forceHardDelete If TRUE, the "deleted" flag is ignored if applicable for record and the record is deleted COMPLETELY!
-     * @return void
      * @access private
      * @see deletePages()
      */
@@ -5255,7 +5338,6 @@ class DataHandler
      *
      * @param string $table Record table
      * @param int $uid Record uid
-     * @return void
      */
     protected function copyMovedRecordToNewLocation($table, $uid)
     {
@@ -5293,52 +5375,45 @@ class DataHandler
      * Used to evaluate if a page can be deleted
      *
      * @param int $uid Page id
-     * @return array|string If array: List of page uids to traverse and delete (means OK), if string: error message.
+     * @return int[]|string If array: List of page uids to traverse and delete (means OK), if string: error message.
      */
     public function canDeletePage($uid)
     {
+        $uid = (int)$uid;
+
         // If we may at all delete this page
         if (!$this->doesRecordExist('pages', $uid, 'delete')) {
             return 'Attempt to delete page without permissions';
         }
 
+        $pageIdsInBranch = $this->doesBranchExist('', $uid, $this->pMap['delete'], true);
+
         if ($this->deleteTree) {
-            // Returns the branch
-            $brExist = $this->doesBranchExist('', $uid, $this->pMap['delete'], 1);
-            // Checks if we had permissions
-            if ($brExist == -1) {
+            if ($pageIdsInBranch === -1) {
                 return 'Attempt to delete pages in branch without permissions';
             }
 
-            if (!$this->noRecordsFromUnallowedTables($brExist . $uid)) {
-                return 'Attempt to delete records from disallowed tables';
-            }
-
-            $pagesInBranch = GeneralUtility::trimExplode(',', $brExist . $uid, true);
-            foreach ($pagesInBranch as $pageInBranch) {
-                if (!$this->BE_USER->recordEditAccessInternals('pages', $pageInBranch, false, false, true)) {
-                    return 'Attempt to delete page which has prohibited localizations.';
-                }
-            }
-            return $pagesInBranch;
+            $pagesInBranch = GeneralUtility::intExplode(',', $pageIdsInBranch . $uid, true);
         } else {
-            // returns the branch
-            $brExist = $this->doesBranchExist('', $uid, $this->pMap['delete'], 1);
-            // Checks if branch exists
-            if ($brExist != '') {
+            if ($pageIdsInBranch === -1) {
+                return 'Attempt to delete page without permissions';
+            } elseif ($pageIdsInBranch !== '') {
                 return 'Attempt to delete page which has subpages';
             }
 
-            if (!$this->noRecordsFromUnallowedTables($uid)) {
-                return 'Attempt to delete records from disallowed tables';
-            }
+            $pagesInBranch = [$uid];
+        }
 
-            if ($this->BE_USER->recordEditAccessInternals('pages', $uid, false, false, true)) {
-                return [$uid];
-            } else {
+        if (!$this->checkForRecordsFromDisallowedTables($pagesInBranch)) {
+            return 'Attempt to delete records from disallowed tables';
+        }
+
+        foreach ($pagesInBranch as $pageInBranch) {
+            if (!$this->BE_USER->recordEditAccessInternals('pages', $pageInBranch, false, false, true)) {
                 return 'Attempt to delete page which has prohibited localizations.';
             }
         }
+        return $pagesInBranch;
     }
 
     /**
@@ -5391,7 +5466,6 @@ class DataHandler
      * @param string $table Record Table
      * @param string $uid Record UID
      * @param bool $undeleteRecord If a record should be undeleted (e.g. from history/undo)
-     * @return void
      * @see deleteRecord()
      */
     public function deleteRecord_procFields($table, $uid, $undeleteRecord = false)
@@ -5416,7 +5490,6 @@ class DataHandler
      * @param string $value Record field value
      * @param array $conf TCA configuration of current field
      * @param bool $undeleteRecord If a record should be undeleted (e.g. from history/undo)
-     * @return void
      * @see deleteRecord()
      */
     public function deleteRecord_procBasedOnFieldType($table, $uid, $field, $value, $conf, $undeleteRecord = false)
@@ -5464,7 +5537,6 @@ class DataHandler
      *
      * @param string $table Record Table
      * @param string $uid Record UID
-     * @return void
      */
     public function deleteL10nOverlayRecords($table, $uid)
     {
@@ -5472,23 +5544,39 @@ class DataHandler
         if (!BackendUtility::isTableLocalizable($table) || $table === 'pages' || $table === 'pages_language_overlay') {
             return;
         }
-        $where = '';
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+        $queryBuilder->select('*')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq(
+                    $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'],
+                    $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)
+                )
+            );
+
         if (isset($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
-            $where = ' AND t3ver_oid=0';
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
+            );
         }
-        $l10nRecords = BackendUtility::getRecordsByField($table, $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'], $uid, $where);
-        if (is_array($l10nRecords)) {
-            foreach ($l10nRecords as $record) {
-                // Ignore workspace delete placeholders. Those records have been marked for
-                // deletion before - deleting them again in a workspace would revert that state.
-                if ($this->BE_USER->workspace > 0 && BackendUtility::isTableWorkspaceEnabled($table)) {
-                    BackendUtility::workspaceOL($table, $record);
-                    if (VersionState::cast($record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
-                        continue;
-                    }
+
+        $result = $queryBuilder->execute();
+        while ($record = $result->fetch()) {
+            // Ignore workspace delete placeholders. Those records have been marked for
+            // deletion before - deleting them again in a workspace would revert that state.
+            if ($this->BE_USER->workspace > 0 && BackendUtility::isTableWorkspaceEnabled($table)) {
+                BackendUtility::workspaceOL($table, $record);
+                if (VersionState::cast($record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
+                    continue;
                 }
-                $this->deleteAction($table, (int)$record['t3ver_oid'] > 0 ? (int)$record['t3ver_oid'] : (int)$record['uid']);
             }
+            $this->deleteAction($table, (int)$record['t3ver_oid'] > 0 ? (int)$record['t3ver_oid'] : (int)$record['uid']);
         }
     }
 
@@ -5612,13 +5700,11 @@ class DataHandler
                 'label' => $label,
             ];
             return $this->copyRecord_raw($table, $id, -1, $overrideArray, $workspaceOptions);
+        }
         // Reuse the existing record and return its uid
         // (prior to TYPO3 CMS 6.2, an error was thrown here, which
         // did not make much sense since the information is available)
-        } else {
-            return $versionRecord['uid'];
-        }
-        return null;
+        return $versionRecord['uid'];
     }
 
     /**
@@ -5627,7 +5713,6 @@ class DataHandler
      * @param string $table Table for the two input records
      * @param int $id Current record (about to go offline)
      * @param int $swapWith Swap record (about to go online)
-     * @return void
      * @see version_swap()
      */
     public function version_remapMMForVersionSwap($table, $id, $swapWith)
@@ -5722,7 +5807,6 @@ class DataHandler
      * @param string $table Table for the two input records
      * @param int $id Current record (about to go offline)
      * @param int $swapWith Swap record (about to go online)
-     * @return void
      * @see version_remapMMForVersionSwap()
      */
     public function version_remapMMForVersionSwap_execSwap($table, $id, $swapWith)
@@ -5772,8 +5856,6 @@ class DataHandler
 
     /**
      * Processes the fields with references as registered during the copy process. This includes all FlexForm fields which had references.
-     *
-     * @return void
      */
     public function remapListedDBRecords()
     {
@@ -5903,6 +5985,7 @@ class DataHandler
 
             // If record has been versioned/copied in this process, handle invalid relations of the live record
             $liveId = BackendUtility::getLiveVersionIdOfRecord($table, $MM_localUid);
+            $originalId = 0;
             if (!empty($this->copyMappingArray_merged[$table])) {
                 $originalId = array_search($MM_localUid, $this->copyMappingArray_merged[$table]);
             }
@@ -5935,7 +6018,6 @@ class DataHandler
      * @param string $value Field value
      * @param int $uid The uid of the ORIGINAL record
      * @param string $table Table name
-     * @return void
      */
     public function remapListedDBRecords_procInline($conf, $value, $uid, $table)
     {
@@ -5988,14 +6070,13 @@ class DataHandler
     /**
      * Processes the $this->remapStack at the end of copying, inserting, etc. actions.
      * The remapStack takes care about the correct mapping of new and old uids in case of relational data.
-     *
-     * @return void
      */
     public function processRemapStack()
     {
         // Processes the remap stack:
         if (is_array($this->remapStack)) {
             $remapFlexForms = [];
+            $hookPayload = [];
 
             foreach ($this->remapStack as $remapAction) {
                 // If no position index for the arguments was set, skip this remap action:
@@ -6071,24 +6152,41 @@ class DataHandler
 
                     $remapFlexForms[$flexFormId][$flexFormPath] = $newValue;
                 }
-                // Process waiting Hook: processDatamap_afterDatabaseOperations:
+
+                // Collect elements that shall trigger processDatamap_afterDatabaseOperations
                 if (isset($this->remapStackRecords[$table][$rawId]['processDatamap_afterDatabaseOperations'])) {
                     $hookArgs = $this->remapStackRecords[$table][$rawId]['processDatamap_afterDatabaseOperations'];
-                    // Update field with remapped data:
-                    $hookArgs['fieldArray'][$field] = $newValue;
-                    // Process waiting hook objects:
-                    $hookObjectsArr = $hookArgs['hookObjectsArr'];
-                    foreach ($hookObjectsArr as $hookObj) {
-                        if (method_exists($hookObj, 'processDatamap_afterDatabaseOperations')) {
-                            $hookObj->processDatamap_afterDatabaseOperations($hookArgs['status'], $table, $rawId, $hookArgs['fieldArray'], $this);
-                        }
+                    if (!isset($hookPayload[$table][$rawId])) {
+                        $hookPayload[$table][$rawId] = [
+                            'status' => $hookArgs['status'],
+                            'fieldArray' => $hookArgs['fieldArray'],
+                            'hookObjects' => $hookArgs['hookObjectsArr'],
+                        ];
                     }
+                    $hookPayload[$table][$rawId]['fieldArray'][$field] = $newValue;
                 }
             }
 
             if ($remapFlexForms) {
                 foreach ($remapFlexForms as $flexFormId => $modifications) {
                     $this->updateFlexFormData($flexFormId, $modifications);
+                }
+            }
+
+            foreach ($hookPayload as $tableName => $rawIdPayload) {
+                foreach ($rawIdPayload as $rawId => $payload) {
+                    foreach ($payload['hookObjects'] as $hookObject) {
+                        if (!method_exists($hookObject, 'processDatamap_afterDatabaseOperations')) {
+                            continue;
+                        }
+                        $hookObject->processDatamap_afterDatabaseOperations(
+                            $payload['status'],
+                            $tableName,
+                            $rawId,
+                            $payload['fieldArray'],
+                            $this
+                        );
+                    }
                 }
             }
         }
@@ -6119,7 +6217,6 @@ class DataHandler
      *
      * @param string $flexFormId, e.g. <table>:<uid>:<field>
      * @param array $modifications Modifications with paths and values (e.g. 'sDEF/lDEV/field/vDEF' => 'TYPO3')
-     * @return void
      */
     protected function updateFlexFormData($flexFormId, array $modifications)
     {
@@ -6169,7 +6266,6 @@ class DataHandler
      * @param array $callback The method to be called
      * @param array $arguments The arguments to be submitted to the callback method
      * @param bool $forceRemapStackActions Whether to force to use the stack
-     * @return void
      * @see processRemapStack
      */
     protected function triggerRemapAction($table, $id, array $callback, array $arguments, $forceRemapStackActions = false)
@@ -6189,7 +6285,6 @@ class DataHandler
      * @param int $id The affected ID
      * @param array $callback The callback information (object and method)
      * @param array $arguments The arguments to be used with the callback
-     * @return void
      */
     public function addRemapAction($table, $id, array $callback, array $arguments)
     {
@@ -6208,7 +6303,6 @@ class DataHandler
      *
      * @param string $table
      * @param int $id
-     * @return void
      */
     public function addRemapStackRefIndex($table, $id)
     {
@@ -6225,7 +6319,6 @@ class DataHandler
      * @param int $id Uid of the parent record
      * @param array $incomingFieldArray Reference to the incomingFieldArray of process_datamap
      * @param array $registerDBList Reference to the $registerDBList array that was created/updated by versionizing calls to DataHandler in process_datamap.
-     * @return void
      */
     public function getVersionizedIncomingFieldArray($table, $id, &$incomingFieldArray, &$registerDBList)
     {
@@ -6438,7 +6531,17 @@ class DataHandler
     {
         $id = (int)$id;
         if ($this->bypassAccessCheckForRecords) {
-            return is_array(BackendUtility::getRecordRaw($table, 'uid=' . $id, 'uid'));
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable($table);
+            $queryBuilder->getRestrictions()->removeAll();
+
+            $record = $queryBuilder->select('uid')
+                ->from($table)
+                ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)))
+                ->execute()
+                ->fetch();
+
+            return is_array($record);
         }
         // Processing the incoming $perms (from possible string to integer that can be AND'ed)
         if (!MathUtility::canBeInterpretedAsInteger($perms)) {
@@ -6537,15 +6640,14 @@ class DataHandler
     /**
      * Checks if a whole branch of pages exists
      *
-     * Tests the branch under $pid (like doesRecordExist). It doesn't test the page with $pid as uid. Use doesRecordExist() for this purpose
-     * Returns an ID-list or "" if OK. Else -1 which means that somewhere there was no permission (eg. to delete).
-     * if $recurse is set, then the function will follow subpages. This MUST be set, if we need the idlist for deleting pages or else we get an incomplete list
+     * Tests the branch under $pid like doesRecordExist(), but it doesn't test the page with $pid as uid - use doesRecordExist() for this purpose.
+     * If $recurse is set, the function will follow subpages. This MUST be set, if we need the id-list for deleting pages or else we get an incomplete list
      *
-     * @param string $inList List of page uids, this is added to and outputted in the end
+     * @param string $inList List of page uids, this is added to and returned in the end
      * @param int $pid Page ID to select subpages from.
      * @param int $perms Perms integer to check each page record for.
      * @param bool $recurse Recursion flag: If set, it will go out through the branch.
-     * @return string List of integers in branch
+     * @return string|int List of page IDs in branch, if there are subpages, empty string if there are none or -1 if no permission
      */
     public function doesBranchExist($inList, $pid, $perms, $recurse)
     {
@@ -6567,7 +6669,7 @@ class DataHandler
                     if ($recurse) {
                         // Follow the subpages recursively...
                         $inList = $this->doesBranchExist($inList, $row['uid'], $perms, $recurse);
-                        if ($inList == -1) {
+                        if ($inList === -1) {
                             return -1;
                         }
                     }
@@ -6832,7 +6934,6 @@ class DataHandler
      * @param string $table Record table name
      * @param int $id Record uid
      * @param array $fieldArray Array of field=>value pairs to insert. FIELDS MUST MATCH the database FIELDS. No check is done.
-     * @return void
      */
     public function updateDB($table, $id, $fieldArray)
     {
@@ -6858,6 +6959,9 @@ class DataHandler
                         $newRow = [];
                         if ($this->checkStoredRecords) {
                             $newRow = $this->checkStoredRecord($table, $id, $fieldArray, 2);
+                        } else {
+                            $newRow = $fieldArray;
+                            $newRow['uid'] = $id;
                         }
                         // Set log entry:
                         $propArr = $this->getRecordPropertiesFromRow($table, $newRow);
@@ -6941,9 +7045,14 @@ class DataHandler
                         $this->substNEWwithIDs_table[$NEW_id] = $table;
                     }
                     $newRow = [];
-                    // Checking the record is properly saved and writing to log
-                    if ($this->enableLogging && $this->checkStoredRecords) {
-                        $newRow = $this->checkStoredRecord($table, $id, $fieldArray, 1);
+                    if ($this->enableLogging) {
+                        // Checking the record is properly saved if configured
+                        if ($this->checkStoredRecords) {
+                            $newRow = $this->checkStoredRecord($table, $id, $fieldArray, 1);
+                        } else {
+                            $newRow = $fieldArray;
+                            $newRow['uid'] = $id;
+                        }
                     }
                     // Update reference index:
                     $this->updateRefIndex($table, $id);
@@ -7042,7 +7151,6 @@ class DataHandler
      * @param string $table Table name
      * @param int $id Record ID
      * @param int $logId Log entry ID, important for linking between log and history views
-     * @return void
      */
     public function setHistory($table, $id, $logId)
     {
@@ -7066,7 +7174,6 @@ class DataHandler
      *
      * @param string $table Table name
      * @param int $id Record UID
-     * @return void
      */
     public function updateRefIndex($table, $id)
     {
@@ -7387,7 +7494,6 @@ class DataHandler
      *
      * @param string $table Table name
      * @param array $incomingFieldArray Incoming array (passed by reference)
-     * @return void
      */
     public function addDefaultPermittedLanguageIfNotSet($table, &$incomingFieldArray)
     {
@@ -7547,9 +7653,11 @@ class DataHandler
      *
      * @param string $input Input string
      * @return string Output string with any comma in the end removed, if any.
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function rmComma($input)
     {
+        GeneralUtility::logDeprecatedFunction();
         return rtrim($input, ',');
     }
 
@@ -7580,9 +7688,11 @@ class DataHandler
      *
      * @param string $folder Upload folder name, relative to PATH_site
      * @return string Input string prefixed with PATH_site
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, can be simplified by just prepending the PATH_site constant
      */
     public function destPathFromUploadFolder($folder)
     {
+        GeneralUtility::logDeprecatedFunction();
         return PATH_site . $folder;
     }
 
@@ -7590,8 +7700,6 @@ class DataHandler
      * Disables the delete clause for fetching records.
      * In general only undeleted records will be used. If the delete
      * clause is disabled, also deleted records are taken into account.
-     *
-     * @return void
      */
     public function disableDeleteClause()
     {
@@ -7618,7 +7726,6 @@ class DataHandler
      * Add delete restriction if not disabled
      *
      * @param QueryRestrictionContainerInterface $restrictions
-     * @return void
      */
     protected function addDeleteRestriction(QueryRestrictionContainerInterface $restrictions)
     {
@@ -7698,8 +7805,6 @@ class DataHandler
     /**
      * Executing dbAnalysisStore
      * This will save MM relations for new records but is executed after records are created because we need to know the ID of them
-     *
-     * @return void
      */
     public function dbAnalysisStoreExec()
     {
@@ -7713,8 +7818,6 @@ class DataHandler
 
     /**
      * Removing files registered for removal before exit
-     *
-     * @return void
      */
     public function removeRegisteredFiles()
     {
@@ -7808,7 +7911,6 @@ class DataHandler
      *
      * @param string $table Table name
      * @param int $uid Record UID
-     * @return void
      */
     public function fixUniqueInPid($table, $uid)
     {
@@ -8054,29 +8156,26 @@ class DataHandler
      * @param string $table Table name
      * @param string $field Field name
      * @param string $filelist List of files to work on from field
-     * @param string $func Function, eg. "deleteAll" which will delete all files listed.
-     * @return void
+     * @param string $func, previously "deleteAll" was possible, this argument is now removed, as deleteAll is the only option
      */
-    public function extFileFunctions($table, $field, $filelist, $func)
+    public function extFileFunctions($table, $field, $filelist, $func = null)
     {
+        if ($func !== null) {
+            GeneralUtility::deprecationLog('Parameter 4 of DataHandler::extFileFunctions() has been removed in TYPO3 v8, and will be removed in TYPO3 v9.');
+            if ($func !== 'deleteAll') {
+                return;
+            }
+        }
         $uploadFolder = $GLOBALS['TCA'][$table]['columns'][$field]['config']['uploadfolder'];
         if ($uploadFolder && trim($filelist) && $GLOBALS['TCA'][$table]['columns'][$field]['config']['internal_type'] === 'file') {
-            $uploadPath = $this->destPathFromUploadFolder($uploadFolder);
-            $fileArray = explode(',', $filelist);
+            $uploadPath = PATH_site . $uploadFolder;
+            $fileArray = GeneralUtility::trimExplode(',', $filelist, true);
             foreach ($fileArray as $theFile) {
-                $theFile = trim($theFile);
-                if ($theFile) {
-                    switch ($func) {
-                        case 'deleteAll':
-                            $theFileFullPath = $uploadPath . '/' . $theFile;
-                            if (@is_file($theFileFullPath)) {
-                                $file = $this->getResourceFactory()->retrieveFileOrFolderObject($theFileFullPath);
-                                $file->delete();
-                            } elseif ($this->enableLogging) {
-                                $this->log($table, 0, 3, 0, 100, 'Delete: Referenced file that was supposed to be deleted together with it\'s record didn\'t exist');
-                            }
-                            break;
-                    }
+                $theFileFullPath = $uploadPath . '/' . $theFile;
+                if (@is_file($theFileFullPath)) {
+                    $this->getResourceFactory()->retrieveFileOrFolderObject($theFileFullPath)->delete();
+                } elseif ($this->enableLogging) {
+                    $this->log($table, 0, 3, 0, 100, 'Delete: Referenced file that was supposed to be deleted together with it\'s record didn\'t exist');
                 }
             }
         }
@@ -8087,16 +8186,28 @@ class DataHandler
      *
      * @param string $inList List of page integers
      * @return bool Return TRUE, if permission granted
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function noRecordsFromUnallowedTables($inList)
     {
-        if (strpos($inList, ',') !== false) {
-            $pids = GeneralUtility::intExplode(',', $inList, true);
-        } else {
-            $inList = trim($this->rmComma(trim($inList)));
-            $pids = [$inList];
+        GeneralUtility::logDeprecatedFunction();
+        return $this->checkForRecordsFromDisallowedTables(GeneralUtility::intExplode(',', $inList, true));
+    }
+
+    /**
+     * Check if there are records from tables on the pages to be deleted which the current user is not allowed to
+     *
+     * @param int[] $pageIds IDs of pages which should be checked
+     * @return bool Return TRUE, if permission granted
+     * @see canDeletePage()
+     */
+    protected function checkForRecordsFromDisallowedTables(array $pageIds)
+    {
+        if ($this->admin) {
+            return true;
         }
-        if ($inList && !$this->admin) {
+
+        if (!empty($pageIds)) {
             foreach ($GLOBALS['TCA'] as $table => $_) {
                 $query = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
                 $query->getRestrictions()
@@ -8106,7 +8217,7 @@ class DataHandler
                     ->from($table)
                     ->where($query->expr()->in(
                         'pid',
-                        $query->createNamedParameter($pids, Connection::PARAM_INT_ARRAY)
+                        $query->createNamedParameter($pageIds, Connection::PARAM_INT_ARRAY)
                     ))
                     ->execute()
                     ->fetchColumn(0);
@@ -8150,7 +8261,6 @@ class DataHandler
      * @param string $table Table name of record that was just updated.
      * @param int $uid UID of updated / inserted record
      * @param int $pid REAL PID of page of a deleted/moved record to get TSconfig in ClearCache.
-     * @return void
      * @internal This method is not meant to be called directly but only from the core itself or from hooks
      */
     public function registerRecordIdForPageCacheClearing($table, $uid, $pid = null)
@@ -8169,7 +8279,6 @@ class DataHandler
 
     /**
      * Do the actual clear cache
-     * @return void
      */
     protected function processClearCacheQueue()
     {
@@ -8377,7 +8486,6 @@ class DataHandler
      *
      *
      * @param string $cacheCmd The cache command, see above description
-     * @return void
      */
     public function clear_cacheCmd($cacheCmd)
     {
@@ -8531,7 +8639,6 @@ class DataHandler
      * Print log error messages from the operations of this script instance
      *
      * @param string $redirect Redirect URL (for creating link in message)
-     * @return void (Will exit on error)
      */
     public function printLogErrorMessages($redirect)
     {
@@ -8651,7 +8758,6 @@ class DataHandler
      * Adds new values to the remapStackChildIds array.
      *
      * @param array $idValues uid values
-     * @return void
      */
     protected function addNewValuesToRemapStackChildIds(array $idValues)
     {
@@ -8762,7 +8868,6 @@ class DataHandler
      * @param string $table Name of the table
      * @param int $id Uid of the record
      * @param string $identifier Name of the action to be tracked
-     * @return void
      */
     protected function registerNestedElementCall($table, $id, $identifier)
     {
@@ -8773,8 +8878,6 @@ class DataHandler
 
     /**
      * Resets the nested element calls.
-     *
-     * @return void
      */
     protected function resetNestedElementCalls()
     {
@@ -8801,7 +8904,6 @@ class DataHandler
     /**
      * Registers elements to be deleted in the registry.
      *
-     * @return void
      * @see process_datamap
      */
     protected function registerElementsToBeDeleted()
@@ -8813,7 +8915,6 @@ class DataHandler
     /**
      * Resets the elements to be deleted in the registry.
      *
-     * @return void
      * @see process_datamap
      */
     protected function resetElementsToBeDeleted()
@@ -8863,8 +8964,6 @@ class DataHandler
     /**
      * Controls active elements and sets NULL values if not active.
      * Datamap is modified accordant to submitted control values.
-     *
-     * @return void
      */
     protected function controlActiveElements()
     {
@@ -8883,7 +8982,6 @@ class DataHandler
      *
      * @param array $active hierarchical array with active elements
      * @param array $haystack hierarchical array with haystack to be modified
-     * @return void
      */
     protected function setNullValues(array $active, array &$haystack)
     {
@@ -8918,8 +9016,11 @@ class DataHandler
      */
     protected function createRelationHandlerInstance()
     {
+        $isVersionLoaded = ExtensionManagementUtility::isLoaded('version');
         $relationHandler = GeneralUtility::makeInstance(RelationHandler::class);
         $relationHandler->setWorkspaceId($this->BE_USER->workspace);
+        $relationHandler->setUseLiveReferenceIds($isVersionLoaded);
+        $relationHandler->setUseLiveParentIds($isVersionLoaded);
         return $relationHandler;
     }
 

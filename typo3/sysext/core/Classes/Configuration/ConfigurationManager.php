@@ -41,6 +41,11 @@ class ConfigurationManager
     protected $defaultConfigurationFile = 'typo3/sysext/core/Configuration/DefaultConfiguration.php';
 
     /**
+     * @var string Path to description file for TYPO3_CONF_VARS, relative to PATH_site
+     */
+    protected $defaultConfigurationDescriptionFile = 'typo3/sysext/core/Configuration/DefaultConfigurationDescription.php';
+
+    /**
      * @var string Path to local overload TYPO3_CONF_VARS file, relative to PATH_site
      */
     protected $localConfigurationFile = 'typo3conf/LocalConfiguration.php';
@@ -66,7 +71,7 @@ class ConfigurationManager
     protected $pathTypo3Conf = PATH_typo3conf;
 
     /**
-     * Writing to these configuration pathes is always allowed,
+     * Writing to these configuration paths is always allowed,
      * even if the requested sub path does not exist yet.
      *
      * @var array
@@ -98,6 +103,18 @@ class ConfigurationManager
     public function getDefaultConfigurationFileLocation()
     {
         return PATH_site . $this->defaultConfigurationFile;
+    }
+
+    /**
+     * Get the file location of the default configuration description file,
+     * currently the path and filename.
+     *
+     * @return string
+     * @access private
+     */
+    public function getDefaultConfigurationDescriptionFileLocation()
+    {
+        return PATH_site . $this->defaultConfigurationDescriptionFile;
     }
 
     /**
@@ -158,7 +175,6 @@ class ConfigurationManager
      * Override local configuration with new values.
      *
      * @param array $configurationToMerge Override configuration array
-     * @return void
      */
     public function updateLocalConfiguration(array $configurationToMerge)
     {
@@ -278,7 +294,6 @@ class ConfigurationManager
      *
      * @access private
      * @throws \UnexpectedValueException
-     * @return void
      */
     public function exportConfiguration()
     {
@@ -356,7 +371,6 @@ class ConfigurationManager
      * by the install tool in an early step.
      *
      * @throws \RuntimeException
-     * @return void
      * @access private
      */
     public function createLocalConfigurationFromFactoryConfiguration()

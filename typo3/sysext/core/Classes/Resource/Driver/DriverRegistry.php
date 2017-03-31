@@ -30,7 +30,7 @@ class DriverRegistry implements \TYPO3\CMS\Core\SingletonInterface
     protected $driverConfigurations = [];
 
     /**
-     * Creates this object.
+     * Creates this object by detecting all available drivers registered in $TYPO3_CONF_VARS.
      */
     public function __construct()
     {
@@ -83,7 +83,8 @@ class DriverRegistry implements \TYPO3\CMS\Core\SingletonInterface
     }
 
     /**
-     * @return void
+     * Adds the TCA information so the registered drivers can be selected when creating a sys_file_storage
+     * in the TYPO3 Backend.
      */
     public function addDriversToTCA()
     {

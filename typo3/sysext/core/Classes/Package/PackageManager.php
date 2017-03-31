@@ -127,8 +127,6 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
 
     /**
      * Initializes the package manager
-     *
-     * @return void
      */
     public function initialize()
     {
@@ -222,7 +220,6 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      * The result is stored in $this->packageStatesConfiguration.
      *
      * @throws Exception\PackageStatesUnavailableException
-     * @return void
      */
     protected function loadPackageStates()
     {
@@ -255,8 +252,6 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      * Initializes activePackages property
      *
      * Saves PackageStates.php if list of required extensions has changed.
-     *
-     * @return void
      */
     protected function initializePackageObjects()
     {
@@ -293,8 +288,6 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
 
     /**
      * Initializes a backwards compatibility $GLOBALS['TYPO3_LOADED_EXT'] array
-     *
-     * @return void
      */
     protected function initializeCompatibilityLoadedExtArray()
     {
@@ -305,8 +298,6 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
     /**
      * Scans all directories in the packages directories for available packages.
      * For each package a Package object is created and stored in $this->packages.
-     *
-     * @return void
      */
     public function scanAvailablePackages()
     {
@@ -461,7 +452,6 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      * Unregisters a package from the list of available packages
      *
      * @param string $packageKey Package Key of the package to be unregistered
-     * @return void
      */
     protected function unregisterPackageByPackageKey($packageKey)
     {
@@ -813,7 +803,6 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      * Unregisters a package from the list of available packages
      *
      * @param PackageInterface $package The package to be unregistered
-     * @return void
      * @throws Exception\InvalidPackageStateException
      */
     public function unregisterPackage(PackageInterface $package)
@@ -913,6 +902,7 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
         $this->setComposerManifestValueIfEmpty($composerManifest, 'name', $packageKey);
         $this->setComposerManifestValueIfEmpty($composerManifest, 'type', 'typo3-cms-extension');
         $this->setComposerManifestValueIfEmpty($composerManifest, 'description', $extensionManagerConfiguration['title']);
+        $this->setComposerManifestValueIfEmpty($composerManifest, 'authors', [['name' => $extensionManagerConfiguration['author'], 'email' => $extensionManagerConfiguration['author_email']]]);
         $composerManifest->version = $extensionManagerConfiguration['version'];
         if (isset($extensionManagerConfiguration['constraints']['depends']) && is_array($extensionManagerConfiguration['constraints']['depends'])) {
             $composerManifest->require = new \stdClass();
@@ -979,13 +969,13 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
 
     /**
      * Returns an array of dependent package keys for the given package. It will
-     * do this recursively, so dependencies of dependant packages will also be
+     * do this recursively, so dependencies of dependent packages will also be
      * in the result.
      *
      * @param string $packageKey The package key to fetch the dependencies for
      * @param array $dependentPackageKeys
      * @param array $trace An array of already visited package keys, to detect circular dependencies
-     * @return array|NULL An array of direct or indirect dependant packages
+     * @return array|NULL An array of direct or indirect dependent packages
      * @throws Exception\InvalidPackageKeyException
      */
     protected function getDependencyArrayForPackage($packageKey, array &$dependentPackageKeys = [], array $trace = [])

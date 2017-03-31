@@ -64,7 +64,7 @@ class TemplateService
 
     /**
      * This array is passed on to matchObj by generateConfig().
-     * If it holds elements, they are used for matching instead. See commment at the match-class.
+     * If it holds elements, they are used for matching instead. See comment at the match-class.
      * Used for backend modules only. Never frontend!
      *
      * @var array
@@ -246,7 +246,6 @@ class TemplateService
 
     /**
      * Used by Backend only (Typoscript Template Analyzer)
-     *
      */
     public $clearList_const = [];
 
@@ -360,7 +359,6 @@ class TemplateService
      * Initialize
      * MUST be called directly after creating a new template-object
      *
-     * @return void
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::initTemplate()
      */
     public function init()
@@ -463,7 +461,6 @@ class TemplateService
      * Sets $this->setup to the parsed TypoScript template array
      *
      * @param array $theRootLine The rootline of the current page (going ALL the way to tree root)
-     * @return void
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getConfigArray()
      */
     public function start($theRootLine)
@@ -590,7 +587,6 @@ class TemplateService
      *
      * @param array $theRootLine The rootline of the current page (going ALL the way to tree root)
      * @param int $start_template_uid Set specific template record UID to select; this is only for debugging/development/analysis use in backend modules like "Web > Template". For parsing TypoScript templates in the frontend it should be 0 (zero)
-     * @return void
      * @see start()
      */
     public function runThroughTemplates($theRootLine, $start_template_uid = 0)
@@ -696,7 +692,6 @@ class TemplateService
      * @param string $templateID The id of the current template. Same syntax as $idList ids, eg. "sys_123
      * @param string $templateParent Parent template id (during recursive call); Same syntax as $idList ids, eg. "sys_123
      * @param string $includePath Specifies the path from which the template was included (used with static_includes)
-     * @return void
      * @see runThroughTemplates()
      */
     public function processTemplate($row, $idList, $pid, $templateID = '', $templateParent = '', $includePath = '')
@@ -819,7 +814,6 @@ class TemplateService
      * rootline as before!
      *
      * @param array $fullRootLine Array containing the FULL rootline (up to the TYPO3 root)
-     * @return void
      * @throws \RuntimeException If the given $fullRootLine does not contain all pages that are in the current template rootline
      */
     public function updateRootlineData($fullRootLine)
@@ -851,7 +845,6 @@ class TemplateService
      * @param string $templateID The id of the current template. Same syntax as $idList ids, eg. "sys_123
      * @param int $pid The PID of the input template record
      * @param array $row A full TypoScript template record
-     * @return void
      * @see processTemplate()
      */
     public function includeStaticTypoScriptSources($idList, $templateID, $pid, $row)
@@ -946,7 +939,6 @@ class TemplateService
      * @param string $templateID The id of the current template. Same syntax as $idList ids, eg. "sys_123
      * @param int $pid The PID of the input template record
      * @param array $row A full TypoScript template record
-     * @return void
      * @access private
      * @see includeStaticTypoScriptSources()
      */
@@ -1000,7 +992,6 @@ class TemplateService
      * This will use either frontend or backend overlay functionality depending on environment.
      *
      * @param array $row Row to overlay (passed by reference)
-     * @return void
      */
     public function versionOL(&$row)
     {
@@ -1026,7 +1017,6 @@ class TemplateService
      * Generates the configuration array by replacing constants and parsing the whole thing.
      * Depends on $this->config and $this->constants to be set prior to this! (done by processTemplate/runThroughTemplates)
      *
-     * @return void
      * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser, start()
      */
     public function generateConfig()
@@ -1113,7 +1103,7 @@ class TemplateService
         // Final processing of the $this->setup TypoScript Template array
         // Basically: This is unsetting/setting of certain reserved keys.
         // ****************************************************************
-        // These vars are allready set after 'processTemplate', but because $config->setup overrides them (in the line above!), we set them again. They are not changed compared to the value they had in the top of the page!
+        // These vars are already set after 'processTemplate', but because $config->setup overrides them (in the line above!), we set them again. They are not changed compared to the value they had in the top of the page!
         unset($this->setup['sitetitle']);
         unset($this->setup['sitetitle.']);
         $this->setup['sitetitle'] = $this->sitetitle;
@@ -1145,7 +1135,6 @@ class TemplateService
      * for include instructions and does the inclusion of external TypoScript files
      * if needed.
      *
-     * @return void
      * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser, generateConfig()
      */
     public function processIncludes()
@@ -1251,7 +1240,6 @@ class TemplateService
      *
      * @param array $setupArray TypoScript array
      * @param string $prefix Prefix to the object path. Used for recursive calls to this function.
-     * @return void
      * @see generateConfig()
      */
     public function flattenSetup($setupArray, $prefix)
@@ -1321,67 +1309,15 @@ class TemplateService
      * @param int $splitCount The number of items for which to generated individual TypoScript arrays
      * @return array The individualized TypoScript array.
      * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::IMGTEXT(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::procesItemStates()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use TypoScriptService::explodeConfigurationForOptionSplit() instead
      */
     public function splitConfArray($conf, $splitCount)
     {
-        // Initialize variables:
-        $splitCount = (int)$splitCount;
-        $conf2 = [];
-        if ($splitCount && is_array($conf)) {
-            // Initialize output to carry at least the keys:
-            for ($aKey = 0; $aKey < $splitCount; $aKey++) {
-                $conf2[$aKey] = [];
-            }
-            // Recursive processing of array keys:
-            foreach ($conf as $cKey => $val) {
-                if (is_array($val)) {
-                    $tempConf = $this->splitConfArray($val, $splitCount);
-                    foreach ($tempConf as $aKey => $val2) {
-                        $conf2[$aKey][$cKey] = $val2;
-                    }
-                } else {
-                    // Splitting of all values on this level of the TypoScript object tree:
-                    if ($cKey === 'noTrimWrap' || (!strstr($val, '|*|') && !strstr($val, '||'))) {
-                        for ($aKey = 0; $aKey < $splitCount; $aKey++) {
-                            $conf2[$aKey][$cKey] = $val;
-                        }
-                    } else {
-                        $main = explode('|*|', $val);
-                        $lastC = 0;
-                        $middleC = 0;
-                        $firstC = 0;
-                        if ($main[0]) {
-                            $first = explode('||', $main[0]);
-                            $firstC = count($first);
-                        }
-                        $middle = [];
-                        if ($main[1]) {
-                            $middle = explode('||', $main[1]);
-                            $middleC = count($middle);
-                        }
-                        $last = [];
-                        $value = '';
-                        if ($main[2]) {
-                            $last = explode('||', $main[2]);
-                            $lastC = count($last);
-                            $value = $last[0];
-                        }
-                        for ($aKey = 0; $aKey < $splitCount; $aKey++) {
-                            if ($firstC && isset($first[$aKey])) {
-                                $value = $first[$aKey];
-                            } elseif ($middleC) {
-                                $value = $middle[($aKey - $firstC) % $middleC];
-                            }
-                            if ($lastC && $lastC >= $splitCount - $aKey) {
-                                $value = $last[$lastC - ($splitCount - $aKey)];
-                            }
-                            $conf2[$aKey][$cKey] = trim($value);
-                        }
-                    }
-                }
-            }
+        GeneralUtility::logDeprecatedFunction();
+        if (!is_array($conf)) {
+            return [];
         }
-        return $conf2;
+        return GeneralUtility::makeInstance(TypoScriptService::class)->explodeConfigurationForOptionSplit($conf, (int)$splitCount);
     }
 
     /**
@@ -1680,7 +1616,6 @@ class TemplateService
      * @param int $id Root id from which to start map creation.
      * @param array $MP_array MP_array passed from root page.
      * @param int $level Recursion brake. Incremented for each recursive call. 20 is the limit.
-     * @return void
      * @see getFromMPvar()
      */
     public function initMPmap_create($id, $MP_array = [], $level = 0)
@@ -1765,7 +1700,6 @@ class TemplateService
      * The class property isDefaultTypoScriptAdded ensures
      * that the adding only happens once.
      *
-     * @return void
      * @see isDefaultTypoScriptAdded
      */
     protected function addDefaultTypoScript()
@@ -1834,7 +1768,6 @@ class TemplateService
      * @param string $identifier 32 bit hash string (eg. a md5 hash of a serialized array identifying the data being stored)
      * @param mixed $data The data to store
      * @param string $tag Is just a textual identification in order to inform about the content
-     * @return void
      */
     protected function setCacheEntry($identifier, $data, $tag)
     {

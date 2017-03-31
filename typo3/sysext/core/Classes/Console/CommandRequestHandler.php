@@ -55,14 +55,14 @@ class CommandRequestHandler implements RequestHandlerInterface
      * Handles any commandline request
      *
      * @param InputInterface $input
-     * @return void
      */
     public function handleRequest(InputInterface $input)
     {
         $output = new ConsoleOutput();
 
         $this->bootstrap
-            ->loadExtensionTables()
+            ->loadBaseTca()
+            ->loadExtTables()
             // create the BE_USER object (not logged in yet)
             ->initializeBackendUser(CommandLineUserAuthentication::class)
             ->initializeLanguageObject()
@@ -73,8 +73,10 @@ class CommandRequestHandler implements RequestHandlerInterface
         $command = $this->getCommandToRun($input);
 
         if (!$command) {
+            // Using old "cliKeys" is marked as deprecated and will be removed in TYPO3 v9
             $cliKeys = array_keys($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['cliKeys']);
 
+            $output->writeln('Using old "cliKeys" ($GLOBALS[TYPO3_CONF_VARS][SC_OPTIONS][GLOBAL][cliKeys]) is marked as deprecated and will be removed in TYPO3 v9:');
             $output->writeln('Old entrypoint keys available:');
             asort($cliKeys);
             foreach ($cliKeys as $key => $value) {
@@ -111,7 +113,6 @@ class CommandRequestHandler implements RequestHandlerInterface
     }
 
     /**
-     *
      * @param InputInterface $input
      * @return bool|Command
      */

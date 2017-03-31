@@ -197,7 +197,22 @@ class ConnectionMigrator
             }
 
             if ($createOnly) {
+                // Ignore new indexes that work on columns that need changes
+                foreach ($changedTable->addedIndexes as $indexName => $addedIndex) {
+                    // Strip MySQL prefix length information to get real column names
+                    $indexColumns = array_map(
+                        function ($columnName) {
+                            return preg_replace('/\(\d+\)$/', '', $columnName);
+                        },
+                        $addedIndex->getColumns()
+                    );
+                    $columnChanges = array_intersect($indexColumns, array_keys($changedTable->changedColumns));
+                    if (!empty($columnChanges)) {
+                        unset($schemaDiff->changedTables[$key]->addedIndexes[$indexName]);
+                    }
+                }
                 $schemaDiff->changedTables[$key]->changedColumns = [];
+                $schemaDiff->changedTables[$key]->changedIndexes = [];
                 $schemaDiff->changedTables[$key]->renamedIndexes = [];
             }
         }
@@ -224,8 +239,9 @@ class ConnectionMigrator
      * for tables that are in the database but have no direct relation to the TYPO3 instance.
      *
      * @param bool $renameUnused
-     * @return \Doctrine\DBAL\Schema\SchemaDiff
      * @throws \Doctrine\DBAL\DBALException
+     * @return \Doctrine\DBAL\Schema\SchemaDiff
+     * @throws \Doctrine\DBAL\Schema\SchemaException
      * @throws \InvalidArgumentException
      */
     protected function buildSchemaDiff(bool $renameUnused = true): SchemaDiff
@@ -247,7 +263,7 @@ class ConnectionMigrator
         }
 
         // Build SchemaDiff and handle renames of tables and colums
-        $comparator = GeneralUtility::makeInstance(Comparator::class);
+        $comparator = GeneralUtility::makeInstance(Comparator::class, $this->connection->getDatabasePlatform());
         $schemaDiff = $comparator->compare($fromSchema, $toSchema);
         $schemaDiff = $this->migrateColumnRenamesToDistinctActions($schemaDiff);
 

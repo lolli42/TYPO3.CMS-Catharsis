@@ -26,7 +26,7 @@ lib.parseFunc {
             typolink {
                 parameter.data = parameters:href
                 title.data = parameters:title
-                aTagParams.data = parameters:allParams
+                ATagParams.data = parameters:allParams
                 target.data = parameters:target
                 extTarget = {$styles.content.links.extTarget}
                 extTarget.override.data = parameters:target
@@ -50,20 +50,9 @@ lib.parseFunc {
 # Creates persistent ParseFunc setup for RTE content (which is mainly HTML) based on the "ts_css" transformation.
 lib.parseFunc_RTE < lib.parseFunc
 lib.parseFunc_RTE {
-    # Processing <table> and <blockquote> blocks separately
+    # Processing <ol>, <ul> and <table> blocks separately
     externalBlocks = article, aside, blockquote, div, dd, dl, footer, header, nav, ol, section, table, ul, pre
     externalBlocks {
-        # The blockquote content is passed into parseFunc again...
-        blockquote {
-            stripNL = 1
-            callRecursive = 1
-            callRecursive {
-                tagStdWrap {
-                    HTMLparser = 1
-                    HTMLparser.tags.blockquote.overrideAttribs = style="margin-bottom:0;margin-top:0;"
-                }
-            }
-        }
         ol {
             stripNL = 1
             stdWrap.parseFunc = < lib.parseFunc
@@ -101,6 +90,7 @@ lib.parseFunc_RTE {
         }
         article < .div
         aside < .div
+        blockquote < .div
         footer < .div
         header < .div
         nav < .div

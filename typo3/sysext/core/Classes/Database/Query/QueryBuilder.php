@@ -209,11 +209,11 @@ class QueryBuilder
      *
      * @param string|int $key The parameter position or name.
      * @param mixed $value The parameter value.
-     * @param string|null $type One of the Connection::PARAM_* constants.
+     * @param int|null $type One of the Connection::PARAM_* constants.
      *
      * @return QueryBuilder This QueryBuilder instance.
      */
-    public function setParameter($key, $value, string $type = null): QueryBuilder
+    public function setParameter($key, $value, int $type = null): QueryBuilder
     {
         $this->concreteQueryBuilder->setParameter($key, $value, $type);
 
@@ -1031,7 +1031,7 @@ class QueryBuilder
      * Return all tables/aliases used in FROM or JOIN query parts from the query builder.
      *
      * The table names are automatically unquoted. This is a helper for to build the list
-     * of queried tables for the QueryRestrictionBuilder.
+     * of queried tables for the AbstractRestrictionContainer.
      *
      * @return string[]
      */
@@ -1042,16 +1042,16 @@ class QueryBuilder
         // Loop through all FROM tables
         foreach ($this->getQueryPart('from') as $from) {
             $tableName = $this->unquoteSingleIdentifier($from['table']);
-            $tableAlias = isset($from['alias']) ? $this->unquoteSingleIdentifier($from['alias']) : null;
-            $queriedTables[$tableName] = $tableAlias;
+            $tableAlias = isset($from['alias']) ? $this->unquoteSingleIdentifier($from['alias']) : $tableName;
+            $queriedTables[$tableAlias] = $tableName;
         }
 
         // Loop through all JOIN tables
         foreach ($this->getQueryPart('join') as $fromTable => $joins) {
             foreach ($joins as $join) {
                 $tableName = $this->unquoteSingleIdentifier($join['joinTable']);
-                $tableAlias = isset($join['joinAlias']) ? $this->unquoteSingleIdentifier($join['joinAlias']) : null;
-                $queriedTables[$tableName] = $tableAlias;
+                $tableAlias = isset($join['joinAlias']) ? $this->unquoteSingleIdentifier($join['joinAlias']) : $tableName;
+                $queriedTables[$tableAlias] = $tableName;
             }
         }
 

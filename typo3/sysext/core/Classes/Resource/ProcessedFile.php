@@ -176,7 +176,6 @@ class ProcessedFile extends AbstractFile
      * Injects a local file, which is a processing result into the object.
      *
      * @param string $filePath
-     * @return void
      * @throws \RuntimeException
      */
     public function updateWithLocalFile($filePath)
@@ -388,7 +387,7 @@ class ProcessedFile extends AbstractFile
     }
 
     /**
-     * @return void
+     * Defines that the original file should be used.
      */
     public function setUsesOriginalFile()
     {

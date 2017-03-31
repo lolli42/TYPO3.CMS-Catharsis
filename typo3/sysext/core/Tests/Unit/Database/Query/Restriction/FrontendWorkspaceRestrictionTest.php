@@ -21,7 +21,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 class FrontendWorkspaceRestrictionTest extends AbstractRestrictionTestCase
 {
     /**
-     * @return void
      */
     protected function setUp()
     {
@@ -45,7 +44,7 @@ class FrontendWorkspaceRestrictionTest extends AbstractRestrictionTestCase
         $pageRepository->versioningPreview = false;
 
         $subject = new FrontendWorkspaceRestriction(0);
-        $expression = $subject->buildExpression(['aTable' => ''], $this->expressionBuilder);
+        $expression = $subject->buildExpression(['aTable' => 'aTable'], $this->expressionBuilder);
         $this->assertSame('("aTable"."t3ver_state" <= 0) AND ("aTable"."pid" <> -1)', (string)$expression);
     }
 
@@ -67,7 +66,7 @@ class FrontendWorkspaceRestrictionTest extends AbstractRestrictionTestCase
         $pageRepository->versioningWorkspaceId = 42;
 
         $subject = new FrontendWorkspaceRestriction(42, true);
-        $expression = $subject->buildExpression(['aTable' => ''], $this->expressionBuilder);
+        $expression = $subject->buildExpression(['aTable' => 'aTable'], $this->expressionBuilder);
         $this->assertSame('(("aTable"."t3ver_wsid" = 0) OR ("aTable"."t3ver_wsid" = 42)) AND ("aTable"."pid" <> -1)', (string)$expression);
     }
 
@@ -89,7 +88,7 @@ class FrontendWorkspaceRestrictionTest extends AbstractRestrictionTestCase
         $pageRepository->versioningWorkspaceId = 42;
 
         $subject = new FrontendWorkspaceRestriction(42, true, false);
-        $expression = $subject->buildExpression(['aTable' => ''], $this->expressionBuilder);
+        $expression = $subject->buildExpression(['aTable' => 'aTable'], $this->expressionBuilder);
         $this->assertSame('("aTable"."t3ver_wsid" = 0) OR ("aTable"."t3ver_wsid" = 42)', (string)$expression);
     }
 }

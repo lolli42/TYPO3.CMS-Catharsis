@@ -84,8 +84,6 @@ class PermissionController extends ActionController
 
     /**
      * Initialize action
-     *
-     * @return void
      */
     protected function initializeAction()
     {
@@ -112,7 +110,6 @@ class PermissionController extends ActionController
      * Initializes view
      *
      * @param ViewInterface $view The view to be initialized
-     * @return void
      */
     protected function initializeView(ViewInterface $view)
     {
@@ -147,7 +144,6 @@ class PermissionController extends ActionController
     /**
      * Registers the Icons into the docheader
      *
-     * @return void
      * @throws \InvalidArgumentException
      */
     protected function registerDocHeaderButtons()
@@ -175,7 +171,7 @@ class PermissionController extends ActionController
                 ->setHref($closeUrl)
                 ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.closeDoc'))
                 ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon(
-                    'actions-document-close',
+                    'actions-close',
                     Icon::SIZE_SMALL
                 ));
             $buttonBar->addButton($closeButton);
@@ -204,8 +200,6 @@ class PermissionController extends ActionController
 
     /**
      * Index action
-     *
-     * @return void
      */
     public function indexAction()
     {
@@ -271,8 +265,6 @@ class PermissionController extends ActionController
 
     /**
      * Edit action
-     *
-     * @return void
      */
     public function editAction()
     {
@@ -321,7 +313,6 @@ class PermissionController extends ActionController
      *
      * @param array $data
      * @param array $mirror
-     * @return void
      */
     protected function updateAction(array $data, array $mirror)
     {

@@ -122,7 +122,7 @@ class ReferenceIndex
      * @var int
      * @see updateRefIndexTable()
      */
-    public $hashVersion = 1;
+    public $hashVersion = 2;
 
     /**
      * Current workspace id
@@ -209,8 +209,8 @@ class ReferenceIndex
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('sys_refindex');
 
-        // Get current index from Database with hash as index using $uidIndexField
-        // no restrictions are needed, since sys_refindex is not a TCA table
+        // Get current index from database with hash as index using $uidIndexField
+        // No restrictions are needed, since sys_refindex is not a TCA table
         $queryBuilder = $connection->createQueryBuilder();
         $queryBuilder->getRestrictions()->removeAll();
         $queryResult = $queryBuilder->select('*')->from('sys_refindex')->where(
@@ -227,7 +227,19 @@ class ReferenceIndex
         }
 
         // If the table has fields which could contain relations and the record does exist (including deleted-flagged)
-        if ($tableRelationFields !== '' && BackendUtility::getRecordRaw($tableName, 'uid=' . (int)$uid, 'uid')) {
+        $queryBuilder = $connection->createQueryBuilder();
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $exists = $queryBuilder
+            ->select('uid')
+            ->from($tableName)
+            ->where(
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT))
+            )
+            ->execute()
+            ->fetch();
+
+        if ($tableRelationFields !== '' && $exists) {
             // Then, get relations:
             $relations = $this->generateRefIndexData($tableName, $uid);
             if (is_array($relations)) {
@@ -236,14 +248,23 @@ class ReferenceIndex
                     if (!is_array($relation)) {
                         continue;
                     }
-                    $relation['hash'] = md5(implode('///', $relation) . '///' . $this->hashVersion);
-                    // First, check if already indexed and if so, unset that row (so in the end we know which rows to remove!)
+
+                    // Exclude sorting from the list of hashed fields as generateRefIndexData()
+                    // can generate arbitrary sorting values
+                    // @see createEntryData_dbRels and createEntryData_fileRels
+                    $relation['hash'] = md5(
+                        implode('///', array_diff_key($relation, ['sorting' => true]))
+                        . '///'
+                        . $this->hashVersion
+                    );
+
+                    // First, check if already indexed and if so, unset that row
+                    // (so in the end we know which rows to remove!)
                     if (isset($currentRelations[$relation['hash']])) {
                         unset($currentRelations[$relation['hash']]);
                         $result['keptNodes']++;
                         $relation['_ACTION'] = 'KEPT';
                     } else {
-                        // If new, add it:
                         if (!$testOnly) {
                             $connection->insert('sys_refindex', $relation);
                         }
@@ -308,7 +329,7 @@ class ReferenceIndex
 
         // Return if there are no fields which could contain relations
         if ($tableRelationFields === '') {
-            return $this->relations;
+            return array_filter($this->relations);
         }
 
         $deleteField = $GLOBALS['TCA'][$tableName]['ctrl']['delete'];
@@ -323,7 +344,18 @@ class ReferenceIndex
         }
 
         // Get raw record from DB
-        $record = BackendUtility::getRecordRaw($tableName, 'uid=' . (int)$uid, $selectFields);
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($tableName);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $record = $queryBuilder
+            ->select(...explode(',', $selectFields))
+            ->from($tableName)
+            ->where(
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT))
+            )
+            ->execute()
+            ->fetch();
+
         if (!is_array($record)) {
             return null;
         }
@@ -374,7 +406,7 @@ class ReferenceIndex
             }
         }
 
-        return $this->relations;
+        return array_filter($this->relations);
     }
 
     /**
@@ -392,16 +424,19 @@ class ReferenceIndex
      * @param int $sort The sorting order of references if many (the "group" or "select" TCA types). -1 if no sorting order is specified.
      * @param string $softref_key If the reference is a soft reference, this is the soft reference parser key. Otherwise empty.
      * @param string $softref_id Soft reference ID for key. Might be useful for replace operations.
-     * @return array Array record to insert into table.
+     * @return array|null Array record to insert into table.
      */
     public function createEntryData($table, $uid, $field, $flexPointer, $deleted, $ref_table, $ref_uid, $ref_string = '', $sort = -1, $softref_key = '', $softref_id = '')
     {
-        if (BackendUtility::isTableWorkspaceEnabled($table)) {
+        if ($this->getWorkspaceId() > 0 && BackendUtility::isTableWorkspaceEnabled($table)) {
             $element = BackendUtility::getRecord($table, $uid, 't3ver_wsid');
-            if ($element !== null && isset($element['t3ver_wsid']) && (int)$element['t3ver_wsid'] !== $this->getWorkspaceId()) {
-                //The given Element is ws-enabled but doesn't live in the selected workspace
-                // => don't add index as it's not actually there
-                return false;
+            if ($element !== null
+                && isset($element['t3ver_wsid'])
+                && (int)$element['t3ver_wsid'] !== $this->getWorkspaceId()
+            ) {
+                // The given element is ws-enabled but doesn't live in the selected workspace
+                // => don't add to index as it's not actually there
+                return null;
             }
         }
         return [
@@ -429,7 +464,6 @@ class ReferenceIndex
      * @param string $flexPointer Pointer to location inside FlexForm structure where reference is located in [field]
      * @param int $deleted Whether record is deleted-flagged or not
      * @param array $items Data array with database relations (table/id)
-     * @return void
      */
     public function createEntryData_dbRels($table, $uid, $fieldName, $flexPointer, $deleted, $items)
     {
@@ -447,7 +481,6 @@ class ReferenceIndex
      * @param string $flexPointer Pointer to location inside FlexForm structure where reference is located in [field]
      * @param int $deleted Whether record is deleted-flagged or not
      * @param array $items Data array with file relations
-     * @return void
      */
     public function createEntryData_fileRels($table, $uid, $fieldName, $flexPointer, $deleted, $items)
     {
@@ -469,7 +502,6 @@ class ReferenceIndex
      * @param string $flexPointer Pointer to location inside FlexForm structure
      * @param int $deleted
      * @param array $keys Data array with soft reference keys
-     * @return void
      */
     public function createEntryData_softreferences($table, $uid, $fieldName, $flexPointer, $deleted, $keys)
     {
@@ -625,7 +657,6 @@ class ReferenceIndex
      * @param array $PA Additional configuration used in calling function
      * @param string $structurePath Path of value in DS structure
      * @param object $parentObject Object reference to caller (unused)
-     * @return void
      * @see DataHandler::checkValue_flex_procInData_travDS(),FlexFormTools::traverseFlexFormXMLData()
      */
     public function getRelations_flexFormCallBack($dsArr, $dataValue, $PA, $structurePath, $parentObject)

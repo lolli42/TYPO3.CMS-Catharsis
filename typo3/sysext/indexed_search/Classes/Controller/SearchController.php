@@ -146,7 +146,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     protected $enableMetaphoneSearch = false;
 
     /**
-     * @var \TYPO3\CMS\Extbase\Service\TypoScriptService
+     * @var \TYPO3\CMS\Core\TypoScript\TypoScriptService
      */
     protected $typoScriptService;
 
@@ -156,9 +156,9 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     protected $charsetConverter;
 
     /**
-     * @param \TYPO3\CMS\Extbase\Service\TypoScriptService $typoScriptService
+     * @param \TYPO3\CMS\Core\TypoScript\TypoScriptService $typoScriptService
      */
-    public function injectTypoScriptService(\TYPO3\CMS\Extbase\Service\TypoScriptService $typoScriptService)
+    public function injectTypoScriptService(\TYPO3\CMS\Core\TypoScript\TypoScriptService $typoScriptService)
     {
         $this->typoScriptService = $typoScriptService;
     }
@@ -243,7 +243,6 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * Performs the search, the display and writing stats
      *
      * @param array $search the search parameters, an associative array
-     * @return void
      * @ignorevalidation $search
      */
     public function searchAction($search = [])
@@ -799,7 +798,6 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * @param array $searchWords Search Word array
      * @param int $count Number of hits
      * @param int $pt Milliseconds the search took
-     * @return void
      */
     protected function writeSearchStat($searchParams, $searchWords, $count, $pt)
     {
@@ -934,7 +932,6 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * Sort options about the search form
      *
      * @param array $search The search data / params
-     * @return void
      * @ignorevalidation $search
      */
     public function formAction($search = [])
@@ -1302,7 +1299,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      * @param int $pageUid Page id
      * @param string $linkText Title to link (must already be escaped for HTML output)
      * @param array $row Result row
-     * @param array $markUpSwParams Additional parameters for marking up seach words
+     * @param array $markUpSwParams Additional parameters for marking up search words
      * @return string <A> tag wrapped title string.
      * @todo make use of the UriBuilder
      */
@@ -1452,8 +1449,6 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     /**
      * simple function to initialize possible external parsers
      * feeds the $this->externalParsers array
-     *
-     * @return void
      */
     protected function initializeExternalParsers()
     {

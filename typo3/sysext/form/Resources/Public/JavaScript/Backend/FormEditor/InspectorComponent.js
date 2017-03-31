@@ -60,12 +60,13 @@ define(['jquery',
             domElementDataAttributeValues: {
                 collapse: 'actions-view-table-expand',
                 editorControlsInputGroup: 'inspectorEditorControlsGroup',
+                editorWrapper: 'editorWrapper',
                 editorControlsWrapper: 'inspectorEditorControlsWrapper',
                 formElementHeaderEditor: 'inspectorFormElementHeaderEditor',
                 formElementSelectorControlsWrapper: 'inspectorEditorFormElementSelectorControlsWrapper',
                 formElementSelectorSplitButtonContainer: 'inspectorEditorFormElementSelectorSplitButtonContainer',
                 formElementSelectorSplitButtonListContainer: 'inspectorEditorFormElementSelectorSplitButtonListContainer',
-                iconNotAvailable: 'actions-message-error-close',
+                iconNotAvailable: 'actions-close',
                 iconPage: 'apps-pagetree-page-default',
                 iconTtContent: 'mimetypes-x-content-text',
                 inspector: 'inspector',
@@ -78,6 +79,7 @@ define(['jquery',
                 'Inspector-RequiredValidatorEditor': 'Inspector-RequiredValidatorEditor',
                 'Inspector-SingleSelectEditor': 'Inspector-SingleSelectEditor',
                 'Inspector-MultiSelectEditor': 'Inspector-MultiSelectEditor',
+                'Inspector-GridColumnViewPortConfigurationEditor': 'Inspector-GridColumnViewPortConfigurationEditor',
                 'Inspector-TextareaEditor': 'Inspector-TextareaEditor',
                 'Inspector-TextEditor': 'Inspector-TextEditor',
                 'Inspector-Typo3WinBrowserEditor': 'Inspector-Typo3WinBrowserEditor',
@@ -92,7 +94,8 @@ define(['jquery',
                 propertyGridEditorRowItem: 'rowItem',
                 propertyGridEditorSelectValue: 'selectValue',
                 propertyGridEditorSortRow: 'sortRow',
-                propertyGridEditorValue: 'value'
+                propertyGridEditorValue: 'value',
+                viewportButton: 'viewportButton'
             },
             domElementIdNames: {
                 finisherPrefix: 't3-form-inspector-finishers-',
@@ -310,6 +313,14 @@ define(['jquery',
                         collectionName
                     );
                     break;
+                case 'Inspector-GridColumnViewPortConfigurationEditor':
+                    renderGridColumnViewPortConfigurationEditor(
+                        editorConfiguration,
+                        editorHtml,
+                        collectionElementIdentifier,
+                        collectionName
+                    );
+                    break;
                 case 'Inspector-PropertyGridEditor':
                     renderPropertyGridEditor(
                         editorConfiguration,
@@ -509,6 +520,16 @@ define(['jquery',
             });
 
             getCurrentlySelectedFormElement().set(propertyPathPrefix + propertyPath, newPropertyData);
+        };
+
+        /**
+         * @private
+         *
+         * @param object
+         * @return object
+         */
+        function _getEditorWrapperDomElement(editorDomElement) {
+            return $(getHelper().getDomElementDataIdentifierSelector('editorWrapper'), $(editorDomElement));
         };
 
         /**
@@ -1035,7 +1056,7 @@ define(['jquery',
          * @throws 1475421056
          */
         function renderTextEditor(editorConfiguration, editorHtml, collectionElementIdentifier, collectionName) {
-            var propertyPath, propertyData;
+            var compatibilityPropertyData, compatibilityPropertyPath, propertyData, propertyPath;
             assert(
                 'object' === $.type(editorConfiguration),
                 'Invalid parameter "editorConfiguration"',
@@ -1077,6 +1098,22 @@ define(['jquery',
             );
             propertyData = getCurrentlySelectedFormElement().get(propertyPath);
 
+            if (
+                getUtility().isNonEmptyString(editorConfiguration['compatibilityPropertyPath'])
+                && getUtility().isUndefinedOrNull(propertyData)
+            ) {
+                compatibilityPropertyPath = getFormEditorApp().buildPropertyPath(
+                    editorConfiguration['compatibilityPropertyPath'],
+                    collectionElementIdentifier,
+                    collectionName
+                );
+                compatibilityPropertyData = getCurrentlySelectedFormElement().get(compatibilityPropertyPath);
+
+                getCurrentlySelectedFormElement().set(propertyPath, compatibilityPropertyData, true);
+                getCurrentlySelectedFormElement().unset(compatibilityPropertyPath, true);
+                propertyData = compatibilityPropertyData;
+            }
+
             _validateCollectionElement(propertyPath, editorHtml);
 
             getHelper().getTemplatePropertyDomElement('propertyPath', editorHtml).val(propertyData);
@@ -1084,8 +1121,30 @@ define(['jquery',
             renderFormElementSelectorEditorAddition(editorConfiguration, editorHtml, propertyPath);
 
             getHelper().getTemplatePropertyDomElement('propertyPath', editorHtml).on('keyup paste', function() {
-                getCurrentlySelectedFormElement().set(propertyPath, $(this).val());
+                if (
+                    !!editorConfiguration['doNotSetIfPropertyValueIsEmpty']
+                    && !getUtility().isNonEmptyString($(this).val())
+                ) {
+                    getCurrentlySelectedFormElement().unset(propertyPath);
+                } else {
+                    getCurrentlySelectedFormElement().set(propertyPath, $(this).val());
+                }
                 _validateCollectionElement(propertyPath, editorHtml);
+                if (
+                    !getUtility().isUndefinedOrNull(editorConfiguration['additionalElementPropertyPaths'])
+                    && 'array' === $.type(editorConfiguration['additionalElementPropertyPaths'])
+                ) {
+                    for (var i = 0, len = editorConfiguration['additionalElementPropertyPaths'].length; i < len; ++i) {
+                        if (
+                            !!editorConfiguration['doNotSetIfPropertyValueIsEmpty']
+                            && !getUtility().isNonEmptyString($(this).val())
+                        ) {
+                            getCurrentlySelectedFormElement().unset(editorConfiguration['additionalElementPropertyPaths'][i]);
+                        } else {
+                            getCurrentlySelectedFormElement().set(editorConfiguration['additionalElementPropertyPaths'][i], $(this).val());
+                        }
+                    }
+                }
             });
         };
 
@@ -1251,6 +1310,153 @@ define(['jquery',
 
                 getCurrentlySelectedFormElement().set(propertyPath, selectValues);
             });
+        };
+
+        /**
+         * @public
+         *
+         * @param object editorConfiguration
+         * @param object editorHtml
+         * @param string collectionElementIdentifier
+         * @param string collectionName
+         * @return void
+         * @throws 1489528242
+         * @throws 1489528243
+         * @throws 1489528244
+         * @throws 1489528245
+         * @throws 1489528246
+         * @throws 1489528247
+         */
+        function renderGridColumnViewPortConfigurationEditor(editorConfiguration, editorHtml, collectionElementIdentifier, collectionName) {
+            var editorControlsWrapper, initNumbersOfColumnsField, numbersOfColumnsTemplate, selectElement, viewportButtonTemplate;
+            assert(
+                'object' === $.type(editorConfiguration),
+                'Invalid parameter "editorConfiguration"',
+                1489528242
+            );
+            assert(
+                'object' === $.type(editorHtml),
+                'Invalid parameter "editorHtml"',
+                1489528243
+            );
+            assert(
+                getUtility().isNonEmptyString(editorConfiguration['label']),
+                'Invalid configuration "label"',
+                1489528244
+            );
+            assert(
+                'array' === $.type(editorConfiguration['configurationOptions']['viewPorts']),
+                'Invalid configurationOptions "viewPorts"',
+                1489528245
+            );
+            assert(
+                !getUtility().isUndefinedOrNull(editorConfiguration['configurationOptions']['numbersOfColumnsToUse']['label']),
+                'Invalid configurationOptions "numbersOfColumnsToUse"',
+                1489528246
+            );
+            assert(
+                !getUtility().isUndefinedOrNull(editorConfiguration['configurationOptions']['numbersOfColumnsToUse']['propertyPath']),
+                'Invalid configuration "selectOptions"',
+                1489528247
+            );
+
+            if (!getFormElementDefinition(getCurrentlySelectedFormElement().get('__parentRenderable'), '_isGridRowFormElement')) {
+                editorHtml.remove();
+                return;
+            }
+
+            getHelper()
+                .getTemplatePropertyDomElement('label', editorHtml)
+                .append(editorConfiguration['label']);
+
+
+            viewportButtonTemplate = $(getHelper()
+                .getDomElementDataIdentifierSelector('viewportButton'), $(editorHtml))
+                .clone();
+
+            $(getHelper()
+                .getDomElementDataIdentifierSelector('viewportButton'), $(editorHtml))
+                .remove();
+
+            numbersOfColumnsTemplate = getHelper()
+                .getTemplatePropertyDomElement('numbersOfColumnsToUse', $(editorHtml))
+                .clone();
+
+            getHelper()
+                .getTemplatePropertyDomElement('numbersOfColumnsToUse', $(editorHtml))
+                .remove();
+
+            editorControlsWrapper = _getEditorControlsWrapperDomElement(editorHtml);
+
+            initNumbersOfColumnsField = function(element) {
+                var numbersOfColumnsTemplateClone, propertyPath;
+
+                getHelper().getTemplatePropertyDomElement('numbersOfColumnsToUse', $(editorHtml))
+                    .off()
+                    .empty()
+                    .remove();
+
+                numbersOfColumnsTemplateClone = $(numbersOfColumnsTemplate).clone(true, true);
+                _getEditorWrapperDomElement(editorHtml).after(numbersOfColumnsTemplateClone);
+
+                $('input', numbersOfColumnsTemplateClone).focus();
+
+                getHelper()
+                    .getTemplatePropertyDomElement('numbersOfColumnsToUse-label', numbersOfColumnsTemplateClone)
+                    .append(
+                        editorConfiguration['configurationOptions']['numbersOfColumnsToUse']['label']
+                            .replace('{@viewPortLabel}', element.data('viewPortLabel'))
+                    );
+
+                getHelper()
+                    .getTemplatePropertyDomElement('numbersOfColumnsToUse-fieldExplanationText', numbersOfColumnsTemplateClone)
+                    .append(editorConfiguration['configurationOptions']['numbersOfColumnsToUse']['fieldExplanationText']);
+
+                propertyPath = editorConfiguration['configurationOptions']['numbersOfColumnsToUse']['propertyPath']
+                    .replace('{@viewPortIdentifier}', element.data('viewPortIdentifier'));
+
+                getHelper()
+                    .getTemplatePropertyDomElement('numbersOfColumnsToUse-propertyPath', numbersOfColumnsTemplateClone)
+                    .val(getCurrentlySelectedFormElement().get(propertyPath));
+
+                getHelper().getTemplatePropertyDomElement('numbersOfColumnsToUse-propertyPath', numbersOfColumnsTemplateClone).on('keyup paste change', function() {
+                    var that = $(this);
+                    if (!$.isNumeric(that.val())) {
+                        that.val('');
+                    } else {
+                        getCurrentlySelectedFormElement().set(propertyPath, that.val());
+                    }
+                });
+            };
+
+            for (var i = 0, len = editorConfiguration['configurationOptions']['viewPorts'].length; i < len; ++i) {
+                var numbersOfColumnsTemplateClone, viewportButtonTemplateClone, viewPortIdentifier, viewPortLabel;
+
+                viewPortIdentifier = editorConfiguration['configurationOptions']['viewPorts'][i]['viewPortIdentifier'];
+                viewPortLabel = editorConfiguration['configurationOptions']['viewPorts'][i]['label'];
+
+                viewportButtonTemplateClone = $(viewportButtonTemplate).clone(true, true);
+                viewportButtonTemplateClone.text(viewPortLabel);
+                viewportButtonTemplateClone.data('viewPortIdentifier', viewPortIdentifier);
+                viewportButtonTemplateClone.data('viewPortLabel', viewPortLabel);
+                editorControlsWrapper.append(viewportButtonTemplateClone);
+
+                if (i === (len - 1)) {
+                    numbersOfColumnsTemplateClone = $(numbersOfColumnsTemplate).clone(true, true);
+                    _getEditorWrapperDomElement(editorHtml).after(numbersOfColumnsTemplateClone);
+                    initNumbersOfColumnsField(viewportButtonTemplateClone);
+                    viewportButtonTemplateClone.addClass(getHelper().getDomElementClassName('active'));
+                }
+
+                $('button', editorControlsWrapper).on('click', function() {
+                    var that = $(this);
+
+                    $('button', editorControlsWrapper).removeClass(getHelper().getDomElementClassName('active'));
+                    that.addClass(getHelper().getDomElementClassName('active'));
+
+                    initNumbersOfColumnsField(that);
+                });
+            }
         };
 
         /**
@@ -1507,9 +1713,11 @@ define(['jquery',
          * @throws 1475417094
          * @throws 1475417095
          * @throws 1475417096
+         * @throws 1489319751
+         * @throws 1489319752
          */
         function renderRequiredValidatorEditor(editorConfiguration, editorHtml, collectionElementIdentifier, collectionName) {
-            var validatorIdentifier;
+            var propertyPath, propertyValue, validatorIdentifier;
             assert(
                 'object' === $.type(editorConfiguration),
                 'Invalid parameter "editorConfiguration"',
@@ -1530,12 +1738,27 @@ define(['jquery',
                 'Invalid configuration "label"',
                 1475417096
             );
+            assert(
+                getUtility().isNonEmptyString(editorConfiguration['propertyPath']),
+                'Invalid configuration "propertyPath"',
+                1489319751
+            );
+            assert(
+                getUtility().isNonEmptyString(editorConfiguration['propertyValue']),
+                'Invalid configuration "propertyValue"',
+                1489319752
+            );
 
             validatorIdentifier = editorConfiguration['validatorIdentifier'];
             getHelper().getTemplatePropertyDomElement('label', editorHtml).append(editorConfiguration['label']);
 
+            propertyPath = getFormEditorApp()
+                .buildPropertyPath(editorConfiguration['propertyPath'], collectionElementIdentifier, collectionName);
+            propertyValue = editorConfiguration['propertyValue'];
+
             if (-1 !== getFormEditorApp().getIndexFromPropertyCollectionElement(validatorIdentifier, 'validators')) {
                 $('input[type="checkbox"]', $(editorHtml)).prop('checked', true);
+                getCurrentlySelectedFormElement().set(propertyPath, propertyValue);
             }
 
             $('input[type="checkbox"]', $(editorHtml)).on('change', function() {
@@ -1544,11 +1767,13 @@ define(['jquery',
                         'view/inspector/collectionElement/new/selected',
                         [validatorIdentifier, 'validators']
                     );
+                    getCurrentlySelectedFormElement().set(propertyPath, propertyValue);
                 } else {
                     getPublisherSubscriber().publish(
                         'view/inspector/removeCollectionElement/perform',
                         [validatorIdentifier, 'validators']
-                    );                 
+                    );
+                    getCurrentlySelectedFormElement().unset(propertyPath);
                 }
             });
         };

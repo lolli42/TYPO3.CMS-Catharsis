@@ -36,7 +36,7 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * TYPICAL SETUP OF A BACKEND MODULE:
  *
- * PrototypeController EXTENDS THE CLASS \TYPO3\CMS\Backend\Module\BaseScriptClass with a main() and printContent() function:
+ * PrototypeController EXTENDS THE CLASS \TYPO3\CMS\Backend\Module\BaseScriptClass with a main() function:
  *
  * namespace Vendor\Prototype\Controller;
  *
@@ -54,10 +54,6 @@ use TYPO3\CMS\Lang\LanguageService;
  * 	... AND OF COURSE A LOT OF OTHER THINGS GOES ON - LIKE PUTTING CONTENT INTO $this->content
  * 	$this->content='';
  * }
- * PRINT CONTENT - DONE AS THE LAST THING
- * public function printContent() {
- * 	echo $this->content;
- * }
  *
  * MAKE INSTANCE OF THE SCRIPT CLASS AND CALL init()
  * $GLOBALS['SOBE'] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\Vendor\Prototype\Controller\PrototypeController::class);
@@ -69,8 +65,6 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * THEN WE CALL THE main() METHOD AND THIS SHOULD SPARK THE CREATION OF THE MODULE OUTPUT.
  * $GLOBALS['SOBE']->main();
- * FINALLY THE printContent() FUNCTION WILL OUTPUT THE ACCUMULATED CONTENT
- * $GLOBALS['SOBE']->printContent();
  */
 class BaseScriptClass
 {
@@ -195,7 +189,6 @@ class BaseScriptClass
     /**
      * Initializes the backend module by setting internal variables, initializing the menu.
      *
-     * @return void
      * @see menuConfig()
      */
     public function init()
@@ -216,7 +209,6 @@ class BaseScriptClass
      * Then MOD_SETTINGS array is cleaned up (see \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData()) so it contains only valid values. It's also updated with any SET[] values submitted.
      * Also loads the modTSconfig internal variable.
      *
-     * @return void
      * @see init(), $MOD_MENU, $MOD_SETTINGS, \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleData(), mergeExternalItems()
      */
     public function menuConfig()
@@ -256,7 +248,6 @@ class BaseScriptClass
      *
      * @param string $MM_key The key to MOD_MENU for which to fetch configuration. 'function' is default since it is first and foremost used to get information per "extension object" (I think that is what its called)
      * @param string $MS_value The value-key to fetch from the config array. If NULL (default) MOD_SETTINGS[$MM_key] will be used. This is useful if you want to force another function than the one defined in MOD_SETTINGS[function]. Call this in init() function of your Script Class: handleExternalFunctionValue('function', $forcedSubModKey)
-     * @return void
      * @see getExternalItemConfig(), init()
      */
     public function handleExternalFunctionValue($MM_key = 'function', $MS_value = null)
@@ -291,7 +282,6 @@ class BaseScriptClass
      * The array $this->extClassConf is set in handleExternalFunctionValue() based on the value of MOD_SETTINGS[function]
      * If an instance is created it is initiated with $this passed as value and $this->extClassConf as second argument. Further the $this->MOD_SETTING is cleaned up again after calling the init function.
      *
-     * @return void
      * @see handleExternalFunctionValue(), \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::insertModuleFunction(), $extObj
      */
     public function checkExtObj()
@@ -306,8 +296,6 @@ class BaseScriptClass
 
     /**
      * Calls the checkExtObj function in sub module if present.
-     *
-     * @return void
      */
     public function checkSubExtObj()
     {
@@ -319,8 +307,6 @@ class BaseScriptClass
     /**
      * Calls the 'header' function inside the "Function menu module" if present.
      * A header function might be needed to add JavaScript or other stuff in the head. This can't be done in the main function because the head is already written.
-     *
-     * @return void
      */
     public function extObjHeader()
     {
@@ -331,8 +317,6 @@ class BaseScriptClass
 
     /**
      * Calls the 'main' function inside the "Function menu module" if present
-     *
-     * @return void
      */
     public function extObjContent()
     {

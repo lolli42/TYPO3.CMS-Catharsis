@@ -46,7 +46,6 @@ class Person extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
 
     /**
      * Constructs a new Person
-     *
      */
     public function __construct($firstname, $lastname, $email)
     {
@@ -59,7 +58,6 @@ class Person extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
      * Sets this persons's firstname
      *
      * @param string $firstname The person's firstname
-     * @return void
      */
     public function setFirstname($firstname)
     {
@@ -80,7 +78,6 @@ class Person extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
      * Sets this persons's lastname
      *
      * @param string $lastname The person's lastname
-     * @return void
      */
     public function setLastname($lastname)
     {
@@ -108,10 +105,9 @@ class Person extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
     }
 
     /**
-     * Sets this persons's email adress
+     * Sets this persons's email address
      *
-     * @param string $email The person's email adress
-     * @return void
+     * @param string $email The person's email address
      */
     public function setEmail($email)
     {

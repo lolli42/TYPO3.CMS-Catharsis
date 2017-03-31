@@ -1,4 +1,5 @@
 # Include setup
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/Configuration/TypoScript/Helper/ContentElement.txt">
 <INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/Configuration/TypoScript/Helper/ParseFunc.txt">
 <INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/Configuration/TypoScript/Helper/StandardHeader.txt">
 
@@ -154,3 +155,6 @@ tt_content.stdWrap {
 <INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/Configuration/TypoScript/ContentElement/MenuRelatedPages.txt">
 <INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/Configuration/TypoScript/ContentElement/MenuSitemap.txt">
 <INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/Configuration/TypoScript/ContentElement/MenuSitemapPages.txt">
+
+# Extensions
+<INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/Configuration/TypoScript/Extension/FrontendLogin.txt">

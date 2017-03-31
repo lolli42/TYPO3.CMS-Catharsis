@@ -208,6 +208,12 @@ class EditDocumentController extends AbstractModule
     public $returnEditConf;
 
     /**
+     * @var string
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
+     */
+    public $localizationMode;
+
+    /**
      * Workspace used for the editing action.
      *
      * @var NULL|int
@@ -434,8 +440,6 @@ class EditDocumentController extends AbstractModule
 
     /**
      * First initialization.
-     *
-     * @return void
      */
     public function preInit()
     {
@@ -451,7 +455,6 @@ class EditDocumentController extends AbstractModule
         $this->closeDoc = (int)GeneralUtility::_GP('closeDoc');
         $this->doSave = GeneralUtility::_GP('doSave');
         $this->returnEditConf = GeneralUtility::_GP('returnEditConf');
-        $this->localizationMode = GeneralUtility::_GP('localizationMode');
         $this->workspace = GeneralUtility::_GP('workspace');
         $this->uc = GeneralUtility::_GP('uc');
         // Setting override values as default if defVals does not exist.
@@ -509,8 +512,6 @@ class EditDocumentController extends AbstractModule
 
     /**
      * Do processing of data, submitting it to DataHandler.
-     *
-     * @return void
      */
     public function processData()
     {
@@ -702,8 +703,6 @@ class EditDocumentController extends AbstractModule
 
     /**
      * Initialize the normal module operation
-     *
-     * @return void
      */
     public function init()
     {
@@ -714,7 +713,7 @@ class EditDocumentController extends AbstractModule
         $this->viewUrl = GeneralUtility::_GP('viewUrl');
         $this->recTitle = GeneralUtility::_GP('recTitle');
         $this->noView = GeneralUtility::_GP('noView');
-        $this->perms_clause = $beUser->getPagePermsClause(1);
+        $this->perms_clause = $beUser->getPagePermsClause(Permission::PAGE_SHOW);
         // Set other internal variables:
         $this->R_URL_getvars['returnUrl'] = $this->retUrl;
         $this->R_URI = $this->R_URL_parts['path'] . '?' . ltrim(GeneralUtility::implodeArrayForUrl(
@@ -742,28 +741,6 @@ class EditDocumentController extends AbstractModule
 '
         );
         $t3Configuration = [];
-
-        if (ExtensionManagementUtility::isLoaded('feedit') && (int)GeneralUtility::_GP('feEdit') === 1) {
-            // We have to load some locallang strings and push them into TYPO3.LLL if this request was
-            // triggered by feedit. Originally, this object is fed by BackendController which is not
-            // called here. This block of code is intended to be removed at a later point again.
-            $lang = $this->getLanguageService();
-            $coreLabels = [
-                'csh_tooltip_loading' => $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:csh_tooltip_loading')
-            ];
-            $generatedLabels = [];
-            $generatedLabels['core'] = $coreLabels;
-            $code = 'TYPO3.LLL = ' . json_encode($generatedLabels) . ';';
-            $filePath = 'typo3temp/assets/js/backend-' . sha1($code) . '.js';
-            if (!file_exists(PATH_site . $filePath)) {
-                // writeFileToTypo3tempDir() returns NULL on success (please double-read!)
-                $error = GeneralUtility::writeFileToTypo3tempDir(PATH_site . $filePath, $code);
-                if ($error !== null) {
-                    throw new \RuntimeException('Locallang JS file could not be written to ' . $filePath . '. Reason: ' . $error, 1446118286);
-                }
-            }
-            $pageRenderer->addJsFile('../' . $filePath);
-        }
 
         $javascript = '
 			TYPO3.configuration = ' . json_encode($t3Configuration) . ';
@@ -949,8 +926,6 @@ class EditDocumentController extends AbstractModule
 
     /**
      * Main module operation
-     *
-     * @return void
      */
     public function main()
     {
@@ -1296,7 +1271,7 @@ class EditDocumentController extends AbstractModule
             ->setClasses('t3js-editform-close')
             ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.closeDoc'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
-                'actions-document-close',
+                'actions-close',
                 Icon::SIZE_SMALL
             ));
         $buttonBar->addButton($closeButton);
@@ -1618,7 +1593,7 @@ class EditDocumentController extends AbstractModule
                                     'returnUrl' => $this->retUrl
                                 ]);
 
-                                if ($currentLanguage === 0) {
+                                if (array_key_exists(0, $rowsByLang)) {
                                     $href = BackendUtility::getLinkToDataHandlerAction(
                                         '&cmd[' . $table . '][' . $rowsByLang[0]['uid'] . '][localize]=' . $lang['uid'],
                                         $redirectUrl
@@ -1653,7 +1628,6 @@ class EditDocumentController extends AbstractModule
      * Redirects to FormEngine with new parameters to edit a just created localized record
      *
      * @param string $justLocalized String passed by GET &justLocalized=
-     * @return void
      */
     public function localizationRedirect($justLocalized)
     {
@@ -1769,7 +1743,6 @@ class EditDocumentController extends AbstractModule
      * Fix $this->editconf if versioning applies to any of the records
      *
      * @param array|bool $mapArray Mapping between old and new ids if auto-versioning has been performed.
-     * @return void
      */
     public function fixWSversioningInEditConf($mapArray = false)
     {
@@ -1862,7 +1835,6 @@ class EditDocumentController extends AbstractModule
     /**
      * Populates the variables $this->storeArray, $this->storeUrl, $this->storeUrlMd5
      *
-     * @return void
      * @see makeDocSel()
      */
     public function compileStoreDat()
@@ -1899,7 +1871,6 @@ class EditDocumentController extends AbstractModule
      * - other values will call setDocument with ->retUrl
      *
      * @param int $mode the close mode: one of self::DOCUMENT_CLOSE_MODE_*
-     * @return void
      */
     public function closeDocument($mode = self::DOCUMENT_CLOSE_MODE_DEFAULT)
     {
@@ -1950,7 +1921,6 @@ class EditDocumentController extends AbstractModule
      *
      * @param string $currentDocFromHandlerMD5 Pointer to the document in the docHandler array
      * @param string $retUrl Alternative/Default retUrl
-     * @return void
      */
     public function setDocument($currentDocFromHandlerMD5 = '', $retUrl = '')
     {

@@ -60,8 +60,6 @@ class IfHasRoleViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractCondi
      * Initializes the "role" argument.
      * Renders <f:then> child if the current logged in FE user belongs to the specified role (aka usergroup)
      * otherwise renders <f:else> child.
-     *
-     * @return void
      */
     public function initializeArguments()
     {
@@ -69,7 +67,7 @@ class IfHasRoleViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractCondi
     }
 
     /**
-     * This method decides if the condition is TRUE or FALSE. It can be overriden in extending viewhelpers to adjust functionality.
+     * This method decides if the condition is TRUE or FALSE. It can be overridden in extending viewhelpers to adjust functionality.
      *
      * @param array $arguments ViewHelper arguments to evaluate the condition for this ViewHelper, allows for flexiblity in overriding this method.
      * @return bool

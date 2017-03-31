@@ -95,6 +95,7 @@ class AdministrationController extends ActionController
             }
             $this->generateMenu();
             $this->view->getModuleTemplate()->setFlashMessageQueue($this->controllerContext->getFlashMessageQueue());
+            $view->assign('extensionConfiguration', $this->indexerConfig);
         }
     }
 
@@ -145,8 +146,6 @@ class AdministrationController extends ActionController
 
     /**
      * Function will be called before every other action
-     *
-     * @return void
      */
     public function initializeAction()
     {
@@ -199,7 +198,6 @@ class AdministrationController extends ActionController
 
     /**
      * @param \TYPO3\CMS\IndexedSearch\Domain\Repository\AdministrationRepository $administrationRepository
-     * @return void
      */
     public function injectAdministrationRepository(AdministrationRepository $administrationRepository)
     {
@@ -208,8 +206,6 @@ class AdministrationController extends ActionController
 
     /**
      * Index action contains the most important statistics
-     *
-     * @return void
      */
     public function indexAction()
     {
@@ -237,8 +233,6 @@ class AdministrationController extends ActionController
 
     /**
      * Statistics for pages
-     *
-     * @return void
      */
     public function pagesAction()
     {
@@ -247,8 +241,6 @@ class AdministrationController extends ActionController
 
     /**
      * Statistics for external documents
-     *
-     * @return void
      */
     public function externalDocumentsAction()
     {
@@ -259,7 +251,6 @@ class AdministrationController extends ActionController
      * Statistics for a given page hash
      *
      * @param int $pageHash
-     * @return void
      */
     public function statisticDetailsAction($pageHash = 0)
     {
@@ -440,7 +431,6 @@ class AdministrationController extends ActionController
      * @param int $pageId
      * @param array $stopwords
      * @param array $keywords
-     * @return void
      */
     public function saveStopwordsKeywordsAction($pageHash, $pageId, $stopwords = [], $keywords = [])
     {
@@ -461,7 +451,6 @@ class AdministrationController extends ActionController
      *
      * @param int $id
      * @param int $pageHash
-     * @return void
      */
     public function wordDetailAction($id = 0, $pageHash = 0)
     {
@@ -500,7 +489,6 @@ class AdministrationController extends ActionController
      *
      * @param int $depth
      * @param string $mode
-     * @return void
      */
     public function statisticAction($depth = 1, $mode = 'overview')
     {
@@ -532,7 +520,6 @@ class AdministrationController extends ActionController
      * @param string $id
      * @param int $depth
      * @param string $mode
-     * @return void
      */
     public function deleteIndexedItemAction($id, $depth = 1, $mode = 'overview')
     {

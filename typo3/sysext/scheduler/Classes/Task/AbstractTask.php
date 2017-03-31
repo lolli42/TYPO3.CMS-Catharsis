@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Scheduler\Task;
 
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -121,7 +122,6 @@ abstract class AbstractTask
      * This method is used to set the unique id of the task
      *
      * @param int $id Primary key (from the database record) of the scheduled task
-     * @return void
      */
     public function setTaskUid($id)
     {
@@ -182,7 +182,6 @@ abstract class AbstractTask
      * This method is used to set the disable status of the task
      *
      * @param bool $flag TRUE if task should be disabled, FALSE otherwise
-     * @return void
      */
     public function setDisabled($flag)
     {
@@ -217,7 +216,6 @@ abstract class AbstractTask
      * This method is used to set the timestamp corresponding to the next execution time of the task
      *
      * @param int $timestamp Timestamp of next execution
-     * @return void
      */
     public function setExecutionTime($timestamp)
     {
@@ -238,7 +236,6 @@ abstract class AbstractTask
      * This method is used to set the task group (uid) of the task
      *
      * @param int $taskGroup Uid of task group
-     * @return void
      */
     public function setTaskGroup($taskGroup)
     {
@@ -259,7 +256,6 @@ abstract class AbstractTask
      * This method is used to set the description of the task
      *
      * @param string $description Description
-     * @return void
      */
     public function setDescription($description)
     {
@@ -278,8 +274,6 @@ abstract class AbstractTask
 
     /**
      * Sets the internal reference to the singleton instance of the Scheduler
-     *
-     * @return void
      */
     public function setScheduler()
     {
@@ -290,8 +284,6 @@ abstract class AbstractTask
      * Unsets the internal reference to the singleton instance of the Scheduler
      * This is done before a task is serialized, so that the scheduler instance
      * is not saved to the database too
-     *
-     * @return void
      */
     public function unsetScheduler()
     {
@@ -325,7 +317,6 @@ abstract class AbstractTask
      * @param int $end The last date/time where this execution should occur (timestamp)
      * @param bool $multiple Set to FALSE if multiple executions of this task are not permitted in parallel
      * @param string $cron_cmd Used like in crontab (minute hour day month weekday)
-     * @return void
      */
     public function registerRecurringExecution($start, $interval, $end = 0, $multiple = false, $cron_cmd = '')
     {
@@ -471,7 +462,6 @@ abstract class AbstractTask
      *
      * @param int $executionID Id of the execution to remove.
      * @param \Exception $failure An exception to signal a failed execution
-     * @return void
      */
     public function unmarkExecution($executionID, \Exception $failure = null)
     {
@@ -500,8 +490,9 @@ abstract class AbstractTask
             }
             if ($failure instanceof \Exception) {
                 // Log failed execution
-                $logMessage = 'Task failed to execute successfully. Class: ' . get_class($this) . ', UID: ' . $this->taskUid . '. ' . $failure->getMessage();
-                $this->scheduler->log($logMessage, 1, $failure->getCode());
+                $logMessage = 'Task failed to execute successfully. Class: ' . get_class($this)
+                    . ', UID: ' . $this->taskUid . ', Code: ' . $failure->getCode() . ', ' . $failure->getMessage();
+                $this->scheduler->log($logMessage, 1);
                 // Do not serialize the complete exception or the trace, this can lead to huge strings > 50MB
                 $failureString = serialize([
                     'code' => $failure->getCode(),
@@ -570,8 +561,6 @@ abstract class AbstractTask
     /**
      * Stops the task, by replacing the execution object by an empty one
      * NOTE: the task still needs to be saved after that
-     *
-     * @return void
      */
     public function stop()
     {
@@ -580,8 +569,6 @@ abstract class AbstractTask
 
     /**
      * Removes the task totally from the system.
-     *
-     * @return void
      */
     public function remove()
     {
@@ -600,5 +587,27 @@ abstract class AbstractTask
             return self::TYPE_RECURRING;
         }
         return self::TYPE_SINGLE;
+    }
+
+    /**
+     * Log exception via GeneralUtility::sysLog
+     *
+     * @param \Exception $e
+     */
+    protected function logException(\Exception $e)
+    {
+        GeneralUtility::sysLog($e->getMessage(), 'scheduler', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+        $this->getLogger()->error('A Task Exception was captured: ' . $e->getMessage() . ' (' . $e->getCode() . ')', ['exception' => $e]);
+    }
+
+    /**
+     * Instantiates a logger
+     *
+     * @return \TYPO3\CMS\Core\Log\Logger
+     */
+    protected function getLogger()
+    {
+        $logManager = GeneralUtility::makeInstance(LogManager::class);
+        return $logManager->getLogger(get_class($this));
     }
 }

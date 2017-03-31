@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
@@ -420,8 +421,6 @@ abstract class AbstractMenuContentObject
      * Basically this will read the page records needed and fill in the internal $this->menuArr
      * Based on a hash of this array and some other variables the $this->result variable will be
      * loaded either from cache OR by calling the generate() method of the class to create the menu for real.
-     *
-     * @return void
      */
     public function makeMenu()
     {
@@ -519,8 +518,6 @@ abstract class AbstractMenuContentObject
      * Generates the the menu data.
      *
      * Subclasses should overwrite this method.
-     *
-     * @return void
      */
     public function generate()
     {
@@ -1216,7 +1213,6 @@ abstract class AbstractMenuContentObject
      * Analyzes the parameters to find if the link needs a cHash parameter.
      *
      * @param string $queryString
-     * @return void
      */
     protected function analyzeCacheHashRequirements($queryString)
     {
@@ -1330,11 +1326,12 @@ abstract class AbstractMenuContentObject
             // Setting a blank array if NO=1 and there are no properties.
             $this->mconf['NO.'] = [];
         }
-        $NOconf = $this->tmpl->splitConfArray($this->mconf['NO.'], $splitCount);
+        $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
+        $NOconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['NO.'], $splitCount);
         // Prepare rollOver settings, overriding normal settings
         $ROconf = [];
         if ($this->mconf['RO']) {
-            $ROconf = $this->tmpl->splitConfArray($this->mconf['RO.'], $splitCount);
+            $ROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['RO.'], $splitCount);
         }
         // Prepare IFSUB settings, overriding normal settings
         // IFSUB is TRUE if there exist submenu items to the current item
@@ -1345,9 +1342,9 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('IFSUB', $key)) {
                     // if this is the first IFSUB element, we must generate IFSUB.
                     if ($IFSUBconf === null) {
-                        $IFSUBconf = $this->tmpl->splitConfArray($this->mconf['IFSUB.'], $splitCount);
+                        $IFSUBconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['IFSUB.'], $splitCount);
                         if (!empty($this->mconf['IFSUBRO'])) {
-                            $IFSUBROconf = $this->tmpl->splitConfArray($this->mconf['IFSUBRO.'], $splitCount);
+                            $IFSUBROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['IFSUBRO.'], $splitCount);
                         }
                     }
                     // Substitute normal with ifsub
@@ -1371,10 +1368,10 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('ACT', $key)) {
                     // If this is the first 'active', we must generate ACT.
                     if ($ACTconf === null) {
-                        $ACTconf = $this->tmpl->splitConfArray($this->mconf['ACT.'], $splitCount);
+                        $ACTconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['ACT.'], $splitCount);
                         // Prepare active rollOver settings, overriding normal active settings
                         if (!empty($this->mconf['ACTRO'])) {
-                            $ACTROconf = $this->tmpl->splitConfArray($this->mconf['ACTRO.'], $splitCount);
+                            $ACTROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['ACTRO.'], $splitCount);
                         }
                     }
                     // Substitute normal with active
@@ -1399,10 +1396,10 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('ACTIFSUB', $key)) {
                     // If this is the first 'active', we must generate ACTIFSUB.
                     if ($ACTIFSUBconf === null) {
-                        $ACTIFSUBconf = $this->tmpl->splitConfArray($this->mconf['ACTIFSUB.'], $splitCount);
+                        $ACTIFSUBconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['ACTIFSUB.'], $splitCount);
                         // Prepare active rollOver settings, overriding normal active settings
                         if (!empty($this->mconf['ACTIFSUBRO'])) {
-                            $ACTIFSUBROconf = $this->tmpl->splitConfArray($this->mconf['ACTIFSUBRO.'], $splitCount);
+                            $ACTIFSUBROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['ACTIFSUBRO.'], $splitCount);
                         }
                     }
                     // Substitute normal with active
@@ -1428,9 +1425,9 @@ abstract class AbstractMenuContentObject
                     // from the other implementations as current would only exist one time and that's it
                     // (unless you use special-features of HMENU)
                     if ($CURconf === null) {
-                        $CURconf = $this->tmpl->splitConfArray($this->mconf['CUR.'], $splitCount);
+                        $CURconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['CUR.'], $splitCount);
                         if (!empty($this->mconf['CURRO'])) {
-                            $CURROconf = $this->tmpl->splitConfArray($this->mconf['CURRO.'], $splitCount);
+                            $CURROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['CURRO.'], $splitCount);
                         }
                     }
                     // Substitute normal with current
@@ -1454,10 +1451,10 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('CURIFSUB', $key)) {
                     // If this is the first 'current', we must generate CURIFSUB.
                     if ($CURIFSUBconf === null) {
-                        $CURIFSUBconf = $this->tmpl->splitConfArray($this->mconf['CURIFSUB.'], $splitCount);
+                        $CURIFSUBconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['CURIFSUB.'], $splitCount);
                         // Prepare current rollOver settings, overriding normal current settings
                         if (!empty($this->mconf['CURIFSUBRO'])) {
-                            $CURIFSUBROconf = $this->tmpl->splitConfArray($this->mconf['CURIFSUBRO.'], $splitCount);
+                            $CURIFSUBROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['CURIFSUBRO.'], $splitCount);
                         }
                     }
                     // Substitute normal with active
@@ -1481,10 +1478,10 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('USR', $key)) {
                     // if this is the first active, we must generate USR.
                     if ($USRconf === null) {
-                        $USRconf = $this->tmpl->splitConfArray($this->mconf['USR.'], $splitCount);
+                        $USRconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['USR.'], $splitCount);
                         // Prepare active rollOver settings, overriding normal active settings
                         if (!empty($this->mconf['USRRO'])) {
-                            $USRROconf = $this->tmpl->splitConfArray($this->mconf['USRRO.'], $splitCount);
+                            $USRROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['USRRO.'], $splitCount);
                         }
                     }
                     // Substitute normal with active
@@ -1507,7 +1504,7 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('SPC', $key)) {
                     // If this is the first spacer, we must generate SPC.
                     if ($SPCconf === null) {
-                        $SPCconf = $this->tmpl->splitConfArray($this->mconf['SPC.'], $splitCount);
+                        $SPCconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['SPC.'], $splitCount);
                     }
                     // Substitute normal with spacer
                     if (isset($SPCconf[$key])) {
@@ -1525,10 +1522,10 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('USERDEF1', $key)) {
                     // If this is the first active, we must generate USERDEF1.
                     if ($USERDEF1conf === null) {
-                        $USERDEF1conf = $this->tmpl->splitConfArray($this->mconf['USERDEF1.'], $splitCount);
+                        $USERDEF1conf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['USERDEF1.'], $splitCount);
                         // Prepare active rollOver settings, overriding normal active settings
                         if (!empty($this->mconf['USERDEF1RO'])) {
-                            $USERDEF1ROconf = $this->tmpl->splitConfArray($this->mconf['USERDEF1RO.'], $splitCount);
+                            $USERDEF1ROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['USERDEF1RO.'], $splitCount);
                         }
                     }
                     // Substitute normal with active
@@ -1552,10 +1549,10 @@ abstract class AbstractMenuContentObject
                 if ($this->isItemState('USERDEF2', $key)) {
                     // If this is the first active, we must generate USERDEF2.
                     if ($USERDEF2conf === null) {
-                        $USERDEF2conf = $this->tmpl->splitConfArray($this->mconf['USERDEF2.'], $splitCount);
+                        $USERDEF2conf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['USERDEF2.'], $splitCount);
                         // Prepare active rollOver settings, overriding normal active settings
                         if (!empty($this->mconf['USERDEF2RO'])) {
-                            $USERDEF2ROconf = $this->tmpl->splitConfArray($this->mconf['USERDEF2RO.'], $splitCount);
+                            $USERDEF2ROconf = $typoScriptService->explodeConfigurationForOptionSplit((array)$this->mconf['USERDEF2RO.'], $splitCount);
                         }
                     }
                     // Substitute normal with active
@@ -1701,7 +1698,7 @@ abstract class AbstractMenuContentObject
         if (preg_match('/([0-9]+[\\s])?(([0-9]+)x([0-9]+))?(:.+)?/s', $LD['target'], $matches) || $targetIsType) {
             // has type?
             if ((int)$matches[1] || $targetIsType) {
-                $LD['totalURL'] = $this->parent_cObj->URLqMark($LD['totalURL'], '&type=' . ($targetIsType ?: (int)$matches[1]));
+                $LD['totalURL'] .= (strpos($LD['totalURL'], '?') === false ? '?' : '&') . 'type=' . ($targetIsType ?: (int)$matches[1]);
                 $LD['target'] = $targetIsType ? '' : trim(substr($LD['target'], strlen($matches[1]) + 1));
             }
             // Open in popup window?
@@ -1762,7 +1759,6 @@ abstract class AbstractMenuContentObject
      * @param array $page Page array
      * @param string $mainTarget Main target value
      * @param string $typeOverride Type number override if any
-     * @return void ($LD passed by reference might be changed.)
      */
     public function changeLinksForAccessRestrictedPages(&$LD, $page, $mainTarget, $typeOverride)
     {
@@ -2050,7 +2046,6 @@ abstract class AbstractMenuContentObject
     /**
      * Creates the <A> tag parts for the current item (in $this->I, [A1] and [A2]) based on other information in this array (like $this->I['linkHREF'])
      *
-     * @return void
      * @internal
      */
     public function setATagParts()
@@ -2195,8 +2190,16 @@ abstract class AbstractMenuContentObject
             'pidInList' => $pid,
             'orderBy' => $altSortField,
             'languageField' => 'sys_language_uid',
-            'where' => $useColPos >= 0 ? 'colPos=' . $useColPos : ''
+            'where' => ''
         ];
+
+        if ($useColPos >= 0) {
+            $expressionBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('tt_content')
+                ->getExpressionBuilder();
+            $selectSetup['where'] = $expressionBuilder->eq('colPos', $useColPos);
+        }
+
         if ($basePageRow['content_from_pid']) {
             // If the page is configured to show content from a referenced page the sectionIndex contains only contents of
             // the referenced page

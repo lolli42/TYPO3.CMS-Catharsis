@@ -10,7 +10,7 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "TYPO3/CMS/Backend/Modal", "TYPO3/CMS/Backend/Severity", "jquery", "jquery-ui/draggable", "jquery-ui/resizable"], function (require, exports, ImagesLoaded, Modal, Severity, $) {
+define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "TYPO3/CMS/Backend/Modal", "jquery", "jquery-ui/draggable", "jquery-ui/resizable"], function (require, exports, ImagesLoaded, Modal, $) {
     "use strict";
     /**
      * Module: TYPO3/CMS/Backend/ImageManipulation
@@ -48,6 +48,8 @@ define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "T
              */
             this.cropBuiltHandler = function () {
                 var imageData = _this.cropper.cropper('getImageData');
+                var image = _this.currentModal.find(_this.cropImageSelector);
+                _this.imageOriginalSizeFactor = image.data('originalWidth') / imageData.naturalWidth;
                 // Iterate over the crop variants and set up their respective preview
                 _this.cropVariantTriggers.each(function (index, elem) {
                     var cropVariantId = $(elem).attr('data-crop-variant-id');
@@ -96,7 +98,9 @@ define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "T
                 });
                 _this.updatePreviewThumbnail(_this.currentCropVariant, _this.activeCropVariantTrigger);
                 _this.updateCropVariantData(_this.currentCropVariant);
-                _this.cropInfo.text(_this.currentCropVariant.cropArea.width + "\u00D7" + _this.currentCropVariant.cropArea.height + " px");
+                var naturalWidth = Math.round(_this.currentCropVariant.cropArea.width * _this.imageOriginalSizeFactor);
+                var naturalHeight = Math.round(_this.currentCropVariant.cropArea.height * _this.imageOriginalSizeFactor);
+                _this.cropInfo.text(naturalWidth + "\u00D7" + naturalHeight + " px");
             };
             /**
              * @method cropStartHandler
@@ -204,10 +208,6 @@ define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "T
             var _this = this;
             var image = this.currentModal.find(this.cropImageSelector);
             ImagesLoaded(image, function () {
-                var modal = _this.currentModal.find('.modal-dialog');
-                modal.css({ marginLeft: 'auto', marginRight: 'auto' });
-                modal.addClass('modal-image-manipulation modal-resize');
-                Modal.center();
                 setTimeout(function () {
                     _this.init();
                 }, 100);
@@ -221,13 +221,53 @@ define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "T
         ImageManipulation.prototype.show = function () {
             var _this = this;
             var modalTitle = this.trigger.data('modalTitle');
+            var buttonPreviewText = this.trigger.data('buttonPreviewText');
+            var buttonDismissText = this.trigger.data('buttonDismissText');
+            var buttonSaveText = this.trigger.data('buttonSaveText');
             var imageUri = this.trigger.data('url');
             var initCropperModal = this.initializeCropperModal.bind(this);
             /**
              * Open modal with image to crop
              */
-            this.currentModal = Modal.loadUrl(modalTitle, Severity.notice, [], imageUri, initCropperModal, '.modal-content');
-            this.currentModal.addClass('modal-dark');
+            this.currentModal = Modal.advanced({
+                additionalCssClasses: ['modal-image-manipulation'],
+                ajaxCallback: initCropperModal,
+                buttons: [
+                    {
+                        btnClass: 'btn-default pull-left',
+                        dataAttributes: {
+                            method: 'preview',
+                        },
+                        icon: 'actions-view',
+                        text: buttonPreviewText,
+                    },
+                    {
+                        btnClass: 'btn-default',
+                        dataAttributes: {
+                            method: 'dismiss',
+                        },
+                        icon: 'actions-close',
+                        text: buttonDismissText,
+                    },
+                    {
+                        btnClass: 'btn-primary',
+                        dataAttributes: {
+                            method: 'save',
+                        },
+                        icon: 'actions-document-save',
+                        text: buttonSaveText,
+                    },
+                ],
+                callback: function (currentModal) {
+                    currentModal.find('.t3js-modal-body')
+                        .addClass('cropper');
+                },
+                content: imageUri,
+                size: Modal.sizes.full,
+                style: Modal.styles.dark,
+                title: modalTitle,
+                type: 'ajax',
+            });
             this.currentModal.on('hide.bs.modal', function (e) {
                 _this.destroy();
             });
@@ -621,6 +661,9 @@ define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "T
          * @return {boolean}
          */
         ImageManipulation.prototype.checkFocusAndCoverAreasCollision = function (focusArea, coverAreas) {
+            if (!coverAreas) {
+                return false;
+            }
             return coverAreas
                 .some(function (coverArea) {
                 // noinspection OverlyComplexBooleanExpressionJS
@@ -680,10 +723,13 @@ define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "T
                 var $preview = _this.trigger
                     .closest('.form-group')
                     .find(".t3js-image-manipulation-preview[data-crop-variant-id=\"" + cropVariantId + "\"]");
+                var $previewSelectedRatio = _this.trigger
+                    .closest('.form-group')
+                    .find(".t3js-image-manipulation-selected-ratio[data-crop-variant-id=\"" + cropVariantId + "\"]");
                 if ($preview.length === 0) {
                     return;
                 }
-                var previewWidth = $preview.data('preview-width');
+                var previewWidth = $preview.width();
                 var previewHeight = $preview.data('preview-height');
                 // Adjust aspect ratio of preview width/height
                 var aspectRatio = cropData.width / cropData.height;
@@ -701,6 +747,8 @@ define(["require", "exports", "TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min", "T
                 }
                 var ratio = previewWidth / cropData.width;
                 var $viewBox = $('<div />').html('<img src="' + $image.attr('src') + '">');
+                var $ratioTitleText = _this.currentModal.find(".t3-js-ratio-title[data-ratio-id=\"" + cropVariant.id + cropVariant.selectedRatio + "\"]");
+                $previewSelectedRatio.text($ratioTitleText.text());
                 $viewBox.addClass('cropper-preview-container');
                 $preview.empty().append($viewBox);
                 $viewBox.wrap('<span class="thumbnail thumbnail-status"></span>');

@@ -20,7 +20,6 @@ use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
 class EndTimeRestrictionTest extends AbstractRestrictionTestCase
 {
     /**
-     * @return void
      */
     protected function setUp()
     {
@@ -43,7 +42,7 @@ class EndTimeRestrictionTest extends AbstractRestrictionTestCase
         $this->expectExceptionCode(1462821084);
 
         $subject = new EndTimeRestriction();
-        $subject->buildExpression(['aTable' => ''], $this->expressionBuilder);
+        $subject->buildExpression(['aTable' => 'aTable'], $this->expressionBuilder);
     }
 
     /**
@@ -58,7 +57,7 @@ class EndTimeRestrictionTest extends AbstractRestrictionTestCase
         ];
 
         $subject = new EndTimeRestriction(42);
-        $expression = $subject->buildExpression(['aTable' => ''], $this->expressionBuilder);
+        $expression = $subject->buildExpression(['aTable' => 'aTable'], $this->expressionBuilder);
         $this->assertSame('("aTable"."myEndTimeField" = 0) OR ("aTable"."myEndTimeField" > 42)', (string)$expression);
     }
 }

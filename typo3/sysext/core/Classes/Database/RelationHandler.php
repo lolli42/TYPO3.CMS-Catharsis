@@ -257,7 +257,6 @@ class RelationHandler
      * @param int $MMuid Local UID for MM lookup
      * @param string $currentTable Current table name
      * @param array $conf TCA configuration for current field
-     * @return void
      */
     public function start($itemlist, $tablelist, $MMtable = '', $MMuid = 0, $currentTable = '', $conf = [])
     {
@@ -357,7 +356,6 @@ class RelationHandler
      * Sets whether the reference index shall be updated.
      *
      * @param bool $updateReferenceIndex Whether the reference index shall be updated
-     * @return void
      */
     public function setUpdateReferenceIndex($updateReferenceIndex)
     {
@@ -385,7 +383,6 @@ class RelationHandler
      *
      * @param string $itemlist Item list
      * @param array $configuration Parent field configuration
-     * @return void
      */
     public function readList($itemlist, array $configuration)
     {
@@ -467,11 +464,10 @@ class RelationHandler
      * This function is only relevant for data that is stored in comma separated lists!
      *
      * @param string $sortby The default_sortby field/command (e.g. 'price DESC')
-     * @return void
      */
     public function sortList($sortby)
     {
-        // Sort directly without fetching addional data
+        // Sort directly without fetching additional data
         if ($sortby === 'uid') {
             usort(
                 $this->itemArray,
@@ -519,7 +515,6 @@ class RelationHandler
      *
      * @param string $tableName MM Tablename
      * @param int $uid Local UID
-     * @return void
      */
     public function readMM($tableName, $uid)
     {
@@ -573,14 +568,12 @@ class RelationHandler
                 $queryBuilder->expr()->eq($field, $queryBuilder->createNamedParameter($value, \PDO::PARAM_STR))
             );
         }
-        if (MathUtility::canBeInterpretedAsInteger($uid)) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq(
-                    $uidLocal_field,
-                    $queryBuilder->createNamedParameter((int)$uid, \PDO::PARAM_INT)
-                )
-            );
-        }
+        $queryBuilder->andWhere(
+            $queryBuilder->expr()->eq(
+                $uidLocal_field,
+                $queryBuilder->createNamedParameter((int)$uid, \PDO::PARAM_INT)
+            )
+        );
         $queryBuilder->orderBy($sorting_field);
         $statement = $queryBuilder->execute();
         while ($row = $statement->fetch()) {
@@ -608,7 +601,6 @@ class RelationHandler
      * @param string $MM_tableName MM table name
      * @param int $uid Local UID
      * @param bool $prependTableName If set, then table names will always be written.
-     * @return void
      */
     public function writeMM($MM_tableName, $uid, $prependTableName = false)
     {
@@ -852,7 +844,6 @@ class RelationHandler
      * @param int $uid Local, current UID
      * @param int $newUid Local, new UID
      * @param bool $prependTableName If set, then table names will always be written.
-     * @return void
      */
     public function remapMM($MM_tableName, $uid, $newUid, $prependTableName = false)
     {
@@ -906,7 +897,6 @@ class RelationHandler
      *
      * @param int $uid The uid of the parent record (this value is also on the foreign_table in the foreign_field)
      * @param array $conf TCA configuration for current field
-     * @return void
      */
     public function readForeignField($uid, $conf)
     {
@@ -1045,7 +1035,6 @@ class RelationHandler
      * @param int $parentUid The uid of the parent record
      * @param int $updateToUid If this is larger than zero it will be used as foreign UID instead of the given $parentUid (on Copy)
      * @param bool $skipSorting Do not update the sorting columns, this could happen for imported values
-     * @return void
      */
     public function writeForeignField($conf, $parentUid, $updateToUid = 0, $skipSorting = false)
     {

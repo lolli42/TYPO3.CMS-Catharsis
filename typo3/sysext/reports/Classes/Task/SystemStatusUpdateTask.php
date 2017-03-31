@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Reports\Task;
 use TYPO3\CMS\Core\Mail\MailMessage;
 use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MailUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Reports\Status;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
@@ -78,7 +77,6 @@ class SystemStatusUpdateTask extends AbstractTask
      * Sets the notification email address.
      *
      * @param string $notificationEmail Notification email address.
-     * @return void
      */
     public function setNotificationEmail($notificationEmail)
     {
@@ -89,7 +87,6 @@ class SystemStatusUpdateTask extends AbstractTask
      * Sends a notification email, reporting system issues.
      *
      * @param Status[] $systemStatus Array of statuses
-     * @return void
      */
     protected function sendNotificationEmail(array $systemStatus)
     {
@@ -115,10 +112,8 @@ class SystemStatusUpdateTask extends AbstractTask
         $message .= $this->getLanguageService()->getLL('status_updateTask_email_issues') . ': ' . CRLF;
         $message .= implode(CRLF, $systemIssues);
         $message .= CRLF . CRLF;
-        $from = MailUtility::getSystemFrom();
         /** @var MailMessage $mail */
         $mail = GeneralUtility::makeInstance(MailMessage::class);
-        $mail->setFrom($from);
         $mail->setTo($sendEmailsTo);
         $mail->setSubject($subject);
         $mail->setBody($message);

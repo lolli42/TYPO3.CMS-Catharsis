@@ -24,6 +24,7 @@ use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\Dispatcher;
 use TYPO3\CMS\Core\Http\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -90,8 +91,6 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
 
     /**
      * Execute TYPO3 bootstrap
-     *
-     * @return void
      */
     protected function boot()
     {
@@ -99,7 +98,8 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
             ->checkBackendIpOrDie()
             ->checkSslBackendAndRedirectIfNeeded()
             ->initializeBackendRouter()
-            ->loadExtensionTables()
+            ->loadBaseTca()
+            ->loadExtTables()
             ->initializeBackendUser()
             ->initializeBackendAuthentication()
             ->initializeLanguageObject()
@@ -149,7 +149,7 @@ class BackendModuleRequestHandler implements RequestHandlerInterface
         $this->backendUserAuthentication->modAccess($moduleConfiguration, true);
         $id = isset($this->request->getQueryParams()['id']) ? $this->request->getQueryParams()['id'] : $this->request->getParsedBody()['id'];
         if ($id && MathUtility::canBeInterpretedAsInteger($id)) {
-            $permClause = $this->backendUserAuthentication->getPagePermsClause(true);
+            $permClause = $this->backendUserAuthentication->getPagePermsClause(Permission::PAGE_SHOW);
             // Check page access
             $access = is_array(BackendUtility::readPageAccess((int)$id, $permClause));
             if (!$access) {

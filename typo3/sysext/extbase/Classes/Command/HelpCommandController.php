@@ -45,12 +45,11 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
      * This only outputs the Extbase version number, context and some hint about how to
      * get more help about commands.
      *
-     * @return void
      * @internal
      */
     public function helpStubCommand()
     {
-        $this->outputLine('Extbase %s', [\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionVersion('extbase')]);
+        $this->outputLine('Extbase %s', [TYPO3_version]);
         $this->outputLine('usage: ' . $this->request->getCallingScript() . ' <command identifier>');
         $this->outputLine();
         $this->outputLine('See \'' . $this->request->getCallingScript() . ' help\' for a list of all available commands.');
@@ -82,12 +81,12 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
     }
 
     /**
-     * @return void
+     * Builds an index of all commands that are available
      */
     protected function displayHelpIndex()
     {
         $this->buildCommandsIndex();
-        $this->outputLine('Extbase %s', [\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionVersion('extbase')]);
+        $this->outputLine('Extbase %s', [TYPO3_version]);
         $this->outputLine('usage: ' . $this->request->getCallingScript() . ' <command identifier>');
         $this->outputLine();
         $this->outputLine('The following commands are currently available:');
@@ -112,7 +111,6 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
      * Render help text for a single command
      *
      * @param \TYPO3\CMS\Extbase\Mvc\Cli\Command $command
-     * @return void
      */
     protected function displayHelpForCommand(\TYPO3\CMS\Extbase\Mvc\Cli\Command $command)
     {
@@ -187,7 +185,6 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
      *
      * @internal
      * @param \TYPO3\CMS\Extbase\Mvc\Exception\CommandException $exception
-     * @return void
      */
     public function errorCommand(\TYPO3\CMS\Extbase\Mvc\Exception\CommandException $exception)
     {
@@ -206,8 +203,6 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
     /**
      * Builds an index of available commands. For each of them a Command object is
      * added to the commands array of this class.
-     *
-     * @return void
      */
     protected function buildCommandsIndex()
     {

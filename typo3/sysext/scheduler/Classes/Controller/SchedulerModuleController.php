@@ -118,8 +118,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Initializes the backend module
-     *
-     * @return void
      */
     public function init()
     {
@@ -131,8 +129,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Adds items to the ->MOD_MENU array. Used for the function menu selector.
-     *
-     * @return void
      */
     public function menuConfig()
     {
@@ -148,8 +144,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Main function of the module. Write the content to $this->content
-     *
-     * @return void
      */
     public function main()
     {
@@ -162,7 +156,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             // Prepare main content
             $this->content .= '<h1>' . $this->getLanguageService()->getLL('function.' . $this->MOD_SETTINGS['function']) . '</h1>';
             $this->content .= $this->getModuleContent();
-            $this->content .= '</form>';
+            $this->content .= '</form><div id="extraFieldsHidden"></div>';
         } else {
             // If no access, only display the module's title
             $this->content = '<h1>' . $this->getLanguageService()->getLL('title.') . '</h1>';
@@ -423,8 +417,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Delete a task from the execution queue
-     *
-     * @return void
      */
     protected function deleteTask()
     {
@@ -470,8 +462,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
      * Note that this doesn't actually stop the running script. It just unmarks
      * all executions.
      * @todo find a way to really kill the running task
-     *
-     * @return void
      */
     protected function stopTask()
     {
@@ -498,8 +488,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Toggles the disabled state of the submitted task
-     *
-     * @return void
      */
     protected function toggleDisableAction()
     {
@@ -515,8 +503,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Sets the next execution time of the submitted task to now
-     *
-     * @return void
      */
     protected function setNextExecutionTimeAction()
     {
@@ -800,6 +786,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             . '</div></div>';
 
         // Display additional fields
+        $table[] = '<div id="extraFieldsSection">';
         foreach ($allAdditionalFields as $class => $fields) {
             if ($class == $taskInfo['class']) {
                 $additionalFieldsStyle = '';
@@ -820,6 +807,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                 }
             }
         }
+        $table[] = '</div>';
 
         $this->view->assign('table', implode(LF, $table));
         $this->view->assign('now', $this->getServerTime());
@@ -852,8 +840,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Execute all selected tasks
-     *
-     * @return void
      */
     protected function executeTasks()
     {
@@ -1028,7 +1014,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                     . ' data-button-close-text="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:cancel')) . '"'
                     . ' data-content="' . htmlspecialchars($this->getLanguageService()->getLL('msg.stop')) . '"'
                     . ' title="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:stop')) . '" class="icon">' .
-                    $this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL)->render() . '</a>';
+                    $this->moduleTemplate->getIconFactory()->getIcon('actions-close', Icon::SIZE_SMALL)->render() . '</a>';
                 $runAction = '<a class="btn btn-default" data-toggle="tooltip" data-container="body" href="' . htmlspecialchars($this->moduleUri . '&tx_scheduler[execute][]=' . $schedulerRecord['uid']) . '" title="' . htmlspecialchars($this->getLanguageService()->getLL('action.run_task')) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('extensions-scheduler-run-task', Icon::SIZE_SMALL)->render() . '</a>';
                 $runCronAction = '<a class="btn btn-default" data-toggle="tooltip" data-container="body" href="' . htmlspecialchars($this->moduleUri . '&CMD=setNextExecutionTime&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->getLL('action.run_task_cron', true) . '" class="icon">' .
@@ -1224,8 +1210,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
     /**
      * Saves a task specified in the backend form to the database
-     *
-     * @return void
      */
     protected function saveTask()
     {
@@ -1343,24 +1327,31 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         if (empty($this->submittedData['start'])) {
             $this->addMessage($this->getLanguageService()->getLL('msg.noStartDate'), FlashMessage::ERROR);
             $result = false;
-        } else {
+        } elseif (is_string($this->submittedData['start']) && (!is_numeric($this->submittedData['start']))) {
             try {
-                $this->submittedData['start'] = (int)$this->submittedData['start'];
+                $this->submittedData['start'] = $this->convertToTimestamp($this->submittedData['start']);
             } catch (\Exception $e) {
                 $this->addMessage($this->getLanguageService()->getLL('msg.invalidStartDate'), FlashMessage::ERROR);
                 $result = false;
             }
+        } else {
+            $this->submittedData['start'] = (int)$this->submittedData['start'];
         }
         // Check end date, if recurring task
         if ((int)$this->submittedData['type'] === AbstractTask::TYPE_RECURRING && !empty($this->submittedData['end'])) {
-            try {
-                $this->submittedData['end'] = (int)$this->submittedData['end'];
-                if ($this->submittedData['end'] < $this->submittedData['start']) {
-                    $this->addMessage($this->getLanguageService()->getLL('msg.endDateSmallerThanStartDate'), FlashMessage::ERROR);
+            if (is_string($this->submittedData['end']) && (!is_numeric($this->submittedData['end']))) {
+                try {
+                    $this->submittedData['end'] = $this->convertToTimestamp($this->submittedData['end']);
+                } catch (\Exception $e) {
+                    $this->addMessage($this->getLanguageService()->getLL('msg.invalidStartDate'), FlashMessage::ERROR);
                     $result = false;
                 }
-            } catch (\Exception $e) {
-                $this->addMessage($this->getLanguageService()->getLL('msg.invalidEndDate'), FlashMessage::ERROR);
+            } else {
+                $this->submittedData['end'] = (int)$this->submittedData['end'];
+            }
+            if ($this->submittedData['end'] < $this->submittedData['start']) {
+                $this->addMessage($this->getLanguageService()->getLL('msg.endDateSmallerThanStartDate'),
+                    FlashMessage::ERROR);
                 $result = false;
             }
         }
@@ -1412,6 +1403,23 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         return $result;
     }
 
+    /**
+     * Convert input to DateTime and retrieve timestamp
+     *
+     * @param string $input
+     * @return int
+     */
+    protected function convertToTimestamp(string $input): int
+    {
+        // Convert to ISO 8601 dates
+        $dateTime = new \DateTime($input);
+        $value = $dateTime->getTimestamp();
+        if ($value !== 0) {
+            $value -= date('Z', $value);
+        }
+        return $value;
+    }
+
     /*************************
      *
      * APPLICATION LOGIC UTILITIES
@@ -1422,7 +1430,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
      *
      * @param string $message The message itself
      * @param int $severity Message level (according to FlashMessage class constants)
-     * @return void
      */
     public function addMessage($message, $severity = FlashMessage::OK)
     {
@@ -1527,7 +1534,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             // Close
             $closeButton = $buttonBar->makeLinkButton()
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_common.xlf:cancel'))
-                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-close', Icon::SIZE_SMALL))
+                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-close', Icon::SIZE_SMALL))
                 ->setOnClick('document.location=' . GeneralUtility::quoteJSvalue($this->moduleUri))
                 ->setHref('#');
             $buttonBar->addButton($closeButton, ButtonBar::BUTTON_POSITION_LEFT, 2);

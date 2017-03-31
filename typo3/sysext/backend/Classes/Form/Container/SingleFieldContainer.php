@@ -79,8 +79,6 @@ class SingleFieldContainer extends AbstractContainer
             || $parameterArray['fieldConf']['config']['type'] === 'passthrough'
             // Return if field should not be rendered in translated records
             || $isOverlay && empty($parameterArray['fieldConf']['l10n_display']) && $parameterArray['fieldConf']['l10n_mode'] === 'exclude'
-            // @todo: localizationMode still needs handling!
-            || $isOverlay && $this->data['localizationMode'] && $this->data['localizationMode'] !== $parameterArray['fieldConf']['l10n_cat']
             || $this->inlineFieldShouldBeSkipped()
         ) {
             return $resultArray;

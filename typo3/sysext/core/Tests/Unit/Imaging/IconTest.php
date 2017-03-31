@@ -31,7 +31,7 @@ class IconTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     /**
      * @var string
      */
-    protected $iconIdentifier = 'actions-document-close';
+    protected $iconIdentifier = 'actions-close';
 
     /**
      * @var string
@@ -40,8 +40,6 @@ class IconTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 
     /**
      * Set up
-     *
-     * @return void
      */
     protected function setUp()
     {

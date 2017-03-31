@@ -62,11 +62,29 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
         $data = $linkParts['url'];
         // Checking if the id-parameter is an alias.
         if (isset($data['pagealias'])) {
-            $records = BackendUtility::getRecordsByField('pages', 'alias', $data['pagealias']);
-            if (empty($records)) {
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('pages');
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+
+            $pageUid = $queryBuilder->select('uid')
+                ->from('pages')
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'alias',
+                        $queryBuilder->createNamedParameter($data['pagealias'], \PDO::PARAM_STR)
+                    )
+                )
+                ->setMaxResults(1)
+                ->execute()
+                ->fetchColumn(0);
+
+            if ($pageUid === false) {
                 return false;
             }
-            $data['pageuid'] = (int)$records[0]['uid'];
+            $data['pageuid'] = (int)$pageUid;
         }
         // Check if the page still exists
         if ((int)$data['pageuid'] > 0) {
@@ -134,8 +152,6 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
      * This adds all content elements on a page to the view and lets you create a link to the element.
      *
      * @param int $pageId Page uid to expand
-     *
-     * @return void
      */
     protected function getRecordsOnExpandedPage($pageId)
     {
@@ -205,7 +221,7 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
     }
 
     /**
-     * @return void
+     * Sets a DB mount and stores it in the currently defined backend user in her/his uc
      */
     protected function setTemporaryDbMounts()
     {
@@ -290,7 +306,7 @@ class PageLinkHandler extends AbstractLinkHandler implements LinkHandlerInterfac
     {
         $configuration = $this->linkBrowser->getConfiguration();
         if (!empty($configuration['pageIdSelector.']['enabled'])) {
-            array_push($this->linkAttributes, 'pageIdSelector');
+            $this->linkAttributes[] = 'pageIdSelector';
             $fieldDefinitions['pageIdSelector'] = '
 				<tr>
 					<td>

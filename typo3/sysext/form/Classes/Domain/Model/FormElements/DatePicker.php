@@ -26,11 +26,12 @@ class DatePicker extends AbstractFormElement
 {
 
     /**
-     * @return void
+     * Initializes the Form Element by setting the data type to "DateTime"
      * @internal
      */
     public function initializeFormElement()
     {
         $this->setDataType('DateTime');
+        parent::initializeFormElement();
     }
 }

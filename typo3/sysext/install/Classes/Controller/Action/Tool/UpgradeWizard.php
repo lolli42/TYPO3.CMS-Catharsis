@@ -125,8 +125,6 @@ class UpgradeWizard extends Action\AbstractAction
 
     /**
      * List of available updates
-     *
-     * @return void
      */
     protected function listUpdates()
     {
@@ -284,8 +282,6 @@ class UpgradeWizard extends Action\AbstractAction
      */
     protected function performUpdate()
     {
-        $this->getDatabaseConnection()->store_lastBuiltQuery = true;
-
         $wizardIdentifier = $this->postValues['values']['identifier'];
         $className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$wizardIdentifier];
         $updateObject = $this->getUpdateObjectInstance($className, $wizardIdentifier);
@@ -335,8 +331,6 @@ class UpgradeWizard extends Action\AbstractAction
         }
 
         $this->view->assign('wizardData', $wizardData);
-
-        $this->getDatabaseConnection()->store_lastBuiltQuery = false;
 
         // Next update wizard, if available
         $nextUpdate = $this->getNextUpdateInstance($updateObject);
@@ -396,7 +390,6 @@ class UpgradeWizard extends Action\AbstractAction
      * Force creation / update of caching framework tables that are needed by some update wizards
      *
      * @TODO: See also the other remarks on this topic in the abstract class, this whole area needs improvements
-     * @return void
      * @throws \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException
      * @throws \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException
      * @throws \TYPO3\CMS\Core\Database\Schema\Exception\UnexpectedSignalReturnValueTypeException
@@ -414,7 +407,9 @@ class UpgradeWizard extends Action\AbstractAction
             $cachingFrameworkDatabaseSchemaService->getCachingFrameworkRequiredDatabaseSchema()
         );
 
-        $schemaMigrationService = GeneralUtility::makeInstance(SchemaMigrator::class);
-        $schemaMigrationService->install($createTableStatements);
+        if (!empty($createTableStatements)) {
+            $schemaMigrationService = GeneralUtility::makeInstance(SchemaMigrator::class);
+            $schemaMigrationService->install($createTableStatements);
+        }
     }
 }

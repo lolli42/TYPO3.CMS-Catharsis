@@ -60,8 +60,8 @@ interface RootRenderableInterface
      * is outputted to the browser.
      *
      * @param FormRuntime $formRuntime
-     * @return void
      * @api
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function beforeRendering(FormRuntime $formRuntime);
 
@@ -69,10 +69,10 @@ interface RootRenderableInterface
      * Get the renderer class name to be used to display this form;
      * must implement RendererInterface
      *
-     * @return null|string the renderer class name
+     * @return string the renderer class name
      * @api
      */
-    public function getRendererClassName();
+    public function getRendererClassName(): string;
 
     /**
      * Get all rendering options

@@ -9,20 +9,20 @@ Overriding the FLUID templates
 At :ref:`typoscript` we have described the way content elements are rendered.
 
 By default these settings are done in the file :file:`setup.txt` which can be found in the
-folder :file:`EXT:fluid_styled_content/Configuration/TypoScript/Static/`.
+folder :file:`EXT:fluid_styled_content/Configuration/TypoScript/`.
 
 
 .. _overriding-fluid-templates-using-lib-fluidcontent:
 
-Using lib.fluidContent
-======================
+Using lib.contentElement
+========================
 
 This option gives you the possibility to add another `templateRootPath` and can be defined
 the same as `partialRootPaths` and `layoutRootPaths`:
 
 .. code-block:: typoscript
 
-   lib.fluidContent {
+   lib.contentElement {
       templateRootPaths {
          200 = EXT:your_extension_key/Resources/Private/Templates/
       }
@@ -42,7 +42,7 @@ not be loaded then, since its name is still the default value.
 
    tt_content {
       bullets {
-         templateName = ChangedName.html
+         templateName = ChangedName
       }
    }
 

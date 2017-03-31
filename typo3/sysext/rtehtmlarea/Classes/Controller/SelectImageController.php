@@ -156,7 +156,6 @@ class SelectImageController extends AbstractLinkBrowserController
      * Initialize hook objects implementing the interface
      *
      * @throws \UnexpectedValueException
-     * @return void
      */
     protected function initHookObjects()
     {
@@ -198,8 +197,6 @@ class SelectImageController extends AbstractLinkBrowserController
 
     /**
      * Initialize $this->currentLinkParts and $this->currentLinkHandler
-     *
-     * @return void
      */
     protected function initCurrentUrl()
     {
@@ -233,12 +230,10 @@ class SelectImageController extends AbstractLinkBrowserController
     protected function renderCurrentUrl()
     {
         return '<!-- Print current URL -->
-            <div class="link-browser-section link-browser-current-link">
-                <strong>' .
-                    htmlspecialchars($this->getLanguageService()->getLL('currentImage')) .
-                    ': ' .
-                    htmlspecialchars($this->currentLinkHandler->formatCurrentUrl()) .
-                '</strong>' .
+            <div class="element-browser-panel element-browser-title">' .
+                htmlspecialchars($this->getLanguageService()->getLL('currentImage')) .
+                ': ' .
+                htmlspecialchars($this->currentLinkHandler->formatCurrentUrl()) .
             '</div>';
     }
 

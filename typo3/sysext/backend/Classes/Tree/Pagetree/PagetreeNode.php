@@ -74,7 +74,6 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      * Sets the background color
      *
      * @param string $backgroundColor
-     * @return void
      */
     public function setBackgroundColor($backgroundColor)
     {
@@ -95,7 +94,6 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      * Set's the original id of the element
      *
      * @param int $workspaceId
-     * @return void
      */
     public function setWorkspaceId($workspaceId)
     {
@@ -136,7 +134,6 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      * Sets the mount point id
      *
      * @param int $mountPoint
-     * @return void
      */
     public function setMountPoint($mountPoint)
     {
@@ -157,7 +154,6 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      * Sets the indicator if the node is a mount point
      *
      * @param bool $isMountPoint
-     * @return void
      */
     public function setIsMountPoint($isMountPoint)
     {
@@ -178,7 +174,6 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      * Sets the readable rootline
      *
      * @param string $rootline
-     * @return void
      */
     public function setReadableRootline($rootline)
     {
@@ -254,7 +249,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      */
     public function canBeDisabledAndEnabled()
     {
-        return $this->canEdit($this->record) && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+        return $this->canEdit() && $GLOBALS['BE_USER']->checkLanguageAccess(0);
     }
 
     /**
@@ -265,7 +260,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
     public function canBeCut()
     {
         return
-            $this->canEdit($this->record)
+            $this->canEdit()
             && !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
             && $GLOBALS['BE_USER']->checkLanguageAccess(0)
         ;
@@ -278,7 +273,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      */
     public function canBeEdited()
     {
-        return $this->canEdit($this->record) && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+        return $this->canEdit() && $GLOBALS['BE_USER']->checkLanguageAccess(0);
     }
 
     /**
@@ -302,7 +297,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      */
     public function canCreateNewPages()
     {
-        return $this->canCreate($this->record) && $GLOBALS['BE_USER']->checkLanguageAccess(0);
+        return $this->canCreate() && $GLOBALS['BE_USER']->checkLanguageAccess(0);
     }
 
     /**
@@ -313,7 +308,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
     public function canBeRemoved()
     {
         return
-            $this->canRemove($this->record)
+            $this->canRemove()
             && !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
             && $GLOBALS['BE_USER']->checkLanguageAccess(0)
         ;
@@ -327,7 +322,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
     public function canBePastedInto()
     {
         return
-            $this->canCreate($this->record)
+            $this->canCreate()
             && !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
             && $GLOBALS['BE_USER']->checkLanguageAccess(0)
         ;
@@ -341,7 +336,7 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
     public function canBePastedAfter()
     {
         return
-            $this->canCreate($this->record)
+            $this->canCreate()
             && !VersionState::cast($this->record['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
             && $GLOBALS['BE_USER']->checkLanguageAccess(0)
         ;
@@ -438,7 +433,6 @@ class PagetreeNode extends \TYPO3\CMS\Backend\Tree\ExtDirectNode
      * Sets data of the node by a given data array
      *
      * @param array $data
-     * @return void
      */
     public function dataFromArray($data)
     {

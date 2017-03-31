@@ -87,7 +87,13 @@ class SilentConfigurationUpgradeService
         'SYS/caching/cacheConfigurations/extbase_typo3dbbackend_queries',
         // #79513
         'FE/lockHashKeyWords',
-        'BE/lockHashKeyWords'
+        'BE/lockHashKeyWords',
+        // #78835
+        'SYS/cookieHttpOnly',
+        // #71095
+        'BE/lang',
+        // #80050
+        'FE/cHashIncludePageId',
     ];
 
     public function __construct(ConfigurationManager $configurationManager = null)
@@ -98,8 +104,6 @@ class SilentConfigurationUpgradeService
     /**
      * Executed configuration upgrades. Single upgrade methods must throw a
      * RedirectException if something was written to LocalConfiguration.
-     *
-     * @return void
      */
     public function execute()
     {
@@ -109,12 +113,15 @@ class SilentConfigurationUpgradeService
         $this->transferHttpSettings();
         $this->disableImageMagickDetailSettingsIfImageMagickIsDisabled();
         $this->setImageMagickDetailSettings();
-        $this->removeObsoleteLocalConfigurationSettings();
         $this->migrateThumbnailsPngSetting();
         $this->migrateLockSslSetting();
         $this->migrateDatabaseConnectionSettings();
         $this->migrateDatabaseConnectionCharset();
         $this->migrateDatabaseDriverOptions();
+        $this->migrateLangDebug();
+
+        // Should run at the end to prevent that obsolete settings are removed before migration
+        $this->removeObsoleteLocalConfigurationSettings();
     }
 
     /**
@@ -122,8 +129,6 @@ class SilentConfigurationUpgradeService
      * and have no impact on the core anymore.
      * To keep the configuration clean, those old settings are just silently
      * removed from LocalConfiguration if set.
-     *
-     * @return void
      */
     protected function removeObsoleteLocalConfigurationSettings()
     {
@@ -139,8 +144,6 @@ class SilentConfigurationUpgradeService
      * Backend login security is set to rsa if rsaauth
      * is installed (but not used) otherwise the default value "normal" has to be used.
      * This forces either 'normal' or 'rsa' to be set in LocalConfiguration.
-     *
-     * @return void
      */
     protected function configureBackendLoginSecurity()
     {
@@ -167,8 +170,6 @@ class SilentConfigurationUpgradeService
      * and the whole TYPO3 link rendering later on. A random key is set here in
      * LocalConfiguration if it does not exist yet. This might possible happen
      * during upgrading and will happen during first install.
-     *
-     * @return void
      */
     protected function generateEncryptionKeyIfNeeded()
     {
@@ -188,8 +189,6 @@ class SilentConfigurationUpgradeService
 
     /**
      * Parse old curl and HTTP options and set new HTTP options, related to Guzzle
-     *
-     * @return void
      */
     protected function transferHttpSettings()
     {
@@ -384,8 +383,6 @@ class SilentConfigurationUpgradeService
      * "Configuration presets" in install tool is not type safe, so value
      * comparisons here are not type safe too, to not trigger changes to
      * LocalConfiguration again.
-     *
-     * @return void
      */
     protected function disableImageMagickDetailSettingsIfImageMagickIsDisabled()
     {
@@ -447,8 +444,6 @@ class SilentConfigurationUpgradeService
      * "Configuration presets" in install tool is not type safe, so value
      * comparisons here are not type safe too, to not trigger changes to
      * LocalConfiguration again.
-     *
-     * @return void
      */
     protected function setImageMagickDetailSettings()
     {
@@ -490,8 +485,6 @@ class SilentConfigurationUpgradeService
     /**
      * Migrate the definition of the image processor from the configuration value
      * im_version_5 to the setting processor.
-     *
-     * @return void
      */
     protected function migrateImageProcessorSetting()
     {
@@ -569,8 +562,6 @@ class SilentConfigurationUpgradeService
 
     /**
      * Migrate the configuration value thumbnails_png to a boolean value.
-     *
-     * @return void
      */
     protected function migrateThumbnailsPngSetting()
     {
@@ -592,8 +583,6 @@ class SilentConfigurationUpgradeService
 
     /**
      * Migrate the configuration setting BE/lockSSL to boolean if set in the LocalConfiguration.php file
-     *
-     * @return void
      */
     protected function migrateLockSslSetting()
     {
@@ -611,82 +600,119 @@ class SilentConfigurationUpgradeService
 
     /**
      * Move the database connection settings to a "Default" connection
-     *
-     * @return void
      */
     protected function migrateDatabaseConnectionSettings()
     {
-        $changedSettings = [];
-        $settingsToRename = [
-            'DB/username' => 'DB/Connections/Default/user',
-            'DB/password' => 'DB/Connections/Default/password',
-            'DB/host' => 'DB/Connections/Default/host',
-            'DB/port' => 'DB/Connections/Default/port',
-            'DB/socket' => 'DB/Connections/Default/unix_socket',
-            'DB/database' => 'DB/Connections/Default/dbname',
-            'SYS/setDBinit' => 'DB/Connections/Default/initCommands',
-            'SYS/no_pconnect' => 'DB/Connections/Default/persistentConnection',
-            'SYS/dbClientCompress' => 'DB/Connections/Default/driverOptions',
-
-        ];
-
         $confManager = $this->configurationManager;
 
-        foreach ($settingsToRename as $oldPath => $newPath) {
-            try {
-                $value = $confManager->getLocalConfigurationValueByPath($oldPath);
-                $confManager->setLocalConfigurationValueByPath($newPath, $value);
-                $changedSettings[$oldPath] = true;
-            } catch (\RuntimeException $e) {
-                // If an exception is thrown, the value is not set in LocalConfiguration
-                $changedSettings[$oldPath] = false;
+        $newSettings = [];
+        $removeSettings = [];
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('DB/username');
+            $removeSettings[] = 'DB/username';
+            $newSettings['DB/Connections/Default/user'] = $value;
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
+        }
+
+        try {
+            $value= $confManager->getLocalConfigurationValueByPath('DB/password');
+            $removeSettings[] = 'DB/password';
+            $newSettings['DB/Connections/Default/password'] = $value;
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
+        }
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('DB/host');
+            $removeSettings[] = 'DB/host';
+            $newSettings['DB/Connections/Default/host'] = $value;
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
+        }
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('DB/port');
+            $removeSettings[] = 'DB/port';
+            $newSettings['DB/Connections/Default/port'] = $value;
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
+        }
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('DB/socket');
+            $removeSettings[] = 'DB/socket';
+            // Remove empty socket connects
+            if (!empty($value)) {
+                $newSettings['DB/Connections/Default/unix_socket'] = $value;
             }
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
         }
 
-        // Remove empty socket connects
-        if (!empty($changedSettings['DB/Connections/Default/unix_socket'])) {
-            $value = $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/unix_socket');
-            if (empty($value)) {
-                $confManager->removeLocalConfigurationKeysByPath(array_keys('DB/Connections/Default/unix_socket'));
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('DB/database');
+            $removeSettings[] = 'DB/database';
+            $newSettings['DB/Connections/Default/dbname'] = $value;
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
+        }
+
+        try {
+            $value = (bool)$confManager->getLocalConfigurationValueByPath('SYS/dbClientCompress');
+            $removeSettings[] = 'SYS/dbClientCompress';
+            if ($value) {
+                $newSettings['DB/Connections/Default/driverOptions'] = [
+                    'flags' => MYSQLI_CLIENT_COMPRESS,
+                ];
             }
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
         }
 
-        // Convert the dbClientCompress flag to a mysqli driver option
-        if (!empty($changedSettings['DB/Connections/Default/driverOptions'])) {
-            $value = $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/driverOptions');
-            $confManager->setLocalConfigurationValueByPath(
-                'DB/Connections/Default/driverOptions',
-                [
-                    'flags' => (bool)$value ? MYSQLI_CLIENT_COMPRESS : 0,
-                ]
-            );
+        try {
+            $value = (bool)$confManager->getLocalConfigurationValueByPath('SYS/no_pconnect');
+            $removeSettings[] = 'SYS/no_pconnect';
+            if (!$value) {
+                $newSettings['DB/Connections/Default/persistentConnection'] = true;
+            }
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
         }
 
-        // Swap value as the semantics have changed
-        if (!empty($changedSettings['DB/Connections/Default/persistentConnection'])) {
-            $value = $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/persistentConnection');
-            $confManager->setLocalConfigurationValueByPath(
-                'DB/Connections/Default/persistentConnection',
-                !$value
-            );
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('SYS/setDBinit');
+            $removeSettings[] = 'SYS/setDBinit';
+            $newSettings['DB/Connections/Default/initCommands'] = $value;
+        } catch (\RuntimeException $e) {
+            // Old setting does not exist, do nothing
         }
 
-        // Set the utf-8 connection charset by default if no value has been provided yet
         try {
             $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/charset');
         } catch (\RuntimeException $e) {
-            $confManager->setLocalConfigurationValueByPath('DB/Connections/Default/charset', 'utf8');
+            // If there is no charset option yet, add it.
+            $newSettings['DB/Connections/Default/charset'] = 'utf8';
         }
 
-        // Use the mysqli driver by default if no value has been provided yet
         try {
             $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/driver');
         } catch (\RuntimeException $e) {
-            $confManager->setLocalConfigurationValueByPath('DB/Connections/Default/driver', 'mysqli');
+            // Use the mysqli driver by default if no value has been provided yet
+            $newSettings['DB/Connections/Default/driver'] = 'mysqli';
         }
 
-        if (!empty(array_filter($changedSettings))) {
-            $confManager->removeLocalConfigurationKeysByPath(array_keys($changedSettings));
+        // Add new settings and remove old ones
+        if (!empty($newSettings)) {
+            $confManager->setLocalConfigurationValuesByPathValuePairs($newSettings);
+        }
+        if (!empty($removeSettings)) {
+            $confManager->removeLocalConfigurationKeysByPath($removeSettings);
+        }
+
+        // Throw redirect if something was changed
+        if (!empty($newSettings) || !empty($removeSettings)) {
             $this->throwRedirectException();
         }
     }
@@ -694,8 +720,6 @@ class SilentConfigurationUpgradeService
     /**
      * Migrate the configuration setting DB/Connections/Default/charset to 'utf8' as
      * 'utf-8' is not supported by all MySQL versions.
-     *
-     * @return void
      */
     protected function migrateDatabaseConnectionCharset()
     {
@@ -714,8 +738,6 @@ class SilentConfigurationUpgradeService
 
     /**
      * Migrate the configuration setting DB/Connections/Default/driverOptions to array type.
-     *
-     * @return void
      */
     protected function migrateDatabaseDriverOptions()
     {
@@ -730,6 +752,23 @@ class SilentConfigurationUpgradeService
             }
         } catch (\RuntimeException $e) {
             // no driver options found, nothing needs to be modified
+        }
+    }
+
+    /**
+     * Migrate the configuration setting BE/lang/debug if set in the LocalConfiguration.php file
+     */
+    protected function migrateLangDebug()
+    {
+        $confManager = $this->configurationManager;
+        try {
+            $currentOption = $confManager->getLocalConfigurationValueByPath('BE/lang/debug');
+            // check if the current option is set and boolean
+            if (isset($currentOption) && is_bool($currentOption)) {
+                $confManager->setLocalConfigurationValueByPath('BE/languageDebug', $currentOption);
+            }
+        } catch (\RuntimeException $e) {
+            // no change inside the LocalConfiguration.php found, so nothing needs to be modified
         }
     }
 }

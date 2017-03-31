@@ -89,21 +89,31 @@ Then we configure the backend fields for our new content element:
       'showitem' => '
          --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
             --palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.general;general,
-            --palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.header;header,
-        --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.appearance,
+            --palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.headers;headers,
+            bodytext;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:bodytext_formlabel,
+         --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.appearance,
             --palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.frames;frames,
             --palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.appearanceLinks;appearanceLinks,
-        --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:language,
+         --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:language,
             --palette--;;language,
-        --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+         --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
             --palette--;;hidden,
             --palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.access;access,
-        --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:categories,
+         --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:categories,
             categories,
-        --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
+         --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:notes,
             rowDescription,
-        --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
-   ');
+         --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
+      ',
+      'columnsOverrides' => [
+         'bodytext' => [
+            'config' => [
+               'enableRichtext' => true,
+               'richtextConfiguration' => 'default'
+            ]
+         ]
+      ]
+   );
 
 .. _AddingCE-TCA-Overrides-sys_template:
 
@@ -137,9 +147,9 @@ As defined in `Configuration/TCA/Overrides/tt_content.php`, this file is in the 
   .. code-block:: typoscript
 
      tt_content {
-        yourextensionkey_newcontentelement < lib.fluidContent
+        yourextensionkey_newcontentelement =< lib.contentElement
         yourextensionkey_newcontentelement {
-           templateName = NewContentElement.html
+           templateName = NewContentElement
         }
      }
 
@@ -152,9 +162,9 @@ As defined in `Configuration/TCA/Overrides/tt_content.php`, this file is in the 
 .. code-block:: typoscript
 
    tt_content {
-      yourextensionkey_newcontentelement < lib.fluidContent
+      yourextensionkey_newcontentelement =< lib.contentElement
       yourextensionkey_newcontentelement {
-         templateName = NewContentElement.html
+         templateName = NewContentElement
          dataProcessing {
             1 = Vendor\YourExtensionKey\DataProcessing\NewContentElementProcessor
             1 {
@@ -169,7 +179,7 @@ it, partialRootPaths and layoutRootPaths:
 
 .. code-block:: typoscript
 
-   lib.fluidContent {
+   lib.contentElement {
       templateRootPaths {
          200 = EXT:your_extension_key/Resources/Private/Templates/
       }

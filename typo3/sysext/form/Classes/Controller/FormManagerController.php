@@ -51,7 +51,6 @@ class FormManagerController extends AbstractBackendController
      * Initialize the references action.
      * This action use the Fluid JsonView::class as view.
      *
-     * @return void
      * @internal
      */
     public function initializeReferencesAction()
@@ -62,7 +61,6 @@ class FormManagerController extends AbstractBackendController
     /**
      * Displays the Form Manager
      *
-     * @return void
      * @internal
      */
     public function indexAction()
@@ -107,6 +105,22 @@ class FormManagerController extends AbstractBackendController
         $form['prototypeName'] = $prototypeName;
 
         $formPersistenceIdentifier = $this->formPersistenceManager->getUniquePersistenceIdentifier($form['identifier'], $savePath);
+
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormCreate'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormCreate'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormCreate'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'beforeFormCreate')) {
+                    $form = $hookObj->beforeFormCreate(
+                        $formPersistenceIdentifier,
+                        $form
+                    );
+                }
+            }
+        }
+
         $this->formPersistenceManager->save($formPersistenceIdentifier, $form);
 
         return $this->controllerContext->getUriBuilder()->uriFor('index', ['formPersistenceIdentifier' => $formPersistenceIdentifier], 'FormEditor');
@@ -128,6 +142,22 @@ class FormManagerController extends AbstractBackendController
         $formToDuplicate['identifier'] = $this->formPersistenceManager->getUniqueIdentifier($this->convertFormNameToIdentifier($formName));
 
         $formPersistenceIdentifier = $this->formPersistenceManager->getUniquePersistenceIdentifier($formToDuplicate['identifier'], $savePath);
+
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDuplicate'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDuplicate'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDuplicate'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'beforeFormDuplicate')) {
+                    $formToDuplicate = $hookObj->beforeFormDuplicate(
+                        $formPersistenceIdentifier,
+                        $formToDuplicate
+                    );
+                }
+            }
+        }
+
         $this->formPersistenceManager->save($formPersistenceIdentifier, $formToDuplicate);
 
         return $this->controllerContext->getUriBuilder()->uriFor('index', ['formPersistenceIdentifier' => $formPersistenceIdentifier], 'FormEditor');
@@ -137,7 +167,6 @@ class FormManagerController extends AbstractBackendController
      * Show references to this persistence identifier
      *
      * @param string $formPersistenceIdentifier persistence identifier of the form to duplicate
-     * @return void
      * @internal
      */
     public function referencesAction(string $formPersistenceIdentifier)
@@ -156,29 +185,35 @@ class FormManagerController extends AbstractBackendController
      * Delete a formDefinition identified by the $formPersistenceIdentifier.
      *
      * @param string $formPersistenceIdentifier persistence identifier to delete
-     * @return void
      * @internal
      */
     public function deleteAction(string $formPersistenceIdentifier)
     {
         if (empty($this->getReferences($formPersistenceIdentifier))) {
+            if (
+                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'])
+                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'])
+            ) {
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'] as $className) {
+                    $hookObj = GeneralUtility::makeInstance($className);
+                    if (method_exists($hookObj, 'beforeFormDelete')) {
+                        $hookObj->beforeFormDelete(
+                            $formPersistenceIdentifier
+                        );
+                    }
+                }
+            }
+
             $this->formPersistenceManager->delete($formPersistenceIdentifier);
         } else {
+            $controllerConfiguration = TranslationService::getInstance()->translateValuesRecursive(
+                $this->formSettings['formManager']['controller'],
+                $this->formSettings['formManager']['translationFile']
+            );
+
             $this->addFlashMessage(
-                TranslationService::getInstance()->translate(
-                    $this->formSettings['formManager']['controller']['deleteAction']['errorMessage'],
-                    [$formPersistenceIdentifier],
-                    $this->formSettings['formManager']['translationFile'],
-                    null,
-                    $this->formSettings['formManager']['controller']['deleteAction']['errorMessage']
-                ),
-                TranslationService::getInstance()->translate(
-                    $this->formSettings['formManager']['controller']['deleteAction']['errorTitle'],
-                    null,
-                    $this->formSettings['formManager']['translationFile'],
-                    null,
-                    $this->formSettings['formManager']['controller']['deleteAction']['errorTitle']
-                ),
+                sprintf($controllerConfiguration['deleteAction']['errorMessage'], $formPersistenceIdentifier),
+                $controllerConfiguration['deleteAction']['errorTitle'],
                 AbstractMessage::ERROR,
                 true
             );

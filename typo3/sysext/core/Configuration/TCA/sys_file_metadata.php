@@ -14,7 +14,7 @@ return [
         'transOrigDiffSourceField' => 'l10n_diffsource',
         'versioningWS' => true,
         'origUid' => 't3_origuid',
-        'default_sortby' => 'ORDER BY crdate DESC',
+        'default_sortby' => 'crdate DESC',
         'typeicon_classes' => [
             'default' => 'mimetypes-other-other'
         ],
@@ -78,7 +78,7 @@ return [
         'fileinfo' => [
             'config' => [
                 'type' => 'user',
-                'userFunc' => 'TYPO3\\CMS\\Core\\Resource\\Hook\\FileInfoHook->renderFileMetadataInfo'
+                'renderType' => 'fileInfo',
             ]
         ],
         'file' => [

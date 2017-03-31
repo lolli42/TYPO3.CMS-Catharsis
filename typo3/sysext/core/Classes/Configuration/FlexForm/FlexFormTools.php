@@ -110,6 +110,7 @@ class FlexFormTools
      */
     public function getDataStructureIdentifier(array $fieldTca, string $tableName, string $fieldName, array $row): string
     {
+        $dataStructureIdentifier = null;
         // Hook to inject an own logic to point to a data structure elsewhere.
         // A hook has to implement method getDataStructureIdentifierPreProcess() to be called here.
         // All hooks are called in a row, each MUST return an array, and the FIRST one that
@@ -777,6 +778,10 @@ class FlexFormTools
         if (!is_array($editData)) {
             return 'Parsing error: ' . $editData;
         }
+        // Check if $dataStructureArray['sheets'] is indeed an array before loop or it will crash with runtime error
+        if (!is_array($dataStructureArray['sheets'])) {
+            return 'Data Structure ERROR: sheets is defined but not an array for table ' . $table . (isset($row['uid']) ? ' and uid ' . $row['uid'] : '');
+        }
         // Traverse languages:
         foreach ($dataStructureArray['sheets'] as $sheetKey => $sheetData) {
             // Render sheet:
@@ -903,7 +908,6 @@ class FlexFormTools
      * @param array $PA Additional configuration used in calling function
      * @param string $path Path of value in DS structure
      * @param FlexFormTools $pObj caller
-     * @return void
      */
     public function cleanFlexFormXML_callBackFunction($dsArr, $data, $PA, $path, $pObj)
     {

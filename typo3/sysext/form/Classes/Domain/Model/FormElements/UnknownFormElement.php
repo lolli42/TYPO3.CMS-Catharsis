@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Form\Domain\Model\FormElements;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Form\Domain\Exception\IdentifierNotValidException;
 use TYPO3\CMS\Form\Domain\Model\Renderable\AbstractRenderable;
 use TYPO3\CMS\Form\Domain\Runtime\FormRuntime;
@@ -47,6 +48,26 @@ class UnknownFormElement extends AbstractRenderable implements FormElementInterf
     }
 
     /**
+     * @api
+     */
+    public function initializeFormElement()
+    {
+        if (
+            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['initializeFormElement'])
+            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['initializeFormElement'])
+        ) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['initializeFormElement'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'initializeFormElement')) {
+                    $hookObj->initializeFormElement(
+                        $this
+                    );
+                }
+            }
+        }
+    }
+
+    /**
      * Returns a unique identifier of this element.
      * While element identifiers are only unique within one form,
      * this includes the identifier of the form itself, making it "globally" unique
@@ -74,16 +95,6 @@ class UnknownFormElement extends AbstractRenderable implements FormElementInterf
     }
 
     /**
-     * Not used in this implementation
-     *
-     * @return void
-     * @internal
-     */
-    public function initializeFormElement()
-    {
-    }
-
-    /**
      * @return mixed the default value for this Form Element
      * @internal
      */
@@ -107,7 +118,6 @@ class UnknownFormElement extends AbstractRenderable implements FormElementInterf
      *
      * @param string $key
      * @param mixed $value
-     * @return void
      * @internal
      */
     public function setProperty(string $key, $value)
@@ -138,11 +148,12 @@ class UnknownFormElement extends AbstractRenderable implements FormElementInterf
      * @param FormRuntime $formRuntime
      * @param mixed $elementValue submitted value of the element *before post processing*
      * @param array $requestArguments submitted raw request values
-     * @return void
      * @see FormRuntime::mapAndValidate()
      * @internal
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
      */
     public function onSubmit(FormRuntime $formRuntime, &$elementValue, array $requestArguments = [])
     {
+        GeneralUtility::logDeprecatedFunction();
     }
 }

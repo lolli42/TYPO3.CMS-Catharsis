@@ -67,7 +67,7 @@ class PageRepository
 
     /**
      * If TRUE, versioning preview of other record versions is allowed. THIS MUST
-     * ONLY BE SET IF the page is not cached and truely previewed by a backend
+     * ONLY BE SET IF the page is not cached and truly previewed by a backend
      * user!!!
      *
      * @var bool
@@ -175,7 +175,6 @@ class PageRepository
      * into account
      *
      * @param bool $show_hidden If $show_hidden is TRUE, the hidden-field is ignored!! Normally this should be FALSE. Is used for previewing.
-     * @return void
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::fetch_the_id(), \TYPO3\CMS\Tstemplate\Controller\TemplateAnalyzerModuleFunctionController::initialize_editor()
      */
     public function init($show_hidden)
@@ -228,7 +227,7 @@ class PageRepository
      * @param int $uid The page id to look up.
      * @param bool $disableGroupAccessCheck If set, the check for group access is disabled. VERY rarely used
      * @throws \UnexpectedValueException
-     * @return array The page row with overlayed localized fields. Empty it no page.
+     * @return array The page row with overlaid localized fields. Empty it no page.
      * @see getPage_noCheck()
      */
     public function getPage($uid, $disableGroupAccessCheck = false)
@@ -286,7 +285,7 @@ class PageRepository
      * ->where_hid_del (start- and endtime or hidden). Only "deleted" is checked!
      *
      * @param int $uid The page id to look up
-     * @return array The page row with overlayed localized fields. Empty array if no page.
+     * @return array The page row with overlaid localized fields. Empty array if no page.
      * @see getPage()
      */
     public function getPage_noCheck($uid)
@@ -320,7 +319,7 @@ class PageRepository
      * Returns the $row of the first web-page in the tree (for the default menu...)
      *
      * @param int $uid The page id for which to fetch first subpages (PID)
-     * @return mixed If found: The page record (with overlayed localized fields, if any). If NOT found: blank value (not array!)
+     * @return mixed If found: The page record (with overlaid localized fields, if any). If NOT found: blank value (not array!)
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::fetch_the_id()
      */
     public function getFirstWebPage($uid)
@@ -389,10 +388,10 @@ class PageRepository
     /**
      * Returns the relevant page overlay record fields
      *
-     * @param mixed $pageInput If $pageInput is an integer, it's the pid of the pageOverlay record and thus the page overlay record is returned. If $pageInput is an array, it's a page-record and based on this page record the language record is found and OVERLAYED before the page record is returned.
+     * @param mixed $pageInput If $pageInput is an integer, it's the pid of the pageOverlay record and thus the page overlay record is returned. If $pageInput is an array, it's a page-record and based on this page record the language record is found and OVERLAID before the page record is returned.
      * @param int $lUid Language UID if you want to set an alternative value to $this->sys_language_uid which is default. Should be >=0
      * @throws \UnexpectedValueException
-     * @return array Page row which is overlayed with language_overlay record (or the overlay record alone)
+     * @return array Page row which is overlaid with language_overlay record (or the overlay record alone)
      */
     public function getPageOverlay($pageInput, $lUid = -1)
     {
@@ -404,10 +403,10 @@ class PageRepository
     /**
      * Returns the relevant page overlay record fields
      *
-     * @param array $pagesInput Array of integers or array of arrays. If each value is an integer, it's the pids of the pageOverlay records and thus the page overlay records are returned. If each value is an array, it's page-records and based on this page records the language records are found and OVERLAYED before the page records are returned.
+     * @param array $pagesInput Array of integers or array of arrays. If each value is an integer, it's the pids of the pageOverlay records and thus the page overlay records are returned. If each value is an array, it's page-records and based on this page records the language records are found and OVERLAID before the page records are returned.
      * @param int $lUid Language UID if you want to set an alternative value to $this->sys_language_uid which is default. Should be >=0
      * @throws \UnexpectedValueException
-     * @return array Page rows which are overlayed with language_overlay record.
+     * @return array Page rows which are overlaid with language_overlay record.
      *               If the input was an array of integers, missing records are not
      *               included. If the input were page rows, untranslated pages
      *               are returned.
@@ -436,14 +435,9 @@ class PageRepository
         }
         // If language UID is different from zero, do overlay:
         if ($lUid) {
-            $fieldArr = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'], true);
             $page_ids = [];
 
             $origPage = reset($pagesInput);
-            if (is_array($origPage)) {
-                // Make sure that only fields which exist in the first incoming record are overlaid!
-                $fieldArr = array_intersect($fieldArr, array_keys($this->purgeComputedProperties($origPage)));
-            }
             foreach ($pagesInput as $origPage) {
                 if (is_array($origPage)) {
                     // Was the whole record
@@ -453,47 +447,42 @@ class PageRepository
                     $page_ids[] = $origPage;
                 }
             }
-            if (!empty($fieldArr)) {
-                if (!in_array('pid', $fieldArr, true)) {
-                    $fieldArr[] = 'pid';
-                }
-                // NOTE regarding the query restrictions
-                // Currently the showHiddenRecords of TSFE set will allow
-                // pages_language_overlay records to be selected as they are
-                // child-records of a page.
-                // However you may argue that the showHiddenField flag should
-                // determine this. But that's not how it's done right now.
-                // Selecting overlay record:
-                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                    ->getQueryBuilderForTable('pages_language_overlay');
-                $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
-                $result = $queryBuilder->select(...$fieldArr)
-                    ->from('pages_language_overlay')
-                    ->where(
-                        $queryBuilder->expr()->in(
-                            'pid',
-                            $queryBuilder->createNamedParameter($page_ids, Connection::PARAM_INT_ARRAY)
-                        ),
-                        $queryBuilder->expr()->eq(
-                            'sys_language_uid',
-                            $queryBuilder->createNamedParameter($lUid, \PDO::PARAM_INT)
-                        )
+            // NOTE regarding the query restrictions
+            // Currently the showHiddenRecords of TSFE set will allow
+            // pages_language_overlay records to be selected as they are
+            // child-records of a page.
+            // However you may argue that the showHiddenField flag should
+            // determine this. But that's not how it's done right now.
+            // Selecting overlay record:
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('pages_language_overlay');
+            $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
+            $result = $queryBuilder->select('*')
+                ->from('pages_language_overlay')
+                ->where(
+                    $queryBuilder->expr()->in(
+                        'pid',
+                        $queryBuilder->createNamedParameter($page_ids, Connection::PARAM_INT_ARRAY)
+                    ),
+                    $queryBuilder->expr()->eq(
+                        'sys_language_uid',
+                        $queryBuilder->createNamedParameter($lUid, \PDO::PARAM_INT)
                     )
-                    ->execute();
+                )
+                ->execute();
 
-                $overlays = [];
-                while ($row = $result->fetch()) {
-                    $this->versionOL('pages_language_overlay', $row);
-                    if (is_array($row)) {
-                        $row['_PAGES_OVERLAY'] = true;
-                        $row['_PAGES_OVERLAY_UID'] = $row['uid'];
-                        $row['_PAGES_OVERLAY_LANGUAGE'] = $lUid;
-                        $origUid = $row['pid'];
-                        // Unset vital fields that are NOT allowed to be overlaid:
-                        unset($row['uid']);
-                        unset($row['pid']);
-                        $overlays[$origUid] = $row;
-                    }
+            $overlays = [];
+            while ($row = $result->fetch()) {
+                $this->versionOL('pages_language_overlay', $row);
+                if (is_array($row)) {
+                    $row['_PAGES_OVERLAY'] = true;
+                    $row['_PAGES_OVERLAY_UID'] = $row['uid'];
+                    $row['_PAGES_OVERLAY_LANGUAGE'] = $lUid;
+                    $origUid = $row['pid'];
+                    // Unset vital fields that are NOT allowed to be overlaid:
+                    unset($row['uid']);
+                    unset($row['pid']);
+                    $overlays[$origUid] = $row;
                 }
             }
         }
@@ -645,7 +634,7 @@ class PageRepository
      * @param string $sortField The field to sort by. Default is "sorting
      * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
      * @param bool $checkShortcuts Check if shortcuts exist, checks by default
-     * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlayed localized fields, if any)
+     * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlaid localized fields, if any)
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getPageShortcut(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::makeMenu()
      * @see \TYPO3\CMS\WizardCrpages\Controller\CreatePagesWizardModuleFunctionController, \TYPO3\CMS\WizardSortpages\View\SortPagesWizardModuleFunction
      */
@@ -665,7 +654,7 @@ class PageRepository
      * @param string $sortField The field to sort by. Default is "sorting"
      * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
      * @param bool $checkShortcuts Check if shortcuts exist, checks by default
-     * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlayed localized fields, if any)
+     * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlaid localized fields, if any)
      */
     public function getMenuForPages(array $pageIds, $fields = '*', $sortField = 'sorting', $additionalWhereClause = '', $checkShortcuts = true)
     {
@@ -687,7 +676,7 @@ class PageRepository
      * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
      * @param bool $checkShortcuts Check if shortcuts exist, checks by default
      * @param bool $parentPages Whether the uid list is meant as list of parent pages or the page itself TRUE means id list is checked against pid field
-     * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlayed localized fields, if any)
+     * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlaid localized fields, if any)
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getPageShortcut(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::makeMenu()
      * @see \TYPO3\CMS\WizardCrpages\Controller\CreatePagesWizardModuleFunctionController, \TYPO3\CMS\WizardSortpages\View\SortPagesWizardModuleFunction
      */
@@ -1269,9 +1258,11 @@ class PageRepository
      * @param string $hash The hash-string which was used to store the data value
      * @return mixed The "data" from the cache
      * @see tslib_TStemplate::start(), storeHash()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the Cache Manager directly to fetch cache entries
      */
     public static function getHash($hash)
     {
+        GeneralUtility::logDeprecatedFunction();
         $hashContent = null;
         /** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $contentHashCache */
         $contentHashCache = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
@@ -1293,11 +1284,12 @@ class PageRepository
      * @param mixed $data The data to store
      * @param string $ident Is just a textual identification in order to inform about the content!
      * @param int $lifetime The lifetime for the cache entry in seconds
-     * @return void
      * @see tslib_TStemplate::start(), getHash()
+     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the Cache Manager directly to store cache entries
      */
     public static function storeHash($hash, $data, $ident, $lifetime = 0)
     {
+        GeneralUtility::logDeprecatedFunction();
         GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash')->set($hash, $data, ['ident_' . $ident], (int)$lifetime);
     }
 
@@ -1479,7 +1471,6 @@ class PageRepository
      *
      * @param string $table Table name
      * @param array $rr Record array passed by reference. As minimum, "pid" and "uid" fields must exist! "t3ver_oid" and "t3ver_wsid" is nice and will save you a DB query.
-     * @return void (Passed by ref).
      * @see BackendUtility::fixVersioningPid(), versionOL(), getRootLine()
      */
     public function fixVersioningPid($table, &$rr)
@@ -1539,7 +1530,6 @@ class PageRepository
      * @param array $row Record array passed by reference. As minimum, the "uid", "pid" and "t3ver_state" fields must exist! The record MAY be set to FALSE in which case the calling function should act as if the record is forbidden to access!
      * @param bool $unsetMovePointers If set, the $row is cleared in case it is a move-pointer. This is only for preview of moved records (to remove the record from the original location so it appears only in the new location)
      * @param bool $bypassEnableFieldsCheck Unless this option is TRUE, the $row is unset if enablefields for BOTH the version AND the online record deselects it. This is because when versionOL() is called it is assumed that the online record is already selected with no regards to it's enablefields. However, after looking for a new version the online record enablefields must ALSO be evaluated of course. This is done all by this function!
-     * @return void (Passed by ref).
      * @see fixVersioningPid(), BackendUtility::workspaceOL()
      */
     public function versionOL($table, &$row, $unsetMovePointers = false, $bypassEnableFieldsCheck = false)

@@ -35,7 +35,6 @@ class FormFrontendController extends ActionController
 
     /**
      * @param \TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface $formPersistenceManager
-     * @return void
      * @internal
      */
     public function injectFormPersistenceManager(\TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface $formPersistenceManager)
@@ -50,7 +49,6 @@ class FormFrontendController extends ActionController
      * This method is used directly to display the first page from the
      * formDefinition because its cached.
      *
-     * @return void
      * @internal
      */
     public function renderAction()
@@ -69,7 +67,6 @@ class FormFrontendController extends ActionController
      * This method is used to display all pages / finishers except the
      * first page because its non cached.
      *
-     * @return void
      * @internal
      */
     public function performAction()
@@ -95,7 +92,7 @@ class FormFrontendController extends ActionController
                     $prototypeConfiguration = $configurationService->getPrototypeConfiguration($prototypeName);
 
                     foreach ($finisherValue['options'] as $optionKey => $optionValue) {
-                        // If a previous overriden finisher property is excluded at some time
+                        // If a previous overridden finisher property is excluded at some time
                         // it is still present in the flexform database row.
                         // To avoid a override from the time the property is excluded, this check is needed
                         if (!isset($prototypeConfiguration['finishersDefinition'][$finisherIdentifier]['FormEngine']['elements'][$optionKey])) {

@@ -28,12 +28,15 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     const VALUE_HotelIdSecond = 4;
     const VALUE_HotelIdThird = 5;
     const VALUE_LanguageId = 1;
+    const VALUE_LanguageIdSecond = 2;
 
     const TABLE_Page = 'pages';
+    const TABLE_PageOverlay = 'pages_language_overlay';
     const TABLE_Content = 'tt_content';
     const TABLE_Hotel = 'tx_irretutorial_1nff_hotel';
     const TABLE_Offer = 'tx_irretutorial_1nff_offer';
 
+    const FIELD_PageHotel = 'tx_irretutorial_hotels';
     const FIELD_ContentHotel = 'tx_irretutorial_1nff_hotels';
     const FIELD_HotelOffer = 'offers';
 
@@ -212,6 +215,33 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
         $GLOBALS['TCA'][self::TABLE_Hotel]['columns'][self::FIELD_HotelOffer]['config']['behaviour']['localizeChildrenAtParentLocalization'] = true;
         $newTableIds = $this->actionService->localizeRecord(self::TABLE_Content, self::VALUE_ContentIdLast, self::VALUE_LanguageId);
         $this->recordIds['localizedContentId'] = $newTableIds[self::TABLE_Content][self::VALUE_ContentIdLast];
+        $this->actionService->modifyRecords(
+            self::VALUE_PageId,
+            [
+                self::TABLE_Content => ['uid' => self::VALUE_ContentIdLast, self::FIELD_ContentHotel => '5,__nextUid'],
+                self::TABLE_Hotel => ['uid' => '__NEW', 'title' => 'Hotel #2'],
+            ]
+        );
+    }
+
+    /**
+     * @see DataSet/localizeParentContentWAllChildrenSelect.csv
+     */
+    public function localizeParentContentChainWithAllChildrenInSelectModeAndLanguageSynchronizationSource()
+    {
+        $GLOBALS['TCA'][self::TABLE_Content]['columns'][self::FIELD_ContentHotel]['config']['behaviour']['localizationMode'] = 'select';
+        $GLOBALS['TCA'][self::TABLE_Content]['columns'][self::FIELD_ContentHotel]['config']['behaviour']['allowLanguageSynchronization'] = true;
+        $GLOBALS['TCA'][self::TABLE_Content]['columns'][self::FIELD_ContentHotel]['config']['behaviour']['localizeChildrenAtParentLocalization'] = true;
+        $GLOBALS['TCA'][self::TABLE_Hotel]['columns'][self::FIELD_HotelOffer]['config']['behaviour']['localizeChildrenAtParentLocalization'] = true;
+        $newTableIds = $this->actionService->localizeRecord(self::TABLE_Content, self::VALUE_ContentIdLast, self::VALUE_LanguageId);
+        $this->recordIds['localizedContentIdFirst'] = $newTableIds[self::TABLE_Content][self::VALUE_ContentIdLast];
+        $newTableIds = $this->actionService->localizeRecord(self::TABLE_Content, $this->recordIds['localizedContentIdFirst'], self::VALUE_LanguageIdSecond);
+        $this->recordIds['localizedContentIdSecond'] = $newTableIds[self::TABLE_Content][$this->recordIds['localizedContentIdFirst']];
+        $this->actionService->modifyRecord(
+            self::TABLE_Content,
+            $this->recordIds['localizedContentIdSecond'],
+            ['l10n_state' => [self::FIELD_ContentHotel => 'source']]
+        );
         $this->actionService->modifyRecords(
             self::VALUE_PageId,
             [
@@ -428,5 +458,81 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
             [self::FIELD_ContentHotel => '3'],
             [self::TABLE_Hotel => [4]]
         );
+    }
+
+    public function localizePageWithLocalizationExclude()
+    {
+        $GLOBALS['TCA'][self::TABLE_Page]['columns'][self::FIELD_PageHotel]['l10n_mode'] = 'exclude';
+        $GLOBALS['TCA'][self::TABLE_PageOverlay]['columns'][self::FIELD_PageHotel]['l10n_mode'] = 'exclude';
+        $localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_LanguageId);
+        $this->recordIds['localizedPageId'] = $localizedTableIds[self::TABLE_Page][self::VALUE_PageId];
+        $this->recordIds['localizedPageOverlayId'] = $localizedTableIds[self::TABLE_PageOverlay][self::VALUE_PageId];
+    }
+
+    public function localizePageAndAddHotelChildWithLocalizationExclude()
+    {
+        $GLOBALS['TCA'][self::TABLE_Page]['columns'][self::FIELD_PageHotel]['l10n_mode'] = 'exclude';
+        $GLOBALS['TCA'][self::TABLE_PageOverlay]['columns'][self::FIELD_PageHotel]['l10n_mode'] = 'exclude';
+        $localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_LanguageId);
+        $this->recordIds['localizedPageId'] = $localizedTableIds[self::TABLE_Page][self::VALUE_PageId];
+        $this->recordIds['localizedPageOverlayId'] = $localizedTableIds[self::TABLE_PageOverlay][self::VALUE_PageId];
+        $this->actionService->modifyRecords(
+            self::VALUE_PageId,
+            [
+                self::TABLE_Page => ['uid' => self::VALUE_PageId, self::FIELD_PageHotel => '2,__nextUid'],
+                self::TABLE_Hotel => ['uid' => '__NEW', 'title' => 'Hotel #007'],
+            ]
+        );
+    }
+
+    public function localizePageWithLanguageSynchronization()
+    {
+        $GLOBALS['TCA'][self::TABLE_PageOverlay]['columns'][self::FIELD_PageHotel]['config']['behaviour']['allowLanguageSynchronization'] = true;
+        $localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_LanguageId);
+        $this->recordIds['localizedPageId'] = $localizedTableIds[self::TABLE_Page][self::VALUE_PageId];
+        $this->recordIds['localizedPageOverlayId'] = $localizedTableIds[self::TABLE_PageOverlay][self::VALUE_PageId];
+    }
+
+    public function localizePageAndAddHotelChildWithLanguageSynchronization()
+    {
+        $GLOBALS['TCA'][self::TABLE_PageOverlay]['columns'][self::FIELD_PageHotel]['config']['behaviour']['allowLanguageSynchronization'] = true;
+        $localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_LanguageId);
+        $this->recordIds['localizedPageId'] = $localizedTableIds[self::TABLE_Page][self::VALUE_PageId];
+        $this->recordIds['localizedPageOverlayId'] = $localizedTableIds[self::TABLE_PageOverlay][self::VALUE_PageId];
+        $this->actionService->modifyRecords(
+            self::VALUE_PageId,
+            [
+                self::TABLE_Page => ['uid' => self::VALUE_PageId, self::FIELD_PageHotel => '2,__nextUid'],
+                self::TABLE_Hotel => ['uid' => '__NEW', 'title' => 'Hotel #007'],
+            ]
+        );
+    }
+
+    public function localizePageAndAddMonoglotHotelChildWithLanguageSynchronization()
+    {
+        unset($GLOBALS['TCA'][self::TABLE_Hotel]['ctrl']['languageField']);
+        unset($GLOBALS['TCA'][self::TABLE_Hotel]['ctrl']['transOrigPointerField']);
+        unset($GLOBALS['TCA'][self::TABLE_Hotel]['ctrl']['transOrigDiffSourceField']);
+        $GLOBALS['TCA'][self::TABLE_PageOverlay]['columns'][self::FIELD_PageHotel]['config']['behaviour']['allowLanguageSynchronization'] = true;
+        $localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_LanguageId);
+        $this->recordIds['localizedPageId'] = $localizedTableIds[self::TABLE_Page][self::VALUE_PageId];
+        $this->recordIds['localizedPageOverlayId'] = $localizedTableIds[self::TABLE_PageOverlay][self::VALUE_PageId];
+        $this->actionService->modifyRecords(
+            self::VALUE_PageId,
+            [
+                self::TABLE_Page => ['uid' => self::VALUE_PageId, self::FIELD_PageHotel => '2,__nextUid'],
+                self::TABLE_Hotel => ['uid' => '__NEW', 'title' => 'Hotel #007'],
+            ]
+        );
+    }
+
+    public function localizeAndCopyPageWithLanguageSynchronization()
+    {
+        $GLOBALS['TCA'][self::TABLE_PageOverlay]['columns'][self::FIELD_PageHotel]['config']['behaviour']['allowLanguageSynchronization'] = true;
+        $localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_LanguageId);
+        $this->recordIds['localizedPageId'] = $localizedTableIds[self::TABLE_Page][self::VALUE_PageId];
+        $this->recordIds['localizedPageOverlayId'] = $localizedTableIds[self::TABLE_PageOverlay][self::VALUE_PageId];
+        $newTableIds = $this->actionService->copyRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_PageIdTarget);
+        $this->recordIds['newPageId'] = $newTableIds[self::TABLE_Page][self::VALUE_PageId];
     }
 }

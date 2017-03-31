@@ -42,8 +42,6 @@ class ExpressionBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
 
     /**
      * Create a new database connection mock object for every test.
-     *
-     * @return void
      */
     protected function setUp()
     {
@@ -260,7 +258,6 @@ class ExpressionBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
         $databasePlatform->getName()->willReturn('postgresql');
 
         $this->connectionProphet->quote(',', Argument::cetera())->shouldBeCalled()->willReturn("','");
-        $this->connectionProphet->quote('\'1\'', Argument::cetera())->shouldBeCalled()->willReturn("'1'");
         $this->connectionProphet->quoteIdentifier(Argument::cetera())->will(function ($args) {
             return '"' . $args[0] . '"';
         });
@@ -270,6 +267,26 @@ class ExpressionBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
         $result = $this->subject->inSet('aField', "'1'");
 
         $this->assertSame('\'1\' = ANY(string_to_array("aField"::text, \',\'))', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function inSetForPostgreSQLWithColumn()
+    {
+        $databasePlatform = $this->prophesize(MockPlatform::class);
+        $databasePlatform->getName()->willReturn('postgresql');
+
+        $this->connectionProphet->quote(',', Argument::cetera())->shouldBeCalled()->willReturn("','");
+        $this->connectionProphet->quoteIdentifier(Argument::cetera())->will(function ($args) {
+            return '"' . $args[0] . '"';
+        });
+
+        $this->connectionProphet->getDatabasePlatform()->willReturn($databasePlatform->reveal());
+
+        $result = $this->subject->inSet('aField', '"testtable"."uid"', true);
+
+        $this->assertSame('"testtable"."uid"::text = ANY(string_to_array("aField"::text, \',\'))', $result);
     }
 
     /**
@@ -466,6 +483,23 @@ class ExpressionBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
         $this->assertSame(
             'COUNT("tableName"."fieldName") AS "anAlias"',
             $this->subject->count('tableName.fieldName', 'anAlias')
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function lengthQuotesIdentifier()
+    {
+        $this->connectionProphet->quoteIdentifier(Argument::cetera())->will(function ($args) {
+            $platform = new MockPlatform();
+            return $platform->quoteIdentifier($args[0]);
+        });
+
+        $this->assertSame('LENGTH("tableName"."fieldName")', $this->subject->length('tableName.fieldName'));
+        $this->assertSame(
+            'LENGTH("tableName"."fieldName") AS "anAlias"',
+            $this->subject->length('tableName.fieldName', 'anAlias')
         );
     }
 
