@@ -399,7 +399,8 @@ class Typo3DbQueryParser
                     $plainValue = $this->dataMapper->getPlainValue($singleValue);
                     if ($plainValue !== null) {
                         $hasValue = true;
-                        $plainValues[] = $plainValue;
+                        $parameterType = ctype_digit((string)$plainValue) ? \PDO::PARAM_INT : \PDO::PARAM_STR;
+                        $plainValues[] = $this->queryBuilder->createNamedParameter($plainValue, $parameterType);
                     }
                 }
                 if (!$hasValue) {
@@ -826,7 +827,7 @@ class Typo3DbQueryParser
 
             $joinConditionExpression =  $this->queryBuilder->expr()->eq(
                 $leftTableAlias . '.' . $column1Name,
-                $rightTableAlias . '.' . $column2Name
+                $this->queryBuilder->quoteIdentifier($rightTableAlias . '.' . $column2Name)
             );
         }
         $this->queryBuilder->leftJoin($leftTableAlias, $rightTableName, $rightTableAlias, $joinConditionExpression);
@@ -913,12 +914,12 @@ class Typo3DbQueryParser
                 // @todo: no test for this part yet
                 $joinConditionExpression = $this->queryBuilder->expr()->eq(
                     $tableName . '.uid',
-                    $childTableAlias . '.' . $parentKeyFieldName
+                    $this->queryBuilder->quoteIdentifier($childTableAlias . '.' . $parentKeyFieldName)
                 );
             } else {
                 $joinConditionExpression = $this->queryBuilder->expr()->eq(
                     $tableName . '.' . $columnName,
-                    $childTableAlias . '.uid'
+                    $this->queryBuilder->quoteIdentifier($childTableAlias . '.uid')
                 );
             }
             $this->queryBuilder->leftJoin($tableName, $childTableName, $childTableAlias, $joinConditionExpression);
@@ -931,7 +932,7 @@ class Typo3DbQueryParser
             if (isset($parentKeyFieldName)) {
                 $joinConditionExpression = $this->queryBuilder->expr()->eq(
                     $tableName . '.uid',
-                    $childTableAlias . '.' . $parentKeyFieldName
+                    $this->queryBuilder->quoteIdentifier($childTableAlias . '.' . $parentKeyFieldName)
                 );
             } else {
                 $joinConditionExpression = $this->queryBuilder->expr()->inSet(
@@ -952,14 +953,16 @@ class Typo3DbQueryParser
             $joinConditionExpression = $this->queryBuilder->expr()->andX(
                 $this->queryBuilder->expr()->eq(
                     $tableName . '.uid',
-                    $relationTableAlias . '.' . $columnMap->getParentKeyFieldName()
+                    $this->queryBuilder->quoteIdentifier(
+                        $relationTableAlias . '.' . $columnMap->getParentKeyFieldName()
+                    )
                 ),
                 $this->getAdditionalMatchFieldsStatement($this->queryBuilder->expr(), $columnMap, $relationTableAlias, $realTableName)
             );
             $this->queryBuilder->leftJoin($tableName, $relationTableName, $relationTableAlias, $joinConditionExpression);
             $joinConditionExpression = $this->queryBuilder->expr()->eq(
                 $relationTableAlias . '.' . $columnMap->getChildKeyFieldName(),
-                $childTableAlias . '.uid'
+                $this->queryBuilder->quoteIdentifier($childTableAlias . '.uid')
             );
             $this->queryBuilder->leftJoin($relationTableAlias, $childTableName, $childTableAlias, $joinConditionExpression);
             $this->unionTableAliasCache[] = $childTableAlias;

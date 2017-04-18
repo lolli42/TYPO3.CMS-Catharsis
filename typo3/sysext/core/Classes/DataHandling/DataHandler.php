@@ -4780,12 +4780,12 @@ class DataHandler
             }
         } else {
             // Create new record:
-            /** @var $copyTCE DataHandler */
+            $temporaryId = StringUtility::getUniqueId('NEW');
             $copyTCE = $this->getLocalTCE();
-            $copyTCE->start([$Ttable => ['NEW' => $overrideValues]], '', $this->BE_USER);
+            $copyTCE->start([$Ttable => [$temporaryId => $overrideValues]], [], $this->BE_USER);
             $copyTCE->process_datamap();
             // Getting the new UID as if it had been copied:
-            $theNewSQLID = $copyTCE->substNEWwithIDs['NEW'];
+            $theNewSQLID = $copyTCE->substNEWwithIDs[$temporaryId];
             if ($theNewSQLID) {
                 // If is by design that $Ttable is used and not $table! See "l10nmgr" extension. Could be debated, but this is what I chose for this "pseudo case"
                 $this->copyMappingArray[$Ttable][$uid] = $theNewSQLID;
@@ -6054,6 +6054,11 @@ class DataHandler
                 }
                 // Update child records if change to pid is required (only if the current record is not on a workspace):
                 if ($thePidToUpdate) {
+                    // ensure, only live page ids are used as 'pid' values
+                    $liveId = BackendUtility::getLiveVersionIdOfRecord('pages', $theUidToUpdate);
+                    if ($liveId !== null) {
+                        $thePidToUpdate = $liveId;
+                    }
                     $updateValues = ['pid' => $thePidToUpdate];
                     foreach ($originalItemArray as $v) {
                         if ($v['id'] && $v['table'] && is_null(BackendUtility::getLiveVersionIdOfRecord($v['table'], $v['id']))) {

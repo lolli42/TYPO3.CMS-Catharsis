@@ -15,8 +15,9 @@ namespace TYPO3\CMS\Core\Tests\Unit\LinkHandling;
  */
 
 use TYPO3\CMS\Core\LinkHandling\LinkService;
+use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-class LinkServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
+class LinkServiceTest extends UnitTestCase
 {
     /**
      * Data to resolve strings to arrays and vice versa, external, mail, page
@@ -146,6 +147,14 @@ class LinkServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                     'email' => 'one@love.com'
                 ],
                 'mailto:one@love.com'
+            ],
+            'email without protocol and subject parameter' => [
+                'email@mail.mail?subject=Anfrage:%20Text%20Text%20Lösungen',
+                [
+                    'type' => LinkService::TYPE_EMAIL,
+                    'email' => 'email@mail.mail?subject=Anfrage:%20Text%20Text%20Lösungen'
+                ],
+                'mailto:email@mail.mail?subject=Anfrage:%20Text%20Text%20Lösungen'
             ],
             'current page - cool style' => [
                 't3://page?uid=current',

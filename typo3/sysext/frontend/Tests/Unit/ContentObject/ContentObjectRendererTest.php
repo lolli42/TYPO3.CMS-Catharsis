@@ -22,9 +22,11 @@ use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use TYPO3\CMS\Frontend\ContentObject\AbstractContentObject;
 use TYPO3\CMS\Frontend\ContentObject\CaseContentObject;
 use TYPO3\CMS\Frontend\ContentObject\ContentContentObject;
@@ -1263,6 +1265,26 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     }
 
     /**
+     * Checks if getData() works with type "session"
+     *
+     * @test
+     */
+    public function getDataWithTypeSession()
+    {
+        $frontendUser = $this->getMockBuilder(FrontendUserAuthentication::class)
+            ->setMethods(['getSessionData'])
+            ->getMock();
+        $frontendUser->expects($this->once())->method('getSessionData')->with('myext')->willReturn([
+            'mydata' => [
+                'someValue' => 42,
+            ],
+        ]);
+        $GLOBALS['TSFE']->fe_user = $frontendUser;
+
+        $this->assertEquals(42, $this->subject->getData('session:myext|mydata|someValue'));
+    }
+
+    /**
      * Checks if getData() works with type "level"
      *
      * @test
@@ -2054,113 +2076,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     }
 
     /**
-     * @param string $expected The expected URL
-     * @param string $url The URL to parse and manipulate
-     * @param array $configuration The configuration array
-     * @test
-     * @dataProvider forceAbsoluteUrlReturnsCorrectAbsoluteUrlDataProvider
-     */
-    public function forceAbsoluteUrlReturnsCorrectAbsoluteUrl($expected, $url, array $configuration)
-    {
-        // Force hostname
-        $this->subject->expects($this->any())->method('getEnvironmentVariable')->will($this->returnValueMap(
-            [
-                ['HTTP_HOST', 'localhost'],
-                ['TYPO3_SITE_PATH', '/'],
-            ]
-        ));
-        $GLOBALS['TSFE']->absRefPrefix = '';
-
-        $this->assertEquals($expected, $this->subject->_call('forceAbsoluteUrl', $url, $configuration));
-    }
-
-    /**
-     * @return array The test data for forceAbsoluteUrlReturnsAbsoluteUrl
-     */
-    public function forceAbsoluteUrlReturnsCorrectAbsoluteUrlDataProvider()
-    {
-        return [
-            'Missing forceAbsoluteUrl leaves URL untouched' => [
-                'foo',
-                'foo',
-                []
-            ],
-            'Absolute URL stays unchanged' => [
-                'http://example.org/',
-                'http://example.org/',
-                [
-                    'forceAbsoluteUrl' => '1'
-                ]
-            ],
-            'Absolute URL stays unchanged 2' => [
-                'http://example.org/resource.html',
-                'http://example.org/resource.html',
-                [
-                    'forceAbsoluteUrl' => '1'
-                ]
-            ],
-            'Scheme and host w/o ending slash stays unchanged' => [
-                'http://example.org',
-                'http://example.org',
-                [
-                    'forceAbsoluteUrl' => '1'
-                ]
-            ],
-            'Scheme can be forced' => [
-                'typo3://example.org',
-                'http://example.org',
-                [
-                    'forceAbsoluteUrl' => '1',
-                    'forceAbsoluteUrl.' => [
-                        'scheme' => 'typo3'
-                    ]
-                ]
-            ],
-            'Relative path old-style' => [
-                'http://localhost/fileadmin/dummy.txt',
-                '/fileadmin/dummy.txt',
-                [
-                    'forceAbsoluteUrl' => '1',
-                ]
-            ],
-            'Relative path' => [
-                'http://localhost/fileadmin/dummy.txt',
-                'fileadmin/dummy.txt',
-                [
-                    'forceAbsoluteUrl' => '1',
-                ]
-            ],
-            'Scheme can be forced with pseudo-relative path' => [
-                'typo3://localhost/fileadmin/dummy.txt',
-                '/fileadmin/dummy.txt',
-                [
-                    'forceAbsoluteUrl' => '1',
-                    'forceAbsoluteUrl.' => [
-                        'scheme' => 'typo3'
-                    ]
-                ]
-            ],
-            'Hostname only is not treated as valid absolute URL' => [
-                'http://localhost/example.org',
-                'example.org',
-                [
-                    'forceAbsoluteUrl' => '1'
-                ]
-            ],
-            'Scheme and host is added to local file path' => [
-                'typo3://localhost/fileadmin/my.pdf',
-                'fileadmin/my.pdf',
-                [
-                    'forceAbsoluteUrl' => '1',
-                    'forceAbsoluteUrl.' => [
-                        'scheme' => 'typo3'
-                    ]
-                ]
-            ]
-        ];
-    }
-
-    /**
      * @test
      */
     public function renderingContentObjectThrowsException()
@@ -2294,28 +2209,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                 throw new \LogicException('Exception during rendering', 1414513947);
             });
         return $contentObjectFixture;
-    }
-
-    /**
-     * @test
-     */
-    public function forceAbsoluteUrlReturnsCorrectAbsoluteUrlWithSubfolder()
-    {
-        // Force hostname and subfolder
-        $this->subject->expects($this->any())->method('getEnvironmentVariable')->will($this->returnValueMap(
-            [
-                ['HTTP_HOST', 'localhost'],
-                ['TYPO3_SITE_PATH', '/subfolder/'],
-            ]
-        ));
-
-        $expected = 'http://localhost/subfolder/fileadmin/my.pdf';
-        $url = 'fileadmin/my.pdf';
-        $configuration = [
-            'forceAbsoluteUrl' => '1'
-        ];
-
-        $this->assertEquals($expected, $this->subject->_call('forceAbsoluteUrl', $url, $configuration));
     }
 
     /**
@@ -2876,6 +2769,56 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                 ],
                 '<a href="fileadmin/foo.bar" title="Title of the file" target="_blank" class="file-class">My file</a>',
             ],
+            'Link to file with attributes and additional href' => [
+                'My file',
+                [
+                    'parameter' => 'fileadmin/foo.bar',
+                    'ATagParams' => 'href="foo-bar"',
+                    'fileTarget' => '_blank',
+                    'title' => 'Title of the file',
+                ],
+                '<a href="fileadmin/foo.bar" title="Title of the file" target="_blank">My file</a>',
+            ],
+            'Link to file with attributes and additional href and class' => [
+                'My file',
+                [
+                    'parameter' => 'fileadmin/foo.bar',
+                    'ATagParams' => 'href="foo-bar" class="file-class"',
+                    'fileTarget' => '_blank',
+                    'title' => 'Title of the file',
+                ],
+                '<a href="fileadmin/foo.bar" title="Title of the file" target="_blank" class="file-class">My file</a>',
+            ],
+            'Link to file with attributes and additional class and href' => [
+                'My file',
+                [
+                    'parameter' => 'fileadmin/foo.bar',
+                    'ATagParams' => 'class="file-class" href="foo-bar"',
+                    'fileTarget' => '_blank',
+                    'title' => 'Title of the file',
+                ],
+                '<a href="fileadmin/foo.bar" title="Title of the file" target="_blank" class="file-class">My file</a>',
+            ],
+            'Link to file with attributes and additional class and href and title' => [
+                'My file',
+                [
+                    'parameter' => 'fileadmin/foo.bar',
+                    'ATagParams' => 'class="file-class" href="foo-bar" title="foo-bar"',
+                    'fileTarget' => '_blank',
+                    'title' => 'Title of the file',
+                ],
+                '<a href="fileadmin/foo.bar" title="foo-bar" target="_blank" class="file-class">My file</a>',
+            ],
+            'Link to file with attributes and empty ATagParams' => [
+                'My file',
+                [
+                    'parameter' => 'fileadmin/foo.bar',
+                    'ATagParams' => '',
+                    'fileTarget' => '_blank',
+                    'title' => 'Title of the file',
+                ],
+                '<a href="fileadmin/foo.bar" title="Title of the file" target="_blank">My file</a>',
+            ],
             'Link to file with attributes in parameter' => [
                 'My file',
                 [
@@ -2917,6 +2860,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         ];
         $typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
         $GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
+
         $this->subject->_set('typoScriptFrontendController', $typoScriptFrontendControllerMockObject);
 
         $this->assertEquals($expectedResult, $this->subject->typoLink($linkText, $configuration));
@@ -7558,6 +7502,84 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      ***************************************************************************/
 
     /**
+     * Check if getCurrentTable works properly.
+     *
+     * @test
+     */
+    public function getCurrentTable()
+    {
+        $this->assertEquals('tt_content', $this->subject->getCurrentTable());
+    }
+
+    /**
+     * Data provider for linkWrap
+     *
+     * @return array [[$expected, $content, $wrap],]
+     */
+    public function linkWrapDataProvider()
+    {
+        $content = $this->getUniqueId();
+        return [
+            'Handles a tag as wrap.' => [
+                '<tag>' . $content . '</tag>',
+                $content,
+                '<tag>|</tag>'
+            ],
+            'Handles simple text as wrap.' => [
+                'alpha' . $content . 'omega',
+                $content,
+                'alpha|omega'
+            ],
+            'Trims whitespace around tags.' => [
+                '<tag>' . $content . '</tag>',
+                $content,
+                "\t <tag>\t |\t </tag>\t "
+            ],
+            'A wrap without pipe is placed before the content.' => [
+                '<tag>' . $content,
+                $content,
+                '<tag>'
+            ],
+            'For an empty string as wrap the content is returned as is.' => [
+                $content,
+                $content,
+                ''
+            ],
+            'For null as wrap the content is returned as is.' => [
+                $content,
+                $content,
+                null
+            ],
+            'For a valid rootline level the uid will be inserted.' => [
+                '<a href="?id=55">' . $content . '</a>',
+                $content,
+                '<a href="?id={3}"> | </a>'
+            ],
+            'For an invalid rootline level there is no replacement.' => [
+                '<a href="?id={4}">' . $content . '</a>',
+                $content,
+                '<a href="?id={4}"> | </a>'
+            ],
+        ];
+    }
+
+    /**
+     * Check if linkWrap works properly.
+     *
+     * @test
+     * @dataProvider  linkWrapDataProvider
+     * @param string $expected The expected output.
+     * @param string $content The parameter $content.
+     * @param string $wrap The parameter $wrap.
+     */
+    public function linkWrap($expected, $content, $wrap)
+    {
+        $this->templateServiceMock->rootLine = [3 => ['uid' => 55]];
+        $actual = $this->subject->linkWrap($content, $wrap);
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
      * Data provider for prefixComment.
      *
      * @return array [$expect, $comment, $content]
@@ -7614,6 +7636,50 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         // Consider to improve the signature and deprecate the old one.
         $result = $this->subject->prefixComment($comment, null, $content);
         $this->assertEquals($expect, $result);
+    }
+
+    /**
+     * Check setter and getter of currentFile work properly.
+     *
+     * @test
+     */
+    public function setCurrentFile_getCurrentFile()
+    {
+        $storageMock = $this->createMock(ResourceStorage::class);
+        $file = new File(['testfile'], $storageMock);
+        $this->subject->setCurrentFile($file);
+        $this->assertSame($file, $this->subject->getCurrentFile());
+    }
+
+    /**
+     * Check setter and getter of currentVal work properly.
+     *
+     * Show it stored to $this->data[$this->currentValKey].
+     * (The default value of currentValKey is tested elsewhere.)
+     *
+     * @test
+     * @see $this->stdWrap_current()
+     */
+    public function setCurrentVal_getCurrentVal()
+    {
+        $key = $this->getUniqueId();
+        $value = $this->getUniqueId();
+        $this->subject->currentValKey = $key;
+        $this->subject->setCurrentVal($value);
+        $this->assertEquals($value, $this->subject->getCurrentVal());
+        $this->assertEquals($value, $this->subject->data[$key]);
+    }
+
+    /**
+     * Check setter and getter of userObjectType work properly.
+     *
+     * @test
+     */
+    public function setUserObjectType_getUserObjectType()
+    {
+        $value = $this->getUniqueId();
+        $this->subject->setUserObjectType($value);
+        $this->assertEquals($value, $this->subject->getUserObjectType());
     }
 
     /***************************************************************************

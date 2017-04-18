@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "0a93bff6ece95bdbe45d883432719012",
+    "content-hash": "5b719671fab589a7f3ad3a665bc27289",
     "packages": [
         {
             "name": "cogpowered/finediff",
@@ -3381,16 +3381,16 @@
         },
         {
             "name": "typo3/cms-styleguide",
-            "version": "8.0.8",
+            "version": "8.0.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/TYPO3/styleguide.git",
-                "reference": "7f9b8f5b376e981cb59f091d460720bfbde0ce7b"
+                "reference": "67ef37d488d908b379d4dce113b489d440c7be3c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/TYPO3/styleguide/zipball/7f9b8f5b376e981cb59f091d460720bfbde0ce7b",
-                "reference": "7f9b8f5b376e981cb59f091d460720bfbde0ce7b",
+                "url": "https://api.github.com/repos/TYPO3/styleguide/zipball/67ef37d488d908b379d4dce113b489d440c7be3c",
+                "reference": "67ef37d488d908b379d4dce113b489d440c7be3c",
                 "shasum": ""
             },
             "replace": {
@@ -3426,30 +3426,30 @@
                 "typo3",
                 "typo3 backend"
             ],
-            "time": "2017-03-14T18:36:19+00:00"
+            "time": "2017-03-29T15:43:53+00:00"
         },
         {
             "name": "typo3/testing-framework",
-            "version": "1.0.0",
+            "version": "1.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/TYPO3/testing-framework.git",
-                "reference": "6142661e9ae04ad8fdfd5128b48548af0c89d66d"
+                "reference": "34b6242830e393817f937b68fd5e7e2dacf8711e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/TYPO3/testing-framework/zipball/6142661e9ae04ad8fdfd5128b48548af0c89d66d",
-                "reference": "6142661e9ae04ad8fdfd5128b48548af0c89d66d",
+                "url": "https://api.github.com/repos/TYPO3/testing-framework/zipball/34b6242830e393817f937b68fd5e7e2dacf8711e",
+                "reference": "34b6242830e393817f937b68fd5e7e2dacf8711e",
                 "shasum": ""
             },
             "require": {
                 "mikey179/vfsstream": "~1.6.0",
                 "phpunit/phpunit": "^5.6",
-                "typo3/cms-backend": "^8.5",
-                "typo3/cms-core": "^8.5",
-                "typo3/cms-extbase": "^8.5",
-                "typo3/cms-fluid": "^8.5",
-                "typo3/cms-frontend": "^8.5",
+                "typo3/cms-backend": "^8.5 || ^9",
+                "typo3/cms-core": "^8.5 || ^9",
+                "typo3/cms-extbase": "^8.5 || ^9",
+                "typo3/cms-fluid": "^8.5 || ^9",
+                "typo3/cms-frontend": "^8.5 || ^9",
                 "typo3fluid/fluid": "^2.2"
             },
             "suggest": {
@@ -3489,7 +3489,7 @@
                 "tests",
                 "typo3"
             ],
-            "time": "2017-03-31T14:08:16+00:00"
+            "time": "2017-04-18T17:16:07+00:00"
         },
         {
             "name": "webmozart/assert",

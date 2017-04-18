@@ -53,7 +53,7 @@
 		"doctrine/dbal": "~2.5.4"
 	},
 	"require-dev": {
-		"typo3/testing-framework": "~1.0.0",
+		"typo3/testing-framework": "~1.0.3",
 		"codeception/codeception": "^2.2",
 		"se/selenium-server-standalone": "~2.53",
 		"typo3/cms-styleguide": "~8.0.8",
@@ -75,7 +75,6 @@
 			"class-alias-maps": [
 				"typo3/sysext/extbase/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/fluid/Migrations/Code/ClassAliasMap.php",
-				"typo3/sysext/rtehtmlarea/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/version/Migrations/Code/ClassAliasMap.php"
 			]
 		},
@@ -119,7 +118,6 @@
 		"typo3/cms-reports": "self.version",
 		"typo3/cms-rsaauth": "self.version",
 		"typo3/cms-rte-ckeditor": "self.version",
-		"typo3/cms-rtehtmlarea": "self.version",
 		"typo3/cms-saltedpasswords": "self.version",
 		"typo3/cms-scheduler": "self.version",
 		"typo3/cms-setup": "self.version",
@@ -171,7 +169,6 @@
 			"TYPO3\\CMS\\Reports\\": "typo3/sysext/reports/Classes/",
 			"TYPO3\\CMS\\Rsaauth\\": "typo3/sysext/rsaauth/Classes/",
 			"TYPO3\\CMS\\RteCKEditor\\": "typo3/sysext/rte_ckeditor/Classes/",
-			"TYPO3\\CMS\\Rtehtmlarea\\": "typo3/sysext/rtehtmlarea/Classes/",
 			"TYPO3\\CMS\\Saltedpasswords\\": "typo3/sysext/saltedpasswords/Classes/",
 			"TYPO3\\CMS\\Scheduler\\": "typo3/sysext/scheduler/Classes/",
 			"TYPO3\\CMS\\Setup\\": "typo3/sysext/setup/Classes/",
@@ -185,10 +182,7 @@
 			"TYPO3\\CMS\\Viewpage\\": "typo3/sysext/viewpage/Classes/",
 			"TYPO3\\CMS\\WizardCrpages\\": "typo3/sysext/wizard_crpages/Classes/",
 			"TYPO3\\CMS\\WizardSortpages\\": "typo3/sysext/wizard_sortpages/Classes/",
-			"TYPO3\\CMS\\Workspaces\\": "typo3/sysext/workspaces/Classes/",
-			"TYPO3\\TestingFramework\\": "components/testing_framework/Classes/",
-			"TYPO3\\CMS\\Core\\Tests\\": "components/testing_framework/compat/core/",
-			"TYPO3\\CMS\\Fluid\\Tests\\": "components/testing_framework/compat/fluid/"
+			"TYPO3\\CMS\\Workspaces\\": "typo3/sysext/workspaces/Classes/"
 		},
 		"classmap": [
 			"typo3/sysext/core/Resources/PHP/"
@@ -221,7 +215,6 @@
 			"TYPO3\\CMS\\Recordlist\\Tests\\": "typo3/sysext/recordlist/Tests/",
 			"TYPO3\\CMS\\Reports\\Tests\\": "typo3/sysext/reports/Tests/",
 			"TYPO3\\CMS\\Rsaauth\\Tests\\": "typo3/sysext/rsaauth/Tests/",
-			"TYPO3\\CMS\\Rtehtmlarea\\Tests\\": "typo3/sysext/rtehtmlarea/Tests/",
 			"TYPO3\\CMS\\Saltedpasswords\\Tests\\": "typo3/sysext/saltedpasswords/Tests/",
 			"TYPO3\\CMS\\Scheduler\\Tests\\": "typo3/sysext/scheduler/Tests/",
 			"TYPO3\\CMS\\Sv\\Tests\\": "typo3/sysext/sv/Tests/",

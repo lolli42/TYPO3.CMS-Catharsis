@@ -71,7 +71,10 @@ class SysRefindexHashUpdater extends AbstractUpdate
         }
 
         $description = 'The hash calculation for records within the table sys_refindex was changed'
-            . ' to exclude the sorting field. The records need to be updated with a newly calculated hash.';
+            . ' to exclude the sorting field. The records need to be updated with a newly calculated hash.<br />'
+            . '<b>Important:</b> If this online migration times out you can perform an offline update using the'
+            . ' command-line instead of the wizard, by executing the following command: '
+            . '<code>TYPO3_PATH_ROOT=$PWD/web vendor/bin/typo3 referenceindex:update</code>';
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('sys_refindex');
 
@@ -114,13 +117,13 @@ class SysRefindexHashUpdater extends AbstractUpdate
 
         $updateQueryBuilder = $connection->createQueryBuilder();
         $updateQueryBuilder->update('sys_refindex')
+            ->set('hash', $updateQueryBuilder->createPositionalParameter('', \PDO::PARAM_STR), false)
             ->where(
                 $updateQueryBuilder->expr()->eq(
                     'hash',
                     $updateQueryBuilder->createPositionalParameter('', \PDO::PARAM_STR)
                 )
-            )
-            ->set('hash', $updateQueryBuilder->createPositionalParameter('', \PDO::PARAM_STR), false);
+            );
         $databaseQueries[] = $updateQueryBuilder->getSQL();
         $updateStatement = $connection->prepare($updateQueryBuilder->getSQL());
 
@@ -128,7 +131,7 @@ class SysRefindexHashUpdater extends AbstractUpdate
         try {
             while ($row = $statement->fetch()) {
                 $newHash = md5(implode('///', array_diff_key($row, ['hash' => true])) . '///' . $this->hashVersion);
-                $updateStatement->execute([$row['hash'], $newHash]);
+                $updateStatement->execute([$newHash, $row['hash']]);
             }
             $connection->commit();
             $this->markWizardAsDone();
