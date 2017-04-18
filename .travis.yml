@@ -48,6 +48,7 @@ before_script:
   - phpenv config-rm xdebug.ini
   - echo "extension = memcached.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - git checkout TYPO3_8-7
   - composer install
   - export typo3DatabaseName="typo3"
   - export typo3DatabaseHost="localhost"
