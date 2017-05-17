@@ -136,33 +136,6 @@ class ExtensionManagementUtility
     }
 
     /**
-     * Returns the relative path to the extension as measured from from the TYPO3_mainDir
-     * If the extension is not loaded the function will die with an error message
-     * Useful for images and links from backend
-     *
-     * @param string $key Extension key
-     *
-     * @throws \BadFunctionCallException
-     * @return string
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use PathUtility::getAbsoluteWebPath(), or ->siteRelPath()
-     */
-    public static function extRelPath($key)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if (!static::$packageManager->isPackageActive($key)) {
-            throw new \BadFunctionCallException('TYPO3 Fatal Error: Extension key "' . $key . '" is NOT loaded!', 1365429673);
-        }
-        $relativePathToSiteRoot = self::siteRelPath($key);
-        $typo3MainDirLength = strlen(TYPO3_mainDir);
-        if (substr($relativePathToSiteRoot, 0, $typo3MainDirLength) === TYPO3_mainDir) {
-            $relativePathToSiteRoot = substr($relativePathToSiteRoot, $typo3MainDirLength);
-        } else {
-            $relativePathToSiteRoot = '../' . $relativePathToSiteRoot;
-        }
-        return $relativePathToSiteRoot;
-    }
-
-    /**
      * Returns the relative path to the extension as measured from the PATH_site (frontend)
      * If the extension is not loaded the function will die with an error message
      * Useful for images and links from the frontend
@@ -256,7 +229,7 @@ class ExtensionManagementUtility
      * Adds an array with $GLOBALS['TCA'] column-configuration to the $GLOBALS['TCA']-entry for that table.
      * This function adds the configuration needed for rendering of the field in TCEFORMS - but it does NOT add the field names to the types lists!
      * So to have the fields displayed you must also call fx. addToAllTCAtypes or manually add the fields to the types list.
-     * FOR USE IN ext_tables.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php . Use in ext_tables.php FILES may break the frontend.
      *
      * @param string $table The table name of a table already present in $GLOBALS['TCA'] with a columns section
      * @param array $columnArray The array with the additional columns (typical some fields an extension wants to add)
@@ -275,7 +248,7 @@ class ExtensionManagementUtility
      * Adds a string $string (comma separated list of field names) to all ["types"][xxx]["showitem"] entries for table $table (unless limited by $typeList)
      * This is needed to have new fields shown automatically in the TCEFORMS of a record from $table.
      * Typically this function is called after having added new columns (database fields) with the addTCAcolumns function
-     * FOR USE IN ext_tables.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php Use in ext_tables.php FILES may break the frontend.
      *
      * @param string $table Table name
      * @param string $newFieldsString Field list to add.
@@ -363,6 +336,7 @@ class ExtensionManagementUtility
      * Adds new fields to all palettes that is defined after an existing field.
      * If the field does not have a following palette yet, it's created automatically
      * and gets called "generatedFor-$field".
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php Use in ext_tables.php FILES may break the frontend.
      *
      * See unit tests for more examples and edge cases.
      *
@@ -447,6 +421,7 @@ class ExtensionManagementUtility
     /**
      * Adds new fields to a palette.
      * If the palette does not exist yet, it's created automatically.
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php Use in ext_tables.php FILES may break the frontend.
      *
      * @param string $table Name of the table
      * @param string $palette Name of the palette to be extended
@@ -472,6 +447,7 @@ class ExtensionManagementUtility
      * Warning: Do not use this method for radio or check types, especially not
      * with $relativeToField and $relativePosition parameters. This would shift
      * existing database data 'off by one'.
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php Use in ext_tables.php FILES may break the frontend.
      *
      * As an example, this can be used to add an item to tt_content CType select
      * drop-down after the existing 'mailform' field with these parameters:
@@ -810,49 +786,6 @@ class ExtensionManagementUtility
     }
 
     /**
-     * Adds an ExtJS module (main or sub) to the backend interface
-     * FOR USE IN ext_tables.php FILES
-     *
-     * @param string $extensionName
-     * @param string $mainModuleName Is the main module key
-     * @param string $subModuleName Is the submodule key, if blank a plain main module is generated
-     * @param string $position Passed to \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModule, see reference there
-     * @param array $moduleConfiguration Icon with array keys: access, icon, labels to configure the module
-     * @throws \InvalidArgumentException
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use addModule instead for a regular module, as ExtJS usage is discouraged,
-     */
-    public static function addExtJSModule($extensionName, $mainModuleName, $subModuleName = '', $position = '', array $moduleConfiguration = [])
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if (empty($extensionName)) {
-            throw new \InvalidArgumentException('The extension name must not be empty', 1325938973);
-        }
-        $extensionName = str_replace(' ', '', ucwords(str_replace('_', ' ', $extensionName)));
-        $defaultModuleConfiguration = [
-            'access' => 'admin',
-            'icon' => 'EXT:backend/Resources/Public/Images/Logo.png',
-            'labels' => '',
-        ];
-        // Add mandatory parameter to use new pagetree
-        if ($mainModuleName === 'web') {
-            $defaultModuleConfiguration['navigationComponentId'] = 'typo3-pagetree';
-        }
-        ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
-        $moduleConfiguration = $defaultModuleConfiguration;
-        if ($subModuleName !== '') {
-            $moduleSignature = $mainModuleName . '_' . $subModuleName;
-        } else {
-            $moduleSignature = $mainModuleName;
-        }
-        $moduleConfiguration['name'] = $moduleSignature;
-        $moduleConfiguration['script'] = 'extjspaneldummy.html';
-        $moduleConfiguration['extensionName'] = $extensionName;
-        $moduleConfiguration['configureModuleFunction'] = [self::class, 'configureModule'];
-        $GLOBALS['TBE_MODULES']['_configuration'][$moduleSignature] = $moduleConfiguration;
-        self::addModule($mainModuleName, $subModuleName, $position);
-    }
-
-    /**
      * This method is called from \TYPO3\CMS\Backend\Module\ModuleLoader::checkMod
      * and it replaces old conf.php.
      *
@@ -862,11 +795,6 @@ class ExtensionManagementUtility
     public static function configureModule($moduleSignature)
     {
         $moduleConfiguration = $GLOBALS['TBE_MODULES']['_configuration'][$moduleSignature];
-        if (!empty($moduleConfiguration['labels']['tabs_images']['tab'])) {
-            GeneralUtility::deprecationLog('Module registration for backend module "' . $moduleSignature . '" uses old referencing for the icon. Use the configuration option "icon" directly instead of [labels][tabs_images][tab]. The old option is removed with TYPO3 v9.');
-            $moduleConfiguration['icon'] = $moduleConfiguration['labels']['tabs_images']['tab'];
-            unset($moduleConfiguration['labels']['tabs_images']['tab']);
-        }
 
         // Register the icon and move it too "iconIdentifier"
         if (!empty($moduleConfiguration['icon'])) {
@@ -933,12 +861,6 @@ class ExtensionManagementUtility
         if (is_array($moduleConfiguration) && !empty($moduleConfiguration)) {
             $fullModuleSignature = $main . ($sub ? '_' . $sub : '');
 
-            if (!empty($moduleConfiguration['labels']['tabs_images']['tab'])) {
-                GeneralUtility::deprecationLog('Module registration for module "' . $fullModuleSignature . '" uses old referencing for the icon. Use the configuration option "icon" directly instead of [labels][tabs_images][tab]. The old option is removed with TYPO3 v9.');
-                $moduleConfiguration['icon'] = $moduleConfiguration['labels']['tabs_images']['tab'];
-                unset($moduleConfiguration['labels']['tabs_images']['tab']);
-            }
-
             if (!empty($moduleConfiguration['icon'])) {
                 $iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
                 $iconIdentifier = 'module-' . $fullModuleSignature;
@@ -957,41 +879,6 @@ class ExtensionManagementUtility
     }
 
     /**
-     * Registers an Ext.Direct component with access restrictions.
-     *
-     * @param string $endpointName
-     * @param string $callbackClass
-     * @param string $moduleName Optional: must be <mainmodule> or <mainmodule>_<submodule>
-     * @param string $accessLevel Optional: can be 'admin' or 'user,group'
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public static function registerExtDirectComponent($endpointName, $callbackClass, $moduleName = null, $accessLevel = null)
-    {
-        $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ExtDirect'][$endpointName] = [
-            'callbackClass' => $callbackClass,
-            'moduleName' => $moduleName,
-            'accessLevel' => $accessLevel
-        ];
-    }
-
-    /**
-     * Registers an Ajax Handler
-     *
-     * @param string $ajaxId Identifier of the handler, that is used in the request
-     * @param string $callbackMethod TYPO3 callback method (className->methodName).
-     * @param bool $csrfTokenCheck Only set this to FALSE if you are sure that the registered handler does not modify any data!
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public static function registerAjaxHandler($ajaxId, $callbackMethod, $csrfTokenCheck = true)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'][$ajaxId] = [
-            'callbackMethod' => $callbackMethod,
-            'csrfTokenCheck' => $csrfTokenCheck
-        ];
-    }
-
-    /**
      * Adds a "Function menu module" ('third level module') to an existing function menu for some other backend module
      * The arguments values are generally determined by which function menu this is supposed to interact with
      * See Inside TYPO3 for information on how to use this function.
@@ -999,37 +886,19 @@ class ExtensionManagementUtility
      *
      * @param string $modname Module name
      * @param string $className Class name
-     * @param string $classPath Class path, deprecated since 6.2, use auto-loading instead
+     * @param string $_ unused
      * @param string $title Title of module
      * @param string $MM_key Menu array key - default is "function
      * @param string $WS Workspace conditions. Blank means all workspaces, any other string can be a comma list of "online", "offline" and "custom
      * @see \TYPO3\CMS\Backend\Module\BaseScriptClass::mergeExternalItems()
      */
-    public static function insertModuleFunction($modname, $className, $classPath = null, $title, $MM_key = 'function', $WS = '')
+    public static function insertModuleFunction($modname, $className, $_ = null, $title, $MM_key = 'function', $WS = '')
     {
         $GLOBALS['TBE_MODULES_EXT'][$modname]['MOD_MENU'][$MM_key][$className] = [
             'name' => $className,
             'title' => $title,
             'ws' => $WS
         ];
-    }
-
-    /**
-     * Adds some more content to a key of TYPO3_CONF_VARS array.
-     *
-     * This also tracks which content was added by extensions (in TYPO3_CONF_VARS_extensionAdded)
-     * so that they cannot be editted again through the Install Tool.
-     *
-     * @param string $group The group ('FE', 'BE', 'SYS' ...)
-     * @param string $key The key of this setting within the group
-     * @param string $content The text to add (include leading "\n" in case of multi-line entries)
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public static function appendToTypoConfVars($group, $key, $content)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $GLOBALS['TYPO3_CONF_VARS_extensionAdded'][$group][$key] .= $content;
-        $GLOBALS['TYPO3_CONF_VARS'][$group][$key] .= $content;
     }
 
     /**
@@ -1286,7 +1155,7 @@ class ExtensionManagementUtility
      * Takes the $itemArray (label, value[,icon]) and adds to the items-array of $GLOBALS['TCA'][tt_content] elements with CType "listtype" (or another field if $type points to another fieldname)
      * If the value (array pos. 1) is already found in that items-array, the entry is substituted, otherwise the input array is added to the bottom.
      * Use this function to add a frontend plugin to this list of plugin-types - or more generally use this function to add an entry to any selectorbox/radio-button set in the TCEFORMS
-     * FOR USE IN ext_tables.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php Use in ext_tables.php FILES may break the frontend.
      *
      * @param array $itemArray Numerical array: [0] => Plugin label, [1] => Underscored extension key, [2] => Path to plugin icon relative to TYPO3_mainDir
      * @param string $type Type (eg. "list_type") - basically a field from "tt_content" table
@@ -1323,6 +1192,7 @@ class ExtensionManagementUtility
     /**
      * Adds an entry to the "ds" array of the tt_content field "pi_flexform".
      * This is used by plugins to add a flexform XML reference / content for use when they are selected as plugin or content element.
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php Use in ext_tables.php FILES may break the frontend.
      *
      * @param string $piKeyToMatch Plugin key as used in the list_type field. Use the asterisk * to match all list_type values.
      * @param string $value Either a reference to a flex-form XML file (eg. "FILE:EXT:newloginbox/flexform_ds.xml") or the XML directly.
@@ -1339,7 +1209,7 @@ class ExtensionManagementUtility
     /**
      * Adds the $table tablename to the list of tables allowed to be includes by content element type "Insert records"
      * By using $content_table and $content_field you can also use the function for other tables.
-     * FOR USE IN ext_tables.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
+     * FOR USE IN files in Configuration/TCA/Overrides/*.php Use in ext_tables.php FILES may break the frontend.
      *
      * @param string $table Table name to allow for "insert record
      * @param string $content_table Table name TO WHICH the $table name is applied. See $content_field as well.
@@ -1360,7 +1230,7 @@ class ExtensionManagementUtility
      * The naming of #43 has historic reason and is rooted inside code which is now put into a TER extension called
      * "statictemplates". Since the static template with uid 43 is the "content.default" and practically always used
      * for rendering the content elements it's very useful to have this function automatically adding the necessary
-     * TypoScript for calling your plugin. It will also work for the extension "css_styled_content".
+     * TypoScript for calling your plugin.
      * The logic is now generalized and called "defaultContentRendering", see addTypoScript() as well.
      *
      * $type determines the type of frontend plugin:
@@ -1425,10 +1295,10 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Call this method to add an entry in the static template list found in sys_templates
-     * FOR USE IN ext_tables.php FILES or in Configuration/TCA/Overrides/sys_template.php Use the latter to benefit from TCA caching!
+     * FOR USE IN Configuration/TCA/Overrides/sys_template.php Use in ext_tables.php may break the frontend.
      *
      * @param string $extKey Is of course the extension key
-     * @param string $path Is the path where the template files (fixed names) include_static.txt (integer list of uids from the table "static_templates"), constants.txt, setup.txt, and include_static_file.txt is found (relative to extPath, eg. 'static/'). The file include_static_file.txt, allows you to include other static templates defined in files, from your static template, and thus corresponds to the field 'include_static_file' in the sys_template table. The syntax for this is a comma separated list of static templates to include, like:  EXT:css_styled_content/static/,EXT:da_newsletter_subscription/static/,EXT:cc_random_image/pi2/static/
+     * @param string $path Is the path where the template files (fixed names) include_static.txt, constants.txt, setup.txt, and include_static_file.txt is found (relative to extPath, eg. 'static/'). The file include_static_file.txt, allows you to include other static templates defined in files, from your static template, and thus corresponds to the field 'include_static_file' in the sys_template table. The syntax for this is a comma separated list of static templates to include, like:  EXT:fluid_styled_content/Configuration/TypoScript/,EXT:da_newsletter_subscription/static/,EXT:cc_random_image/pi2/static/
      * @param string $title Is the title in the selector box.
      * @see addTypoScript()
      */
@@ -1443,7 +1313,7 @@ tt_content.' . $key . $suffix . ' {
 
     /**
      * Call this method to add an entry in the pageTSconfig list found in pages
-     * FOR USE in Configuration/TCA/Overrides/pages.php Use the latter to benefit from TCA caching!
+     * FOR USE in Configuration/TCA/Overrides/pages.php
      *
      * @param string $extKey The extension key
      * @param string $filePath The path where the TSconfig file is located
@@ -1499,7 +1369,7 @@ tt_content.' . $key . $suffix . ' {
      * (Basically this function can do the same as addTypoScriptSetup and addTypoScriptConstants - just with a little more hazzle, but also with some more options!)
      * FOR USE IN ext_localconf.php FILES
      * Note: As of TYPO3 CMS 6.2, static template #43 (content: default) was replaced with "defaultContentRendering" which makes it
-     * possible that a first extension like css_styled_content registers a "contentRendering" template (= a template that defines default content rendering TypoScript)
+     * possible that a first extension like fluid_styled_content registers a "contentRendering" template (= a template that defines default content rendering TypoScript)
      * by adding itself to $TYPO3_CONF_VARS[FE][contentRenderingTemplates][] = 'myext/Configuration/TypoScript'.
      * An extension calling addTypoScript('myext', 'setup', $typoScript, 'defaultContentRendering') will add its TypoScript directly after;
      * For now, "43" and "defaultContentRendering" can be used, but "defaultContentRendering" is more descriptive and
@@ -1508,7 +1378,7 @@ tt_content.' . $key . $suffix . ' {
      * @param string $key Is the extension key (informative only).
      * @param string $type Is either "setup" or "constants" and obviously determines which kind of TypoScript code we are adding.
      * @param string $content Is the TS content, will be prefixed with a [GLOBAL] line and a comment-header.
-     * @param int|string $afterStaticUid Is either an integer pointing to a uid of a static_template or a string pointing to the "key" of a static_file template ([reduced extension_key]/[local path]). The points is that the TypoScript you add is included only IF that static template is included (and in that case, right after). So effectively the TypoScript you set can specifically overrule settings from those static templates.
+     * @param int|string string pointing to the "key" of a static_file template ([reduced extension_key]/[local path]). The points is that the TypoScript you add is included only IF that static template is included (and in that case, right after). So effectively the TypoScript you set can specifically overrule settings from those static templates.
      */
     public static function addTypoScript($key, $type, $content, $afterStaticUid = 0)
     {
@@ -1523,7 +1393,7 @@ tt_content.' . $key . $suffix . ' {
 ' . $content;
             if ($afterStaticUid) {
                 // If 'content (default)' is targeted (static uid 43),
-                // the content is added after typoscript of type contentRendering, eg. css_styled_content, see EXT:frontend/TemplateService for more information on how the code is parsed
+                // the content is added after typoscript of type contentRendering, eg. fluid_styled_content, see EXT:frontend/TemplateService for more information on how the code is parsed
                 if ($afterStaticUid === 'defaultContentRendering' || $afterStaticUid == 43) {
                     $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.']['defaultContentRendering'] .= $content;
                 } else {

@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Frontend\Plugin;
 use Doctrine\DBAL\Driver\Statement;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Localization\Locales;
@@ -228,14 +227,6 @@ class AbstractPlugin
     protected $frontendController;
 
     /**
-     * Property for accessing DatabaseConnection centrally
-     *
-     * @var DatabaseConnection
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use the Doctrine DBAL layer via the ConnectionPool class
-     */
-    protected $databaseConnection;
-
-    /**
      * @var MarkerBasedTemplateService
      */
     protected $templateService;
@@ -245,12 +236,11 @@ class AbstractPlugin
      * Initializes $this->piVars if $this->prefixId is set to any value
      * Will also set $this->LLkey based on the config.language setting.
      *
-     * @param DatabaseConnection $databaseConnection, deprecated in TYPO3 v8, will be removed in TYPO3 v9
+     * @param null $_ unused,
      * @param TypoScriptFrontendController $frontendController
      */
-    public function __construct(DatabaseConnection $databaseConnection = null, TypoScriptFrontendController $frontendController = null)
+    public function __construct($_ = null, TypoScriptFrontendController $frontendController = null)
     {
-        $this->databaseConnection = $databaseConnection ?: $GLOBALS['TYPO3_DB'];
         $this->frontendController = $frontendController ?: $GLOBALS['TSFE'];
         $this->templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
         // Setting piVars:
@@ -581,9 +571,9 @@ class AbstractPlugin
             $pagefloat = -1;
         }
         // Default values for "traditional" wrapping with a table. Can be overwritten by vars from $wrapArr
-        $wrapper['disabledLinkWrap'] = '<td nowrap="nowrap"><p>|</p></td>';
-        $wrapper['inactiveLinkWrap'] = '<td nowrap="nowrap"><p>|</p></td>';
-        $wrapper['activeLinkWrap'] = '<td' . $this->pi_classParam('browsebox-SCell') . ' nowrap="nowrap"><p>|</p></td>';
+        $wrapper['disabledLinkWrap'] = '<td class="nowrap"><p>|</p></td>';
+        $wrapper['inactiveLinkWrap'] = '<td class="nowrap"><p>|</p></td>';
+        $wrapper['activeLinkWrap'] = '<td' . $this->pi_classParam('browsebox-SCell') . ' class="nowrap"><p>|</p></td>';
         $wrapper['browseLinksWrap'] = rtrim('<table ' . $tableParams) . '><tr>|</tr></table>';
         $wrapper['showResultsWrap'] = '<p>|</p>';
         $wrapper['browseBoxWrap'] = '
@@ -613,7 +603,7 @@ class AbstractPlugin
                     $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, [$pointerName => null], $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
                 } else {
                     $label = $this->pi_getLL('pi_list_browseresults_first', '<< First');
-                    $links[] = $this->cObj->wrap(hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
+                    $links[] = $this->cObj->wrap($hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
                 }
             }
             // Link to previous page
@@ -632,7 +622,7 @@ class AbstractPlugin
                     $pageText = ($a * $results_at_a_time + 1) . '-' . min($count, ($a + 1) * $results_at_a_time);
                 } else {
                     $label = $this->pi_getLL('pi_list_browseresults_page', 'Page');
-                    $pageText = trim($hscText ? htmlspecialchars($label) : $label . ' ' . ($a + 1));
+                    $pageText = trim(($hscText ? htmlspecialchars($label) : $label) . ' ' . ($a + 1));
                 }
                 // Current page
                 if ($pointer == $a) {
@@ -941,10 +931,9 @@ class AbstractPlugin
      *
      * @param string $key The key from the LOCAL_LANG array for which to return the value.
      * @param string $alternativeLabel Alternative string to return IF no value is found set for the key, neither for the local language nor the default.
-     * @param bool $hsc If TRUE, the output label is passed through htmlspecialchars()
      * @return string The value from LOCAL_LANG.
      */
-    public function pi_getLL($key, $alternativeLabel = '', $hsc = false)
+    public function pi_getLL($key, $alternativeLabel = '')
     {
         $word = null;
         if (!empty($this->LOCAL_LANG[$this->LLkey][$key][0]['target'])
@@ -975,14 +964,7 @@ class AbstractPlugin
                 $word = isset($this->LLtestPrefixAlt) ? $this->LLtestPrefixAlt . $alternativeLabel : $alternativeLabel;
             }
         }
-        $output = isset($this->LLtestPrefix) ? $this->LLtestPrefix . $word : $word;
-        if ($hsc) {
-            GeneralUtility::deprecationLog(
-                'Calling pi_getLL() with argument \'hsc\' has been deprecated.'
-            );
-            $output = htmlspecialchars($output);
-        }
-        return $output;
+        return isset($this->LLtestPrefix) ? $this->LLtestPrefix . $word : $word;
     }
 
     /**
@@ -1007,8 +989,7 @@ class AbstractPlugin
         if ($languageFilePath !== '') {
             /** @var $languageFactory LocalizationFactory */
             $languageFactory = GeneralUtility::makeInstance(LocalizationFactory::class);
-            // Read the strings in the required charset (since TYPO3 4.2)
-            $this->LOCAL_LANG = $languageFactory->getParsedData($languageFilePath, $this->LLkey, 'utf-8');
+            $this->LOCAL_LANG = $languageFactory->getParsedData($languageFilePath, $this->LLkey);
             $alternativeLanguageKeys = GeneralUtility::trimExplode(',', $this->altLLkey, true);
             foreach ($alternativeLanguageKeys as $languageKey) {
                 $tempLL = $languageFactory->getParsedData($languageFilePath, $languageKey);
@@ -1340,9 +1321,8 @@ class AbstractPlugin
     }
 
     /**
-     * Will process the input string with the parseFunc function from ContentObjectRenderer based on configuration set in "lib.parseFunc_RTE" in the current TypoScript template.
-     * This is useful for rendering of content in RTE fields where the transformation mode is set to "ts_css" or so.
-     * Notice that this requires the use of "css_styled_content" to work right.
+     * Will process the input string with the parseFunc function from ContentObjectRenderer based on configuration
+     * set in "lib.parseFunc_RTE" in the current TypoScript template.
      *
      * @param string $str The input text string to process
      * @return string The processed string

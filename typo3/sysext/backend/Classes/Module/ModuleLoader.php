@@ -16,8 +16,8 @@ namespace TYPO3\CMS\Backend\Module;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * This document provides a class that loads the modules for the TYPO3 interface.
@@ -383,18 +383,6 @@ class ModuleLoader
                 $language = $this->getLanguageService()->lang;
             } else {
                 $language = 'default';
-            }
-
-            if (empty($labels)) {
-                if (isset($this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tablabel'])) {
-                    $labels[$language]['labels']['tablabel'] = $this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tablabel'];
-                }
-                if (isset($this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tabdescr'])) {
-                    $labels[$language]['labels']['tabdescr'] = $this->getLanguageService()->moduleLabels['labels'][$moduleName . '_tabdescr'];
-                }
-                if (isset($this->getLanguageService()->moduleLabels['tabs'][$moduleName . '_tab'])) {
-                    $labels[$language]['tabs']['tab'] = $this->getLanguageService()->moduleLabels['tabs'][$moduleName . '_tab'];
-                }
             }
 
             if (isset($labels[$language]['ll_ref'])) {

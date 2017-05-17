@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Frontend\Page;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
@@ -99,11 +98,6 @@ class PageRepository
      * @var int
      */
     public $error_getRootLine_failPid = 0;
-
-    /**
-     * @var array
-     */
-    protected $cache_getRootLine = [];
 
     /**
      * @var array
@@ -234,10 +228,10 @@ class PageRepository
     {
         // Hook to manipulate the page uid for special overlay handling
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getPage'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getPage'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getPage'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (!$hookObject instanceof PageRepositoryGetPageHookInterface) {
-                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . PageRepositoryGetPageHookInterface::class, 1251476766);
+                    throw new \UnexpectedValueException($className . ' must implement interface ' . PageRepositoryGetPageHookInterface::class, 1251476766);
                 }
                 $hookObject->getPage_preProcess($uid, $disableGroupAccessCheck, $this);
             }
@@ -423,10 +417,10 @@ class PageRepository
         $row = null;
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getPageOverlay'])) {
             foreach ($pagesInput as &$origPage) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getPageOverlay'] as $classRef) {
-                    $hookObject = GeneralUtility::getUserObj($classRef);
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getPageOverlay'] as $className) {
+                    $hookObject = GeneralUtility::makeInstance($className);
                     if (!$hookObject instanceof PageRepositoryGetPageOverlayHookInterface) {
-                        throw new \UnexpectedValueException($classRef . ' must implement interface ' . PageRepositoryGetPageOverlayHookInterface::class, 1269878881);
+                        throw new \UnexpectedValueException($className . ' must implement interface ' . PageRepositoryGetPageOverlayHookInterface::class, 1269878881);
                     }
                     $hookObject->getPageOverlay_preProcess($origPage, $lUid, $this);
                 }
@@ -522,10 +516,10 @@ class PageRepository
     public function getRecordOverlay($table, $row, $sys_language_content, $OLmode = '')
     {
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getRecordOverlay'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getRecordOverlay'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getRecordOverlay'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (!$hookObject instanceof PageRepositoryGetRecordOverlayHookInterface) {
-                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . PageRepositoryGetRecordOverlayHookInterface::class, 1269881658);
+                    throw new \UnexpectedValueException($className . ' must implement interface ' . PageRepositoryGetRecordOverlayHookInterface::class, 1269881658);
                 }
                 $hookObject->getRecordOverlay_preProcess($table, $row, $sys_language_content, $OLmode, $this);
             }
@@ -605,10 +599,10 @@ class PageRepository
             }
         }
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getRecordOverlay'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getRecordOverlay'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_page.php']['getRecordOverlay'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (!$hookObject instanceof PageRepositoryGetRecordOverlayHookInterface) {
-                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . PageRepositoryGetRecordOverlayHookInterface::class, 1269881659);
+                    throw new \UnexpectedValueException($className . ' must implement interface ' . PageRepositoryGetRecordOverlayHookInterface::class, 1269881659);
                 }
                 $hookObject->getRecordOverlay_postProcess($table, $row, $sys_language_content, $OLmode, $this);
             }
@@ -947,31 +941,6 @@ class PageRepository
     }
 
     /**
-     * Creates a "path" string for the input root line array titles.
-     * Used for writing statistics.
-     *
-     * @param array $rl A rootline array!
-     * @param int $len The max length of each title from the rootline.
-     * @return string The path in the form "/page title/This is another pageti.../Another page
-     * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getConfigArray()
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function getPathFromRootline($rl, $len = 20)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $path = '';
-        if (is_array($rl)) {
-            $c = count($rl);
-            for ($a = 0; $a < $c; $a++) {
-                if ($rl[$a]['uid']) {
-                    $path .= '/' . GeneralUtility::fixed_lgd_cs(strip_tags($rl[$a]['title']), $len);
-                }
-            }
-        }
-        return $path;
-    }
-
-    /**
      * Returns the URL type for the input page row IF the doktype is set to 3.
      *
      * @param array $pagerow The page row to return URL type for
@@ -1244,54 +1213,9 @@ class PageRepository
 
     /********************************
      *
-     * Caching and standard clauses
+     * Standard clauses
      *
      ********************************/
-
-    /**
-     * Returns data stored for the hash string in the cache "cache_hash"
-     * Can be used to retrieved a cached value, array or object
-     * Can be used from your frontend plugins if you like. It is also used to
-     * store the parsed TypoScript template structures. You can call it directly
-     * like PageRepository::getHash()
-     *
-     * @param string $hash The hash-string which was used to store the data value
-     * @return mixed The "data" from the cache
-     * @see tslib_TStemplate::start(), storeHash()
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the Cache Manager directly to fetch cache entries
-     */
-    public static function getHash($hash)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $hashContent = null;
-        /** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $contentHashCache */
-        $contentHashCache = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
-        $cacheEntry = $contentHashCache->get($hash);
-        if ($cacheEntry) {
-            $hashContent = $cacheEntry;
-        }
-        return $hashContent;
-    }
-
-    /**
-     * Stores $data in the 'cache_hash' cache with the hash key, $hash
-     * and visual/symbolic identification, $ident
-     *
-     * Can be used from your frontend plugins if you like. You can call it
-     * directly like PageRepository::storeHash()
-     *
-     * @param string $hash 32 bit hash string (eg. a md5 hash of a serialized array identifying the data being stored)
-     * @param mixed $data The data to store
-     * @param string $ident Is just a textual identification in order to inform about the content!
-     * @param int $lifetime The lifetime for the cache entry in seconds
-     * @see tslib_TStemplate::start(), getHash()
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use the Cache Manager directly to store cache entries
-     */
-    public static function storeHash($hash, $data, $ident, $lifetime = 0)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash')->set($hash, $data, ['ident_' . $ident], (int)$lifetime);
-    }
 
     /**
      * Returns the "AND NOT deleted" clause for the tablename given IF
@@ -1614,7 +1538,6 @@ class PageRepository
         if (!empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS'])
             && (int)VersionState::cast($row['t3ver_state'])->equals(VersionState::MOVE_PLACEHOLDER)
         ) {
-            // Only for WS ver 2... (moving) - enabled by default with CMS7
             // If t3ver_move_id is not found, then find it (but we like best if it is here)
             if (!isset($row['t3ver_move_id'])) {
                 $moveIDRec = $this->getRawRecord($table, $row['uid'], 't3ver_move_id', true);
@@ -1896,21 +1819,6 @@ class PageRepository
             }
         }
         return $row;
-    }
-
-    /**
-     * Determine if a field needs an overlay
-     *
-     * @param string $table TCA tablename
-     * @param string $field TCA fieldname
-     * @param mixed $value Current value of the field
-     * @return bool Returns TRUE if a given record field needs to be overlaid
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    protected function shouldFieldBeOverlaid($table, $field, $value)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return true;
     }
 
     /**

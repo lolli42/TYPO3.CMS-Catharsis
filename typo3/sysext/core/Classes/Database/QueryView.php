@@ -21,13 +21,13 @@ use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageRendererResolver;
 use TYPO3\CMS\Core\Utility\CsvUtility;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Class used in module tools/dbint (advanced search) and which may hold code specific for that module
@@ -577,19 +577,6 @@ class QueryView
             }
         }
         return CsvUtility::csvValues($valueArray, $delim, $quote);
-    }
-
-    /**
-     * Table wrap
-     *
-     * @param string $str
-     * @return string
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function tableWrap($str)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return '<pre>' . $str . '</pre>';
     }
 
     /**

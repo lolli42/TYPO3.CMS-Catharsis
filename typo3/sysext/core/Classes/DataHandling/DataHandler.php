@@ -469,64 +469,43 @@ class DataHandler
      * Used by function checkRecordUpdateAccess() to store whether a record is updatable or not.
      *
      * @var array
-     *
-     * @deprecated since TYPO3 v8, visibility will change to protected or to a run-time cache in TYPO3 v9
      */
-    public $recUpdateAccessCache = [];
+    protected $recUpdateAccessCache = [];
 
     /**
      * User by function checkRecordInsertAccess() to store whether a record can be inserted on a page id
      *
      * @var array
-     *
-     * @deprecated since TYPO3 v8, visibility will change to protected or to a run-time cache in TYPO3 v9
      */
-    public $recInsertAccessCache = [];
+    protected $recInsertAccessCache = [];
 
     /**
      * Caching array for check of whether records are in a webmount
      *
      * @var array
-     *
-     * @deprecated since TYPO3 v8, visibility will change to protected or to a run-time cache in TYPO3 v9
      */
-    public $isRecordInWebMount_Cache = [];
+    protected $isRecordInWebMount_Cache = [];
 
     /**
      * Caching array for page ids in webmounts
      *
      * @var array
-     *
-     * @deprecated since TYPO3 v8, visibility will change to protected or to a run-time cache in TYPO3 v9
      */
-    public $isInWebMount_Cache = [];
+    protected $isInWebMount_Cache = [];
 
     /**
      * Caching for collecting TSconfig for page ids
      *
      * @var array
-     *
-     * @deprecated since TYPO3 v8, visibility will change to protected or to a run-time cache in TYPO3 v9
      */
-    public $cachedTSconfig = [];
+    protected $cachedTSconfig = [];
 
     /**
      * Used for caching page records in pageInfo()
      *
      * @var array
-     *
-     * @deprecated since TYPO3 v8, visibility will change to protected or to a run-time cache in TYPO3 v9
      */
-    public $pageCache = [];
-
-    /**
-     * Array caching workspace access for BE_USER
-     *
-     * @var array
-     *
-     * @deprecated since TYPO3 v8, no references could be found in class will be removed in TYPO3 v9
-     */
-    public $checkWorkspaceCache = [];
+    protected $pageCache = [];
 
     // Other arrays:
     /**
@@ -812,7 +791,7 @@ class DataHandler
         }
 
         foreach ($userTS as $k => $v) {
-            $k = substr($k, 0, -1);
+            $k = mb_substr($k, 0, -1);
             if (!$k || !is_array($v) || !isset($GLOBALS['TCA'][$k])) {
                 continue;
             }
@@ -927,10 +906,10 @@ class DataHandler
         if (!isset($this->checkModifyAccessListHookObjects)) {
             $this->checkModifyAccessListHookObjects = [];
             if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkModifyAccessList'])) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkModifyAccessList'] as $classData) {
-                    $hookObject = GeneralUtility::getUserObj($classData);
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkModifyAccessList'] as $className) {
+                    $hookObject = GeneralUtility::makeInstance($className);
                     if (!$hookObject instanceof DataHandlerCheckModifyAccessListHookInterface) {
-                        throw new \UnexpectedValueException($classData . ' must implement interface ' . DataHandlerCheckModifyAccessListHookInterface::class, 1251892472);
+                        throw new \UnexpectedValueException($className . ' must implement interface ' . DataHandlerCheckModifyAccessListHookInterface::class, 1251892472);
                     }
                     $this->checkModifyAccessListHookObjects[] = $hookObject;
                 }
@@ -968,8 +947,8 @@ class DataHandler
         // First prepare user defined objects (if any) for hooks which extend this function:
         $hookObjectsArr = [];
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (method_exists($hookObject, 'processDatamap_beforeStart')) {
                     $hookObject->processDatamap_beforeStart($this);
                 }
@@ -2181,10 +2160,10 @@ class DataHandler
                                         GeneralUtility::upload_copy_move($theFile, $theDestFile);
                                         // Hook for post-processing the upload action
                                         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processUpload'])) {
-                                            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processUpload'] as $classRef) {
-                                                $hookObject = GeneralUtility::getUserObj($classRef);
+                                            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processUpload'] as $className) {
+                                                $hookObject = GeneralUtility::makeInstance($className);
                                                 if (!$hookObject instanceof DataHandlerProcessUploadHookInterface) {
-                                                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . DataHandlerProcessUploadHookInterface::class, 1279962349);
+                                                    throw new \UnexpectedValueException($className . ' must implement interface ' . DataHandlerProcessUploadHookInterface::class, 1279962349);
                                                 }
                                                 $hookObject->processUpload_postProcessAction($theDestFile, $this);
                                             }
@@ -2372,8 +2351,8 @@ class DataHandler
             $arrValue = GeneralUtility::xml2array($xmlValue);
 
             if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkFlexFormValue'])) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkFlexFormValue'] as $classRef) {
-                    $hookObject = GeneralUtility::getUserObj($classRef);
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkFlexFormValue'] as $className) {
+                    $hookObject = GeneralUtility::makeInstance($className);
                     if (method_exists($hookObject, 'checkFlexFormValue_beforeMerge')) {
                         $hookObject->checkFlexFormValue_beforeMerge($this, $currentValueArray, $arrValue);
                     }
@@ -2778,12 +2757,12 @@ class DataHandler
                     }
                     break;
                 case 'is_in':
-                    $c = strlen($value);
+                    $c = mb_strlen($value);
                     if ($c) {
                         $newVal = '';
                         for ($a = 0; $a < $c; $a++) {
-                            $char = substr($value, $a, 1);
-                            if (strpos($is_in, $char) !== false) {
+                            $char = mb_substr($value, $a, 1);
+                            if (mb_strpos($is_in, $char) !== false) {
                                 $newVal .= $char;
                             }
                         }
@@ -3052,7 +3031,7 @@ class DataHandler
                     }
                     // Finally, check if new and old values are different (or no .vDEFbase value is found) and if so, we record the vDEF value for diff'ing.
                     // We do this after $dataValues has been updated since I expect that $dataValues_current holds evaluated values from database (so this must be the right value to compare with).
-                    if (substr($vKey, -9) !== '.vDEFbase') {
+                    if (mb_substr($vKey, -9) !== '.vDEFbase') {
                         if ($this->updateModeL10NdiffData && $GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && $vKey !== 'vDEF' && ((string)$dataValues[$key][$vKey] !== (string)$dataValues_current[$key][$vKey] || !isset($dataValues_current[$key][$vKey . '.vDEFbase']) || $this->updateModeL10NdiffData === 'FORCE_FFUPD')) {
                             // Now, check if a vDEF value is submitted in the input data, if so we expect this has been processed prior to this operation (normally the case since those fields are higher in the form) and we can use that:
                             if (isset($dataValues[$key]['vDEF'])) {
@@ -3161,8 +3140,8 @@ class DataHandler
         // Hook initialization:
         $hookObjectsArr = [];
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'] as $classRef) {
-                $hookObj = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
                 if (method_exists($hookObj, 'processCmdmap_beforeStart')) {
                     $hookObj->processCmdmap_beforeStart($this);
                 }
@@ -4071,7 +4050,7 @@ class DataHandler
             }
             $fileInfo = [];
             $fileInfo['exists'] = @is_file((PATH_site . $rteFileRecord['ref_string']));
-            $fileInfo['original'] = substr($rteFileRecord['ref_string'], 0, -strlen($filename)) . 'RTEmagicP_' . preg_replace('/\\.[[:alnum:]]+$/', '', substr($filename, 10));
+            $fileInfo['original'] = mb_substr($rteFileRecord['ref_string'], 0, -mb_strlen($filename)) . 'RTEmagicP_' . preg_replace('/\\.[[:alnum:]]+$/', '', mb_substr($filename, 10));
             $fileInfo['original_exists'] = @is_file((PATH_site . $fileInfo['original']));
             // CODE from tx_impexp and class.rte_images.php adapted for use here:
             if (!$fileInfo['exists'] || !$fileInfo['original_exists']) {
@@ -4090,7 +4069,7 @@ class DataHandler
                 $origDestName = $this->fileFunc->getUniqueName($rteOrigName, PATH_site . $dirPrefix);
                 // Create copy file name:
                 $pI = pathinfo($rteFileRecord['ref_string']);
-                $copyDestName = dirname($origDestName) . '/RTEmagicC_' . substr(basename($origDestName), 10) . '.' . $pI['extension'];
+                $copyDestName = dirname($origDestName) . '/RTEmagicC_' . mb_substr(basename($origDestName), 10) . '.' . $pI['extension'];
                 if (!@is_file($copyDestName) && !@is_file($origDestName) && $origDestName === GeneralUtility::getFileAbsFileName($origDestName) && $copyDestName === GeneralUtility::getFileAbsFileName($copyDestName)) {
                     // Making copies:
                     GeneralUtility::upload_copy_move(PATH_site . $fileInfo['original'], $origDestName);
@@ -4310,8 +4289,8 @@ class DataHandler
         $recordWasMoved = false;
         // Move the record via a hook, used e.g. for versioning
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['moveRecordClass'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['moveRecordClass'] as $classRef) {
-                $hookObj = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['moveRecordClass'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
                 if (method_exists($hookObj, 'moveRecord')) {
                     $hookObj->moveRecord($table, $uid, $destPid, $propArr, $moveRec, $resolvedPid, $recordWasMoved, $this);
                 }
@@ -4349,8 +4328,8 @@ class DataHandler
         // Prepare user defined objects (if any) for hooks which extend this function:
         $hookObjectsArr = [];
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['moveRecordClass'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['moveRecordClass'] as $classRef) {
-                $hookObjectsArr[] = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['moveRecordClass'] as $className) {
+                $hookObjectsArr[] = GeneralUtility::makeInstance($className);
             }
         }
         // Timestamp field:
@@ -4750,8 +4729,8 @@ class DataHandler
                         $translateToMsg = @sprintf($TSConfig['translateToMessage'], $langRec['title']);
                     }
                     if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processTranslateToClass'])) {
-                        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processTranslateToClass'] as $classRef) {
-                            $hookObj = GeneralUtility::getUserObj($classRef);
+                        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processTranslateToClass'] as $className) {
+                            $hookObj = GeneralUtility::makeInstance($className);
                             if (method_exists($hookObj, 'processTranslateTo_copyAction')) {
                                 $hookObj->processTranslateTo_copyAction($row[$fN], $langRec, $this);
                             }
@@ -4971,8 +4950,8 @@ class DataHandler
         if (is_array($recordToDelete)) {
             $recordWasDeleted = false;
             if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'])) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'] as $classRef) {
-                    $hookObj = GeneralUtility::getUserObj($classRef);
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'] as $className) {
+                    $hookObj = GeneralUtility::makeInstance($className);
                     if (method_exists($hookObj, 'processCmdmap_deleteAction')) {
                         $hookObj->processCmdmap_deleteAction($table, $id, $recordToDelete, $recordWasDeleted, $this);
                     }
@@ -7654,19 +7633,6 @@ class DataHandler
     }
 
     /**
-     * Returns the $input string without a comma in the end
-     *
-     * @param string $input Input string
-     * @return string Output string with any comma in the end removed, if any.
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function rmComma($input)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return rtrim($input, ',');
-    }
-
-    /**
      * Converts a HTML entity (like &#123;) to the character '123'
      *
      * @param string $input Input string
@@ -7686,19 +7652,6 @@ class DataHandler
             }
         }
         return implode('', $parts);
-    }
-
-    /**
-     * Returns absolute destination path for the upload folder, $folder
-     *
-     * @param string $folder Upload folder name, relative to PATH_site
-     * @return string Input string prefixed with PATH_site
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, can be simplified by just prepending the PATH_site constant
-     */
-    public function destPathFromUploadFolder($folder)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return PATH_site . $folder;
     }
 
     /**
@@ -8161,16 +8114,9 @@ class DataHandler
      * @param string $table Table name
      * @param string $field Field name
      * @param string $filelist List of files to work on from field
-     * @param string $func, previously "deleteAll" was possible, this argument is now removed, as deleteAll is the only option
      */
-    public function extFileFunctions($table, $field, $filelist, $func = null)
+    public function extFileFunctions($table, $field, $filelist)
     {
-        if ($func !== null) {
-            GeneralUtility::deprecationLog('Parameter 4 of DataHandler::extFileFunctions() has been removed in TYPO3 v8, and will be removed in TYPO3 v9.');
-            if ($func !== 'deleteAll') {
-                return;
-            }
-        }
         $uploadFolder = $GLOBALS['TCA'][$table]['columns'][$field]['config']['uploadfolder'];
         if ($uploadFolder && trim($filelist) && $GLOBALS['TCA'][$table]['columns'][$field]['config']['internal_type'] === 'file') {
             $uploadPath = PATH_site . $uploadFolder;
@@ -8184,19 +8130,6 @@ class DataHandler
                 }
             }
         }
-    }
-
-    /**
-     * Used by the deleteFunctions to check if there are records from disallowed tables under the pages to be deleted.
-     *
-     * @param string $inList List of page integers
-     * @return bool Return TRUE, if permission granted
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function noRecordsFromUnallowedTables($inList)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return $this->checkForRecordsFromDisallowedTables(GeneralUtility::intExplode(',', $inList, true));
     }
 
     /**

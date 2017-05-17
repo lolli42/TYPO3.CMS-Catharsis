@@ -343,7 +343,6 @@ abstract class AbstractUserAuthentication
     /**
      * Holds deserialized data from session records.
      * 'Reserved' keys are:
-     *   - 'recs': (DEPRECATED) Array: Used to 'register' records, eg in a shopping basket. Structure: [recs][tablename][record_uid]=number
      *   - 'sys': Reserved for TypoScript standard code.
      * @var array
      */
@@ -1134,38 +1133,6 @@ abstract class AbstractUserAuthentication
     }
 
     /**
-     * This returns the where-clause needed to select the user
-     * with respect flags like deleted, hidden, starttime, endtime
-     *
-     * @return string
-     * @access private
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    protected function user_where_clause()
-    {
-        GeneralUtility::logDeprecatedFunction();
-
-        $whereClause = '';
-        if ($this->enablecolumns['rootLevel']) {
-            $whereClause .= ' AND ' . $this->user_table . '.pid=0 ';
-        }
-        if ($this->enablecolumns['disabled']) {
-            $whereClause .= ' AND ' . $this->user_table . '.' . $this->enablecolumns['disabled'] . '=0';
-        }
-        if ($this->enablecolumns['deleted']) {
-            $whereClause .= ' AND ' . $this->user_table . '.' . $this->enablecolumns['deleted'] . '=0';
-        }
-        if ($this->enablecolumns['starttime']) {
-            $whereClause .= ' AND (' . $this->user_table . '.' . $this->enablecolumns['starttime'] . '<=' . $GLOBALS['EXEC_TIME'] . ')';
-        }
-        if ($this->enablecolumns['endtime']) {
-            $whereClause .= ' AND (' . $this->user_table . '.' . $this->enablecolumns['endtime'] . '=0 OR '
-                . $this->user_table . '.' . $this->enablecolumns['endtime'] . '>' . $GLOBALS['EXEC_TIME'] . ')';
-        }
-        return $whereClause;
-    }
-
-    /**
      * Returns the IP address to lock to.
      * The IP address may be partial based on $parts.
      *
@@ -1185,20 +1152,6 @@ abstract class AbstractUserAuthentication
             }
             return implode('.', $IPparts);
         }
-    }
-
-    /**
-     * VeriCode returns 10 first chars of a md5 hash of the session cookie AND the encryptionKey from TYPO3_CONF_VARS.
-     * This code is used as an alternative verification when the JavaScript interface executes cmd's to
-     * tce_db.php from eg. MSIE 5.0 because the proper referer is not passed with this browser...
-     *
-     * @return string
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function veriCode()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return substr(md5($this->id . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']), 0, 10);
     }
 
     /*************************

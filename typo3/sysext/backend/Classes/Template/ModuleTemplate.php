@@ -19,6 +19,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -26,7 +27,6 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\Exception\InvalidTemplateResourceException;
 use TYPO3\CMS\Fluid\View\StandaloneView;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * A class taking care of the "outer" HTML of a module, especially
@@ -85,6 +85,11 @@ class ModuleTemplate
      * @var PageRenderer
      */
     protected $pageRenderer;
+
+    /**
+     * @var bool
+     */
+    protected $uiBlock = false;
 
     /**
      * TemplateRootPath
@@ -336,6 +341,7 @@ class ModuleTemplate
         if ($this->moduleName) {
             $this->view->assign('moduleName', $this->moduleName);
         }
+        $this->view->assign('uiBlock', $this->uiBlock);
         $this->view->assign('flashMessageQueueIdentifier', $this->getFlashMessageQueue()->getIdentifier());
         $renderedPage = $this->pageRenderer->render(PageRenderer::PART_HEADER);
         $renderedPage .= $this->bodyTag;
@@ -558,34 +564,6 @@ class ModuleTemplate
     }
 
     /**
-     * Creates the version selector for the page id inputted.
-     * Requires the core version management extension, "version" to be loaded.
-     *
-     * @param int $id Page id to create selector for.
-     * @param bool $noAction If set, there will be no button for swapping page.
-     *
-     * @return string
-     * @internal
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function getVersionSelector($id, $noAction = false)
-    {
-        if (ExtensionManagementUtility::isLoaded('version')
-            && ExtensionManagementUtility::isLoaded('compatibility7')
-            && !ExtensionManagementUtility::isLoaded('workspaces')
-        ) {
-            /**
-             * For Code Completion
-             *
-             * @var $versionGuiObj \TYPO3\CMS\Compatibility7\View\VersionView
-             */
-            $versionGuiObj = GeneralUtility::makeInstance(\TYPO3\CMS\Compatibility7\View\VersionView::class);
-            return $versionGuiObj->getVersionSelector($id, $noAction);
-        }
-        return '';
-    }
-
-    /**
      * Returns the BE USER Object
      *
      * @return BackendUserAuthentication
@@ -729,5 +707,21 @@ class ModuleTemplate
             $this->flashMessageQueue = $service->getMessageQueueByIdentifier();
         }
         return $this->flashMessageQueue;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUiBlock() : bool
+    {
+        return $this->uiBlock;
+    }
+
+    /**
+     * @param bool $uiBlock
+     */
+    public function setUiBlock(bool $uiBlock)
+    {
+        $this->uiBlock = $uiBlock;
     }
 }

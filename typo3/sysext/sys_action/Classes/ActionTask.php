@@ -68,8 +68,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
         $this->taskObject = $taskObject;
         $this->getLanguageService()->includeLLFile('EXT:sys_action/Resources/Private/Language/locallang.xlf');
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['sys_action']['tx_sysaction_task'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['sys_action']['tx_sysaction_task'] as $classRef) {
-                $this->hookObjects[] = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['sys_action']['tx_sysaction_task'] as $className) {
+                $this->hookObjects[] = GeneralUtility::makeInstance($className);
             }
         }
     }
@@ -1049,7 +1049,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface
     /**
      * Returns LanguageService
      *
-     * @return \TYPO3\CMS\Lang\LanguageService
+     * @return \TYPO3\CMS\Core\Localization\LanguageService
      */
     protected function getLanguageService()
     {

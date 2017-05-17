@@ -23,13 +23,13 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Render a single inline record relation.
@@ -594,10 +594,10 @@ class InlineRecordContainer extends AbstractContainer
         if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['tceformsInlineHook'])) {
             $tceformsInlineHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['tceformsInlineHook'];
             if (is_array($tceformsInlineHook)) {
-                foreach ($tceformsInlineHook as $classData) {
-                    $processObject = GeneralUtility::getUserObj($classData);
+                foreach ($tceformsInlineHook as $className) {
+                    $processObject = GeneralUtility::makeInstance($className);
                     if (!$processObject instanceof InlineElementHookInterface) {
-                        throw new \UnexpectedValueException($classData . ' must implement interface ' . InlineElementHookInterface::class, 1202072000);
+                        throw new \UnexpectedValueException($className . ' must implement interface ' . InlineElementHookInterface::class, 1202072000);
                     }
                     $this->hookObjects[] = $processObject;
                 }

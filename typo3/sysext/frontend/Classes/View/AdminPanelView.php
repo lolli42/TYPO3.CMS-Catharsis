@@ -290,10 +290,10 @@ class AdminPanelView
         $moduleContent .= $this->getModule('info', $this->getInfoModule());
 
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (!$hookObject instanceof AdminPanelViewHookInterface) {
-                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . AdminPanelViewHookInterface::class, 1311942539);
+                    throw new \UnexpectedValueException($className . ' must implement interface ' . AdminPanelViewHookInterface::class, 1311942539);
                 }
                 $content = $hookObject->extendAdminPanel($moduleContent, $this);
                 if ($content) {
@@ -765,7 +765,8 @@ class AdminPanelView
                 $tableArr[] = [$this->extGetLL('info_feuserName'), htmlspecialchars($tsfe->fe_user->user['username'])];
                 $tableArr[] = [$this->extGetLL('info_feuserId'), htmlspecialchars($tsfe->fe_user->user['uid'])];
             }
-            $tableArr[] = [$this->extGetLL('info_totalParsetime'), $tsfe->scriptParseTime . ' ms', true];
+
+            $tableArr[] = [$this->extGetLL('info_totalParsetime'), $this->getTimeTracker()->getParseTime() . ' ms', true];
             $table = '';
             foreach ($tableArr as $key => $arr) {
                 $label = (isset($arr[2]) ? '<strong>' . $arr[0] . '</strong>' : $arr[0]);
@@ -1029,7 +1030,7 @@ class AdminPanelView
     /**
      * Returns LanguageService
      *
-     * @return \TYPO3\CMS\Lang\LanguageService
+     * @return \TYPO3\CMS\Core\Localization\LanguageService
      */
     protected function getLanguageService()
     {

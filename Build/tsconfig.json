@@ -29,9 +29,6 @@
             "TYPO3/CMS/Cshmanuel/*": [
                 "../typo3/sysext/cshmanuel/Resources/Public/JavaScript/"
             ],
-            "TYPO3/CMS/CssStyledContent/*": [
-                "../typo3/sysext/css_styled_content/Resources/Public/JavaScript/"
-            ],
             "TYPO3/CMS/Documentation/*": [
                 "../typo3/sysext/documentation/Resources/Public/JavaScript/"
             ],
@@ -156,7 +153,7 @@
         "outDir": "./JavaScript/",
         "typeRoots": [
             "node_modules/@types",
-            "typings/no-def"
+            "types"
         ]
     },
     "filesGlob": [
@@ -166,6 +163,7 @@
         "../typo3/sysext/backend/Resources/Private/TypeScript/ColorPicker.ts",
         "../typo3/sysext/backend/Resources/Private/TypeScript/FormEngineReview.ts",
         "../typo3/sysext/backend/Resources/Private/TypeScript/ImageManipulation.ts",
+        "../typo3/sysext/backend/Resources/Private/TypeScript/Popover.ts",
         "../typo3/sysext/backend/Resources/Private/TypeScript/RenameFile.ts"
     ]
 }

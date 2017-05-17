@@ -607,7 +607,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             foreach ($registeredClasses as $class => $registrationInfo) {
                 if (!empty($registrationInfo['provider'])) {
                     /** @var $providerObject \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface */
-                    $providerObject = GeneralUtility::getUserObj($registrationInfo['provider']);
+                    $providerObject = GeneralUtility::makeInstance($registrationInfo['provider']);
                     if ($providerObject instanceof \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface) {
                         $additionalFields = $providerObject->getAdditionalFields($taskInfo, null, $this);
                         $allAdditionalFields = array_merge($allAdditionalFields, [$class => $additionalFields]);
@@ -616,7 +616,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             }
         } else {
             if (!empty($registeredClasses[$taskInfo['class']]['provider'])) {
-                $providerObject = GeneralUtility::getUserObj($registeredClasses[$taskInfo['class']]['provider']);
+                $providerObject = GeneralUtility::makeInstance($registeredClasses[$taskInfo['class']]['provider']);
                 if ($providerObject instanceof \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface) {
                     $allAdditionalFields[$taskInfo['class']] = $providerObject->getAdditionalFields($taskInfo, $task, $this);
                 }
@@ -1017,7 +1017,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                     $this->moduleTemplate->getIconFactory()->getIcon('actions-close', Icon::SIZE_SMALL)->render() . '</a>';
                 $runAction = '<a class="btn btn-default" data-toggle="tooltip" data-container="body" href="' . htmlspecialchars($this->moduleUri . '&tx_scheduler[execute][]=' . $schedulerRecord['uid']) . '" title="' . htmlspecialchars($this->getLanguageService()->getLL('action.run_task')) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('extensions-scheduler-run-task', Icon::SIZE_SMALL)->render() . '</a>';
-                $runCronAction = '<a class="btn btn-default" data-toggle="tooltip" data-container="body" href="' . htmlspecialchars($this->moduleUri . '&CMD=setNextExecutionTime&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->getLL('action.run_task_cron', true) . '" class="icon">' .
+                $runCronAction = '<a class="btn btn-default" data-toggle="tooltip" data-container="body" href="' . htmlspecialchars($this->moduleUri . '&CMD=setNextExecutionTime&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="' . htmlspecialchars($this->getLanguageService()->getLL('action.run_task_cron')) . '" class="icon">' .
                     $this->moduleTemplate->getIconFactory()->getIcon('extensions-scheduler-run-task-cron', Icon::SIZE_SMALL)->render() . '</a>';
 
                 // Define some default values
@@ -1156,7 +1156,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                             . '<td><span class="t-span">' . $multiple . '</span></td>'
                             . '<td><span class="t-span">' . $lastExecution . '</span></td>'
                             . '<td><span class="t-span">' . $nextDate . '</span></td>'
-                            . '<td nowrap="nowrap"><span class="t-span">' . $actions . '</span></td>'
+                            . '<td class="nowrap"><span class="t-span">' . $actions . '</span></td>'
                         . '</tr>';
                 } else {
                     // The task object is not valid
@@ -1172,7 +1172,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                             . '<td>' . $startExecutionElement . '</td>'
                             . '<td class="right">' . $schedulerRecord['uid'] . '</td>'
                             . '<td colspan="6">' . $executionStatusOutput . '</td>'
-                            . '<td nowrap="nowrap"><div class="btn-group" role="group">'
+                            . '<td class="nowrap"><div class="btn-group" role="group">'
                                 . '<span class="btn btn-default disabled">' . $this->moduleTemplate->getIconFactory()->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>'
                                 . '<span class="btn btn-default disabled">' . $this->moduleTemplate->getIconFactory()->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>'
                                 . $deleteAction
@@ -1250,7 +1250,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             // Save additional input values
             if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields'])) {
                 /** @var $providerObject \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface */
-                $providerObject = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields']);
+                $providerObject = GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields']);
                 if ($providerObject instanceof \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface) {
                     $providerObject->saveAdditionalFields($this->submittedData, $task);
                 }
@@ -1278,7 +1278,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
             // Save additional input values
             if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields'])) {
                 /** @var $providerObject \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface */
-                $providerObject = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields']);
+                $providerObject = GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields']);
                 if ($providerObject instanceof \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface) {
                     $providerObject->saveAdditionalFields($this->submittedData, $task);
                 }
@@ -1393,7 +1393,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
         // Validate additional input fields
         if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields'])) {
             /** @var $providerObject \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface */
-            $providerObject = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields']);
+            $providerObject = GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][$this->submittedData['class']]['additionalFields']);
             if ($providerObject instanceof \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface) {
                 // The validate method will return true if all went well, but that must not
                 // override previous false values => AND the returned value with the existing one

@@ -575,7 +575,7 @@ class AbstractDatabaseRecordList extends AbstractRecordList
 
         // get translated labels for search levels from pagets
         foreach ($searchLevelsFromTSconfig as $keySearchLevel => $labelConfigured) {
-            $label = $lang->sL('LLL:' . $labelConfigured, false);
+            $label = $lang->sL('LLL:' . $labelConfigured);
             if ($label === '') {
                 $label = $labelConfigured;
             }
@@ -656,80 +656,6 @@ class AbstractDatabaseRecordList extends AbstractRecordList
     public function thumbCode($row, $table, $field)
     {
         return BackendUtility::thumbCode($row, $table, $field);
-    }
-
-    /**
-     * Returns the SQL-query array to select the records from a table $table with pid = $id
-     *
-     * @param string $table Table name
-     * @param int $id Page id (NOT USED! $this->pidSelect is used instead)
-     * @param string $addWhere Additional part for where clause
-     * @param string $fieldList Field list to select, * for all (for "SELECT [fieldlist] FROM ...")
-     * @return string[] Returns query array
-     *
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9. Please use getQueryBuilder()
-     */
-    public function makeQueryArray($table, $id, $addWhere = '', $fieldList = '*')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $hookObjectsArr = [];
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/class.db_list.inc']['makeQueryArray'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/class.db_list.inc']['makeQueryArray'] as $classRef) {
-                $hookObjectsArr[] = GeneralUtility::getUserObj($classRef);
-            }
-        }
-        // Set ORDER BY:
-        $orderBy = $GLOBALS['TCA'][$table]['ctrl']['sortby'] ? 'ORDER BY ' . $GLOBALS['TCA'][$table]['ctrl']['sortby'] : $GLOBALS['TCA'][$table]['ctrl']['default_sortby'];
-        if ($this->sortField) {
-            if (in_array($this->sortField, $this->makeFieldList($table, 1))) {
-                $orderBy = 'ORDER BY ' . $this->sortField;
-                if ($this->sortRev) {
-                    $orderBy .= ' DESC';
-                }
-            }
-        }
-        // Set LIMIT:
-        $limit = $this->iLimit ? ($this->firstElementNumber ? $this->firstElementNumber . ',' : '') . $this->iLimit : '';
-        // Filtering on displayable pages (permissions):
-        $pC = $table === 'pages' && $this->perms_clause ? ' AND ' . $this->perms_clause : '';
-        // Adding search constraints:
-        $search = $this->makeSearchString($table, $id);
-        // Compiling query array:
-        $queryParts = [
-            'SELECT' => $fieldList,
-            'FROM' => $table,
-            'WHERE' => $this->getPageIdConstraint($table) . ' ' . $pC . BackendUtility::deleteClause($table) . BackendUtility::versioningPlaceholderClause($table) . ' ' . $addWhere . ' ' . $search,
-            'GROUPBY' => '',
-            'LIMIT' => $limit
-        ];
-        $tempOrderBy = [];
-        foreach (QueryHelper::parseOrderBy($orderBy) as $orderPair) {
-            list($fieldName, $order) = $orderPair;
-            if ($order !== null) {
-                $tempOrderBy[] = implode(' ', $orderPair);
-            } else {
-                $tempOrderBy[] = $fieldName;
-            }
-        }
-        $queryParts['ORDERBY'] = implode(',', $tempOrderBy);
-        // Filter out records that are translated, if TSconfig mod.web_list.hideTranslations is set
-        if ((in_array($table, GeneralUtility::trimExplode(',', $this->hideTranslations)) || $this->hideTranslations === '*') && !empty($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']) && $table !== 'pages_language_overlay') {
-            $queryParts['WHERE'] .= ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . '=0 ';
-        }
-        // Apply hook as requested in http://forge.typo3.org/issues/16634
-        foreach ($hookObjectsArr as $hookObj) {
-            if (method_exists($hookObj, 'makeQueryArray_post')) {
-                $_params = [
-                    'orderBy' => $orderBy,
-                    'limit' => $limit,
-                    'pC' => $pC,
-                    'search' => $search
-                ];
-                $hookObj->makeQueryArray_post($queryParts, $this, $table, $id, $addWhere, $fieldList, $_params);
-            }
-        }
-        // Return query:
-        return $queryParts;
     }
 
     /**
@@ -844,8 +770,8 @@ class AbstractDatabaseRecordList extends AbstractRecordList
 
         $hookName = DatabaseRecordList::class;
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][$hookName]['buildQueryParameters'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][$hookName]['buildQueryParameters'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][$hookName]['buildQueryParameters'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (method_exists($hookObject, 'buildQueryParametersPostProcess')) {
                     $hookObject->buildQueryParametersPostProcess(
                         $parameters,

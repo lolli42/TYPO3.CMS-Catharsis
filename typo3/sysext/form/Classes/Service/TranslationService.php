@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Form\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Localization\Locales;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -26,7 +27,6 @@ use TYPO3\CMS\Form\Domain\Model\FormElements\FormElementInterface;
 use TYPO3\CMS\Form\Domain\Model\Renderable\RootRenderableInterface;
 use TYPO3\CMS\Form\Domain\Runtime\FormRuntime;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Advanced translations
@@ -158,7 +158,7 @@ class TranslationService implements SingletonInterface
             $value = $this->LOCAL_LANG['default'][$key][0]['target'];
         }
 
-        if (is_array($arguments) && $value !== null) {
+        if (is_array($arguments) && !empty($arguments) && $value !== null) {
             $value = vsprintf($value, $arguments);
         } else {
             if (empty($value)) {
@@ -486,10 +486,10 @@ class TranslationService implements SingletonInterface
         if (!empty($locallangPathAndFilename)) {
             /** @var $languageFactory LocalizationFactory */
             $languageFactory = GeneralUtility::makeInstance(LocalizationFactory::class);
-            $this->LOCAL_LANG = $languageFactory->getParsedData($locallangPathAndFilename, $this->languageKey, 'utf-8');
+            $this->LOCAL_LANG = $languageFactory->getParsedData($locallangPathAndFilename, $this->languageKey);
 
             foreach ($this->alternativeLanguageKeys as $language) {
-                $tempLL = $languageFactory->getParsedData($locallangPathAndFilename, $language, 'utf-8');
+                $tempLL = $languageFactory->getParsedData($locallangPathAndFilename, $language);
                 if ($this->languageKey !== 'default' && isset($tempLL[$language])) {
                     $this->LOCAL_LANG[$language] = $tempLL[$language];
                 }

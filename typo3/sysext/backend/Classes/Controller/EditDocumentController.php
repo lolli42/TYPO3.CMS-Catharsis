@@ -208,12 +208,6 @@ class EditDocumentController extends AbstractModule
     public $returnEditConf;
 
     /**
-     * @var string
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public $localizationMode;
-
-    /**
      * Workspace used for the editing action.
      *
      * @var NULL|int
@@ -411,6 +405,7 @@ class EditDocumentController extends AbstractModule
     public function __construct()
     {
         parent::__construct();
+        $this->moduleTemplate->setUiBlock(true);
         $GLOBALS['SOBE'] = $this;
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_alt_doc.xlf');
     }
@@ -1981,7 +1976,7 @@ class EditDocumentController extends AbstractModule
     /**
      * Returns LanguageService
      *
-     * @return \TYPO3\CMS\Lang\LanguageService
+     * @return \TYPO3\CMS\Core\Localization\LanguageService
      */
     protected function getLanguageService()
     {

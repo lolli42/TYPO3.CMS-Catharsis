@@ -323,37 +323,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Functional\
     }
 
     /**
-     * @test
-     * @param array $tca
-     * @param string $table
-     * @param array $configuration
-     * @param string $expectedResult
-     * @dataProvider getWhereReturnCorrectQueryDataProvider
-     */
-    public function getWhereReturnCorrectQuery(array $tca, string $table, array $configuration, string $expectedResult)
-    {
-        $GLOBALS['TCA'] = $tca;
-        $GLOBALS['SIM_ACCESS_TIME'] = '4242';
-        $GLOBALS['TSFE']->sys_language_content = 13;
-        /** @var \PHPUnit_Framework_MockObject_MockObject|ContentObjectRenderer $contentObjectRenderer */
-        $contentObjectRenderer = $this->getMockBuilder(ContentObjectRenderer::class)
-            ->setMethods(['checkPidArray'])
-            ->getMock();
-        $contentObjectRenderer->expects($this->any())
-            ->method('checkPidArray')
-            ->willReturn(explode(',', $configuration['pidInList']));
-
-        // Replace the MySQL backtick quote character with the actual quote character for the DBMS
-        $expectedResult = str_replace('`', $this->quoteChar, $expectedResult);
-
-        // Embed the enable fields string into the expected result as the database
-        // connection is still unconfigured when the data provider is being run.
-        $expectedResult = sprintf($expectedResult, $GLOBALS['TSFE']->sys_page->enableFields($table));
-
-        $this->assertSame($expectedResult, $contentObjectRenderer->getWhere($table, $configuration));
-    }
-
-    /**
      * @return array
      */
     public function typolinkReturnsCorrectLinksForPagesDataProvider()
@@ -454,7 +423,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Functional\
         );
         $typoScriptFrontendController->config = [
             'config' => [],
-            'mainScript' => 'index.php',
         ];
         $typoScriptFrontendController->sys_page = $pageRepositoryMockObject;
         $typoScriptFrontendController->tmpl = GeneralUtility::makeInstance(TemplateService::class);
@@ -509,7 +477,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Functional\
         );
         $typoScriptFrontendController->config = [
             'config' => [],
-            'mainScript' => 'index.php',
         ];
         $typoScriptFrontendController->sys_page = $pageRepositoryMockObject;
         $typoScriptFrontendController->tmpl = $templateServiceMockObject;
@@ -527,23 +494,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Functional\
     /**
      * @return array
      */
-    protected function getLibParseTarget()
-    {
-        return [
-            'override' => '',
-            'override.' => [
-                'if.' => [
-                    'isTrue.' => [
-                        'data' => 'TSFE:dtdAllowsFrames',
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * @return array
-     */
     protected function getLibParseFunc()
     {
         return [
@@ -552,7 +502,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Functional\
                 'http.' => [
                     'keep' => '{$styles.content.links.keep}',
                     'extTarget' => '',
-                    'extTarget.' => $this->getLibParseTarget(),
                     'mailto.' => [
                         'keep' => 'path',
                     ],
@@ -566,8 +515,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Functional\
                         'parameter.' => [
                             'data' => 'parameters : allParams',
                         ],
-                        'extTarget.' => $this->getLibParseTarget(),
-                        'target.' => $this->getLibParseTarget(),
                     ],
                     'parseFunc.' => [
                         'constants' => '1',

@@ -25,10 +25,12 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\ImageManipulation\CropVariantCollection;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Resource\AbstractFile;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
@@ -43,7 +45,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Frontend\Page\PageRepository;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Standard functions available for the TYPO3 backend.
@@ -181,120 +182,6 @@ class BackendUtility
     }
 
     /**
-     * Returns the first record found from $table with $where as WHERE clause
-     * This function does NOT check if a record has the deleted flag set.
-     * $table does NOT need to be configured in $GLOBALS['TCA']
-     * The query used is simply this:
-     * $query = 'SELECT ' . $fields . ' FROM ' . $table . ' WHERE ' . $where;
-     *
-     * @param string $table Table name (not necessarily in TCA)
-     * @param string $where WHERE clause
-     * @param string $fields $fields is a list of fields to select, default is '*'
-     * @return array|bool First row found, if any, FALSE otherwise
-     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
-     */
-    public static function getRecordRaw($table, $where = '', $fields = '*')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $queryBuilder = static::getQueryBuilderForTable($table);
-        $queryBuilder->getRestrictions()->removeAll();
-
-        $row = $queryBuilder
-            ->select(...GeneralUtility::trimExplode(',', $fields, true))
-            ->from($table)
-            ->where(QueryHelper::stripLogicalOperatorPrefix($where))
-            ->execute()
-            ->fetch();
-
-        return $row ?: false;
-    }
-
-    /**
-     * Returns records from table, $theTable, where a field ($theField) equals the value, $theValue
-     * The records are returned in an array
-     * If no records were selected, the function returns nothing
-     *
-     * @param string $theTable Table name present in $GLOBALS['TCA']
-     * @param string $theField Field to select on
-     * @param string $theValue Value that $theField must match
-     * @param string $whereClause Optional additional WHERE clauses put in the end of the query. DO NOT PUT IN GROUP BY, ORDER BY or LIMIT!
-     * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
-     * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
-     * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
-     * @param bool $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
-     * @param null|QueryBuilder $queryBuilder The queryBuilder must be provided, if the parameter $whereClause is given and the concept of prepared statement was used. Example within self::firstDomainRecord()
-     * @return mixed Multidimensional array with selected records (if any is selected)
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public static function getRecordsByField(
-        $theTable,
-        $theField,
-        $theValue,
-        $whereClause = '',
-        $groupBy = '',
-        $orderBy = '',
-        $limit = '',
-        $useDeleteClause = true,
-        $queryBuilder = null
-    ) {
-        GeneralUtility::logDeprecatedFunction();
-        if (is_array($GLOBALS['TCA'][$theTable])) {
-            if (null === $queryBuilder) {
-                $queryBuilder = static::getQueryBuilderForTable($theTable);
-            }
-
-            // Show all records except versioning placeholders
-            $queryBuilder->getRestrictions()
-                ->removeAll()
-                ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
-
-            // Remove deleted records from the query result
-            if ($useDeleteClause) {
-                $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-            }
-
-            // build fields to select
-            $queryBuilder
-                ->select('*')
-                ->from($theTable)
-                ->where($queryBuilder->expr()->eq($theField, $queryBuilder->createNamedParameter($theValue)));
-
-            // additional where
-            if ($whereClause) {
-                $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($whereClause));
-            }
-
-            // group by
-            if ($groupBy !== '') {
-                $queryBuilder->groupBy(QueryHelper::parseGroupBy($groupBy));
-            }
-
-            // order by
-            if ($orderBy !== '') {
-                foreach (QueryHelper::parseOrderBy($orderBy) as $orderPair) {
-                    list($fieldName, $order) = $orderPair;
-                    $queryBuilder->addOrderBy($fieldName, $order);
-                }
-            }
-
-            // limit
-            if ($limit !== '') {
-                if (strpos($limit, ',')) {
-                    $limitOffsetAndMax = GeneralUtility::intExplode(',', $limit);
-                    $queryBuilder->setFirstResult((int)$limitOffsetAndMax[0]);
-                    $queryBuilder->setMaxResults((int)$limitOffsetAndMax[1]);
-                } else {
-                    $queryBuilder->setMaxResults((int)$limit);
-                }
-            }
-
-            $rows = $queryBuilder->execute()->fetchAll();
-            return $rows;
-        }
-        return null;
-    }
-
-    /**
      * Makes an backwards explode on the $str and returns an array with ($table, $uid).
      * Example: tt_content_45 => array('tt_content', 45)
      *
@@ -305,37 +192,6 @@ class BackendUtility
     {
         list($uid, $table) = explode('_', strrev($str), 2);
         return [strrev($table), strrev($uid)];
-    }
-
-    /**
-     * Returns a list of pure ints based on $in_list being a list of records with table-names prepended.
-     * Ex: $in_list = "pages_4,tt_content_12,45" would result in a return value of "4,45" if $tablename is "pages" and $default_tablename is 'pages' as well.
-     *
-     * @param string $in_list Input list
-     * @param string $tablename Table name from which ids is returned
-     * @param string $default_tablename $default_tablename denotes what table the number '45' is from (if nothing is prepended on the value)
-     * @return string List of ids
-     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
-     */
-    public static function getSQLselectableList($in_list, $tablename, $default_tablename)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $list = [];
-        if ((string)trim($in_list) != '') {
-            $tempItemArray = explode(',', trim($in_list));
-            foreach ($tempItemArray as $key => $val) {
-                $val = strrev($val);
-                $parts = explode('_', $val, 2);
-                if ((string)trim($parts[0]) != '') {
-                    $theID = (int)strrev($parts[0]);
-                    $theTable = trim($parts[1]) ? strrev(trim($parts[1])) : $default_tablename;
-                    if ($theTable == $tablename) {
-                        $list[] = $theID;
-                    }
-                }
-            }
-        }
-        return implode(',', $list);
     }
 
     /**
@@ -899,251 +755,6 @@ class BackendUtility
         return $typeNum;
     }
 
-    /**
-     * Parses "defaultExtras" of $GLOBALS['TCA'] columns config section to an array.
-     * Elements are split by ":" and within those parts, parameters are split by "|".
-     *
-     * See unit tests for details.
-     *
-     * @param string $defaultExtrasString "defaultExtras" string from columns config
-     * @return array
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public static function getSpecConfParts($defaultExtrasString)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $specConfParts = GeneralUtility::trimExplode(':', $defaultExtrasString, true);
-        $reg = [];
-        if (!empty($specConfParts)) {
-            foreach ($specConfParts as $k2 => $v2) {
-                unset($specConfParts[$k2]);
-                if (preg_match('/(.*)\\[(.*)\\]/', $v2, $reg)) {
-                    $specConfParts[trim($reg[1])] = [
-                        'parameters' => GeneralUtility::trimExplode('|', $reg[2], true)
-                    ];
-                } else {
-                    $specConfParts[trim($v2)] = 1;
-                }
-            }
-        } else {
-            $specConfParts = [];
-        }
-        return $specConfParts;
-    }
-
-    /**
-     * Takes an array of "[key] = [value]" strings and returns an array with the keys set as keys pointing to the value.
-     * Better see it in action! Find example in Inside TYPO3
-     *
-     * @param array $pArr Array of "[key] = [value]" strings to convert.
-     * @return array
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public static function getSpecConfParametersFromArray($pArr)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $out = [];
-        if (is_array($pArr)) {
-            foreach ($pArr as $k => $v) {
-                $parts = explode('=', $v, 2);
-                if (count($parts) === 2) {
-                    $out[trim($parts[0])] = trim($parts[1]);
-                } else {
-                    $out[$k] = $v;
-                }
-            }
-        }
-        return $out;
-    }
-
-    /**
-     * Finds the Data Structure for a FlexForm field
-     *
-     * NOTE ON data structures for deleted records: This function may fail to deliver the data structure
-     * for a record for a few reasons:
-     *  a) The data structure could be deleted (either with deleted-flagged or hard-deleted),
-     *  b) the data structure is fetched using the ds_pointerField_searchParent in which case any
-     *     deleted record on the route to the final location of the DS will make it fail.
-     * In theory, we can solve the problem in the case where records that are deleted-flagged keeps us
-     * from finding the DS - this is done at the markers ###NOTE_A### where we make sure to also select deleted records.
-     * However, we generally want the DS lookup to fail for deleted records since for the working website we expect a
-     * deleted-flagged record to be as inaccessible as one that is completely deleted from the DB. Any way we look
-     * at it, this may lead to integrity problems of the reference index and even lost files if attached.
-     * However, that is not really important considering that a single change to a data structure can instantly
-     * invalidate large amounts of the reference index which we do accept as a cost for the flexform features.
-     * Other than requiring a reference index update, deletion of/changes in data structure or the failure to look
-     * them up when completely deleting records may lead to lost files in the uploads/ folders since those are now
-     * without a proper reference.
-     *
-     * @param array $conf Field config array
-     * @param array $row Record data
-     * @param string $table The table name
-     * @param string $fieldName Optional fieldname passed to hook object
-     * @param bool $WSOL If set, workspace overlay is applied to records. This is correct behaviour for all presentation and export, but NOT if you want a TRUE reflection of how things are in the live workspace.
-     * @param int $newRecordPidValue SPECIAL CASES: Use this, if the DataStructure may come from a parent record and the INPUT row doesn't have a uid yet (hence, the pid cannot be looked up). Then it is necessary to supply a PID value to search recursively in for the DS (used from DataHandler)
-     * @return mixed If array, the data structure was found and returned as an array. Otherwise (string) it is an error message.
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9. This is now integrated as FlexFormTools->getDataStructureIdentifier()
-     */
-    public static function getFlexFormDS($conf, $row, $table, $fieldName = '', $WSOL = true, $newRecordPidValue = 0)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        // Get pointer field etc from TCA-config:
-        $ds_pointerField = $conf['ds_pointerField'];
-        $ds_array = $conf['ds'];
-        $ds_tableField = $conf['ds_tableField'];
-        $ds_searchParentField = $conf['ds_pointerField_searchParent'];
-        // If there is a data source array, that takes precedence
-        if (is_array($ds_array)) {
-            // If a pointer field is set, take the value from that field in the $row array and use as key.
-            if ($ds_pointerField) {
-                // Up to two pointer fields can be specified in a comma separated list.
-                $pointerFields = GeneralUtility::trimExplode(',', $ds_pointerField);
-                // If we have two pointer fields, the array keys should contain both field values separated by comma.
-                // The asterisk "*" catches all values. For backwards compatibility, it's also possible to specify only
-                // the value of the first defined ds_pointerField.
-                if (count($pointerFields) === 2) {
-                    if ($ds_array[$row[$pointerFields[0]] . ',' . $row[$pointerFields[1]]]) {
-                        // Check if we have a DS for the combination of both pointer fields values
-                        $srcPointer = $row[$pointerFields[0]] . ',' . $row[$pointerFields[1]];
-                    } elseif ($ds_array[$row[$pointerFields[1]] . ',*']) {
-                        // Check if we have a DS for the value of the first pointer field suffixed with ",*"
-                        $srcPointer = $row[$pointerFields[1]] . ',*';
-                    } elseif ($ds_array['*,' . $row[$pointerFields[1]]]) {
-                        // Check if we have a DS for the value of the second pointer field prefixed with "*,"
-                        $srcPointer = '*,' . $row[$pointerFields[1]];
-                    } elseif ($ds_array[$row[$pointerFields[0]]]) {
-                        // Check if we have a DS for just the value of the first pointer field (mainly for backwards compatibility)
-                        $srcPointer = $row[$pointerFields[0]];
-                    } else {
-                        $srcPointer = null;
-                    }
-                } else {
-                    $srcPointer = $row[$pointerFields[0]];
-                }
-                $srcPointer = $srcPointer !== null && isset($ds_array[$srcPointer]) ? $srcPointer : 'default';
-            } else {
-                $srcPointer = 'default';
-            }
-            // Get Data Source: Detect if it's a file reference and in that case read the file and parse as XML. Otherwise the value is expected to be XML.
-            if (substr($ds_array[$srcPointer], 0, 5) === 'FILE:') {
-                $file = GeneralUtility::getFileAbsFileName(substr($ds_array[$srcPointer], 5));
-                if ($file && @is_file($file)) {
-                    $dataStructArray = GeneralUtility::xml2array(file_get_contents($file));
-                } else {
-                    $dataStructArray = 'The file "' . substr($ds_array[$srcPointer], 5) . '" in ds-array key "' . $srcPointer . '" was not found ("' . $file . '")';
-                }
-            } else {
-                $dataStructArray = GeneralUtility::xml2array($ds_array[$srcPointer]);
-            }
-        } elseif ($ds_pointerField) {
-            // If pointer field AND possibly a table/field is set:
-            // Value of field pointed to:
-            $srcPointer = $row[$ds_pointerField];
-            // Searching recursively back if 'ds_pointerField_searchParent' is defined (typ. a page rootline, or maybe a tree-table):
-            if ($ds_searchParentField && !$srcPointer) {
-                $rr = self::getRecord($table, $row['uid'], 'uid,' . $ds_searchParentField);
-                // Get the "pid" field - we cannot know that it is in the input record! ###NOTE_A###
-                if ($WSOL) {
-                    self::workspaceOL($table, $rr);
-                    self::fixVersioningPid($table, $rr, true);
-                }
-
-                $queryBuilder = static::getQueryBuilderForTable($table);
-                $queryBuilder->getRestrictions()
-                    ->removeAll()
-                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-
-                $uidAcc = [];
-                // Used to avoid looping, if any should happen.
-                $subFieldPointer = $conf['ds_pointerField_searchParent_subField'];
-                while (!$srcPointer) {
-                    // select fields
-                    $queryBuilder
-                        ->select('uid', $ds_pointerField, $ds_searchParentField)
-                        ->from($table)
-                        ->where(
-                            $queryBuilder->expr()->eq(
-                                'uid',
-                                $queryBuilder->createNamedParameter(
-                                    ($newRecordPidValue ?: $rr[$ds_searchParentField]),
-                                    \PDO::PARAM_INT
-                                )
-                            )
-                        );
-                    if ($subFieldPointer) {
-                        $queryBuilder->addSelect($subFieldPointer);
-                    }
-
-                    $rr = $queryBuilder->execute()->fetch();
-
-                    $newRecordPidValue = 0;
-                    // Break if no result from SQL db or if looping...
-                    if (!is_array($rr) || isset($uidAcc[$rr['uid']])) {
-                        break;
-                    }
-                    $uidAcc[$rr['uid']] = 1;
-                    if ($WSOL) {
-                        self::workspaceOL($table, $rr);
-                        self::fixVersioningPid($table, $rr, true);
-                    }
-                    $srcPointer = $subFieldPointer && $rr[$subFieldPointer] ? $rr[$subFieldPointer] : $rr[$ds_pointerField];
-                }
-            }
-            // If there is a srcPointer value:
-            if ($srcPointer) {
-                if (MathUtility::canBeInterpretedAsInteger($srcPointer)) {
-                    // If integer, then its a record we will look up:
-                    list($tName, $fName) = explode(':', $ds_tableField, 2);
-                    if ($tName && $fName && is_array($GLOBALS['TCA'][$tName])) {
-                        $dataStructRec = self::getRecord($tName, $srcPointer);
-                        if ($WSOL) {
-                            self::workspaceOL($tName, $dataStructRec);
-                        }
-                        if (strpos($dataStructRec[$fName], '<') === false) {
-                            if (is_file(PATH_site . $dataStructRec[$fName])) {
-                                // The value is a pointer to a file
-                                $dataStructArray = GeneralUtility::xml2array(file_get_contents(PATH_site . $dataStructRec[$fName]));
-                            } else {
-                                $dataStructArray = sprintf('File \'%s\' was not found', $dataStructRec[$fName]);
-                            }
-                        } else {
-                            // No file pointer, handle as being XML (default behaviour)
-                            $dataStructArray = GeneralUtility::xml2array($dataStructRec[$fName]);
-                        }
-                    } else {
-                        $dataStructArray = 'No tablename (' . $tName . ') or fieldname (' . $fName . ') was found an valid!';
-                    }
-                } else {
-                    // Otherwise expect it to be a file:
-                    $file = GeneralUtility::getFileAbsFileName($srcPointer);
-                    if ($file && @is_file($file)) {
-                        $dataStructArray = GeneralUtility::xml2array(file_get_contents($file));
-                    } else {
-                        // Error message.
-                        $dataStructArray = 'The file "' . $srcPointer . '" was not found ("' . $file . '")';
-                    }
-                }
-            } else {
-                // Error message.
-                $dataStructArray = 'No source value in fieldname "' . $ds_pointerField . '"';
-            }
-        } else {
-            $dataStructArray = 'No proper configuration!';
-        }
-        // Hook for post-processing the Flexform DS. Introduces the possibility to configure Flexforms via TSConfig
-        // This hook isn't called anymore from within the core, the whole method is deprecated.
-        // There are alternative hooks, see FlexFormTools->getDataStructureIdentifier() and ->parseDataStructureByIdentifier()
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['getFlexFormDSClass'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['getFlexFormDSClass'] as $classRef) {
-                $hookObj = GeneralUtility::getUserObj($classRef);
-                if (method_exists($hookObj, 'getFlexFormDS_postProcessDS')) {
-                    $hookObj->getFlexFormDS_postProcessDS($dataStructArray, $conf, $row, $table, $fieldName);
-                }
-            }
-        }
-        return $dataStructArray;
-    }
-
     /*******************************************
      *
      * Caching related
@@ -1152,8 +763,6 @@ class BackendUtility
     /**
      * Stores $data in the 'cache_hash' cache with the hash key, $hash
      * and visual/symbolic identification, $ident
-     *
-     * IDENTICAL to the function by same name found in \TYPO3\CMS\Frontend\Page\PageRepository
      *
      * @param string $hash 32 bit hash string (eg. a md5 hash of a serialized array identifying the data being stored)
      * @param mixed $data The data to store
@@ -1169,8 +778,6 @@ class BackendUtility
     /**
      * Returns data stored for the hash string in the cache "cache_hash"
      * Can be used to retrieved a cached value, array or object
-     *
-     * IDENTICAL to the function by same name found in \TYPO3\CMS\Frontend\Page\PageRepository
      *
      * @param string $hash The hash-string which was used to store the data value
      * @return mixed The "data" from the cache
@@ -1554,22 +1161,6 @@ class BackendUtility
         $label = static::getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.minutesHoursDaysYears');
         $age = ' (' . self::calcAge($prefix * ($GLOBALS['EXEC_TIME'] - $tstamp), $label) . ')';
         return ($date === 'date' ? self::date($tstamp) : self::datetime($tstamp)) . $age;
-    }
-
-    /**
-     * Returns alt="" and title="" attributes with the value of $content.
-     *
-     * @param string $content Value for 'alt' and 'title' attributes (will be htmlspecialchars()'ed before output)
-     * @return string
-     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
-     */
-    public static function titleAltAttrib($content)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $out = '';
-        $out .= ' alt="' . htmlspecialchars($content) . '"';
-        $out .= ' title="' . htmlspecialchars($content) . '"';
-        return $out;
     }
 
     /**
@@ -2097,38 +1688,6 @@ class BackendUtility
         }
 
         return null;
-    }
-
-    /**
-     * Replace field values in given row with values from the original language
-     * if l10n_mode TCA settings require to do so.
-     *
-     * @param string $table Table name
-     * @param array $row Row to fill with original language values
-     * @return array Row with values from the original language
-     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9
-     */
-    protected static function replaceL10nModeFields($table, array $row)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $originalUidField = isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])
-            ? $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
-            : '';
-        if (empty($row[$originalUidField])) {
-            return $row;
-        }
-
-        $originalTable = self::getOriginalTranslationTable($table);
-        $originalRow = self::getRecord($originalTable, $row[$originalUidField]);
-        foreach ($row as $field => $_) {
-            $l10n_mode = isset($GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode'])
-                ? $GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode']
-                : '';
-            if ($l10n_mode === 'exclude') {
-                $row[$field] = $originalRow[$field];
-            }
-        }
-        return $row;
     }
 
     /**
@@ -2747,70 +2306,6 @@ class BackendUtility
         return implode(',', array_unique($fields));
     }
 
-    /**
-     * Makes a form for configuration of some values based on configuration found in the array $configArray,
-     * with default values from $defaults and a data-prefix $dataPrefix
-     * <form>-tags must be supplied separately
-     * Needs more documentation and examples, in particular syntax for configuration array. See Inside TYPO3.
-     * That's were you can expect to find example, if anywhere.
-     *
-     * @param array $configArray Field configuration code.
-     * @param array $defaults Defaults
-     * @param string $dataPrefix Prefix for formfields
-     * @return string HTML for a form.
-     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
-     */
-    public static function makeConfigForm($configArray, $defaults, $dataPrefix)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $params = $defaults;
-        $lines = [];
-        if (is_array($configArray)) {
-            foreach ($configArray as $fname => $config) {
-                if (is_array($config)) {
-                    $lines[$fname] = '<strong>' . htmlspecialchars($config[1]) . '</strong><br />';
-                    $lines[$fname] .= $config[2] . '<br />';
-                    switch ($config[0]) {
-                        case 'string':
-
-                        case 'short':
-                            $formEl = '<input type="text" name="' . $dataPrefix . '[' . $fname . ']" value="' . $params[$fname] . '"' . static::getDocumentTemplate()->formWidth(($config[0] === 'short' ? 24 : 48)) . ' />';
-                            break;
-                        case 'check':
-                            $formEl = '<input type="hidden" name="' . $dataPrefix . '[' . $fname . ']" value="0" /><input type="checkbox" name="' . $dataPrefix . '[' . $fname . ']" value="1"' . ($params[$fname] ? ' checked="checked"' : '') . ' />';
-                            break;
-                        case 'comment':
-                            $formEl = '';
-                            break;
-                        case 'select':
-                            $opt = [];
-                            foreach ($config[3] as $k => $v) {
-                                $opt[] = '<option value="' . htmlspecialchars($k) . '"' . ($params[$fname] == $k ? ' selected="selected"' : '') . '>' . htmlspecialchars($v) . '</option>';
-                            }
-                            $formEl = '<select name="' . $dataPrefix . '[' . $fname . ']">'
-                                . implode('', $opt) . '</select>';
-                            break;
-                        default:
-                            $formEl = '<strong>Should not happen. Bug in config.</strong>';
-                    }
-                    $lines[$fname] .= $formEl;
-                    $lines[$fname] .= '<br /><br />';
-                } else {
-                    $lines[$fname] = '<hr />';
-                    if ($config) {
-                        $lines[$fname] .= '<strong>' . strtoupper(htmlspecialchars($config)) . '</strong><br />';
-                    }
-                    if ($config) {
-                        $lines[$fname] .= '<br />';
-                    }
-                }
-            }
-        }
-        $out = implode('', $lines);
-        $out .= '<input class="btn btn-default" type="submit" name="submit" value="Update configuration" />';
-        return $out;
-    }
-
     /*******************************************
      *
      * Backend Modules API functions
@@ -2898,10 +2393,6 @@ class BackendUtility
      */
     public static function wrapInHelp($table, $field, $text = '', array $overloadHelpText = [])
     {
-        if (!ExtensionManagementUtility::isLoaded('context_help')) {
-            return $text;
-        }
-
         // Initialize some variables
         $helpText = '';
         $abbrClassAdd = '';
@@ -3019,8 +2510,8 @@ class BackendUtility
             isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['viewOnClickClass'])
             && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['viewOnClickClass'])
         ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['viewOnClickClass'] as $funcRef) {
-                $hookObj = GeneralUtility::getUserObj($funcRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['viewOnClickClass'] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
                 if (method_exists($hookObj, 'preProcess')) {
                     $hookObj->preProcess(
                         $pageUid,
@@ -3505,7 +2996,6 @@ class BackendUtility
      *
      * @return string HTML javascript code
      * @see BackendUtility::setUpdateSignal()
-     * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::sectionEnd
      */
     public static function getUpdateSignalCode()
     {
@@ -3659,54 +3149,6 @@ class BackendUtility
             $uri = $uriBuilder->buildUriFromModule($moduleName, $urlParameters);
         }
         return (string)$uri;
-    }
-
-    /**
-     * Returns the Ajax URL for a given AjaxID including a CSRF token.
-     *
-     * This method is only called by the core and must not be used by extensions.
-     * Ajax URLs of all registered backend Ajax handlers are automatically published
-     * to JavaScript inline settings: TYPO3.settings.ajaxUrls['ajaxId']
-     *
-     * @param string $ajaxIdentifier Identifier of the AJAX callback
-     * @param array $urlParameters URL parameters that should be added as key value pairs
-     * @return string Calculated URL
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use the UriBuilder directly.
-     */
-    public static function getAjaxUrl($ajaxIdentifier, array $urlParameters = [])
-    {
-        GeneralUtility::logDeprecatedFunction();
-        /** @var UriBuilder $uriBuilder */
-        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-        try {
-            $routeIdentifier = 'ajax_' . $ajaxIdentifier;
-            $uri = $uriBuilder->buildUriFromRoute($routeIdentifier, $urlParameters);
-        } catch (\TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException $e) {
-            // no route registered, use the fallback logic to check for a module
-            $uri = $uriBuilder->buildUriFromAjaxId($ajaxIdentifier, $urlParameters);
-        }
-        return (string)$uri;
-    }
-
-    /**
-     * Return a link to the list view
-     *
-     * @param array $urlParameters URL parameters that should be added as key value pairs
-     * @param string $linkTitle title for the link tag
-     * @param string $linkText optional link text after the icon
-     * @return string A complete <a href=""> tag
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use getModuleUrl and IconFactory methods directly
-     */
-    public static function getListViewLink($urlParameters = [], $linkTitle = '', $linkText = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        /** @var IconFactory $iconFactory */
-        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-        return '<a href="'
-        . htmlspecialchars(self::getModuleUrl('web_list', $urlParameters)) . '" title="'
-        . htmlspecialchars($linkTitle) . '">'
-        . $iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL)->render()
-        . htmlspecialchars($linkText) . '</a>';
     }
 
     /*******************************************
@@ -4087,36 +3529,6 @@ class BackendUtility
     }
 
     /**
-     * Returns processed RTE setup from an array with TSconfig.
-     * Merges table and type specific RTE configuration into 'default.'
-     *
-     * @param array $RTEprop The properties of Page TSconfig in the key "RTE.
-     * @param string $table Table name
-     * @param string $field Field name
-     * @param string $type Type value of the current record (like from CType of tt_content)
-     * @return array Array with the configuration for the RTE
-     * @internal
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9.
-     */
-    public static function RTEsetup($RTEprop, $table, $field, $type = '')
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $thisConfig = is_array($RTEprop['default.']) ? $RTEprop['default.'] : [];
-        $thisFieldConf = $RTEprop['config.'][$table . '.'][$field . '.'];
-        if (is_array($thisFieldConf)) {
-            unset($thisFieldConf['types.']);
-            ArrayUtility::mergeRecursiveWithOverrule($thisConfig, $thisFieldConf);
-        }
-        if ($type && is_array($RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.'])) {
-            ArrayUtility::mergeRecursiveWithOverrule(
-                $thisConfig,
-                $RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.']
-            );
-        }
-        return $thisConfig;
-    }
-
-    /**
      * Returns soft-reference parser for the softRef processing type
      * Usage: $softRefObj = &BackendUtility::softRefParserObj('[parser key]');
      *
@@ -4132,12 +3544,9 @@ class BackendUtility
             // Now, try to create parser object:
             $objRef = null;
             if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey])) {
-                $objRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey];
-                if ($objRef) {
-                    $softRefParserObj = GeneralUtility::getUserObj($objRef);
-                    if (is_object($softRefParserObj)) {
-                        $GLOBALS['T3_VAR']['softRefParser'][$spKey] = $softRefParserObj;
-                    }
+                $className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey];
+                if ($className) {
+                    $GLOBALS['T3_VAR']['softRefParser'][$spKey] = GeneralUtility::makeInstance($className);
                 }
             }
         }
@@ -4845,25 +4254,21 @@ class BackendUtility
      */
     public static function ADMCMD_previewCmds($pageInfo)
     {
-        $tableNameFeGroup = 'fe_groups';
         $simUser = '';
         $simTime = '';
-        if ($pageInfo[$tableNameFeGroup] > 0) {
-            $simUser = '&ADMCMD_simUser=' . $pageInfo[$tableNameFeGroup];
-        } elseif ((int)$pageInfo[$tableNameFeGroup] === -2) {
+        if ($pageInfo['fe_group'] > 0) {
+            $simUser = '&ADMCMD_simUser=' . $pageInfo['fe_group'];
+        } elseif ((int)$pageInfo['fe_group'] === -2) {
             // -2 means "show at any login". We simulate first available fe_group.
-            /** @var PageRepository $sysPage */
-            $sysPage = GeneralUtility::makeInstance(PageRepository::class);
-
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getQueryBuilderForTable($tableNameFeGroup);
-            $queryBuilder->getRestrictions()->removeAll();
+                ->getQueryBuilderForTable('fe_groups');
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                ->add(GeneralUtility::makeInstance(HiddenRestriction::class));
 
             $activeFeGroupRow = $queryBuilder->select('uid')
-                ->from($tableNameFeGroup)
-                ->where(
-                    QueryHelper::stripLogicalOperatorPrefix('1=1' . $sysPage->enableFields('fe_groups'))
-                )
+                ->from('fe_groups')
                 ->execute()
                 ->fetch();
 
@@ -4878,30 +4283,6 @@ class BackendUtility
             $simTime = '&ADMCMD_simTime=' . ($pageInfo['endtime'] - 1);
         }
         return $simUser . $simTime;
-    }
-
-    /**
-     * Returns an array with key=>values based on input text $params
-     * $params is exploded by line-breaks and each line is supposed to be on the syntax [key] = [some value]
-     * These pairs will be parsed into an array an returned.
-     *
-     * @param string $params String of parameters on multiple lines to parse into key-value pairs (see function description)
-     * @return array
-     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9.
-     */
-    public static function processParams($params)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $paramArr = [];
-        $lines = explode(LF, $params);
-        foreach ($lines as $val) {
-            $val = trim($val);
-            if ($val) {
-                $pair = explode('=', $val, 2);
-                $paramArr[trim($pair[0])] = trim($pair[1]);
-            }
-        }
-        return $paramArr;
     }
 
     /**

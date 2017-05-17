@@ -69,12 +69,11 @@ class LegacyLinkNotationConverter
             // Check for link-handler keyword
             list($linkHandlerKeyword, $linkHandlerValue) = explode(':', $linkParameter, 2);
             $result['type'] = strtolower(trim($linkHandlerKeyword));
-            $result['url'] = $linkHandlerValue;
+            $result['url'] = $linkParameter;
+            $result['value'] = $linkHandlerValue;
             if ($result['type'] === LinkService::TYPE_RECORD) {
                 list($a['identifier'], $a['table'], $a['uid']) = explode(':', $linkHandlerValue);
                 $result['url'] = $a;
-            } else {
-                // @TODO add a hook for old typolinkLinkHandler to convert their values properly, forge #79647
             }
         } else {
             // special handling without a scheme
@@ -82,8 +81,15 @@ class LegacyLinkNotationConverter
             $fileChar = (int)strpos($linkParameter, '/');
             $urlChar = (int)strpos($linkParameter, '.');
 
+            $isIdOrAlias = MathUtility::canBeInterpretedAsInteger($linkParameter);
+            $matches = [];
+            // capture old RTE links relative to TYPO3_mainDir
+            if (preg_match('#../(?:index\\.php)?\\?id=([^&]+)#', $linkParameter, $matches)) {
+                $linkParameter = $matches[1];
+                $isIdOrAlias = true;
+            }
             $containsSlash = false;
-            if (!MathUtility::canBeInterpretedAsInteger($linkParameter)) {
+            if (!$isIdOrAlias) {
                 // Detects if a file is found in site-root and if so it will be treated like a normal file.
                 list($rootFileDat) = explode('?', rawurldecode($linkParameter));
                 $containsSlash = strpos($rootFileDat, '/') !== false;
@@ -106,7 +112,7 @@ class LegacyLinkNotationConverter
             }
 
             // url (external): If doubleSlash or if a '.' comes before a '/'.
-            if ($isLocalFile !== 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar)) {
+            if (!$isIdOrAlias && $isLocalFile !== 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar)) {
                 $result['type'] = LinkService::TYPE_URL;
                 if (!$scheme) {
                     $result['url'] = 'http://' . $linkParameter;

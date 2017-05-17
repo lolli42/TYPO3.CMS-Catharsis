@@ -27,12 +27,12 @@ use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DefaultRestrictionContainer;
 use TYPO3\CMS\Core\Database\RelationHandler;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Test case
@@ -1629,51 +1629,6 @@ class TcaSelectItemsTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                                     'PAGE_TSCONFIG_IDLIST' => 'a, 471, b, 481, c',
                                 ],
                             ],
-                        ],
-                    ],
-                ],
-            ],
-            'deprecated flexHack PAGE_TSCONFIG_ID is substituted' => [
-                'AND fTable.uid=###PAGE_TSCONFIG_ID###',
-                [
-                    ['fTable.uid=123'],
-                    [' 1=1'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
-                [
-                    'pageTsConfig' => [
-                        'flexHack.' => [
-                            'PAGE_TSCONFIG_ID' => '123',
-                        ],
-                    ],
-                ],
-            ],
-            'deprecated flexHack PAGE_TSCONFIG_IDLIST is substituted' => [
-                'AND fTable.uid IN (###PAGE_TSCONFIG_IDLIST###)',
-                [
-                    ['fTable.uid IN (123,124)'],
-                    [' 1=1'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
-                [
-                    'pageTsConfig' => [
-                        'flexHack.' => [
-                            'PAGE_TSCONFIG_IDLIST' => '123,124',
-                        ],
-                    ],
-                ],
-            ],
-            'deprecated flexHack PAGE_TSCONFIG_STR is substituted' => [
-                'AND fTable.uid=\'###PAGE_TSCONFIG_STR###\'',
-                [
-                    ['fTable.uid=\'aString\''],
-                    [' 1=1'],
-                    ['`pages.uid` = `fTable.pid`']
-                ],
-                [
-                    'pageTsConfig' => [
-                        'flexHack.' => [
-                            'PAGE_TSCONFIG_STR' => 'aString',
                         ],
                     ],
                 ],

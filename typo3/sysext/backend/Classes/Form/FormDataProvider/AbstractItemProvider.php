@@ -28,13 +28,13 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconRegistry;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Contains methods used by Data providers that handle elements
@@ -136,23 +136,6 @@ abstract class AbstractItemProvider
                     && !empty($addItemsArray[$value . '.']['icon'])
                 ) {
                     $iconIdentifier = $addItemsArray[$value . '.']['icon'];
-                    if (!$iconRegistry->isRegistered($iconIdentifier)) {
-                        GeneralUtility::deprecationLog(
-                            'Using a file path for icon in pageTsConfig addItems is deprecated.' .
-                            'Use a registered iconIdentifier instead'
-                        );
-                        $iconPath = GeneralUtility::getFileAbsFileName($iconIdentifier);
-                        if ($iconPath !== '') {
-                            $iconIdentifier = md5($iconPath);
-                            $iconRegistry->registerIcon(
-                                $iconIdentifier,
-                                $iconRegistry->detectIconProvider($iconPath),
-                                [
-                                    'source' => $iconPath
-                                ]
-                            );
-                        }
-                    }
                 }
                 $items[] = [$label, $value, $iconIdentifier];
             }
@@ -1067,19 +1050,11 @@ abstract class AbstractItemProvider
             }
 
             $pageTsConfigId = 0;
-            if ($result['pageTsConfig']['flexHack.']['PAGE_TSCONFIG_ID']) {
-                // @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - see also the flexHack part in TcaFlexProcess
-                $pageTsConfigId = (int)$result['pageTsConfig']['flexHack.']['PAGE_TSCONFIG_ID'];
-            }
             if ($result['pageTsConfig']['TCEFORM.'][$localTable . '.'][$localFieldName . '.']['PAGE_TSCONFIG_ID']) {
                 $pageTsConfigId = (int)$result['pageTsConfig']['TCEFORM.'][$localTable . '.'][$localFieldName . '.']['PAGE_TSCONFIG_ID'];
             }
 
             $pageTsConfigIdList = 0;
-            if ($result['pageTsConfig']['flexHack.']['PAGE_TSCONFIG_IDLIST']) {
-                // @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - see also the flexHack part in TcaFlexProcess
-                $pageTsConfigIdList = $result['pageTsConfig']['flexHack.']['PAGE_TSCONFIG_IDLIST'];
-            }
             if ($result['pageTsConfig']['TCEFORM.'][$localTable . '.'][$localFieldName . '.']['PAGE_TSCONFIG_IDLIST']) {
                 $pageTsConfigIdList = $result['pageTsConfig']['TCEFORM.'][$localTable . '.'][$localFieldName . '.']['PAGE_TSCONFIG_IDLIST'];
             }
@@ -1093,10 +1068,6 @@ abstract class AbstractItemProvider
             $pageTsConfigIdList = implode(',', $pageTsConfigIdList);
 
             $pageTsConfigString = '';
-            if ($result['pageTsConfig']['flexHack.']['PAGE_TSCONFIG_STR']) {
-                // @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - see also the flexHack part in TcaFlexProcess
-                $pageTsConfigString = $connection->quote($result['pageTsConfig']['flexHack.']['PAGE_TSCONFIG_STR']);
-            }
             if ($result['pageTsConfig']['TCEFORM.'][$localTable . '.'][$localFieldName . '.']['PAGE_TSCONFIG_STR']) {
                 $pageTsConfigString = $result['pageTsConfig']['TCEFORM.'][$localTable . '.'][$localFieldName . '.']['PAGE_TSCONFIG_STR'];
                 $pageTsConfigString = $connection->quote($pageTsConfigString);
@@ -1303,29 +1274,6 @@ abstract class AbstractItemProvider
         }
 
         return $itemArray;
-    }
-
-    /**
-     * Make sure maxitems is always filled with a valid integer value.
-     *
-     * Used by TcaSelectItems and TcaSelectTreeItems data providers
-     *
-     * @param mixed $maxItems
-     * @return int
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function sanitizeMaxItems($maxItems)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if (!empty($maxItems)
-            && (int)$maxItems >= 1
-        ) {
-            $maxItems = (int)$maxItems;
-        } else {
-            $maxItems = 99999;
-        }
-
-        return $maxItems;
     }
 
     /**

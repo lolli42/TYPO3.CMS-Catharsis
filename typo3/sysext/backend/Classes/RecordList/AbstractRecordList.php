@@ -23,8 +23,8 @@ use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Library with a single function addElement that returns table
@@ -225,7 +225,7 @@ abstract class AbstractRecordList
     public function addElement($h, $icon, $data, $rowParams = '', $_ = '', $_2 = '', $colType = 'td')
     {
         $colType = ($colType === 'th') ? 'th' : 'td';
-        $noWrap = $this->no_noWrap ? '' : ' nowrap="nowrap"';
+        $noWrap = $this->no_noWrap ? '' : ' nowrap';
         // Start up:
         $l10nParent = isset($data['_l10nparent_']) ? (int)$data['_l10nparent_'] : 0;
         $out = '
@@ -234,7 +234,7 @@ abstract class AbstractRecordList
         // Show icon and lines
         if ($this->showIcon) {
             $out .= '
-			<' . $colType . ' nowrap="nowrap" class="col-icon">';
+			<' . $colType . ' class="col-icon nowrap">';
             if (!$h) {
                 $out .= '&nbsp;';
             } else {
@@ -269,7 +269,7 @@ abstract class AbstractRecordList
                         $cssClass = implode(' ', [$this->addElement_tdCssClass[$lastKey], $this->oddColumnsCssClass]);
                     }
                     $out .= '
-						<' . $colType . $noWrap . ' class="' . $cssClass . '"' . $colsp . $this->addElement_tdParams[$lastKey] . '>' . $data[$lastKey] . '</' . $colType . '>';
+						<' . $colType . ' class="' . $cssClass . $noWrap . '"' . $colsp . $this->addElement_tdParams[$lastKey] . '>' . $data[$lastKey] . '</' . $colType . '>';
                 }
                 $lastKey = $vKey;
                 $c = 1;
@@ -292,7 +292,7 @@ abstract class AbstractRecordList
                 $cssClass = implode(' ', [$this->addElement_tdCssClass[$lastKey], $this->oddColumnsCssClass]);
             }
             $out .= '
-				<' . $colType . $noWrap . ' class="' . $cssClass . '"' . $colsp . $this->addElement_tdParams[$lastKey] . '>' . $data[$lastKey] . '</' . $colType . '>';
+				<' . $colType . ' class="' . $cssClass . $noWrap . '"' . $colsp . $this->addElement_tdParams[$lastKey] . '>' . $data[$lastKey] . '</' . $colType . '>';
         }
         // End row
         $out .= '

@@ -20,8 +20,8 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * This class provides Processing plugin implementation
@@ -37,11 +37,11 @@ class LinkAnalyzer
     protected $searchFields = [];
 
     /**
-     * List of comma separated page uids (rootline downwards)
+     * List of page uids (rootline downwards)
      *
-     * @var string
+     * @var array
      */
-    protected $pidList = '';
+    protected $pids = [];
 
     /**
      * Array of tables and the number of external links they contain
@@ -107,8 +107,8 @@ class LinkAnalyzer
         $this->getLanguageService()->includeLLFile('EXT:linkvalidator/Resources/Private/Language/Module/locallang.xlf');
         // Hook to handle own checks
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] as $key => $classRef) {
-                $this->hookObjectsArr[$key] = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] as $key => $className) {
+                $this->hookObjectsArr[$key] = GeneralUtility::makeInstance($className);
             }
         }
     }
@@ -116,14 +116,14 @@ class LinkAnalyzer
     /**
      * Store all the needed configuration values in class variables
      *
-     * @param array $searchField List of fields in which to search for links
-     * @param string $pid List of comma separated page uids in which to search for links
-     * @param array $tsConfig The currently active TSConfig.
+     * @param array  $searchField List of fields in which to search for links
+     * @param string $pidList     List of comma separated page uids in which to search for links
+     * @param array  $tsConfig    The currently active TSConfig.
      */
-    public function init(array $searchField, $pid, $tsConfig)
+    public function init(array $searchField, $pidList, $tsConfig)
     {
         $this->searchFields = $searchField;
-        $this->pidList = $pid;
+        $this->pids = GeneralUtility::intExplode(',', $pidList, true);
         $this->tsConfig = $tsConfig;
     }
 
@@ -136,8 +136,7 @@ class LinkAnalyzer
     public function getLinkStatistics($checkOptions = [], $considerHidden = false)
     {
         $results = [];
-        $pidList = GeneralUtility::intExplode(',', $this->pidList, true);
-        if (!empty($checkOptions) && !empty($pidList)) {
+        if (!empty($checkOptions) && !empty($this->pids)) {
             $checkKeys = array_keys($checkOptions);
 
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -148,12 +147,12 @@ class LinkAnalyzer
                     $queryBuilder->expr()->orX(
                         $queryBuilder->expr()->in(
                             'record_pid',
-                            $queryBuilder->createNamedParameter($pidList, Connection::PARAM_INT_ARRAY)
+                            $queryBuilder->createNamedParameter($this->pids, Connection::PARAM_INT_ARRAY)
                         ),
                         $queryBuilder->expr()->andX(
                             $queryBuilder->expr()->in(
                                 'record_uid',
-                                $queryBuilder->createNamedParameter($pidList, Connection::PARAM_INT_ARRAY)
+                                $queryBuilder->createNamedParameter($this->pids, Connection::PARAM_INT_ARRAY)
                             ),
                             $queryBuilder->expr()->eq(
                                 'table_name',
@@ -192,7 +191,7 @@ class LinkAnalyzer
                     ->where(
                         $queryBuilder->expr()->in(
                             ($table === 'pages' ? 'uid' : 'pid'),
-                            $queryBuilder->createNamedParameter($pidList, Connection::PARAM_INT_ARRAY)
+                            $queryBuilder->createNamedParameter($this->pids, Connection::PARAM_INT_ARRAY)
                         )
                     )
                     ->execute();
@@ -420,7 +419,6 @@ class LinkAnalyzer
     public function getLinkCounts($curPage)
     {
         $markerArray = [];
-        $this->pidList = GeneralUtility::intExplode(',', ($this->pidList ?: $curPage), true);
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tx_linkvalidator_link');
@@ -432,7 +430,7 @@ class LinkAnalyzer
             ->where(
                 $queryBuilder->expr()->in(
                     'record_pid',
-                    $queryBuilder->createNamedParameter($this->pidList, Connection::PARAM_INT_ARRAY)
+                    $queryBuilder->createNamedParameter($this->pids, Connection::PARAM_INT_ARRAY)
                 )
             )
             ->groupBy('link_type')

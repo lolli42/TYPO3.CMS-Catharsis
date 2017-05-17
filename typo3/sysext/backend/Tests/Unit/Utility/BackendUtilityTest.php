@@ -29,8 +29,8 @@ use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DefaultRestrictionContainer;
 use TYPO3\CMS\Core\Database\RelationHandler;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Test case
@@ -907,33 +907,6 @@ class BackendUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     /**
      * @test
      */
-    public function getSpecConfPartsSplitsDefaultExtras()
-    {
-        $defaultExtras = 'nowrap:wizards[foo|bar]:anotherDefaultExtras:some[other|setting|with|parameters]';
-        $expected = [
-            'nowrap' => 1,
-            'wizards' => [
-                'parameters' => [
-                    0 => 'foo',
-                    1 => 'bar',
-                ],
-            ],
-            'anotherDefaultExtras' => 1,
-            'some' => [
-                'parameters' => [
-                    0 => 'other',
-                    1 => 'setting',
-                    2 => 'with',
-                    3 => 'parameters',
-                ],
-            ],
-        ];
-        $this->assertEquals($expected, BackendUtility::getSpecConfParts($defaultExtras));
-    }
-
-    /**
-     * @test
-     */
     public function dateTimeAgeReturnsCorrectValues()
     {
         /** @var ObjectProphecy|LanguageService $languageServiceProphecy */
@@ -1145,7 +1118,6 @@ class BackendUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                             'cols' => 40,
                             'rows' => 5
                         ],
-                        'defaultExtras' => 'richtext:rte_transform[mode=ts_css]'
                     ],
                     'text2' => [
                         'label' => 'RTE Text 2',
@@ -1154,7 +1126,6 @@ class BackendUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                             'cols' => 40,
                             'rows' => 5
                         ],
-                        'defaultExtras' => 'richtext:rte_transform[mode=fooBar,type=RTE]'
                     ],
                     'select' => [
                         'label' => 'Select test',

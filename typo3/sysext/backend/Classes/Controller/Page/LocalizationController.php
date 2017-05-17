@@ -152,35 +152,6 @@ class LocalizationController
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
      * @return ResponseInterface
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function getRecordUidsToCopy(ServerRequestInterface $request, ResponseInterface $response)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $params = $request->getQueryParams();
-        if (!isset($params['pageId'], $params['colPos'], $params['languageId'])) {
-            $response = $response->withStatus(500);
-            return $response;
-        }
-
-        $pageId = (int)$params['pageId'];
-        $colPos = (int)$params['colPos'];
-        $languageId = (int)$params['languageId'];
-
-        $result = $this->localizationRepository->getRecordsToCopyDatabaseResult($pageId, $colPos, $languageId, 'uid');
-        $uids = [];
-        while ($row = $result->fetch()) {
-            $uids[] = (int)$row['uid'];
-        }
-
-        $response->getBody()->write(json_encode($uids));
-        return $response;
-    }
-
-    /**
-     * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
-     * @return ResponseInterface
      */
     public function localizeRecords(ServerRequestInterface $request, ResponseInterface $response)
     {
@@ -196,10 +167,49 @@ class LocalizationController
             return $response;
         }
 
+        // Filter transmitted but invalid uids
+        $params['uidList'] = $this->filterInvalidUids(
+            (int)$params['pageId'],
+            (int)$params['colPos'],
+            (int)$params['destLanguageId'],
+            (int)$params['srcLanguageId'],
+            $params['uidList']
+        );
+
         $this->process($params);
 
         $response->getBody()->write(json_encode([]));
         return $response;
+    }
+
+    /**
+     * Gets all possible UIDs of a page, colPos and language that might be processed and removes invalid UIDs that might
+     * be smuggled in.
+     *
+     * @param int $pageId
+     * @param int $colPos
+     * @param int $destLanguageId
+     * @param int $srcLanguageId
+     * @param array $transmittedUidList
+     * @return array
+     */
+    protected function filterInvalidUids(
+        int $pageId,
+        int $colPos,
+        int $destLanguageId,
+        int $srcLanguageId,
+        array $transmittedUidList
+    ): array {
+        // Get all valid uids that can be processed
+        $validUidList = $result = $this->localizationRepository->getRecordsToCopyDatabaseResult(
+            $pageId,
+            $colPos,
+            $destLanguageId,
+            $srcLanguageId,
+            'uid'
+        );
+
+        return array_intersect(array_unique($transmittedUidList), array_column($validUidList->fetchAll(), 'uid'));
     }
 
     /**

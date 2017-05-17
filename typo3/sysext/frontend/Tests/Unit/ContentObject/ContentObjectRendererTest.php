@@ -36,6 +36,7 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectOneSourceCollectionHookInterfa
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectStdWrapHookInterface;
 use TYPO3\CMS\Frontend\ContentObject\EditPanelContentObject;
+use TYPO3\CMS\Frontend\ContentObject\Exception\ContentRenderingException;
 use TYPO3\CMS\Frontend\ContentObject\FileContentObject;
 use TYPO3\CMS\Frontend\ContentObject\FilesContentObject;
 use TYPO3\CMS\Frontend\ContentObject\FluidTemplateContentObject;
@@ -239,10 +240,94 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     }
 
     //////////////////////////////////////
-    // Tests concerning getContentObject
+    // Tests related to getContentObject
     //////////////////////////////////////
 
-    public function getContentObjectValidContentObjectsDataProvider()
+    /**
+     * Show registration of a class for a TypoScript object name and getting
+     * the registered content object is working.
+     *
+     * Prove is done by successfully creating an object based on the mapping.
+     * Note two conditions in contrast to other tests, where the creation
+     * fails.
+     *
+     * 1. The type must be of AbstractContentObject.
+     * 2. Registration can only be done by public methods.
+     *
+     * @test
+     */
+    public function canRegisterAContentObjectClassForATypoScriptName()
+    {
+        $className = TextContentObject::class;
+        $contentObjectName = 'TEST_TEXT';
+        $this->subject->registerContentObjectClass($className,
+            $contentObjectName);
+        $object = $this->subject->getContentObject($contentObjectName);
+        $this->assertInstanceOf($className, $object);
+    }
+
+    /**
+     * Show that setting of the class map and getting a registered content
+     * object is working.
+     *
+     * @see ContentObjectRendererTest::canRegisterAContentObjectClassForATypoScriptName
+     * @test
+     */
+    public function canSetTheContentObjectClassMapAndGetARegisteredContentObject()
+    {
+        $className = TextContentObject::class;
+        $contentObjectName = 'TEST_TEXT';
+        $classMap = [$contentObjectName => $className];
+        $this->subject->setContentObjectClassMap($classMap);
+        $object = $this->subject->getContentObject($contentObjectName);
+        $this->assertInstanceOf($className, $object);
+    }
+
+    /**
+     * Show that the map is not set as an externally accessible reference.
+     *
+     * Prove is done by missing success when trying to use it this way.
+     *
+     * @see ContentObjectRendererTest::canRegisterAContentObjectClassForATypoScriptName
+     * @test
+     */
+    public function canNotAccessInternalContentObjectMapByReference()
+    {
+        $className = TextContentObject::class;
+        $contentObjectName = 'TEST_TEXT';
+        $classMap = [];
+        $this->subject->setContentObjectClassMap($classMap);
+        $classMap[$contentObjectName] = $className;
+        $object = $this->subject->getContentObject($contentObjectName);
+        $this->assertNull($object);
+    }
+
+    /**
+     * @see ContentObjectRendererTest::canRegisterAContentObjectClassForATypoScriptName
+     * @test
+     */
+    public function willReturnNullForUnregisteredObject()
+    {
+        $object = $this->subject->getContentObject('FOO');
+        $this->assertNull($object);
+    }
+
+    /**
+     * @see ContentObjectRendererTest::canRegisterAContentObjectClassForATypoScriptName
+     * @test
+     */
+    public function willThrowAnExceptionForARegisteredNonContentObject()
+    {
+        $this->expectException(ContentRenderingException::class);
+        $this->subject->registerContentObjectClass(\stdClass::class,
+            'STDCLASS');
+        $this->subject->getContentObject('STDCLASS');
+    }
+
+    /**
+     * @return string[][] [[$name, $fullClassName],]
+     */
+    public function registersAllDefaultContentObjectsDataProvider(): array
     {
         $dataProvider = [];
         foreach ($this->contentObjectMap as $name => $className) {
@@ -252,16 +337,22 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     }
 
     /**
+     * Prove that all content objects are registered and a class is available
+     * for each of them.
+     *
      * @test
-     * @dataProvider getContentObjectValidContentObjectsDataProvider
-     * @param string $name TypoScript name of content object
-     * @param string $fullClassName Expected class name
+     * @dataProvider registersAllDefaultContentObjectsDataProvider
+     * @param string $objectName TypoScript name of content object
+     * @param string $className Expected class name
      */
-    public function getContentObjectCallsMakeInstanceForNewContentObjectInstance($name, $fullClassName)
-    {
-        $contentObjectInstance = $this->createMock($fullClassName);
-        GeneralUtility::addInstance($fullClassName, $contentObjectInstance);
-        $this->assertSame($contentObjectInstance, $this->subject->getContentObject($name));
+    public function registersAllDefaultContentObjects(
+        string $objectName,
+        string $className
+    ) {
+        $this->assertTrue(
+            is_subclass_of($className, AbstractContentObject::class));
+        $object = $this->subject->getContentObject($objectName);
+        $this->assertInstanceOf($className, $object);
     }
 
     /////////////////////////////////////////
@@ -1799,9 +1890,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function getImageSourceCollectionRendersDefinedLayoutKeyDataDefaultProvider()
     {
-        /**
-         * @see css_styled_content/static/setup.txt
-         */
         $sourceCollectionArray = [
             'small.' => [
                 'width' => 200,
@@ -1873,9 +1961,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function getImageSourceCollectionRendersDefinedLayoutKeyDataDataProvider()
     {
-        /**
-         * @see css_styled_content/static/setup.txt
-         */
         $sourceCollectionArray = [
             'small.' => [
                 'width' => 200,
@@ -2214,23 +2299,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     /**
      * @return array
      */
-    protected function getLibParseTarget()
-    {
-        return [
-            'override' => '',
-            'override.' => [
-                'if.' => [
-                    'isTrue.' => [
-                        'data' => 'TSFE:dtdAllowsFrames',
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * @return array
-     */
     protected function getLibParseFunc()
     {
         return [
@@ -2239,7 +2307,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                 'http.' => [
                     'keep' => '{$styles.content.links.keep}',
                     'extTarget' => '',
-                    'extTarget.' => $this->getLibParseTarget(),
                     'mailto.' => [
                         'keep' => 'path',
                     ],
@@ -2253,8 +2320,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                         'parameter.' => [
                             'data' => 'parameters : allParams',
                         ],
-                        'extTarget.' => $this->getLibParseTarget(),
-                        'target.' => $this->getLibParseTarget(),
                     ],
                     'parseFunc.' => [
                         'constants' => '1',
@@ -2379,13 +2444,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                     'http.' => [
                         'extTarget.' =>  [
                             'override' => '_blank',
-                            'override.' => [
-                                'if.' => [
-                                    'isTrue.' => [
-                                        'data' => 'TSFE:dtdAllowsFrames',
-                                    ],
-                                ],
-                            ],
                         ],
                         'keep' => 'path',
                     ],
@@ -2426,26 +2484,12 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                         'typolink.' => [
                             'extTarget.' =>  [
                                 'override' => '',
-                                'override.' => [
-                                    'if.' => [
-                                        'isTrue.' => [
-                                            'data' => 'TSFE:dtdAllowsFrames',
-                                        ],
-                                    ],
-                                ],
                             ],
                             'parameter.' => [
                                 'data' => 'parameters : allParams',
                             ],
                             'target.' =>  [
                                 'override' => '',
-                                'override.' => [
-                                    'if.' => [
-                                        'isTrue.' => [
-                                            'data' => 'TSFE:dtdAllowsFrames',
-                                        ],
-                                    ],
-                                ],
                             ],
                         ],
                     ],
@@ -2614,7 +2658,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = [
             'config' => [],
-            'mainScript' => 'index.php',
         ];
         $typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
         $GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
@@ -2856,7 +2899,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = [
             'config' => [],
-            'mainScript' => 'index.php',
         ];
         $typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
         $GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
@@ -3007,7 +3049,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $typoScriptFrontendControllerMockObject = $this->createMock(TypoScriptFrontendController::class);
         $typoScriptFrontendControllerMockObject->config = [
             'config' => [],
-            'mainScript' => 'index.php',
         ];
         $typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
         $GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
@@ -3421,7 +3462,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             }
         }
         $this->assertSame(1, $notCallable);
-        $this->assertSame(91, $callable);
+        $this->assertSame(89, $callable);
     }
 
     /**
@@ -3468,7 +3509,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             }
         }
         $this->assertSame($expectExceptions, $exceptions);
-        $this->assertSame(91, $count);
+        $this->assertSame(89, $count);
     }
 
     /***************************************************************************

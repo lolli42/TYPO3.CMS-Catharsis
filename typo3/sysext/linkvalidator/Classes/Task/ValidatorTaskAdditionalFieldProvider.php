@@ -15,9 +15,9 @@ namespace TYPO3\CMS\Linkvalidator\Task;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface;
 use TYPO3\CMS\Scheduler\Controller\SchedulerModuleController;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
@@ -225,7 +225,11 @@ class ValidatorTaskAdditionalFieldProvider implements AdditionalFieldProviderInt
         // @todo which is normally a comma separated string
         $lang = $this->getLanguageService();
         if (!empty($submittedData['linkvalidator']['email'])) {
-            $emailList = GeneralUtility::trimExplode(',', $submittedData['linkvalidator']['email']);
+            if (strpos($submittedData['linkvalidator']['email'], ',') !== false) {
+                $emailList = GeneralUtility::trimExplode(',', $submittedData['linkvalidator']['email']);
+            } else {
+                $emailList = GeneralUtility::trimExplode(LF, $submittedData['linkvalidator']['email']);
+            }
             foreach ($emailList as $emailAdd) {
                 if (!GeneralUtility::validEmail($emailAdd)) {
                     $isValid = false;

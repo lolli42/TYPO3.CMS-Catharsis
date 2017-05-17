@@ -26,14 +26,13 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\TypoScript\TypoScriptService;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Script Class for the Web > List module; rendering the listing of records on a page
@@ -388,10 +387,6 @@ class RecordList extends AbstractModule
             $this->pointer = max(0, (int)$this->pointer);
             $dblist->start($this->id, $this->table, $this->pointer, $this->search_field, $this->search_levels, $this->showLimit);
             $dblist->setDispFields();
-            // Render versioning selector:
-            if (ExtensionManagementUtility::isLoaded('version')) {
-                $dblist->HTMLcode .= $this->moduleTemplate->getVersionSelector($this->id);
-            }
             // Render the list of tables:
             $dblist->generateList();
             $listUrl = $dblist->listURL();

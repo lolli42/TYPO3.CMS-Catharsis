@@ -21,9 +21,9 @@ use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Service\DependencyOrderingService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Recordlist\LinkHandler\LinkHandlerInterface;
 
 /**
@@ -174,7 +174,21 @@ abstract class AbstractLinkBrowserController
             $content .= $this->renderCurrentUrl();
         }
 
-        $content .= '<div class="element-browser-panel element-browser-tabs">' . $this->doc->getTabMenuRaw($menuData) . '</div>';
+        $options = '';
+        foreach ($menuData as $id => $def) {
+            $class = $def['isActive'] ? 'active' : '';
+            $label = $def['label'];
+            $url = htmlspecialchars($def['url']);
+            $params = $def['addParams'];
+
+            $options .= '<li class="' . $class . '">' .
+                '<a href="' . $url . '" ' . $params . '>' . $label . '</a>' .
+                '</li>';
+        }
+
+        $content .= '<div class="element-browser-panel element-browser-tabs"><ul class="nav nav-tabs" role="tablist">' .
+            $options . '</ul></div>';
+
         $content .= $renderLinkAttributeFields;
 
         $content .= $browserContent;
@@ -230,6 +244,11 @@ abstract class AbstractLinkBrowserController
         $lang = $this->getLanguageService();
         foreach ($linkHandlers as $identifier => $configuration) {
             $identifier = rtrim($identifier, '.');
+
+            if (empty($configuration['handler'])) {
+                throw new \UnexpectedValueException(sprintf('Missing handler for link handler "%1$s", check page TSconfig TCEMAIN.linkHandler.%1$s.handler', $identifier), 1494579849);
+            }
+
             /** @var LinkHandlerInterface $handler */
             $handler = GeneralUtility::makeInstance($configuration['handler']);
             $handler->initialize(

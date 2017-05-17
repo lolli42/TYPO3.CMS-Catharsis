@@ -185,7 +185,7 @@ return [
                     'groups' => ['system']
                 ],
                 'fluid_template' => [
-                    'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
+                    'backend' => \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend::class,
                     'frontend' => \TYPO3\CMS\Fluid\Core\Cache\FluidTemplateCache::class,
                     'groups' => ['system'],
                 ],
@@ -947,7 +947,6 @@ return [
         'explicitConfirmationOfTranslation' => false,
         'versionNumberInFilename' => false,
         'debug' => false,
-        'AJAX' => [], // array of key-value pairs for a unified use of AJAX calls in the TYPO3 backend. Keys are the unique ajaxIDs where the value will be resolved to call a method in an object. See the AjaxRequestHandler class for more information.
         'toolbarItems' => [], // Array: Registered toolbar items classes
         'HTTP' => [
             'Response' => [
@@ -958,7 +957,6 @@ return [
     'FE' => [ // Configuration for the TypoScript frontend (FE). Nothing here relates to the administration backend!
         'addAllowedPaths' => '',
         'debug' => false,
-        'noPHPscriptInclude' => false,
         'compressionLevel' => 0,
         'pageNotFound_handling' => '',
         'pageNotFound_handling_statheader' => 'HTTP/1.0 404 Not Found',
@@ -972,7 +970,6 @@ return [
         'loginSecurityLevel' => '',
         'lifetime' => 0,
         'sessionDataLifetime' => 86400,
-        'maxSessionDataSize' => 10000,
         'permalogin' => 0,
         'cookieDomain' => '',
         'cookieName' => 'fe_typo_user',
@@ -998,7 +995,7 @@ return [
         'cHashExcludedParametersIfEmpty' => '',
         'workspacePreviewLogoutTemplate' => '',
         'versionNumberInFilename' => 'querystring',
-        'contentRenderingTemplates' => [], // Array to define the TypoScript parts that define the main content rendering. Extensions like "css_styled_content" provide content rendering templates. Other extensions like "felogin" or "indexed search" extend these templates and their TypoScript parts are added directly after the content templates. See EXT:css_styled_content/ext_localconf.php and EXT:frontend/Classes/TypoScript/TemplateService.php
+        'contentRenderingTemplates' => [], // Array to define the TypoScript parts that define the main content rendering. Extensions like "fluid_styled_content" provide content rendering templates. Other extensions like "felogin" or "indexed search" extend these templates and their TypoScript parts are added directly after the content templates. See EXT:fluid_styled_content/ext_localconf.php and EXT:frontend/Classes/TypoScript/TemplateService.php
         'ContentObjects' => [], // Array to register ContentObject (cObjects) like TEXT or HMENU within ext_localconf.php, see EXT:frontend/ext_localconf.php
         'typolinkBuilder' => [  // Matches the LinkService implementations for generating URL, link text via typolink
             'page' => \TYPO3\CMS\Frontend\Typolink\PageLinkBuilder::class,
@@ -1073,8 +1070,6 @@ return [
                 'email' => \TYPO3\CMS\Core\Database\SoftReferenceIndex::class,
                 'url' => \TYPO3\CMS\Core\Database\SoftReferenceIndex::class,
             ],
-            // cliKeys have been deprecated and will be removed in TYPO3 v9
-            'cliKeys' => []
         ],
     ],
     'SVCONF' => []

@@ -230,15 +230,6 @@ abstract class AbstractMenuContentObject
     protected $useCacheHash = false;
 
     /**
-     * Holds the menuArr of the parent menu, if this menu is a subMenu.
-     *
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, please use getter and setter methods.
-     *
-     * @var array
-     */
-    public $parentMenuArr = [];
-
-    /**
      * Array key of the parentMenuItem in the parentMenuArr, if this menu is a subMenu.
      *
      * @var null|int
@@ -1249,10 +1240,10 @@ abstract class AbstractMenuContentObject
     {
         $includePage = true;
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/tslib/class.tslib_menu.php']['filterMenuPages'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/tslib/class.tslib_menu.php']['filterMenuPages'] as $classRef) {
-                $hookObject = GeneralUtility::getUserObj($classRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/tslib/class.tslib_menu.php']['filterMenuPages'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (!$hookObject instanceof AbstractMenuFilterPagesHookInterface) {
-                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . AbstractMenuFilterPagesHookInterface::class, 1269877402);
+                    throw new \UnexpectedValueException($className . ' must implement interface ' . AbstractMenuFilterPagesHookInterface::class, 1269877402);
                 }
                 $includePage = $includePage && $hookObject->processFilter($data, $banUidArray, $spacer, $this);
             }
@@ -1620,6 +1611,10 @@ abstract class AbstractMenuContentObject
         } else {
             $addParams .= $this->I['val']['additionalParams'] . $this->menuArr[$key]['_ADD_GETVARS'];
             $LD = $this->menuTypoLink($this->menuArr[$key], $mainTarget, '', '', $overrideArray, $addParams, $typeOverride);
+        }
+        // Override default target configuration if option is set
+        if ($this->menuArr[$key]['target']) {
+            $LD['target'] = $this->menuArr[$key]['target'];
         }
         // Override URL if using "External URL"
         if ($this->menuArr[$key]['doktype'] == PageRepository::DOKTYPE_LINK) {

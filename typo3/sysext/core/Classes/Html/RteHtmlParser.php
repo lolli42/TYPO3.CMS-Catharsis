@@ -154,12 +154,12 @@ class RteHtmlParser extends HtmlParser
      * This is the main function called from DataHandler and transfer data classes
      *
      * @param string $value Input value
-     * @param array $specConf deprecated old "defaultExtras" parsed as array
+     * @param null $_ unused
      * @param string $direction Direction of the transformation. Two keywords are allowed; "db" or "rte". If "db" it means the transformation will clean up content coming from the Rich Text Editor and goes into the database. The other direction, "rte", is of course when content is coming from database and must be transformed to fit the RTE.
      * @param array $thisConfig Parsed TypoScript content configuring the RTE, probably coming from Page TSconfig.
      * @return string Output value
      */
-    public function RTE_transform($value, $specConf = [], $direction = 'rte', $thisConfig = [])
+    public function RTE_transform($value, $_ = null, $direction = 'rte', $thisConfig = [])
     {
         $this->tsConfig = $thisConfig;
         $this->procOptions = (array)$thisConfig['proc.'];
@@ -192,16 +192,8 @@ class RteHtmlParser extends HtmlParser
         // Setting modes / transformations to be called
         if ((string)$this->procOptions['overruleMode'] !== '') {
             $modes = GeneralUtility::trimExplode(',', $this->procOptions['overruleMode']);
-        } elseif (!empty($this->procOptions['mode'])) {
-            $modes = [$this->procOptions['mode']];
         } else {
-            // Get parameters for rte_transformation:
-            // @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - the else{} part can be removed in v9
-            GeneralUtility::deprecationLog(
-                'Argument 2 of RteHtmlParser::RTE_transform() is deprecated. Transformations should be given in $thisConfig[\'proc.\'][\'overruleMode\']'
-            );
-            $specialFieldConfiguration = BackendUtility::getSpecConfParametersFromArray($specConf['rte_transform']['parameters']);
-            $modes = GeneralUtility::trimExplode('-', $specialFieldConfiguration['mode']);
+            $modes = [$this->procOptions['mode']];
         }
         $modes = $this->resolveAppliedTransformationModes($direction, $modes);
 
@@ -214,8 +206,8 @@ class RteHtmlParser extends HtmlParser
         foreach ($modes as $cmd) {
             if ($direction === 'db') {
                 // Checking for user defined transformation:
-                if ($_classRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
-                    $_procObj = GeneralUtility::getUserObj($_classRef);
+                if ($className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
+                    $_procObj = GeneralUtility::makeInstance($className);
                     $_procObj->pObj = $this;
                     $_procObj->transformationKey = $cmd;
                     $value = $_procObj->transform_db($value, $this);
@@ -244,8 +236,8 @@ class RteHtmlParser extends HtmlParser
                 }
             } elseif ($direction === 'rte') {
                 // Checking for user defined transformation:
-                if ($_classRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
-                    $_procObj = GeneralUtility::getUserObj($_classRef);
+                if ($className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['transformation'][$cmd]) {
+                    $_procObj = GeneralUtility::makeInstance($className);
                     $_procObj->pObj = $this;
                     $value = $_procObj->transform_rte($value, $this);
                 } else {
@@ -292,9 +284,6 @@ class RteHtmlParser extends HtmlParser
 
         // Replace the shortcut "default" with all custom modes
         $modeList = str_replace('default', 'detectbrokenlinks,css_transform,ts_images,ts_links', $modeList);
-        // Replace the shortcut "ts_css" with all custom modes
-        // @deprecated since TYPO3 v8, will be removed in TYPO3 v9 - NEXT line can be removed in v9
-        $modeList = str_replace('ts_css', 'detectbrokenlinks,css_transform,ts_images,ts_links', $modeList);
 
         // Make list unique
         $modes = array_unique(GeneralUtility::trimExplode(',', $modeList, true));
@@ -559,8 +548,8 @@ class RteHtmlParser extends HtmlParser
                         'url' => $linkInformation['href'],
                         'attributes' => $tagAttributes
                     ];
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'] as $objRef) {
-                        $processor = GeneralUtility::getUserObj($objRef);
+                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksDb_PostProc'] as $className) {
+                        $processor = GeneralUtility::makeInstance($className);
                         $blockSplit[$k] = $processor->modifyParamsLinksDb($parameters, $this);
                     }
                 } else {
@@ -624,8 +613,8 @@ class RteHtmlParser extends HtmlParser
                         'external' => $linkInformation['type'] === LinkService::TYPE_URL,
                         'error' => $error
                     ];
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc'] as $objRef) {
-                        $processor = GeneralUtility::getUserObj($objRef);
+                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc'] as $className) {
+                        $processor = GeneralUtility::makeInstance($className);
                         $blockSplit[$k] = $processor->modifyParamsLinksRte($parameters, $this);
                     }
                 } else {

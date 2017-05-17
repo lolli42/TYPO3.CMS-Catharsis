@@ -14,12 +14,14 @@ namespace TYPO3\CMS\Core\TypoScript\Parser;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
+use TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher as BackendConditionMatcher;
+use TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher as FrontendConditionMatcher;
 
 /**
  * The TypoScript parser
@@ -481,9 +483,6 @@ class TypoScriptParser
                             break;
                         }
                     } else {
-                        if (preg_match('|^\s*/[^/]|', $line)) {
-                            $this->error('Line ' . ($this->lineNumberOffset + $this->rawP - 1) . ': Single slash headed one-line comments are deprecated.', 2);
-                        }
                         if ($this->syntaxHighLight) {
                             $this->regHighLight('comment', $lineP);
                         }
@@ -832,8 +831,15 @@ class TypoScriptParser
                     if ($condition[0] !== '[') {
                         $condition = '[' . $condition . ']';
                     }
-                    /** @var ConditionMatcher $conditionMatcher */
-                    $conditionMatcher = GeneralUtility::makeInstance(ConditionMatcher::class);
+
+                    /** @var AbstractConditionMatcher $conditionMatcher */
+                    $conditionMatcher = null;
+                    if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_FE) {
+                        $conditionMatcher = GeneralUtility::makeInstance(FrontendConditionMatcher::class);
+                    } else {
+                        $conditionMatcher = GeneralUtility::makeInstance(BackendConditionMatcher::class);
+                    }
+
                     // If it didn't match then proceed to the next include, but prepend next normal (not file) part to output string
                     if (!$conditionMatcher->match($condition)) {
                         $newString .= $tsContentsTillNextInclude . LF;
@@ -868,8 +874,8 @@ class TypoScriptParser
                 $newString .= $tsContentsTillNextInclude . LF;
 
                 // load default TypoScript for content rendering templates like
-                // css_styled_content if those have been included through f.e.
-                // <INCLUDE_TYPOSCRIPT: source="FILE:EXT:css_styled_content/static/setup.txt">
+                // fluid_styled_content if those have been included through f.e.
+                // <INCLUDE_TYPOSCRIPT: source="FILE:EXT:fluid_styled_content/Configuration/TypoScript/setup.txt">
                 if (strpos(strtolower($filename), 'ext:') === 0) {
                     $filePointerPathParts = explode('/', substr($filename, 4));
 

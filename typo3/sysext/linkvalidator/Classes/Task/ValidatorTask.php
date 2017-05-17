@@ -15,13 +15,13 @@ namespace TYPO3\CMS\Linkvalidator\Task;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Mail\MailMessage;
 use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MailUtility;
-use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Linkvalidator\LinkAnalyzer;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
@@ -281,6 +281,9 @@ class ValidatorTask extends AbstractTask
         $pageList = GeneralUtility::trimExplode(',', $this->page, true);
         $modTs = $this->loadModTsConfig($this->page);
         if (is_array($pageList)) {
+            // reset broken link counts as they were stored in the serialized object
+            $this->oldTotalBrokenLink = 0;
+            $this->totalBrokenLink = 0;
             foreach ($pageList as $page) {
                 $pageSections .= $this->checkPageLinks($page);
             }

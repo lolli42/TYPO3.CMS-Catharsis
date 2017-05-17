@@ -53,7 +53,7 @@ class CrawlerHook
     {
         // To make sure the backend charset is available:
         if (!is_object($GLOBALS['LANG'])) {
-            $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Lang\LanguageService::class);
+            $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageService::class);
             $GLOBALS['LANG']->init($GLOBALS['BE_USER']->uc['lang']);
         }
     }
@@ -161,18 +161,16 @@ class CrawlerHook
                     break;
                 default:
                     if ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['crawler'][$cfgRec['type']]) {
-                        $hookObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['crawler'][$cfgRec['type']]);
-                        if (is_object($hookObj)) {
-                            // Parameters:
-                            $params = [
-                                'indexConfigUid' => $cfgRec['uid'],
-                                // General
-                                'procInstructions' => ['[Index Cfg UID#' . $cfgRec['uid'] . '/CUSTOM]'],
-                                // General
-                                'url' => $hookObj->initMessage($message)
-                            ];
-                            $pObj->addQueueEntry_callBack($setId, $params, $this->callBack, $cfgRec['pid']);
-                        }
+                        $hookObj = GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['crawler'][$cfgRec['type']]);
+                        // Parameters:
+                        $params = [
+                            'indexConfigUid' => $cfgRec['uid'],
+                            // General
+                            'procInstructions' => ['[Index Cfg UID#' . $cfgRec['uid'] . '/CUSTOM]'],
+                            // General
+                            'url' => $hookObj->initMessage($message)
+                        ];
+                        $pObj->addQueueEntry_callBack($setId, $params, $this->callBack, $cfgRec['pid']);
                     }
             }
         }
@@ -233,12 +231,10 @@ class CrawlerHook
                         break;
                     default:
                         if ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['crawler'][$cfgRec['type']]) {
-                            $hookObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['crawler'][$cfgRec['type']]);
-                            if (is_object($hookObj)) {
-                                $this->pObj = $pObj;
-                                // For addQueueEntryForHook()
-                                $hookObj->indexOperation($cfgRec, $session_data, $params, $this);
-                            }
+                            $hookObj = GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['crawler'][$cfgRec['type']]);
+                            $this->pObj = $pObj;
+                            // For addQueueEntryForHook()
+                            $hookObj->indexOperation($cfgRec, $session_data, $params, $this);
                         }
                 }
                 // Save process data which might be modified:

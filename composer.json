@@ -55,7 +55,8 @@
 	"require-dev": {
 		"typo3/testing-framework": "~1.0.3",
 		"codeception/codeception": "^2.2",
-		"se/selenium-server-standalone": "~2.53",
+		"se/selenium-server-standalone": "~3.3.1",
+		"enm1989/chromedriver": "~2.29",
 		"typo3/cms-styleguide": "~8.0.8",
 		"friendsofphp/php-cs-fixer": "^2.0",
 		"fiunchinho/phpunit-randomizer": "~2.0.3"
@@ -73,15 +74,19 @@
 		"typo3/class-alias-loader": {
 			"always-add-alias-loader": true,
 			"class-alias-maps": [
+				"typo3/sysext/core/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/extbase/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/fluid/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/version/Migrations/Code/ClassAliasMap.php"
 			]
 		},
 		"branch-alias": {
-			"dev-master": "8.x-dev"
+			"dev-master": "9.x-dev"
 		}
 	},
+	"non-feature-branches": [
+		"TYPO3_.+"
+	],
 	"replace": {
 		"typo3/cms-about": "self.version",
 		"typo3/cms-backend": "self.version",
@@ -90,7 +95,6 @@
 		"typo3/cms-context-help": "self.version",
 		"typo3/cms-core": "self.version",
 		"typo3/cms-cshmanual": "self.version",
-		"typo3/cms-css-styled-content": "self.version",
 		"typo3/cms-documentation": "self.version",
 		"typo3/cms-extbase": "self.version",
 		"typo3/cms-extensionmanager": "self.version",
@@ -127,6 +131,7 @@
 		"typo3/cms-t3editor": "self.version",
 		"typo3/cms-taskcenter": "self.version",
 		"typo3/cms-tstemplate": "self.version",
+		"typo3/cms-typo3db-legacy": "self.version",
 		"typo3/cms-version": "self.version",
 		"typo3/cms-viewpage": "self.version",
 		"typo3/cms-wizard-crpages": "self.version",
@@ -142,7 +147,6 @@
 			"TYPO3\\CMS\\ContextHelp\\": "typo3/sysext/context_help/Classes/",
 			"TYPO3\\CMS\\Core\\": "typo3/sysext/core/Classes/",
 			"TYPO3\\CMS\\Cshmanual\\": "typo3/sysext/cshmanual/Classes/",
-			"TYPO3\\CMS\\CssStyledContent\\": "typo3/sysext/css_styled_content/Classes/",
 			"TYPO3\\CMS\\Documentation\\": "typo3/sysext/documentation/Classes/",
 			"TYPO3\\CMS\\Extbase\\": "typo3/sysext/extbase/Classes/",
 			"TYPO3\\CMS\\Extensionmanager\\": "typo3/sysext/extensionmanager/Classes/",
@@ -178,6 +182,7 @@
 			"TYPO3\\CMS\\T3editor\\": "typo3/sysext/t3editor/Classes/",
 			"TYPO3\\CMS\\Taskcenter\\": "typo3/sysext/taskcenter/Classes/",
 			"TYPO3\\CMS\\Tstemplate\\": "typo3/sysext/tstemplate/Classes/",
+			"TYPO3\\CMS\\Typo3DbLegacy\\": "typo3/sysext/typo3db_legacy/Classes/",
 			"TYPO3\\CMS\\Version\\": "typo3/sysext/version/Classes/",
 			"TYPO3\\CMS\\Viewpage\\": "typo3/sysext/viewpage/Classes/",
 			"TYPO3\\CMS\\WizardCrpages\\": "typo3/sysext/wizard_crpages/Classes/",
@@ -197,7 +202,6 @@
 			"TYPO3\\CMS\\Belog\\Tests\\": "typo3/sysext/belog/Tests/",
 			"TYPO3\\CMS\\Beuser\\Tests\\": "typo3/sysext/beuser/Tests/",
 			"TYPO3\\CMS\\Core\\Tests\\": "typo3/sysext/core/Tests/",
-			"TYPO3\\CMS\\CssStyledContent\\Tests\\": "typo3/sysext/css_styled_content/Tests/",
 			"TYPO3\\CMS\\Documentation\\Tests\\": "typo3/sysext/documentation/Tests/",
 			"TYPO3\\CMS\\Extbase\\Tests\\": "typo3/sysext/extbase/Tests/",
 			"TYPO3\\CMS\\Extensionmanager\\Tests\\": "typo3/sysext/extensionmanager/Tests/",
@@ -220,6 +224,7 @@
 			"TYPO3\\CMS\\Sv\\Tests\\": "typo3/sysext/sv/Tests/",
 			"TYPO3\\CMS\\SysAction\\Tests\\": "typo3/sysext/sys_action/Tests/",
 			"TYPO3\\CMS\\SysNote\\Tests\\": "typo3/sysext/sys_note/Tests/",
+			"TYPO3\\CMS\\Typo3DbLegacy\\Tests\\": "typo3/sysext/typo3db_legacy/Tests/",
 			"TYPO3\\CMS\\Workspaces\\Tests\\": "typo3/sysext/workspaces/Tests/",
 			"TYPO3\\CMS\\Recycler\\Tests\\": "typo3/sysext/recycler/Tests/"
 		},

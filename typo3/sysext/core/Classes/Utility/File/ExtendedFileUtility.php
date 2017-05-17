@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\DuplicationBehavior;
@@ -40,7 +41,6 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Type\Exception\InvalidEnumerationValueException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Contains functions for performing file operations like copying, pasting, uploading, moving,
@@ -268,10 +268,10 @@ class ExtendedFileUtility extends BasicFileUtility
                         }
                         // Hook for post-processing the action
                         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'])) {
-                            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'] as $classRef) {
-                                $hookObject = GeneralUtility::getUserObj($classRef);
+                            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'] as $className) {
+                                $hookObject = GeneralUtility::makeInstance($className);
                                 if (!$hookObject instanceof ExtendedFileUtilityProcessDataHookInterface) {
-                                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . ExtendedFileUtilityProcessDataHookInterface::class, 1279719168);
+                                    throw new \UnexpectedValueException($className . ' must implement interface ' . ExtendedFileUtilityProcessDataHookInterface::class, 1279719168);
                                 }
                                 $hookObject->processData_postProcessAction($action, $cmdArr, $result[$action], $this);
                             }
@@ -281,26 +281,6 @@ class ExtendedFileUtility extends BasicFileUtility
             }
         }
         return $result;
-    }
-
-    /**
-     * Adds all log error messages from the operations of this script instance to the FlashMessageQueue
-     *
-     * @deprecated since TYPO3 CMS 8, will be removed in TYPO3 CMS 9
-     */
-    public function pushErrorMessagesToFlashMessageQueue()
-    {
-        GeneralUtility::logDeprecatedFunction();
-        foreach ($this->getErrorMessages() as $msg) {
-            $flashMessage = GeneralUtility::makeInstance(
-                FlashMessage::class,
-                $msg,
-                '',
-                FlashMessage::ERROR,
-                true
-            );
-            $this->addFlashMessage($flashMessage);
-        }
     }
 
     /**
@@ -563,6 +543,10 @@ class ExtendedFileUtility extends BasicFileUtility
                 $queryBuilder->expr()->neq(
                     'tablename',
                     $queryBuilder->createNamedParameter('sys_file_metadata', \PDO::PARAM_STR)
+                ),
+                $queryBuilder->expr()->eq(
+                    'deleted',
+                    $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
                 )
             )->execute()->fetchColumn(0);
 

@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
@@ -25,7 +26,6 @@ use TYPO3\CMS\Extbase\Mvc\Web\Request as WebRequest;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 use TYPO3\CMS\IndexedSearch\Domain\Repository\AdministrationRepository;
 use TYPO3\CMS\IndexedSearch\Indexer;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Administration controller
@@ -493,9 +493,9 @@ class AdministrationController extends ActionController
     public function statisticAction($depth = 1, $mode = 'overview')
     {
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] as $extension => $_objRef) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] as $extension => $className) {
                 /** @var \TYPO3\CMS\IndexedSearch\FileContentParser $fileContentParser */
-                $fileContentParser = GeneralUtility::getUserObj($_objRef);
+                $fileContentParser = GeneralUtility::makeInstance($className);
                 if ($fileContentParser->softInit($extension)) {
                     $this->external_parsers[$extension] = $fileContentParser;
                 }

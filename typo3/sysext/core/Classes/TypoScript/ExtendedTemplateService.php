@@ -22,10 +22,10 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * TSParser extension class to TemplateService
@@ -695,7 +695,7 @@ class ExtendedTemplateService extends TemplateService
             $RL = $this->ext_getRootlineNumber($row['pid']);
             $statusCheckedIcon = $iconFactory->getIcon('status-status-checked', Icon::SIZE_SMALL)->render();
             $keyArray[] = '<tr>
-							<td nowrap="nowrap">' . $HTML . '</td>
+							<td class="nowrap">' . $HTML . '</td>
 							<td align="center">' . ($row['root'] ? $statusCheckedIcon : '') . '</td>
 							<td align="center">' . ($row['clConf'] ? $statusCheckedIcon : '') . '</td>
 							<td align="center">' . ($row['clConst'] ? $statusCheckedIcon : '') . '</td>

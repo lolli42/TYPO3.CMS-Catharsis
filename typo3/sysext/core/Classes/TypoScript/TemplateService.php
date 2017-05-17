@@ -686,8 +686,8 @@ class TemplateService
      * Checks if the template ($row) has some included templates and after including them it fills the arrays with the setup
      * Builds up $this->rowSum
      *
-     * @param array $row A full TypoScript template record (sys_template/static_template/forged "dummy" record made from static template file)
-     * @param string $idList A list of already processed template ids including the current; The list is on the form "[prefix]_[uid]" where [prefix] is "sys" for "sys_template" records, "static" for "static_template" records and "ext_" for static include files (from extensions). The list is used to check that the recursive inclusion of templates does not go into circles: Simply it is used to NOT include a template record/file which has already BEEN included somewhere in the recursion.
+     * @param array $row A full TypoScript template record (sys_template/forged "dummy" record made from static template file)
+     * @param string $idList A list of already processed template ids including the current; The list is on the form "[prefix]_[uid]" where [prefix] is "sys" for "sys_template" records, records and "ext_" for static include files (from extensions). The list is used to check that the recursive inclusion of templates does not go into circles: Simply it is used to NOT include a template record/file which has already BEEN included somewhere in the recursion.
      * @param int $pid The PID of the input template record
      * @param string $templateID The id of the current template. Same syntax as $idList ids, eg. "sys_123
      * @param string $templateParent Parent template id (during recursive call); Same syntax as $idList ids, eg. "sys_123
@@ -722,7 +722,7 @@ class TemplateService
                 $this->clearList_setup = [];
             }
         }
-        // Include static records (static_template) or files (from extensions) (#1/2)
+        // Include files (from extensions) (#1/2)
         // NORMAL inclusion, The EXACT same code is found below the basedOn inclusion!!!
         if (!$row['includeStaticAfterBasedOn']) {
             $this->includeStaticTypoScriptSources($idList, $templateID, $pid, $row);
@@ -766,7 +766,7 @@ class TemplateService
                 }
             }
         }
-        // Include static records (static_template) or files (from extensions) (#2/2)
+        // Include files (from extensions) (#2/2)
         if ($row['includeStaticAfterBasedOn']) {
             $this->includeStaticTypoScriptSources($idList, $templateID, $pid, $row);
         }
@@ -839,9 +839,9 @@ class TemplateService
     }
 
     /**
-     * Includes static template records (from static_template table, loaded through a hook) and static template files (from extensions) for the input template record row.
+     * Includes static template files (from extensions) for the input template record row.
      *
-     * @param string $idList A list of already processed template ids including the current; The list is on the form "[prefix]_[uid]" where [prefix] is "sys" for "sys_template" records, "static" for "static_template" records and "ext_" for static include files (from extensions). The list is used to check that the recursive inclusion of templates does not go into circles: Simply it is used to NOT include a template record/file which has already BEEN included somewhere in the recursion.
+     * @param string $idList A list of already processed template ids including the current; The list is on the form "[prefix]_[uid]" where [prefix] is "sys" for "sys_template" records and "ext_" for static include files (from extensions). The list is used to check that the recursive inclusion of templates does not go into circles: Simply it is used to NOT include a template record/file which has already BEEN included somewhere in the recursion.
      * @param string $templateID The id of the current template. Same syntax as $idList ids, eg. "sys_123
      * @param int $pid The PID of the input template record
      * @param array $row A full TypoScript template record
@@ -849,7 +849,6 @@ class TemplateService
      */
     public function includeStaticTypoScriptSources($idList, $templateID, $pid, $row)
     {
-        // Static Template Records (static_template): include_static is a list of static templates to include
         // Call function for link rendering:
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSources'])) {
             $_params = [
@@ -922,7 +921,7 @@ class TemplateService
      */
     protected function getTypoScriptSourceFileContent($filePath, $baseName)
     {
-        $extensions = ['.ts', '.txt'];
+        $extensions = ['.typoscript', '.ts', '.txt'];
         foreach ($extensions as $extension) {
             $fileName = $filePath . $baseName . $extension;
             if (@file_exists($fileName)) {
@@ -935,7 +934,7 @@ class TemplateService
     /**
      * Adds the default TypoScript files for extensions if any.
      *
-     * @param string $idList A list of already processed template ids including the current; The list is on the form "[prefix]_[uid]" where [prefix] is "sys" for "sys_template" records, "static" for "static_template" records and "ext_" for static include files (from extensions). The list is used to check that the recursive inclusion of templates does not go into circles: Simply it is used to NOT include a template record/file which has already BEEN included somewhere in the recursion.
+     * @param string $idList A list of already processed template ids including the current; The list is on the form "[prefix]_[uid]" where [prefix] is "sys" for "sys_template" records and "ext_" for static include files (from extensions). The list is used to check that the recursive inclusion of templates does not go into circles: Simply it is used to NOT include a template record/file which has already BEEN included somewhere in the recursion.
      * @param string $templateID The id of the current template. Same syntax as $idList ids, eg. "sys_123
      * @param int $pid The PID of the input template record
      * @param array $row A full TypoScript template record
@@ -948,24 +947,42 @@ class TemplateService
 
         // @todo Change to use new API
         foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extKey => $files) {
-            if ((is_array($files) || $files instanceof \ArrayAccess) && ($files['ext_typoscript_constants.txt'] || $files['ext_typoscript_setup.txt'])) {
+            if ((is_array($files) || $files instanceof \ArrayAccess) && ($files['ext_typoscript_constants.txt'] || $files['ext_typoscript_constants.typoscript'] || $files['ext_typoscript_setup.txt'] || $files['ext_typoscript_setup.typoscript'])) {
                 $mExtKey = str_replace('_', '', $extKey);
-                $subrow = [
-                    'constants' => $files['ext_typoscript_constants.txt'] ? @file_get_contents($files['ext_typoscript_constants.txt']) : '',
-                    'config' => $files['ext_typoscript_setup.txt'] ? @file_get_contents($files['ext_typoscript_setup.txt']) : '',
-                    'title' => $extKey,
-                    'uid' => $mExtKey
-                ];
-                $subrow = $this->prependStaticExtra($subrow);
-                $extPath = ExtensionManagementUtility::extPath($extKey);
-                $this->processTemplate($subrow, $idList . ',ext_' . $mExtKey, $pid, 'ext_' . $mExtKey, $templateID, $extPath);
+                $constants = '';
+                $config = '';
+
+                if ($files['ext_typoscript_constants.typoscript']) {
+                    $constants = @file_get_contents($files['ext_typoscript_constants.typoscript']);
+                } elseif ($files['ext_typoscript_constants.txt']) {
+                    $constants = @file_get_contents($files['ext_typoscript_constants.txt']);
+                }
+
+                if ($files['ext_typoscript_setup.typoscript']) {
+                    $config = @file_get_contents($files['ext_typoscript_setup.typoscript']);
+                } elseif ($files['ext_typoscript_setup.txt']) {
+                    $config = @file_get_contents($files['ext_typoscript_setup.txt']);
+                }
+
+                $this->processTemplate(
+                    $this->prependStaticExtra([
+                        'constants' => $constants,
+                        'config' => $config,
+                        'title' => $extKey,
+                        'uid' => $mExtKey
+                    ]),
+                    $idList . ',ext_' . $mExtKey,
+                    $pid,
+                    'ext_' . $mExtKey,
+                    $templateID,
+                    ExtensionManagementUtility::extPath($extKey)
+                );
             }
         }
     }
 
     /**
      * Appends (not prepends) additional TypoScript code to static template records/files as set in TYPO3_CONF_VARS
-     * For DB records the "uid" value is the integer of the "static_template" record.
      * For files the "uid" value is the extension key but with any underscores removed. Possibly with a path if its a static file selected in the template record
      *
      * @param array $subrow Static template record/file
@@ -1300,25 +1317,6 @@ class TemplateService
      * Various API functions, used from elsewhere in the frontend classes
      *
      *******************************************************************/
-    /**
-     * Implementation of the "optionSplit" feature in TypoScript (used eg. for MENU objects)
-     * What it does is to split the incoming TypoScript array so that the values are exploded by certain strings ("||" and "|*|") and each part distributed into individual TypoScript arrays with a similar structure, but individualized values.
-     * The concept is known as "optionSplit" and is rather advanced to handle but quite powerful, in particular for creating menus in TYPO3.
-     *
-     * @param array $conf A TypoScript array
-     * @param int $splitCount The number of items for which to generated individual TypoScript arrays
-     * @return array The individualized TypoScript array.
-     * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::IMGTEXT(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::procesItemStates()
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use TypoScriptService::explodeConfigurationForOptionSplit() instead
-     */
-    public function splitConfArray($conf, $splitCount)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if (!is_array($conf)) {
-            return [];
-        }
-        return GeneralUtility::makeInstance(TypoScriptService::class)->explodeConfigurationForOptionSplit($conf, (int)$splitCount);
-    }
 
     /**
      * Returns the reference used for the frontend inclusion, checks against allowed paths for inclusion.
@@ -1404,58 +1402,6 @@ class TemplateService
     }
 
     /**
-     * Reads the fileContent of $fileName and returns it.
-     * Similar to GeneralUtility::getUrl() but with an additional check if the path is allowed
-     *
-     * @param string $fileName Absolute filepath to record
-     * @return NULL|string The content returned
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use $this->getFileName() and file_get_contents directly
-     */
-    public function fileContent($fileName)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $fileName = $this->getFileName($fileName);
-        if ($fileName) {
-            return GeneralUtility::getUrl($fileName);
-        }
-        return null;
-    }
-
-    /**
-     * Removes the "?" of input string IF the "?" is the last character.
-     *
-     * @param string $url Input string
-     * @return string Output string, free of "?" in the end, if any such character.
-     * @see linkData(), \TYPO3\CMS\Frontend\Page\FramesetRenderer::frameParams()
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use rtrim($url, '?') instead
-     */
-    public function removeQueryString($url)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if (substr($url, -1) === '?') {
-            return substr($url, 0, -1);
-        } else {
-            return $url;
-        }
-    }
-
-    /**
-     * Takes a TypoScript array as input and returns an array which contains all integer properties found which had a value (not only properties). The output array will be sorted numerically.
-     * Call it like \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList()
-     *
-     * @param array $setupArr TypoScript array with numerical array in
-     * @param bool $acceptOnlyProperties If set, then a value is not required - the properties alone will be enough.
-     * @return array An array with all integer properties listed in numeric order.
-     * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::cObjGet(), \TYPO3\CMS\Frontend\Imaging\GifBuilder, \TYPO3\CMS\Frontend\ContentObject\Menu\ImageMenuContentObject::makeImageMap()
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9, use ArrayUtility::filterAndSortByNumericKeys instead
-     */
-    public static function sortedKeyList($setupArr, $acceptOnlyProperties = false)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        return ArrayUtility::filterAndSortByNumericKeys($setupArr, $acceptOnlyProperties);
-    }
-
-    /**
      * Returns the level of the given page in the rootline - Multiple pages can be given by separating the UIDs by comma.
      *
      * @param string $list A list of UIDs for which the rootline-level should get returned
@@ -1487,15 +1433,15 @@ class TemplateService
      * @param array $page The page record of the page to which we are creating a link. Needed due to fields like uid, alias, target, no_cache, title and sectionIndex_uid.
      * @param string $oTarget Default target string to use IF not $page['target'] is set.
      * @param bool $no_cache If set, then the "&no_cache=1" parameter is included in the URL.
-     * @param string $script Alternative script name if you don't want to use $this->getTypoScriptFrontendController()->config['mainScript'] (normally set to "index.php")
+     * @param string $_ not in use anymore
      * @param array $overrideArray Array with overriding values for the $page array.
      * @param string $addParams Additional URL parameters to set in the URL. Syntax is "&foo=bar&foo2=bar2" etc. Also used internally to add parameters if needed.
      * @param string $typeOverride If you set this value to something else than a blank string, then the typeNumber used in the link will be forced to this value. Normally the typeNum is based on the target set OR on $this->getTypoScriptFrontendController()->config['config']['forceTypeValue'] if found.
      * @param string $targetDomain The target Doamin, if any was detected in typolink
      * @return array Contains keys like "totalURL", "url", "sectionIndex", "linkVars", "no_cache", "type", "target" of which "totalURL" is normally the value you would use while the other keys contains various parts that was used to construct "totalURL
-     * @see \TYPO3\CMS\Frontend\Page\FramesetRenderer::frameParams(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typoLink(), \TYPO3\CMS\Frontend\Page\PageGenerator::pagegenInit(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::link()
+     * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typoLink(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::link()
      */
-    public function linkData($page, $oTarget, $no_cache, $script, $overrideArray = null, $addParams = '', $typeOverride = '', $targetDomain = '')
+    public function linkData($page, $oTarget, $no_cache, $_ = null, $overrideArray = null, $addParams = '', $typeOverride = '', $targetDomain = '')
     {
         $LD = [];
         // Overriding some fields in the page record and still preserves the values by adding them as parameters. Little strange function.
@@ -1519,9 +1465,7 @@ class TemplateService
             }
         }
         // Setting ID/alias:
-        if (!$script) {
-            $script = $this->getTypoScriptFrontendController()->config['mainScript'];
-        }
+        $script = 'index.php';
         if ($page['alias']) {
             $LD['url'] = $script . '?id=' . rawurlencode($page['alias']);
         } else {

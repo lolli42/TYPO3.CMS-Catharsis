@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Core\Page;
 
 use TYPO3\CMS\Backend\Routing\Router;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
@@ -1460,10 +1459,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
      */
     public function loadRequireJs()
     {
+        $this->addRequireJs = true;
         if (!empty($this->requireJsConfig)) {
             return;
         }
-        $this->addRequireJs = true;
 
         $loadedExtensions = ExtensionManagementUtility::getLoadedExtensionListArray();
         $isDevelopment = GeneralUtility::getApplicationContext()->isDevelopment();
@@ -1656,17 +1655,15 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
      * @param string $fileRef Input is a file-reference (see GeneralUtility::getFileAbsFileName). That file is expected to be a 'locallang.xlf' file containing a valid XML TYPO3 language structure.
      * @param string $selectionPrefix Prefix to select the correct labels (default: '')
      * @param string $stripFromSelectionName String to be removed from the label names in the output. (default: '')
-     * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
      */
-    public function addInlineLanguageLabelFile($fileRef, $selectionPrefix = '', $stripFromSelectionName = '', $errorMode = 0)
+    public function addInlineLanguageLabelFile($fileRef, $selectionPrefix = '', $stripFromSelectionName = '')
     {
         $index = md5($fileRef . $selectionPrefix . $stripFromSelectionName);
         if ($fileRef && !isset($this->inlineLanguageLabelFiles[$index])) {
             $this->inlineLanguageLabelFiles[$index] = [
                 'fileRef' => $fileRef,
                 'selectionPrefix' => $selectionPrefix,
-                'stripFromSelectionName' => $stripFromSelectionName,
-                'errorMode' => $errorMode
+                'stripFromSelectionName' => $stripFromSelectionName
             ];
         }
     }
@@ -2086,7 +2083,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
     {
         if (!empty($this->inlineLanguageLabelFiles)) {
             foreach ($this->inlineLanguageLabelFiles as $languageLabelFile) {
-                $this->includeLanguageFileForInline($languageLabelFile['fileRef'], $languageLabelFile['selectionPrefix'], $languageLabelFile['stripFromSelectionName'], $languageLabelFile['errorMode']);
+                $this->includeLanguageFileForInline($languageLabelFile['fileRef'], $languageLabelFile['selectionPrefix'], $languageLabelFile['stripFromSelectionName']);
             }
         }
         $this->inlineLanguageLabelFiles = [];
@@ -2104,12 +2101,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
     protected function addAjaxUrlsToInlineSettings()
     {
         $ajaxUrls = [];
-        // Note: this method of adding Ajax URLs is @deprecated as of TYPO3 v8, and will be removed in TYPO3 v9
-        foreach ($GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'] as $ajaxHandler => $_) {
-            $ajaxUrls[$ajaxHandler] = BackendUtility::getAjaxUrl($ajaxHandler);
-        }
-
-        // also add the ajax-based routes
+        // Add the ajax-based routes
         /** @var UriBuilder $uriBuilder */
         $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
         /** @var Router $router */
@@ -2389,16 +2381,15 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
      * @param string $fileRef
      * @param string $selectionPrefix
      * @param string $stripFromSelectionName
-     * @param int $errorMode
      * @throws \RuntimeException
      */
-    protected function includeLanguageFileForInline($fileRef, $selectionPrefix = '', $stripFromSelectionName = '', $errorMode = 0)
+    protected function includeLanguageFileForInline($fileRef, $selectionPrefix = '', $stripFromSelectionName = '')
     {
         if (!isset($this->lang) || !isset($this->charSet)) {
             throw new \RuntimeException('Language and character encoding are not set.', 1284906026);
         }
         $labelsFromFile = [];
-        $allLabels = $this->readLLfile($fileRef, $errorMode);
+        $allLabels = $this->readLLfile($fileRef);
         if ($allLabels !== false) {
             // Merge language specific translations:
             if ($this->lang !== 'default' && isset($allLabels[$this->lang])) {
@@ -2423,10 +2414,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
      * Reads a locallang file.
      *
      * @param string $fileRef Reference to a relative filename to include.
-     * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
      * @return array Returns the $LOCAL_LANG array found in the file. If no array found, returns empty array.
      */
-    protected function readLLfile($fileRef, $errorMode = 0)
+    protected function readLLfile($fileRef)
     {
         /** @var $languageFactory LocalizationFactory */
         $languageFactory = GeneralUtility::makeInstance(LocalizationFactory::class);
@@ -2443,7 +2433,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
 
         $localLanguage = [];
         foreach ($languages as $language) {
-            $tempLL = $languageFactory->getParsedData($fileRef, $language, $this->charSet, $errorMode);
+            $tempLL = $languageFactory->getParsedData($fileRef, $language);
 
             $localLanguage['default'] = $tempLL['default'];
             if (!isset($localLanguage[$this->lang])) {
@@ -2668,7 +2658,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface
     /**
      * Returns global language service instance
      *
-     * @return \TYPO3\CMS\Lang\LanguageService
+     * @return \TYPO3\CMS\Core\Localization\LanguageService
      */
     protected function getLanguageService()
     {

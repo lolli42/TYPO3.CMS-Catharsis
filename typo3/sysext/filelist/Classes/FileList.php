@@ -922,6 +922,8 @@ class FileList extends AbstractRecordList
     {
         $cells = [];
         $fullIdentifier = $fileOrFolderObject->getCombinedIdentifier();
+        $md5 = GeneralUtility::shortMD5($fullIdentifier);
+        $isSel = $this->clipObj->isSelected('_FILE', $md5);
 
         // Edit file content (if editable)
         if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('write') && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'], $fileOrFolderObject->getExtension())) {
@@ -990,6 +992,30 @@ class FileList extends AbstractRecordList
             $cells['info'] = $this->spaceIcon;
         }
 
+        // copy the file
+        if ($fileOrFolderObject->checkActionPermission('copy') && $this->clipObj->current === 'normal') {
+            $copyTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.copy'));
+            $copyIcon = $this->iconFactory->getIcon('actions-edit-copy', Icon::SIZE_SMALL)->render();
+
+            if ($isSel === 'copy') {
+                $copyIcon = $this->iconFactory->getIcon('actions-edit-copy-release', Icon::SIZE_SMALL)->render();
+            }
+
+            $cells['copy'] = '<a class="btn btn-default"" href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 1, ($isSel === 'copy'))) . '" title="' . $copyTitle . '">' . $copyIcon . '</a>';
+        }
+
+        // cut the file
+        if ($fileOrFolderObject->checkActionPermission('move') && $this->clipObj->current === 'normal') {
+            $cutTitle = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.cut'));
+            $cutIcon = $this->iconFactory->getIcon('actions-edit-cut', Icon::SIZE_SMALL)->render();
+
+            if ($isSel === 'cut') {
+                $cutIcon = $this->iconFactory->getIcon('actions-edit-cut-release', Icon::SIZE_SMALL)->render();
+            }
+
+            $cells['cut'] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 0, ($isSel === 'cut'))) . '" title="' . $cutTitle . '">' . $cutIcon . '</a>';
+        }
+
         // delete the file
         if ($fileOrFolderObject->checkActionPermission('delete')) {
             $identifier = $fileOrFolderObject->getIdentifier();
@@ -1025,11 +1051,11 @@ class FileList extends AbstractRecordList
         // Hook for manipulating edit icons.
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['fileList']['editIconsHook'])) {
             $cells['__fileOrFolderObject'] = $fileOrFolderObject;
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['fileList']['editIconsHook'] as $classData) {
-                $hookObject = GeneralUtility::getUserObj($classData);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['fileList']['editIconsHook'] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (!$hookObject instanceof FileListEditIconHookInterface) {
                     throw new \UnexpectedValueException(
-                        $classData . ' must implement interface ' . FileListEditIconHookInterface::class,
+                        $className . ' must implement interface ' . FileListEditIconHookInterface::class,
                         1235225797
                     );
                 }
@@ -1081,7 +1107,7 @@ class FileList extends AbstractRecordList
     /**
      * Returns an instance of LanguageService
      *
-     * @return \TYPO3\CMS\Lang\LanguageService
+     * @return \TYPO3\CMS\Core\Localization\LanguageService
      */
     protected function getLanguageService()
     {

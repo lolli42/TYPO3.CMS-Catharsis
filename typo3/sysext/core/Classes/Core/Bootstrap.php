@@ -172,8 +172,7 @@ class Bootstrap
             ->loadTypo3LoadedExtAndExtLocalconf(true)
             ->setFinalCachingFrameworkCacheConfiguration()
             ->defineLoggingAndExceptionConstants()
-            ->unsetReservedGlobalVariables()
-            ->initializeTypo3DbGlobal();
+            ->unsetReservedGlobalVariables();
 
         return $this;
     }
@@ -398,7 +397,6 @@ class Bootstrap
             ->initializePackageManagement($packageManagerClassName)
             ->initializeRuntimeActivatedPackagesFromConfiguration()
             ->defineUserAgentConstant()
-            ->registerExtDirectComponents()
             ->setCacheHashOptions()
             ->setDefaultTimezone()
             ->initializeL10nLocales()
@@ -521,26 +519,6 @@ class Bootstrap
     protected function defineUserAgentConstant()
     {
         define('TYPO3_user_agent', 'User-Agent: ' . $GLOBALS['TYPO3_CONF_VARS']['HTTP']['headers']['User-Agent']);
-        return $this;
-    }
-
-    /**
-     * Register default ExtDirect components
-     *
-     * @return Bootstrap
-     */
-    protected function registerExtDirectComponents()
-    {
-        if (TYPO3_MODE === 'BE') {
-            ExtensionManagementUtility::registerExtDirectComponent(
-                'TYPO3.Components.PageTree.DataProvider',
-                \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class
-            );
-            ExtensionManagementUtility::registerExtDirectComponent(
-                'TYPO3.Components.PageTree.Commands',
-                \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class
-            );
-        }
         return $this;
     }
 
@@ -761,77 +739,6 @@ class Bootstrap
     }
 
     /**
-     * Initialize database connection in $GLOBALS and connect if requested
-     *
-     * @return \TYPO3\CMS\Core\Core\Bootstrap
-     * @internal This is not a public API method, do not use in own extensions
-     */
-    public function initializeTypo3DbGlobal()
-    {
-        /** @var $databaseConnection \TYPO3\CMS\Core\Database\DatabaseConnection */
-        $databaseConnection = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\DatabaseConnection::class);
-        $databaseConnection->setDatabaseName(
-            $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['dbname'] ?? ''
-        );
-        $databaseConnection->setDatabaseUsername(
-            $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['user'] ?? ''
-        );
-        $databaseConnection->setDatabasePassword(
-            $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['password'] ?? ''
-        );
-
-        $databaseHost = $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['host'] ?? '';
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['port'])) {
-            $databaseConnection->setDatabasePort($GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['port']);
-        } elseif (strpos($databaseHost, ':') > 0) {
-            // @TODO: Find a way to handle this case in the install tool and drop this
-            list($databaseHost, $databasePort) = explode(':', $databaseHost);
-            $databaseConnection->setDatabasePort($databasePort);
-        }
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['unix_socket'])) {
-            $databaseConnection->setDatabaseSocket(
-                $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['unix_socket']
-            );
-        }
-        $databaseConnection->setDatabaseHost($databaseHost);
-
-        $databaseConnection->debugOutput = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sqlDebug'];
-
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['persistentConnection'])
-            && $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['persistentConnection']
-        ) {
-            $databaseConnection->setPersistentDatabaseConnection(true);
-        }
-
-        $isDatabaseHostLocalHost = in_array($databaseHost, ['localhost', '127.0.0.1', '::1'], true);
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['driverOptions'])
-            && $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['driverOptions'] & MYSQLI_CLIENT_COMPRESS
-            && !$isDatabaseHostLocalHost
-        ) {
-            $databaseConnection->setConnectionCompression(true);
-        }
-
-        if (!empty($GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['initCommands'])) {
-            $commandsAfterConnect = GeneralUtility::trimExplode(
-                LF,
-                str_replace(
-                    '\' . LF . \'',
-                    LF,
-                    $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['initCommands']
-                ),
-                true
-            );
-            $databaseConnection->setInitializeCommandsAfterConnect($commandsAfterConnect);
-        }
-
-        $GLOBALS['TYPO3_DB'] = $databaseConnection;
-        // $GLOBALS['TYPO3_DB'] needs to be defined first in order to work for DBAL
-        $GLOBALS['TYPO3_DB']->initialize();
-
-        return $this;
-    }
-
-    /**
      * Check adminOnly configuration variable and redirects
      * to an URL in file typo3conf/LOCK_BACKEND or exit the script
      *
@@ -900,26 +807,6 @@ class Bootstrap
     }
 
     /**
-     * Load ext_tables and friends.
-     *
-     * This will mainly set up $TCA and several other global arrays
-     * through API's like extMgm.
-     * Executes ext_tables.php files of loaded extensions or the
-     * according cache file if exists.
-     *
-     * @param bool $allowCaching True, if reading compiled ext_tables file from cache is allowed
-     * @return Bootstrap
-     * @internal This is not a public API method, do not use in own extensions
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function loadExtensionTables($allowCaching = true)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        $this->loadBaseTca($allowCaching)->loadExtTables($allowCaching);
-        return $this;
-    }
-
-    /**
      * Load $TCA
      *
      * This will mainly set up $TCA through extMgm API.
@@ -959,12 +846,12 @@ class Bootstrap
     protected function runExtTablesPostProcessingHooks()
     {
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'] as $classReference) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'] as $className) {
                 /** @var $hookObject \TYPO3\CMS\Core\Database\TableConfigurationPostProcessingHookInterface */
-                $hookObject = GeneralUtility::getUserObj($classReference);
+                $hookObject = GeneralUtility::makeInstance($className);
                 if (!$hookObject instanceof \TYPO3\CMS\Core\Database\TableConfigurationPostProcessingHookInterface) {
                     throw new \UnexpectedValueException(
-                        '$hookObject "' . $classReference . '" must implement interface TYPO3\\CMS\\Core\\Database\\TableConfigurationPostProcessingHookInterface',
+                        '$hookObject "' . $className . '" must implement interface TYPO3\\CMS\\Core\\Database\\TableConfigurationPostProcessingHookInterface',
                         1320585902
                     );
                 }
@@ -1070,8 +957,8 @@ class Bootstrap
      */
     public function initializeLanguageObject()
     {
-        /** @var $GLOBALS['LANG'] \TYPO3\CMS\Lang\LanguageService */
-        $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Lang\LanguageService::class);
+        /** @var $GLOBALS['LANG'] \TYPO3\CMS\Core\Localization\LanguageService */
+        $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageService::class);
         $GLOBALS['LANG']->init($GLOBALS['BE_USER']->uc['lang']);
         return $this;
     }

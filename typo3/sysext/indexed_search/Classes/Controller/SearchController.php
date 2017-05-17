@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
@@ -906,8 +907,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     {
         $newSearchWords = [];
         // Init lexer (used to post-processing of search words)
-        $lexerObjRef = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['lexer'] ?: \TYPO3\CMS\IndexedSearch\Lexer::class;
-        $this->lexerObj = GeneralUtility::getUserObj($lexerObjRef);
+        $lexerObjectClassName = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['lexer'] ?: \TYPO3\CMS\IndexedSearch\Lexer::class;
+        $this->lexerObj = GeneralUtility::makeInstance($lexerObjectClassName);
         // Traverse the search word array
         foreach ($searchWords as $wordDef) {
             // No space in word (otherwise it might be a sentense in quotes like "there is").
@@ -1390,7 +1391,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             $pageCount = count($rl);
             if (is_array($rl) && !empty($rl)) {
                 $breadcrumbWrap = isset($this->settings['breadcrumbWrap']) ? $this->settings['breadcrumbWrap'] : '/';
-                $breadcrumbWraps = $GLOBALS['TSFE']->tmpl->splitConfArray(['wrap' => $breadcrumbWrap], $pageCount);
+                $breadcrumbWraps = GeneralUtility::makeInstance(TypoScriptService::class)
+                    ->explodeConfigurationForOptionSplit(['wrap' => $breadcrumbWrap], $pageCount);
                 foreach ($rl as $k => $v) {
                     // Check fe_user
                     if ($v['fe_group'] && ($v['uid'] == $id || $v['extendToSubpages'])) {
@@ -1454,8 +1456,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     {
         // Initialize external document parsers for icon display and other soft operations
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] as $extension => $_objRef) {
-                $this->externalParsers[$extension] = GeneralUtility::getUserObj($_objRef);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] as $extension => $className) {
+                $this->externalParsers[$extension] = GeneralUtility::makeInstance($className);
                 // Init parser and if it returns FALSE, unset its entry again
                 if (!$this->externalParsers[$extension]->softInit($extension)) {
                     unset($this->externalParsers[$extension]);
@@ -1474,7 +1476,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
     {
         // Hook: menuConfig_preProcessModMenu
         if ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['pi1_hooks'][$functionName]) {
-            $hookObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['pi1_hooks'][$functionName]);
+            $hookObj = GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['pi1_hooks'][$functionName]);
             if (method_exists($hookObj, $functionName)) {
                 $hookObj->pObj = $this;
                 return $hookObj;

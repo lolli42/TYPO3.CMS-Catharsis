@@ -156,9 +156,9 @@ class LocalizationUtility
         /** @var $languageFactory LocalizationFactory */
         $languageFactory = GeneralUtility::makeInstance(LocalizationFactory::class);
 
-        self::$LOCAL_LANG[$extensionName] = $languageFactory->getParsedData($locallangPathAndFilename, self::$languageKey, 'utf-8');
+        self::$LOCAL_LANG[$extensionName] = $languageFactory->getParsedData($locallangPathAndFilename, self::$languageKey);
         foreach (self::$alternativeLanguageKeys as $language) {
-            $tempLL = $languageFactory->getParsedData($locallangPathAndFilename, $language, 'utf-8');
+            $tempLL = $languageFactory->getParsedData($locallangPathAndFilename, $language);
             if (self::$languageKey !== 'default' && isset($tempLL[$language])) {
                 self::$LOCAL_LANG[$extensionName][$language] = $tempLL[$language];
             }
@@ -287,7 +287,7 @@ class LocalizationUtility
     }
 
     /**
-     * @return \TYPO3\CMS\Lang\LanguageService
+     * @return \TYPO3\CMS\Core\Localization\LanguageService
      */
     protected static function getLanguageService()
     {

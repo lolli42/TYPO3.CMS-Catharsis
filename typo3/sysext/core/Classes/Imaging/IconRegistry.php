@@ -117,12 +117,6 @@ class IconRegistry implements SingletonInterface
                 'source' => 'EXT:core/Resources/Public/Icons/T3Icons/actions/actions-delete.svg'
             ]
         ],
-        'actions-document-close' => [
-            'provider' => SvgIconProvider::class,
-            'options' => [
-                'source' => 'EXT:core/Resources/Public/Icons/T3Icons/actions/actions-document-close.svg'
-            ]
-        ],
         'actions-document-duplicates-select' => [
             'provider' => SvgIconProvider::class,
             'options' => [
@@ -289,12 +283,6 @@ class IconRegistry implements SingletonInterface
             'provider' => SvgIconProvider::class,
             'options' => [
                 'source' => 'EXT:core/Resources/Public/Icons/T3Icons/actions/actions-duplicates.svg'
-            ]
-        ],
-        'actions-edit-add' => [
-            'provider' => SvgIconProvider::class,
-            'options' => [
-                'source' => 'EXT:core/Resources/Public/Icons/T3Icons/actions/actions-edit-add.svg'
             ]
         ],
         'actions-edit-copy-release' => [
@@ -2071,6 +2059,12 @@ class IconRegistry implements SingletonInterface
                 'source' => 'EXT:core/Resources/Public/Icons/T3Icons/mimetypes/mimetypes-text-ts.svg'
             ]
         ],
+        'mimetypes-text-typoscript' => [
+            'provider' => SvgIconProvider::class,
+            'options' => [
+                'source' => 'EXT:core/Resources/Public/Icons/T3Icons/mimetypes/mimetypes-text-typoscript.svg'
+            ]
+        ],
         'mimetypes-word' => [
             'provider' => SvgIconProvider::class,
             'options' => [
@@ -3056,6 +3050,7 @@ class IconRegistry implements SingletonInterface
         'php3' => 'mimetypes-text-php',
         'inc' => 'mimetypes-text-php',
         'ts' => 'mimetypes-text-ts',
+        'typoscript' => 'mimetypes-text-typoscript',
         'txt' => 'mimetypes-text-text',
         'class' => 'mimetypes-text-text',
         'tmpl' => 'mimetypes-text-text',
@@ -3139,24 +3134,16 @@ class IconRegistry implements SingletonInterface
      *   which replaces the old identifier
      *
      * Example:
-     * array(
-     *   'deprecated-icon-identifier' => array(
-     *      'message' => '%s is deprecated since TYPO3 CMS 7, this icon will be removed in TYPO3 CMS 8',
+     * [
+     *   'deprecated-icon-identifier' => [
+     *      'message' => '%s is deprecated since TYPO3 CMS 9, this icon will be removed in TYPO3 CMS 10',
      *      'replacement' => 'alternative-icon-identifier' // must be registered
-     *   )
-     * )
+     *   ]
+     * ]
      *
      * @var array
      */
     protected $deprecatedIcons = [
-        'actions-document-close' => [
-            'message' => '%s is deprecated since TYPO3 CMS 8, this icon will be removed in TYPO3 CMS 9',
-            'replacement' => 'actions-close'
-        ],
-        'actions-edit-add' => [
-            'message' => '%s is deprecated since TYPO3 CMS 8, this icon will be removed in TYPO3 CMS 9',
-            'replacement' => 'actions-add'
-        ]
     ];
 
     /**
@@ -3288,22 +3275,6 @@ class IconRegistry implements SingletonInterface
             }
         }
         return $this->icons[$identifier];
-    }
-
-    /**
-     * @param string $identifier
-     *
-     * @return array
-     * @throws Exception
-     * @deprecated since TYPO3 v8, will be removed in TYPO3 v9
-     */
-    public function getDeprecationSettings($identifier)
-    {
-        GeneralUtility::logDeprecatedFunction();
-        if (!$this->isDeprecated($identifier)) {
-            throw new Exception('Icon with identifier "' . $identifier . '" is not deprecated"', 1460976527);
-        }
-        return $this->deprecatedIcons[$identifier];
     }
 
     /**
