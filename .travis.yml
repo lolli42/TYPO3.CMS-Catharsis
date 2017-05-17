@@ -8,7 +8,7 @@ matrix:
 
   include:
     - php: 7
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=no PHP_LINT=no XLF_CHECK=no SUBMODULE_TEST=no
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes SUBMODULE_TEST=yes
 
 sudo: false
 
