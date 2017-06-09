@@ -274,7 +274,7 @@ class Check implements CheckInterface
      */
     protected function checkPcreVersion()
     {
-        $minimumPcreVersion = '8.30';
+        $minimumPcreVersion = '8.38';
         if (!extension_loaded('pcre')) {
             $status = new Status\ErrorStatus();
             $status->setTitle('PHP extension pcre not loaded');
@@ -284,9 +284,9 @@ class Check implements CheckInterface
                 ' in with minimum version ' . $minimumPcreVersion . '.'
             );
         } else {
-            $installedPcreVersionString = trim(PCRE_VERSION); // '8.31 2012-07-06'
+            $installedPcreVersionString = trim(PCRE_VERSION); // '8.39 2016-06-14'
             $mainPcreVersionString = explode(' ', $installedPcreVersionString);
-            $mainPcreVersionString = $mainPcreVersionString[0]; // '8.31'
+            $mainPcreVersionString = $mainPcreVersionString[0]; // '8.39'
             if (version_compare($mainPcreVersionString, $minimumPcreVersion) < 0) {
                 $status = new Status\ErrorStatus();
                 $status->setTitle('PCRE version too low');
@@ -951,9 +951,9 @@ class Check implements CheckInterface
                 ' On Windows the default stack size for Apache is a lot smaller than on UNIX.' .
                 ' You can increase the size to 8MB (default on UNIX) by adding the following configuration' .
                 ' to httpd.conf and restarting Apache afterwards:' . LF .
-                '<IfModule mpm_winnt_module>' . LF .
+                '&lt;IfModule mpm_winnt_module&gt;' . LF .
                 'ThreadStackSize 8388608' . LF .
-                '</IfModule>'
+                '&lt;/IfModule&gt;'
             );
         } else {
             $status = new Status\OkStatus();

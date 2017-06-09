@@ -59,10 +59,8 @@ module.exports = function (grunt) {
 			workspaces: '<%= paths.sysext %>workspaces/Resources/',
 			ckeditor: '<%= paths.sysext %>rte_ckeditor/Resources/',
 			core: '<%= paths.sysext %>core/Resources/',
-			bower: 'bower_components/',
-			flags: '<%= paths.bower %>region-flags/svg/',
-			t3icons: '<%= paths.bower %>typo3-icons/dist/',
-			npm: 'node_modules/'
+			npm: 'node_modules/',
+			t3icons: '<%= paths.npm %>@typo3/icons/dist/'
 		},
 		stylelint: {
 			options: {
@@ -85,9 +83,9 @@ module.exports = function (grunt) {
 				outputStyle: 'expanded',
 				precision: 8,
 				includePaths: [
-					'bower_components/bootstrap-sass/assets/stylesheets',
-					'bower_components/fontawesome/scss',
-					'bower_components/eonasdan-bootstrap-datetimepicker/src/sass',
+					'node_modules/bootstrap-sass/assets/stylesheets',
+					'node_modules/font-awesome/scss',
+					'node_modules/eonasdan-bootstrap-datetimepicker/src/sass',
 					'node_modules/tagsort'
 				]
 			},
@@ -155,15 +153,15 @@ module.exports = function (grunt) {
 					}),
 					require('postcss-banner')({
 						banner: 'This file is part of the TYPO3 CMS project.\n' +
-						'\n' +
-						'It is free software; you can redistribute it and/or modify it under\n' +
-						'the terms of the GNU General Public License, either version 2\n' +
-						'of the License, or any later version.\n' +
-						'\n' +
-						'For the full copyright and license information, please read the\n' +
-						'LICENSE.txt file that was distributed with this source code.\n' +
-						'\n' +
-						'The TYPO3 project - inspiring people to share!',
+							'\n' +
+							'It is free software; you can redistribute it and/or modify it under\n' +
+							'the terms of the GNU General Public License, either version 2\n' +
+							'of the License, or any later version.\n' +
+							'\n' +
+							'For the full copyright and license information, please read the\n' +
+							'LICENSE.txt file that was distributed with this source code.\n' +
+							'\n' +
+							'The TYPO3 project - inspiring people to share!',
 						important: true,
 						inline: false
 					})
@@ -194,14 +192,8 @@ module.exports = function (grunt) {
 				src: '<%= paths.workspaces %>Public/Css/*.css'
 			}
 		},
-		ts: {
-			default: {
-				tsconfig: true,
-				options: {
-					verbose: false,
-					additionalFlags: '--typeRoots "node_modules/@types,types"'
-				}
-			}
+		exec: {
+			ts: './node_modules/.bin/tsc --project tsconfig.json'
 		},
 		tslint: {
 			options: {
@@ -375,44 +367,32 @@ module.exports = function (grunt) {
 				files: [
 					{
 						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.eot',
-						src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.eot'
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.eot'
 					},
 					{
 						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.svg',
-						src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.svg'
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.svg'
 					},
 					{
 						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.ttf',
-						src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.ttf'
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.ttf'
 					},
 					{
 						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff',
-						src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.woff'
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.woff'
 					},
 					{
 						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff2',
-						src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.woff2'
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.woff2'
 					}
 				]
 			}
 		},
-		bowercopy: {
+		npmcopy: {
 			options: {
 				clean: false,
 				report: false,
-				runBower: false,
-				srcPrefix: "bower_components/"
-			},
-			glob: {
-				files: {
-					// When using glob patterns, destinations are *always* folder names
-					// into which matching files will be copied
-					// Also note that subdirectories are **not** maintained
-					// if a destination is specified
-					// For example, one of the files copied here is
-					// 'lodash/dist/lodash.js' -> 'public/js/libs/lodash/lodash.js'
-					'<%= paths.sysext %>core/Resources/Public/Images/colorpicker': 'jquery-minicolors/*.png'
-				}
+				srcPrefix: "node_modules/"
 			},
 			ckeditor: {
 				options: {
@@ -431,7 +411,6 @@ module.exports = function (grunt) {
 				},
 				files: {
 					'nprogress.js': 'nprogress/nprogress.js',
-					'jquery.matchHeight-min.js': 'matchHeight/dist/jquery.matchHeight-min.js',
 					'jquery.dataTables.js': 'datatables/media/js/jquery.dataTables.min.js',
 					'require.js': 'requirejs/require.js',
 					'moment.js': 'moment/min/moment-with-locales.min.js',
@@ -441,16 +420,17 @@ module.exports = function (grunt) {
 					'bootstrap-datetimepicker.js': 'eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js',
 					'autosize.js': 'autosize/dist/autosize.min.js',
 					'taboverride.min.js': 'taboverride/build/output/taboverride.min.js',
-					'bootstrap-slider.min.js': 'seiyria-bootstrap-slider/dist/bootstrap-slider.min.js',
+					'bootstrap-slider.min.js': 'bootstrap-slider/dist/bootstrap-slider.min.js',
 					/* disabled until events are not bound to document only
-					 see https://github.com/claviska/jquery-minicolors/issues/192
-					 see https://github.com/claviska/jquery-minicolors/issues/206
-					 'jquery.minicolors.js': 'jquery-minicolors/jquery.minicolors.min.js',
+					   see https://github.com/claviska/jquery-minicolors/issues/192
+					   see https://github.com/claviska/jquery-minicolors/issues/206
+					   'jquery.minicolors.js': '../node_modules/@claviska/jquery-minicolors/jquery.minicolors.min.js',
+					   '../../Images/colorpicker/jquery.minicolors.png': '../node_modules/@claviska/jquery-minicolors/jquery.minicolors.png'
 					 */
 					/* disabled until autocomplete formatGroup is fixed to pass on the index too
-					 'jquery.autocomplete.js': 'devbridge-autocomplete/src/jquery.autocomplete.js',
+					   'jquery.autocomplete.js': '../node_modules/devbridge-autocomplete/dist/jquery.autocomplete.min.js',
 					 */
-					'd3/d3.js': 'd3/d3.min.js',
+					'd3/d3.js': 'd3/build/d3.min.js',
 					/**
 					 * copy needed parts of jquery
 					 */
@@ -489,38 +469,18 @@ module.exports = function (grunt) {
 					"<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js": ["<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js"]
 				}
 			}
-		},
-		svgmin: {
-			options: {
-				plugins: [
-					{removeViewBox: false}
-				]
-			},
-			// Flags
-			flags: {
-				files: [{
-					expand: true,
-					cwd: '<%= paths.flags %>',
-					src: '*.svg',
-					dest: '<%= paths.sysext %>core/Resources/Public/Icons/Flags/SVG/',
-					ext: '.svg',
-					extDot: 'first'
-				}]
-			}
 		}
 	});
 
 	// Register tasks
 	grunt.loadNpmTasks('grunt-sass');
 	grunt.loadNpmTasks('grunt-contrib-watch');
-	grunt.loadNpmTasks('grunt-bowercopy');
+	grunt.loadNpmTasks('grunt-npmcopy');
 	grunt.loadNpmTasks('grunt-npm-install');
-	grunt.loadNpmTasks('grunt-bower-just-install');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-svgmin');
 	grunt.loadNpmTasks('grunt-postcss');
 	grunt.loadNpmTasks('grunt-contrib-copy');
-	grunt.loadNpmTasks("grunt-ts");
+	grunt.loadNpmTasks('grunt-exec');
 	grunt.loadNpmTasks('grunt-tslint');
 	grunt.loadNpmTasks('grunt-stylelint');
 
@@ -532,6 +492,17 @@ module.exports = function (grunt) {
 	 * this will trigger the CSS build
 	 */
 	grunt.registerTask('default', ['css']);
+
+	/**
+	 * grunt lint
+	 *
+	 * call "$ grunt lint"
+	 *
+	 * this task does the following things:
+	 * - tslint
+	 * - stylelint
+	 */
+	grunt.registerTask('lint', ['tslint', 'stylelint']);
 
 	/**
 	 * grunt format
@@ -562,10 +533,9 @@ module.exports = function (grunt) {
 	 *
 	 * this task does the following things:
 	 * - npm install
-	 * - bower install
-	 * - copy some bower components to a specific destinations because they need to be included via PHP
+	 * - copy some components to a specific destinations because they need to be included via PHP
 	 */
-	grunt.registerTask('update', ['npm-install', 'bower_install', 'bowercopy']);
+	grunt.registerTask('update', ['npm-install', 'npmcopy']);
 
 	/**
 	 * grunt scripts task
@@ -577,11 +547,60 @@ module.exports = function (grunt) {
 	 * - 2) Compiles all TypeScript files (*.ts) which are located in sysext/<EXTKEY>/Resources/Private/TypeScript/*.ts
 	 * - 3) Copy all generated JavaScript and Map files to public folders
 	 */
-	grunt.registerTask('scripts', ['tslint', 'tsclean', 'ts', 'copy:ts_files']);
+	grunt.registerTask('scripts', ['tsconfig', 'tslint', 'tsclean', 'exec:ts', 'copy:ts_files']);
 
+	/**
+	 * grunt tsclean task
+	 *
+	 * call "$ grunt tsclean"
+	 *
+	 * Clean the JavaScript output folder before building
+	 */
 	grunt.task.registerTask('tsclean', function () {
 		grunt.option('force');
 		grunt.file.delete("JavaScript");
+	});
+
+	/**
+	 * grunt tsdev task
+	 *
+	 * call "$ grunt tsdev"
+	 *
+	 * this task copies and modifies the TypeScript configuration for a developer system
+	 * most TypeScript tooling expects tsconfig.json to be in a domineering/root-level position
+	 */
+	grunt.task.registerTask('tsdev', function () {
+		var content = grunt.file.read("tsconfig.json");
+		content = content.replace(/..\/typo3\//g, 'typo3/');
+		content = content.replace('"rootDir": "../",', '"rootDir": "./",');
+		content = content.replace('./JavaScript', './Build/JavaScript');
+		content = content.replace('"node_modules/@types"', '"Build/node_modules/@types"');
+		content = content.replace('"types"', '"Build/types"');
+		grunt.file.write('../tsconfig.json', content);
+		grunt.file.copy('./tslint.json', '../tslint.json');
+	});
+
+	/**
+	 * grunt tsconfig task
+	 *
+	 * call "$ grunt tsconfig"
+	 *
+	 * this task updates the tsconfig.json file with modules paths for all sysexts
+	 */
+	grunt.task.registerTask('tsconfig', function () {
+		var config = grunt.file.readJSON("tsconfig.json");
+		config.compilerOptions.paths = {};
+		grunt.file.expand('../typo3/sysext/*/Resources/Public/JavaScript').forEach( function(dir){
+			var extname = '_' + dir.match(/sysext\/(.*?)\//)[1],
+				extname = extname.replace(/_./g, function(match){
+					return match.charAt(1).toUpperCase();
+				});
+			var namespace = 'TYPO3/CMS/' + extname + '/*',
+				path = dir + "/*";
+			config.compilerOptions.paths[namespace] = [path];
+		});
+
+		grunt.file.write('tsconfig.json', JSON.stringify(config, null, 4));
 	});
 
 	/**
@@ -597,5 +616,5 @@ module.exports = function (grunt) {
 	 * - minifies svg files
 	 * - compiles TypeScript files
 	 */
-	grunt.registerTask('build', ['update', 'scripts', 'copy', 'format', 'css', 'uglify', 'svgmin']);
+	grunt.registerTask('build', ['update', 'scripts', 'copy', 'format', 'css', 'uglify']);
 };

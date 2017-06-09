@@ -170,7 +170,7 @@ class NewRecordController extends AbstractModule
             if (!empty($pidList)) {
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                     ->getQueryBuilderForTable('pages');
-                $this->perms_clause .= ' AND ' . $queryBuilder->expr()->in(
+                $this->perms_clause .= ' AND ' . $queryBuilder->expr()->notIn(
                     'pages.uid',
                     GeneralUtility::intExplode(',', $pidList)
                 );
@@ -368,7 +368,7 @@ class NewRecordController extends AbstractModule
                     ))
                     ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.showPage'))
                     ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(
-                        'actions-document-view',
+                        'actions-view-page',
                         Icon::SIZE_SMALL
                     ));
                 $buttonBar->addButton($viewButton, ButtonBar::BUTTON_POSITION_LEFT, 30);

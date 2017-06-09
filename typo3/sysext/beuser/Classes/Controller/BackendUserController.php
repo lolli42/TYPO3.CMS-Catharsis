@@ -162,6 +162,9 @@ class BackendUserController extends BackendUserActionController
         $this->view->assign('timeFormat', $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm']);
         $this->view->assign('backendUsers', $this->backendUserRepository->findDemanded($demand));
         $this->view->assign('backendUserGroups', array_merge([''], $this->backendUserGroupRepository->findAll()->toArray()));
+        $this->view->assign('compareUserUidList', array_map(function ($item) {
+            return true;
+        }, array_flip((array)$compareUserList)));
         $this->view->assign('compareUserList', !empty($compareUserList) ? $this->backendUserRepository->findByUidList($compareUserList) : '');
     }
 
@@ -192,6 +195,14 @@ class BackendUserController extends BackendUserActionController
         $compareUserList = $this->moduleData->getCompareUserList();
         $this->view->assign('dateFormat', $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy']);
         $this->view->assign('timeFormat', $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm']);
+        $returnUrl = BackendUtility::getModuleUrl(
+            'system_BeuserTxBeuser',
+            [
+                'tx_beuser_system_beusertxbeuser[action]' => 'compare',
+                'tx_beuser_system_beusertxbeuser[controller]' => 'BackendUser'
+            ]
+        );
+        $this->view->assign('returnUrl', rawurlencode($returnUrl));
         $this->view->assign('compareUserList', !empty($compareUserList) ? $this->backendUserRepository->findByUidList($compareUserList) : '');
     }
 

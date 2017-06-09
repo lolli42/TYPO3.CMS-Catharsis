@@ -401,7 +401,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function flushByTagWorksWithEmptyCacheTablesWithMysql()
     {
@@ -412,7 +413,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function flushByTagsWorksWithEmptyCacheTablesWithMysql()
     {
@@ -423,7 +425,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function flushByTagRemovesCorrectRowsFromDatabaseWithMysql()
     {
@@ -443,7 +446,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function flushByTagsRemovesCorrectRowsFromDatabaseWithMysql()
     {
@@ -517,7 +521,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function collectGarbageWorksWithEmptyTableWithMysql()
     {
@@ -528,7 +533,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function collectGarbageRemovesCacheEntryWithExpiredLifetimeWithMysql()
     {
@@ -559,7 +565,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function collectGarbageRemovesTagEntriesForCacheEntriesWithExpiredLifetimeWithMysql()
     {
@@ -590,7 +597,8 @@ class Typo3DatabaseBackendTest extends \TYPO3\TestingFramework\Core\Functional\F
     /**
      * @test
      *
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function collectGarbageRemovesOrphanedTagEntriesFromTagsTableWithMysql()
     {

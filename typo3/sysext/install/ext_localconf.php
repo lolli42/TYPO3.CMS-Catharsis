@@ -43,8 +43,6 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][\TYPO3\CMS\In
     = \TYPO3\CMS\Install\Updates\UploadContentElementUpdate::class;
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][\TYPO3\CMS\Install\Updates\MigrateFscStaticTemplateUpdate::class]
     = \TYPO3\CMS\Install\Updates\MigrateFscStaticTemplateUpdate::class;
-$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][\TYPO3\CMS\Install\Updates\SysRefindexHashUpdater::class]
-    = \TYPO3\CMS\Install\Updates\SysRefindexHashUpdater::class;
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][\TYPO3\CMS\Install\Updates\MigrateFeSessionDataUpdate::class]
     = \TYPO3\CMS\Install\Updates\MigrateFeSessionDataUpdate::class;
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update']['compatibility7Extension']
@@ -55,3 +53,5 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update']['rtehtmlareaE
     = \TYPO3\CMS\Install\Updates\RteHtmlAreaExtractionUpdate::class;
 
 // Add update wizards below this line
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update']['typo3DbLegacyExtension']
+    = \TYPO3\CMS\Install\Updates\Typo3DbExtractionUpdate::class;

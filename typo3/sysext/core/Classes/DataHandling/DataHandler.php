@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\DataHandling;
 
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Statement;
+use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Doctrine\DBAL\Types\IntegerType;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -25,7 +26,6 @@ use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\Configuration\Richtext;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
@@ -1729,7 +1729,7 @@ class DataHandler
         // normal integer "date" fields (timestamps) are handled in checkValue_input_Eval
         if (isset($tcaFieldConf['dbType']) && ($tcaFieldConf['dbType'] === 'date' || $tcaFieldConf['dbType'] === 'datetime')) {
             if (empty($value)) {
-                $value = 0;
+                $value = null;
             } else {
                 $isDateOrDateTimeField = true;
                 $dateTimeFormats = QueryHelper::getDateTimeFormats();
@@ -1739,7 +1739,7 @@ class DataHandler
                 $emptyValue = $dateTimeFormats[$tcaFieldConf['dbType']]['empty'];
                 // We store UTC timestamps in the database, which is what getTimestamp() returns.
                 $dateTime = new \DateTime($value);
-                $value = $value === $emptyValue ? 0 : $dateTime->getTimestamp();
+                $value = $value === $emptyValue ? null : $dateTime->getTimestamp();
             }
         }
         // Secures the string-length to be less than max.
@@ -1770,6 +1770,10 @@ class DataHandler
             }
 
             $res = $this->checkValue_input_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
+            if (isset($tcaFieldConf['dbType']) && isset($res['value']) && !$res['value']) {
+                // set the value to null if we have an empty value for a native field
+                $res['value'] = null;
+            }
 
             // Process UNIQUE settings:
             // Field is NOT set for flexForms - which also means that uniqueInPid and unique is NOT available for flexForm fields! Also getUnique should not be done for versioning and if PID is -1 ($realPid<0) then versioning is happening...
@@ -2536,9 +2540,9 @@ class DataHandler
             $statement = $this->getUniqueCountStatement($newValue, $table, $field, (int)$id, (int)$newPid);
             // For as long as records with the test-value existing, try again (with incremented numbers appended)
             if ($statement->fetchColumn()) {
-                $statement->bindParam(1, $newValue);
                 for ($counter = 0; $counter <= 100; $counter++) {
                     $newValue = $value . $counter;
+                    $statement->bindValue(1, $newValue);
                     $statement->execute();
                     if (!$statement->fetchColumn()) {
                         break;
@@ -6570,8 +6574,7 @@ class DataHandler
                 // If record found, check page as well:
                 if (is_array($output)) {
                     // Looking up the page for record:
-                    $queryBuilder = $this->doesRecordExist_pageLookUp($output['pid'], $perms);
-                    $pageRec = $queryBuilder->select('uid')->execute()->fetch();
+                    $pageRec = $this->doesRecordExist_pageLookUp($output['pid'], $perms);
                     // Return TRUE if either a page was found OR if the PID is zero AND the user is ADMIN (in which case the record is at root-level):
                     $isRootLevelRestrictionIgnored = BackendUtility::isRootLevelRestrictionIgnored($table);
                     if (is_array($pageRec) || !$output['pid'] && ($isRootLevelRestrictionIgnored || $this->admin)) {
@@ -6580,8 +6583,8 @@ class DataHandler
                 }
                 return false;
             } else {
-                $queryBuilder = $this->doesRecordExist_pageLookUp($id, $perms);
-                return $queryBuilder->count('uid')->execute()->fetchColumn(0);
+                $pageRec = $this->doesRecordExist_pageLookUp($id, $perms);
+                return is_array($pageRec);
             }
         }
         return false;
@@ -6592,16 +6595,25 @@ class DataHandler
      *
      * @param int $id Page id
      * @param int $perms Permission integer
-     * @return QueryBuilder
+     * @param string $fields List of fields (SQL CSV list) to select
+     * @return bool|array
      * @access private
      * @see doesRecordExist()
      */
-    protected function doesRecordExist_pageLookUp($id, $perms)
+    protected function doesRecordExist_pageLookUp($id, $perms, $fieldList = 'uid')
     {
+        $cacheId = md5('doesRecordExist_pageLookUp' . '_' . $id . '_' . $perms . '_' . $fieldList . '_' . (string)$this->admin);
+
+        // If result is cached, return it
+        $cachedResult = $this->runtimeCache->get($cacheId);
+        if (!empty($cachedResult)) {
+            return $cachedResult;
+        }
+
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
         $this->addDeleteRestriction($queryBuilder->getRestrictions()->removeAll());
         $queryBuilder
-            ->select('uid')
+            ->select(...GeneralUtility::trimExplode(',', $fieldList, true))
             ->from('pages')
             ->where($queryBuilder->expr()->eq(
                 'uid',
@@ -6618,7 +6630,11 @@ class DataHandler
                 $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
             ));
         }
-        return $queryBuilder;
+
+        $row = $queryBuilder->execute()->fetch();
+        $this->runtimeCache->set($cacheId, $row);
+
+        return $row;
     }
 
     /**
@@ -6926,12 +6942,23 @@ class DataHandler
             unset($fieldArray['uid']);
             if (!empty($fieldArray)) {
                 $fieldArray = $this->insertUpdateDB_preprocessBasedOnFieldType($table, $fieldArray);
+
+                $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($table);
+
+                $types = [];
+                $platform = $connection->getDatabasePlatform();
+                if ($platform instanceof SQLServerPlatform) {
+                    // mssql needs to set proper PARAM_LOB and others to update fields
+                    $tableDetails = $connection->getSchemaManager()->listTableDetails($table);
+                    foreach ($fieldArray as $columnName => $columnValue) {
+                        $types[$columnName] = $tableDetails->getColumn($columnName)->getType()->getBindingType();
+                    }
+                }
+
                 // Execute the UPDATE query:
                 $updateErrorMessage = '';
                 try {
-                    GeneralUtility::makeInstance(ConnectionPool::class)
-                        ->getConnectionForTable($table)
-                        ->update($table, $fieldArray, ['uid' => (int)$id]);
+                    $connection->update($table, $fieldArray, ['uid' => (int)$id], $types);
                 } catch (DBALException $e) {
                     $updateErrorMessage = $e->getPrevious()->getMessage();
                 }
@@ -6940,7 +6967,6 @@ class DataHandler
                     // Update reference index:
                     $this->updateRefIndex($table, $id);
                     if ($this->enableLogging) {
-                        $newRow = [];
                         if ($this->checkStoredRecords) {
                             $newRow = $this->checkStoredRecord($table, $id, $fieldArray, 2);
                         } else {

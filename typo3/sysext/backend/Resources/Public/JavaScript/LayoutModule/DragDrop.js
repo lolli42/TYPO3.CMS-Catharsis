@@ -93,7 +93,7 @@ define(['jquery', 'jquery-ui/droppable'], function ($) {
 		// make the drop zones visible
 		$(DragDrop.dropZoneIdentifier).each(function () {
 			if (
-				$(this).parent().find('.icon-actions-document-new').length
+				$(this).parent().find('.icon-actions-add').length
 			) {
 				$(this).addClass(DragDrop.validDropZoneClass);
 			} else {
@@ -243,9 +243,7 @@ define(['jquery', 'jquery-ui/droppable'], function ($) {
 									.insertAfter($droppableElement.closest(DragDrop.contentIdentifier));
 						}
 					}
-					if ($('.t3js-page-lang-column').length || $copyAction || $pasteAction) {
-						self.location.reload(true);
-					}
+					self.location.reload(true);
 				}
 			});
 		});

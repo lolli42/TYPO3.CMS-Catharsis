@@ -53,7 +53,7 @@ class RecordProvider extends AbstractProvider
     protected $itemsConfiguration = [
         'view' => [
             'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.view',
-            'iconIdentifier' => 'actions-document-view',
+            'iconIdentifier' => 'actions-view',
             'callbackAction' => 'viewRecord'
         ],
         'edit' => [
@@ -63,7 +63,7 @@ class RecordProvider extends AbstractProvider
         ],
         'new' => [
             'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.new',
-            'iconIdentifier' => 'actions-document-new',
+            'iconIdentifier' => 'actions-add',
             'callbackAction' => 'newRecord'
         ],
         'info' => [
@@ -110,7 +110,7 @@ class RecordProvider extends AbstractProvider
             'childItems' => [
                 'newWizard' => [
                     'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_misc.xlf:CM_newWizard',
-                    'iconIdentifier' => 'actions-document-new',
+                    'iconIdentifier' => 'actions-add',
                     'callbackAction' => 'newContentWizard',
                 ],
                 'openListModule' => [

@@ -359,12 +359,12 @@ class Typo3DbQueryParser
                         // Add it to the main query
                         return $this->queryBuilder->expr()->eq(
                             $tableName . '.uid',
-                            $queryBuilderForSubselect->getSQL()
+                            '(' . $queryBuilderForSubselect->getSQL() . ')'
                         );
                     } else {
                         return $this->queryBuilder->expr()->inSet(
                             $tableName . '.' . $columnName,
-                            $this->queryBuilder->createNamedParameter($value)
+                            $this->queryBuilder->quote($value)
                         );
                     }
                 } else {
