@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\Utility;
  */
 
 use TYPO3\CMS\Backend\Routing\UriBuilder;
-use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\VariableFrontend;
@@ -1106,14 +1105,7 @@ class BackendUtility
      */
     public static function time($value, $withSeconds = true)
     {
-        $hh = floor($value / 3600);
-        $min = floor(($value - $hh * 3600) / 60);
-        $sec = $value - $hh * 3600 - $min * 60;
-        $l = sprintf('%02d', $hh) . ':' . sprintf('%02d', $min);
-        if ($withSeconds) {
-            $l .= ':' . sprintf('%02d', $sec);
-        }
-        return $l;
+        return gmdate('H:i' . ($withSeconds ? ':s' : ''), (int)$value);
     }
 
     /**
@@ -2155,11 +2147,11 @@ class BackendUtility
                         }
                     } elseif (GeneralUtility::inList($theColConf['eval'], 'time')) {
                         if (!empty($value)) {
-                            $l = self::time($value, false);
+                            $l = gmdate('H:i', (int)$value);
                         }
                     } elseif (GeneralUtility::inList($theColConf['eval'], 'timesec')) {
                         if (!empty($value)) {
-                            $l = self::time($value);
+                            $l = gmdate('H:i:s', (int)$value);
                         }
                     } elseif (GeneralUtility::inList($theColConf['eval'], 'datetime')) {
                         // Handle native date/time field
@@ -2905,7 +2897,7 @@ class BackendUtility
     ) {
         $scriptUrl = self::buildScriptUrl($mainParams, $addParams, $script);
         $onChange = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+escape(this.value),this);';
-        return '<input type="text"' . static::getDocumentTemplate()->formWidth($size) . ' name="' . $elementName . '" value="' . htmlspecialchars($currentValue) . '" onchange="' . htmlspecialchars($onChange) . '" />';
+        return '<input type="text" class="form-control" name="' . $elementName . '" value="' . htmlspecialchars($currentValue) . '" onchange="' . htmlspecialchars($onChange) . '" />';
     }
 
     /**
@@ -4456,13 +4448,5 @@ class BackendUtility
     protected static function getBackendUserAuthentication()
     {
         return $GLOBALS['BE_USER'];
-    }
-
-    /**
-     * @return DocumentTemplate
-     */
-    protected static function getDocumentTemplate()
-    {
-        return $GLOBALS['TBE_TEMPLATE'];
     }
 }

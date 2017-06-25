@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface as CacheFrontendInterface;
-use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Resource\File;
@@ -184,9 +183,8 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     protected function handleCharset(&$subject, &$expected)
     {
-        $charsetConverter = new CharsetConverter();
-        $subject = $charsetConverter->conv($subject, 'iso-8859-1', 'utf-8');
-        $expected = $charsetConverter->conv($expected, 'iso-8859-1', 'utf-8');
+        $subject = mb_convert_encoding($subject, 'utf-8', 'iso-8859-1');
+        $expected = mb_convert_encoding($expected, 'utf-8', 'iso-8859-1');
     }
 
     /////////////////////////////////////////////
@@ -5628,6 +5626,33 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->with($content)->willReturn($return);
         $this->assertSame($return,
             $subject->stdWrap_insertData($content, $conf));
+    }
+
+    /**
+     * Data provider for stdWrap_insertData
+     *
+     * @return array [$expect, $content]
+     */
+    public function stdWrap_insertDataProvider()
+    {
+        return [
+            'empty' => ['', ''],
+            'notFoundData' => ['any=1', 'any{$string}=1'],
+            'queryParameter' => ['any{#string}=1', 'any{#string}=1'],
+        ];
+    }
+
+    /**
+     * Check that stdWrap_insertData works properly with given input.
+     *
+     * @test
+     * @dataProvider stdWrap_insertDataProvider
+     * @param int $expect The expected output.
+     * @param string $content The given input.
+     */
+    public function stdWrap_insertDataAndInputExamples($expect, $content)
+    {
+        $this->assertSame($expect, $this->subject->stdWrap_insertData($content));
     }
 
     /**

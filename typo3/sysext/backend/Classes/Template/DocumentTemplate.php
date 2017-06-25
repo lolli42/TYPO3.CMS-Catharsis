@@ -395,9 +395,11 @@ function jumpToUrl(URL) {
      * @param bool $textarea A flag you can set for textareas - DEPRECATED as there is no difference any more between the two
      * @param string $styleOverride A string which will be returned as attribute-value for style="" instead of the calculated width (if CSS is enabled)
      * @return string Tag attributes for an <input> tag (regarding width)
+     * @deprecated since TYPO3 CMS 9, will be removed in TYPO3 CMS 10.
      */
     public function formWidth($size = 48, $textarea = false, $styleOverride = '')
     {
+        GeneralUtility::logDeprecatedFunction();
         return ' style="' . ($styleOverride ?: 'width:' . ceil($size * 9.58) . 'px;') . '"';
     }
 
@@ -552,9 +554,7 @@ function jumpToUrl(URL) {
 </div>' : '') . $this->endOfPageJsBlock;
 
         // Logging: Can't find better place to put it:
-        if (TYPO3_DLOG) {
-            GeneralUtility::devLog('END of BACKEND session', \TYPO3\CMS\Backend\Template\DocumentTemplate::class, 0, ['_FLUSH' => true]);
-        }
+        GeneralUtility::devLog('END of BACKEND session', \TYPO3\CMS\Backend\Template\DocumentTemplate::class, 0, ['_FLUSH' => true]);
         return $str;
     }
 

@@ -14,11 +14,10 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Charset\CharsetConverter;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Exception\InvalidVariableException;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
 
 /**
  * Modifies the case of an input string to upper- or lowercase or capitalization.
@@ -66,6 +65,8 @@ use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
  */
 class CaseViewHelper extends AbstractViewHelper
 {
+    use CompileWithRenderStatic;
+
     /**
      * Directs the input string being converted to "lowercase"
      */
@@ -110,24 +111,6 @@ class CaseViewHelper extends AbstractViewHelper
     /**
      * Changes the case of the input string
      *
-     * @return string the altered string.
-     * @api
-     */
-    public function render()
-    {
-        return static::renderStatic(
-            [
-                'value' => $this->arguments['value'],
-                'mode' => $this->arguments['mode']
-            ],
-            $this->buildRenderChildrenClosure(),
-            $this->renderingContext
-        );
-    }
-
-    /**
-     * Changes the case of the input string
-     *
      * @param array $arguments
      * @param \Closure $renderChildrenClosure
      * @param RenderingContextInterface $renderingContext
@@ -151,13 +134,20 @@ class CaseViewHelper extends AbstractViewHelper
                 $output = mb_strtoupper($value, 'utf-8');
                 break;
             case self::CASE_CAPITAL:
-                $output = GeneralUtility::makeInstance(CharsetConverter::class)->convCaseFirst('utf-8', $value, 'toUpper');
+                $firstChar = mb_substr($value, 0, 1, 'utf-8');
+                $firstChar = mb_strtoupper($firstChar, 'utf-8');
+                $remainder = mb_substr($value, 1, null, 'utf-8');
+                $output = $firstChar . $remainder;
                 break;
             case self::CASE_UNCAPITAL:
-                $output = GeneralUtility::makeInstance(CharsetConverter::class)->convCaseFirst('utf-8', $value, 'toLower');
+                $firstChar = mb_substr($value, 0, 1, 'utf-8');
+                $firstChar = mb_strtolower($firstChar, 'utf-8');
+                $remainder = mb_substr($value, 1, null, 'utf-8');
+                $output = $firstChar . $remainder;
                 break;
             case self::CASE_CAPITAL_WORDS:
-                // @todo: Implement method once there is a proper solution with using the CharsetConverter
+                $output = mb_convert_case($value, MB_CASE_TITLE, 'utf-8');
+                break;
             default:
                 throw new InvalidVariableException('The case mode "' . $mode . '" supplied to Fluid\'s format.case ViewHelper is not supported.', 1358349150);
         }

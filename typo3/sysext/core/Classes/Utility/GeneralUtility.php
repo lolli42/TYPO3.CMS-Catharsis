@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Core\Utility;
  */
 
 use GuzzleHttp\Exception\RequestException;
-use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -256,9 +255,15 @@ class GeneralUtility
      */
     public static function fixed_lgd_cs($string, $chars, $appendString = '...')
     {
-        /** @var CharsetConverter $charsetConverter */
-        $charsetConverter = self::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
-        return $charsetConverter->crop('utf-8', $string, $chars, $appendString);
+        if ((int)$chars === 0 || mb_strlen($string, 'utf-8') <= abs($chars)) {
+            return $string;
+        }
+        if ($chars > 0) {
+            $string = mb_substr($string, 0, $chars, 'utf-8') . $appendString;
+        } else {
+            $string = $appendString . mb_substr($string, $chars, mb_strlen($string, 'utf-8'), 'utf-8');
+        }
+        return $string;
     }
 
     /**
@@ -3366,14 +3371,11 @@ class GeneralUtility
      * @param string $funcName Function/Method reference or Closure.
      * @param mixed $params Parameters to be pass along (typically an array) (REFERENCE!)
      * @param mixed $ref Reference to be passed along (typically "$this" - being a reference to the calling object) (REFERENCE!)
-     * @param string $_ Not used anymore since 6.0
-     * @param int $errorMode Error mode (when class/function could not be found): 0 - call debug(), 1 - do nothing, 2 - raise an exception (allows to call a user function that may return FALSE)
-     * @return mixed Content from method/function call or FALSE if the class/method/function was not found
-     * @see makeInstance()
+     * @return mixed Content from method/function call
+     * @throws \InvalidArgumentException
      */
-    public static function callUserFunction($funcName, &$params, &$ref, $_ = '', $errorMode = 0)
+    public static function callUserFunction($funcName, &$params, &$ref)
     {
-        $content = false;
         // Check if we're using a closure and invoke it directly.
         if (is_object($funcName) && is_a($funcName, 'Closure')) {
             return call_user_func_array($funcName, [&$params, &$ref]);
@@ -3382,7 +3384,7 @@ class GeneralUtility
         $parts = explode('->', $funcName);
         // Call function or method
         if (count($parts) === 2) {
-            // Class
+            // It's a class/method
             // Check if class/method exists:
             if (class_exists($parts[0])) {
                 // Create object
@@ -3392,32 +3394,18 @@ class GeneralUtility
                     $content = call_user_func_array([&$classObj, $parts[1]], [&$params, &$ref]);
                 } else {
                     $errorMsg = 'No method name \'' . $parts[1] . '\' in class ' . $parts[0];
-                    if ($errorMode == 2) {
-                        throw new \InvalidArgumentException($errorMsg, 1294585865);
-                    } elseif (!$errorMode) {
-                        debug($errorMsg, \TYPO3\CMS\Core\Utility\GeneralUtility::class . '::callUserFunction');
-                    }
+                    throw new \InvalidArgumentException($errorMsg, 1294585865);
                 }
             } else {
                 $errorMsg = 'No class named ' . $parts[0];
-                if ($errorMode == 2) {
-                    throw new \InvalidArgumentException($errorMsg, 1294585866);
-                } elseif (!$errorMode) {
-                    debug($errorMsg, \TYPO3\CMS\Core\Utility\GeneralUtility::class . '::callUserFunction');
-                }
+                throw new \InvalidArgumentException($errorMsg, 1294585866);
             }
+        } elseif (function_exists($funcName)) {
+            // It's a function
+            $content = call_user_func_array($funcName, [&$params, &$ref]);
         } else {
-            // Function
-            if (function_exists($funcName)) {
-                $content = call_user_func_array($funcName, [&$params, &$ref]);
-            } else {
-                $errorMsg = 'No function named: ' . $funcName;
-                if ($errorMode == 2) {
-                    throw new \InvalidArgumentException($errorMsg, 1294585867);
-                } elseif (!$errorMode) {
-                    debug($errorMsg, \TYPO3\CMS\Core\Utility\GeneralUtility::class . '::callUserFunction');
-                }
-            }
+            $errorMsg = 'No function named: ' . $funcName;
+            throw new \InvalidArgumentException($errorMsg, 1294585867);
         }
         return $content;
     }
@@ -3905,8 +3893,8 @@ class GeneralUtility
      * This should be implemented around the source code, both frontend and backend, logging everything from the flow through an application, messages, results from comparisons to fatal errors.
      * The result is meant to make sense to developers during development or debugging of a site.
      * The idea is that this function is only a wrapper for external extensions which can set a hook which will be allowed to handle the logging of the information to any format they might wish and with any kind of filter they would like.
-     * If you want to implement the devLog in your applications, simply add lines like:
-     * if (TYPO3_DLOG)	\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('[write message in english here]', 'extension key');
+     * If you want to implement the devLog in your applications, simply add a line like:
+     * \TYPO3\CMS\Core\Utility\GeneralUtility::devLog('[write message in english here]', 'extension key');
      *
      * @param string $msg Message (in english).
      * @param string $extKey Extension key (from which extension you are calling the log)
@@ -3915,7 +3903,7 @@ class GeneralUtility
      */
     public static function devLog($msg, $extKey, $severity = 0, $dataVar = false)
     {
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['devLog'])) {
+        if ((bool)$GLOBALS['TYPO3_CONF_VARS']['SYS']['enable_DLOG'] && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['devLog'])) {
             $params = ['msg' => $msg, 'extKey' => $extKey, 'severity' => $severity, 'dataVar' => $dataVar];
             $fakeThis = false;
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['devLog'] as $hookMethod) {
