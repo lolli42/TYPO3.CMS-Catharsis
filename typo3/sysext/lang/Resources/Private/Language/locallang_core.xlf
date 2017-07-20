@@ -633,6 +633,13 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="file_rename.php.submit">
 				<source>Rename</source>
+				<note from="developer">This label is not used since TYPO3 v9.</note>
+			</trans-unit>
+			<trans-unit id="file_rename.php.label.target.file">
+				<source>New file name</source>
+			</trans-unit>
+			<trans-unit id="file_rename.php.label.target.folder">
+				<source>New folder name</source>
 			</trans-unit>
 			<trans-unit id="file_replace.php.pagetitle">
 				<source>Replace</source>
@@ -977,6 +984,9 @@ Do you want to refresh it now?</source>
 			</trans-unit>
 			<trans-unit id="cm.cut">
 				<source>Cut</source>
+			</trans-unit>
+			<trans-unit id="cm.cutrelease">
+				<source>Cut release</source>
 			</trans-unit>
 			<trans-unit id="cm.view">
 				<source>Show</source>

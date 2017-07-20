@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Extbase\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
@@ -94,6 +95,11 @@ class ImageService implements \TYPO3\CMS\Core\SingletonInterface
             $uriPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
         }
 
+        // Prevent double / when concatenating $uriPrefix and $imageUrl
+        if ($imageUrl[0] === '/') {
+            $uriPrefix = rtrim($uriPrefix, '/');
+        }
+
         if ($absolute) {
             // If full URL has no scheme we add the same scheme as used by the site
             // so we have an absolute URL also usable outside of browser scope (e.g. in an email message)
@@ -154,6 +160,11 @@ class ImageService implements \TYPO3\CMS\Core\SingletonInterface
             } else {
                 $image = $this->resourceFactory->getFileObject($src);
             }
+        } elseif (strpos($src, 't3://file') === 0) {
+            // We have a t3://file link to a file in FAL
+            $linkService = GeneralUtility::makeInstance(LinkService::class);
+            $data = $linkService->resolveByStringRepresentation($src);
+            $image = $data['file'];
         } else {
             // We have a combined identifier or legacy (storage 0) path
             $image = $this->resourceFactory->retrieveFileOrFolderObject($src);

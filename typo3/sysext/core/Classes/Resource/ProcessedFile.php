@@ -118,6 +118,11 @@ class ProcessedFile extends AbstractFile
         $this->originalFileSha1 = $this->originalFile->getSha1();
         $this->storage = $originalFile->getStorage()->getProcessingFolder()->getStorage();
         $this->taskType = $taskType;
+        if ($taskType === self::CONTEXT_IMAGEPREVIEW) {
+            $processingConfiguration = array_merge(['width' => 64, 'height' => 64], $processingConfiguration);
+            $processingConfiguration['width'] = MathUtility::forceIntegerInRange($processingConfiguration['width'], 1, 1000);
+            $processingConfiguration['height'] = MathUtility::forceIntegerInRange($processingConfiguration['height'], 1, 1000);
+        }
         $this->processingConfiguration = $processingConfiguration;
         if (is_array($databaseRow)) {
             $this->reconstituteFromDatabaseRecord($databaseRow);
@@ -429,9 +434,8 @@ class ProcessedFile extends AbstractFile
         // Only delete file when original isn't used
         if (!$this->usesOriginalFile()) {
             return parent::delete();
-        } else {
-            return true;
         }
+        return true;
     }
 
     /**

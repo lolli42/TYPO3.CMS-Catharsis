@@ -392,10 +392,6 @@ class TypoScriptFrontendController
      *
      * Keys in use:
      *
-     * JSFormValidate: <script type="text/javascript" src="'.$GLOBALS["TSFE"]->absRefPrefix.'typo3/sysext/frontend/Resources/Public/JavaScript/jsfunc.validateform.js"></script>
-     * JSMenuCode, JSMenuCode_menu: JavaScript for the JavaScript menu
-     * JSCode: reserved
-     *
      * used to accumulate additional HTML-code for the header-section,
      * <head>...</head>. Insert either associative keys (like
      * additionalHeaderData['myStyleSheet'], see reserved keys above) or num-keys
@@ -561,7 +557,10 @@ class TypoScriptFrontendController
      * Site content overlay flag; If set - and sys_language_content is > 0 - ,
      * records selected will try to look for a translation pointing to their uid. (If
      * configured in [ctrl][languageField] / [ctrl][transOrigP...]
-     * @var int
+     * Possible values: [0,1,hideNonTranslated]
+     * This flag is set based on TypoScript config.sys_language_overlay setting
+     *
+     * @var int|string
      */
     public $sys_language_contentOL = 0;
 
@@ -2783,7 +2782,12 @@ class TypoScriptFrontendController
     public function calculateLinkVars()
     {
         $this->linkVars = '';
-        $linkVars = GeneralUtility::trimExplode(',', (string)$this->config['config']['linkVars']);
+        if (empty($this->config['config']['linkVars'])) {
+            return;
+        }
+
+        $linkVars = $this->splitLinkVarsString((string)$this->config['config']['linkVars']);
+
         if (empty($linkVars)) {
             return;
         }
@@ -2813,6 +2817,28 @@ class TypoScriptFrontendController
             }
             $this->linkVars .= $value;
         }
+    }
+
+    /**
+     * Split the link vars string by "," but not if the "," is inside of braces
+     *
+     * @param $string
+     *
+     * @return array
+     */
+    protected function splitLinkVarsString(string $string): array
+    {
+        $tempCommaReplacementString = '###KASPER###';
+
+        // replace every "," wrapped in "()" by a "unique" string
+        $string = preg_replace_callback('/\((?>[^()]|(?R))*\)/', function ($result) use ($tempCommaReplacementString) {
+            return str_replace(',', $tempCommaReplacementString, $result[0]);
+        }, $string);
+
+        $string = GeneralUtility::trimExplode(',', $string);
+
+        // replace all "unique" strings back to ","
+        return str_replace($tempCommaReplacementString, ',', $string);
     }
 
     /**

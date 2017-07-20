@@ -24,7 +24,6 @@
 		"news": "nntp://lists.typo3.org"
 	},
 	"config": {
-		"optimize-autoloader": true,
 		"bin-dir": "bin"
 	},
 	"bin": [
@@ -106,8 +105,6 @@
 		"typo3/cms-fluid-styled-content": "self.version",
 		"typo3/cms-form": "self.version",
 		"typo3/cms-frontend": "self.version",
-		"typo3/cms-func": "self.version",
-		"typo3/cms-func-wizards": "self.version",
 		"typo3/cms-impexp": "self.version",
 		"typo3/cms-indexed-search": "self.version",
 		"typo3/cms-info": "self.version",
@@ -125,7 +122,6 @@
 		"typo3/cms-saltedpasswords": "self.version",
 		"typo3/cms-scheduler": "self.version",
 		"typo3/cms-setup": "self.version",
-		"typo3/cms-sv": "self.version",
 		"typo3/cms-sys-action": "self.version",
 		"typo3/cms-sys-note": "self.version",
 		"typo3/cms-t3editor": "self.version",
@@ -134,8 +130,6 @@
 		"typo3/cms-typo3db-legacy": "self.version",
 		"typo3/cms-version": "self.version",
 		"typo3/cms-viewpage": "self.version",
-		"typo3/cms-wizard-crpages": "self.version",
-		"typo3/cms-wizard-sortpages": "self.version",
 		"typo3/cms-workspaces": "self.version"
 	},
 	"autoload": {
@@ -157,7 +151,6 @@
 			"TYPO3\\CMS\\FluidStyledContent\\": "typo3/sysext/fluid_styled_content/Classes/",
 			"TYPO3\\CMS\\Form\\": "typo3/sysext/form/Classes/",
 			"TYPO3\\CMS\\Frontend\\": "typo3/sysext/frontend/Classes/",
-			"TYPO3\\CMS\\Func\\": "typo3/sysext/func/Classes/",
 			"TYPO3\\CMS\\Impexp\\": "typo3/sysext/impexp/Classes/",
 			"TYPO3\\CMS\\IndexedSearch\\": "typo3/sysext/indexed_search/Classes/",
 			"TYPO3\\CMS\\IndexedSearchMysql\\": "typo3/sysext/indexed_search_mysql/Classes/",
@@ -176,7 +169,6 @@
 			"TYPO3\\CMS\\Saltedpasswords\\": "typo3/sysext/saltedpasswords/Classes/",
 			"TYPO3\\CMS\\Scheduler\\": "typo3/sysext/scheduler/Classes/",
 			"TYPO3\\CMS\\Setup\\": "typo3/sysext/setup/Classes/",
-			"TYPO3\\CMS\\Sv\\": "typo3/sysext/sv/Classes/",
 			"TYPO3\\CMS\\SysAction\\": "typo3/sysext/sys_action/Classes/",
 			"TYPO3\\CMS\\SysNote\\": "typo3/sysext/sys_note/Classes/",
 			"TYPO3\\CMS\\T3editor\\": "typo3/sysext/t3editor/Classes/",
@@ -184,8 +176,6 @@
 			"TYPO3\\CMS\\Tstemplate\\": "typo3/sysext/tstemplate/Classes/",
 			"TYPO3\\CMS\\Version\\": "typo3/sysext/version/Classes/",
 			"TYPO3\\CMS\\Viewpage\\": "typo3/sysext/viewpage/Classes/",
-			"TYPO3\\CMS\\WizardCrpages\\": "typo3/sysext/wizard_crpages/Classes/",
-			"TYPO3\\CMS\\WizardSortpages\\": "typo3/sysext/wizard_sortpages/Classes/",
 			"TYPO3\\CMS\\Workspaces\\": "typo3/sysext/workspaces/Classes/"
 		},
 		"classmap": [
@@ -220,7 +210,6 @@
 			"TYPO3\\CMS\\Rsaauth\\Tests\\": "typo3/sysext/rsaauth/Tests/",
 			"TYPO3\\CMS\\Saltedpasswords\\Tests\\": "typo3/sysext/saltedpasswords/Tests/",
 			"TYPO3\\CMS\\Scheduler\\Tests\\": "typo3/sysext/scheduler/Tests/",
-			"TYPO3\\CMS\\Sv\\Tests\\": "typo3/sysext/sv/Tests/",
 			"TYPO3\\CMS\\SysAction\\Tests\\": "typo3/sysext/sys_action/Tests/",
 			"TYPO3\\CMS\\SysNote\\Tests\\": "typo3/sysext/sys_note/Tests/",
 			"TYPO3\\CMS\\Workspaces\\Tests\\": "typo3/sysext/workspaces/Tests/",

@@ -1690,8 +1690,10 @@ class DataHandler
         ];
 
         if (
+            // in case field is empty
+            empty($field)
             // in case the field is not relevant
-            !in_array($field, $relevantFieldNames)
+            || !in_array($field, $relevantFieldNames)
             // in case the 'value' index has been unset already
             || !array_key_exists('value', $res)
             // in case it's not a NEW-identifier
@@ -2121,7 +2123,7 @@ class DataHandler
             if (!$this->bypassFileHandling) {
                 // For logging..
                 $propArr = $this->getRecordProperties($table, $id);
-                // Get destrination path:
+                // Get destination path:
                 $dest = PATH_site . $tcaFieldConf['uploadfolder'];
                 // If we are updating:
                 if ($status === 'update') {
@@ -3395,6 +3397,7 @@ class DataHandler
         $data = [];
         $nonFields = array_unique(GeneralUtility::trimExplode(',', 'uid,perms_userid,perms_groupid,perms_user,perms_group,perms_everybody,t3ver_oid,t3ver_wsid,t3ver_id,t3ver_label,t3ver_state,t3ver_count,t3ver_stage,t3ver_tstamp,' . $excludeFields, true));
         BackendUtility::workspaceOL($table, $row, -99, false);
+        $row = BackendUtility::purgeComputedPropertiesFromRecord($row);
 
         // Initializing:
         $theNewID = StringUtility::getUniqueId('NEW');

@@ -103,8 +103,8 @@ class FileUploadController extends AbstractModule
 
         // Cleaning and checking target directory
         if (!$this->folderObject) {
-            $title = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:paramError');
-            $message = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_mod_file_list.xlf:targetNoDir');
+            $title = $this->getLanguageService()->sL('LLL:EXT:filelist/Resources/Private/Language/locallang_mod_file_list.xlf:paramError');
+            $message = $this->getLanguageService()->sL('LLL:EXT:filelist/Resources/Private/Language/locallang_mod_file_list.xlf:targetNoDir');
             throw new \RuntimeException($title . ': ' . $message, 1294586843);
         }
 
@@ -180,8 +180,8 @@ class FileUploadController extends AbstractModule
         // Adding 'size="50" ' for the sake of Mozilla!
         $content .= '
 				<input type="file" multiple="multiple" name="upload_1[]" />
-				<input type="hidden" name="file[upload][1][target]" value="' . htmlspecialchars($this->folderObject->getCombinedIdentifier()) . '" />
-				<input type="hidden" name="file[upload][1][data]" value="1" /><br />
+				<input type="hidden" name="data[upload][1][target]" value="' . htmlspecialchars($this->folderObject->getCombinedIdentifier()) . '" />
+				<input type="hidden" name="data[upload][1][data]" value="1" /><br />
 			';
         $content .= '
 			</div>
