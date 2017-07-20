@@ -48,7 +48,6 @@ before_script:
   - export typo3DatabaseHost="localhost"
   - export typo3DatabaseUsername="root"
   - export typo3DatabasePassword=""
-  - export COMPOSER_ROOT_VERSION=9.0.0
 
 script:
   - >
