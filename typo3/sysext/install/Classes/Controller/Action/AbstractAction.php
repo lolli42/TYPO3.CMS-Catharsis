@@ -80,6 +80,7 @@ abstract class AbstractAction implements ActionInterface
         $controllerActionDirectoryName = ucfirst($this->controller);
         $mainTemplate = ucfirst($this->action);
         $this->view = GeneralUtility::makeInstance(StandaloneView::class);
+        $this->view->getRequest()->setControllerExtensionName('Install');
         $this->view->setTemplatePathAndFilename($viewRootPath . 'Templates/Action/' . $controllerActionDirectoryName . '/' . $mainTemplate . '.html');
         $this->view->setLayoutRootPaths([$viewRootPath . 'Layouts/']);
         $this->view->setPartialRootPaths([$viewRootPath . 'Partials/']);
@@ -208,31 +209,5 @@ abstract class AbstractAction implements ActionInterface
     {
         $saltFactory = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance(null, 'BE');
         return $saltFactory->getHashedPassword($password);
-    }
-
-    /**
-     * Prepare status messages used in extension compatibility view template
-     *
-     * @return \TYPO3\CMS\Install\Status\StatusInterface[]
-     */
-    protected function getExtensionCompatibilityTesterMessages()
-    {
-        $extensionCompatibilityTesterMessages = [];
-
-        /** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
-        $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\LoadingStatus::class);
-        $message->setTitle('Loading...');
-        $extensionCompatibilityTesterMessages[] = $message;
-
-        $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\ErrorStatus::class);
-        $message->setTitle('Incompatible extension found!');
-        $message->setMessage('Something went wrong and no protocol was written.');
-        $extensionCompatibilityTesterMessages[] = $message;
-
-        $message = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Status\OkStatus::class);
-        $message->setTitle('All local extensions can be loaded!');
-        $extensionCompatibilityTesterMessages[] = $message;
-
-        return $extensionCompatibilityTesterMessages;
     }
 }

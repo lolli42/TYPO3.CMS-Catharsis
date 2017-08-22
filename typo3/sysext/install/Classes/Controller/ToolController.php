@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Install\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\Service\EnableFileService;
 
 /**
@@ -28,17 +29,10 @@ class ToolController extends AbstractController
      * @var array List of valid action names that need authentication
      */
     protected $authenticationActions = [
-        'importantActions',
-        'systemEnvironment',
-        'configuration',
-        'folderStructure',
-        'testSetup',
-        'upgradeWizard',
-        'upgradeAnalysis',
-        'allConfiguration',
-        'cleanUp',
-        'loadExtensions',
-        'about',
+        'environment',
+        'maintenance',
+        'settings',
+        'upgrade',
     ];
 
     /**
@@ -116,10 +110,11 @@ class ToolController extends AbstractController
                     // Add error to display a message what triggered the check
                     $errorEncoded = json_encode($error);
                     $parameters[] = 'install[lastError]=' . rawurlencode($errorEncoded);
+
                     // We do not use GeneralUtility here to be sure that hash generation works even if that class might not exist any more.
                     $parameters[] = 'install[lastErrorHash]=' . hash_hmac('sha1', $errorEncoded, $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . 'InstallToolError');
 
-                    $redirectLocation = 'Install.php?' . implode('&', $parameters);
+                    $redirectLocation = GeneralUtility::getIndpEnv('TYPO3_REQUEST_SCRIPT') . '?' . implode('&', $parameters);
 
                     if (!headers_sent()) {
                         \TYPO3\CMS\Core\Utility\HttpUtility::redirect(
@@ -166,7 +161,7 @@ class ToolController extends AbstractController
     {
         $action = $this->getAction();
         if ($action === '') {
-            $action = 'importantActions';
+            $action = 'maintenance';
         }
         $this->validateAuthenticationAction($action);
         $actionClass = ucfirst($action);

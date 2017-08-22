@@ -1,31 +1,43 @@
 {
-    "name": "typo3/cms-form",
-    "type": "typo3-cms-framework",
-    "description": "Extensible and flexible API and editor for building web forms",
-    "homepage": "https://typo3.org",
-    "license": ["GPL-2.0+"],
+	"name": "typo3/cms-form",
+	"type": "typo3-cms-framework",
+	"description": "Form Library, Plugin and Editor",
+	"homepage": "https://typo3.org",
+	"license": ["GPL-2.0+"],
+	"authors": [{
+			"name": "TYPO3 Core Team",
+			"email": "typo3cms@typo3.org",
+			"role": "Developer"
+		}],
 
-    "require": {
-        "typo3/cms-core": "*"
-    },
-    "replace": {
-        "form": "*"
-    },
-    "extra": {
-        "typo3/cms": {
-            "Package": {
-                "partOfFactoryDefault": true
-            }
-        }
-    },
-    "autoload": {
-        "psr-4": {
-            "TYPO3\\CMS\\Form\\": "Classes/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "TYPO3\\CMS\\Form\\Tests\\": "Tests/"
-        }
-    }
+	"require": {
+		"typo3/cms-core": ">=9.0.0 <=9.0.99"
+	},
+	"conflict": {
+		"typo3/cms": "*"
+	},
+	"replace": {
+		"form": "*"
+	},
+	"extra": {
+		"branch-alias": {
+			"dev-master": "9.x-dev"
+		},
+		"typo3/cms": {
+			"Package": {
+				"partOfFactoryDefault": true
+			},
+			"extension-key": "form"
+		}
+	},
+	"autoload": {
+		"psr-4": {
+			"TYPO3\\CMS\\Form\\": "Classes/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"TYPO3\\CMS\\Form\\Tests\\": "Tests/"
+		}
+	}
 }

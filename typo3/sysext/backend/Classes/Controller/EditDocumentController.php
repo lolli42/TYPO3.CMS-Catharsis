@@ -866,6 +866,9 @@ class EditDocumentController extends AbstractModule
             $linkParameters = array_replace($linkParameters, $additionalGetParameters);
         }
 
+        // anchor with uid of content element]
+        $anchorSection = $table === 'tt_content' ? '#c' . $recordId : '';
+
         $this->popViewId = $previewPageId;
         $this->popViewId_addParams = GeneralUtility::implodeArrayForUrl('', $linkParameters, '', false, true);
 
@@ -877,7 +880,7 @@ class EditDocumentController extends AbstractModule
                 $this->popViewId,
                 '',
                 $previewPageRootline,
-                '',
+                $anchorSection,
                 $this->viewUrl,
                 $this->popViewId_addParams,
                 false
@@ -889,7 +892,7 @@ class EditDocumentController extends AbstractModule
                 $this->popViewId,
                 '',
                 $previewPageRootline,
-                '',
+                $anchorSection,
                 $this->viewUrl,
                 $this->popViewId_addParams
             )
@@ -1700,7 +1703,7 @@ class EditDocumentController extends AbstractModule
 
         $queryBuilder->select('s.uid', 's.pid', 's.hidden', 's.title', 's.flag')
             ->from('sys_language', 's')
-            ->groupBy('s.uid', 's.pid', 's.hidden', 's.title', 's.flag')
+            ->groupBy('s.uid', 's.pid', 's.hidden', 's.title', 's.flag', 's.sorting')
             ->orderBy('s.sorting');
 
         if ($id) {
