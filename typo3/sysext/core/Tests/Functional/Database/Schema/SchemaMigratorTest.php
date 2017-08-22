@@ -142,8 +142,6 @@ class SchemaMigratorTest extends \TYPO3\TestingFramework\Core\Functional\Functio
 
     /**
      * @test
-     * @group mysql
-     * @TODO: Find PostgreSQL failure
      */
     public function changeExistingColumn()
     {
@@ -201,7 +199,8 @@ class SchemaMigratorTest extends \TYPO3\TestingFramework\Core\Functional\Functio
 
     /**
      * @test
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function renameUnusedField()
     {
@@ -282,7 +281,7 @@ class SchemaMigratorTest extends \TYPO3\TestingFramework\Core\Functional\Functio
 
     /**
      * @test
-     * @group mysql
+     * @group not-postgres
      */
     public function installPerformsOnlyAddAndCreateOperations()
     {
@@ -298,7 +297,6 @@ class SchemaMigratorTest extends \TYPO3\TestingFramework\Core\Functional\Functio
 
     /**
      * @test
-     * @group mysql
      */
     public function installDoesNotAddIndexOnChangedColumn()
     {
@@ -311,7 +309,8 @@ class SchemaMigratorTest extends \TYPO3\TestingFramework\Core\Functional\Functio
 
     /**
      * @test
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function installCanPerformChangeOperations()
     {
@@ -327,7 +326,8 @@ class SchemaMigratorTest extends \TYPO3\TestingFramework\Core\Functional\Functio
 
     /**
      * @test
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function importStaticDataInsertsRecords()
     {
@@ -353,7 +353,8 @@ class SchemaMigratorTest extends \TYPO3\TestingFramework\Core\Functional\Functio
 
     /**
      * @test
-     * @group mysql
+     * @group not-postgres
+     * @group not-mssql
      */
     public function changeTableEngine()
     {

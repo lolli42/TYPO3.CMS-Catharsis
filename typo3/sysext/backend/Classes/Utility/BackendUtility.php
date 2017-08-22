@@ -295,6 +295,39 @@ class BackendUtility
     }
 
     /**
+     * Purges computed properties starting with underscore character ('_').
+     *
+     * @param array $record
+     * @return array
+     */
+    public static function purgeComputedPropertiesFromRecord(array $record): array
+    {
+        return array_filter(
+            $record,
+            function (string $propertyName): bool {
+                return $propertyName[0] !== '_';
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
+    /**
+     * Purges computed property names starting with underscore character ('_').
+     *
+     * @param array $propertyNames
+     * @return array
+     */
+    public static function purgeComputedPropertyNames(array $propertyNames): array
+    {
+        return array_filter(
+            $propertyNames,
+            function (string $propertyName): bool {
+                return $propertyName[0] !== '_';
+            }
+        );
+    }
+
+    /**
      * Makes an backwards explode on the $str and returns an array with ($table, $uid).
      * Example: tt_content_45 => array('tt_content', 45)
      *
@@ -1499,14 +1532,7 @@ class BackendUtility
      */
     public static function time($value, $withSeconds = true)
     {
-        $hh = floor($value / 3600);
-        $min = floor(($value - $hh * 3600) / 60);
-        $sec = $value - $hh * 3600 - $min * 60;
-        $l = sprintf('%02d', $hh) . ':' . sprintf('%02d', $min);
-        if ($withSeconds) {
-            $l .= ':' . sprintf('%02d', $sec);
-        }
-        return $l;
+        return gmdate('H:i' . ($withSeconds ? ':s' : ''), (int)$value);
     }
 
     /**
@@ -1695,7 +1721,7 @@ class BackendUtility
                 // Preview web image or media elements
                 if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails']
                     && GeneralUtility::inList(
-                        $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'] . ',' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext'],
+                        $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'],
                         $fileReferenceObject->getExtension()
                     )
                 ) {
@@ -2596,11 +2622,11 @@ class BackendUtility
                         }
                     } elseif (GeneralUtility::inList($theColConf['eval'], 'time')) {
                         if (!empty($value)) {
-                            $l = self::time($value, false);
+                            $l = gmdate('H:i', (int)$value);
                         }
                     } elseif (GeneralUtility::inList($theColConf['eval'], 'timesec')) {
                         if (!empty($value)) {
-                            $l = self::time($value);
+                            $l = gmdate('H:i:s', (int)$value);
                         }
                     } elseif (GeneralUtility::inList($theColConf['eval'], 'datetime')) {
                         // Handle native date/time field
@@ -4509,7 +4535,12 @@ class BackendUtility
                 $orig_pid = $row['pid'];
                 $movePldSwap = self::movePlhOL($table, $row);
             }
-            $wsAlt = self::getWorkspaceVersionOfRecord($wsid, $table, $row['uid'], implode(',', array_keys($row)));
+            $wsAlt = self::getWorkspaceVersionOfRecord(
+                $wsid,
+                $table,
+                $row['uid'],
+                implode(',', static::purgeComputedPropertyNames(array_keys($row)))
+            );
             // If version was found, swap the default record with that one.
             if (is_array($wsAlt)) {
                 // Check if this is in move-state:
@@ -4577,7 +4608,11 @@ class BackendUtility
             }
             // Find pointed-to record.
             if ($versionState->equals(VersionState::MOVE_PLACEHOLDER) && $moveID) {
-                if ($origRow = self::getRecord($table, $moveID, implode(',', array_keys($row)))) {
+                if ($origRow = self::getRecord(
+                    $table,
+                    $moveID,
+                    implode(',', static::purgeComputedPropertyNames(array_keys($row)))
+                )) {
                     $row = $origRow;
                     return true;
                 }
@@ -4845,12 +4880,13 @@ class BackendUtility
      */
     public static function ADMCMD_previewCmds($pageInfo)
     {
-        $tableNameFeGroup = 'fe_groups';
         $simUser = '';
         $simTime = '';
-        if ($pageInfo[$tableNameFeGroup] > 0) {
-            $simUser = '&ADMCMD_simUser=' . $pageInfo[$tableNameFeGroup];
-        } elseif ((int)$pageInfo[$tableNameFeGroup] === -2) {
+        if ($pageInfo['fe_group'] > 0) {
+            $simUser = '&ADMCMD_simUser=' . $pageInfo['fe_group'];
+        } elseif ((int)$pageInfo['fe_group'] === -2) {
+            $tableNameFeGroup = 'fe_groups';
+
             // -2 means "show at any login". We simulate first available fe_group.
             /** @var PageRepository $sysPage */
             $sysPage = GeneralUtility::makeInstance(PageRepository::class);
@@ -4862,7 +4898,7 @@ class BackendUtility
             $activeFeGroupRow = $queryBuilder->select('uid')
                 ->from($tableNameFeGroup)
                 ->where(
-                    QueryHelper::stripLogicalOperatorPrefix('1=1' . $sysPage->enableFields('fe_groups'))
+                    QueryHelper::stripLogicalOperatorPrefix('1=1' . $sysPage->enableFields($tableNameFeGroup))
                 )
                 ->execute()
                 ->fetch();

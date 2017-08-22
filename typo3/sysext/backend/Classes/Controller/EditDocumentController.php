@@ -411,6 +411,7 @@ class EditDocumentController extends AbstractModule
     public function __construct()
     {
         parent::__construct();
+        $this->moduleTemplate->setUiBlock(true);
         $GLOBALS['SOBE'] = $this;
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_alt_doc.xlf');
     }
@@ -505,8 +506,8 @@ class EditDocumentController extends AbstractModule
             || isset($_POST['_saveandclosedok'])
             || isset($_POST['_savedokview'])
             || isset($_POST['_savedoknew'])
-            || isset($_POST['_translation_savedok_x'])
-            || isset($_POST['_translation_savedokclear_x']);
+            || isset($_POST['_translation_savedok'])
+            || isset($_POST['_translation_savedokclear']);
         return $out;
     }
 
@@ -532,10 +533,10 @@ class EditDocumentController extends AbstractModule
         if (!empty($control)) {
             $tce->setControl($control);
         }
-        if (isset($_POST['_translation_savedok_x'])) {
+        if (isset($_POST['_translation_savedok'])) {
             $tce->updateModeL10NdiffData = 'FORCE_FFUPD';
         }
-        if (isset($_POST['_translation_savedokclear_x'])) {
+        if (isset($_POST['_translation_savedokclear'])) {
             $tce->updateModeL10NdiffData = 'FORCE_FFUPD';
             $tce->updateModeL10NdiffDataClear = true;
         }
@@ -689,13 +690,13 @@ class EditDocumentController extends AbstractModule
                 $this->previewData['table'] = $table;
                 $this->previewData['id'] = $id;
             }
-            $tce->printLogErrorMessages(isset($_POST['_saveandclosedok']) || isset($_POST['_translation_savedok_x']) ? $this->retUrl : $this->R_URL_parts['path'] . '?' . GeneralUtility::implodeArrayForUrl('', $this->R_URL_getvars));
+            $tce->printLogErrorMessages(isset($_POST['_saveandclosedok']) || isset($_POST['_translation_savedok']) ? $this->retUrl : $this->R_URL_parts['path'] . '?' . GeneralUtility::implodeArrayForUrl('', $this->R_URL_getvars));
         }
         //  || count($tce->substNEWwithIDs)... If any new items has been save, the document is CLOSED
         // because if not, we just get that element re-listed as new. And we don't want that!
         if ((int)$this->closeDoc < self::DOCUMENT_CLOSE_MODE_DEFAULT
             || isset($_POST['_saveandclosedok'])
-            || isset($_POST['_translation_savedok_x'])
+            || isset($_POST['_translation_savedok'])
         ) {
             $this->closeDocument(abs($this->closeDoc));
         }
@@ -871,6 +872,9 @@ class EditDocumentController extends AbstractModule
             $linkParameters = array_replace($linkParameters, $additionalGetParameters);
         }
 
+        // anchor with uid of content element]
+        $anchorSection = $table === 'tt_content' ? '#c' . $recordId : '';
+
         $this->popViewId = $previewPageId;
         $this->popViewId_addParams = GeneralUtility::implodeArrayForUrl('', $linkParameters, '', false, true);
 
@@ -882,7 +886,7 @@ class EditDocumentController extends AbstractModule
                 $this->popViewId,
                 '',
                 $previewPageRootline,
-                '',
+                $anchorSection,
                 $this->viewUrl,
                 $this->popViewId_addParams,
                 false
@@ -894,7 +898,7 @@ class EditDocumentController extends AbstractModule
                 $this->popViewId,
                 '',
                 $previewPageRootline,
-                '',
+                $anchorSection,
                 $this->viewUrl,
                 $this->popViewId_addParams
             )
@@ -1705,7 +1709,7 @@ class EditDocumentController extends AbstractModule
 
         $queryBuilder->select('s.uid', 's.pid', 's.hidden', 's.title', 's.flag')
             ->from('sys_language', 's')
-            ->groupBy('s.uid', 's.pid', 's.hidden', 's.title', 's.flag')
+            ->groupBy('s.uid', 's.pid', 's.hidden', 's.title', 's.flag', 's.sorting')
             ->orderBy('s.sorting');
 
         if ($id) {

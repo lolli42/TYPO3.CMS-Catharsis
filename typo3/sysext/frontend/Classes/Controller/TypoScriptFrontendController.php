@@ -578,7 +578,10 @@ class TypoScriptFrontendController
      * Site content overlay flag; If set - and sys_language_content is > 0 - ,
      * records selected will try to look for a translation pointing to their uid. (If
      * configured in [ctrl][languageField] / [ctrl][transOrigP...]
-     * @var int
+     * Possible values: [0,1,hideNonTranslated]
+     * This flag is set based on TypoScript config.sys_language_overlay setting
+     *
+     * @var int|string
      */
     public $sys_language_contentOL = 0;
 
@@ -813,8 +816,6 @@ class TypoScriptFrontendController
 
     /**
      * Doctype to use
-     *
-     * Currently set via PageGenerator
      *
      * @var string
      */
@@ -1241,27 +1242,10 @@ class TypoScriptFrontendController
                     }
                 }
             }
-            if ($this->id) {
-                if ($this->determineIdIsHiddenPage()) {
-                    // The preview flag is set only if the current page turns out to actually be hidden!
-                    $this->fePreview = 1;
-                    $this->showHiddenPage = true;
-                }
-                // For Live workspace: Check root line for proper connection to tree root (done because of possible preview of page / branch versions)
-                if (!$this->fePreview && $this->whichWorkspace() === 0) {
-                    // Initialize the page-select functions to check rootline:
-                    $temp_sys_page = GeneralUtility::makeInstance(PageRepository::class);
-                    $temp_sys_page->init($this->showHiddenPage);
-                    // If root line contained NO records and ->error_getRootLine_failPid tells us that it was because of a pid=-1 (indicating a "version" record)...:
-                    if (empty($temp_sys_page->getRootLine($this->id, $this->MP)) && $temp_sys_page->error_getRootLine_failPid == -1) {
-                        // Setting versioningPreview flag and try again:
-                        $temp_sys_page->versioningPreview = true;
-                        if (!empty($temp_sys_page->getRootLine($this->id, $this->MP))) {
-                            // Finally, we got a root line (meaning that it WAS due to versioning preview of a page somewhere) and we set the fePreview flag which in itself will allow sys_page class to display previews of versionized records.
-                            $this->fePreview = 1;
-                        }
-                    }
-                }
+            if ($this->id && $this->determineIdIsHiddenPage()) {
+                // The preview flag is set only if the current page turns out to actually be hidden!
+                $this->fePreview = 1;
+                $this->showHiddenPage = true;
             }
             // The preview flag will be set if a backend user is in an offline workspace
             if (
@@ -1548,23 +1532,13 @@ class TypoScriptFrontendController
         $this->rootLine = $this->sys_page->getRootLine($this->id, $this->MP);
         // If not rootline we're off...
         if (empty($this->rootLine)) {
-            $ws = $this->whichWorkspace();
-            if ($this->sys_page->error_getRootLine_failPid == -1 && $ws) {
-                $this->sys_page->versioningPreview = true;
-                $this->sys_page->versioningWorkspaceId = $ws;
-                $this->rootLine = $this->sys_page->getRootLine($this->id, $this->MP);
+            $message = 'The requested page didn\'t have a proper connection to the tree-root!';
+            if ($this->checkPageUnavailableHandler()) {
+                $this->pageUnavailableAndExit($message);
+            } else {
+                GeneralUtility::sysLog($message, 'cms', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+                throw new ServiceUnavailableException($message, 1301648167);
             }
-            if (empty($this->rootLine)) {
-                $message = 'The requested page didn\'t have a proper connection to the tree-root!';
-                if ($this->checkPageUnavailableHandler()) {
-                    $this->pageUnavailableAndExit($message);
-                } else {
-                    $rootline = '(' . $this->sys_page->error_getRootLine . ')';
-                    GeneralUtility::sysLog($message, 'cms', GeneralUtility::SYSLOG_SEVERITY_ERROR);
-                    throw new ServiceUnavailableException($message . '<br /><br />' . $rootline, 1301648167);
-                }
-            }
-            $this->fePreview = 1;
         }
         // Checking for include section regarding the hidden/starttime/endtime/fe_user (that is access control of a whole subbranch!)
         if ($this->checkRootlineForIncludeSection()) {
@@ -1617,7 +1591,7 @@ class TypoScriptFrontendController
                 $c = 0;
                 $page = [];
                 foreach ($pageArray as $pV) {
-                    if ($c == $pO) {
+                    if ($c === $pO) {
                         $page = $pV;
                         break;
                     }
@@ -1726,7 +1700,7 @@ class TypoScriptFrontendController
      * @param array $row The page record to evaluate (needs fields: hidden, starttime, endtime, fe_group)
      * @param bool $bypassGroupCheck Bypass group-check
      * @return bool TRUE, if record is viewable.
-     * @see TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer::getTreeList(), checkPagerecordForIncludeSection()
+     * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getTreeList(), checkPagerecordForIncludeSection()
      */
     public function checkEnableFields($row, $bypassGroupCheck = false)
     {
@@ -1772,7 +1746,7 @@ class TypoScriptFrontendController
      * @param array $row The page record to evaluate (needs fields: extendToSubpages + hidden, starttime, endtime, fe_group)
      * @return bool Returns TRUE if either extendToSubpages is not checked or if the enableFields does not disable the page record.
      * @access private
-     * @see checkEnableFields(), TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer::getTreeList(), checkRootlineForIncludeSection()
+     * @see checkEnableFields(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getTreeList(), checkRootlineForIncludeSection()
      */
     public function checkPagerecordForIncludeSection($row)
     {
@@ -2039,7 +2013,8 @@ class TypoScriptFrontendController
         } elseif ($code !== '') {
             // Check if URL is relative
             $url_parts = parse_url($code);
-            if ($url_parts['host'] == '') {
+            // parse_url could return an array without the key "host", the empty check works better than strict check
+            if (empty($url_parts['host'])) {
                 $url_parts['host'] = GeneralUtility::getIndpEnv('HTTP_HOST');
                 if ($code[0] === '/') {
                     $code = GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST') . $code;
@@ -2841,7 +2816,12 @@ class TypoScriptFrontendController
     public function calculateLinkVars()
     {
         $this->linkVars = '';
-        $linkVars = GeneralUtility::trimExplode(',', (string)$this->config['config']['linkVars']);
+        if (empty($this->config['config']['linkVars'])) {
+            return;
+        }
+
+        $linkVars = $this->splitLinkVarsString((string)$this->config['config']['linkVars']);
+
         if (empty($linkVars)) {
             return;
         }
@@ -2871,6 +2851,28 @@ class TypoScriptFrontendController
             }
             $this->linkVars .= $value;
         }
+    }
+
+    /**
+     * Split the link vars string by "," but not if the "," is inside of braces
+     *
+     * @param $string
+     *
+     * @return array
+     */
+    protected function splitLinkVarsString(string $string): array
+    {
+        $tempCommaReplacementString = '###KASPER###';
+
+        // replace every "," wrapped in "()" by a "unique" string
+        $string = preg_replace_callback('/\((?>[^()]|(?R))*\)/', function ($result) use ($tempCommaReplacementString) {
+            return str_replace(',', $tempCommaReplacementString, $result[0]);
+        }, $string);
+
+        $string = GeneralUtility::trimExplode(',', $string);
+
+        // replace all "unique" strings back to ","
+        return str_replace($tempCommaReplacementString, ',', $string);
     }
 
     /**
@@ -4454,9 +4456,7 @@ class TypoScriptFrontendController
 
         // Rendering charset of HTML page.
         if ($this->config['config']['metaCharset']) {
-            /** @var CharsetConverter $charsetConverter */
-            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
-            $this->metaCharset = $charsetConverter->parse_charset($this->config['config']['metaCharset']);
+            $this->metaCharset = trim(strtolower($this->config['config']['metaCharset']));
         }
     }
 
@@ -4507,10 +4507,25 @@ class TypoScriptFrontendController
     public function convPOSTCharset()
     {
         if ($this->metaCharset !== 'utf-8' && is_array($_POST) && !empty($_POST)) {
-            /** @var CharsetConverter $charsetConverter */
-            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
-            $charsetConverter->convArray($_POST, $this->metaCharset, 'utf-8');
+            $this->convertCharsetRecursivelyToUtf8($_POST, $this->metaCharset);
             $GLOBALS['HTTP_POST_VARS'] = $_POST;
+        }
+    }
+
+    /**
+     * Small helper function to convert charsets for arrays to UTF-8
+     *
+     * @param mixed $data given by reference (string/array usually)
+     * @param string $fromCharset convert FROM this charset
+     */
+    protected function convertCharsetRecursivelyToUtf8(&$data, string $fromCharset)
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($data[$key])) {
+                $this->convertCharsetRecursivelyToUtf8($data[$key], $fromCharset);
+            } elseif (is_string($data[$key])) {
+                $data[$key] = mb_convert_encoding($data[$key], 'utf-8', $fromCharset);
+            }
         }
     }
 
@@ -4534,7 +4549,7 @@ class TypoScriptFrontendController
             $result = min($result, $this->getFirstTimeValueForRecord($tableDef, $now));
         }
         // We return + 1 second just to ensure that cache is definitely regenerated
-        return $result == PHP_INT_MAX ? PHP_INT_MAX : $result - $now + 1;
+        return $result === PHP_INT_MAX ? PHP_INT_MAX : $result - $now + 1;
     }
 
     /**

@@ -313,7 +313,7 @@ class ExtendedTemplateService extends TemplateService
             case 'const':
             case 'subst':
                 $all = preg_replace(
-                    '/##[a-z0-9]{6}_B##((?:(?!##[a-z0-9]{6}_E##).)+)##[a-z0-9]{6}_E##/',
+                    '/##[a-z0-9]{6}_B##((?:(?!##[a-z0-9]{6}_E##).)+)?##[a-z0-9]{6}_E##/',
                         '<strong style="color: green;">$1</strong>',
                         $all
                 );
@@ -695,7 +695,7 @@ class ExtendedTemplateService extends TemplateService
             $RL = $this->ext_getRootlineNumber($row['pid']);
             $statusCheckedIcon = $iconFactory->getIcon('status-status-checked', Icon::SIZE_SMALL)->render();
             $keyArray[] = '<tr>
-							<td nowrap="nowrap">' . $HTML . '</td>
+							<td class="nowrap">' . $HTML . '</td>
 							<td align="center">' . ($row['root'] ? $statusCheckedIcon : '') . '</td>
 							<td align="center">' . ($row['clConf'] ? $statusCheckedIcon : '') . '</td>
 							<td align="center">' . ($row['clConst'] ? $statusCheckedIcon : '') . '</td>

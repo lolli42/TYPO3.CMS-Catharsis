@@ -1099,7 +1099,8 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             'trailing carriage return' => ['test@example.com' . CR],
             'trailing linefeed' => ['test@example.com' . LF],
             'trailing carriage return linefeed' => ['test@example.com' . CRLF],
-            'trailing tab' => ['test@example.com' . TAB]
+            'trailing tab' => ['test@example.com' . TAB],
+            'prohibited input characters' => ['“mailto:test@example.com”'],
         ];
     }
 
@@ -2046,6 +2047,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             'string array()' => ['array()'],
             'random string' => ['qwe'],
             'http directory umlauts' => ['http://www.oebb.at/äöü/'],
+            'prohibited input characters' => ['https://{$unresolved_constant}'],
         ];
     }
 
@@ -2414,7 +2416,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     {
         $path = PATH_typo3conf;
         $directories = GeneralUtility::get_dirs($path);
-        $this->assertInternalType(\PHPUnit_Framework_Constraint_IsType::TYPE_ARRAY, $directories);
+        $this->assertInternalType(\PHPUnit\Framework\Constraint\IsType::TYPE_ARRAY, $directories);
     }
 
     /**
@@ -3500,14 +3502,39 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     }
 
     /**
+     * Data provider for getFilesInDirByExtensionFindsFiles
+     *
+     * @return array
+     */
+    public function fileExtensionDataProvider()
+    {
+        return [
+            'no space' => [
+                'txt,js,css'
+            ],
+            'spaces' => [
+                'txt, js, css'
+            ],
+            'mixed' => [
+                'txt,js, css'
+            ],
+            'wild' => [
+                'txt,     js  ,         css'
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider fileExtensionDataProvider
      * @test
      */
-    public function getFilesInDirByExtensionFindsFiles()
+    public function getFilesInDirByExtensionFindsFiles($fileExtensions)
     {
         $vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
-        $files = GeneralUtility::getFilesInDir($vfsStreamUrl, 'txt,js');
+        $files = GeneralUtility::getFilesInDir($vfsStreamUrl, $fileExtensions);
         $this->assertContains('testA.txt', $files);
         $this->assertContains('test.js', $files);
+        $this->assertContains('test.css', $files);
     }
 
     /**
@@ -3811,7 +3838,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $directoryCreated = is_dir($directory);
         rmdir($directory);
         $this->assertTrue($directoryCreated);
-        $this->assertInternalType(\PHPUnit_Framework_Constraint_IsType::TYPE_ARRAY, $fileInfo);
+        $this->assertInternalType(\PHPUnit\Framework\Constraint\IsType::TYPE_ARRAY, $fileInfo);
         $this->assertEquals($directoryPath, $fileInfo['path']);
         $this->assertEquals($directoryName, $fileInfo['file']);
         $this->assertEquals($directoryName, $fileInfo['filebody']);
@@ -3826,7 +3853,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     {
         $testFile = 'fileadmin/media/someFile.png';
         $fileInfo = GeneralUtility::split_fileref($testFile);
-        $this->assertInternalType(\PHPUnit_Framework_Constraint_IsType::TYPE_ARRAY, $fileInfo);
+        $this->assertInternalType(\PHPUnit\Framework\Constraint\IsType::TYPE_ARRAY, $fileInfo);
         $this->assertEquals('fileadmin/media/', $fileInfo['path']);
         $this->assertEquals('someFile.png', $fileInfo['file']);
         $this->assertEquals('someFile', $fileInfo['filebody']);

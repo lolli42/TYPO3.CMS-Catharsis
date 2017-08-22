@@ -103,11 +103,6 @@ class PageRepository
     /**
      * @var array
      */
-    protected $cache_getRootLine = [];
-
-    /**
-     * @var array
-     */
     protected $cache_getPage = [];
 
     /**
@@ -206,7 +201,7 @@ class PageRepository
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['init'] as $classRef) {
                 $hookObject = GeneralUtility::makeInstance($classRef);
                 if (!$hookObject instanceof PageRepositoryInitHookInterface) {
-                    throw new \UnexpectedValueException($hookObject . ' must implement interface ' . PageRepositoryInitHookInterface::class, 1379579812);
+                    throw new \UnexpectedValueException($classRef . ' must implement interface ' . PageRepositoryInitHookInterface::class, 1379579812);
                 }
                 $hookObject->init_postProcess($this);
             }
@@ -737,12 +732,21 @@ class PageRepository
     }
 
     /**
-     * Add the mount point parameter to the page if needed
+     * Replaces the given page record with mounted page if required
      *
-     * @param array $page The page to check
-     * @return array
+     * If the given page record is a mount point in overlay mode, the page
+     * record is replaced by the record of the overlaying page. The overlay
+     * record is enriched by setting the mount point mapping into the field
+     * _MP_PARAM as string for example '23-14'.
+     *
+     * In all other cases the given page record is returned as is.
+     *
+     * @todo Find a better name. The current doesn't hit the point.
+     *
+     * @param array $page The page record to handle.
+     * @return array The given page record or it's replacement.
      */
-    protected function addMountPointParameterToPage(array $page)
+    protected function addMountPointParameterToPage(array $page): array
     {
         if (empty($page)) {
             return [];
@@ -751,7 +755,7 @@ class PageRepository
         // $page MUST have "uid", "pid", "doktype", "mount_pid", "mount_pid_ol" fields in it
         $mountPointInfo = $this->getMountPointInfo($page['uid'], $page);
 
-        // There is a valid mount point.
+        // There is a valid mount point in overlay mode.
         if (is_array($mountPointInfo) && $mountPointInfo['overlay']) {
 
             // Using "getPage" is OK since we need the check for enableFields AND for type 2
@@ -994,16 +998,35 @@ class PageRepository
     }
 
     /**
-     * Returns MountPoint id for page
+     * Returns a MountPoint array for the specified page
      *
-     * Does a recursive search if the mounted page should be a mount page itself. It
-     * has a run-away break so it can't go into infinite loops.
+     * Does a recursive search if the mounted page should be a mount page
+     * itself.
      *
-     * @param int $pageId Page id for which to look for a mount pid. Will be returned only if mount pages are enabled, the correct doktype (7) is set for page and there IS a mount_pid (which has a valid record that is not deleted...)
-     * @param array|bool $pageRec Optional page record for the page id. If not supplied it will be looked up by the system. Must contain at least uid,pid,doktype,mount_pid,mount_pid_ol
-     * @param array $prevMountPids Array accumulating formerly tested page ids for mount points. Used for recursivity brake.
+     * Note:
+     *
+     * Recursive mount points are not supported by all parts of the core.
+     * The usage is discouraged. They may be removed from this method.
+     *
+     * @see: https://decisions.typo3.org/t/supporting-or-prohibiting-recursive-mount-points/165/3
+     *
+     * An array will be returned if mount pages are enabled, the correct
+     * doktype (7) is set for page and there IS a mount_pid with a valid
+     * record.
+     *
+     * The optional page record must contain at least uid, pid, doktype,
+     * mount_pid,mount_pid_ol. If it is not supplied it will be looked up by
+     * the system at additional costs for the lookup.
+     *
+     * Returns FALSE if no mount point was found, "-1" if there should have been
+     * one, but no connection to it, otherwise an array with information
+     * about mount pid and modes.
+     *
+     * @param int $pageId Page id to do the lookup for.
+     * @param array|bool $pageRec Optional page record for the given page.
+     * @param array $prevMountPids Internal register to prevent lookup cycles.
      * @param int $firstPageUid The first page id.
-     * @return mixed Returns FALSE if no mount point was found, "-1" if there should have been one, but no connection to it, otherwise an array with information about mount pid and modes.
+     * @return mixed Mount point array or failure flags (-1, false).
      * @see \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject
      */
     public function getMountPointInfo($pageId, $pageRec = false, $prevMountPids = [], $firstPageUid = 0)
@@ -1614,7 +1637,6 @@ class PageRepository
         if (!empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS'])
             && (int)VersionState::cast($row['t3ver_state'])->equals(VersionState::MOVE_PLACEHOLDER)
         ) {
-            // Only for WS ver 2... (moving) - enabled by default with CMS7
             // If t3ver_move_id is not found, then find it (but we like best if it is here)
             if (!isset($row['t3ver_move_id'])) {
                 $moveIDRec = $this->getRawRecord($table, $row['uid'], 't3ver_move_id', true);
@@ -1674,7 +1696,7 @@ class PageRepository
                         $queryBuilder->expr()->eq(
                             't3ver_state',
                             $queryBuilder->createNamedParameter(
-                                new VersionState(VersionState::MOVE_PLACEHOLDER),
+                                (string)VersionState::cast(VersionState::MOVE_PLACEHOLDER),
                                 \PDO::PARAM_INT
                             )
                         ),
@@ -1791,38 +1813,17 @@ class PageRepository
      * Checks if user has access to workspace.
      *
      * @param int $wsid Workspace ID
-     * @return bool <code>TRUE</code> if has access
+     * @return bool true if the backend user has access to a certain workspace
      */
     public function checkWorkspaceAccess($wsid)
     {
         if (!$this->getBackendUser() || !ExtensionManagementUtility::isLoaded('workspaces')) {
             return false;
         }
-        if (isset($this->workspaceCache[$wsid])) {
-            $ws = $this->workspaceCache[$wsid];
-        } else {
-            if ($wsid > 0) {
-                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                    ->getQueryBuilderForTable('sys_workspace');
-                $queryBuilder->getRestrictions()->removeAll();
-                $ws = $queryBuilder->select('*')
-                    ->from('sys_workspace')
-                    ->where(
-                        $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($wsid, \PDO::PARAM_INT)),
-                        $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
-                    )
-                    ->execute()
-                    ->fetch();
-                if (!is_array($ws)) {
-                    return false;
-                }
-            } else {
-                $ws = $wsid;
-            }
-            $ws = $this->getBackendUser()->checkWorkspace($ws);
-            $this->workspaceCache[$wsid] = $ws;
+        if (!isset($this->workspaceCache[$wsid])) {
+            $this->workspaceCache[$wsid] = $this->getBackendUser()->checkWorkspace($wsid);
         }
-        return (string)$ws['_ACCESS'] !== '';
+        return (string)$this->workspaceCache[$wsid]['_ACCESS'] !== '';
     }
 
     /**

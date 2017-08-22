@@ -83,7 +83,7 @@ class SystemEnvironmentBuilder
     protected static function defineBaseConstants()
     {
         // This version, branch and copyright
-        define('TYPO3_version', '8.7.1-dev');
+        define('TYPO3_version', '8.7.5-dev');
         define('TYPO3_branch', '8.7');
         define('TYPO3_copyright_year', '1998-2017');
 
@@ -365,7 +365,7 @@ class SystemEnvironmentBuilder
      * The following main scenarios for entry points exist by default in the TYPO3 core:
      * - Directly called documentRoot/index.php (-> FE call or eiD include): index.php is located in the same directory
      * as the main project. The document root is identical to the directory the script is located at.
-     * - The install tool, located under typo3/sysext/install/Start/Install.php.
+     * - The install tool, located under typo3/install.php.
      * - A Backend script: This is the case for the typo3/index.php dispatcher and other entry scripts like 'typo3/sysext/core/bin/typo3'
      * or 'typo3/index.php' that are located inside typo3/ directly.
      *

@@ -281,6 +281,9 @@ class ValidatorTask extends AbstractTask
         $pageList = GeneralUtility::trimExplode(',', $this->page, true);
         $modTs = $this->loadModTsConfig($this->page);
         if (is_array($pageList)) {
+            // reset broken link counts as they were stored in the serialized object
+            $this->oldTotalBrokenLink = 0;
+            $this->totalBrokenLink = 0;
             foreach ($pageList as $page) {
                 $pageSections .= $this->checkPageLinks($page);
             }
@@ -302,6 +305,7 @@ class ValidatorTask extends AbstractTask
      *
      * @param int $page Uid of the page to parse
      * @return string $pageSections Content of page section
+     * @throws \InvalidArgumentException
      */
     protected function checkPageLinks($page)
     {
@@ -318,6 +322,12 @@ class ValidatorTask extends AbstractTask
             $rootLineHidden = false;
         } else {
             $pageRow = BackendUtility::getRecord('pages', $page, '*', '', false);
+            if ($pageRow === null) {
+                throw new \InvalidArgumentException(
+                    sprintf($this->getLanguageService()->sL($this->languageFile . ':tasks.error.invalidPageUid'), $page),
+                    1502800555
+                );
+            }
             $rootLineHidden = $processor->getRootLineIsHidden($pageRow);
         }
         if (!$rootLineHidden || $modTs['checkhidden'] == 1) {

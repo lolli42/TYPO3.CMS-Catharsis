@@ -102,7 +102,7 @@ page.10.value (
 page.100 =< styles.content.get',
                         'description' => 'This is an Empty Site Package TypoScript template.
 
-For each website you need a TypoScript template on the main page of your website (on the top level). For better maintenance all TypoScript should be extracted into external files via <INCLUDE_TYPOSCRIPT: source="FILE:EXT:site_myproject/Configuration/TypoScript/setup.ts">.'
+For each website you need a TypoScript template on the main page of your website (on the top level). For better maintenance all TypoScript should be extracted into external files via <INCLUDE_TYPOSCRIPT: source="FILE:EXT:site_myproject/Configuration/TypoScript/setup.typoscript">.'
                     ]
                 );
             break;
@@ -138,7 +138,7 @@ For each website you need a TypoScript template on the main page of your website
             EnableFileService::removeInstallToolEnableFile();
         }
 
-        \TYPO3\CMS\Core\Utility\HttpUtility::redirect('../../../index.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_303);
+        \TYPO3\CMS\Core\Utility\HttpUtility::redirect(GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir . 'index.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_303);
     }
 
     /**

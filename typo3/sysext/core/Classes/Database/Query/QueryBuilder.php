@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Core\Database\Query;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Doctrine\DBAL\Query\Expression\CompositeExpression;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -915,11 +916,11 @@ class QueryBuilder
      * Quotes a given input parameter.
      *
      * @param mixed $input The parameter to be quoted.
-     * @param string|null $type The type of the parameter.
+     * @param int|null $type The type of the parameter.
      *
-     * @return string The quoted parameter.
+     * @return mixed Often string, but also int or float or similar depending on $input and platform
      */
-    public function quote($input, string $type = null): string
+    public function quote($input, int $type = null)
     {
         return $this->getConnection()->quote($input, $type);
     }
@@ -968,7 +969,7 @@ class QueryBuilder
     public function quoteIdentifiersForSelect(array $input): array
     {
         foreach ($input as &$select) {
-            list($fieldName, $alias, $suffix) = GeneralUtility::trimExplode(' AS ', $select, 3);
+            list($fieldName, $alias, $suffix) = GeneralUtility::trimExplode(' AS ', str_ireplace(' as ', ' AS ', $select), 3);
             if (!empty($suffix)) {
                 throw new \InvalidArgumentException(
                     'QueryBuilder::quoteIdentifiersForSelect() could not parse the input "' . $input . '"',
@@ -1018,13 +1019,18 @@ class QueryBuilder
      */
     protected function unquoteSingleIdentifier(string $identifier): string
     {
-        $quoteChar = $this->getConnection()
-            ->getDatabasePlatform()
-            ->getIdentifierQuoteCharacter();
-
-        $unquotedIdentifier = trim($identifier, $quoteChar);
-
-        return str_replace($quoteChar . $quoteChar, $quoteChar, $unquotedIdentifier);
+        $identifier = trim($identifier);
+        $platform = $this->getConnection()->getDatabasePlatform();
+        if ($platform instanceof SQLServerPlatform) {
+            // mssql quotes identifiers with [ and ], not a single character
+            $identifier = ltrim($identifier, '[');
+            $identifier = rtrim($identifier, ']');
+        } else {
+            $quoteChar = $platform->getIdentifierQuoteCharacter();
+            $identifier = trim($identifier, $quoteChar);
+            $identifier = str_replace($quoteChar . $quoteChar, $quoteChar, $identifier);
+        }
+        return $identifier;
     }
 
     /**
@@ -1085,5 +1091,15 @@ class QueryBuilder
         // @todo add hook to be able to add additional restrictions
 
         return $originalWhereConditions;
+    }
+
+    /**
+     * Deep clone of the QueryBuilder
+     * @see \Doctrine\DBAL\Query\QueryBuilder::__clone()
+     */
+    public function __clone()
+    {
+        $this->concreteQueryBuilder = clone $this->concreteQueryBuilder;
+        $this->restrictionContainer = clone $this->restrictionContainer;
     }
 }

@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Frontend\ContentObject;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Statement;
 use TYPO3\CMS\Core\Cache\CacheManager;
-use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
@@ -2320,8 +2319,7 @@ class ContentObjectRenderer
     public function stdWrap_csConv($content = '', $conf = [])
     {
         if (!empty($conf['csConv'])) {
-            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
-            $output = $charsetConverter->conv($content, $charsetConverter->parse_charset($conf['csConv']), 'utf-8');
+            $output = mb_convert_encoding($content, 'utf-8', trim(strtolower($conf['csConv'])));
             return $output !== false && $output !== '' ? $output : $content;
         } else {
             return $content;
@@ -2520,9 +2518,7 @@ class ContentObjectRenderer
         $content = (string)$content === '' ? $GLOBALS['EXEC_TIME'] : (int)$content;
         $content = $conf['strftime.']['GMT'] ? gmstrftime($conf['strftime'], $content) : strftime($conf['strftime'], $content);
         if (!empty($conf['strftime.']['charset'])) {
-            /** @var CharsetConverter $charsetConverter */
-            $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
-            $output = $charsetConverter->conv($content, $charsetConverter->parse_charset($conf['strftime.']['charset']), 'utf-8');
+            $output = mb_convert_encoding($content, 'utf-8', trim(strtolower($conf['strftime.']['charset'])));
             return $output ?: $content;
         }
         return $content;
@@ -3540,8 +3536,13 @@ class ContentObjectRenderer
     }
 
     /**
-     * Implements the "insertData" property of stdWrap meaning that if strings matching {...} is found in the input string they will be substituted with the return value from getData (datatype) which is passed the content of the curly braces.
-     * Example: If input string is "This is the page title: {page:title}" then the part, '{page:title}', will be substituted with the current pages title field value.
+     * Implements the "insertData" property of stdWrap meaning that if strings matching {...} is found in the input string they
+     * will be substituted with the return value from getData (datatype) which is passed the content of the curly braces.
+     * If the content inside the curly braces starts with a hash sign {#...} it is a field name that must be quoted by Doctrine
+     * DBAL and is skipped here for later processing.
+     *
+     * Example: If input string is "This is the page title: {page:title}" then the part, '{page:title}', will be substituted with
+     * the current pages title field value.
      *
      * @param string $str Input value
      * @return string Processed input value
@@ -3558,6 +3559,12 @@ class ContentObjectRenderer
                 $len = strcspn(substr($str, $pointer), '{');
                 $newVal .= substr($str, $pointer, $len);
                 $inside = true;
+                if (substr($str, $pointer + $len + 1, 1) === '#') {
+                    $len2 = strcspn(substr($str, $pointer + $len), '}');
+                    $newVal .= substr($str, $pointer + $len, $len2);
+                    $len += $len2;
+                    $inside = false;
+                }
             } else {
                 $len = strcspn(substr($str, $pointer), '}') + 1;
                 $newVal .= $this->getData(substr($str, $pointer + 1, $len - 2), $this->data);
@@ -4142,7 +4149,8 @@ class ContentObjectRenderer
         if ($wrap !== '' || $cObjNumSplitConf !== '') {
             $splitArr['wrap'] = $wrap;
             $splitArr['cObjNum'] = $cObjNumSplitConf;
-            $splitArr = $GLOBALS['TSFE']->tmpl->splitConfArray($splitArr, $splitCount);
+            $splitArr = GeneralUtility::makeInstance(TypoScriptService::class)
+                ->explodeConfigurationForOptionSplit($splitArr, $splitCount);
         }
         $content = '';
         for ($a = 0; $a < $splitCount; $a++) {
@@ -4740,7 +4748,7 @@ class ContentObjectRenderer
                 if (!$attrib['align'] && $defaultAlign) {
                     $attrib['align'] = $defaultAlign;
                 }
-                $params = GeneralUtility::implodeAttributes($attrib, 1);
+                $params = GeneralUtility::implodeAttributes($attrib, true);
                 if (!($conf['removeWrapping'] && !($emptyTag && $conf['removeWrapping.']['keepSingleTag']))) {
                     if ($emptyTag) {
                         $str_content = '<' . strtolower($uTagName) . (trim($params) ? ' ' . trim($params) : '') . ' />';
@@ -5602,7 +5610,7 @@ class ContentObjectRenderer
         $linkService = GeneralUtility::makeInstance(LinkService::class);
         $linkDetails = $linkService->resolve($linkParameter);
         $linkDetails['typoLinkParameter'] = $linkParameter;
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['FE']['typolinkBuilder'][$linkDetails['type']])) {
+        if (isset($linkDetails['type']) && isset($GLOBALS['TYPO3_CONF_VARS']['FE']['typolinkBuilder'][$linkDetails['type']])) {
             /** @var AbstractTypolinkBuilder $linkBuilder */
             $linkBuilder = GeneralUtility::makeInstance(
                 $GLOBALS['TYPO3_CONF_VARS']['FE']['typolinkBuilder'][$linkDetails['type']],
@@ -5614,6 +5622,8 @@ class ContentObjectRenderer
                 // Only return the link text directly
                 return $e->getLinkText();
             }
+        } elseif (isset($linkDetails['url'])) {
+            $this->lastTypoLinkUrl = $linkDetails['url'];
         } else {
             return $linkText;
         }
@@ -6305,7 +6315,6 @@ class ContentObjectRenderer
      */
     public function caseshift($theValue, $case)
     {
-        $charsetConverter = GeneralUtility::makeInstance(CharsetConverter::class);
         switch (strtolower($case)) {
             case 'upper':
                 $theValue = mb_strtoupper($theValue, 'utf-8');
@@ -6317,10 +6326,16 @@ class ContentObjectRenderer
                 $theValue = mb_convert_case($theValue, MB_CASE_TITLE, 'utf-8');
                 break;
             case 'ucfirst':
-                $theValue = $charsetConverter->convCaseFirst('utf-8', $theValue, 'toUpper');
+                $firstChar = mb_substr($theValue, 0, 1, 'utf-8');
+                $firstChar = mb_strtoupper($firstChar, 'utf-8');
+                $remainder = mb_substr($theValue, 1, null, 'utf-8');
+                $theValue = $firstChar . $remainder;
                 break;
             case 'lcfirst':
-                $theValue = $charsetConverter->convCaseFirst('utf-8', $theValue, 'toLower');
+                $firstChar = mb_substr($theValue, 0, 1, 'utf-8');
+                $firstChar = mb_strtolower($firstChar, 'utf-8');
+                $remainder = mb_substr($theValue, 1, null, 'utf-8');
+                $theValue = $firstChar . $remainder;
                 break;
             case 'uppercamelcase':
                 $theValue = GeneralUtility::underscoredToUpperCamelCase($theValue);

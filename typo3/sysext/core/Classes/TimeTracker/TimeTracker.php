@@ -295,6 +295,30 @@ class TimeTracker implements SingletonInterface
         return $this->getMilliseconds($microtime) - $this->starttime;
     }
 
+    /**
+     * Get total parse time in milliseconds(without backend user initialization)
+     *
+     * @return int
+     */
+    public function getParseTime(): int
+    {
+        // Compensates for the time consumed with Back end user initialization.
+        $processStart = $this->getMilliseconds($GLOBALS['TYPO3_MISC']['microtime_start'] ?? null);
+
+        $beUserInitializationStart = $this->getMilliseconds($GLOBALS['TYPO3_MISC']['microtime_BE_USER_start'] ?? null);
+        $beUserInitializationEnd = $this->getMilliseconds($GLOBALS['TYPO3_MISC']['microtime_BE_USER_end'] ?? null);
+        $beUserInitialization = $beUserInitializationEnd - $beUserInitializationStart;
+
+        $processEnd = $this->getMilliseconds($GLOBALS['TYPO3_MISC']['microtime_end'] ?? null);
+        $totalParseTime = $processEnd - $processStart;
+
+        if ($beUserInitialization > 0) {
+            $totalParseTime -= $beUserInitialization;
+        }
+
+        return $totalParseTime;
+    }
+
     /*******************************************
      *
      * Printing the parsing time information (for Admin Panel)

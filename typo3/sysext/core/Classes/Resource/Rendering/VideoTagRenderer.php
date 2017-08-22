@@ -27,7 +27,7 @@ class VideoTagRenderer implements FileRendererInterface
      *
      * @var array
      */
-    protected $possibleMimeTypes = ['video/mp4', 'video/webm', 'video/ogg', 'application/ogg'];
+    protected $possibleMimeTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/x-m4v', 'application/ogg'];
 
     /**
      * Returns the priority of the renderer
@@ -94,7 +94,7 @@ class VideoTagRenderer implements FileRendererInterface
         if (!empty($options['loop'])) {
             $attributes[] = 'loop';
         }
-        foreach (['class', 'dir', 'id', 'lang', 'style', 'title', 'accesskey', 'tabindex', 'onclick'] as $key) {
+        foreach (['class', 'dir', 'id', 'lang', 'style', 'title', 'accesskey', 'tabindex', 'onclick', 'controlsList'] as $key) {
             if (!empty($options[$key])) {
                 $attributes[] = $key . '="' . htmlspecialchars($options[$key]) . '"';
             }

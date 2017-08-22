@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\DataHandling;
 
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Statement;
+use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Doctrine\DBAL\Types\IntegerType;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -25,7 +26,6 @@ use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\Configuration\Richtext;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
@@ -812,7 +812,7 @@ class DataHandler
         }
 
         foreach ($userTS as $k => $v) {
-            $k = substr($k, 0, -1);
+            $k = mb_substr($k, 0, -1);
             if (!$k || !is_array($v) || !isset($GLOBALS['TCA'][$k])) {
                 continue;
             }
@@ -1681,6 +1681,58 @@ class DataHandler
             default:
                 // Do nothing
         }
+        $res = $this->checkValueForInternalReferences($res, $value, $tcaFieldConf, $table, $id, $field);
+        return $res;
+    }
+
+    /**
+     * Checks values that are used for internal references. If the provided $value
+     * is a NEW-identifier, the direct processing is stopped. Instead, the value is
+     * forwarded to the remap-stack to be post-processed and resolved into a proper
+     * UID after all data has been resolved.
+     *
+     * This method considers TCA types that cannot handle and resolve these internal
+     * values directly, like 'passthrough', 'none' or 'user'. Values are only modified
+     * here if the $field is used as 'transOrigPointerField' or 'translationSource'.
+     *
+     * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
+     * @param string $value The value to set.
+     * @param array $tcaFieldConf Field configuration from TCA
+     * @param string $table Table name
+     * @param int $id UID of record
+     * @param string $field The field name
+     * @return array The result array. The processed value (if any!) is set in the "value" key.
+     */
+    protected function checkValueForInternalReferences(array $res, $value, $tcaFieldConf, $table, $id, $field)
+    {
+        $relevantFieldNames = [
+            $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] ?? null,
+            $GLOBALS['TCA'][$table]['ctrl']['translationSource'] ?? null,
+        ];
+
+        if (
+            // in case field is empty
+            empty($field)
+            // in case the field is not relevant
+            || !in_array($field, $relevantFieldNames)
+            // in case the 'value' index has been unset already
+            || !array_key_exists('value', $res)
+            // in case it's not a NEW-identifier
+            || strpos($value, 'NEW') === false
+        ) {
+            return $res;
+        }
+
+        $valueArray = [$value];
+        $this->remapStackRecords[$table][$id] = ['remapStackIndex' => count($this->remapStack)];
+        $this->addNewValuesToRemapStackChildIds($valueArray);
+        $this->remapStack[] = [
+            'args' => [$valueArray, $tcaFieldConf, $id, $table, $field],
+            'pos' => ['valueArray' => 0, 'tcaFieldConf' => 1, 'id' => 2, 'table' => 3],
+            'field' => $field
+        ];
+        unset($res['value']);
+
         return $res;
     }
 
@@ -1750,7 +1802,7 @@ class DataHandler
         // normal integer "date" fields (timestamps) are handled in checkValue_input_Eval
         if (isset($tcaFieldConf['dbType']) && ($tcaFieldConf['dbType'] === 'date' || $tcaFieldConf['dbType'] === 'datetime')) {
             if (empty($value)) {
-                $value = 0;
+                $value = null;
             } else {
                 $isDateOrDateTimeField = true;
                 $dateTimeFormats = QueryHelper::getDateTimeFormats();
@@ -1760,7 +1812,7 @@ class DataHandler
                 $emptyValue = $dateTimeFormats[$tcaFieldConf['dbType']]['empty'];
                 // We store UTC timestamps in the database, which is what getTimestamp() returns.
                 $dateTime = new \DateTime($value);
-                $value = $value === $emptyValue ? 0 : $dateTime->getTimestamp();
+                $value = $value === $emptyValue ? null : $dateTime->getTimestamp();
             }
         }
         // Secures the string-length to be less than max.
@@ -1791,6 +1843,10 @@ class DataHandler
             }
 
             $res = $this->checkValue_input_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
+            if (isset($tcaFieldConf['dbType']) && isset($res['value']) && !$res['value']) {
+                // set the value to null if we have an empty value for a native field
+                $res['value'] = null;
+            }
 
             // Process UNIQUE settings:
             // Field is NOT set for flexForms - which also means that uniqueInPid and unique is NOT available for flexForm fields! Also getUnique should not be done for versioning and if PID is -1 ($realPid<0) then versioning is happening...
@@ -1807,7 +1863,7 @@ class DataHandler
         // Handle native date/time fields
         if ($isDateOrDateTimeField) {
             // Convert the timestamp back to a date/time
-            $res['value'] = $res['value'] ? date($format, $res['value']) : $emptyValue;
+            $res['value'] = $res['value'] ? gmdate($format, $res['value']) : $emptyValue;
         }
         return $res;
     }
@@ -2088,7 +2144,7 @@ class DataHandler
             if (!$this->bypassFileHandling) {
                 // For logging..
                 $propArr = $this->getRecordProperties($table, $id);
-                // Get destrination path:
+                // Get destination path:
                 $dest = PATH_site . $tcaFieldConf['uploadfolder'];
                 // If we are updating:
                 if ($status === 'update') {
@@ -2557,9 +2613,9 @@ class DataHandler
             $statement = $this->getUniqueCountStatement($newValue, $table, $field, (int)$id, (int)$newPid);
             // For as long as records with the test-value existing, try again (with incremented numbers appended)
             if ($statement->fetchColumn()) {
-                $statement->bindParam(1, $newValue);
                 for ($counter = 0; $counter <= 100; $counter++) {
                     $newValue = $value . $counter;
+                    $statement->bindValue(1, $newValue);
                     $statement->execute();
                     if (!$statement->fetchColumn()) {
                         break;
@@ -2723,23 +2779,32 @@ class DataHandler
                     break;
                 case 'time':
                 case 'timesec':
+                    // If $value is a pure integer we have the number of seconds, we can store that directly
+                    if ($value !== '' && !MathUtility::canBeInterpretedAsInteger($value)) {
+                        // $value is an ISO 8601 date
+                        $value = (new \DateTime($value))->getTimestamp();
+                    }
+                    break;
                 case 'date':
                 case 'datetime':
-                    // a hyphen as first character indicates a negative timestamp
-                    if ((strpos($value, '-') === false && strpos($value, ':') === false) || strpos($value, '-') === 0) {
-                        $value = (int)$value;
-                    } else {
-                        // ISO 8601 dates
-                        $dateTime = new \DateTime($value);
-                        // The returned timestamp is always UTC
-                        $value = $dateTime->getTimestamp();
-                    }
-                    // $value is a UTC timestamp here.
-                    // The value will be stored in the server’s local timezone, but treated as UTC, so we brute force
-                    // subtract the offset here. The offset is subtracted instead of added because the value is stored
-                    // in the timezone, but interpreted as UTC, so if we switched the server to UTC, the correct
-                    // value would be returned.
-                    if ($value !== 0 && !$this->dontProcessTransformations) {
+                    // If $value is a pure integer we have the number of seconds, we can store that directly
+                    if ($value !== null && $value !== '' && !MathUtility::canBeInterpretedAsInteger($value)) {
+                        // The value we receive from JS is an ISO 8601 date, which is always in UTC. (the JS code works like that, on purpose!)
+                        // For instance "1999-11-11T11:11:11Z"
+                        // Since the user actually specifies the time in the server's local time, we need to mangle this
+                        // to reflect the server TZ. So we make this 1999-11-11T11:11:11+0200 (assuming Europe/Vienna here)
+                        // In the database we store the date in UTC (1999-11-11T09:11:11Z), hence we take the timestamp of this converted value.
+                        // For achieving this we work with timestamps only (which are UTC) and simply adjust it for the
+                        // TZ difference.
+                        try {
+                            // Make the date from JS a timestamp
+                            $value = (new \DateTime($value))->getTimestamp();
+                        } catch (\Exception $e) {
+                            // set the default timezone value to achieve the value of 0 as a result
+                            $value = (int)date('Z', 0);
+                        }
+
+                        // @todo this hacky part is problematic when it comes to times around DST switch! Add test to prove that this is broken.
                         $value -= date('Z', $value);
                     }
                     break;
@@ -2778,12 +2843,12 @@ class DataHandler
                     }
                     break;
                 case 'is_in':
-                    $c = strlen($value);
+                    $c = mb_strlen($value);
                     if ($c) {
                         $newVal = '';
                         for ($a = 0; $a < $c; $a++) {
-                            $char = substr($value, $a, 1);
-                            if (strpos($is_in, $char) !== false) {
+                            $char = mb_substr($value, $a, 1);
+                            if (mb_strpos($is_in, $char) !== false) {
                                 $newVal .= $char;
                             }
                         }
@@ -3052,7 +3117,7 @@ class DataHandler
                     }
                     // Finally, check if new and old values are different (or no .vDEFbase value is found) and if so, we record the vDEF value for diff'ing.
                     // We do this after $dataValues has been updated since I expect that $dataValues_current holds evaluated values from database (so this must be the right value to compare with).
-                    if (substr($vKey, -9) !== '.vDEFbase') {
+                    if (mb_substr($vKey, -9) !== '.vDEFbase') {
                         if ($this->updateModeL10NdiffData && $GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && $vKey !== 'vDEF' && ((string)$dataValues[$key][$vKey] !== (string)$dataValues_current[$key][$vKey] || !isset($dataValues_current[$key][$vKey . '.vDEFbase']) || $this->updateModeL10NdiffData === 'FORCE_FFUPD')) {
                             // Now, check if a vDEF value is submitted in the input data, if so we expect this has been processed prior to this operation (normally the case since those fields are higher in the form) and we can use that:
                             if (isset($dataValues[$key]['vDEF'])) {
@@ -3322,10 +3387,13 @@ class DataHandler
             return null;
         }
 
+        // Fetch record with permission check
+        $row = $this->recordInfoWithPermissionCheck($table, $uid, 'show');
+
         // This checks if the record can be selected which is all that a copy action requires.
-        if (!$this->doesRecordExist($table, $uid, 'show')) {
+        if ($row === false) {
             if ($this->enableLogging) {
-                $this->log($table, $uid, 1, 0, 1, 'Attempt to copy record "%s:%s" without permission', -1, [$table, $uid]);
+                $this->log($table, $uid, 1, 0, 1, 'Attempt to copy record "%s:%s" which does not exist or you do not have permission to read', -1, [$table, $uid]);
             }
             return null;
         }
@@ -3349,14 +3417,8 @@ class DataHandler
 
         $data = [];
         $nonFields = array_unique(GeneralUtility::trimExplode(',', 'uid,perms_userid,perms_groupid,perms_user,perms_group,perms_everybody,t3ver_oid,t3ver_wsid,t3ver_id,t3ver_label,t3ver_state,t3ver_count,t3ver_stage,t3ver_tstamp,' . $excludeFields, true));
-        // So it copies (and localized) content from workspace...
-        $row = BackendUtility::getRecordWSOL($table, $uid);
-        if (!is_array($row)) {
-            if ($this->enableLogging) {
-                $this->log($table, $uid, 1, 0, 1, 'Attempt to copy record that did not exist!');
-            }
-            return null;
-        }
+        BackendUtility::workspaceOL($table, $row, -99, false);
+        $row = BackendUtility::purgeComputedPropertiesFromRecord($row);
 
         // Initializing:
         $theNewID = StringUtility::getUniqueId('NEW');
@@ -3644,23 +3706,21 @@ class DataHandler
         if (!$GLOBALS['TCA'][$table] || !$uid || $this->isRecordCopied($table, $uid)) {
             return null;
         }
-        if (!$this->doesRecordExist($table, $uid, 'show')) {
+
+        // Fetch record with permission check
+        $row = $this->recordInfoWithPermissionCheck($table, $uid, 'show');
+
+        // This checks if the record can be selected which is all that a copy action requires.
+        if ($row === false) {
             if ($this->enableLogging) {
-                $this->log($table, $uid, 3, 0, 1, 'Attempt to rawcopy/versionize record without copy permission');
+                $this->log($table, $uid, 3, 0, 1,
+                    'Attempt to rawcopy/versionize record which either does not exist or you don\'t have permission to read');
             }
             return null;
         }
 
         // Set up fields which should not be processed. They are still written - just passed through no-questions-asked!
         $nonFields = ['uid', 'pid', 't3ver_id', 't3ver_oid', 't3ver_wsid', 't3ver_label', 't3ver_state', 't3ver_count', 't3ver_stage', 't3ver_tstamp', 'perms_userid', 'perms_groupid', 'perms_user', 'perms_group', 'perms_everybody'];
-        // Select main record:
-        $row = $this->recordInfo($table, $uid, '*');
-        if (!is_array($row)) {
-            if ($this->enableLogging) {
-                $this->log($table, $uid, 3, 0, 1, 'Attempt to rawcopy/versionize record that did not exist!');
-            }
-            return null;
-        }
 
         // Merge in override array.
         $row = array_merge($row, $overrideArray);
@@ -4071,7 +4131,7 @@ class DataHandler
             }
             $fileInfo = [];
             $fileInfo['exists'] = @is_file((PATH_site . $rteFileRecord['ref_string']));
-            $fileInfo['original'] = substr($rteFileRecord['ref_string'], 0, -strlen($filename)) . 'RTEmagicP_' . preg_replace('/\\.[[:alnum:]]+$/', '', substr($filename, 10));
+            $fileInfo['original'] = mb_substr($rteFileRecord['ref_string'], 0, -mb_strlen($filename)) . 'RTEmagicP_' . preg_replace('/\\.[[:alnum:]]+$/', '', mb_substr($filename, 10));
             $fileInfo['original_exists'] = @is_file((PATH_site . $fileInfo['original']));
             // CODE from tx_impexp and class.rte_images.php adapted for use here:
             if (!$fileInfo['exists'] || !$fileInfo['original_exists']) {
@@ -4090,7 +4150,7 @@ class DataHandler
                 $origDestName = $this->fileFunc->getUniqueName($rteOrigName, PATH_site . $dirPrefix);
                 // Create copy file name:
                 $pI = pathinfo($rteFileRecord['ref_string']);
-                $copyDestName = dirname($origDestName) . '/RTEmagicC_' . substr(basename($origDestName), 10) . '.' . $pI['extension'];
+                $copyDestName = dirname($origDestName) . '/RTEmagicC_' . mb_substr(basename($origDestName), 10) . '.' . $pI['extension'];
                 if (!@is_file($copyDestName) && !@is_file($origDestName) && $origDestName === GeneralUtility::getFileAbsFileName($origDestName) && $copyDestName === GeneralUtility::getFileAbsFileName($copyDestName)) {
                     // Making copies:
                     GeneralUtility::upload_copy_move(PATH_site . $fileInfo['original'], $origDestName);
@@ -4622,7 +4682,6 @@ class DataHandler
             }
             return false;
         }
-
         $langRec = BackendUtility::getRecord('sys_language', (int)$language, 'uid,title');
         if (!$langRec) {
             if ($this->enableLogging) {
@@ -5611,18 +5670,14 @@ class DataHandler
             return null;
         }
 
-        if (!$this->doesRecordExist($table, $id, 'show')) {
-            if ($this->enableLogging) {
-                $this->newlog('You didn\'t have correct permissions to make a new version (copy) of this record "' . $table . '" / ' . $id, 1);
-            }
-            return null;
-        }
+        // Fetch record with permission check
+        $row = $this->recordInfoWithPermissionCheck($table, $id, 'show');
 
-        // Select main record:
-        $row = $this->recordInfo($table, $id, 'pid,t3ver_id,t3ver_state');
-        if (!is_array($row)) {
+        // This checks if the record can be selected which is all that a copy action requires.
+        if ($row === false) {
             if ($this->enableLogging) {
-                $this->newlog('Record "' . $table . ':' . $id . '" you wanted to versionize did not exist!', 1);
+                $this->newlog('The record does not exist or you don\'t have correct permissions to make a new version (copy) of this record "' . $table . ':' . $id . '"',
+                    1);
             }
             return null;
         }
@@ -6135,7 +6190,9 @@ class DataHandler
                     $remapAction['args'][$remapAction['pos']['valueArray']] = $valueArray;
                 }
                 // Process the arguments with the defined function:
-                $newValue = call_user_func_array([$this, $remapAction['func']], $remapAction['args']);
+                if (!empty($remapAction['func'])) {
+                    $newValue = call_user_func_array([$this, $remapAction['func']], $remapAction['args']);
+                }
                 // If array is returned, check for maxitems condition, if string is returned this was already done:
                 if (is_array($newValue)) {
                     $newValue = implode(',', $this->checkValue_checkMax($tcaFieldConf, $newValue));
@@ -6534,78 +6591,7 @@ class DataHandler
      */
     public function doesRecordExist($table, $id, $perms)
     {
-        $id = (int)$id;
-        if ($this->bypassAccessCheckForRecords) {
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getQueryBuilderForTable($table);
-            $queryBuilder->getRestrictions()->removeAll();
-
-            $record = $queryBuilder->select('uid')
-                ->from($table)
-                ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)))
-                ->execute()
-                ->fetch();
-
-            return is_array($record);
-        }
-        // Processing the incoming $perms (from possible string to integer that can be AND'ed)
-        if (!MathUtility::canBeInterpretedAsInteger($perms)) {
-            if ($table !== 'pages') {
-                switch ($perms) {
-                    case 'edit':
-
-                    case 'delete':
-
-                    case 'new':
-                        // This holds it all in case the record is not page!!
-                    if ($table === 'sys_file_reference' && array_key_exists('pages', $this->datamap)) {
-                        $perms = 'edit';
-                    } else {
-                        $perms = 'editcontent';
-                    }
-                        break;
-                }
-            }
-            $perms = (int)$this->pMap[$perms];
-        } else {
-            $perms = (int)$perms;
-        }
-        if (!$perms) {
-            throw new \RuntimeException('Internal ERROR: no permissions to check for non-admin user', 1270853920);
-        }
-        // For all tables: Check if record exists:
-        $isWebMountRestrictionIgnored = BackendUtility::isWebMountRestrictionIgnored($table);
-        if (is_array($GLOBALS['TCA'][$table]) && $id > 0 && ($isWebMountRestrictionIgnored || $this->isRecordInWebMount($table, $id) || $this->admin)) {
-            if ($table !== 'pages') {
-                // Find record without checking page
-                // @todo: Thist should probably check for editlock
-                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
-                $this->addDeleteRestriction($queryBuilder->getRestrictions()->removeAll());
-                $output = $queryBuilder
-                    ->select('uid', 'pid')
-                    ->from($table)
-                    ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)))
-                    ->execute()
-                    ->fetch();
-                BackendUtility::fixVersioningPid($table, $output, true);
-                // If record found, check page as well:
-                if (is_array($output)) {
-                    // Looking up the page for record:
-                    $queryBuilder = $this->doesRecordExist_pageLookUp($output['pid'], $perms);
-                    $pageRec = $queryBuilder->select('uid')->execute()->fetch();
-                    // Return TRUE if either a page was found OR if the PID is zero AND the user is ADMIN (in which case the record is at root-level):
-                    $isRootLevelRestrictionIgnored = BackendUtility::isRootLevelRestrictionIgnored($table);
-                    if (is_array($pageRec) || !$output['pid'] && ($isRootLevelRestrictionIgnored || $this->admin)) {
-                        return true;
-                    }
-                }
-                return false;
-            } else {
-                $queryBuilder = $this->doesRecordExist_pageLookUp($id, $perms);
-                return $queryBuilder->count('uid')->execute()->fetchColumn(0);
-            }
-        }
-        return false;
+        return $this->recordInfoWithPermissionCheck($table, $id, $perms, 'uid, pid') !== false;
     }
 
     /**
@@ -6613,16 +6599,26 @@ class DataHandler
      *
      * @param int $id Page id
      * @param int $perms Permission integer
-     * @return QueryBuilder
+     * @param array $columns Columns to select
+     * @return bool|array
      * @access private
      * @see doesRecordExist()
      */
-    protected function doesRecordExist_pageLookUp($id, $perms)
+    protected function doesRecordExist_pageLookUp($id, $perms, $columns = ['uid'])
     {
+        $cacheId = md5('doesRecordExist_pageLookUp' . '_' . $id . '_' . $perms . '_' . implode('_',
+                $columns) . '_' . (string)$this->admin);
+
+        // If result is cached, return it
+        $cachedResult = $this->runtimeCache->get($cacheId);
+        if (!empty($cachedResult)) {
+            return $cachedResult;
+        }
+
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('pages');
         $this->addDeleteRestriction($queryBuilder->getRestrictions()->removeAll());
         $queryBuilder
-            ->select('uid')
+            ->select(...$columns)
             ->from('pages')
             ->where($queryBuilder->expr()->eq(
                 'uid',
@@ -6639,7 +6635,11 @@ class DataHandler
                 $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
             ));
         }
-        return $queryBuilder;
+
+        $row = $queryBuilder->execute()->fetch();
+        $this->runtimeCache->set($cacheId, $row);
+
+        return $row;
     }
 
     /**
@@ -6874,6 +6874,92 @@ class DataHandler
     }
 
     /**
+     * Checks if record exists with and without permission check and returns that row
+     *
+     * @param string $table Record table name
+     * @param int $id Record UID
+     * @param int|string $perms Permission restrictions to observe: Either an integer that will be bitwise AND'ed or a string, which points to a key in the ->pMap array
+     * @param string $fieldList - fields - default is '*'
+     * @throws \RuntimeException
+     * @return array|bool Row if exists and accessible, false otherwise
+     */
+    protected function recordInfoWithPermissionCheck(string $table, int $id, $perms, string $fieldList = '*')
+    {
+        $id = (int)$id;
+        if ($this->bypassAccessCheckForRecords) {
+            $columns = GeneralUtility::trimExplode(',', $fieldList, true);
+
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+            $queryBuilder->getRestrictions()->removeAll();
+
+            $record = $queryBuilder->select(...$columns)
+                ->from($table)
+                ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)))
+                ->execute()
+                ->fetch();
+
+            return $record ?: false;
+        }
+        // Processing the incoming $perms (from possible string to integer that can be AND'ed)
+        if (!MathUtility::canBeInterpretedAsInteger($perms)) {
+            if ($table !== 'pages') {
+                switch ($perms) {
+                    case 'edit':
+
+                    case 'delete':
+
+                    case 'new':
+                        // This holds it all in case the record is not page!!
+                        if ($table === 'sys_file_reference' && array_key_exists('pages', $this->datamap)) {
+                            $perms = 'edit';
+                        } else {
+                            $perms = 'editcontent';
+                        }
+                        break;
+                }
+            }
+            $perms = (int)$this->pMap[$perms];
+        } else {
+            $perms = (int)$perms;
+        }
+        if (!$perms) {
+            throw new \RuntimeException('Internal ERROR: no permissions to check for non-admin user', 1270853920);
+        }
+        // For all tables: Check if record exists:
+        $isWebMountRestrictionIgnored = BackendUtility::isWebMountRestrictionIgnored($table);
+        if (is_array($GLOBALS['TCA'][$table]) && $id > 0 && ($this->admin || $isWebMountRestrictionIgnored || $this->isRecordInWebMount($table, $id))) {
+            $columns = GeneralUtility::trimExplode(',', $fieldList, true);
+            if ($table !== 'pages') {
+                // Find record without checking page
+                // @todo: This should probably check for editlock
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+                $this->addDeleteRestriction($queryBuilder->getRestrictions()->removeAll());
+                $output = $queryBuilder
+                    ->select(...$columns)
+                    ->from($table)
+                    ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)))
+                    ->execute()
+                    ->fetch();
+                BackendUtility::fixVersioningPid($table, $output, true);
+                // If record found, check page as well:
+                if (is_array($output)) {
+                    // Looking up the page for record:
+                    $pageRec = $this->doesRecordExist_pageLookUp($output['pid'], $perms);
+                    // Return TRUE if either a page was found OR if the PID is zero AND the user is ADMIN (in which case the record is at root-level):
+                    $isRootLevelRestrictionIgnored = BackendUtility::isRootLevelRestrictionIgnored($table);
+                    if (is_array($pageRec) || !$output['pid'] && ($this->admin || $isRootLevelRestrictionIgnored)) {
+                        return $output;
+                    }
+                }
+                return false;
+            } else {
+                return $this->doesRecordExist_pageLookUp($id, $perms, $columns);
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns an array with record properties, like header and pid
      * No check for deleted or access is done!
      * For versionized records, pid is resolved to its live versions pid.
@@ -6947,12 +7033,23 @@ class DataHandler
             unset($fieldArray['uid']);
             if (!empty($fieldArray)) {
                 $fieldArray = $this->insertUpdateDB_preprocessBasedOnFieldType($table, $fieldArray);
+
+                $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($table);
+
+                $types = [];
+                $platform = $connection->getDatabasePlatform();
+                if ($platform instanceof SQLServerPlatform) {
+                    // mssql needs to set proper PARAM_LOB and others to update fields
+                    $tableDetails = $connection->getSchemaManager()->listTableDetails($table);
+                    foreach ($fieldArray as $columnName => $columnValue) {
+                        $types[$columnName] = $tableDetails->getColumn($columnName)->getType()->getBindingType();
+                    }
+                }
+
                 // Execute the UPDATE query:
                 $updateErrorMessage = '';
                 try {
-                    GeneralUtility::makeInstance(ConnectionPool::class)
-                        ->getConnectionForTable($table)
-                        ->update($table, $fieldArray, ['uid' => (int)$id]);
+                    $connection->update($table, $fieldArray, ['uid' => (int)$id], $types);
                 } catch (DBALException $e) {
                     $updateErrorMessage = $e->getPrevious()->getMessage();
                 }
@@ -6961,7 +7058,6 @@ class DataHandler
                     // Update reference index:
                     $this->updateRefIndex($table, $id);
                     if ($this->enableLogging) {
-                        $newRow = [];
                         if ($this->checkStoredRecords) {
                             $newRow = $this->checkStoredRecord($table, $id, $fieldArray, 2);
                         } else {

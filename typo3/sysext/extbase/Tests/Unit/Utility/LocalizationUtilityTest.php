@@ -195,6 +195,7 @@ class LocalizationUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTest
         $expected = [
             'key1' => 'value1',
             'key2' => 'value2',
+            'key3' => 'value3',
             'key3.subkey1' => 'subvalue1',
             'key3.subkey2.subsubkey' => 'val'
         ];
@@ -202,6 +203,7 @@ class LocalizationUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTest
             'key1' => 'value1',
             'key2' => 'value2',
             'key3' => [
+                '_typoScriptNodeValue' => 'value3',
                 'subkey1' => 'subvalue1',
                 'subkey2' => [
                     'subsubkey' => 'val'
@@ -453,5 +455,26 @@ class LocalizationUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTest
         $result = LocalizationUtility::translate('key1', 'extensionKey');
         $this->assertNotNull($result);
         $this->assertEquals('', $result);
+    }
+
+    /**
+     * Tests whether method can be invoked without second parameter. Actual translation is not tested here.
+     *
+     * @test
+     */
+    public function translateWithFullyQualifiedKey()
+    {
+        $result = LocalizationUtility::translate('LLL:EXT:extbase/Resources/Private/Language/locallang_db.xlf:fe_users.tx_extbase_type');
+        $this->assertNotEmpty($result);
+    }
+
+    /**
+     * @test
+     */
+    public function translateThrowsExceptionWithEmptyExtensionNameIfKeyIsNotPrefixedWithLLL()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionCode(1498144052);
+        LocalizationUtility::translate('foo/bar', '');
     }
 }

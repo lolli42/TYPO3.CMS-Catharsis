@@ -8,7 +8,15 @@
 	"require": {
 		"typo3/cms-core": "*"
 	},
+	"conflict": {
+		"typo3/cms": "*"
+	},
 	"replace": {
 		"filemetadata": "*"
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"TYPO3\\CMS\\Filemetadata\\Tests\\": "Tests/"
+		}
 	}
 }

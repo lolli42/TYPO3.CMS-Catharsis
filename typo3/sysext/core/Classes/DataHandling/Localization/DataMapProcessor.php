@@ -175,10 +175,7 @@ class DataMapProcessor
 
         $dependencies = $this->fetchDependencies(
             $forTableName,
-            $this->filterNewItemIds(
-                $forTableName,
-                $this->filterNumericIds(array_keys($idValues))
-            )
+            $this->filterNewItemIds($forTableName, array_keys($idValues))
         );
 
         foreach ($idValues as $id => $values) {
@@ -287,19 +284,25 @@ class DataMapProcessor
      *
      * @param DataMapItem $item
      * @param array $fieldNames
-     * @param int $fromId
+     * @param string|int $fromId
      */
-    protected function synchronizeTranslationItem(DataMapItem $item, array $fieldNames, int $fromId)
+    protected function synchronizeTranslationItem(DataMapItem $item, array $fieldNames, $fromId)
     {
         if (empty($fieldNames)) {
             return;
         }
+
         $fieldNameList = 'uid,' . implode(',', $fieldNames);
-        $fromRecord = BackendUtility::getRecordWSOL(
-            $item->getFromTableName(),
-            $fromId,
-            $fieldNameList
-        );
+
+        $fromRecord = ['uid' => $fromId];
+        if (MathUtility::canBeInterpretedAsInteger($fromId)) {
+            $fromRecord = BackendUtility::getRecordWSOL(
+                $item->getFromTableName(),
+                $fromId,
+                $fieldNameList
+            );
+        }
+
         $forRecord = [];
         if (!$item->isNew()) {
             $forRecord = BackendUtility::getRecordWSOL(
@@ -308,6 +311,7 @@ class DataMapProcessor
                 $fieldNameList
             );
         }
+
         foreach ($fieldNames as $fieldName) {
             $this->synchronizeFieldValues(
                 $item,
@@ -326,10 +330,6 @@ class DataMapProcessor
      */
     protected function populateTranslationItem(DataMapItem $item)
     {
-        if ($item->isNew()) {
-            return;
-        }
-
         foreach ([DataMapItem::SCOPE_PARENT, DataMapItem::SCOPE_SOURCE] as $scope) {
             foreach ($item->findDependencies($scope) as $dependentItem) {
                 // use suggested item, if it was submitted in data-map
@@ -389,10 +389,15 @@ class DataMapProcessor
         }
 
         $fromId = $fromRecord['uid'];
+        // retrieve value from in-memory data-map
         if ($this->isSetInDataMap($item->getFromTableName(), $fromId, $fieldName)) {
             $fromValue = $this->allDataMap[$item->getFromTableName()][$fromId][$fieldName];
-        } else {
+        // retrieve value from record
+        } elseif (array_key_exists($fieldName, $fromRecord)) {
             $fromValue = $fromRecord[$fieldName];
+        // otherwise abort synchronization
+        } else {
+            return;
         }
 
         // plain values
@@ -489,11 +494,9 @@ class DataMapProcessor
      */
     protected function synchronizeInlineRelations(DataMapItem $item, string $fieldName, array $fromRecord, array $forRecord)
     {
-        $fromId = $fromRecord['uid'];
         $configuration = $GLOBALS['TCA'][$item->getFromTableName()]['columns'][$fieldName];
         $isLocalizationModeExclude = ($configuration['l10n_mode'] ?? null) === 'exclude';
         $foreignTableName = $configuration['config']['foreign_table'];
-        $manyToManyTable = ($configuration['config']['MM'] ?? '');
 
         $fieldNames = [
             'language' => ($GLOBALS['TCA'][$foreignTableName]['ctrl']['languageField'] ?? null),
@@ -502,38 +505,17 @@ class DataMapProcessor
         ];
         $isTranslatable = (!empty($fieldNames['language']) && !empty($fieldNames['parent']));
 
-        // determine suggested elements of either translation parent or source record
-        // from data-map, in case the accordant language parent/source record was modified
-        if ($this->isSetInDataMap($item->getFromTableName(), $fromId, $fieldName)) {
-            $suggestedAncestorIds = GeneralUtility::trimExplode(
-                ',',
-                $this->allDataMap[$item->getFromTableName()][$fromId][$fieldName],
-                true
-            );
-        // determine suggested elements of either translation parent or source record from storage
-        } else {
-            $relationHandler = $this->createRelationHandler();
-            $relationHandler->start(
-                $fromRecord[$fieldName],
-                $foreignTableName,
-                $manyToManyTable,
-                $fromId,
-                $item->getFromTableName(),
-                $configuration['config']
-            );
-            $suggestedAncestorIds = $this->mapRelationItemId($relationHandler->itemArray);
-        }
-        // determine persisted elements for the current data-map item
-        $relationHandler = $this->createRelationHandler();
-        $relationHandler->start(
-            $forRecord[$fieldName] ?? '',
-            $foreignTableName,
-            $manyToManyTable,
-            $item->getId(),
-            $item->getTableName(),
-            $configuration['config']
+        $suggestedAncestorIds = $this->resolveSuggestedInlineRelations(
+            $item,
+            $fieldName,
+            $fromRecord
         );
-        $persistedIds = $this->mapRelationItemId($relationHandler->itemArray);
+        $persistedIds = $this->resolvePersistedInlineRelations(
+            $item,
+            $fieldName,
+            $forRecord
+        );
+
         // The dependent ID map points from language parent/source record to
         // localization, thus keys: parents/sources & values: localizations
         $dependentIdMap = $this->fetchDependentIdMap($foreignTableName, $suggestedAncestorIds, $item->getLanguage());
@@ -569,9 +551,9 @@ class DataMapProcessor
             return;
         }
         // In case only missing elements shall be created, re-use previously sanitized
-        // values IF child table cannot be translated, the relation parent item is new
-        // and the count of missing relations equals the count of previously sanitized
-        // relations. This is caused during copy processes, when the child relations
+        // values IF the relation parent item is new and the count of missing relations
+        // equals the count of previously sanitized relations.
+        // This is caused during copy processes, when the child relations
         // already have been cloned in DataHandler::copyRecord_procBasedOnFieldType()
         // without the possibility to resolve the initial connections at this point.
         // Otherwise child relations would superfluously be duplicated again here.
@@ -579,7 +561,7 @@ class DataMapProcessor
         $sanitizedValue = $this->sanitizationMap[$item->getTableName()][$item->getId()][$fieldName] ?? null;
         if (
             !empty($missingAncestorIds) && $item->isNew() && $sanitizedValue !== null
-            && count(GeneralUtility::trimExplode(',', $sanitizedValue)) === count($missingAncestorIds)
+            && count(GeneralUtility::trimExplode(',', $sanitizedValue, true)) === count($missingAncestorIds)
         ) {
             $this->modifyDataMap(
                 $item->getTableName(),
@@ -634,16 +616,17 @@ class DataMapProcessor
             foreach ($populateAncestorIds as $populateAncestorId) {
                 $newLocalizationId = StringUtility::getUniqueId('NEW');
                 $desiredIdMap[$populateAncestorId] = $newLocalizationId;
+                $duplicatedValues = $this->duplicateFromDataMap(
+                    $foreignTableName,
+                    $populateAncestorId,
+                    $item->getLanguage(),
+                    $fieldNames,
+                    !$isLocalizationModeExclude && $isTranslatable
+                );
                 $this->modifyDataMap(
                     $foreignTableName,
                     $newLocalizationId,
-                    $this->duplicateFromDataMap(
-                        $foreignTableName,
-                        $populateAncestorId,
-                        $item->getLanguage(),
-                        $fieldNames,
-                        !$isLocalizationModeExclude && $isTranslatable
-                    )
+                    $duplicatedValues
                 );
             }
         }
@@ -653,6 +636,81 @@ class DataMapProcessor
             $item->getId(),
             [$fieldName => implode(',', array_values($desiredIdMap))]
         );
+    }
+
+    /**
+     * Determines suggest inline relations of either translation parent or
+     * source record from data-map or storage in case records have been
+     * persisted already.
+     *
+     * @param DataMapItem $item
+     * @param string $fieldName
+     * @param array $fromRecord
+     * @return int[]|string[]
+     */
+    protected function resolveSuggestedInlineRelations(DataMapItem $item, string $fieldName, array $fromRecord): array
+    {
+        $suggestedAncestorIds = [];
+        $fromId = $fromRecord['uid'];
+        $configuration = $GLOBALS['TCA'][$item->getFromTableName()]['columns'][$fieldName];
+        $foreignTableName = $configuration['config']['foreign_table'];
+        $manyToManyTable = ($configuration['config']['MM'] ?? '');
+
+        // determine suggested elements of either translation parent or source record
+        // from data-map, in case the accordant language parent/source record was modified
+        if ($this->isSetInDataMap($item->getFromTableName(), $fromId, $fieldName)) {
+            $suggestedAncestorIds = GeneralUtility::trimExplode(
+                ',',
+                $this->allDataMap[$item->getFromTableName()][$fromId][$fieldName],
+                true
+            );
+        // determine suggested elements of either translation parent or source record from storage
+        } elseif (MathUtility::canBeInterpretedAsInteger($fromId)) {
+            $relationHandler = $this->createRelationHandler();
+            $relationHandler->start(
+                $fromRecord[$fieldName],
+                $foreignTableName,
+                $manyToManyTable,
+                $fromId,
+                $item->getFromTableName(),
+                $configuration['config']
+            );
+            $suggestedAncestorIds = $this->mapRelationItemId($relationHandler->itemArray);
+        }
+
+        return $suggestedAncestorIds;
+    }
+
+    /**
+     * Determine persisted inline relations for current data-map-item.
+     *
+     * @param DataMapItem $item
+     * @param string $fieldName
+     * @param array $forRecord
+     * @return int[]
+     */
+    private function resolvePersistedInlineRelations(DataMapItem $item, string $fieldName, array $forRecord): array
+    {
+        $persistedIds = [];
+        $configuration = $GLOBALS['TCA'][$item->getFromTableName()]['columns'][$fieldName];
+        $foreignTableName = $configuration['config']['foreign_table'];
+        $manyToManyTable = ($configuration['config']['MM'] ?? '');
+
+        // determine persisted elements for the current data-map item
+        if (!$item->isNew()) {
+            $relationHandler = $this->createRelationHandler();
+            $relationHandler->start(
+                $forRecord[$fieldName] ?? '',
+                $foreignTableName,
+                $manyToManyTable,
+                $item->getId(),
+                $item->getTableName(),
+                $configuration['config']
+            );
+            $persistedIds = $this->mapRelationItemId($relationHandler->itemArray);
+        }
+
+        return $persistedIds;
     }
 
     /**
@@ -779,7 +837,7 @@ class DataMapProcessor
      * + [7]   -> []                               # since there's nothing
      *
      * @param string $tableName
-     * @param array $ids
+     * @param int[]|string[] $ids
      * @return DataMapItem[][]
      */
     protected function fetchDependencies(string $tableName, array $ids)
@@ -801,8 +859,22 @@ class DataMapProcessor
         if (!empty($GLOBALS['TCA'][$tableName]['ctrl']['translationSource'])) {
             $fieldNames['source'] = $GLOBALS['TCA'][$tableName]['ctrl']['translationSource'];
         }
+        $fieldNamesMap = array_combine($fieldNames, $fieldNames);
 
-        $dependentElements = $this->fetchDependentElements($tableName, $ids, $fieldNames);
+        $persistedIds = $this->filterNumericIds($ids, true);
+        $createdIds = $this->filterNumericIds($ids, false);
+        $dependentElements = $this->fetchDependentElements($tableName, $persistedIds, $fieldNames);
+
+        foreach ($createdIds as $createdId) {
+            $data = $this->allDataMap[$tableName][$createdId] ?? null;
+            if ($data === null) {
+                continue;
+            }
+            $dependentElements[] = array_merge(
+                ['uid' => $createdId],
+                array_intersect_key($data, $fieldNamesMap)
+            );
+        }
 
         $dependencyMap = [];
         foreach ($dependentElements as $dependentElement) {
@@ -1026,7 +1098,7 @@ class DataMapProcessor
      *
      * @param string[]|int[] $ids
      * @param bool $numeric
-     * @return array
+     * @return int[]|string[]
      */
     protected function filterNumericIds(array $ids, bool $numeric = true)
     {
@@ -1153,6 +1225,10 @@ class DataMapProcessor
             // @todo Not sure, whether $id is resolved in DataHandler's remapStack
             $data[$fieldNames['source']] = $fromId;
         }
+        // unset field names that are expected to be handled in this processor
+        foreach ($this->getFieldNamesToBeHandled($tableName) as $fieldName) {
+            unset($data[$fieldName]);
+        }
 
         $prefixFieldNames = array_intersect(
             array_keys($data),
@@ -1239,6 +1315,21 @@ class DataMapProcessor
         }
 
         return $localizationExcludeFieldNames;
+    }
+
+    /**
+     * Gets a list of field names which have to be handled. Basically this
+     * includes fields using allowLanguageSynchronization or l10n_mode=exclude.
+     *
+     * @param string $tableName
+     * @return string[]
+     */
+    protected function getFieldNamesToBeHandled(string $tableName)
+    {
+        return array_merge(
+            State::getFieldNames($tableName),
+            $this->getLocalizationModeExcludeFieldNames($tableName)
+        );
     }
 
     /**

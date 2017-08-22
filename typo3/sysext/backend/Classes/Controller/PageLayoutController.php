@@ -399,7 +399,8 @@ class PageLayoutController
                 )
                 ->groupBy('pages_language_overlay.sys_language_uid', 'sys_language.uid', 'sys_language.pid',
                     'sys_language.tstamp', 'sys_language.hidden', 'sys_language.title',
-                    'sys_language.language_isocode', 'sys_language.static_lang_isocode', 'sys_language.flag')
+                    'sys_language.language_isocode', 'sys_language.static_lang_isocode', 'sys_language.flag',
+                    'sys_language.sorting')
                 ->orderBy('sys_language.sorting');
             if (!$this->getBackendUser()->isAdmin()) {
                 $queryBuilder->andWhere(
@@ -581,7 +582,7 @@ class PageLayoutController
                 } else {
                     $linkToPid = $this->local_linkThisScript(['id' => $targetPage['uid']]);
                     $path = BackendUtility::getRecordPath($targetPage['uid'], $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW), 1000);
-                    $linkedPath = '<a href="' . $linkToPid . '">' . htmlspecialchars($path) . '</a>';
+                    $linkedPath = '<a href="' . htmlspecialchars($linkToPid) . '">' . htmlspecialchars($path) . '</a>';
                     $message .= sprintf($lang->getLL('pageIsInternalLinkMessage'), $linkedPath);
                 }
 
@@ -629,7 +630,7 @@ class PageLayoutController
             $contentPage = BackendUtility::getRecord('pages', (int)$this->pageinfo['content_from_pid']);
             $linkToPid = $this->local_linkThisScript(['id' => $this->pageinfo['content_from_pid']]);
             $title = BackendUtility::getRecordTitle('pages', $contentPage);
-            $link = '<a href="' . $linkToPid . '">' . htmlspecialchars($title) . ' (PID ' . (int)$this->pageinfo['content_from_pid'] . ')</a>';
+            $link = '<a href="' . htmlspecialchars($linkToPid) . '">' . htmlspecialchars($title) . ' (PID ' . (int)$this->pageinfo['content_from_pid'] . ')</a>';
             $message = sprintf($lang->getLL('content_from_pid_title'), $link);
             $view->assignMultiple([
                 'title' => $title,

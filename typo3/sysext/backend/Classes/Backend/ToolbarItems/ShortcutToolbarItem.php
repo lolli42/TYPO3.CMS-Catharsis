@@ -324,7 +324,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
                 $module = $returnUrlParameters['M'];
                 $returnUrl = BackendUtility::getModuleUrl($module, $returnUrlParameters);
                 $parameters['returnUrl'] = $returnUrl;
-                $url = $parsedUrl['path'] . '?' . http_build_query($parameters);
+                $url = $parsedUrl['path'] . '?' . http_build_query($parameters, '', '&', PHP_QUERY_RFC3986);
             }
         }
 
@@ -806,9 +806,6 @@ class ShortcutToolbarItem implements ToolbarItemInterface
                     }
                     if (is_array($GLOBALS['TCA'][$table]['ctrl']['enablecolumns'])) {
                         $selectFields = array_merge($selectFields, $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']);
-                    }
-                    if ($GLOBALS['TCA'][$table]['ctrl']['type']) {
-                        $selectFields[] = $GLOBALS['TCA'][$table]['ctrl']['type'];
                     }
                     if ($GLOBALS['TCA'][$table]['ctrl']['typeicon_column']) {
                         $selectFields[] = $GLOBALS['TCA'][$table]['ctrl']['typeicon_column'];

@@ -6,14 +6,15 @@
 	"license": ["GPL-2.0+"],
 
 	"require": {
-		"php" : "^7.0"
+		"php" : "^7.0",
+		"typo3/cms-cli": "^1.0"
+	},
+	"conflict": {
+		"typo3/cms": "*"
 	},
 	"replace": {
 		"core": "*"
 	},
-	"bin": [
-		"bin/typo3"
-	],
 	"extra": {
 		"typo3/cms": {
 			"Package": {
@@ -21,6 +22,11 @@
 				"partOfFactoryDefault": true,
 				"partOfMinimalUsableSystem": true
 			}
+		},
+		"typo3/class-alias-loader": {
+			"class-alias-maps": [
+				"Migrations/Code/ClassAliasMap.php"
+			]
 		}
 	},
 	"autoload": {

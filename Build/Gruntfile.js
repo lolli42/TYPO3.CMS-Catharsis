@@ -57,12 +57,10 @@ module.exports = function(grunt) {
 			backend   : '<%= paths.sysext %>backend/Resources/',
 			t3editor  : '<%= paths.sysext %>t3editor/Resources/',
 			workspaces: '<%= paths.sysext %>workspaces/Resources/',
-			ckeditor  : '<%= paths.sysext %>rte_ckeditor/Resources/',
-			core      : '<%= paths.sysext %>core/Resources/',
-			bower     : 'bower_components/',
-			flags     : '<%= paths.bower %>region-flags/svg/',
-			t3icons   : '<%= paths.bower %>typo3-icons/dist/',
-			npm       : 'node_modules/'
+			ckeditor: '<%= paths.sysext %>rte_ckeditor/Resources/',
+			core: '<%= paths.sysext %>core/Resources/',
+			npm: 'node_modules/',
+			t3icons: '<%= paths.npm %>@typo3/icons/dist/'
 		},
 		stylelint: {
 			options: {
@@ -85,9 +83,9 @@ module.exports = function(grunt) {
 				outputStyle: 'expanded',
 				precision: 8,
 				includePaths: [
-					'bower_components/bootstrap-sass/assets/stylesheets',
-					'bower_components/fontawesome/scss',
-					'bower_components/eonasdan-bootstrap-datetimepicker/src/sass',
+					'node_modules/bootstrap-sass/assets/stylesheets',
+					'node_modules/font-awesome/scss',
+					'node_modules/eonasdan-bootstrap-datetimepicker/src/sass',
 					'node_modules/tagsort'
 				]
 			},
@@ -288,36 +286,34 @@ module.exports = function(grunt) {
 			},
 			fonts: {
 				files: [
-					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.eot', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.eot' },
-					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.svg', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.svg' },
-					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.ttf', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.ttf' },
-					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.woff' },
-					{ dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff2', src: '<%= paths.bower %>fontawesome/fonts/fontawesome-webfont.woff2' }
-				]
-			},
-			npm: {
-				files: [
-					{dest: '<%= paths.install %>Public/JavaScript/chosen.jquery.js', src: '<%= paths.npm %>chosen-js/chosen.jquery.js'}
+					{
+						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.eot',
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.eot'
+					},
+					{
+						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.svg',
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.svg'
+					},
+					{
+						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.ttf',
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.ttf'
+					},
+					{
+						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff',
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.woff'
+					},
+					{
+						dest: '<%= paths.sysext %>backend/Resources/Public/Fonts/FontAwesome/fontawesome-webfont.woff2',
+						src: '<%= paths.npm %>font-awesome/fonts/fontawesome-webfont.woff2'
+					}
 				]
 			}
 		},
-		bowercopy: {
+		npmcopy: {
 			options: {
 				clean: false,
 				report: false,
-				runBower: false,
-				srcPrefix: "bower_components/"
-			},
-			glob: {
-				files: {
-					// When using glob patterns, destinations are *always* folder names
-					// into which matching files will be copied
-					// Also note that subdirectories are **not** maintained
-					// if a destination is specified
-					// For example, one of the files copied here is
-					// 'lodash/dist/lodash.js' -> 'public/js/libs/lodash/lodash.js'
-					'<%= paths.sysext %>core/Resources/Public/Images/colorpicker': 'jquery-minicolors/*.png'
-				}
+				srcPrefix: "node_modules/"
 			},
 			ckeditor: {
 				options: {
@@ -336,7 +332,7 @@ module.exports = function(grunt) {
 				},
 				files: {
 					'nprogress.js': 'nprogress/nprogress.js',
-					'jquery.matchHeight-min.js': 'matchHeight/dist/jquery.matchHeight-min.js',
+					'jquery.matchHeight-min.js': 'jquery-match-height/dist/jquery.matchHeight-min.js',
 					'jquery.dataTables.js': 'datatables/media/js/jquery.dataTables.min.js',
 					'require.js': 'requirejs/require.js',
 					'moment.js': 'moment/min/moment-with-locales.min.js',
@@ -346,16 +342,17 @@ module.exports = function(grunt) {
 					'bootstrap-datetimepicker.js': 'eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js',
 					'autosize.js': 'autosize/dist/autosize.min.js',
 					'taboverride.min.js': 'taboverride/build/output/taboverride.min.js',
-					'bootstrap-slider.min.js': 'seiyria-bootstrap-slider/dist/bootstrap-slider.min.js',
+					'bootstrap-slider.min.js': 'bootstrap-slider/dist/bootstrap-slider.min.js',
 					/* disabled until events are not bound to document only
-						see https://github.com/claviska/jquery-minicolors/issues/192
-						see https://github.com/claviska/jquery-minicolors/issues/206
-					'jquery.minicolors.js': 'jquery-minicolors/jquery.minicolors.min.js',
-					 */
+					   see https://github.com/claviska/jquery-minicolors/issues/192
+					   see https://github.com/claviska/jquery-minicolors/issues/206
+					   'jquery.minicolors.js': '../node_modules/@claviska/jquery-minicolors/jquery.minicolors.min.js',
+					   '../../Images/colorpicker/jquery.minicolors.png': '../node_modules/@claviska/jquery-minicolors/jquery.minicolors.png'
+					*/
 					/* disabled until autocomplete formatGroup is fixed to pass on the index too
-					 'jquery.autocomplete.js': 'devbridge-autocomplete/src/jquery.autocomplete.js',
-					 */
-					'd3/d3.js': 'd3/d3.min.js',
+					   'jquery.autocomplete.js': '../node_modules/devbridge-autocomplete/dist/jquery.autocomplete.min.js',
+					*/
+					'd3/d3.js': 'd3/build/d3.min.js',
 					/**
 					 * copy needed parts of jquery
 					 */
@@ -390,27 +387,9 @@ module.exports = function(grunt) {
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js"],
-					"<%= paths.install %>Public/JavaScript/chosen.jquery.min.js": ["<%= paths.install %>Public/JavaScript/chosen.jquery.js"],
+					"<%= paths.install %>Public/JavaScript/chosen.jquery.min.js": ["<%= paths.npm %>chosen-js/chosen.jquery.js"],
 					"<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js": ["<%= paths.core %>Public/JavaScript/Contrib/bootstrap-datetimepicker.js"]
 				}
-			}
-		},
-		svgmin: {
-			options: {
-				plugins: [
-					{ removeViewBox: false }
-				]
-			},
-			// Flags
-			flags: {
-				files: [{
-					expand: true,
-					cwd: '<%= paths.flags %>',
-					src: '*.svg',
-					dest: '<%= paths.sysext %>core/Resources/Public/Icons/Flags/SVG/',
-					ext: '.svg',
-					extDot: 'first'
-				}]
 			}
 		}
 	});
@@ -418,11 +397,9 @@ module.exports = function(grunt) {
 	// Register tasks
 	grunt.loadNpmTasks('grunt-sass');
 	grunt.loadNpmTasks('grunt-contrib-watch');
-	grunt.loadNpmTasks('grunt-bowercopy');
+	grunt.loadNpmTasks('grunt-npmcopy');
 	grunt.loadNpmTasks('grunt-npm-install');
-	grunt.loadNpmTasks('grunt-bower-just-install');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-svgmin');
 	grunt.loadNpmTasks('grunt-postcss');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks("grunt-ts");
@@ -437,6 +414,17 @@ module.exports = function(grunt) {
 	 * this will trigger the CSS build
 	 */
 	grunt.registerTask('default', ['css']);
+
+	/**
+	 * grunt lint
+	 *
+	 * call "$ grunt lint"
+	 *
+	 * this task does the following things:
+	 * - tslint
+	 * - stylelint
+	 */
+	grunt.registerTask('lint', ['tslint', 'stylelint']);
 
 	/**
 	 * grunt format
@@ -467,10 +455,9 @@ module.exports = function(grunt) {
 	 *
 	 * this task does the following things:
 	 * - npm install
-	 * - bower install
-	 * - copy some bower components to a specific destinations because they need to be included via PHP
+	 * - copy some components to a specific destinations because they need to be included via PHP
 	 */
-	grunt.registerTask('update', ['npm-install', 'bower_install', 'bowercopy']);
+	grunt.registerTask('update', ['npm-install', 'npmcopy']);
 
 	/**
 	 * grunt scripts task
@@ -502,5 +489,5 @@ module.exports = function(grunt) {
 	 * - minifies svg files
 	 * - compiles TypeScript files
 	 */
-	grunt.registerTask('build', ['update', 'scripts', 'copy', 'format', 'css', 'uglify', 'svgmin']);
+	grunt.registerTask('build', ['update', 'scripts', 'copy', 'format', 'css', 'uglify']);
 };

@@ -13,12 +13,14 @@ namespace TYPO3\CMS\Install\Updates;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use Doctrine\DBAL\DBALException;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Log\Logger;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Registry;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -123,13 +125,17 @@ class FrontendUserImageUpdateWizard extends AbstractUpdate
      */
     public function checkForUpdate(&$description)
     {
+        if ($this->isWizardDone()) {
+            return false;
+        }
+
         $description = 'This update wizard goes through all files that are referenced in the fe_users.image field'
             . ' and adds the files to the FAL File Index.<br />'
             . 'It also moves the files from uploads/ to the fileadmin/_migrated/ path.';
 
         $this->init();
 
-        return !$this->isWizardDone() || $this->recordOffset !== [];
+        return $this->recordOffset !== [];
     }
 
     /**
@@ -186,35 +192,35 @@ class FrontendUserImageUpdateWizard extends AbstractUpdate
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
 
-        $stmt = $queryBuilder
-            ->select('uid', 'pid', $this->fieldToMigrate)
-            ->from($this->table)
-            ->where(
-                $queryBuilder->expr()->isNotNull($this->fieldToMigrate),
-                $queryBuilder->expr()->neq(
-                    $this->fieldToMigrate,
-                    $queryBuilder->createNamedParameter('', \PDO::PARAM_STR)
-                ),
-                $queryBuilder->expr()->comparison(
-                    'CAST(CAST(' . $queryBuilder->quoteIdentifier($this->fieldToMigrate) . ' AS DECIMAL) AS CHAR)',
-                    ExpressionBuilder::NEQ,
-                    'CAST(' . $queryBuilder->quoteIdentifier($this->fieldToMigrate) . ' AS CHAR)'
+        try {
+            $result = $queryBuilder
+                ->select('uid', 'pid', $this->fieldToMigrate)
+                ->from($this->table)
+                ->where(
+                    $queryBuilder->expr()->isNotNull($this->fieldToMigrate),
+                    $queryBuilder->expr()->neq(
+                        $this->fieldToMigrate,
+                        $queryBuilder->createNamedParameter('', \PDO::PARAM_STR)
+                    ),
+                    $queryBuilder->expr()->comparison(
+                        'CAST(CAST(' . $queryBuilder->quoteIdentifier($this->fieldToMigrate) . ' AS DECIMAL) AS CHAR)',
+                        ExpressionBuilder::NEQ,
+                        'CAST(' . $queryBuilder->quoteIdentifier($this->fieldToMigrate) . ' AS CHAR)'
+                    )
                 )
-            )
-            ->orderBy('uid')
-            ->setFirstResult($limit)
-            ->execute();
+                ->orderBy('uid')
+                ->setFirstResult($limit)
+                ->execute();
 
-        $dbQueries[] = $queryBuilder->getSQL();
+            $dbQueries[] = $queryBuilder->getSQL();
 
-        if ($stmt->errorCode() > 0) {
+            return $result->fetchAll();
+        } catch (DBALException $e) {
             throw new \RuntimeException(
-                'Database query failed. Error was: ' . implode(CRLF, $stmt->errorInfo()),
+                'Database query failed. Error was: ' . $e->getPrevious()->getMessage(),
                 1476050084
             );
         }
-
-        return $stmt->fetchAll();
     }
 
     /**
@@ -285,6 +291,7 @@ class FrontendUserImageUpdateWizard extends AbstractUpdate
                 try {
                     // if the source file does not exist, we should just continue, but leave a message in the docs;
                     // ideally, the user would be informed after the update as well.
+                    /** @var File $file */
                     $file = $this->storage->getFile($this->targetPath . $item);
                     $fileUid = $file->getUid();
                 } catch (\InvalidArgumentException $e) {

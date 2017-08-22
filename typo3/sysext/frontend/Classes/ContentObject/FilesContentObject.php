@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\Resource\FileCollector;
@@ -34,13 +35,16 @@ class FilesContentObject extends AbstractContentObject
         if (!empty($conf['if.']) && !$this->cObj->checkIf($conf['if.'])) {
             return '';
         }
+        // Store the original "currentFile" within a variable so it can be re-applied later-on
+        $originalFileInContentObject = $this->cObj->getCurrentFile();
 
         $fileCollector = $this->findAndSortFiles($conf);
         $fileObjects = $fileCollector->getFiles();
         $availableFileObjectCount = count($fileObjects);
 
         // optionSplit applied to conf to allow different settings per file
-        $splitConf = $GLOBALS['TSFE']->tmpl->splitConfArray($conf, $availableFileObjectCount);
+        $splitConf = GeneralUtility::makeInstance(TypoScriptService::class)
+            ->explodeConfigurationForOptionSplit($conf, $availableFileObjectCount);
 
         $start = 0;
         if (!empty($conf['begin'])) {
@@ -75,6 +79,10 @@ class FilesContentObject extends AbstractContentObject
             $content .= $this->cObj->cObjGetSingle($splitConf[$key]['renderObj'], $splitConf[$key]['renderObj.']);
             $fileObjectCounter++;
         }
+
+        // Reset current file within cObj to the original file after rendering output of FILES
+        // so e.g. stdWrap is not working on the last current file applied, thus avoiding side-effects
+        $this->cObj->setCurrentFile($originalFileInContentObject);
 
         return $this->cObj->stdWrap($content, $conf['stdWrap.']);
     }

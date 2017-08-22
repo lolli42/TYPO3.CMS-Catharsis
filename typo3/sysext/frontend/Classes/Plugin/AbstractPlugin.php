@@ -581,9 +581,9 @@ class AbstractPlugin
             $pagefloat = -1;
         }
         // Default values for "traditional" wrapping with a table. Can be overwritten by vars from $wrapArr
-        $wrapper['disabledLinkWrap'] = '<td nowrap="nowrap"><p>|</p></td>';
-        $wrapper['inactiveLinkWrap'] = '<td nowrap="nowrap"><p>|</p></td>';
-        $wrapper['activeLinkWrap'] = '<td' . $this->pi_classParam('browsebox-SCell') . ' nowrap="nowrap"><p>|</p></td>';
+        $wrapper['disabledLinkWrap'] = '<td class="nowrap"><p>|</p></td>';
+        $wrapper['inactiveLinkWrap'] = '<td class="nowrap"><p>|</p></td>';
+        $wrapper['activeLinkWrap'] = '<td' . $this->pi_classParam('browsebox-SCell') . ' class="nowrap"><p>|</p></td>';
         $wrapper['browseLinksWrap'] = rtrim('<table ' . $tableParams) . '><tr>|</tr></table>';
         $wrapper['showResultsWrap'] = '<p>|</p>';
         $wrapper['browseBoxWrap'] = '
@@ -613,7 +613,7 @@ class AbstractPlugin
                     $links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($hscText ? htmlspecialchars($label) : $label, [$pointerName => null], $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
                 } else {
                     $label = $this->pi_getLL('pi_list_browseresults_first', '<< First');
-                    $links[] = $this->cObj->wrap(hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
+                    $links[] = $this->cObj->wrap($hscText ? htmlspecialchars($label) : $label, $wrapper['disabledLinkWrap']);
                 }
             }
             // Link to previous page
@@ -632,7 +632,7 @@ class AbstractPlugin
                     $pageText = ($a * $results_at_a_time + 1) . '-' . min($count, ($a + 1) * $results_at_a_time);
                 } else {
                     $label = $this->pi_getLL('pi_list_browseresults_page', 'Page');
-                    $pageText = trim($hscText ? htmlspecialchars($label) : $label . ' ' . ($a + 1));
+                    $pageText = trim(($hscText ? htmlspecialchars($label) : $label) . ' ' . ($a + 1));
                 }
                 // Current page
                 if ($pointer == $a) {

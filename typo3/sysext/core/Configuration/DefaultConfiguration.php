@@ -185,7 +185,7 @@ return [
                     'groups' => ['system']
                 ],
                 'fluid_template' => [
-                    'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
+                    'backend' => \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend::class,
                     'frontend' => \TYPO3\CMS\Fluid\Core\Cache\FluidTemplateCache::class,
                     'groups' => ['system'],
                 ],
@@ -260,7 +260,7 @@ return [
                 'hidden' => 'overlay-hidden',
                 'fe_group' => 'overlay-restricted',
                 'starttime' => 'overlay-scheduled',
-                'endtime' => 'overlay-scheduled',
+                'endtime' => 'overlay-endtime',
                 'futureendtime' => 'overlay-scheduled',
                 'readonly' => 'overlay-readonly',
                 'deleted' => 'overlay-deleted',
@@ -442,6 +442,7 @@ return [
                     ],
                     \TYPO3\CMS\Backend\Form\FormDataProvider\TcaInlineExpandCollapseState::class => [
                         'depends' => [
+                            \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class,
                             \TYPO3\CMS\Backend\Form\FormDataProvider\TcaColumnsOverrides::class,
                         ],
                     ],

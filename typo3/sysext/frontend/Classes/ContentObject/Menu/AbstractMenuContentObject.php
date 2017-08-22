@@ -1621,6 +1621,10 @@ abstract class AbstractMenuContentObject
             $addParams .= $this->I['val']['additionalParams'] . $this->menuArr[$key]['_ADD_GETVARS'];
             $LD = $this->menuTypoLink($this->menuArr[$key], $mainTarget, '', '', $overrideArray, $addParams, $typeOverride);
         }
+        // Override default target configuration if option is set
+        if ($this->menuArr[$key]['target']) {
+            $LD['target'] = $this->menuArr[$key]['target'];
+        }
         // Override URL if using "External URL"
         if ($this->menuArr[$key]['doktype'] == PageRepository::DOKTYPE_LINK) {
             if ($this->menuArr[$key]['urltype'] == 3 && GeneralUtility::validEmail($this->menuArr[$key]['url'])) {
@@ -2052,7 +2056,7 @@ abstract class AbstractMenuContentObject
     {
         $params = trim($this->I['val']['ATagParams']) . $this->I['accessKey']['code'];
         $params = $params !== '' ? ' ' . $params : '';
-        $this->I['A1'] = '<a ' . GeneralUtility::implodeAttributes($this->I['linkHREF'], 1) . $params . '>';
+        $this->I['A1'] = '<a ' . GeneralUtility::implodeAttributes($this->I['linkHREF'], true) . $params . '>';
         $this->I['A2'] = '</a>';
     }
 

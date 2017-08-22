@@ -8,8 +8,11 @@
 	"require": {
 		"typo3/cms-core": "*"
 	},
+	"conflict": {
+		"typo3/cms": "*"
+	},
 	"replace": {
-		"language": "*"
+		"lang": "*"
 	},
 	"extra": {
 		"typo3/cms": {

@@ -91,6 +91,7 @@ class StandaloneView extends AbstractTemplateView
     {
         if ($this->baseRenderingContext instanceof RenderingContext) {
             $this->baseRenderingContext->getControllerContext()->getRequest()->setFormat($format);
+            $this->baseRenderingContext->getTemplatePaths()->setFormat($format);
         } else {
             throw new \RuntimeException('The rendering context must be of type ' . RenderingContext::class, 1482251886);
         }
@@ -137,19 +138,23 @@ class StandaloneView extends AbstractTemplateView
     }
 
     /**
-     * Returns the absolute path to a Fluid template file if it was specified with setTemplatePathAndFilename() before
+     * Returns the absolute path to a Fluid template file if it was specified with setTemplatePathAndFilename() before.
+     * If the template filename was never specified, Fluid attempts to resolve the file based on controller and action.
+     *
+     * NB: If TemplatePaths was previously told to use the specific template path and filename it will short-circuit
+     * and return that template path and filename directly, instead of attempting to resolve it.
      *
      * @return string Fluid template path
-     * @throws \RuntimeException
      * @api
      */
     public function getTemplatePathAndFilename()
     {
         $templatePaths = $this->baseRenderingContext->getTemplatePaths();
-        if ($templatePaths instanceof TemplatePaths) {
-            return $templatePaths->getTemplatePathAndFilename();
-        }
-        throw new \RuntimeException('The template paths storage must be of type ' . TemplatePaths::class, 1482251889);
+        return $templatePaths->resolveTemplateFileForControllerAndActionAndFormat(
+            $this->baseRenderingContext->getControllerName(),
+            $this->baseRenderingContext->getControllerAction(),
+            $templatePaths->getFormat()
+        );
     }
 
     /**
@@ -189,7 +194,7 @@ class StandaloneView extends AbstractTemplateView
     /**
      * Resolves the layout root to be used inside other paths.
      *
-     * @return string Fluid layout root path
+     * @return array Fluid layout root paths
      * @throws InvalidTemplateResourceException
      * @api
      */
@@ -213,7 +218,7 @@ class StandaloneView extends AbstractTemplateView
     /**
      * Returns the absolute path to the folder that contains Fluid partial files
      *
-     * @return string Fluid partial root path
+     * @return array Fluid partial root paths
      * @throws InvalidTemplateResourceException
      * @api
      */

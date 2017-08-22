@@ -8,12 +8,20 @@
 	"require": {
 		"typo3/cms-core": "*"
 	},
+	"conflict": {
+		"typo3/cms": "*"
+	},
 	"replace": {
 		"sys_action": "*"
 	},
 	"autoload": {
 		"psr-4": {
 			"TYPO3\\CMS\\SysAction\\": "Classes/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"TYPO3\\CMS\\SysAction\\Tests\\": "Tests/"
 		}
 	}
 }

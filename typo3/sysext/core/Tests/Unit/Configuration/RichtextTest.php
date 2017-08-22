@@ -207,12 +207,22 @@ class RichtextTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                     'classes.' => [
                         'aClass.' => 'anotherConfig',
                     ],
+                    'editor.' => [
+                        'config.' => [
+                            'contentsCss' => 'my.css'
+                        ]
+                    ],
                 ],
             ],
         ];
         $expected = [
             'classes.' => [
                 'aClass.' => 'anotherConfig',
+            ],
+            'editor' => [
+                'config' => [
+                    'contentsCss' => 'my.css'
+                ]
             ],
             'proc.' => [
                 'overruleMode' => 'default',
@@ -251,6 +261,11 @@ class RichtextTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                             'classes.' => [
                                 'aClass.' => 'aThirdConfig',
                             ],
+                            'editor.' => [
+                                'config.' => [
+                                    'contentsCss' => 'my.css'
+                                ]
+                            ],
                         ],
                     ],
                 ],
@@ -259,6 +274,12 @@ class RichtextTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $expected = [
             'classes.' => [
                 'aClass.' => 'aThirdConfig',
+            ],
+            // editor config without pagets dots
+            'editor' => [
+                'config' => [
+                    'contentsCss' => 'my.css'
+                ]
             ],
             'proc.' => [
                 'overruleMode' => 'default',
@@ -297,10 +318,20 @@ class RichtextTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                             'classes.' => [
                                 'aClass.' => 'aThirdConfig',
                             ],
+                            'editor.' => [
+                                'config.' => [
+                                    'contentsCss' => 'my.css'
+                                ]
+                            ],
                             'types.' => [
                                 'textmedia.' => [
                                     'classes.' => [
                                         'aClass.' => 'aTypeSpecifcConfig',
+                                    ],
+                                    'editor.' => [
+                                        'config.' => [
+                                            'contentsCss' => 'your.css'
+                                        ]
                                     ],
                                 ]
                             ]
@@ -313,6 +344,12 @@ class RichtextTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             'classes.' => [
                 'aClass.' => 'aTypeSpecifcConfig',
             ],
+            // editor config without pagets dots
+            'editor' => [
+                'config' => [
+                    'contentsCss' => 'your.css'
+                ]
+            ],
             'proc.' => [
                 'overruleMode' => 'default',
             ],
@@ -322,6 +359,59 @@ class RichtextTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $subject = $this->getAccessibleMock(Richtext::class, ['getRtePageTsConfigOfPid'], [], '', false);
         $subject->expects($this->once())->method('getRtePageTsConfigOfPid')->with(42)->willReturn($pageTsConfig);
         $output = $subject->getConfiguration('aTable', 'aField', 42, 'textmedia', $fieldConfig);
+        $this->assertSame($expected, $output);
+    }
+
+    /**
+     * @test
+     */
+    public function getConfigurationPageTsOverridesPreset()
+    {
+        $pageId = 42;
+        $presetKey = 'default';
+
+        $preset = [
+            'editor' => [
+                'config' => [
+                    'width' => 100
+                ],
+            ],
+        ];
+
+        $pageTsConfigArray = [
+            'properties' => [
+                'preset' => $presetKey,
+                'editor.' => [
+                    'config.' => [
+                        'width' => 200
+                    ],
+                ],
+            ],
+        ];
+
+        $subject = $this->getAccessibleMock(Richtext::class,
+            ['loadConfigurationFromPreset', 'getRtePageTsConfigOfPid'],
+            [],
+            '',
+            false
+            );
+        $subject->expects($this->once())->method('loadConfigurationFromPreset')->with($presetKey)->willReturn($preset);
+        $subject->expects($this->once())->method('getRtePageTsConfigOfPid')->with($pageId)->willReturn($pageTsConfigArray);
+
+        $output = $subject->getConfiguration('tt_content', 'bodytext', $pageId, 'textmedia', $pageTsConfigArray);
+
+        $expected = [
+            'editor' => [
+                'config' => [
+                    'width' => 200
+                ],
+            ],
+            'preset' => 'default',
+            'proc.' => [
+                'overruleMode' => 'default',
+            ],
+        ];
+
         $this->assertSame($expected, $output);
     }
 }

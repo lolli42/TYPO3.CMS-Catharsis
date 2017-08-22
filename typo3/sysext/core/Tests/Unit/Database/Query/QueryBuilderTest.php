@@ -15,6 +15,10 @@ namespace TYPO3\CMS\Core\Tests\Unit\Database\Query;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\MySqlPlatform;
+use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
+use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Prophecy\Argument;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -22,8 +26,9 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Tests\Unit\Database\Mocks\MockPlatform;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-class QueryBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
+class QueryBuilderTest extends UnitTestCase
 {
     /**
      * @var Connection|\Prophecy\Prophecy\ObjectProphecy
@@ -31,7 +36,7 @@ class QueryBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     protected $connection;
 
     /**
-     * @var \Doctrine\DBAL\Platforms\AbstractPlatform
+     * @var AbstractPlatform
      */
     protected $platform;
 
@@ -277,6 +282,9 @@ class QueryBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $this->subject->select('aField', 'anotherField');
     }
 
+    /**
+     * @return array
+     */
     public function quoteIdentifiersForSelectDataProvider()
     {
         return [
@@ -306,6 +314,30 @@ class QueryBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             ],
             'tableName.fieldName AS anotherTable.anotherFieldName' => [
                 'tableName.fieldName AS anotherTable.anotherFieldName',
+                '"tableName"."fieldName" AS "anotherTable"."anotherFieldName"',
+            ],
+            'fieldName as anotherFieldName' => [
+                'fieldName as anotherFieldName',
+                '"fieldName" AS "anotherFieldName"',
+            ],
+            'tableName.fieldName as anotherFieldName' => [
+                'tableName.fieldName as anotherFieldName',
+                '"tableName"."fieldName" AS "anotherFieldName"',
+            ],
+            'tableName.fieldName as anotherTable.anotherFieldName' => [
+                'tableName.fieldName as anotherTable.anotherFieldName',
+                '"tableName"."fieldName" AS "anotherTable"."anotherFieldName"',
+            ],
+            'fieldName aS anotherFieldName' => [
+                'fieldName aS anotherFieldName',
+                '"fieldName" AS "anotherFieldName"',
+            ],
+            'tableName.fieldName aS anotherFieldName' => [
+                'tableName.fieldName aS anotherFieldName',
+                '"tableName"."fieldName" AS "anotherFieldName"',
+            ],
+            'tableName.fieldName aS anotherTable.anotherFieldName' => [
+                'tableName.fieldName aS anotherTable.anotherFieldName',
                 '"tableName"."fieldName" AS "anotherTable"."anotherFieldName"',
             ],
         ];
@@ -1108,5 +1140,123 @@ class QueryBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             'aTable_alias' => 'aTable'
         ];
         $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @return array
+     */
+    public function unquoteSingleIdentifierUnquotesCorrectlyOnDifferentPlatformsDataProvider()
+    {
+        return [
+            'mysql' => [
+                'platform' => MySqlPlatform::class,
+                'quoteChar' => '`',
+                'input' => '`anIdentifier`',
+                'expected' => 'anIdentifier',
+            ],
+            'mysql with spaces' => [
+                'platform' => MySqlPlatform::class,
+                'quoteChar' => '`',
+                'input' => ' `anIdentifier` ',
+                'expected' => 'anIdentifier',
+            ],
+            'postgres' => [
+                'platform' => PostgreSqlPlatform::class,
+                'quoteChar' => '"',
+                'input' => '"anIdentifier"',
+                'expected' => 'anIdentifier',
+            ],
+            'mssql' => [
+                'platform' => SQLServerPlatform::class,
+                'quoteChar' => '', // no single quote character, but [ and ]
+                'input' => '[anIdentifier]',
+                'expected' => 'anIdentifier',
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider unquoteSingleIdentifierUnquotesCorrectlyOnDifferentPlatformsDataProvider
+     */
+    public function unquoteSingleIdentifierUnquotesCorrectlyOnDifferentPlatforms($platform, $quoteChar, $input, $expected)
+    {
+        $connectionProphecy = $this->prophesize(Connection::class);
+        $databasePlatformProphecy = $this->prophesize($platform);
+        $databasePlatformProphecy->getIdentifierQuoteCharacter()->willReturn($quoteChar);
+        $connectionProphecy->getDatabasePlatform()->willReturn($databasePlatformProphecy);
+        $subject = GeneralUtility::makeInstance(QueryBuilder::class, $connectionProphecy->reveal());
+        $result = $this->callInaccessibleMethod($subject, 'unquoteSingleIdentifier', $input);
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
+    public function cloningQueryBuilderClonesConcreteQueryBuilder()
+    {
+        $clonedQueryBuilder = clone $this->subject;
+        self::assertNotSame($this->subject->getConcreteQueryBuilder(), $clonedQueryBuilder->getConcreteQueryBuilder());
+    }
+
+    /**
+     * @test
+     */
+    public function changingClonedQueryBuilderDoesNotInfluenceSourceOne()
+    {
+        $GLOBALS['TCA']['pages']['ctrl'] = [
+            'tstamp' => 'tstamp',
+            'versioningWS' => true,
+            'delete' => 'deleted',
+            'crdate' => 'crdate',
+            'enablecolumns' => [
+                'disabled' => 'hidden',
+            ],
+        ];
+
+        $this->connection->quoteIdentifier(Argument::cetera())
+            ->willReturnArgument(0);
+        $this->connection->quoteIdentifiers(Argument::cetera())
+            ->willReturnArgument(0);
+        $this->connection->getExpressionBuilder()
+            ->willReturn(GeneralUtility::makeInstance(ExpressionBuilder::class, $this->connection->reveal()));
+
+        $concreteQueryBuilder = GeneralUtility::makeInstance(
+            \Doctrine\DBAL\Query\QueryBuilder::class,
+            $this->connection->reveal()
+        );
+
+        $subject = GeneralUtility::makeInstance(
+            QueryBuilder::class,
+            $this->connection->reveal(),
+            null,
+            $concreteQueryBuilder
+        );
+
+        $subject->select('*')
+            ->from('pages')
+            ->where('uid=1');
+
+        $expectedSQL = 'SELECT * FROM pages WHERE (uid=1) AND ((pages.deleted = 0) AND (pages.hidden = 0))';
+        $this->assertSame($expectedSQL, $subject->getSQL());
+
+        $clonedQueryBuilder = clone $subject;
+        //just after cloning both query builders should return the same sql
+        $this->assertSame($expectedSQL, $clonedQueryBuilder->getSQL());
+
+        //change cloned QueryBuilder
+        $clonedQueryBuilder->count('*');
+        $expectedCountSQL = 'SELECT COUNT(*) FROM pages WHERE (uid=1) AND ((pages.deleted = 0) AND (pages.hidden = 0))';
+        $this->assertSame($expectedCountSQL, $clonedQueryBuilder->getSQL());
+
+        //check if the original QueryBuilder has not changed
+        $this->assertSame($expectedSQL, $subject->getSQL());
+
+        //change restrictions in the original QueryBuilder and check if cloned has changed
+        $subject->getRestrictions()->removeAll()->add(new DeletedRestriction());
+        $expectedSQL = 'SELECT * FROM pages WHERE (uid=1) AND (pages.deleted = 0)';
+        $this->assertSame($expectedSQL, $subject->getSQL());
+
+        $this->assertSame($expectedCountSQL, $clonedQueryBuilder->getSQL());
     }
 }

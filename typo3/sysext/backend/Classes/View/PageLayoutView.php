@@ -1,4 +1,5 @@
 <?php
+
 namespace TYPO3\CMS\Backend\View;
 
 /*
@@ -169,11 +170,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
      * @var \TYPO3\CMS\Backend\Clipboard\Clipboard
      */
     protected $clipboard;
-
-    /**
-     * @var array
-     */
-    protected $plusPages = [];
 
     /**
      * User permissions
@@ -410,19 +406,16 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                         }
                 }
             }
-            // CSH:
-            $optionKey = $this->getPageLayoutController()->MOD_SETTINGS['pages'];
-            $out = BackendUtility::cshItem($this->descrTable, ('func_' . $optionKey), null, '<span class="btn btn-default btn-sm">|</span>') . '
-                <div class="table-fit">
-					<table class="table table-striped table-hover typo3-page-pages">' .
-                        '<thead>' .
-                            $this->addElement(1, '', $theData) .
-                        '</thead>' .
-                        '<tbody>' .
-                            $out .
-                        '</tbody>' .
-                    '</table>
-				</div>';
+            $out = '<div class="table-fit">'
+                . '<table class="table table-striped table-hover typo3-page-pages">'
+                    . '<thead>'
+                            . $this->addElement(1, '', $theData)
+                    . '</thead>'
+                    . '<tbody>'
+                        . $out
+                    . '</tbody>'
+                . '</table>'
+                . '</div>';
         }
         return $out;
     }
@@ -946,7 +939,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                         . ' ' . $recordIcon . ' ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($this->pageRecord['title'], 20));
                 }
                 $sCont[$lP] = '
-					<td nowrap="nowrap" class="t3-page-column t3-page-lang-label">' . $lPLabel . '</td>';
+					<td class="t3-page-column t3-page-lang-label nowrap">' . $lPLabel . '</td>';
             }
             // Add headers:
             $out .= '<tr>' . implode($cCont) . '</tr>';
@@ -1283,11 +1276,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                     );
                 }
             }
-        } else {
-            $count = (int)$queryBuilder->count('uid')->execute()->fetchColumn(0);
-            if ($count) {
-                $this->plusPages[$pid] = $count;
-            }
         }
 
         return $rows;
@@ -1365,14 +1353,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
         foreach ($fieldArr as $field) {
             switch ($field) {
                 case 'title':
-                    $red = $this->plusPages[$row['uid']] ? '<span class="text-danger"><strong>+</strong></span>' : '';
                     $pTitle = htmlspecialchars(BackendUtility::getProcessedValue('pages', $field, $row[$field], 20));
-                    if ($red) {
-                        $pTitle = '<a href="'
-                            . htmlspecialchars($this->script . ((strpos($this->script, '?') !== false) ? '&' : '?')
-                            . 'id=' . $row['uid']) . '">' . $pTitle . '</a>';
-                    }
-                    $theData[$field] = $row['treeIcons'] . $theIcon . $red . $pTitle . '&nbsp;&nbsp;';
+                    $theData[$field] = $row['treeIcons'] . $theIcon . $pTitle . '&nbsp;&nbsp;';
                     break;
                 case 'php_tree_stop':
                     // Intended fall through
@@ -2143,7 +2125,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
                 )
                 ->groupBy('pages_language_overlay.sys_language_uid', 'sys_language.uid', 'sys_language.pid',
                     'sys_language.tstamp', 'sys_language.hidden', 'sys_language.title',
-                    'sys_language.language_isocode', 'sys_language.static_lang_isocode', 'sys_language.flag')
+                    'sys_language.language_isocode', 'sys_language.static_lang_isocode', 'sys_language.flag',
+                    'sys_language.sorting')
                 ->orderBy('sys_language.sorting');
             if (!$this->getBackendUser()->isAdmin()) {
                 $queryBuilder->andWhere(

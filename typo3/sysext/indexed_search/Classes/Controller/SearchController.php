@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
@@ -36,7 +37,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      *
      * @var string
      */
-    protected $sword = null;
+    protected $sword = '';
 
     /**
      * @var array
@@ -455,7 +456,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             }
         }
         $title = $resultData['item_title'] . $resultData['titleaddition'];
-        $title = $this->charsetConverter->crop('utf-8', $title, $this->settings['results.']['titleCropAfter'], $this->settings['results.']['titleCropSignifier']);
+        $title = GeneralUtility::fixed_lgd_cs($title, $this->settings['results.']['titleCropAfter'], $this->settings['results.']['titleCropSignifier']);
         // If external media, link to the media-file instead.
         if ($row['item_type']) {
             if ($row['show_resume']) {
@@ -711,7 +712,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                 }
             }
             if (!trim($markedSW)) {
-                $outputStr = $this->charsetConverter->crop('utf-8', $row['item_description'], $length, $this->settings['results.']['summaryCropSignifier']);
+                $outputStr = GeneralUtility::fixed_lgd_cs($row['item_description'], $length, $this->settings['results.']['summaryCropSignifier']);
                 $outputStr = htmlspecialchars($outputStr);
             }
             $output = $outputStr ?: $markedSW;
@@ -763,16 +764,16 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
                 if (!$k) {
                     // First entry at all (only cropped on the frontside)
                     if ($strLen > $postPreLgd) {
-                        $output[$k] = $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $this->charsetConverter->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
+                        $output[$k] = $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', GeneralUtility::fixed_lgd_cs($parts[$k], -($postPreLgd - $postPreLgd_offset)));
                     }
                 } elseif ($summaryLgd > $summaryMax || !isset($parts[$k + 1])) {
                     // In case summary length is exceed OR if there are no more entries at all:
                     if ($strLen > $postPreLgd) {
-                        $output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $this->charsetConverter->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider;
+                        $output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', GeneralUtility::fixed_lgd_cs($parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider;
                     }
                 } else {
                     if ($strLen > $postPreLgd * 2) {
-                        $output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $this->charsetConverter->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $this->charsetConverter->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
+                        $output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', GeneralUtility::fixed_lgd_cs($parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', GeneralUtility::fixed_lgd_cs($parts[$k], -($postPreLgd - $postPreLgd_offset)));
                     }
                 }
                 $summaryLgd += mb_strlen($output[$k], 'utf-8');
@@ -859,8 +860,10 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         // shortening the string here is only a run-away feature!)
         $searchWords = substr($this->getSword(), 0, 200);
         // Convert to UTF-8 + conv. entities (was also converted during indexing!)
-        $searchWords = $this->charsetConverter->conv($searchWords, $GLOBALS['TSFE']->metaCharset, 'utf-8');
-        $searchWords = $this->charsetConverter->entities_to_utf8($searchWords);
+        if ($GLOBALS['TSFE']->metaCharset && $GLOBALS['TSFE']->metaCharset !== 'utf-8') {
+            $searchWords = mb_convert_encoding($searchWords, 'utf-8', $GLOBALS['TSFE']->metaCharset);
+            $searchWords = html_entity_decode($searchWords);
+        }
         $sWordArray = false;
         if ($hookObj = $this->hookRequest('getSearchWords')) {
             $sWordArray = $hookObj->getSearchWords_splitSWords($searchWords, $defaultOperator);
@@ -1311,7 +1314,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
         if ($row['data_page_mp']) {
             $urlParameters['MP'] = $row['data_page_mp'];
         }
-        $urlParameters['L'] = intval($row['sys_language_uid']);
+        $urlParameters['L'] = (int)$row['sys_language_uid'];
         // markup-GET vars:
         $urlParameters = array_merge($urlParameters, $markUpSwParams);
         // This will make sure that the path is retrieved if it hasn't been
@@ -1390,7 +1393,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
             $pageCount = count($rl);
             if (is_array($rl) && !empty($rl)) {
                 $breadcrumbWrap = isset($this->settings['breadcrumbWrap']) ? $this->settings['breadcrumbWrap'] : '/';
-                $breadcrumbWraps = $GLOBALS['TSFE']->tmpl->splitConfArray(['wrap' => $breadcrumbWrap], $pageCount);
+                $breadcrumbWraps = GeneralUtility::makeInstance(TypoScriptService::class)
+                    ->explodeConfigurationForOptionSplit(['wrap' => $breadcrumbWrap], $pageCount);
                 foreach ($rl as $k => $v) {
                     // Check fe_user
                     if ($v['fe_group'] && ($v['uid'] == $id || $v['extendToSubpages'])) {
@@ -1542,7 +1546,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     protected function getNumberOfResults($numberOfResults)
     {
-        $numberOfResults = intval($numberOfResults);
+        $numberOfResults = (int)$numberOfResults;
 
         return (in_array($numberOfResults, $this->availableResultsNumbers)) ?
             $numberOfResults : $this->defaultResultNumber;
@@ -1554,7 +1558,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     public function setSword($sword)
     {
-        $this->sword = $sword;
+        $this->sword = (string)$sword;
     }
 
     /**
@@ -1563,6 +1567,6 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
      */
     public function getSword()
     {
-        return $this->sword;
+        return (string)$this->sword;
     }
 }

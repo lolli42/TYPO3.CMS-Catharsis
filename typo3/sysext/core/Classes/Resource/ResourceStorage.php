@@ -19,7 +19,6 @@ use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidTargetFolderException;
 use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
-use TYPO3\CMS\Core\Resource\Index\Indexer;
 use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -1167,18 +1166,24 @@ class ResourceStorage implements ResourceStorageInterface
         $targetFileName = $this->emitPreFileAddSignal($targetFileName, $targetFolder, $localFilePath);
 
         $this->assureFileAddPermissions($targetFolder, $targetFileName);
+
+        $replaceExisting = false;
         if ($conflictMode->equals(DuplicationBehavior::CANCEL) && $this->driver->fileExistsInFolder($targetFileName, $targetFolder->getIdentifier())) {
             throw new Exception\ExistingTargetFileNameException('File "' . $targetFileName . '" already exists in folder ' . $targetFolder->getIdentifier(), 1322121068);
         } elseif ($conflictMode->equals(DuplicationBehavior::RENAME)) {
             $targetFileName = $this->getUniqueName($targetFolder, $targetFileName);
+        } elseif ($conflictMode->equals(DuplicationBehavior::REPLACE) && $this->driver->fileExistsInFolder($targetFileName, $targetFolder->getIdentifier())) {
+            $replaceExisting = true;
         }
 
         $fileIdentifier = $this->driver->addFile($localFilePath, $targetFolder->getIdentifier(), $targetFileName, $removeOriginal);
         $file = $this->getResourceFactoryInstance()->getFileObjectByStorageAndIdentifier($this->getUid(), $fileIdentifier);
 
+        if ($replaceExisting && $file instanceof File) {
+            $this->getIndexer()->updateIndexEntry($file);
+        }
         if ($this->autoExtractMetadataEnabled()) {
-            $indexer = GeneralUtility::makeInstance(Indexer::class, $this);
-            $indexer->extractMetaData($file);
+            $this->getIndexer()->extractMetaData($file);
         }
 
         $this->emitPostFileAddSignal($file, $targetFolder);
@@ -1294,7 +1299,7 @@ class ResourceStorage implements ResourceStorageInterface
                     }
 
                     $queryParameterArray['token'] = GeneralUtility::hmac(implode('|', $queryParameterArray), 'resourceStorageDumpFile');
-                    $publicUrl = 'index.php?' . str_replace('+', '%20', http_build_query($queryParameterArray));
+                    $publicUrl = 'index.php?' . http_build_query($queryParameterArray, '', '&', PHP_QUERY_RFC3986);
                 }
 
                 // If requested, make the path relative to the current script in order to make it possible
@@ -1902,8 +1907,7 @@ class ResourceStorage implements ResourceStorageInterface
             $this->getIndexer()->updateIndexEntry($file);
         }
         if ($this->autoExtractMetadataEnabled()) {
-            $indexer = GeneralUtility::makeInstance(Indexer::class, $this);
-            $indexer->extractMetaData($file);
+            $this->getIndexer()->extractMetaData($file);
         }
         $this->emitPostFileReplaceSignal($file, $localFilePath);
 

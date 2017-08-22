@@ -37,6 +37,14 @@ class RsaEncryptionEncoder implements SingletonInterface
     protected $pageRenderer = null;
 
     /**
+     * This method is called by the hook constructPostProcess
+     */
+    public function enableEncryptionFromBackendControllerPostConstructor()
+    {
+        $this->enableRsaEncryption(true);
+    }
+
+    /**
      * Load all necessary Javascript files
      *
      * @param bool $useRequireJsModule
@@ -53,7 +61,7 @@ class RsaEncryptionEncoder implements SingletonInterface
             $pageRenderer->loadRequireJsModule('TYPO3/CMS/Rsaauth/RsaEncryptionModule');
         } else {
             // Register ajax handler url
-            $code = 'var TYPO3RsaEncryptionPublicKeyUrl = ' . GeneralUtility::quoteJSvalue(GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . 'index.php?eID=RsaPublicKeyGenerationController') . ';';
+            $code = 'var TYPO3RsaEncryptionPublicKeyUrl = ' . GeneralUtility::quoteJSvalue(GeneralUtility::getIndpEnv('TYPO3_SITE_PATH') . 'index.php?eID=RsaPublicKeyGenerationController') . ';';
             $pageRenderer->addJsInlineCode('TYPO3RsaEncryptionPublicKeyUrl', $code);
             $javascriptPath = ExtensionManagementUtility::siteRelPath('rsaauth') . 'Resources/Public/JavaScript/';
             if (!$GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['debug']) {

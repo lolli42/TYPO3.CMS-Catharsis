@@ -240,8 +240,7 @@ $tree-control-icon-size: 12px;
 //
 .treeline-icon {
     position: relative;
-    display: block;
-    float: left;
+    display: inline-block;
     margin-top: -6px;
     margin-bottom: -6px;
     margin-right: 2px;
@@ -250,6 +249,7 @@ $tree-control-icon-size: 12px;
     width: 16px;
     white-space: nowrap;
     overflow: hidden;
+    vertical-align: top;
 
     &:after,
     &:before {
@@ -367,4 +367,14 @@ span.dragIcon {
 .x-layout-split {
     width: 1px;
     background-color: $navigation-border;
+}
+
+//
+// Info Pagetree Overview
+[id=InfoModuleController] a.btn-default {
+    margin-right: 5px;
+}
+
+[id=InfoModuleController] a.t3js-contextmenutrigger {
+    margin-right: 4px;
 }

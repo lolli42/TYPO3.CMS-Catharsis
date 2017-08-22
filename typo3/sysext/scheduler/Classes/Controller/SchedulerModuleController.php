@@ -731,8 +731,8 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                 . $label
                 . '<div class="form-control-wrap">'
                     . '<div class="input-group" id="tceforms-datetimefield-task_start_row-wrapper">'
-                        . '<input name="tx_scheduler[start]_hr" value="' . $value . '" class="form-control t3js-datetimepicker t3js-clearable" data-date-type="datetime" data-date-offset="0" type="text" id="tceforms-datetimefield-task_start_row">'
-                        . '<input name="tx_scheduler[start]" value="' . $taskInfo['start'] . '" type="hidden">'
+                        . '<input name="tx_scheduler[start]_hr" value="' . htmlspecialchars($value) . '" class="form-control t3js-datetimepicker t3js-clearable" data-date-type="datetime" type="text" id="tceforms-datetimefield-task_start_row">'
+                        . '<input name="tx_scheduler[start]" value="' . htmlspecialchars($taskInfo['start']) . '" type="hidden">'
                         . '<span class="input-group-btn"><label class="btn btn-default" for="tceforms-datetimefield-task_start_row"><span class="fa fa-calendar"></span></label></span>'
                     . '</div>'
                 . '</div>'
@@ -747,8 +747,8 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                 . BackendUtility::wrapInHelp($this->cshKey, 'task_end', $label)
                 . '<div class="form-control-wrap">'
                     . '<div class="input-group" id="tceforms-datetimefield-task_end_row-wrapper">'
-                        . '<input name="tx_scheduler[end]_hr" value="' . $value . '" class="form-control  t3js-datetimepicker t3js-clearable" data-date-type="datetime" data-date-offset="0" type="text" id="tceforms-datetimefield-task_end_row">'
-                        . '<input name="tx_scheduler[end]" value="' . $taskInfo['end'] . '" type="hidden">'
+                        . '<input name="tx_scheduler[end]_hr" value="' . htmlspecialchars($value) . '" class="form-control  t3js-datetimepicker t3js-clearable" data-date-type="datetime" type="text" id="tceforms-datetimefield-task_end_row">'
+                        . '<input name="tx_scheduler[end]" value="' . htmlspecialchars($taskInfo['end']) . '" type="hidden">'
                         . '<span class="input-group-btn"><label class="btn btn-default" for="tceforms-datetimefield-task_end_row"><span class="fa fa-calendar"></span></label></span>'
                     . '</div>'
                 . '</div>'
@@ -1156,7 +1156,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                             . '<td><span class="t-span">' . $multiple . '</span></td>'
                             . '<td><span class="t-span">' . $lastExecution . '</span></td>'
                             . '<td><span class="t-span">' . $nextDate . '</span></td>'
-                            . '<td nowrap="nowrap"><span class="t-span">' . $actions . '</span></td>'
+                            . '<td class="nowrap"><span class="t-span">' . $actions . '</span></td>'
                         . '</tr>';
                 } else {
                     // The task object is not valid
@@ -1172,7 +1172,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
                             . '<td>' . $startExecutionElement . '</td>'
                             . '<td class="right">' . $schedulerRecord['uid'] . '</td>'
                             . '<td colspan="6">' . $executionStatusOutput . '</td>'
-                            . '<td nowrap="nowrap"><div class="btn-group" role="group">'
+                            . '<td class="nowrap"><div class="btn-group" role="group">'
                                 . '<span class="btn btn-default disabled">' . $this->moduleTemplate->getIconFactory()->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>'
                                 . '<span class="btn btn-default disabled">' . $this->moduleTemplate->getIconFactory()->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>'
                                 . $deleteAction

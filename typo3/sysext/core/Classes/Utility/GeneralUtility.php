@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Core\Utility;
  */
 
 use GuzzleHttp\Exception\RequestException;
-use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Core\Crypto\Random;
@@ -279,9 +278,15 @@ class GeneralUtility
      */
     public static function fixed_lgd_cs($string, $chars, $appendString = '...')
     {
-        /** @var CharsetConverter $charsetConverter */
-        $charsetConverter = self::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
-        return $charsetConverter->crop('utf-8', $string, $chars, $appendString);
+        if ((int)$chars === 0 || mb_strlen($string, 'utf-8') <= abs($chars)) {
+            return $string;
+        }
+        if ($chars > 0) {
+            $string = mb_substr($string, 0, $chars, 'utf-8') . $appendString;
+        } else {
+            $string = $appendString . mb_substr($string, $chars, mb_strlen($string, 'utf-8'), 'utf-8');
+        }
+        return $string;
     }
 
     /**
@@ -446,7 +451,7 @@ class GeneralUtility
         // According to RFC lowercase-representation is recommended
         $address = strtolower($address);
         // Normalized representation has 39 characters (0000:0000:0000:0000:0000:0000:0000:0000)
-        if (strlen($address) == 39) {
+        if (strlen($address) === 39) {
             // Already in full expanded form
             return $address;
         }
@@ -458,7 +463,7 @@ class GeneralUtility
             $left = count($chunksLeft);
             $right = count($chunksRight);
             // Special case: leading zero-only blocks count to 1, should be 0
-            if ($left == 1 && strlen($chunksLeft[0]) == 0) {
+            if ($left === 1 && strlen($chunksLeft[0]) === 0) {
                 $left = 0;
             }
             $hiddenBlocks = 8 - ($left + $right);
@@ -468,7 +473,7 @@ class GeneralUtility
                 $hiddenPart .= '0000:';
                 $h++;
             }
-            if ($left == 0) {
+            if ($left === 0) {
                 $stageOneAddress = $hiddenPart . $chunks[1];
             } else {
                 $stageOneAddress = $chunks[0] . ':' . $hiddenPart . $chunks[1];
@@ -1022,7 +1027,11 @@ class GeneralUtility
         $domain = substr($email, $atPosition + 1);
         $user = substr($email, 0, $atPosition);
         if (!preg_match('/^[a-z0-9.\\-]*$/i', $domain)) {
-            $domain = self::idnaEncode($domain);
+            try {
+                $domain = self::idnaEncode($domain);
+            } catch (\InvalidArgumentException $exception) {
+                return false;
+            }
         }
         return filter_var($user . '@' . $domain, FILTER_VALIDATE_EMAIL) !== false;
     }
@@ -1198,7 +1207,11 @@ class GeneralUtility
             return false;
         }
         if (isset($parsedUrl['host']) && !preg_match('/^[a-z0-9.\\-]*$/i', $parsedUrl['host'])) {
-            $parsedUrl['host'] = self::idnaEncode($parsedUrl['host']);
+            try {
+                $parsedUrl['host'] = self::idnaEncode($parsedUrl['host']);
+            } catch (\InvalidArgumentException $exception) {
+                return false;
+            }
         }
         return filter_var(HttpUtility::buildUrl($parsedUrl), FILTER_VALIDATE_URL) !== false;
     }
@@ -2203,10 +2216,6 @@ class GeneralUtility
      */
     public static function writeFileToTypo3tempDir($filepath, $content)
     {
-        if (!defined('PATH_site')) {
-            return 'PATH_site constant was NOT defined!';
-        }
-
         // Parse filepath into directory and basename:
         $fI = pathinfo($filepath);
         $fI['dirname'] .= '/';
@@ -2236,13 +2245,13 @@ class GeneralUtility
         }
         // Checking dir-name again (sub-dir might have been created):
         if (@is_dir($dirName)) {
-            if ($filepath == $dirName . $fI['basename']) {
+            if ($filepath === $dirName . $fI['basename']) {
                 static::writeFile($filepath, $content);
                 if (!@is_file($filepath)) {
                     return 'The file was not written to the disk. Please, check that you have write permissions to the typo3temp/ directory.';
                 }
             } else {
-                return 'Calculated filelocation didn\'t match input "' . $filepath . '".';
+                return 'Calculated file location didn\'t match input "' . $filepath . '".';
             }
         } else {
             return '"' . $dirName . '" is not a directory!';
@@ -2453,7 +2462,7 @@ class GeneralUtility
         }
 
         $pathPrefix = $path . '/';
-        $extensionList = ',' . $extensionList . ',';
+        $extensionList = ',' . str_replace(' ', '', $extensionList) . ',';
         $files = [];
         foreach ($rawFileList as $entry) {
             $completePathToEntry = $pathPrefix . $entry;
@@ -4350,8 +4359,8 @@ class GeneralUtility
      * This should be implemented around the source code, both frontend and backend, logging everything from the flow through an application, messages, results from comparisons to fatal errors.
      * The result is meant to make sense to developers during development or debugging of a site.
      * The idea is that this function is only a wrapper for external extensions which can set a hook which will be allowed to handle the logging of the information to any format they might wish and with any kind of filter they would like.
-     * If you want to implement the devLog in your applications, simply add lines like:
-     * if (TYPO3_DLOG)	\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('[write message in english here]', 'extension key');
+     * If you want to implement the devLog in your applications, simply add a line like:
+     * \TYPO3\CMS\Core\Utility\GeneralUtility::devLog('[write message in english here]', 'extension key');
      *
      * @param string $msg Message (in english).
      * @param string $extKey Extension key (from which extension you are calling the log)
@@ -4360,7 +4369,7 @@ class GeneralUtility
      */
     public static function devLog($msg, $extKey, $severity = 0, $dataVar = false)
     {
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['devLog'])) {
+        if ((bool)$GLOBALS['TYPO3_CONF_VARS']['SYS']['enable_DLOG'] && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['devLog'])) {
             $params = ['msg' => $msg, 'extKey' => $extKey, 'severity' => $severity, 'dataVar' => $dataVar];
             $fakeThis = false;
             foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['devLog'] as $hookMethod) {

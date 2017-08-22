@@ -8,8 +8,18 @@
 	"require": {
 		"typo3/cms-core": "*"
 	},
+	"conflict": {
+		"typo3/cms": "*"
+	},
 	"replace": {
 		"version": "*"
+	},
+	"extra": {
+		"typo3/class-alias-loader": {
+			"class-alias-maps": [
+				"Migrations/Code/ClassAliasMap.php"
+			]
+		}
 	},
 	"autoload": {
 		"psr-4": {

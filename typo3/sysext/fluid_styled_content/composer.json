@@ -9,6 +9,9 @@
 		"typo3/cms-core": "*",
 		"typo3/cms-frontend": "*"
 	},
+	"conflict": {
+		"typo3/cms": "*"
+	},
 	"replace": {
 		"fluid_styled_content": "*"
 	},
@@ -22,6 +25,11 @@
 	"autoload": {
 		"psr-4": {
 			"TYPO3\\CMS\\FluidStyledContent\\": "Classes/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"TYPO3\\CMS\\FluidStyledContent\\Tests\\": "Tests/"
 		}
 	}
 }

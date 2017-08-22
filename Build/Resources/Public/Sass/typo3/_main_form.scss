@@ -104,6 +104,18 @@ label {
     }
 }
 
+.form-group {
+    .t3js-formengine-field-item {
+        position: relative;
+
+        > .t3js-charcounter {
+            left: 0;
+            position: absolute;
+            top: 100%;
+        }
+    }
+}
+
 .form-control[disabled],
 .form-control[readonly],
 fieldset[disabled] .form-control {
