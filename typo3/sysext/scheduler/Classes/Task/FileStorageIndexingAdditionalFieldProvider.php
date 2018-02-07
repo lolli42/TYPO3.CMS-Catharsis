@@ -23,7 +23,7 @@ class FileStorageIndexingAdditionalFieldProvider implements \TYPO3\CMS\Scheduler
      * Add additional fields
      *
      * @param array $taskInfo Reference to the array containing the info used in the add/edit form
-     * @param AbstractTask|NULL $task When editing, reference to the current task. NULL when adding.
+     * @param AbstractTask|null $task When editing, reference to the current task. NULL when adding.
      * @param \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject Reference to the calling object (Scheduler's BE module)
      * @return array Array containing all the information pertaining to the additional fields
      * @throws \InvalidArgumentException
@@ -52,9 +52,9 @@ class FileStorageIndexingAdditionalFieldProvider implements \TYPO3\CMS\Scheduler
         foreach ($storages as $storage) {
             $selected = '';
             if ($task !== null && $task->storageUid === $storage->getUid()) {
-                $selected =' selected="selected"';
+                $selected = ' selected="selected"';
             } elseif ((int)$taskInfo['scheduler_fileStorageIndexing_storage'] === $storage->getUid()) {
-                $selected =' selected="selected"';
+                $selected = ' selected="selected"';
             }
             $options[] = '<option value="' . $storage->getUid() . '" ' . $selected . ' >' . $storage->getName() . '</option>';
         }
@@ -84,7 +84,8 @@ class FileStorageIndexingAdditionalFieldProvider implements \TYPO3\CMS\Scheduler
         $value = $submittedData['scheduler_fileStorageIndexing_storage'];
         if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($value)) {
             return false;
-        } elseif (\TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getStorageObject($submittedData['scheduler_fileStorageIndexing_storage']) !== null) {
+        }
+        if (\TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getStorageObject($submittedData['scheduler_fileStorageIndexing_storage']) !== null) {
             return true;
         }
         return false;

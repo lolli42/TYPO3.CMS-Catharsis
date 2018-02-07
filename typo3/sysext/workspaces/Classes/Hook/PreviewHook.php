@@ -81,8 +81,7 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface
                 GeneralUtility::_GP('no_cache'),
                 GeneralUtility::_GP('cHash'),
                 null,
-                GeneralUtility::_GP('MP'),
-                GeneralUtility::_GP('RDCT')
+                GeneralUtility::_GP('MP')
             );
             $GLOBALS['TSFE'] = $this->tsfeObj;
             // Configuration after initialization of TSFE object.
@@ -303,26 +302,24 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface
                             setcookie($this->previewKey, GeneralUtility::_GP($this->previewKey), 0, GeneralUtility::getIndpEnv('TYPO3_SITE_PATH'), null, null, true);
                         }
                         return $previewConfig;
-                    } elseif (GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . 'index.php?' . $this->previewKey . '=' . $inputCode === GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL')) {
+                    }
+                    if (GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . 'index.php?' . $this->previewKey . '=' . $inputCode === GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL')) {
                         // Set GET variables
                         $GET_VARS = '';
                         parse_str($previewConfig['getVars'], $GET_VARS);
                         GeneralUtility::_GETset($GET_VARS);
                         // Return preview keyword configuration
                         return $previewConfig;
-                    } else {
-                        // This check is to prevent people from setting additional
-                        // GET vars via realurl or other URL path based ways of passing parameters.
-                        throw new \Exception(htmlspecialchars('Request URL did not match "'
+                    }
+                    // This check is to prevent people from setting additional
+                    // GET vars via realurl or other URL path based ways of passing parameters.
+                    throw new \Exception(htmlspecialchars('Request URL did not match "'
                             . GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . 'index.php?' . $this->previewKey . '='
                             . $inputCode . '"', 1294585190));
-                    }
-                } else {
-                    throw new \Exception('POST requests are incompatible with keyword preview.', 1294585191);
                 }
-            } else {
-                throw new \Exception('ADMCMD command could not be executed! (No keyword configuration found)', 1294585192);
+                throw new \Exception('POST requests are incompatible with keyword preview.', 1294585191);
             }
+            throw new \Exception('ADMCMD command could not be executed! (No keyword configuration found)', 1294585192);
         }
         return false;
     }
@@ -353,7 +350,7 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface
      * @param string $getVarsStr Get variables to preview, eg. 'id=1150&L=0&ADMCMD_view=1&ADMCMD_editIcons=1&ADMCMD_previewWS=8'
      * @param string $backendUserUid 32 byte MD5 hash keyword for the URL: "?ADMCMD_prev=[keyword]
      * @param int $ttl Time-To-Live for keyword
-     * @param int|NULL $fullWorkspace Which workspace to preview. Workspace UID, -1 or >0. If set, the getVars is ignored in the frontend, so that string can be empty
+     * @param int|null $fullWorkspace Which workspace to preview. Workspace UID, -1 or >0. If set, the getVars is ignored in the frontend, so that string can be empty
      * @return string Returns keyword to use in URL for ADMCMD_prev=
      */
     public function compilePreviewKeyword($getVarsStr, $backendUserUid, $ttl = 172800, $fullWorkspace = null)

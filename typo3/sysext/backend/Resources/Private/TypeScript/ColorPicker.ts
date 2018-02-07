@@ -11,7 +11,7 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-import $ = require('jquery');
+import * as $ from 'jquery';
 import 'TYPO3/CMS/Core/Contrib/jquery.minicolors';
 
 /**
@@ -41,14 +41,17 @@ class ColorPicker {
       position: 'bottom left',
       theme: 'bootstrap',
     });
-    $(document).on('change', '.t3js-colorpicker-value-trigger', function(this: HTMLFormElement): void {
-      $(this).closest('.t3js-formengine-field-item')
-             .find('.t3js-color-picker')
-             .val(this.value)
-             .trigger('paste');
-      $(this).val('');
+    $(document).on('change', '.t3js-colorpicker-value-trigger', (event: Event): void => {
+      const $element = $(event.target);
+      if ($element.val() !== '') {
+        $element.closest('.t3js-formengine-field-item')
+          .find('.t3js-color-picker')
+          .val($element.val())
+          .trigger('paste');
+        $element.val('');
+      }
     });
   }
 }
-// Create an instance and return it
+// create an instance and return it
 export = new ColorPicker();

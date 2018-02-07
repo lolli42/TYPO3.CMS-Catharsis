@@ -294,21 +294,21 @@ search.skipExtendToSubpagesChecking
 
 
 
-.. _specconfs-pid:
+.. _specialConfiguration-pid:
 
-specConfs.[pid]
+specialConfiguration.[pid]
 """""""""""""""
 
 .. container:: table-row
 
    Property
-         specConfs.[pid]
+         specialConfiguration.[pid]
 
    Data type
          -
 
    Description
-         "specConfs" is an array of objects with properties that can customize
+         "specialConfiguration" is an array of objects with properties that can customize
          certain behaviours of the display of a result row depending on it's
          position in the rootline. For instance you can define that all results
          which links to pages in a branch from page id 123 should have another
@@ -329,15 +329,15 @@ specConfs.[pid]
 
 
 
-.. _specconfs-pid-pageicon:
+.. _specialConfiguration-pid-pageicon:
 
-specConfs.[pid].pageIcon
+specialConfiguration.[pid].pageIcon
 """"""""""""""""""""""""
 
 .. container:: table-row
 
    Property
-         specConfs.[pid].pageIcon
+         specialConfiguration.[pid].pageIcon
 
    Data type
          :ref:`IMAGE cObject <t3tsref:cobj-image>`
@@ -347,15 +347,15 @@ specConfs.[pid].pageIcon
 
 
 
-.. _specconfs-pid-csssuffix:
+.. _specialConfiguration-pid-csssuffix:
 
-specConfs.[pid].CSSsuffix
+specialConfiguration.[pid].CSSsuffix
 """""""""""""""""""""""""
 
 .. container:: table-row
 
    Property
-         specConfs.[pid].CSSsuffix
+         specialConfiguration.[pid].CSSsuffix
 
    Data type
          string
@@ -602,6 +602,33 @@ results\_markupSW_divider
    Description
          Divider for highlighted searchwords in the summary
          Defaults to "..."
+
+.. _results-pathExcludeDoktypes:
+
+results\_pathExcludeDoktypes
+""""""""""""""""""""""""""""
+
+.. container:: table-row
+
+   Property
+         results\_pathExcludeDoktypes
+
+   Data type
+         string
+
+   Description
+         Excludes doktypes in path.
+         Defaults to ""
+
+         **Example:**
+         pathExcludeDoktypes = 254
+         Exclude sys_folder (doktype: 254) in path for result.
+
+         "/Footer(254)/Navi(254)/Imprint(1)" -> "/Imprint".
+
+         pathExcludeDoktypes = 254,4
+         Exclude sys_folder (doktype: 254) and shortcuts (doktype:4) in path for result.
+         "/About-Us(254)/Company(4)/Germany(1)" -> "/Germany".
 
 
 .. _linkSectionTitles-stdWrap:

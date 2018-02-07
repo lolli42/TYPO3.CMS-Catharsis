@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Imaging\ImageManipulation;
 
 /*
@@ -179,8 +179,7 @@ class Area
     {
         if ($this->isEmpty()) {
             return '';
-        } else {
-            return json_encode($this->asArray());
         }
+        return json_encode($this->asArray());
     }
 }

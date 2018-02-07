@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace TYPO3\CMS\Frontend\Http;
 
 /*
@@ -14,10 +15,14 @@ namespace TYPO3\CMS\Frontend\Http;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
 use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\FrontendEditing\FrontendEditingController;
+use TYPO3\CMS\Core\Http\NullResponse;
 use TYPO3\CMS\Core\Http\RequestHandlerInterface;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -57,7 +62,7 @@ class RequestHandler implements RequestHandlerInterface
 
     /**
      * The request handed over
-     * @var \Psr\Http\Message\ServerRequestInterface
+     * @var ServerRequestInterface
      */
     protected $request;
 
@@ -74,23 +79,19 @@ class RequestHandler implements RequestHandlerInterface
     /**
      * Handles a frontend request
      *
-     * @param \Psr\Http\Message\ServerRequestInterface $request
-     * @return NULL|\Psr\Http\Message\ResponseInterface
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
      */
-    public function handleRequest(\Psr\Http\Message\ServerRequestInterface $request)
+    public function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
         $response = null;
         $this->request = $request;
         $this->initializeTimeTracker();
 
         // Hook to preprocess the current request:
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['preprocessRequest'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['preprocessRequest'] as $hookFunction) {
-                $hookParameters = [];
-                GeneralUtility::callUserFunction($hookFunction, $hookParameters, $hookParameters);
-            }
-            unset($hookFunction);
-            unset($hookParameters);
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['preprocessRequest'] ?? [] as $hookFunction) {
+            $hookParameters = [];
+            GeneralUtility::callUserFunction($hookFunction, $hookParameters, $hookParameters);
         }
 
         $this->initializeController();
@@ -98,13 +99,13 @@ class RequestHandler implements RequestHandlerInterface
         if ($GLOBALS['TYPO3_CONF_VARS']['FE']['pageUnavailable_force']
             && !GeneralUtility::cmpIP(
                 GeneralUtility::getIndpEnv('REMOTE_ADDR'),
-                $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask'])
+                $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask']
+            )
         ) {
             $this->controller->pageUnavailableAndExit('This page is temporarily unavailable.');
         }
 
         $this->controller->connectToDB();
-        $this->controller->sendRedirect();
 
         // Output compression
         // Remove any output produced until now
@@ -228,16 +229,22 @@ class RequestHandler implements RequestHandlerInterface
         }
         // Store session data for fe_users
         $this->controller->storeSessionData();
+
+        // Create a Response object when sending content
+        if ($sendTSFEContent) {
+            $response = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Http\Response::class);
+        }
+
         // Statistics
         $GLOBALS['TYPO3_MISC']['microtime_end'] = microtime(true);
-        if ($this->controller->isOutputting()) {
+        if ($sendTSFEContent) {
             if (isset($this->controller->config['config']['debug'])) {
-                $debugParseTime = (bool)$this->controller->config['config']['debug'];
+                $includeParseTime = (bool)$this->controller->config['config']['debug'];
             } else {
-                $debugParseTime = !empty($GLOBALS['TYPO3_CONF_VARS']['FE']['debug']);
+                $includeParseTime = !empty($GLOBALS['TYPO3_CONF_VARS']['FE']['debug']);
             }
-            if ($debugParseTime) {
-                $this->controller->content .= LF . '<!-- Parsetime: ' . $this->timeTracker->getParseTime() . 'ms -->';
+            if ($includeParseTime) {
+                $response = $response->withHeader('X-TYPO3-Parsetime', $this->timeTracker->getParseTime() . 'ms');
             }
         }
         $this->controller->redirectToExternalUrl();
@@ -256,25 +263,32 @@ class RequestHandler implements RequestHandlerInterface
         }
 
         if ($sendTSFEContent) {
-            /** @var \TYPO3\CMS\Core\Http\Response $response */
-            $response = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Http\Response::class);
+            // Send content-length header.
+            // Notice that all HTML content outside the length of the content-length header will be cut off!
+            // Therefore content of unknown length from included PHP-scripts and if admin users are logged
+            // in (admin panel might show...) or if debug mode is turned on, we disable it!
+            if (
+                (!isset($this->controller->config['config']['enableContentLengthHeader']) || $this->controller->config['config']['enableContentLengthHeader'])
+                && !$this->controller->beUserLogin && !$GLOBALS['TYPO3_CONF_VARS']['FE']['debug']
+                && !$this->controller->config['config']['debug'] && !$this->controller->doWorkspacePreview()
+            ) {
+                header('Content-Length: ' . strlen($this->controller->content));
+            }
             $response->getBody()->write($this->controller->content);
         }
-        // Debugging Output
-        if (isset($GLOBALS['error']) && is_object($GLOBALS['error']) && @is_callable([$GLOBALS['error'], 'debugOutput'])) {
-            $GLOBALS['error']->debugOutput();
-        }
-        GeneralUtility::devLog('END of FRONTEND session', 'cms', 0, ['_FLUSH' => true]);
-        return $response;
+        GeneralUtility::makeInstance(LogManager::class)
+            ->getLogger(get_class())->debug('END of FRONTEND session', ['_FLUSH' => true]);
+
+        return $response ?: new NullResponse();
     }
 
     /**
      * This request handler can handle any frontend request.
      *
-     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @param ServerRequestInterface $request
      * @return bool If the request is not an eID request, TRUE otherwise FALSE
      */
-    public function canHandleRequest(\Psr\Http\Message\ServerRequestInterface $request)
+    public function canHandleRequest(ServerRequestInterface $request): bool
     {
         return $request->getQueryParams()['eID'] || $request->getParsedBody()['eID'] ? false : true;
     }
@@ -285,7 +299,7 @@ class RequestHandler implements RequestHandlerInterface
      *
      * @return int The priority of the request handler.
      */
-    public function getPriority()
+    public function getPriority(): int
     {
         return 50;
     }
@@ -329,8 +343,7 @@ class RequestHandler implements RequestHandlerInterface
             GeneralUtility::_GP('no_cache'),
             GeneralUtility::_GP('cHash'),
             null,
-            GeneralUtility::_GP('MP'),
-            GeneralUtility::_GP('RDCT')
+            GeneralUtility::_GP('MP')
         );
         // setting the global variable for the controller
         // We have to define this as reference here, because there is code around

@@ -139,7 +139,7 @@ class TcaFlexProcess implements FormDataProviderInterface
                             }
                         }
                     }
-                } elseif (isset($dataStructureFieldDefinition['type']) || isset($dataStructureFieldDefinition['section'])) {
+                } elseif (isset($dataStructureFieldDefinition['type']) xor isset($dataStructureFieldDefinition['section'])) {
                     // type without section is not ok
                     throw new \UnexpectedValueException(
                         'Broken data structure on field name ' . $fieldName . '. section without type or vice versa is not allowed',
@@ -481,9 +481,8 @@ class TcaFlexProcess implements FormDataProviderInterface
                             ['sheets'][$dataStructureSheetName]['ROOT']['el']
                             [$dataStructureFieldName]['children'] = [];
                     }
-
-                // A "normal" TCA flex form element, no section
                 } else {
+                    // A "normal" TCA flex form element, no section
                     if (isset($dataValues['data'][$dataStructureSheetName]['lDEF'][$dataStructureFieldName])
                         && array_key_exists('vDEF', $dataValues['data'][$dataStructureSheetName]['lDEF'][$dataStructureFieldName])
                     ) {

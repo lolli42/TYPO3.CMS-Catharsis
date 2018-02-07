@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Core\Configuration;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -43,7 +44,7 @@ class ConfigurationManager
     /**
      * @var string Path to description file for TYPO3_CONF_VARS, relative to PATH_site
      */
-    protected $defaultConfigurationDescriptionFile = 'typo3/sysext/core/Configuration/DefaultConfigurationDescription.php';
+    protected $defaultConfigurationDescriptionFile = 'typo3/sysext/core/Configuration/DefaultConfigurationDescription.yaml';
 
     /**
      * @var string Path to local overload TYPO3_CONF_VARS file, relative to PATH_site
@@ -76,6 +77,7 @@ class ConfigurationManager
         'EXTCONF',
         'DB',
         'SYS/caching/cacheConfigurations',
+        'EXTENSIONS',
     ];
 
     /**
@@ -132,6 +134,18 @@ class ConfigurationManager
     public function getLocalConfigurationFileLocation()
     {
         return PATH_site . $this->localConfigurationFile;
+    }
+
+    /**
+     * Returns local configuration array merged with default configuration
+     *
+     * @return array
+     */
+    public function getMergedLocalConfiguration(): array
+    {
+        $localConfiguration = $this->getDefaultConfiguration();
+        ArrayUtility::mergeRecursiveWithOverrule($localConfiguration, $this->getLocalConfiguration());
+        return $localConfiguration;
     }
 
     /**
@@ -273,6 +287,30 @@ class ConfigurationManager
     }
 
     /**
+     * Enables a certain feature and writes the option to LocalConfiguration.php
+     * Short-hand method
+     *
+     * @param string $featureName something like "InlineSvgImages"
+     * @return bool true on successful writing the setting
+     */
+    public function enableFeature(string $featureName): bool
+    {
+        return $this->setLocalConfigurationValueByPath('SYS/features/' . $featureName, true);
+    }
+
+    /**
+     * Disables a feature and writes the option to LocalConfiguration.php
+     * Short-hand method
+     *
+     * @param string $featureName something like "InlineSvgImages"
+     * @return bool true on successful writing the setting
+     */
+    public function disableFeature(string $featureName): bool
+    {
+        return $this->setLocalConfigurationValueByPath('SYS/features/' . $featureName, false);
+    }
+
+    /**
      * Checks if the configuration can be written.
      *
      * @return bool
@@ -323,7 +361,8 @@ class ConfigurationManager
         $localConfigurationFile = $this->getLocalConfigurationFileLocation();
         if (!$this->canWriteConfiguration()) {
             throw new \RuntimeException(
-                $localConfigurationFile . ' is not writable.', 1346323822
+                $localConfigurationFile . ' is not writable.',
+                1346323822
             );
         }
         $configuration = ArrayUtility::sortByKeyRecursive($configuration);
@@ -385,6 +424,9 @@ class ConfigurationManager
                 $additionalFactoryConfigurationArray
             );
         }
+        $randomKey = GeneralUtility::makeInstance(Random::class)->generateRandomHexString(96);
+        $localConfigurationArray['SYS']['encryptionKey'] = $randomKey;
+
         $this->writeLocalConfiguration($localConfigurationArray);
     }
 

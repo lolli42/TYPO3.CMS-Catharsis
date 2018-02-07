@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
 
@@ -68,7 +69,7 @@ class PageInfoViewHelper extends AbstractBackendViewHelper
     public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
     {
         $id = GeneralUtility::_GP('id');
-        $pageRecord = BackendUtility::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(1));
+        $pageRecord = BackendUtility::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(Permission::PAGE_SHOW));
         // Add icon with context menu, etc:
         /** @var IconFactory $iconFactory */
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
@@ -85,8 +86,8 @@ class PageInfoViewHelper extends AbstractBackendViewHelper
             // On root-level of page tree
             // Make Icon
             $theIcon = '<span title="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '">' . $iconFactory->getIcon('apps-pagetree-page-domain', Icon::SIZE_SMALL)->render() . '</span>';
-            if ($GLOBALS['BE_USER']->user['admin']) {
-                $theIcon = BackendUtility::wrapClickMenuOnIcon($theIcon, 'pages', 0);
+            if ($GLOBALS['BE_USER']->isAdmin()) {
+                $theIcon = BackendUtility::wrapClickMenuOnIcon($theIcon, 'pages');
             }
         }
         return $theIcon;

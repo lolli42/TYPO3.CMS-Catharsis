@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\Wizard;
 
 /*
@@ -74,9 +74,8 @@ class ImageManipulationWizard
             $response->getBody()->write($content);
 
             return $response;
-        } else {
-            return $response->withStatus(403);
         }
+        return $response->withStatus(403);
     }
 
     /**
@@ -88,6 +87,6 @@ class ImageManipulationWizard
     protected function isSignatureValid(ServerRequestInterface $request)
     {
         $token = GeneralUtility::hmac($request->getQueryParams()['arguments'], 'ajax_wizard_image_manipulation');
-        return $token === $request->getQueryParams()['signature'];
+        return hash_equals($token, $request->getQueryParams()['signature']);
     }
 }

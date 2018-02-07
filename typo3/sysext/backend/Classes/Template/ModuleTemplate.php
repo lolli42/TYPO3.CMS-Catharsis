@@ -270,10 +270,10 @@ class ModuleTemplate
      */
     protected function loadStylesheets()
     {
-        if ($GLOBALS['TBE_STYLES']['stylesheet']) {
+        if (!empty($GLOBALS['TBE_STYLES']['stylesheet'])) {
             $this->pageRenderer->addCssFile($GLOBALS['TBE_STYLES']['stylesheet']);
         }
-        if ($GLOBALS['TBE_STYLES']['stylesheet2']) {
+        if (!empty($GLOBALS['TBE_STYLES']['stylesheet2'])) {
             $this->pageRenderer->addCssFile($GLOBALS['TBE_STYLES']['stylesheet2']);
         }
     }
@@ -287,7 +287,7 @@ class ModuleTemplate
         $this->pageRenderer->setXmlPrologAndDocType('<!DOCTYPE html>');
         $this->pageRenderer->setCharSet('utf-8');
         $this->pageRenderer->setLanguage($GLOBALS['LANG']->lang);
-        $this->pageRenderer->addMetaTag('<meta name="viewport" content="width=device-width, initial-scale=1">');
+        $this->pageRenderer->setMetaTag('name', 'viewport', 'width=device-width, initial-scale=1');
     }
 
     /**
@@ -510,8 +510,9 @@ class ModuleTemplate
         // since this is used for icons.
         $moduleName = $modName === 'xMOD_alt_doc.php' ? 'record_edit' : $modName;
         // Add the module identifier automatically if typo3/index.php is used:
-        if (GeneralUtility::_GET('M') !== null) {
-            $storeUrl = '&M=' . $moduleName . $storeUrl;
+        // @todo: routing
+        if (GeneralUtility::_GET('route') !== null) {
+            $storeUrl = '&route=' . $moduleName . $storeUrl;
         }
         if ((int)$motherModName === 1) {
             $motherModule = 'top.currentModuleLoaded';

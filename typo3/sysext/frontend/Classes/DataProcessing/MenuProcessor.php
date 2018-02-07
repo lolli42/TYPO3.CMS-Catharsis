@@ -102,13 +102,18 @@ class MenuProcessor implements DataProcessorInterface
         'alwaysActivePIDlist.',
         'protectLvar',
         'addQueryString',
+        'addQueryString.',
         'if',
         'if.',
         'levels',
+        'levels.',
         'expandAll',
+        'expandAll.',
         'includeSpacer',
+        'includeSpacer.',
         'as',
         'titleField',
+        'titleField.',
         'dataProcessing',
         'dataProcessing.'
     ];
@@ -121,10 +126,14 @@ class MenuProcessor implements DataProcessorInterface
      */
     public $removeConfigurationKeysForHmenu = [
         'levels',
+        'levels.',
         'expandAll',
+        'expandAll.',
         'includeSpacer',
+        'includeSpacer.',
         'as',
         'titleField',
+        'titleField.',
         'dataProcessing',
         'dataProcessing.'
     ];

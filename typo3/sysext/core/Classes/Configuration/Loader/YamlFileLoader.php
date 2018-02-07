@@ -18,12 +18,12 @@ use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * A Yaml file loader that allows to load YAML files, based on the Symfony/Yaml component
+ * A YAML file loader that allows to load YAML files, based on the Symfony/Yaml component
  *
- * In addition to just load a yaml file, it adds some special functionality.
+ * In addition to just load a YAML file, it adds some special functionality.
  *
- * - A special "imports" key in the yaml file allows to include other yaml files recursively
- *   where the actual yaml file gets loaded after the import statements, which are interpreted at the very beginning
+ * - A special "imports" key in the YAML file allows to include other YAML files recursively
+ *   where the actual YAML file gets loaded after the import statements, which are interpreted at the very beginning
  *
  * - Merging configuration options of import files when having simple "lists" will add items to the list instead
  *   of overwriting them.
@@ -155,7 +155,7 @@ class YamlFileLoader
     }
 
     /**
-     * Same as array_replace_recursive except that when in simple arrays (= yaml lists), the entries are
+     * Same as array_replace_recursive except that when in simple arrays (= YAML lists), the entries are
      * appended (array_merge)
      *
      * @param array $val1
@@ -168,30 +168,30 @@ class YamlFileLoader
         // Simple lists get merged / added up
         if (count(array_filter(array_keys($val1), 'is_int')) === count($val1)) {
             return array_merge($val1, $val2);
-        } else {
-            foreach ($val1 as $k => $v) {
-                // The key also exists in second array, if it is a simple value
-                // then $val2 will override the value, where an array is calling merge() recursively.
-                if (isset($val2[$k])) {
-                    if (is_array($v) && isset($val2[$k])) {
-                        if (is_array($val2[$k])) {
-                            $val1[$k] = $this->merge($v, $val2[$k]);
-                        } else {
-                            $val1[$k] = $val2[$k];
-                        }
+        }
+        foreach ($val1 as $k => $v) {
+            // The key also exists in second array, if it is a simple value
+            // then $val2 will override the value, where an array is calling merge() recursively.
+            if (isset($val2[$k])) {
+                if (is_array($v) && isset($val2[$k])) {
+                    if (is_array($val2[$k])) {
+                        $val1[$k] = $this->merge($v, $val2[$k]);
                     } else {
                         $val1[$k] = $val2[$k];
                     }
-                    unset($val2[$k]);
+                } else {
+                    $val1[$k] = $val2[$k];
                 }
-            }
-            // If there are properties in the second array left, they are added up
-            if (!empty($val2)) {
-                foreach ($val2 as $k => $v) {
-                    $val1[$k] = $v;
-                }
+                unset($val2[$k]);
             }
         }
+        // If there are properties in the second array left, they are added up
+        if (!empty($val2)) {
+            foreach ($val2 as $k => $v) {
+                $val1[$k] = $v;
+            }
+        }
+
         return $val1;
     }
 }

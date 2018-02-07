@@ -86,9 +86,17 @@ class LazyLoadingProxy implements \Iterator, \TYPO3\CMS\Extbase\Persistence\Gene
             $this->parentObject->_setProperty($this->propertyName, $propertyValue);
             $this->parentObject->_memorizeCleanState($this->propertyName);
             return $propertyValue;
-        } else {
-            return $this->parentObject->_getProperty($this->propertyName);
         }
+        return $this->parentObject->_getProperty($this->propertyName);
+    }
+
+    /**
+     * @return string
+     */
+    public function _getTypeAndUidString()
+    {
+        $type = $this->dataMapper->getType(get_class($this->parentObject), $this->propertyName);
+        return $type . ':' . $this->fieldValue;
     }
 
     /**

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\FieldWizard;
 
 /*
@@ -72,7 +72,7 @@ class TableList extends AbstractNode
             }
         }
 
-        $html= [];
+        $html = [];
         $html[] = '<div class="help-block">';
         $html[] =   implode(LF, $allowedTablesHtml);
         $html[] = '</div>';

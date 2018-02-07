@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Model;
 
 /*
@@ -142,7 +142,7 @@ use TYPO3\CMS\Form\Mvc\ProcessingRule;
  *
  * Often, it is not really useful to manually create the $prototypeConfiguration array.
  *
- * Most of it comes pre-configured inside the extensions's yaml settings,
+ * Most of it comes pre-configured inside the YAML settings of the extensions,
  * and the {@link \TYPO3\CMS\Form\Domain\Configuration\ConfigurationService} contains helper methods
  * which return the ready-to-use *$prototypeConfiguration*.
  *
@@ -304,9 +304,9 @@ class FormDefinition extends AbstractCompositeRenderable
         string $type = 'Form',
         string $persistenceIdentifier = null
     ) {
-        $this->typeDefinitions = isset($prototypeConfiguration['formElementsDefinition']) ? $prototypeConfiguration['formElementsDefinition'] : [];
-        $this->validatorsDefinition = isset($prototypeConfiguration['validatorsDefinition']) ? $prototypeConfiguration['validatorsDefinition'] : [];
-        $this->finishersDefinition = isset($prototypeConfiguration['finishersDefinition']) ? $prototypeConfiguration['finishersDefinition'] : [];
+        $this->typeDefinitions = $prototypeConfiguration['formElementsDefinition'] ?? [];
+        $this->validatorsDefinition = $prototypeConfiguration['validatorsDefinition'] ?? [];
+        $this->finishersDefinition = $prototypeConfiguration['finishersDefinition'] ?? [];
 
         if (!is_string($identifier) || strlen($identifier) === 0) {
             throw new IdentifierNotValidException('The given identifier was not a string or the string was empty.', 1477082503);
@@ -349,10 +349,13 @@ class FormDefinition extends AbstractCompositeRenderable
         if (isset($options['rendererClassName'])) {
             $this->setRendererClassName($options['rendererClassName']);
         }
+        if (isset($options['label'])) {
+            $this->setLabel($options['label']);
+        }
         if (isset($options['renderingOptions'])) {
             foreach ($options['renderingOptions'] as $key => $value) {
                 if (is_array($value)) {
-                    $currentValue = isset($this->getRenderingOptions()[$key]) ? $this->getRenderingOptions()[$key] : [];
+                    $currentValue = $this->getRenderingOptions()[$key] ?? [];
                     ArrayUtility::mergeRecursiveWithOverrule($currentValue, $value);
                     $this->setRenderingOption($key, $currentValue);
                 } else {
@@ -362,13 +365,13 @@ class FormDefinition extends AbstractCompositeRenderable
         }
         if (isset($options['finishers'])) {
             foreach ($options['finishers'] as $finisherConfiguration) {
-                $this->createFinisher($finisherConfiguration['identifier'], isset($finisherConfiguration['options']) ? $finisherConfiguration['options'] : []);
+                $this->createFinisher($finisherConfiguration['identifier'], $finisherConfiguration['options'] ?? []);
             }
         }
 
         ArrayUtility::assertAllArrayKeysAreValid(
             $options,
-            ['rendererClassName', 'renderingOptions', 'finishers', 'formEditor']
+            ['rendererClassName', 'renderingOptions', 'finishers', 'formEditor', 'label']
         );
     }
 
@@ -497,16 +500,15 @@ class FormDefinition extends AbstractCompositeRenderable
     {
         if (isset($this->finishersDefinition[$finisherIdentifier]) && is_array($this->finishersDefinition[$finisherIdentifier]) && isset($this->finishersDefinition[$finisherIdentifier]['implementationClassName'])) {
             $implementationClassName = $this->finishersDefinition[$finisherIdentifier]['implementationClassName'];
-            $defaultOptions = isset($this->finishersDefinition[$finisherIdentifier]['options']) ? $this->finishersDefinition[$finisherIdentifier]['options'] : [];
+            $defaultOptions = $this->finishersDefinition[$finisherIdentifier]['options'] ?? [];
             ArrayUtility::mergeRecursiveWithOverrule($defaultOptions, $options);
 
-            $finisher = $this->objectManager->get($implementationClassName);
+            $finisher = $this->objectManager->get($implementationClassName, $finisherIdentifier);
             $finisher->setOptions($defaultOptions);
             $this->addFinisher($finisher);
             return $finisher;
-        } else {
-            throw new FinisherPresetNotFoundException('The finisher preset identified by "' . $finisherIdentifier . '" could not be found, or the implementationClassName was not specified.', 1328709784);
         }
+        throw new FinisherPresetNotFoundException('The finisher preset identified by "' . $finisherIdentifier . '" could not be found, or the implementationClassName was not specified.', 1328709784);
     }
 
     /**
@@ -561,7 +563,7 @@ class FormDefinition extends AbstractCompositeRenderable
      */
     public function getElementByIdentifier(string $elementIdentifier)
     {
-        return isset($this->elementsByIdentifier[$elementIdentifier]) ? $this->elementsByIdentifier[$elementIdentifier] : null;
+        return $this->elementsByIdentifier[$elementIdentifier] ?? null;
     }
 
     /**

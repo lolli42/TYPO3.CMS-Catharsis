@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Factory;
 
 /*
@@ -18,7 +18,6 @@ namespace TYPO3\CMS\Form\Domain\Factory;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
 
 /**
@@ -62,17 +61,12 @@ abstract class AbstractFormFactory implements FormFactoryInterface
     protected function triggerFormBuildingFinished(FormDefinition $form)
     {
         foreach ($form->getRenderablesRecursively() as $renderable) {
-            if (
-                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterBuildingFinished'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterBuildingFinished'])
-            ) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterBuildingFinished'] as $className) {
-                    $hookObj = GeneralUtility::makeInstance($className);
-                    if (method_exists($hookObj, 'afterBuildingFinished')) {
-                        $hookObj->afterBuildingFinished(
-                            $renderable
-                        );
-                    }
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterBuildingFinished'] ?? [] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'afterBuildingFinished')) {
+                    $hookObj->afterBuildingFinished(
+                        $renderable
+                    );
                 }
             }
         }

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Controller;
 
 /*
@@ -70,8 +70,8 @@ class ErrorPageController
         string $title,
         string $message,
         int $severity = AbstractMessage::ERROR,
-        int $errorCode = 0): string
-    {
+        int $errorCode = 0
+    ): string {
         $this->severity = $severity;
         $classes = [
             AbstractMessage::NOTICE => 'notice',

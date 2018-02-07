@@ -14,9 +14,7 @@ namespace TYPO3\CMS\Backend\Tree\View;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Routing\Router;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
-use TYPO3\CMS\Backend\Tree\Pagetree\Commands;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -36,15 +34,15 @@ abstract class AbstractTreeView
     // EXTERNAL, static:
     // If set, the first element in the tree is always expanded.
     /**
-     * @var int
+     * @var bool
      */
-    public $expandFirst = 0;
+    public $expandFirst = false;
 
     // If set, then ALL items will be expanded, regardless of stored settings.
     /**
-     * @var int
+     * @var bool
      */
-    public $expandAll = 0;
+    public $expandAll = false;
 
     // Holds the current script to reload to.
     /**
@@ -105,7 +103,7 @@ abstract class AbstractTreeView
      * values are the ID of the root element (COULD be zero or anything else.
      * For pages that would be the uid of the page, zero for the pagetree root.)
      *
-     * @var array|NULL
+     * @var array|null
      */
     public $MOUNTS = null;
 
@@ -289,12 +287,8 @@ abstract class AbstractTreeView
     protected function determineScriptUrl()
     {
         if ($routePath = GeneralUtility::_GP('route')) {
-            $router = GeneralUtility::makeInstance(Router::class);
-            $route = $router->match($routePath);
             $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-            $this->thisScript = (string)$uriBuilder->buildUriFromRoute($route->getOption('_identifier'));
-        } elseif ($moduleName = GeneralUtility::_GP('M')) {
-            $this->thisScript = BackendUtility::getModuleUrl($moduleName);
+            $this->thisScript = (string)$uriBuilder->buildUriFromRoutePath($routePath);
         } else {
             $this->thisScript = GeneralUtility::getIndpEnv('SCRIPT_NAME');
         }
@@ -402,7 +396,7 @@ abstract class AbstractTreeView
                 if ($this->ext_showPathAboveMounts) {
                     $mountPointPid = $rootRec['pid'];
                     if ($lastMountPointPid !== $mountPointPid) {
-                        $title = Commands::getMountPointPath($mountPointPid);
+                        $title = $this->getMountPointPath((int)$mountPointPid);
                         $this->tree[] = ['isMountPointPath' => true, 'title' => $title];
                     }
                     $lastMountPointPid = $mountPointPid;
@@ -510,9 +504,8 @@ abstract class AbstractTreeView
             $cmd = $this->bank . '_' . ($isOpen ? '0_' : '1_') . $row['uid'] . '_' . $this->treeName;
             $bMark = $this->bank . '_' . $row['uid'];
             return $this->PM_ATagWrap('', $cmd, $bMark, $isOpen);
-        } else {
-            return '';
         }
+        return '';
     }
 
     /**
@@ -532,9 +525,8 @@ abstract class AbstractTreeView
             $name = $bMark ? ' name="' . $bMark . '"' : '';
             $aUrl = $this->getThisScript() . 'PM=' . $cmd . $anchor;
             return '<a class="list-tree-control ' . ($isOpen ? 'list-tree-control-open' : 'list-tree-control-closed') . '" href="' . htmlspecialchars($aUrl) . '"' . $name . '><i class="fa"></i></a>';
-        } else {
-            return $icon;
         }
+        return $icon;
     }
 
     /**
@@ -610,7 +602,7 @@ abstract class AbstractTreeView
      */
     public function expandNext($id)
     {
-        return $this->stored[$this->bank][$id] || $this->expandAll ? 1 : 0;
+        return !empty($this->stored[$this->bank][$id]) || $this->expandAll;
     }
 
     /**
@@ -748,7 +740,6 @@ abstract class AbstractTreeView
      * @param int $uid item id for which to select subitems (parent id)
      * @param int $depth Max depth (recursivity limit)
      * @param string $depthData HTML-code prefix for recursive calls.
-
      * @return int The count of items on the level
      */
     public function getTree($uid, $depth = 999, $depthData = '')
@@ -846,13 +837,13 @@ abstract class AbstractTreeView
         if (is_array($this->data)) {
             $res = $this->getDataInit($uid);
             return $this->getDataCount($res);
-        } else {
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->table);
-            $queryBuilder->getRestrictions()
+        }
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->table);
+        $queryBuilder->getRestrictions()
                 ->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
                 ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
-            $count = $queryBuilder
+        $count = $queryBuilder
                 ->count('uid')
                 ->from($this->table)
                 ->where(
@@ -865,8 +856,7 @@ abstract class AbstractTreeView
                 ->execute()
                 ->fetchColumn();
 
-            return (int)$count;
-        }
+        return (int)$count;
     }
 
     /**
@@ -891,9 +881,8 @@ abstract class AbstractTreeView
     {
         if (is_array($this->data)) {
             return $this->dataLookup[$uid];
-        } else {
-            return BackendUtility::getRecordWSOL($this->table, $uid);
         }
+        return BackendUtility::getRecordWSOL($this->table, $uid);
     }
 
     /**
@@ -915,13 +904,13 @@ abstract class AbstractTreeView
                 reset($this->dataLookup[$parentId][$this->subLevelID]);
             }
             return $parentId;
-        } else {
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->table);
-            $queryBuilder->getRestrictions()
+        }
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->table);
+        $queryBuilder->getRestrictions()
                 ->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
                 ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
-            $queryBuilder
+        $queryBuilder
                 ->select(...$this->fieldArray)
                 ->from($this->table)
                 ->where(
@@ -932,13 +921,12 @@ abstract class AbstractTreeView
                     QueryHelper::stripLogicalOperatorPrefix($this->clause)
                 );
 
-            foreach (QueryHelper::parseOrderBy($this->orderByFields) as $orderPair) {
-                list($fieldName, $order) = $orderPair;
-                $queryBuilder->addOrderBy($fieldName, $order);
-            }
-
-            return $queryBuilder->execute();
+        foreach (QueryHelper::parseOrderBy($this->orderByFields) as $orderPair) {
+            list($fieldName, $order) = $orderPair;
+            $queryBuilder->addOrderBy($fieldName, $order);
         }
+
+        return $queryBuilder->execute();
     }
 
     /**
@@ -953,9 +941,8 @@ abstract class AbstractTreeView
     {
         if (is_array($this->data)) {
             return count($this->dataLookup[$res][$this->subLevelID]);
-        } else {
-            return $res->rowCount();
         }
+        return $res->rowCount();
     }
 
     /**
@@ -973,18 +960,19 @@ abstract class AbstractTreeView
             if ($res < 0) {
                 $row = false;
             } else {
-                list(, $row) = each($this->dataLookup[$res][$this->subLevelID]);
-            }
-            return $row;
-        } else {
-            while ($row = $res->fetch()) {
-                BackendUtility::workspaceOL($this->table, $row, $this->BE_USER->workspace, true);
-                if (is_array($row)) {
-                    break;
-                }
+                $key = key($this->dataLookup[$res][$this->subLevelID]);
+                next($this->dataLookup[$res][$this->subLevelID]);
+                $row = $this->dataLookup[$res][$this->subLevelID][$key];
             }
             return $row;
         }
+        while ($row = $res->fetch()) {
+            BackendUtility::workspaceOL($this->table, $row, $this->BE_USER->workspace, true);
+            if (is_array($row)) {
+                break;
+            }
+        }
+        return $row;
     }
 
     /**
@@ -1040,6 +1028,31 @@ abstract class AbstractTreeView
     {
         $this->data = &$treeArr;
         $this->dataLookup = &$treeLookupArr;
+    }
+
+    /**
+     * Returns the mount point path for a temporary mount or the given id
+     *
+     * @param int $uid
+     * @return string
+     */
+    protected function getMountPointPath(int $uid): string
+    {
+        if ($uid <= 0) {
+            return '';
+        }
+        $rootline = array_reverse(BackendUtility::BEgetRootLine($uid));
+        array_shift($rootline);
+        $path = [];
+        foreach ($rootline as $rootlineElement) {
+            $record = BackendUtility::getRecordWSOL('pages', $rootlineElement['uid'], 'title, nav_title', '', true, true);
+            $text = $record['title'];
+            if ((bool)$this->getBackendUser()->getTSConfigVal('options.pageTree.showNavTitle') && trim($record['nav_title'] ?? '') !== '') {
+                $text = $record['nav_title'];
+            }
+            $path[] = htmlspecialchars($text);
+        }
+        return '/' . implode('/', $path);
     }
 
     /**

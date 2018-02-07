@@ -24,6 +24,7 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageRendererResolver;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\CsvUtility;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -86,14 +87,35 @@ class QueryView
     protected $backendUserAuthentication;
 
     /**
-     * constructor
+     * Settings, usually from the controller (previously known from $GLOBALS['SOBE']->MOD_SETTINGS
+     * @var array
      */
-    public function __construct()
+    protected $settings = [];
+
+    /**
+     * @var array information on the menu of this module
+     */
+    protected $menuItems = [];
+
+    /**
+     * @var string
+     */
+    protected $moduleName;
+
+    /**
+     * @param array $settings previously stored in $GLOBALS['SOBE']->MOD_SETTINGS
+     * @param array $menuItems previously stored in $GLOBALS['SOBE']->MOD_MENU
+     * @param string $moduleName previously stored in $GLOBALS['SOBE']->moduleName
+     */
+    public function __construct(array $settings = null, $menuItems = null, $moduleName = null)
     {
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
         $this->languageService = $GLOBALS['LANG'];
         $this->languageService->includeLLFile('EXT:core/Resources/Private/Language/locallang_t3lib_fullsearch.xlf');
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        $this->settings = $settings ?: $GLOBALS['SOBE']->MOD_SETTINGS;
+        $this->menuItems = $menuItems ?: $GLOBALS['SOBE']->MOD_MENU;
+        $this->moduleName = $moduleName ?: $GLOBALS['SOBE']->moduleName;
     }
 
     /**
@@ -106,7 +128,7 @@ class QueryView
         $markup = [];
         $markup[] = '<div class="form-group">';
         $markup[] = '<input placeholder="Search Word" class="form-control" type="search" name="SET[sword]" value="'
-            . htmlspecialchars($GLOBALS['SOBE']->MOD_SETTINGS['sword']) . '">';
+            . htmlspecialchars($this->settings['sword']) . '">';
         $markup[] = '</div>';
         $markup[] = '<div class="form-group">';
         $markup[] = '<input class="btn btn-default" type="submit" name="submit" value="Search All Records">';
@@ -171,7 +193,7 @@ class QueryView
         $storeArray = [
             '0' => '[New]'
         ];
-        $savedStoreArray = unserialize($GLOBALS['SOBE']->MOD_SETTINGS['storeArray']);
+        $savedStoreArray = unserialize($this->settings['storeArray']);
         if (is_array($savedStoreArray)) {
             $storeArray = array_merge($storeArray, $savedStoreArray);
         }
@@ -209,7 +231,7 @@ class QueryView
         $keyArr = explode(',', $this->storeList);
         $storeQueryConfigs[$index] = [];
         foreach ($keyArr as $k) {
-            $storeQueryConfigs[$index][$k] = $GLOBALS['SOBE']->MOD_SETTINGS[$k];
+            $storeQueryConfigs[$index][$k] = $this->settings[$k];
         }
         return $storeQueryConfigs;
     }
@@ -226,7 +248,7 @@ class QueryView
             $keyArr = explode(',', $this->storeList);
             $saveArr = [];
             foreach ($keyArr as $k) {
-                $saveArr[$k] = $GLOBALS['SOBE']->MOD_SETTINGS[$k];
+                $saveArr[$k] = $this->settings[$k];
             }
             // Show query
             if ($saveArr['queryTable']) {
@@ -292,7 +314,7 @@ class QueryView
     public function procesStoreControl()
     {
         $storeArray = $this->initStoreArray();
-        $storeQueryConfigs = unserialize($GLOBALS['SOBE']->MOD_SETTINGS['storeQueryConfigs']);
+        $storeQueryConfigs = unserialize($this->settings['storeQueryConfigs']);
         $storeControl = GeneralUtility::_GP('storeControl');
         $storeIndex = (int)$storeControl['STORE'];
         $saveStoreArray = 0;
@@ -379,10 +401,10 @@ class QueryView
             $writeArray['storeArray'] = serialize($storeArray);
             $writeArray['storeQueryConfigs'] =
                 serialize($this->cleanStoreQueryConfigs($storeQueryConfigs, $storeArray));
-            $GLOBALS['SOBE']->MOD_SETTINGS = BackendUtility::getModuleData(
-                $GLOBALS['SOBE']->MOD_MENU,
+            $this->settings = BackendUtility::getModuleData(
+                $this->menuItems,
                 $writeArray,
-                $GLOBALS['SOBE']->MCONF['name'],
+                $this->moduleName,
                 'ses'
             );
         }
@@ -397,9 +419,7 @@ class QueryView
     public function queryMaker()
     {
         $output = '';
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['t3lib_fullsearch'])) {
-            $this->hookArray = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['t3lib_fullsearch'];
-        }
+        $this->hookArray = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['t3lib_fullsearch'] ?? [];
         $msg = $this->procesStoreControl();
         if (!$this->backendUserAuthentication->userTS['mod.']['dbint.']['disableStoreControl']) {
             $output .= '<h2>Load/Save Query</h2>';
@@ -408,13 +428,13 @@ class QueryView
         }
         // Query Maker:
         $queryGenerator = GeneralUtility::makeInstance(QueryGenerator::class);
-        $queryGenerator->init('queryConfig', $GLOBALS['SOBE']->MOD_SETTINGS['queryTable']);
+        $queryGenerator->init('queryConfig', $this->settings['queryTable']);
         if ($this->formName) {
             $queryGenerator->setFormName($this->formName);
         }
-        $tmpCode = $queryGenerator->makeSelectorTable($GLOBALS['SOBE']->MOD_SETTINGS);
+        $tmpCode = $queryGenerator->makeSelectorTable($this->settings);
         $output .= '<div id="query"></div>' . '<h2>Make query</h2><div>' . $tmpCode . '</div>';
-        $mQ = $GLOBALS['SOBE']->MOD_SETTINGS['search_query_makeQuery'];
+        $mQ = $this->settings['search_query_makeQuery'];
         // Make form elements:
         if ($queryGenerator->table && is_array($GLOBALS['TCA'][$queryGenerator->table])) {
             if ($mQ) {
@@ -489,7 +509,7 @@ class QueryView
                 }
                 if (is_array($this->hookArray['beforeResultTable'])) {
                     foreach ($this->hookArray['beforeResultTable'] as $_funcRef) {
-                        $out .= GeneralUtility::callUserFunction($_funcRef, $GLOBALS['SOBE']->MOD_SETTINGS, $this);
+                        $out .= GeneralUtility::callUserFunction($_funcRef, $this->settings, $this);
                     }
                 }
                 if (!empty($rowArr)) {
@@ -571,7 +591,7 @@ class QueryView
     public function csvValues($row, $delim = ',', $quote = '"', $conf = [], $table = '')
     {
         $valueArray = $row;
-        if ($GLOBALS['SOBE']->MOD_SETTINGS['search_result_labels'] && $table) {
+        if ($this->settings['search_result_labels'] && $table) {
             foreach ($valueArray as $key => $val) {
                 $valueArray[$key] = $this->getProcessedValueExtra($table, $key, $val, $conf, ';');
             }
@@ -586,8 +606,7 @@ class QueryView
      */
     public function search()
     {
-        $SET = $GLOBALS['SOBE']->MOD_SETTINGS;
-        $swords = $SET['sword'];
+        $swords = $this->settings['sword'];
         $out = '';
         if ($swords) {
             foreach ($GLOBALS['TCA'] as $table => $value) {
@@ -666,15 +685,14 @@ class QueryView
      */
     public function resultRowDisplay($row, $conf, $table)
     {
-        $SET = $GLOBALS['SOBE']->MOD_SETTINGS;
         $out = '<tr>';
         foreach ($row as $fieldName => $fieldValue) {
-            if (GeneralUtility::inList($SET['queryFields'], $fieldName)
-                || !$SET['queryFields']
+            if (GeneralUtility::inList($this->settings['queryFields'], $fieldName)
+                || !$this->settings['queryFields']
                 && $fieldName !== 'pid'
                 && $fieldName !== 'deleted'
             ) {
-                if ($SET['search_result_labels']) {
+                if ($this->settings['search_result_labels']) {
                     $fVnew = $this->getProcessedValueExtra($table, $fieldName, $fieldValue, $conf, '<br />');
                 } else {
                     $fVnew = htmlspecialchars($fieldValue);
@@ -683,9 +701,12 @@ class QueryView
             }
         }
         $out .= '<td>';
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+
         if (!$row['deleted']) {
             $out .= '<div class="btn-group" role="group">';
-            $url = BackendUtility::getModuleUrl('record_edit', [
+            $url = (string)$uriBuilder->buildUriFromRoute('record_edit', [
                 'edit' => [
                     $table => [
                         $row['uid'] => 'edit'
@@ -703,7 +724,7 @@ class QueryView
             $out .= '</div>';
         } else {
             $out .= '<div class="btn-group" role="group">';
-            $out .= '<a class="btn btn-default" href="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db', [
+            $out .= '<a class="btn btn-default" href="' . htmlspecialchars((string)$uriBuilder->buildUriFromRoute('tce_db', [
                         'cmd' => [
                             $table => [
                                 $row['uid'] => [
@@ -722,8 +743,8 @@ class QueryView
                 ],
                 'returnUrl' => GeneralUtility::linkThisScript()
             ];
-            $redirectUrl = BackendUtility::getModuleUrl('record_edit', $formEngineParameters);
-            $out .= '<a class="btn btn-default" href="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db', [
+            $redirectUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', $formEngineParameters);
+            $out .= '<a class="btn btn-default" href="' . htmlspecialchars((string)$uriBuilder->buildUriFromRoute('tce_db', [
                     'cmd' => [
                         $table => [
                             $row['uid'] => [
@@ -1071,7 +1092,7 @@ class QueryView
                             ->orderBy('uid');
                         if (!$this->backendUserAuthentication->isAdmin() && $GLOBALS['TYPO3_CONF_VARS']['BE']['lockBeUserToDBmounts']) {
                             $webMounts = $this->backendUserAuthentication->returnWebmounts();
-                            $perms_clause = $this->backendUserAuthentication->getPagePermsClause(1);
+                            $perms_clause = $this->backendUserAuthentication->getPagePermsClause(Permission::PAGE_SHOW);
                             $webMountPageTree = '';
                             $webMountPageTreePrefix = '';
                             foreach ($webMounts as $webMount) {
@@ -1112,12 +1133,12 @@ class QueryView
                     }
 
                     foreach ($this->tableArray[$from_table] as $key => $val) {
-                        $GLOBALS['SOBE']->MOD_SETTINGS['labels_noprefix'] =
-                            $GLOBALS['SOBE']->MOD_SETTINGS['labels_noprefix'] == 1
+                        $this->settings['labels_noprefix'] =
+                            $this->settings['labels_noprefix'] == 1
                                 ? 'on'
-                                : $GLOBALS['SOBE']->MOD_SETTINGS['labels_noprefix'];
+                                : $this->settings['labels_noprefix'];
                         $prefixString =
-                            $GLOBALS['SOBE']->MOD_SETTINGS['labels_noprefix'] === 'on'
+                            $this->settings['labels_noprefix'] === 'on'
                                 ? ''
                                 : ' [' . $tablePrefix . $val['uid'] . '] ';
                         if (GeneralUtility::inList($fieldValue, $tablePrefix . $val['uid'])
@@ -1171,18 +1192,17 @@ class QueryView
      */
     public function resultRowTitles($row, $conf, $table)
     {
-        $SET = $GLOBALS['SOBE']->MOD_SETTINGS;
         $tableHeader = [];
         // Start header row
         $tableHeader[] = '<thead><tr>';
         // Iterate over given columns
         foreach ($row as $fieldName => $fieldValue) {
-            if (GeneralUtility::inList($SET['queryFields'], $fieldName)
-                || !$SET['queryFields']
+            if (GeneralUtility::inList($this->settings['queryFields'], $fieldName)
+                || !$this->settings['queryFields']
                 && $fieldName !== 'pid'
                 && $fieldName !== 'deleted'
             ) {
-                if ($GLOBALS['SOBE']->MOD_SETTINGS['search_result_labels']) {
+                if ($this->settings['search_result_labels']) {
                     $title = htmlspecialchars($this->languageService->sL($conf['columns'][$fieldName]['label']
                         ? $conf['columns'][$fieldName]['label']
                         : $fieldName));
@@ -1210,12 +1230,11 @@ class QueryView
     public function csvRowTitles($row, $conf, $table)
     {
         $out = '';
-        $SET = $GLOBALS['SOBE']->MOD_SETTINGS;
         foreach ($row as $fieldName => $fieldValue) {
-            if (GeneralUtility::inList($SET['queryFields'], $fieldName)
-                || !$SET['queryFields'] && $fieldName !== 'pid') {
+            if (GeneralUtility::inList($this->settings['queryFields'], $fieldName)
+                || !$this->settings['queryFields'] && $fieldName !== 'pid') {
                 if (!$out) {
-                    if ($GLOBALS['SOBE']->MOD_SETTINGS['search_result_labels']) {
+                    if ($this->settings['search_result_labels']) {
                         $out = htmlspecialchars($this->languageService->sL($conf['columns'][$fieldName]['label']
                             ? $conf['columns'][$fieldName]['label']
                             : $fieldName));
@@ -1223,7 +1242,7 @@ class QueryView
                         $out = htmlspecialchars($this->languageService->sL($fieldName));
                     }
                 } else {
-                    if ($GLOBALS['SOBE']->MOD_SETTINGS['search_result_labels']) {
+                    if ($this->settings['search_result_labels']) {
                         $out .= ',' . htmlspecialchars($this->languageService->sL(($conf['columns'][$fieldName]['label']
                             ? $conf['columns'][$fieldName]['label']
                             : $fieldName)));

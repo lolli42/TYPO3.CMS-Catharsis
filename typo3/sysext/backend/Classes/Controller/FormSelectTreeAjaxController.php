@@ -19,6 +19,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroup\TcaSelectTreeAjaxFieldData;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -30,18 +31,17 @@ class FormSelectTreeAjaxController
      * Returns json representing category tree
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @throws \RuntimeException
      * @return ResponseInterface
      */
-    public function fetchDataAction(ServerRequestInterface $request, ResponseInterface $response)
+    public function fetchDataAction(ServerRequestInterface $request): ResponseInterface
     {
         $tableName = $request->getQueryParams()['tableName'];
         $fieldName = $request->getQueryParams()['fieldName'];
 
         // Prepare processedTca: Remove all column definitions except the one that contains
         // our tree definition. This way only this field is calculated, everything else is ignored.
-        if (!isset($GLOBALS['TCA'][$tableName])  || !is_array($GLOBALS['TCA'][$tableName])) {
+        if (!isset($GLOBALS['TCA'][$tableName]) || !is_array($GLOBALS['TCA'][$tableName])) {
             throw new \RuntimeException(
                 'TCA for table ' . $tableName . ' not found',
                 1479386729
@@ -179,8 +179,6 @@ class FormSelectTreeAjaxController
         } else {
             $treeData = $formData['processedTca']['columns'][$fieldName]['config']['items'];
         }
-
-        $response->getBody()->write(json_encode($treeData));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class)->setPayload($treeData);
     }
 }

@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * template and comes with a simple dispatcher method.
  *
  * @internal Experimental for now
+ * @deprecated
  */
 class AbstractModule
 {
@@ -40,6 +41,11 @@ class AbstractModule
      */
     public function __construct()
     {
+        trigger_error(
+            'Class AbstractModule is deprecated since TYPO3 v9 and will be removed with TYPO3 v10.'
+            . ' Instantiate ModuleTemplate yourself if needed and use routing registered in Routes.php.',
+            E_USER_DEPRECATED
+        );
         $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
     }
 
@@ -65,7 +71,7 @@ class AbstractModule
         $methodName = $request->getQueryParams()['action'] ?: 'index';
         if (!is_callable([$this, $methodName])) {
             throw new \InvalidArgumentException(
-                'The method "' . $methodName . '" is not callable within "' . get_class($this) . '".',
+                'The method "' . $methodName . '" is not callable within "' . static::class . '".',
                 1442736343
             );
         }

@@ -16,8 +16,7 @@ namespace TYPO3\CMS\Backend\Controller\File;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Module\AbstractModule;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -26,7 +25,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Script Class for display up to 10 upload fields
  */
-class FileUploadController extends AbstractModule
+class FileUploadController
 {
     /**
      * Name of the filemount
@@ -64,11 +63,18 @@ class FileUploadController extends AbstractModule
     protected $folderObject;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $GLOBALS['SOBE'] = $this;
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_misc.xlf');
         $this->init();
@@ -81,11 +87,13 @@ class FileUploadController extends AbstractModule
      */
     protected function init()
     {
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         // Initialize GPvars:
         $this->target = GeneralUtility::_GP('target');
         $this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
         if (!$this->returnUrl) {
-            $this->returnUrl = BackendUtility::getModuleUrl('file_list', [
+            $this->returnUrl = (string)$uriBuilder->buildUriFromRoute('file_list', [
                 'id' => rawurlencode($this->target)
             ]);
         }
@@ -124,12 +132,14 @@ class FileUploadController extends AbstractModule
     public function main()
     {
         $lang = $this->getLanguageService();
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
 
         // set page title
         $this->moduleTemplate->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_upload.php.pagetitle'));
 
         $pageContent = '<form action="'
-            . htmlspecialchars(BackendUtility::getModuleUrl('tce_file'))
+            . htmlspecialchars((string)$uriBuilder->buildUriFromRoute('tce_file'))
             . '" method="post" id="FileUploadController" name="editform" enctype="multipart/form-data">';
         // Make page header:
         $pageContent .= '<h1>' . $lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_upload.php.pagetitle') . '</h1>';
@@ -189,7 +199,7 @@ class FileUploadController extends AbstractModule
         // Submit button:
         $content .= '
 			<div id="c-submit">
-				<input type="hidden" name="redirect" value="' . $this->returnUrl . '" /><br />
+				<input type="hidden" name="data[upload][1][redirect]" value="' . $this->returnUrl . '" /><br />
 				<input class="btn btn-default" type="submit" value="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_upload.php.submit')) . '" />
 			</div>
 		';

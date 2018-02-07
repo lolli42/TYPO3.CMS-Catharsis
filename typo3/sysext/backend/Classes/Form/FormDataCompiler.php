@@ -155,6 +155,9 @@ class FormDataCompiler
             // Parent page record is either the full row of the parent page the record is located at or should
             // be added to, or it is NULL, if a record is added or edited below the root page node.
             'parentPageRow' => null,
+            // If a translated page is handled, the page row of the default language (the page against all page checks
+            // are made) is set here
+            'defaultLanguagePageRow' => null,
             // Holds the "neighbor" row if incoming vanillaUid is negative and record creation is relative to a row of the same table.
             'neighborRow' => null,
             // For "new" this is the fully initialized row with defaults
@@ -272,8 +275,8 @@ class FormDataCompiler
             // configuration - of the new intermediate sys_file_reference record. Data provider that are called later
             // will then use this relation to resolve for instance input placeholder relation values.
             'inlineChildChildUid' => null,
-            // Inline scenario: A localized parent record is handled and localizationMode is set to "select", so inline
-            // parents can have localized children. This value is set to TRUE if this array represents a default language
+            // Inline scenario: A localized parent record is handled, so inline parents can have localized children.
+            // This value is set to TRUE if this array represents a default language
             // child record that was not yet localized.
             'isInlineDefaultLanguageRecordInLocalizedParentContext' => false,
             // If set, inline children will be resolved. This is set to FALSE in inline ajax context where new children

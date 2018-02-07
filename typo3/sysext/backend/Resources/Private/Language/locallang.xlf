@@ -13,14 +13,14 @@
 				<source>Application Information</source>
 			</trans-unit>
 			<trans-unit id="systemmessage.intro">
-				<source><![CDATA[This is a short system overview. For advanced information please head to the <a href="%s">Install Tool</a>.]]></source>
+				<source><![CDATA[This is a short system overview. For advanced information please head to the <a href="%s">Environment Module</a>.]]></source>
 			</trans-unit>
 			<trans-unit id="systemmessage.allgood" xml:space="preserve">
 				<source>Your system is fully operational.
 Have a nice day.</source>
 			</trans-unit>
 			<trans-unit id="usermodule.su.list">
-				<source>Recently 'switched to' users</source>
+				<source>Recently switched to</source>
 			</trans-unit>
 			<trans-unit id="usermodule.su.tooltip">
 				<source>Switch to user %s</source>
@@ -32,7 +32,10 @@ Have a nice day.</source>
 				<source>Highlight Color: If set, this color will be used as highlight color in the login screen.</source>
 			</trans-unit>
 			<trans-unit id="config.loginBackgroundImage">
-				<source>Background Image: If set, this image will be used as background image for the login screen for screen sizes greater than 767 pixel (e.g. fileadmin/images/my-background.jpg or EXT:my_theme/Resources/Public/Images/my-background.jpg or //domain.tld/my-background.png)</source>
+				<source>Background Image: If set, this image will be used as background image for the login screen (e.g. fileadmin/images/my-background.jpg or EXT:my_theme/Resources/Public/Images/my-background.jpg or //domain.tld/my-background.png)</source>
+			</trans-unit>
+			<trans-unit id="config.loginFootnote">
+				<source>Footnote: If set, this text will be displayed on the login screen to provide copyright information for the background image (e.g. © 2017 by Foo Bar) or a descriptive text</source>
 			</trans-unit>
 			<trans-unit id="config.backendLogo">
 				<source>Logo: If set, this logo will be used instead of the TYPO3 logo in the TYPO3 Backend in the left top corner (e.g. fileadmin/images/backend-logo.png or EXT:my_theme/Resources/Public/Images/backend-logo.png</source>

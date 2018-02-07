@@ -158,7 +158,8 @@ class FluidTemplateContentObjectTest extends \TYPO3\TestingFramework\Core\Unit\U
             ->expects($this->at(1))
             ->method('stdWrap')
             ->with('', ['field' => 'someField']);
-        $this->subject->render([
+        $this->subject->render(
+            [
                 'templateName' => 'foobar',
                 'templateRootPaths.' => [
                     10 => 'dummyPath',
@@ -180,18 +181,11 @@ class FluidTemplateContentObjectTest extends \TYPO3\TestingFramework\Core\Unit\U
     public function renderSetsTemplateFileInView()
     {
         $this->addMockViewToSubject();
-        /** @var $templateService \PHPUnit_Framework_MockObject_MockObject */
-        $templateService = $GLOBALS['TSFE']->tmpl;
-        $templateService
-            ->expects($this->any())
-            ->method('getFileName')
-            ->with('foo')
-            ->will($this->returnValue('bar'));
         $this->standaloneView
             ->expects($this->any())
             ->method('setTemplatePathAndFilename')
-            ->with(PATH_site . 'bar');
-        $this->subject->render(['file' => 'foo']);
+            ->with(PATH_site . 'typo3/sysext/core/bar.html');
+        $this->subject->render(['file' => 'EXT:core/bar.html']);
     }
 
     /**
@@ -236,7 +230,8 @@ class FluidTemplateContentObjectTest extends \TYPO3\TestingFramework\Core\Unit\U
             ->method('setTemplate')
             ->with('foo');
 
-        $this->subject->render([
+        $this->subject->render(
+            [
             'templateName' => 'foo',
             'templateRootPaths.' => [
                 0 => 'dummyPath1/',
@@ -266,7 +261,8 @@ class FluidTemplateContentObjectTest extends \TYPO3\TestingFramework\Core\Unit\U
             ->method('setTemplate')
             ->with('bar');
 
-        $this->subject->render([
+        $this->subject->render(
+            [
             'templateName' => 'TEXT',
             'templateName.' => ['value' => 'bar'],
             'templateRootPaths.' => [

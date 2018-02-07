@@ -232,7 +232,7 @@ abstract class AbstractMenuContentObject
     /**
      * Array key of the parentMenuItem in the parentMenuArr, if this menu is a subMenu.
      *
-     * @var null|int
+     * @var int|null
      */
     protected $parentMenuArrItemKey;
 
@@ -345,7 +345,8 @@ abstract class AbstractMenuContentObject
                     }
                     // Add to register:
                     $this->rL_uidRegister[] = 'ITEM:' . $v_rl['uid'] .
-                        (!empty($rl_MParray)
+                        (
+                            !empty($rl_MParray)
                             ? ':' . implode(',', $rl_MParray)
                             : ''
                         );
@@ -387,7 +388,8 @@ abstract class AbstractMenuContentObject
                     $nextMParray[] = $this->tmpl->rootLine[$currentLevel]['_MP_PARAM'];
                 }
                 $this->nextActive = $this->tmpl->rootLine[$currentLevel]['uid'] .
-                    (!empty($nextMParray)
+                    (
+                        !empty($nextMParray)
                         ? ':' . implode(',', $nextMParray)
                         : ''
                     );
@@ -437,11 +439,11 @@ abstract class AbstractMenuContentObject
         $minItems = (int)($this->mconf['minItems'] ?: $this->conf['minItems']);
         $maxItems = (int)($this->mconf['maxItems'] ?: $this->conf['maxItems']);
         $begin = $this->parent_cObj->calc($this->mconf['begin'] ? $this->mconf['begin'] : $this->conf['begin']);
-        $minItemsConf = isset($this->mconf['minItems.']) ? $this->mconf['minItems.'] : (isset($this->conf['minItems.']) ? $this->conf['minItems.'] : null);
+        $minItemsConf = $this->mconf['minItems.'] ?? $this->conf['minItems.'] ?? null;
         $minItems = is_array($minItemsConf) ? $this->parent_cObj->stdWrap($minItems, $minItemsConf) : $minItems;
-        $maxItemsConf = isset($this->mconf['maxItems.']) ? $this->mconf['maxItems.'] : (isset($this->conf['maxItems.']) ? $this->conf['maxItems.'] : null);
+        $maxItemsConf = $this->mconf['maxItems.'] ?? $this->conf['maxItems.'] ?? null;
         $maxItems = is_array($maxItemsConf) ? $this->parent_cObj->stdWrap($maxItems, $maxItemsConf) : $maxItems;
-        $beginConf = isset($this->mconf['begin.']) ? $this->mconf['begin.'] : (isset($this->conf['begin.']) ? $this->conf['begin.'] : null);
+        $beginConf = $this->mconf['begin.'] ?? $this->conf['begin.'] ?? null;
         $begin = is_array($beginConf) ? $this->parent_cObj->stdWrap($begin, $beginConf) : $begin;
         $banUidArray = $this->getBannedUids();
         // Fill in the menuArr with elements that should go into the menu:
@@ -515,8 +517,8 @@ abstract class AbstractMenuContentObject
     }
 
     /**
-    * @return string The HTML for the menu
-    */
+     * @return string The HTML for the menu
+     */
     public function writeMenu()
     {
         return '';
@@ -551,7 +553,7 @@ abstract class AbstractMenuContentObject
         $alternativeSortingField = trim($this->mconf['alternativeSortingField']) ?: 'sorting';
 
         // Additional where clause, usually starts with AND (as usual with all additionalWhere functionality in TS)
-        $additionalWhere = isset($this->mconf['additionalWhere']) ? $this->mconf['additionalWhere'] : '';
+        $additionalWhere = $this->mconf['additionalWhere'] ?? '';
         if (isset($this->mconf['additionalWhere.'])) {
             $additionalWhere = $this->parent_cObj->stdWrap($additionalWhere, $this->mconf['additionalWhere.']);
         }
@@ -948,9 +950,11 @@ abstract class AbstractMenuContentObject
         // Max number of items
         $limit = MathUtility::forceIntegerInRange($this->conf['special.']['limit'], 0, 100);
         // Start point
-        $eLevel = $this->parent_cObj->getKey(isset($this->conf['special.']['entryLevel.'])
+        $eLevel = $this->parent_cObj->getKey(
+            isset($this->conf['special.']['entryLevel.'])
             ? $this->parent_cObj->stdWrap($this->conf['special.']['entryLevel'], $this->conf['special.']['entryLevel.'])
-            : $this->conf['special.']['entryLevel'], $this->tmpl->rootLine
+            : $this->conf['special.']['entryLevel'],
+            $this->tmpl->rootLine
         );
         $startUid = (int)$this->tmpl->rootLine[$eLevel]['uid'];
         // Which field is for keywords
@@ -1239,14 +1243,12 @@ abstract class AbstractMenuContentObject
     public function filterMenuPages(&$data, $banUidArray, $spacer)
     {
         $includePage = true;
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/tslib/class.tslib_menu.php']['filterMenuPages'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/tslib/class.tslib_menu.php']['filterMenuPages'] as $className) {
-                $hookObject = GeneralUtility::makeInstance($className);
-                if (!$hookObject instanceof AbstractMenuFilterPagesHookInterface) {
-                    throw new \UnexpectedValueException($className . ' must implement interface ' . AbstractMenuFilterPagesHookInterface::class, 1269877402);
-                }
-                $includePage = $includePage && $hookObject->processFilter($data, $banUidArray, $spacer, $this);
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/tslib/class.tslib_menu.php']['filterMenuPages'] ?? [] as $className) {
+            $hookObject = GeneralUtility::makeInstance($className);
+            if (!$hookObject instanceof AbstractMenuFilterPagesHookInterface) {
+                throw new \UnexpectedValueException($className . ' must implement interface ' . AbstractMenuFilterPagesHookInterface::class, 1269877402);
             }
+            $includePage = $includePage && $hookObject->processFilter($data, $banUidArray, $spacer, $this);
         }
         if (!$includePage) {
             return false;
@@ -1282,7 +1284,7 @@ abstract class AbstractMenuContentObject
                         if ($languageUid && ($this->conf['protectLvar'] === 'all' || GeneralUtility::hideIfNotTranslated($data['l18n_cfg']))) {
                             $olRec = $tsfe->sys_page->getPageOverlay($data['uid'], $languageUid);
                             if (empty($olRec)) {
-                                // If no pages_language_overlay record then page can NOT be accessed in
+                                // If no page translation record then page can NOT be accessed in
                                 // the language pointed to by "&L" and therefore we protect the link by setting "&L=0"
                                 $data['_ADD_GETVARS'] .= '&L=0';
                             }
@@ -1618,12 +1620,15 @@ abstract class AbstractMenuContentObject
         }
         // Override URL if using "External URL"
         if ($this->menuArr[$key]['doktype'] == PageRepository::DOKTYPE_LINK) {
-            if ($this->menuArr[$key]['urltype'] == 3 && GeneralUtility::validEmail($this->menuArr[$key]['url'])) {
-                // Create mailto-link using \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typolink (concerning spamProtectEmailAddresses):
-                $LD['totalURL'] = $this->parent_cObj->typoLink_URL(['parameter' => $this->menuArr[$key]['url']]);
+            $externalUrl = $this->getSysPage()->getExtURL($this->menuArr[$key]);
+            // Create link using typolink (concerning spamProtectEmailAddresses) for email links
+            $LD['totalURL'] = $this->parent_cObj->typoLink_URL(['parameter' => $externalUrl]);
+            // Links to emails should not have any target
+            if (stripos($externalUrl, 'mailto:') === 0) {
                 $LD['target'] = '';
-            } else {
-                $LD['totalURL'] = $this->parent_cObj->typoLink_URL(['parameter' => $this->getSysPage()->getExtURL($this->menuArr[$key])]);
+                // use external target for the URL
+            } elseif (empty($LD['target']) && !empty($this->getTypoScriptFrontendController()->extTarget)) {
+                $LD['target'] = $this->getTypoScriptFrontendController()->extTarget;
             }
         }
 
@@ -1767,7 +1772,7 @@ abstract class AbstractMenuContentObject
                 ],
                 [
                     rawurlencode($LD['totalURL']),
-                    isset($page['_SHORTCUT_PAGE_UID']) ? $page['_SHORTCUT_PAGE_UID'] : $page['uid']
+                    $page['_SHORTCUT_PAGE_UID'] ?? $page['uid']
                 ],
                 $this->mconf['showAccessRestrictedPages.']['addParams']
             );
@@ -2359,7 +2364,7 @@ abstract class AbstractMenuContentObject
     /**
      * Get the parentMenuItem from the parentMenuArr, if this is a subMenu
      *
-     * @return null|array
+     * @return array|null
      */
     public function getParentMenuItem()
     {

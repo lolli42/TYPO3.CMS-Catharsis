@@ -14,8 +14,6 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
 /**
  * A caching backend which stores cache entries by using APC.
  *
@@ -140,14 +138,13 @@ class ApcBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implement
             throw new \TYPO3\CMS\Core\Cache\Exception\InvalidDataException('The specified data is of type "' . gettype($data) . '" but a string is expected.', 1232986825);
         }
         $tags[] = '%APCBE%' . $this->cacheIdentifier;
-        $expiration = $lifetime !== null ? $lifetime : $this->defaultLifetime;
+        $expiration = $lifetime ?? $this->defaultLifetime;
         $success = apc_store($this->getIdentifierPrefix() . $entryIdentifier, $data, $expiration);
         if ($success === true) {
             $this->removeIdentifierFromAllTags($entryIdentifier);
             $this->addIdentifierToTags($entryIdentifier, $tags);
         } else {
-            $errorMessage = 'Error using APCu: Could not save data in the cache.';
-            GeneralUtility::sysLog($errorMessage, 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+            $this->logger->alert('Error using APCu: Could not save data in the cache.');
         }
     }
 
@@ -208,9 +205,8 @@ class ApcBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implement
         $identifiers = apc_fetch($this->getIdentifierPrefix() . 'tag_' . $tag, $success);
         if ($success === false) {
             return [];
-        } else {
-            return (array)$identifiers;
         }
+        return (array)$identifiers;
     }
 
     /**

@@ -116,6 +116,10 @@ CREATE TABLE pages (
 	editlock tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	crdate int(11) unsigned DEFAULT '0' NOT NULL,
 	cruser_id int(11) unsigned DEFAULT '0' NOT NULL,
+	sys_language_uid int(11) unsigned DEFAULT '0' NOT NULL,
+	l10n_parent int(11) DEFAULT '0' NOT NULL,
+	l10n_source int(11) DEFAULT '0' NOT NULL,
+	l10n_diffsource mediumblob,
 	hidden tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	title varchar(255) DEFAULT '' NOT NULL,
 	doktype int(11) unsigned DEFAULT '0' NOT NULL,
@@ -125,10 +129,8 @@ CREATE TABLE pages (
 	url varchar(255) DEFAULT '' NOT NULL,
 	starttime int(11) unsigned DEFAULT '0' NOT NULL,
 	endtime int(11) unsigned DEFAULT '0' NOT NULL,
-	urltype tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	shortcut int(10) unsigned DEFAULT '0' NOT NULL,
 	shortcut_mode int(10) unsigned DEFAULT '0' NOT NULL,
-	no_cache int(10) unsigned DEFAULT '0' NOT NULL,
 	fe_group varchar(100) DEFAULT '0' NOT NULL,
 	subtitle varchar(255) DEFAULT '' NOT NULL,
 	layout int(11) unsigned DEFAULT '0' NOT NULL,
@@ -158,11 +160,13 @@ CREATE TABLE pages (
 	backend_layout varchar(64) DEFAULT '' NOT NULL,
 	backend_layout_next_level varchar(64) DEFAULT '' NOT NULL,
 	tsconfig_includes text,
+	legacy_overlay_uid int(11) unsigned DEFAULT '0' NOT NULL,
 	PRIMARY KEY (uid),
 	KEY t3ver_oid (t3ver_oid,t3ver_wsid),
 	KEY parent (pid,deleted,sorting),
 	KEY alias (alias),
-	KEY determineSiteRoot (is_siteroot)
+	KEY determineSiteRoot (is_siteroot),
+	KEY language_identifier (l10n_parent,sys_language_uid)
 );
 
 #
@@ -310,7 +314,7 @@ CREATE TABLE sys_file_metadata (
 	# Language fields
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
 	l10n_parent int(11) DEFAULT '0' NOT NULL,
-	l10n_diffsource mediumblob NOT NULL,
+	l10n_diffsource mediumblob,
 
 	# Versioning fields
 	t3ver_oid int(11) DEFAULT '0' NOT NULL,
@@ -376,7 +380,6 @@ CREATE TABLE sys_file_reference (
 	tstamp int(11) DEFAULT '0' NOT NULL,
 	crdate int(11) DEFAULT '0' NOT NULL,
 	cruser_id int(11) DEFAULT '0' NOT NULL,
-	sorting int(10) DEFAULT '0' NOT NULL,
 	deleted tinyint(4) DEFAULT '0' NOT NULL,
 	hidden tinyint(4) DEFAULT '0' NOT NULL,
 
@@ -395,7 +398,7 @@ CREATE TABLE sys_file_reference (
 	# Language fields
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
 	l10n_parent int(11) DEFAULT '0' NOT NULL,
-	l10n_diffsource mediumblob NOT NULL,
+	l10n_diffsource mediumblob,
 
 	# Reference fields (basically same as MM table)
 	uid_local int(11) DEFAULT '0' NOT NULL,
@@ -531,19 +534,20 @@ CREATE TABLE sys_collection_entries (
 CREATE TABLE sys_history (
 	uid int(11) unsigned NOT NULL auto_increment,
 	pid int(11) unsigned DEFAULT '0' NOT NULL,
-	sys_log_uid int(11) DEFAULT '0' NOT NULL,
-	history_data mediumtext,
-	fieldlist text,
+	actiontype tinyint(3) DEFAULT '0' NOT NULL,
+	usertype varchar(2) DEFAULT 'BE' NOT NULL,
+	userid int(11) unsigned,
+	originaluserid int(11) unsigned,
 	recuid int(11) DEFAULT '0' NOT NULL,
 	tablename varchar(255) DEFAULT '' NOT NULL,
 	tstamp int(11) DEFAULT '0' NOT NULL,
-	history_files mediumtext,
-	snapshot int(11) DEFAULT '0' NOT NULL,
+	history_data mediumtext,
+	workspace int(11) DEFAULT '0',
+
 	PRIMARY KEY (uid),
 	KEY parent (pid),
 	KEY recordident_1 (tablename,recuid),
-	KEY recordident_2 (tablename,tstamp),
-	KEY sys_log_uid (sys_log_uid)
+	KEY recordident_2 (tablename,tstamp)
 ) ENGINE=InnoDB;
 
 #
@@ -667,7 +671,7 @@ CREATE TABLE sys_category (
 
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
 	l10n_parent int(11) DEFAULT '0' NOT NULL,
-	l10n_diffsource mediumblob NOT NULL,
+	l10n_diffsource mediumblob,
 
 	title tinytext NOT NULL,
 	description text,

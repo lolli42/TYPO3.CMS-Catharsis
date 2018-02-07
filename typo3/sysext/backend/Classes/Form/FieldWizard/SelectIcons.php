@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\FieldWizard;
 
 /*
@@ -40,17 +40,16 @@ class SelectIcons extends AbstractNode
         foreach ($selectItems as $item) {
             if ($item[1] === '--div--') {
                 continue;
-            } else {
-                $icon = !empty($item[2]) ? FormEngineUtility::getIconHtml($item[2], $item[0], $item[0]) : '';
-                if ($icon) {
-                    $selectIcons[] = [
+            }
+            $icon = !empty($item[2]) ? FormEngineUtility::getIconHtml($item[2], $item[0], $item[0]) : '';
+            if ($icon) {
+                $selectIcons[] = [
                         'title' => $item[0],
                         'icon' => $icon,
                         'index' => $selectItemCounter,
                     ];
-                }
-                $selectItemCounter++;
             }
+            $selectItemCounter++;
         }
 
         $html = [];

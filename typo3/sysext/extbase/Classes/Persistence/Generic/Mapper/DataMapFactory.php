@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
+
 /**
  * A factory for a data map to map a single table configured in $TCA on a domain object.
  */
@@ -40,7 +42,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
     protected $cacheManager;
 
     /**
-     * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+     * @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
      */
     protected $dataMapCache;
 
@@ -304,9 +306,9 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
      */
     protected function setType(ColumnMap $columnMap, $columnConfiguration)
     {
-        $tableColumnType = (isset($columnConfiguration['type'])) ? $columnConfiguration['type'] : null;
+        $tableColumnType = $columnConfiguration['type'] ?? null;
         $columnMap->setType(\TYPO3\CMS\Core\DataHandling\TableColumnType::cast($tableColumnType));
-        $tableColumnSubType = (isset($columnConfiguration['internal_type'])) ? $columnConfiguration['internal_type'] : null;
+        $tableColumnSubType = $columnConfiguration['internal_type'] ?? null;
         $columnMap->setInternalType(\TYPO3\CMS\Core\DataHandling\TableColumnSubType::cast($tableColumnSubType));
 
         return $columnMap;
@@ -317,7 +319,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
      * the $TCA column configuration
      *
      * @param ColumnMap $columnMap The column map
-     * @param NULL|array $columnConfiguration The column configuration from $TCA
+     * @param array|null $columnConfiguration The column configuration from $TCA
      * @param array $propertyMetaData The property metadata as delivered by the reflection service
      * @return ColumnMap
      */
@@ -339,6 +341,11 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
                 )
             ) {
                 $columnMap->setTypeOfRelation(ColumnMap::RELATION_HAS_MANY);
+            } elseif (
+                isset($columnConfiguration['type']) && $columnConfiguration['type'] === 'group'
+                && (!isset($columnConfiguration['maxitems']) || $columnConfiguration['maxitems'] > 1)
+            ) {
+                $columnMap->setTypeOfRelation(ColumnMap::RELATION_HAS_MANY);
             } else {
                 $columnMap->setTypeOfRelation(ColumnMap::RELATION_NONE);
             }
@@ -352,16 +359,16 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
      * Sets field evaluations based on $TCA column configuration.
      *
      * @param ColumnMap $columnMap The column map
-     * @param NULL|array $columnConfiguration The column configuration from $TCA
+     * @param array|null $columnConfiguration The column configuration from $TCA
      * @return ColumnMap
      */
     protected function setFieldEvaluations(ColumnMap $columnMap, array $columnConfiguration = null)
     {
         if (!empty($columnConfiguration['eval'])) {
             $fieldEvaluations = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $columnConfiguration['eval'], true);
-            $dateTimeEvaluations = ['date', 'datetime'];
+            $dateTimeTypes = QueryHelper::getDateTimeTypes();
 
-            if (!empty(array_intersect($dateTimeEvaluations, $fieldEvaluations)) && !empty($columnConfiguration['dbType'])) {
+            if (!empty(array_intersect($dateTimeTypes, $fieldEvaluations)) && !empty($columnConfiguration['dbType'])) {
                 $columnMap->setDateTimeStorageFormat($columnConfiguration['dbType']);
             }
         }
@@ -374,7 +381,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
      * the $TCA column configuration
      *
      * @param ColumnMap $columnMap The column map
-     * @param NULL|array $columnConfiguration The column configuration from $TCA
+     * @param array|null $columnConfiguration The column configuration from $TCA
      * @return ColumnMap
      */
     protected function setOneToOneRelation(ColumnMap $columnMap, array $columnConfiguration = null)
@@ -396,7 +403,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
      * the $TCA column configuration
      *
      * @param ColumnMap $columnMap The column map
-     * @param NULL|array $columnConfiguration The column configuration from $TCA
+     * @param array|null $columnConfiguration The column configuration from $TCA
      * @return ColumnMap
      */
     protected function setOneToManyRelation(ColumnMap $columnMap, array $columnConfiguration = null)
@@ -418,7 +425,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface
      * the $TCA column configuration
      *
      * @param ColumnMap $columnMap The column map
-     * @param NULL|array $columnConfiguration The column configuration from $TCA
+     * @param array|null $columnConfiguration The column configuration from $TCA
      * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnsupportedRelationException
      * @return ColumnMap
      */

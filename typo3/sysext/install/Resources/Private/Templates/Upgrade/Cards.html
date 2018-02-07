@@ -1,0 +1,82 @@
+<div>
+	<h1>Upgrade</h1>
+</div>
+
+<f:alias map="{actions: {
+	0: {partial: 'Upgrade/CoreUpdate',
+		require: 'TYPO3/CMS/Install/CoreUpdate',
+		baseClass: 't3js-coreUpdate',
+		title: 'Update TYPO3 Core',
+		category: 'Core Upgrade',
+		description: 'Update your TYPO3 installation with one click, if your instance is set up correctly.'
+	},
+	1: {partial: 'Upgrade/UpgradeWizards',
+		require: 'TYPO3/CMS/Install/UpgradeWizards',
+		baseClass: 't3js-upgradeWizards',
+		title: 'Execute Upgrade Wizards',
+		category: 'Core Upgrade',
+		description: 'If you upgrade your TYPO3 installation from e.g. v8 to v9, then Upgrade Wizards guide you through the necessary steps.'
+	},
+	2: {partial: 'Upgrade/UpgradeDocs',
+		require: 'TYPO3/CMS/Install/UpgradeDocs',
+		baseClass: 't3js-upgradeDocs',
+		title: 'View Upgrade Documentation',
+		category: 'Core Upgrade',
+		description: 'Show and search documentation files describing important changes between TYPO3 versions.'
+	},
+	3: {partial: 'Upgrade/TcaExtTablesCheck',
+		require: 'TYPO3/CMS/Install/TcaExtTablesCheck',
+		baseClass: 't3js-tcaExtTablesCheck',
+		title: 'Check TCA in ext_tables.php',
+		category: 'TCA',
+		description: 'Test if extensions still change TCA in ext_tables.php files, resulting in performance drawbacks.'
+	},
+	4: {partial: 'Upgrade/ExtensionCompatTester',
+		require: 'TYPO3/CMS/Install/ExtensionCompatTester',
+		baseClass: 't3js-extensionCompatTester',
+		title: 'Check for broken extensions',
+		category: 'Extensions',
+		description: 'Check if all base configuration files of currently loaded extensions have errors with the current TYPO3 version.'
+	},
+	5: {partial: 'Upgrade/TcaMigrationsCheck',
+		require: 'TYPO3/CMS/Install/TcaMigrationsCheck',
+		baseClass: 't3js-tcaMigrationsCheck',
+		title: 'Check TCA Migrations',
+		category: 'TCA',
+		description: 'Check if third-party extensions have outdated TCA configuration which should be adapted for the current TYPO3 version.'
+	},
+	6: {partial: 'Upgrade/ExtensionScanner',
+		require: 'TYPO3/CMS/Install/ExtensionScanner',
+		baseClass: 't3js-extensionScanner',
+		title: 'Scan Extension Files',
+		category: 'Extensions',
+		description: 'Scan extensions for usage of deprecated or outdated TYPO3 API calls.'
+	}
+}}">
+	<div class="gridder">
+		<f:for each="{actions}" as="card" iteration="iterator">
+			<div
+				class="gridder-list {card.baseClass}-open {f:if(condition: '{card.require}', then: 't3js-require')}"
+				{f:if(condition: '{card.require}', then: 'data-require="{card.require}"')}
+			>
+				<div class="gridder-item">
+					<h3>
+						{card.title} <span class="label label-warning {card.baseClass}-badge" style="display:none"></span>
+						<br>
+						<small class="text-muted">{card.category}</small>
+						<br>
+					</h3>
+					<p>{card.description}</p>
+				</div>
+			</div>
+			<div class="gridder-content {f:if(condition: '{card.baseClass}', then: '{card.baseClass}')}">
+				<div class="gridder-padding">
+					<div class="gridder-title clearfix">
+						<h3 class="pull-left">{card.title}</h3>
+					</div>
+					<f:render partial="{card.partial}" arguments="{_all}" />
+				</div>
+			</div>
+		</f:for>
+	</div>
+</f:alias>

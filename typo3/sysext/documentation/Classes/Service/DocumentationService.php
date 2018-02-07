@@ -120,17 +120,17 @@ class DocumentationService
                 $success |= $this->fetchDocument($url, $key, $version, $language);
                 // Fetch next language
                 continue;
-            } else {
-                if (isset($packages[$version])) {
-                    foreach ($packages[$version] as $locale => $_) {
-                        if (GeneralUtility::isFirstPartOfStr($locale, $language)) {
-                            $success |= $this->fetchDocument($url, $key, $version, $locale);
-                            // Fetch next language (jump current foreach up to the loop of $languages)
-                            continue 2;
-                        }
+            }
+            if (isset($packages[$version])) {
+                foreach ($packages[$version] as $locale => $_) {
+                    if (GeneralUtility::isFirstPartOfStr($locale, $language)) {
+                        $success |= $this->fetchDocument($url, $key, $version, $locale);
+                        // Fetch next language (jump current foreach up to the loop of $languages)
+                        continue 2;
                     }
                 }
             }
+
             // Step 2)
             if (preg_match('/^(\d+\.\d+)\.\d+$/', $version, $matches)) {
                 // Instead of a 3-digit version, try to get it on 2 digits
@@ -294,11 +294,11 @@ class DocumentationService
             while (($zipEntry = zip_read($zip)) !== false) {
                 $zipEntryName = zip_entry_name($zipEntry);
                 if (strpos($zipEntryName, '/') !== false) {
-                    $zipEntryPathSegments =  explode('/', $zipEntryName);
+                    $zipEntryPathSegments = explode('/', $zipEntryName);
                     $fileName = array_pop($zipEntryPathSegments);
                     // It is a folder, because the last segment is empty, let's create it
                     if (empty($fileName)) {
-                        GeneralUtility::mkdir_deep($path, implode('/', $zipEntryPathSegments));
+                        GeneralUtility::mkdir_deep($path . implode('/', $zipEntryPathSegments));
                     } else {
                         $absoluteTargetPath = GeneralUtility::getFileAbsFileName($path . implode('/', $zipEntryPathSegments) . '/' . $fileName);
                         if (trim($absoluteTargetPath) !== '') {

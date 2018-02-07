@@ -46,16 +46,15 @@ class VariableFrontend extends AbstractFrontend
                 throw new \InvalidArgumentException('"' . $tag . '" is not a valid tag for a cache entry.', 1233058269);
             }
         }
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/cache/frontend/class.t3lib_cache_frontend_variablefrontend.php']['set'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/cache/frontend/class.t3lib_cache_frontend_variablefrontend.php']['set'] as $_funcRef) {
-                $params = [
-                    'entryIdentifier' => &$entryIdentifier,
-                    'variable' => &$variable,
-                    'tags' => &$tags,
-                    'lifetime' => &$lifetime
-                ];
-                GeneralUtility::callUserFunction($_funcRef, $params, $this);
-            }
+
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/cache/frontend/class.t3lib_cache_frontend_variablefrontend.php']['set'] ?? [] as $_funcRef) {
+            $params = [
+                'entryIdentifier' => &$entryIdentifier,
+                'variable' => &$variable,
+                'tags' => &$tags,
+                'lifetime' => &$lifetime
+            ];
+            GeneralUtility::callUserFunction($_funcRef, $params, $this);
         }
         if (!$this->backend instanceof TransientBackendInterface) {
             $variable = serialize($variable);
@@ -83,9 +82,8 @@ class VariableFrontend extends AbstractFrontend
         $rawResult = $this->backend->get($entryIdentifier);
         if ($rawResult === false) {
             return false;
-        } else {
-            return $this->backend instanceof TransientBackendInterface ? $rawResult : unserialize($rawResult);
         }
+        return $this->backend instanceof TransientBackendInterface ? $rawResult : unserialize($rawResult);
     }
 
     /**
@@ -96,9 +94,11 @@ class VariableFrontend extends AbstractFrontend
      * @return array An array with the content of all matching entries. An empty array if no entries matched
      * @throws \InvalidArgumentException if the tag is not valid
      * @api
+     * @deprecated since TYPO3 v9, Avoid using this method since it is not compliant to PSR-6
      */
     public function getByTag($tag)
     {
+        trigger_error('This method will be removed in TYPO3 v10. Avoid using this method since it is not compliant to PSR-6.', E_USER_DEPRECATED);
         if (!$this->isValidTag($tag)) {
             throw new \InvalidArgumentException('"' . $tag . '" is not a valid tag for a cache entry.', 1233058312);
         }

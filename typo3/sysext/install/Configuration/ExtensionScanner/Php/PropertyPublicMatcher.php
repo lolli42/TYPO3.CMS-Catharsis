@@ -139,6 +139,191 @@ return [
             'Breaking-81171-EditAbilityOfTypoScriptTemplateInEXTtstemplateRemoved.rst',
         ],
     ],
+    'TYPO3\CMS\Frontend\Page\PageRepository->urltypes' => [
+        'restFiles' => [
+            'Breaking-71306-DroppedProtocolFieldFromPageTypeLinkToExternalURL.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->showInsertDelete' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->showDiff' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->lastSyslogId' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->returnUrl' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->showMarked' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Controller\ContentElement\ElementHistoryController->content' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Controller\ContentElement\ElementHistoryController->doc' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\ExtendedTemplateService->helpConfig' => [
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\ExtendedTemplateService->edit_divider' => [
+        'restFiles' => [
+            'Breaking-82425-RemoveOldTyposcriptConstantsEditorOptionMOD_TSEDITABLE_CONSTANTS.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->RDCT' => [
+        'restFiles' => [
+            'Breaking-82572-RDCTFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Controller\SimpleDataHandlerController->prErr' => [
+        'restFiles' => [
+            'Breaking-82629-TceDbOptionsPrErrAndUPTRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Controller\SimpleDataHandlerController->uPT' => [
+        'restFiles' => [
+            'Breaking-82629-TceDbOptionsPrErrAndUPTRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Authentication\AbstractUserAuthentication->writeDevLog' => [
+        'restFiles' => [
+            'Breaking-82639-LoggingActivatedForAuthenticationAndServiceClasses.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Service\AbstractService->writeDevLog' => [
+        'restFiles' => [
+            'Breaking-82639-LoggingActivatedForAuthenticationAndServiceClasses.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\FrontendBackendUserAuthentication->extPageInTreeInfo' => [
+        'restFiles' => [
+            'Breaking-81460-DeprecateGetByTagOnCacheFrontends.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->lockFilePath' => [
+        'restFiles' => [
+            'Breaking-83256-RemovedLockFilePathFunctionality.rst',
+        ],
+    ],
 
     // Deprecated public properties
+    'TYPO3\CMS\Frontend\Page\PageRepository->workspaceCache' => [
+        'restFiles' => [
+            'Deprecation-81318-PublicPropertiesOfPageRepository.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Page\PageRepository->error_getRootLine' => [
+        'restFiles' => [
+            'Deprecation-81318-PublicPropertiesOfPageRepository.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Page\PageRepository->error_getRootLine_failPid' => [
+        'restFiles' => [
+            'Deprecation-81318-PublicPropertiesOfPageRepository.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->matchAll' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->whereClause' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->debug' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->allowedPaths' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->simulationHiddenOrTime' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->nextLevel' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->rootId' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->absoluteRootLine' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->outermostRootlineIndexWithTemplate' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->rowSum' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->sitetitle' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->sectionsMatch' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->frames' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->MPmap' => [
+        'restFiles' => [
+            'Deprecation-83273-PublicPropertiesOfTemplateService.rst',
+        ],
+    ],
+    'TYPO3\CMS\Impexp\Export->maxFileSize' => [
+        'restFiles' => [
+            'Deprecation-83596-ImpexpRemovedMaxFileSizeRestriction.rst',
+        ],
+    ],
+    'TYPO3\CMS\Impexp\Export->maxRecordSize' => [
+        'restFiles' => [
+            'Deprecation-83606-ImpexpSizeHandlingRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Impexp\Export->maxExportSize' => [
+        'restFiles' => [
+            'Deprecation-83606-ImpexpSizeHandlingRemoved.rst',
+        ],
+    ],
 ];

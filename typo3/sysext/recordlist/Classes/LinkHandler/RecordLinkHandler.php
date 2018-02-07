@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Recordlist\LinkHandler;
 
 /*
@@ -81,7 +81,7 @@ class RecordLinkHandler extends AbstractLinkHandler implements LinkHandlerInterf
      */
     public function canHandleLink(array $linkParts): bool
     {
-        if (!$linkParts['url'] || !isset($linkParts['url']['identifier'])) {
+        if (!$linkParts['url'] || !isset($linkParts['url']['identifier']) || $linkParts['url']['identifier'] !== $this->identifier) {
             return false;
         }
 
@@ -137,6 +137,7 @@ class RecordLinkHandler extends AbstractLinkHandler implements LinkHandlerInterf
         } elseif (isset($this->linkParts['pid'])) {
             $this->expandPage = (int)$this->linkParts['pid'];
         }
+        $this->setTemporaryDbMounts();
 
         $databaseBrowser = GeneralUtility::makeInstance(RecordBrowser::class);
 

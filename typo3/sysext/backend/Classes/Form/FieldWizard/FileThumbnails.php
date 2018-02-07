@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\FieldWizard;
 
 /*
@@ -61,8 +61,10 @@ class FileThumbnails extends AbstractNode
                 $fileObject = $fileFactory->getFileObject($uidOrPath);
                 if (!$fileObject->isMissing()) {
                     $extension = $fileObject->getExtension();
-                    if (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'],
-                        $extension)
+                    if (GeneralUtility::inList(
+                        $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'],
+                        $extension
+                    )
                     ) {
                         $thumbnailsHtml[] = '<li>';
                         $thumbnailsHtml[] =     '<span class="thumbnail">';
@@ -93,18 +95,22 @@ class FileThumbnails extends AbstractNode
                         . '</li>';
                 } catch (\Exception $exception) {
                     $message = $exception->getMessage();
-                    $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $message, '',
-                        FlashMessage::ERROR, true);
+                    $flashMessage = GeneralUtility::makeInstance(
+                        FlashMessage::class,
+                        $message,
+                        '',
+                        FlashMessage::ERROR,
+                        true
+                    );
                     $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
                     $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
                     $defaultFlashMessageQueue->enqueue($flashMessage);
-                    $logMessage = $message . ' (' . $table . ':' . $row['uid'] . ')';
-                    GeneralUtility::sysLog($logMessage, 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+                    $this->logger->warning($message, ['table' => $table, 'row' => $row]);
                 }
             }
         }
 
-        $html= [];
+        $html = [];
         if (!empty($thumbnailsHtml)) {
             $html[] = '<ul class="list-inline">';
             $html[] =   implode(LF, $thumbnailsHtml);

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Database\Query\Restriction;
 
 /*
@@ -46,8 +46,8 @@ class FrontendWorkspaceRestriction implements QueryRestrictionInterface
      */
     public function __construct(int $workspaceId = null, bool $includeRowsForWorkspacePreview = null, bool $enforceLiveRowsOnly = true)
     {
-        $this->workspaceId = $workspaceId === null ? $GLOBALS['TSFE']->sys_page->versioningWorkspaceId : $workspaceId;
-        $this->includeRowsForWorkspacePreview = $includeRowsForWorkspacePreview === null ? $GLOBALS['TSFE']->sys_page->versioningPreview : $includeRowsForWorkspacePreview;
+        $this->workspaceId = $workspaceId ?? $GLOBALS['TSFE']->sys_page->versioningWorkspaceId;
+        $this->includeRowsForWorkspacePreview = $includeRowsForWorkspacePreview ?? $GLOBALS['TSFE']->sys_page->versioningPreview;
         $this->enforceLiveRowsOnly = $enforceLiveRowsOnly;
     }
 

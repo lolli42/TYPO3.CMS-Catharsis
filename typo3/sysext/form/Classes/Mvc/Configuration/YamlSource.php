@@ -19,9 +19,11 @@ namespace TYPO3\CMS\Form\Mvc\Configuration;
 
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
+use TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Form\Mvc\Configuration\Exception\FileWriteException;
 use TYPO3\CMS\Form\Mvc\Configuration\Exception\NoSuchFileException;
 use TYPO3\CMS\Form\Mvc\Configuration\Exception\ParseErrorException;
 
@@ -70,6 +72,12 @@ class YamlSource
             if ($fileToLoad instanceof File) {
                 $fileIdentifier = $fileToLoad->getIdentifier();
                 $rawYamlContent = $fileToLoad->getContents();
+                if ($rawYamlContent === false) {
+                    throw new NoSuchFileException(
+                        'The file "' . $fileToLoad . '" does not exist.',
+                        1498802253
+                    );
+                }
             } else {
                 $fileIdentifier = $fileToLoad;
                 $fileToLoad = GeneralUtility::getFileAbsFileName($fileToLoad);
@@ -97,11 +105,11 @@ class YamlSource
                 }
 
                 if (is_array($loadedConfiguration)) {
-                    ArrayUtility::mergeRecursiveWithOverrule($configuration, $loadedConfiguration);
+                    $this->mergeRecursiveWithOverrule($configuration, $loadedConfiguration);
                 }
             } catch (ParseException $exception) {
                 throw new ParseErrorException(
-                    'A parse error occurred while parsing file "' . $fileIdentifier . '". Error message: ' . $exception->getMessage(),
+                    'An error occurred while parsing file "' . $fileIdentifier . '": ' . $exception->getMessage(),
                     1480195405
                 );
             }
@@ -116,17 +124,35 @@ class YamlSource
      *
      * @param File|string $fileToSave The file to write to.
      * @param array $configuration The configuration to save
+     * @throws FileWriteException if the file could not be written
      * @internal
      */
     public function save($fileToSave, array $configuration)
     {
-        $header = $this->getHeaderFromFile($fileToSave);
-        $yaml = Yaml::dump($configuration, 99, 2);
-        if ($fileToSave instanceof File) {
-            $fileToSave->setContents($header . LF . $yaml);
-        } else {
-            @file_put_contents($fileToSave, $header . LF . $yaml);
+        try {
+            $header = $this->getHeaderFromFile($fileToSave);
+        } catch (InsufficientFileAccessPermissionsException  $e) {
+            throw new FileWriteException($e->getMessage(), 1512584488, $e);
         }
+
+        $yaml = Yaml::dump($configuration, 99, 2);
+
+        if ($fileToSave instanceof File) {
+            try {
+                $fileToSave->setContents($header . LF . $yaml);
+            } catch (InsufficientFileAccessPermissionsException $e) {
+                throw new FileWriteException($e->getMessage(), 1512582753, $e);
+            }
+        } else {
+            $byteCount = @file_put_contents($fileToSave, $header . LF . $yaml);
+
+            if ($byteCount === false) {
+                $error = error_get_last();
+                throw new FileWriteException($error['message'], 1512582929);
+            }
+        }
+
+        return $return;
     }
 
     /**
@@ -155,5 +181,29 @@ class YamlSource
             }
         }
         return $header;
+    }
+
+    /**
+     * The differences to the existing PHP function array_merge_recursive() are:
+     *  * If the original value is an array and the overrule value is something else
+     *    (like null) the overrule value is used.
+     *    (TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule does not do this)
+     *
+     * @param array $original Original array. It will be *modified* by this method and contains the result afterwards!
+     * @param array $overrule Overrule array, overruling the original array
+     */
+    protected function mergeRecursiveWithOverrule(array &$original, array $overrule)
+    {
+        foreach ($overrule as $key => $_) {
+            if (isset($original[$key]) && is_array($original[$key])) {
+                if (is_array($overrule[$key])) {
+                    $this->mergeRecursiveWithOverrule($original[$key], $overrule[$key]);
+                } else {
+                    $original[$key] = $overrule[$key];
+                }
+            } else {
+                $original[$key] = $overrule[$key];
+            }
+        }
     }
 }

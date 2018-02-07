@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
@@ -53,7 +52,6 @@ class EditController extends AbstractWizardController
      */
     public function __construct()
     {
-        parent::__construct();
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_wizards.xlf');
         $GLOBALS['SOBE'] = $this;
 
@@ -103,8 +101,11 @@ class EditController extends AbstractWizardController
         $config = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
         $fTable = $config['foreign_table'];
 
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+
         $urlParameters = [
-            'returnUrl' => BackendUtility::getModuleUrl('wizard_edit', ['doClose' => 1])
+            'returnUrl' => (string)$uriBuilder->buildUriFromRoute('wizard_edit', ['doClose' => 1])
         ];
 
         // Detecting the various allowed field type setups and acting accordingly.
@@ -117,11 +118,12 @@ class EditController extends AbstractWizardController
             // SINGLE value
             $urlParameters['edit[' . $fTable . '][' . $this->P['currentValue'] . ']'] = 'edit';
             // Redirect to FormEngine
-            $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+            $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
             HttpUtility::redirect($url);
         } elseif (is_array($config)
             && $this->P['currentSelectedValues']
-            && ($config['type'] === 'select'
+            && (
+                $config['type'] === 'select'
                 && $config['foreign_table']
                 || $config['type'] === 'group'
                 && $config['internal_type'] === 'db'
@@ -142,7 +144,7 @@ class EditController extends AbstractWizardController
                 $urlParameters['edit[' . $recTableUidParts[0] . '][' . $recTableUidParts[1] . ']'] = 'edit';
             }
             // Redirect to FormEngine
-            $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+            $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
             HttpUtility::redirect($url);
         } else {
             return $this->closeWindow;

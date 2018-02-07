@@ -142,7 +142,7 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
         }
         $this->remove($entryIdentifier);
         $temporaryCacheEntryPathAndFilename = $this->cacheDirectory . StringUtility::getUniqueId() . '.temp';
-        $lifetime = $lifetime === null ? $this->defaultLifetime : $lifetime;
+        $lifetime = $lifetime ?? $this->defaultLifetime;
         $expiryTime = $lifetime === 0 ? 0 : $GLOBALS['EXEC_TIME'] + $lifetime;
         $metaData = str_pad($expiryTime, self::EXPIRYTIME_LENGTH) . implode(' ', $tags) . str_pad(strlen($data), self::DATASIZE_DIGITS);
         $result = file_put_contents($temporaryCacheEntryPathAndFilename, $data . $metaData);
@@ -376,15 +376,13 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
         if ($this->frozen === true) {
             if (isset($this->cacheEntryIdentifiers[$entryIdentifier])) {
                 return require_once $this->cacheDirectory . $entryIdentifier . $this->cacheEntryFileExtension;
-            } else {
-                return false;
             }
-        } else {
-            if ($entryIdentifier !== basename($entryIdentifier)) {
-                throw new \InvalidArgumentException('The specified entry identifier must not contain a path segment.', 1282073036);
-            }
-            $pathAndFilename = $this->cacheDirectory . $entryIdentifier . $this->cacheEntryFileExtension;
-            return $this->isCacheFileExpired($pathAndFilename) ? false : require_once $pathAndFilename;
+            return false;
         }
+        if ($entryIdentifier !== basename($entryIdentifier)) {
+            throw new \InvalidArgumentException('The specified entry identifier must not contain a path segment.', 1282073036);
+        }
+        $pathAndFilename = $this->cacheDirectory . $entryIdentifier . $this->cacheEntryFileExtension;
+        return $this->isCacheFileExpired($pathAndFilename) ? false : require_once $pathAndFilename;
     }
 }

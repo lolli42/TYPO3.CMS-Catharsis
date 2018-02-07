@@ -28,7 +28,7 @@ class YouTubeHelper extends AbstractOEmbedHelper
      *
      * @param File $file
      * @param bool $relativeToCurrentScript
-     * @return string|NULL
+     * @return string|null
      */
     public function getPublicUrl(File $file, $relativeToCurrentScript = false)
     {
@@ -69,7 +69,7 @@ class YouTubeHelper extends AbstractOEmbedHelper
      *
      * @param string $url
      * @param Folder $targetFolder
-     * @return File|NULL
+     * @return File|null
      */
     public function transformUrlToFile($url, Folder $targetFolder)
     {
@@ -99,7 +99,8 @@ class YouTubeHelper extends AbstractOEmbedHelper
      */
     protected function getOEmbedUrl($mediaId, $format = 'json')
     {
-        return sprintf('https://www.youtube.com/oembed?url=%s&format=%s',
+        return sprintf(
+            'https://www.youtube.com/oembed?url=%s&format=%s',
             urlencode(sprintf('https://www.youtube.com/watch?v=%s', $mediaId)),
             rawurlencode($format)
         );

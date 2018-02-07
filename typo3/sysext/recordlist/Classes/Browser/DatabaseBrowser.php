@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Recordlist\Browser;
 use TYPO3\CMS\Backend\RecordList\ElementBrowserRecordList;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Recordlist\Tree\View\ElementBrowserPageTreeView;
@@ -32,7 +33,7 @@ class DatabaseBrowser extends AbstractElementBrowser implements ElementBrowserIn
      * value will contain the ID of the expanded page.
      * If the value is NOT set by GET parameter, then it will be restored from the module session data.
      *
-     * @var NULL|int
+     * @var int|null
      */
     protected $expandPage;
 
@@ -196,7 +197,7 @@ class DatabaseBrowser extends AbstractElementBrowser implements ElementBrowserIn
     protected function renderTableRecords($tables)
     {
         $backendUser = $this->getBackendUser();
-        if ($this->expandPage === null  || $this->expandPage < 0 || !$backendUser->isInWebMount($this->expandPage)) {
+        if ($this->expandPage === null || $this->expandPage < 0 || !$backendUser->isInWebMount($this->expandPage)) {
             return '';
         }
         // Set array with table names to list:
@@ -230,7 +231,7 @@ class DatabaseBrowser extends AbstractElementBrowser implements ElementBrowserIn
             $out .= '<br />';
         }
 
-        $permsClause = $backendUser->getPagePermsClause(1);
+        $permsClause = $backendUser->getPagePermsClause(Permission::PAGE_SHOW);
         $pageInfo = BackendUtility::readPageAccess($this->expandPage, $permsClause);
 
         /** @var ElementBrowserRecordList $dbList */
@@ -238,7 +239,6 @@ class DatabaseBrowser extends AbstractElementBrowser implements ElementBrowserIn
         $dbList->setOverrideUrlParameters($this->getUrlParameters([]));
         $dbList->thisScript = $this->thisScript;
         $dbList->thumbs = false;
-        $dbList->localizationView = true;
         $dbList->setIsEditable(false);
         $dbList->calcPerms = $backendUser->calcPerms($pageInfo);
         $dbList->noControlPanels = true;
@@ -297,7 +297,7 @@ class DatabaseBrowser extends AbstractElementBrowser implements ElementBrowserIn
      */
     public function getUrlParameters(array $values)
     {
-        $pid = isset($values['pid']) ? $values['pid'] : $this->expandPage;
+        $pid = $values['pid'] ?? $this->expandPage;
         return [
             'mode' => 'db',
             'expandPage' => $pid,

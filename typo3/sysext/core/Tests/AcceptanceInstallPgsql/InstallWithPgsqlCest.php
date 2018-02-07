@@ -29,7 +29,7 @@ class InstallWithPgsqlCest
 
         // EnvironmentAndFolders step
         $I->waitForText('Installing TYPO3');
-        $I->see('System looks good. Continue!');
+        $I->waitForText('System looks good. Continue!');
         $I->click('System looks good. Continue!');
 
         // DatabaseConnection step
@@ -69,6 +69,11 @@ class InstallWithPgsqlCest
 
         // Verify default frontend is rendered
         $I->amOnPage('/');
+        $I->waitForText('Let us introduce you to TYPO3');
         $I->waitForText('Make it your own');
+
+        // Verify link
+        $I->click('[title="Features"]');
+        $I->waitForText('Feature Complete Out-of-the-box', 30);
     }
 }

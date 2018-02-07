@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface;
 use TYPO3\CMS\Extbase\Object\Exception\CannotReconstituteObjectException;
 use TYPO3\CMS\Extbase\Persistence;
@@ -312,29 +313,31 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface
     }
 
     /**
-     * Creates a DateTime from an unix timestamp or date/datetime value.
+     * Creates a DateTime from an unix timestamp or date/datetime/time value.
      * If the input is empty, NULL is returned.
      *
-     * @param int|string $value Unix timestamp or date/datetime value
-     * @param NULL|string $storageFormat Storage format for native date/datetime fields
-     * @param NULL|string $targetType The object class name to be created
+     * @param int|string $value Unix timestamp or date/datetime/time value
+     * @param string|null $storageFormat Storage format for native date/datetime/time fields
+     * @param string|null $targetType The object class name to be created
      * @return \DateTime
      */
     protected function mapDateTime($value, $storageFormat = null, $targetType = 'DateTime')
     {
-        if (empty($value) || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+        $dateTimeTypes = QueryHelper::getDateTimeTypes();
+
+        if (empty($value) || $value === '0000-00-00' || $value === '0000-00-00 00:00:00' || $value === '00:00:00') {
             // 0 -> NULL !!!
             return null;
-        } elseif ($storageFormat === 'date' || $storageFormat === 'datetime') {
-            // native date/datetime values are stored in UTC
+        }
+        if (in_array($storageFormat, $dateTimeTypes, true)) {
+            // native date/datetime/time values are stored in UTC
             $utcTimeZone = new \DateTimeZone('UTC');
             $utcDateTime = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($targetType, $value, $utcTimeZone);
             $currentTimeZone = new \DateTimeZone(date_default_timezone_get());
             return $utcDateTime->setTimezone($currentTimeZone);
-        } else {
-            // integer timestamps are local server time
-            return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($targetType, date('c', $value));
         }
+        // integer timestamps are local server time
+        return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($targetType, date('c', $value));
     }
 
     /**
@@ -349,7 +352,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface
     public function fetchRelated(DomainObjectInterface $parentObject, $propertyName, $fieldValue = '', $enableLazyLoading = true)
     {
         $propertyMetaData = $this->reflectionService->getClassSchema(get_class($parentObject))->getProperty($propertyName);
-        if ($enableLazyLoading === true && $propertyMetaData['lazy']) {
+        if ($enableLazyLoading === true && $propertyMetaData['annotations']['lazy']) {
             if ($propertyMetaData['type'] === \TYPO3\CMS\Extbase\Persistence\ObjectStorage::class) {
                 $result = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage::class, $parentObject, $propertyName, $fieldValue);
             } else {
@@ -381,7 +384,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface
     /**
      * @param DomainObjectInterface $parentObject
      * @param string $propertyName
-     * @return array|NULL
+     * @return array|null
      */
     protected function getEmptyRelationValue(DomainObjectInterface $parentObject, $propertyName)
     {
@@ -678,13 +681,11 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface
      *
      * @param mixed $input The value that will be converted.
      * @param ColumnMap $columnMap Optional column map for retrieving the date storage format.
-     * @param callable $parseStringValueCallback Optional callback method that will be called for string values. Can be used to do database quotation.
-     * @param array $parseStringValueCallbackParameters Additional parameters that will be passed to the callabck as second parameter.
      * @throws \InvalidArgumentException
      * @throws UnexpectedTypeException
      * @return int|string
      */
-    public function getPlainValue($input, $columnMap = null, $parseStringValueCallback = null, array $parseStringValueCallbackParameters = [])
+    public function getPlainValue($input, $columnMap = null)
     {
         if ($input === null) {
             return 'NULL';
@@ -710,8 +711,11 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface
                     case 'date':
                         $parameter = $timeZoneToStore->format('Y-m-d');
                         break;
+                    case 'time':
+                        $parameter = $timeZoneToStore->format('H:i');
+                        break;
                     default:
-                        throw new \InvalidArgumentException('Column map DateTime format "' . $storageFormat . '" is unknown. Allowed values are datetime or date.', 1395353470);
+                        throw new \InvalidArgumentException('Column map DateTime format "' . $storageFormat . '" is unknown. Allowed values are date, datetime or time.', 1395353470);
                 }
             } else {
                 $parameter = $input->format('U');
@@ -721,35 +725,18 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface
         } elseif (TypeHandlingUtility::isValidTypeForMultiValueComparison($input)) {
             $plainValueArray = [];
             foreach ($input as $inputElement) {
-                $plainValueArray[] = $this->getPlainValue($inputElement, $columnMap, $parseStringValueCallback, $parseStringValueCallbackParameters);
+                $plainValueArray[] = $this->getPlainValue($inputElement, $columnMap);
             }
             $parameter = implode(',', $plainValueArray);
         } elseif (is_object($input)) {
             if (TypeHandlingUtility::isCoreType($input)) {
-                $parameter = $this->getPlainStringValue($input, $parseStringValueCallback, $parseStringValueCallbackParameters);
+                $parameter = (string)$input;
             } else {
                 throw new UnexpectedTypeException('An object of class "' . get_class($input) . '" could not be converted to a plain value.', 1274799934);
             }
         } else {
-            $parameter = $this->getPlainStringValue($input, $parseStringValueCallback, $parseStringValueCallbackParameters);
+            $parameter = (string)$input;
         }
         return $parameter;
-    }
-
-    /**
-     * If the given callback is set the value will be passed on the the callback function.
-     * The value will be converted to a string.
-     *
-     * @param string $value The string value that should be processed. Will be passed to the callback as first parameter.
-     * @param callable $callback The data passed to call_user_func().
-     * @param array $additionalParameters Optional additional parameters passed to the callback as second argument.
-     * @return string
-     */
-    protected function getPlainStringValue($value, $callback = null, array $additionalParameters = [])
-    {
-        if (is_callable($callback)) {
-            $value = call_user_func($callback, $value, $additionalParameters);
-        }
-        return (string)$value;
     }
 }

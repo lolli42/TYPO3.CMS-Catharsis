@@ -16,9 +16,11 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
@@ -88,7 +90,7 @@ class AdministrationController extends ActionController
         if ($view instanceof BackendTemplateView) {
             /** @var BackendTemplateView $view */
             parent::initializeView($view);
-            $permissionClause = $this->getBackendUserAuthentication()->getPagePermsClause(1);
+            $permissionClause = $this->getBackendUserAuthentication()->getPagePermsClause(Permission::PAGE_SHOW);
             $pageRecord = BackendUtility::readPageAccess($this->pageUid, $permissionClause);
             if ($pageRecord) {
                 $view->getModuleTemplate()->getDocHeaderComponent()->setMetaInformation($pageRecord);
@@ -108,22 +110,22 @@ class AdministrationController extends ActionController
             'index' => [
                 'controller' => 'Administration',
                 'action' => 'index',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xml:administration.menu.general')
+                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xlf:administration.menu.general')
             ],
             'pages' => [
                 'controller' => 'Administration',
                 'action' => 'pages',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xml:administration.menu.pages')
+                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xlf:administration.menu.pages')
             ],
             'externalDocuments' => [
                 'controller' => 'Administration',
                 'action' => 'externalDocuments',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xml:administration.menu.externalDocuments')
+                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xlf:administration.menu.externalDocuments')
             ],
             'statistic' => [
                 'controller' => 'Administration',
                 'action' => 'statistic',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xml:administration.menu.statistic')
+                'label' => $this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xlf:administration.menu.statistic')
             ]
         ];
         $uriBuilder = $this->objectManager->get(UriBuilder::class);
@@ -150,7 +152,7 @@ class AdministrationController extends ActionController
     public function initializeAction()
     {
         $this->pageUid = (int)GeneralUtility::_GET('id');
-        $this->indexerConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search'], ['allowed_classes' => false]);
+        $this->indexerConfig = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('indexed_search');
         $this->enableMetaphoneSearch = (bool)$this->indexerConfig['enableMetaphoneSearch'];
         $this->indexer = GeneralUtility::makeInstance(Indexer::class);
 
@@ -259,7 +261,7 @@ class AdministrationController extends ActionController
         $icon = $this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-view-go-up', Icon::SIZE_SMALL);
         $backButton = $this->view->getModuleTemplate()->getDocHeaderComponent()
             ->getButtonBar()->makeLinkButton()
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xml:administration.back'))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:indexed_search/Resources/Private/Language/locallang.xlf:administration.back'))
             ->setIcon($icon)
             ->setHref($this->getHref('Administration', 'statistic'));
         $this->view->getModuleTemplate()->getDocHeaderComponent()
@@ -492,13 +494,11 @@ class AdministrationController extends ActionController
      */
     public function statisticAction($depth = 1, $mode = 'overview')
     {
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] as $extension => $className) {
-                /** @var \TYPO3\CMS\IndexedSearch\FileContentParser $fileContentParser */
-                $fileContentParser = GeneralUtility::makeInstance($className);
-                if ($fileContentParser->softInit($extension)) {
-                    $this->external_parsers[$extension] = $fileContentParser;
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] ?? [] as $extension => $className) {
+            /** @var \TYPO3\CMS\IndexedSearch\FileContentParser $fileContentParser */
+            $fileContentParser = GeneralUtility::makeInstance($className);
+            if ($fileContentParser->softInit($extension)) {
+                $this->external_parsers[$extension] = $fileContentParser;
             }
         }
         $this->administrationRepository->external_parsers = $this->external_parsers;

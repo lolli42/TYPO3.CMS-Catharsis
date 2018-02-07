@@ -73,7 +73,7 @@ class PlainDataResolver
     /**
      * @param string $tableName
      * @param int[] $liveIds
-     * @param NULL|array $sortingStatement
+     * @param array|null $sortingStatement
      */
     public function __construct($tableName, array $liveIds, array $sortingStatement = null)
     {
@@ -255,8 +255,8 @@ class PlainDataResolver
             if (isset($ids[$movePlaceholderId])) {
                 $ids[$movePlaceholderId] = $liveReferenceId;
                 unset($ids[$liveReferenceId]);
-            // Just purge live reference
             } elseif (!$this->keepMovePlaceholder) {
+                // Just purge live reference
                 unset($ids[$liveReferenceId]);
             }
         }
@@ -372,17 +372,9 @@ class PlainDataResolver
      */
     protected function isWorkspaceEnabled()
     {
-        if (ExtensionManagementUtility::isLoaded('version')) {
+        if (ExtensionManagementUtility::isLoaded('workspaces')) {
             return BackendUtility::isTableWorkspaceEnabled($this->tableName);
         }
         return false;
-    }
-
-    /**
-     * @return bool
-     */
-    protected function isLocalizationEnabled()
-    {
-        return BackendUtility::isTableLocalizable($this->tableName);
     }
 }

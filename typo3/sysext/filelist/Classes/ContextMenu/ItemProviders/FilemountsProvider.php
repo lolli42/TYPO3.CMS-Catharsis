@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Filelist\ContextMenu\ItemProviders;
 
 /*
@@ -14,8 +14,6 @@ namespace TYPO3\CMS\Filelist\ContextMenu\ItemProviders;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
-use TYPO3\CMS\Core\Resource\File;
 
 /**
  * Provides click menu items for filemounts

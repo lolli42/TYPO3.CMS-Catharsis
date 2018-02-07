@@ -136,7 +136,7 @@ class ResourceStorageTest extends BaseTestCase
             $driver = new LocalDriver($driverConfiguration);
         } else {
             // We are using the LocalDriver here because PHPUnit can't mock concrete methods in abstract classes, so
-                // when using the AbstractDriver we would be in trouble when wanting to mock away some concrete method
+            // when using the AbstractDriver we would be in trouble when wanting to mock away some concrete method
             $driver = $this->getMockBuilder(LocalDriver::class)
                 ->setMethods($mockedDriverMethods)
                 ->setConstructorArgs([$driverConfiguration])
@@ -149,57 +149,6 @@ class ResourceStorageTest extends BaseTestCase
         $driver->processConfiguration();
         $driver->initialize();
         return $driver;
-    }
-
-    /**
-     * @return array
-     */
-    public function fileExtensionPermissionDataProvider()
-    {
-        return [
-            'Permissions evaluated, extension not in allowed list' => [
-                'fileName' => 'foo.txt',
-                'configuration' => ['allow' => 'jpg'],
-                'evaluatePermissions' => true,
-                'isAllowed' => true,
-            ],
-            'Permissions evaluated, extension in deny list' => [
-                'fileName' => 'foo.txt',
-                'configuration' => ['deny' => 'txt'],
-                'evaluatePermissions' => true,
-                'isAllowed' => false,
-            ],
-            'Permissions not evaluated, extension is php' => [
-                'fileName' => 'foo.php',
-                'configuration' => [],
-                'evaluatePermissions' => false,
-                'isAllowed' => false,
-            ],
-            'Permissions evaluated, extension is php' => [
-                'fileName' => 'foo.php',
-                // It is not possible to allow php file extension through configuration
-                'configuration' => ['allow' => 'php'],
-                'evaluatePermissions' => true,
-                'isAllowed' => false,
-            ],
-        ];
-    }
-
-    /**
-     * @param string $fileName
-     * @param array $configuration
-     * @param bool $evaluatePermissions
-     * @param bool $isAllowed
-     * @test
-     * @dataProvider fileExtensionPermissionDataProvider
-     */
-    public function fileExtensionPermissionIsWorkingCorrectly($fileName, array $configuration, $evaluatePermissions, $isAllowed)
-    {
-        $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace'] = $configuration;
-        $driverMock = $this->getMockForAbstractClass(AbstractDriver::class, [], '', false);
-        $subject = $this->getAccessibleMock(ResourceStorage::class, ['dummy'], [$driverMock, []]);
-        $subject->_set('evaluatePermissions', $evaluatePermissions);
-        $this->assertSame($isAllowed, $subject->_call('checkFileExtensionPermission', $fileName));
     }
 
     /**
@@ -360,7 +309,7 @@ class ResourceStorageTest extends BaseTestCase
         $mockedDriver->expects($this->any())->method('getPermissions')->will($this->returnValue($permissionsFromDriver));
         /** @var $mockedFolder Folder|\PHPUnit_Framework_MockObject_MockObject  */
         $mockedFolder = $this->createMock(Folder::class);
-            // Let all other checks pass
+        // Let all other checks pass
         /** @var $subject ResourceStorage|\PHPUnit_Framework_MockObject_MockObject */
         $subject = $this->getMockBuilder(ResourceStorage::class)
             ->setMethods(['isWritable', 'isBrowsable', 'checkUserActionPermission'])
@@ -760,7 +709,7 @@ class ResourceStorageTest extends BaseTestCase
         $this->subject->renameFile($file, 'bar', DuplicationBehavior::CANCEL);
     }
 
-     /**
+    /**
      * @test
      */
     public function renameFileReplacesIfConflictAndConflictModeIsReplace()

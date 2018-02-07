@@ -5,7 +5,11 @@
  * Add types as you use them
  */
 declare namespace TYPO3 {
+  export let DebugConsole: any;
   export let Popover: any;
+  export let ShortcutMenu: any;
+  export let Storage: any;
+  export let Utility: any;
   export const lang: any;
   export const settings: any;
   export namespace CMS {
@@ -19,6 +23,7 @@ declare namespace TYPO3 {
       export class Modal {
         public readonly sizes: {[key: string]: string};
         public readonly styles: {[key: string]: string};
+        public readonly types: {[key: string]: string};
         public currentModal: JQuery;
         public advanced(configuration: object): any;
         public confirm(title: string, content: any, severity: number, buttons: any[], additionalCssClasses?: string[]): JQuery; // tslint:disable-line:max-line-length
@@ -57,9 +62,10 @@ declare module 'TYPO3/CMS/Backend/Severity' {
   export = new TYPO3.CMS.Backend.Severity();
 }
 
-// Type definition for global namespace object
+// type definition for global namespace object
 interface Window {
   TYPO3: any;
+  $: any;
 }
 
 /**
@@ -71,3 +77,10 @@ declare module 'TYPO3/CMS/Core/Contrib/imagesloaded.pkgd.min' {
 }
 
 declare module 'cm/lib/codemirror';
+
+/**
+ * Required to make jQuery plugins "available" in TypeScript
+ */
+interface JQuery {
+  clearable(): JQuery;
+}

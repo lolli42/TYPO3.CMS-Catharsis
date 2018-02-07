@@ -70,6 +70,24 @@ return [
         'target' => Controller\FormSelectTreeAjaxController::class . '::fetchDataAction'
     ],
 
+    // Get data for page tree
+    'page_tree_data' => [
+        'path' => '/page/tree/fetchData',
+        'target' => Controller\Page\TreeController::class . '::fetchDataAction'
+    ],
+
+    // Get page tree configuration
+    'page_tree_configuration' => [
+        'path' => '/page/tree/fetchConfiguration',
+        'target' => Controller\Page\TreeController::class . '::fetchConfigurationAction'
+    ],
+
+    // Set temporary mount point
+    'page_tree_set_temporary_mount_point' => [
+        'path' => '/page/tree/setTemporaryMountPoint',
+        'target' => Controller\Page\TreeController::class . '::setTemporaryMountPointAction'
+    ],
+
     // Get shortcut edit form
     'shortcut_editform' => [
         'path' => '/shortcut/editform',
@@ -122,50 +140,37 @@ return [
     // Log in into backend
     'login' => [
         'path' => '/login',
-        'target' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '::loginAction',
+        'target' => \TYPO3\CMS\Backend\Controller\AjaxLoginController::class . '::loginAction',
         'access' => 'public'
     ],
 
     // Log out from backend
     'logout' => [
         'path' => '/logout',
-        'target' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '::logoutAction',
+        'target' => \TYPO3\CMS\Backend\Controller\AjaxLoginController::class . '::logoutAction',
         'access' => 'public'
     ],
 
     // Refresh login of backend
     'login_refresh' => [
         'path' => '/login/refresh',
-        'target' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '::refreshAction',
+        'target' => \TYPO3\CMS\Backend\Controller\AjaxLoginController::class . '::refreshAction',
     ],
 
     // Check if backend session has timed out
     'login_timedout' => [
         'path' => '/login/timedout',
-        'target' => \TYPO3\CMS\Backend\AjaxLoginHandler::class . '::isTimedOutAction',
+        'target' => \TYPO3\CMS\Backend\Controller\AjaxLoginController::class . '::isTimedOutAction',
         'access' => 'public',
         'parameters' => [
             'skipSessionUpdate' => 1
         ]
     ],
 
-    // ExtDirect routing
-    'ext_direct_route' => [
-        'path' => '/ext-direct/route',
-        'target' => \TYPO3\CMS\Core\ExtDirect\ExtDirectRouter::class . '::routeAction',
-        'access' => 'public'
-    ],
-
-    // ExtDirect API
-    'ext_direct_api' => [
-        'path' => '/ext-direct/api',
-        'target' => \TYPO3\CMS\Core\ExtDirect\ExtDirectApi::class . '::getAPI'
-    ],
-
     // Render flash messages
     'flashmessages_render' => [
         'path' => '/flashmessages/render',
-        'target' => \TYPO3\CMS\Backend\Template\DocumentTemplate::class . '::renderQueuedFlashMessages'
+        'target' => \TYPO3\CMS\Backend\Controller\FlashMessageController::class . '::getQueuedFlashMessagesAction'
     ],
 
     // Load context menu for

@@ -95,8 +95,8 @@ class InfoModuleController extends BaseScriptClass
             $this->moduleTemplate->getDocHeaderComponent()->setMetaInformation($this->pageinfo);
         }
         $access = is_array($this->pageinfo);
-        if ($this->id && $access || $this->backendUser->user['admin'] && !$this->id) {
-            if ($this->backendUser->user['admin'] && !$this->id) {
+        if ($this->id && $access || $this->backendUser->isAdmin() && !$this->id) {
+            if ($this->backendUser->isAdmin() && !$this->id) {
                 $this->pageinfo = ['title' => '[root-level]', 'uid' => 0, 'pid' => 0];
             }
             // JavaScript
@@ -113,7 +113,9 @@ class InfoModuleController extends BaseScriptClass
             $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ContextMenu');
 
             $this->view = $this->getFluidTemplateObject();
-            $this->view->assign('moduleName', BackendUtility::getModuleUrl($this->moduleName));
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+            $this->view->assign('moduleName', (string)$uriBuilder->buildUriFromRoute($this->moduleName));
             $this->view->assign('functionMenuModuleContent', $this->getExtObjContent());
             // Setting up the buttons and markers for docheader
             $this->getButtons();
@@ -172,7 +174,7 @@ class InfoModuleController extends BaseScriptClass
             ->setModuleName($this->moduleName)
             ->setDisplayName($this->MOD_MENU['function'][$this->MOD_SETTINGS['function']])
             ->setGetVariables([
-                'M',
+                'route',
                 'id',
                 'edit_record',
                 'pointer',
@@ -186,8 +188,8 @@ class InfoModuleController extends BaseScriptClass
 
         // CSH
         $cshButton = $buttonBar->makeHelpButton()
-          ->setModuleName('xMOD_csh_corebe')
-          ->setFieldName('pagetree_overview');
+            ->setModuleName('xMOD_csh_corebe')
+            ->setFieldName('pagetree_overview');
         $buttonBar->addButton($cshButton);
     }
 
@@ -198,11 +200,13 @@ class InfoModuleController extends BaseScriptClass
     {
         $menu = $this->moduleTemplate->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
         $menu->setIdentifier('WebInfoJumpMenu');
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         foreach ($this->MOD_MENU['function'] as $controller => $title) {
             $item = $menu
                 ->makeMenuItem()
                 ->setHref(
-                    BackendUtility::getModuleUrl(
+                    (string)$uriBuilder->buildUriFromRoute(
                         $this->moduleName,
                         [
                             'id' => $this->id,

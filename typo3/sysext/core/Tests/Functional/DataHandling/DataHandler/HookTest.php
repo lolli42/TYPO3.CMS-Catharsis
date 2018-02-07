@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Tests\Functional\DataHandling\DataHandler;
 
 /*
@@ -345,7 +345,8 @@ class HookTest extends AbstractDataHandlerActionTestCase
             $rightValue = $right[$key] ?? null;
             if (!is_array($leftValue) && (string)$leftValue !== (string)$rightValue) {
                 return false;
-            } elseif (is_array($leftValue)) {
+            }
+            if (is_array($leftValue)) {
                 if (!$this->equals($leftValue, $rightValue)) {
                     return false;
                 }

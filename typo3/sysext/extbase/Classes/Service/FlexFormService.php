@@ -35,7 +35,7 @@ class FlexFormService implements \TYPO3\CMS\Core\SingletonInterface
     {
         $settings = [];
         $flexFormArray = \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array($flexFormContent);
-        $flexFormArray = isset($flexFormArray['data']) ? $flexFormArray['data'] : [];
+        $flexFormArray = $flexFormArray['data'] ?? [];
         foreach (array_values($flexFormArray) as $languages) {
             if (!is_array($languages[$languagePointer])) {
                 continue;
@@ -93,7 +93,8 @@ class FlexFormService implements \TYPO3\CMS\Core\SingletonInterface
                         $currentNode = &$currentNode[$nodeKeyParts[$i]];
                     }
                     $newNode = [next($nodeKeyParts) => $nodeValue];
-                    $currentNode = $this->walkFlexFormNode($newNode, $valuePointer);
+                    $subVal = $this->walkFlexFormNode($newNode, $valuePointer);
+                    $currentNode[key($subVal)] = current($subVal);
                 } elseif (is_array($nodeValue)) {
                     if (array_key_exists($valuePointer, $nodeValue)) {
                         $return[$nodeKey] = $nodeValue[$valuePointer];

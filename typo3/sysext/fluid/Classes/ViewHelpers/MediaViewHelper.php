@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Imaging\ImageManipulation\CropVariantCollection;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\Rendering\RendererRegistry;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Domain\Model\AbstractFileFolder;
 use TYPO3\CMS\Extbase\Service\ImageService;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper;
@@ -101,10 +102,9 @@ class MediaViewHelper extends AbstractTagBasedViewHelper
         // Fallback to image when no renderer is found
         if ($fileRenderer === null) {
             return $this->renderImage($file, $width, $height);
-        } else {
-            $additionalConfig = array_merge_recursive($this->arguments, $additionalConfig);
-            return $fileRenderer->render($file, $width, $height, $additionalConfig);
         }
+        $additionalConfig = array_merge_recursive($this->arguments, $additionalConfig);
+        return $fileRenderer->render($file, $width, $height, $additionalConfig);
     }
 
     /**
@@ -161,6 +161,6 @@ class MediaViewHelper extends AbstractTagBasedViewHelper
      */
     protected function getImageService()
     {
-        return $this->objectManager->get(ImageService::class);
+        return GeneralUtility::makeInstance(ImageService::class);
     }
 }

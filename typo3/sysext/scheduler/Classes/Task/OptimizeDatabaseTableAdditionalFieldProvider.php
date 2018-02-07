@@ -35,7 +35,7 @@ class OptimizeDatabaseTableAdditionalFieldProvider implements AdditionalFieldPro
      * Add a multi select box with all available database tables.
      *
      * @param array $taskInfo Reference to the array containing the info used in the add/edit form
-     * @param AbstractTask|NULL $task When editing, reference to the current task. NULL when adding.
+     * @param AbstractTask|null $task When editing, reference to the current task. NULL when adding.
      * @param SchedulerModuleController $parentObject Reference to the calling object (Scheduler's BE module)
      * @return array Array containing all the information pertaining to the additional fields
      */
@@ -147,10 +147,8 @@ class OptimizeDatabaseTableAdditionalFieldProvider implements AdditionalFieldPro
         $optimizableTables = $this->getOptimizableTablesForConnection($defaultConnection);
 
         // Retrieve additional optimizable tables that have been remapped to a different connection
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping'])
-        ) {
-            $tableMap = $GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping'];
+        $tableMap = $GLOBALS['TYPO3_CONF_VARS']['DB']['TableMapping'] ?? false;
+        if ($tableMap) {
             // Remove all remapped tables from the list of optimizable tables
             // These tables will be rechecked and possibly re-added to the list
             // of optimizable tables. This ensures that no orphaned table from

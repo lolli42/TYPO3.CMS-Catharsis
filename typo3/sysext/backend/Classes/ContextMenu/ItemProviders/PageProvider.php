@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\ContextMenu\ItemProviders;
 
 /*
@@ -15,8 +15,9 @@ namespace TYPO3\CMS\Backend\ContextMenu\ItemProviders;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Context menu item provider for pages table
@@ -226,7 +227,7 @@ class PageProvider extends RecordProvider
                 $canRender = $this->isRecordInClipboard('copy');
                 break;
             case 'cut':
-                $canRender = $this->canBeCut();
+                $canRender = $this->canBeCut() && !$this->isRecordInClipboard('cut');
                 break;
             case 'cutRelease':
                 $canRender = $this->isRecordInClipboard('cut');
@@ -365,10 +366,11 @@ class PageProvider extends RecordProvider
      *
      * @return bool
      */
-    protected function canBeRemoved(): bool
+    protected function canBeDeleted(): bool
     {
         return !$this->isDeletePlaceholder()
             && !$this->isRecordLocked()
+            && !$this->isDeletionDisabledInTS()
             && $this->hasPagePermission(Permission::PAGE_DELETE);
     }
 
@@ -453,13 +455,15 @@ class PageProvider extends RecordProvider
             $attributes += $this->getPasteAdditionalAttributes('after');
         }
         if ($itemName === 'pagesSort') {
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
             $attributes += [
-                'data-pages-sort-url' => BackendUtility::getModuleUrl('pages_sort', ['id' => $this->record['uid']]),
+                'data-pages-sort-url' => (string)$uriBuilder->buildUriFromRoute('pages_sort', ['id' => $this->record['uid']]),
             ];
         }
         if ($itemName === 'pagesNewMultiple') {
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
             $attributes += [
-                'data-pages-new-multiple-url' => BackendUtility::getModuleUrl('pages_new', ['id' => $this->record['uid']]),
+                'data-pages-new-multiple-url' => (string)$uriBuilder->buildUriFromRoute('pages_new', ['id' => $this->record['uid']]),
             ];
         }
         return $attributes;

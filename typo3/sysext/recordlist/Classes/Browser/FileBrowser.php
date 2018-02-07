@@ -26,6 +26,7 @@ use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Recordlist\Tree\View\LinkParameterProviderInterface;
 use TYPO3\CMS\Recordlist\View\FolderUtilityRenderer;
 
@@ -40,7 +41,7 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
      * If the value is NOT set, then it will be restored from the module session data.
      * Example value: "/www/htdocs/typo3/32/3dsplm/fileadmin/css/"
      *
-     * @var string|NULL
+     * @var string|null
      */
     protected $expandFolder;
 
@@ -57,14 +58,19 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
     protected $elements = [];
 
     /**
-    * @var string
-    */
+     * @var string
+     */
     protected $searchWord;
 
     /**
      * @var FileRepository
      */
     protected $fileRepository;
+
+    /**
+     * @var array
+     */
+    protected $thumbnailConfiguration = [];
 
     /**
      * Loads additional JavaScript
@@ -74,6 +80,18 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
         parent::initialize();
         $this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Recordlist/BrowseFiles');
         $this->fileRepository = GeneralUtility::makeInstance(FileRepository::class);
+
+        $modTSconfig = BackendUtility::getModTSconfig(0, 'options.file_list');
+        if (isset($modTSconfig['properties']['thumbnail.']['width'])
+            && MathUtility::canBeInterpretedAsInteger($modTSconfig['properties']['thumbnail.']['width'])
+        ) {
+            $this->thumbnailConfiguration['width'] = (int)$modTSconfig['properties']['thumbnail.']['width'];
+        }
+        if (isset($modTSconfig['properties']['thumbnail.']['height'])
+            && MathUtility::canBeInterpretedAsInteger($modTSconfig['properties']['thumbnail.']['height'])
+        ) {
+            $this->thumbnailConfiguration['height'] = (int)$modTSconfig['properties']['thumbnail.']['height'];
+        }
     }
 
     /**
@@ -270,7 +288,7 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
             if (!$noThumbs && GeneralUtility::inList(strtolower($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'] . ',' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext']), strtolower($fileExtension))) {
                 $processedFile = $fileObject->process(
                     ProcessedFile::CONTEXT_IMAGEPREVIEW,
-                    ['width' => 64, 'height' => 64]
+                    $this->thumbnailConfiguration
                 );
                 $imageUrl = $processedFile->getPublicUrl(true);
                 $imgInfo = [
@@ -312,8 +330,10 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
                 $ATag_e = '';
                 $bulkCheckBox = '';
             }
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
             // Create link to showing details about the file in a window:
-            $Ahref = BackendUtility::getModuleUrl('show_item', [
+            $Ahref = (string)$uriBuilder->buildUriFromRoute('show_item', [
                 'type' => 'file',
                 'table' => '_FILE',
                 'uid' => $fileObject->getCombinedIdentifier(),
@@ -449,7 +469,7 @@ class FileBrowser extends AbstractElementBrowser implements ElementBrowserInterf
     {
         return [
             'mode' => 'file',
-            'expandFolder' => isset($values['identifier']) ? $values['identifier'] : $this->expandFolder,
+            'expandFolder' => $values['identifier'] ?? $this->expandFolder,
             'bparams' => $this->bparams
         ];
     }

@@ -14,7 +14,11 @@ namespace TYPO3\CMS\Core\Error;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Log\LogLevel;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -23,14 +27,16 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * This file is a backport from TYPO3 Flow
  */
-class ErrorHandler implements ErrorHandlerInterface
+class ErrorHandler implements ErrorHandlerInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * Error levels which should result in an exception thrown.
      *
-     * @var array
+     * @var int
      */
-    protected $exceptionalErrors = [];
+    protected $exceptionalErrors = 0;
 
     /**
      * Whether to write a flash message in case of an error
@@ -91,83 +97,73 @@ class ErrorHandler implements ErrorHandlerInterface
             return true;
         }
         $errorLevels = [
-            E_WARNING => 'Warning',
-            E_NOTICE => 'Notice',
-            E_USER_ERROR => 'User Error',
-            E_USER_WARNING => 'User Warning',
-            E_USER_NOTICE => 'User Notice',
-            E_STRICT => 'Runtime Notice',
-            E_RECOVERABLE_ERROR => 'Catchable Fatal Error',
-            E_DEPRECATED => 'Runtime Deprecation Notice'
+            E_WARNING => 'PHP Warning',
+            E_NOTICE => 'PHP Notice',
+            E_USER_ERROR => 'PHP User Error',
+            E_USER_WARNING => 'PHP User Warning',
+            E_USER_NOTICE => 'PHP User Notice',
+            E_STRICT => 'PHP Runtime Notice',
+            E_RECOVERABLE_ERROR => 'PHP Catchable Fatal Error',
+            E_USER_DEPRECATED => 'TYPO3 Deprecation Notice',
+            E_DEPRECATED => 'PHP Runtime Deprecation Notice'
         ];
-        $message = 'PHP ' . $errorLevels[$errorLevel] . ': ' . $errorMessage . ' in ' . $errorFile . ' line ' . $errorLine;
+        $message = $errorLevels[$errorLevel] . ': ' . $errorMessage . ' in ' . $errorFile . ' line ' . $errorLine;
         if ($errorLevel & $this->exceptionalErrors) {
-            // handle error raised at early parse time
-            // autoloader not available & built-in classes not resolvable
-            if (!class_exists('stdClass', false)) {
-                $message = 'PHP ' . $errorLevels[$errorLevel] . ': ' . $errorMessage . ' in ' . basename($errorFile) .
-                    'line ' . $errorLine;
-                die($message);
-            }
             throw new Exception($message, 1476107295);
-        } else {
-            switch ($errorLevel) {
-                case E_USER_ERROR:
-                case E_RECOVERABLE_ERROR:
-                    $severity = 2;
-                    break;
-                case E_USER_WARNING:
-                case E_WARNING:
-                    $severity = 1;
-                    break;
-                default:
-                    $severity = 0;
-            }
-            $logTitle = 'Core: Error handler (' . TYPO3_MODE . ')';
-            $message = $logTitle . ': ' . $message;
-            // Write error message to the configured syslogs,
-            // see: $TYPO3_CONF_VARS['SYS']['systemLog']
-            if ($errorLevel & $GLOBALS['TYPO3_CONF_VARS']['SYS']['syslogErrorReporting']) {
-                GeneralUtility::sysLog($message, 'core', $severity + 1);
-            }
-            // Write error message to devlog extension(s),
-            GeneralUtility::devLog($message, 'core', $severity + 1);
+        }
+        switch ($errorLevel) {
+            case E_USER_ERROR:
+            case E_RECOVERABLE_ERROR:
+                // no $flashMessageSeverity, as there will be no flash message for errors
+                $severity = 2;
+                break;
+            case E_USER_WARNING:
+            case E_WARNING:
+                $flashMessageSeverity = FlashMessage::WARNING;
+                $severity = 1;
+                break;
+            default:
+                $flashMessageSeverity = FlashMessage::NOTICE;
+                $severity = 0;
+        }
+        $logTitle = 'Core: Error handler (' . TYPO3_MODE . ')';
+        $message = $logTitle . ': ' . $message;
 
-            // Write error message to TSlog (admin panel)
-            $timeTracker = $this->getTimeTracker();
-            if (is_object($timeTracker)) {
-                $timeTracker->setTSlogMessage($message, $severity + 1);
-            }
-            // Write error message to sys_log table (ext: belog, Tools->Log)
-            if ($errorLevel & $GLOBALS['TYPO3_CONF_VARS']['SYS']['belogErrorReporting']) {
-                // Silently catch in case an error occurs before a database connection exists.
-                try {
-                    $this->writeLog($message, $severity);
-                } catch (\Exception $e) {
-                }
-            }
-            if ($severity === 2) {
-                // Let the internal handler continue. This will stop the script
-                return false;
-            } else {
-                if ($this->debugMode) {
-                    /** @var $flashMessage \TYPO3\CMS\Core\Messaging\FlashMessage */
-                    $flashMessage = GeneralUtility::makeInstance(
-                        \TYPO3\CMS\Core\Messaging\FlashMessage::class,
-                        $message,
-                        'PHP ' . $errorLevels[$errorLevel],
-                        $severity
-                    );
-                    /** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-                    $flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
-                    /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
-                    $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-                    $defaultFlashMessageQueue->enqueue($flashMessage);
-                }
-                // Don't execute PHP internal error handler
-                return true;
+        $this->logger->log(LogLevel::NOTICE - $severity, $message);
+
+        // Write error message to TSlog (admin panel)
+        $timeTracker = $this->getTimeTracker();
+        if (is_object($timeTracker)) {
+            $timeTracker->setTSlogMessage($message, $severity + 1);
+        }
+        // Write error message to sys_log table (ext: belog, Tools->Log)
+        if ($errorLevel & $GLOBALS['TYPO3_CONF_VARS']['SYS']['belogErrorReporting']) {
+            // Silently catch in case an error occurs before a database connection exists.
+            try {
+                $this->writeLog($message, $severity);
+            } catch (\Exception $e) {
             }
         }
+        if ($severity === 2) {
+            // Let the internal handler continue. This will stop the script
+            return false;
+        }
+        if ($this->debugMode) {
+            /** @var $flashMessage \TYPO3\CMS\Core\Messaging\FlashMessage */
+            $flashMessage = GeneralUtility::makeInstance(
+                        \TYPO3\CMS\Core\Messaging\FlashMessage::class,
+                        $message,
+                        $errorLevels[$errorLevel],
+                        $flashMessageSeverity
+                    );
+            /** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+            $flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
+            /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
+            $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+            $defaultFlashMessageQueue->enqueue($flashMessage);
+        }
+        // Don't execute PHP internal error handler
+        return true;
     }
 
     /**

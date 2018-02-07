@@ -6,6 +6,7 @@ CREATE TABLE tx_blogexample_domain_model_blog (
 	pid int(11) DEFAULT '0' NOT NULL,
 
 	title varchar(255) DEFAULT '' NOT NULL,
+	subtitle varchar(255) DEFAULT '',
 	description text NOT NULL,
 	logo tinyblob NOT NULL,
 	administrator int(11) DEFAULT '0' NOT NULL,
@@ -31,7 +32,7 @@ CREATE TABLE tx_blogexample_domain_model_blog (
 
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
 	l18n_parent int(11) DEFAULT '0' NOT NULL,
-	l18n_diffsource mediumblob NOT NULL,
+	l18n_diffsource mediumblob,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),
@@ -50,6 +51,7 @@ CREATE TABLE tx_blogexample_domain_model_post (
 	title varchar(255) DEFAULT '' NOT NULL,
 	date int(11) DEFAULT '0' NOT NULL,
 	author int(255) DEFAULT '0' NOT NULL,
+	reviewer int(255) DEFAULT '0' NOT NULL,
 	content text NOT NULL,
 	tags int(11) unsigned DEFAULT '0' NOT NULL,
 	comments int(11) unsigned DEFAULT '0' NOT NULL,
@@ -74,7 +76,7 @@ CREATE TABLE tx_blogexample_domain_model_post (
 
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
 	l18n_parent int(11) DEFAULT '0' NOT NULL,
-	l18n_diffsource mediumblob NOT NULL,
+	l18n_diffsource mediumblob,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),
@@ -154,6 +156,8 @@ CREATE TABLE tx_blogexample_domain_model_tag (
 	hidden tinyint(4) unsigned DEFAULT '0' NOT NULL,
 
 	sys_language_uid int(11) DEFAULT '0' NOT NULL,
+	l18n_parent int(11) DEFAULT '0' NOT NULL,
+	l18n_diffsource mediumblob,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid)

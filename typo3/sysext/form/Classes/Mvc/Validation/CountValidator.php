@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Mvc\Validation;
 
 /*
@@ -63,7 +63,8 @@ class CountValidator extends AbstractValidator
                     'form',
                     [$minimum, $maximum]
                 ),
-                1475002994, [$this->options['minimum'], $this->options['maximum']]
+                1475002994,
+                [$this->options['minimum'], $this->options['maximum']]
             );
         }
     }

@@ -517,16 +517,12 @@ class AbstractPlugin
      */
     public function pi_list_browseresults($showResultCount = 1, $tableParams = '', $wrapArr = [], $pointerName = 'pointer', $hscText = true, $forceOutput = false)
     {
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['pi_list_browseresults'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['pi_list_browseresults'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['pi_list_browseresults'] as $classRef) {
-                $hookObj = GeneralUtility::makeInstance($classRef);
-                if (method_exists($hookObj, 'pi_list_browseresults')) {
-                    $pageBrowser = $hookObj->pi_list_browseresults($showResultCount, $tableParams, $wrapArr, $pointerName, $hscText, $forceOutput, $this);
-                    if (is_string($pageBrowser) && trim($pageBrowser) !== '') {
-                        return $pageBrowser;
-                    }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['pi_list_browseresults'] ?? [] as $classRef) {
+            $hookObj = GeneralUtility::makeInstance($classRef);
+            if (method_exists($hookObj, 'pi_list_browseresults')) {
+                $pageBrowser = $hookObj->pi_list_browseresults($showResultCount, $tableParams, $wrapArr, $pointerName, $hscText, $forceOutput, $this);
+                if (is_string($pageBrowser) && trim($pageBrowser) !== '') {
+                    return $pageBrowser;
                 }
             }
         }
@@ -883,12 +879,10 @@ class AbstractPlugin
         if ($panel) {
             if ($label) {
                 return '<!-- BEGIN: EDIT PANEL --><table border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td valign="top">' . $label . '</td><td valign="top" align="right">' . $panel . '</td></tr></table><!-- END: EDIT PANEL -->';
-            } else {
-                return '<!-- BEGIN: EDIT PANEL -->' . $panel . '<!-- END: EDIT PANEL -->';
             }
-        } else {
-            return $label;
+            return '<!-- BEGIN: EDIT PANEL -->' . $panel . '<!-- END: EDIT PANEL -->';
         }
+        return $label;
     }
 
     /**
@@ -1269,7 +1263,7 @@ class AbstractPlugin
      *
      * @param string $fList List of fields (keys from piVars) to evaluate on
      * @param int $lowerThan Limit for the values.
-     * @return bool|NULL Returns TRUE (1) if conditions are met.
+     * @return bool|null Returns TRUE (1) if conditions are met.
      */
     public function pi_isOnlyFields($fList, $lowerThan = -1)
     {
@@ -1294,7 +1288,7 @@ class AbstractPlugin
      * This is an advanced form of evaluation of whether a URL should be cached or not.
      *
      * @param array $inArray An array with piVars values to evaluate
-     * @return bool|NULL Returns TRUE (1) if conditions are met.
+     * @return bool|null Returns TRUE (1) if conditions are met.
      * @see pi_linkTP_keepPIvars()
      */
     public function pi_autoCache($inArray)
@@ -1366,7 +1360,7 @@ class AbstractPlugin
      * @param string $sheet Sheet pointer, eg. "sDEF
      * @param string $lang Language pointer, eg. "lDEF
      * @param string $value Value pointer, eg. "vDEF
-     * @return string|NULL The content.
+     * @return string|null The content.
      */
     public function pi_getFFvalue($T3FlexForm_array, $fieldName, $sheet = 'sDEF', $lang = 'lDEF', $value = 'vDEF')
     {

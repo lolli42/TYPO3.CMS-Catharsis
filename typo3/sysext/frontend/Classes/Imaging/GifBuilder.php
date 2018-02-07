@@ -18,7 +18,6 @@ use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -122,11 +121,9 @@ class GifBuilder extends GraphicalFunctions
             // Let's you pre-process the gifbuilder configuration. for
             // example you can split a string up into lines and render each
             // line as TEXT obj, see extension julle_gifbconf
-            if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_gifbuilder.php']['gifbuilder-ConfPreProcess'])) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_gifbuilder.php']['gifbuilder-ConfPreProcess'] as $_funcRef) {
-                    $_params = $this->setup;
-                    $this->setup = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-                }
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_gifbuilder.php']['gifbuilder-ConfPreProcess'] ?? [] as $_funcRef) {
+                $_params = $this->setup;
+                $this->setup = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
             }
             // Initializing global Char Range Map
             $this->charRangeMap = [];
@@ -138,7 +135,7 @@ class GifBuilder extends GraphicalFunctions
                         $this->charRangeMap[$cRMkey] = [];
                         $this->charRangeMap[$cRMkey]['charMapConfig'] = $cRMcfg['charMapConfig.'];
                         $this->charRangeMap[$cRMkey]['cfgKey'] = substr($cRMcfgkey, 0, -1);
-                        $this->charRangeMap[$cRMkey]['multiplicator'] = (double) $cRMcfg['fontSizeMultiplicator'];
+                        $this->charRangeMap[$cRMkey]['multiplicator'] = (double)$cRMcfg['fontSizeMultiplicator'];
                         $this->charRangeMap[$cRMkey]['pixelSpace'] = (int)$cRMcfg['pixelSpaceFontSizeRef'];
                     }
                 }
@@ -378,7 +375,7 @@ class GifBuilder extends GraphicalFunctions
         $this->w = $XY[0];
         $this->h = $XY[1];
         // Transparent layer as background if set and requirements are met
-        if (!empty($this->setup['backColor']) && $this->setup['backColor'] === 'transparent' && $this->png_truecolor && !$this->setup['reduceColors'] && (empty($this->setup['format']) || $this->setup['format'] === 'png')) {
+        if (!empty($this->setup['backColor']) && $this->setup['backColor'] === 'transparent' && !$this->setup['reduceColors'] && (empty($this->setup['format']) || $this->setup['format'] === 'png')) {
             // Set transparency properties
             imagesavealpha($this->im, true);
             // Fill with a transparent background
@@ -557,7 +554,7 @@ class GifBuilder extends GraphicalFunctions
         }
         $conf['fontFile'] = $this->checkFile($conf['fontFile']);
         if (!$conf['fontFile']) {
-            $conf['fontFile'] = ExtensionManagementUtility::siteRelPath('core') . 'Resources/Private/Font/nimbus.ttf';
+            $conf['fontFile'] = $this->checkFile('EXT:core/Resources/Private/Font/nimbus.ttf');
         }
         if (!$conf['iterations']) {
             $conf['iterations'] = 1;
@@ -657,13 +654,13 @@ class GifBuilder extends GraphicalFunctions
      *
      * @param string $file Filename value OR the string "GIFBUILDER", see documentation in TSref for the "datatype" called "imgResource
      * @param array $fileArray TypoScript properties passed to the function. Either GIFBUILDER properties or imgResource properties, depending on the value of $file (whether that is "GIFBUILDER" or a file reference)
-     * @return array|NULL Returns an array with file information from ContentObjectRenderer::getImgResource()
+     * @return array|null Returns an array with file information from ContentObjectRenderer::getImgResource()
      * @access private
      * @see ContentObjectRenderer::getImgResource()
      */
     public function getResource($file, $fileArray)
     {
-        if (!GeneralUtility::inList($this->imageFileExt, $fileArray['ext'])) {
+        if (!in_array($fileArray['ext'], $this->imageFileExt, true)) {
             $fileArray['ext'] = $this->gifExtension;
         }
         /** @var ContentObjectRenderer $cObj */
@@ -700,7 +697,7 @@ class GifBuilder extends GraphicalFunctions
         /** @var $basicFileFunctions \TYPO3\CMS\Core\Utility\File\BasicFileUtility */
         $basicFileFunctions = GeneralUtility::makeInstance(BasicFileUtility::class);
         $filePrefix = implode('_', array_merge($this->combinedTextStrings, $this->combinedFileNames));
-        $filePrefix = $basicFileFunctions->cleanFileName($filePrefix);
+        $filePrefix = $basicFileFunctions->cleanFileName(ltrim($filePrefix, '.'));
 
         // shorten prefix to avoid overly long file names
         $filePrefix = substr($filePrefix, 0, 100);

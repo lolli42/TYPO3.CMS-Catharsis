@@ -23,6 +23,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\RootLevelRestriction;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
@@ -276,7 +277,8 @@ class WorkspaceService implements SingletonInterface
         // be collected, an empty result array needs to be returned:
         if ($isTableLocalizable === false && $language > 0) {
             return [];
-        } elseif ($isTableLocalizable) {
+        }
+        if ($isTableLocalizable) {
             $languageParentField = 'A.' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
         }
 
@@ -484,7 +486,7 @@ class WorkspaceService implements SingletonInterface
 
         if ($pageList) {
             $pidField = $table === 'pages' ? 'B.uid' : 'A.pid';
-            $constraints[] =  $queryBuilder->expr()->in(
+            $constraints[] = $queryBuilder->expr()->in(
                 $pidField,
                 $queryBuilder->createNamedParameter(
                     GeneralUtility::intExplode(',', $pageList, true),
@@ -518,7 +520,7 @@ class WorkspaceService implements SingletonInterface
     {
         // Reusing existing functionality with the drawback that
         // mount points are not covered yet
-        $perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
+        $perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(Permission::PAGE_SHOW);
         /** @var $searchObj \TYPO3\CMS\Core\Database\QueryView */
         $searchObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\QueryView::class);
         if ($pageId > 0) {
@@ -692,19 +694,19 @@ class WorkspaceService implements SingletonInterface
         // If the language is not default, check state of overlay
         if ($language > 0) {
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getQueryBuilderForTable('pages_language_overlay');
+                ->getQueryBuilderForTable('pages');
             $queryBuilder->getRestrictions()
                 ->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
             $row = $queryBuilder->select('t3ver_state')
-                ->from('pages_language_overlay')
+                ->from('pages')
                 ->where(
                     $queryBuilder->expr()->eq(
-                        'pid',
+                        $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'],
                         $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)
                     ),
                     $queryBuilder->expr()->eq(
-                        $GLOBALS['TCA']['pages_language_overlay']['ctrl']['languageField'],
+                        $GLOBALS['TCA']['pages']['ctrl']['languageField'],
                         $queryBuilder->createNamedParameter($language, \PDO::PARAM_INT)
                     ),
                     $queryBuilder->expr()->eq(
@@ -768,10 +770,10 @@ class WorkspaceService implements SingletonInterface
         $viewUrl = '';
 
         // Directly use determined direct page id
-        if ($table === 'pages_language_overlay' || $table === 'tt_content') {
+        if ($table === 'tt_content') {
             $viewUrl = BackendUtility::viewOnClick($previewPageId, '', null, '', '', $additionalParameters);
-        // Analyze Page TSconfig options.workspaces.previewPageId
         } elseif (!empty($pageTsConfig['options.']['workspaces.']['previewPageId.'][$table]) || !empty($pageTsConfig['options.']['workspaces.']['previewPageId'])) {
+            // Analyze Page TSconfig options.workspaces.previewPageId
             if (!empty($pageTsConfig['options.']['workspaces.']['previewPageId.'][$table])) {
                 $previewConfiguration = $pageTsConfig['options.']['workspaces.']['previewPageId.'][$table];
             } else {
@@ -785,8 +787,8 @@ class WorkspaceService implements SingletonInterface
                 $previewPageId = (int)$previewConfiguration;
             }
             $viewUrl = BackendUtility::viewOnClick($previewPageId, '', null, '', '', $additionalParameters);
-        // Call user function to render the single record view
         } elseif (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['workspaces']['viewSingleRecord'])) {
+            // Call user function to render the single record view
             $_params = [
                 'table' => $table,
                 'uid' => $uid,
@@ -815,10 +817,7 @@ class WorkspaceService implements SingletonInterface
         if ($pageUid > 0 && $workspaceUid > 0) {
             $pageRecord = BackendUtility::getRecord('pages', $pageUid);
             BackendUtility::workspaceOL('pages', $pageRecord, $workspaceUid);
-            if (
-                !GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['FE']['content_doktypes'], $pageRecord['doktype'])
-                || VersionState::cast($pageRecord['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)
-            ) {
+            if (VersionState::cast($pageRecord['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
                 $result = false;
             }
         } else {
@@ -861,16 +860,13 @@ class WorkspaceService implements SingletonInterface
         /** @var $uriBuilder \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder */
         $uriBuilder = $this->getObjectManager()->get(\TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder::class);
         $redirect = 'index.php?redirect_url=';
-        // @todo this should maybe be changed so that the extbase URI Builder can deal with module names directly
-        $originalM = GeneralUtility::_GET('M');
-        GeneralUtility::_GETset('web_WorkspacesWorkspaces', 'M');
-        $viewScript = $uriBuilder->uriFor('index', [], 'Preview', 'workspaces', 'web_workspacesworkspaces') . '&id=';
-        GeneralUtility::_GETset($originalM, 'M');
+        $viewScript = $uriBuilder
+            ->setArguments(['route' => '/web/WorkspacesWorkspaces/'])
+            ->uriFor('index', [], 'Preview', 'workspaces', 'web_workspacesworkspaces') . '&id=';
         if ($addDomain === true) {
             return BackendUtility::getViewDomain($uid) . $redirect . urlencode($viewScript) . $uid;
-        } else {
-            return $viewScript;
         }
+        return $viewScript;
     }
 
     /**
@@ -945,16 +941,13 @@ class WorkspaceService implements SingletonInterface
             }
         }
 
-        if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['hasPageRecordVersions'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['hasPageRecordVersions'])) {
-            $parameters = [
-                'workspaceId' => $workspaceId,
-                'pageId' => $pageId,
-                'versionsOnPageCache' => &$this->versionsOnPageCache,
-            ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['hasPageRecordVersions'] as $hookFunction) {
-                GeneralUtility::callUserFunction($hookFunction, $parameters, $this);
-            }
+        $parameters = [
+            'workspaceId' => $workspaceId,
+            'pageId' => $pageId,
+            'versionsOnPageCache' => &$this->versionsOnPageCache,
+        ];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['hasPageRecordVersions'] ?? [] as $hookFunction) {
+            GeneralUtility::callUserFunction($hookFunction, $parameters, $this);
         }
 
         return $this->versionsOnPageCache[$workspaceId][$pageId];
@@ -965,20 +958,22 @@ class WorkspaceService implements SingletonInterface
      *
      * Result:
      * [
+     *   'sys_template' => [],
      *   'tt_content' => [
-     *     1 => 1,
-     *     11 => 11,
-     *     13 => 13,
-     *     15 => 15
+     *     1 => true,
+     *     11 => true,
+     *     13 => true,
+     *     15 => true
      *   ],
      *   'tx_something => [
-     *     15 => 15,
-     *     11 => 11,
-     *     21 => 21
+     *     15 => true,
+     *     11 => true,
+     *     21 => true
      *   ],
      * ]
      *
      * @param int $workspaceId
+     *
      * @return array
      */
     public function getPagesWithVersionsInTable($workspaceId)
@@ -999,10 +994,10 @@ class WorkspaceService implements SingletonInterface
      *
      * Result:
      * [
-     *   1 => 1,
-     *   11 => 11,
-     *   13 => 13,
-     *   15 => 15
+     *   1 => true,
+     *   11 => true,
+     *   13 => true,
+     *   15 => true
      * ],
      *
      * @param int $workspaceId
@@ -1029,7 +1024,7 @@ class WorkspaceService implements SingletonInterface
 
             $movePointerParameter = $queryBuilder->createNamedParameter(
                 VersionState::MOVE_POINTER,
-               \PDO::PARAM_INT
+                \PDO::PARAM_INT
             );
             $workspaceIdParameter = $queryBuilder->createNamedParameter(
                 $workspaceId,
@@ -1073,7 +1068,7 @@ class WorkspaceService implements SingletonInterface
                         $movePointerQueryBuilder->getSQL()
                     )
                 )
-                ->groupBy('pageId')
+                ->groupBy('B.pid')
                 ->execute();
 
             $pageIds = [];
@@ -1083,16 +1078,13 @@ class WorkspaceService implements SingletonInterface
 
             $this->pagesWithVersionsInTable[$workspaceId][$tableName] = $pageIds;
 
-            if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['fetchPagesWithVersionsInTable'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['fetchPagesWithVersionsInTable'])) {
-                $parameters = [
-                    'workspaceId' => $workspaceId,
-                    'tableName' => $tableName,
-                    'pagesWithVersionsInTable' => &$this->pagesWithVersionsInTable,
-                ];
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['fetchPagesWithVersionsInTable'] as $hookFunction) {
-                    GeneralUtility::callUserFunction($hookFunction, $parameters, $this);
-                }
+            $parameters = [
+                'workspaceId' => $workspaceId,
+                'tableName' => $tableName,
+                'pagesWithVersionsInTable' => &$this->pagesWithVersionsInTable,
+            ];
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Workspaces\\Service\\WorkspaceService']['fetchPagesWithVersionsInTable'] ?? [] as $hookFunction) {
+                GeneralUtility::callUserFunction($hookFunction, $parameters, $this);
             }
         }
 
@@ -1140,17 +1132,17 @@ class WorkspaceService implements SingletonInterface
         }
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('pages_language_overlay');
+            ->getQueryBuilderForTable('pages');
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
 
         $result = $queryBuilder->select('sys_language_uid')
-            ->from('pages_language_overlay')
+            ->from('pages')
             ->where(
                 $queryBuilder->expr()->eq(
-                    'pid',
+                    $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'],
                     $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
                 )
             )

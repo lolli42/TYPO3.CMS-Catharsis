@@ -10,19 +10,21 @@
 						<img src="{f:uri.resource(path: 'Icons/FileIcons/{file.extension}.gif', extensionName: 'frontend')}" alt="">
 					</f:if>
 					<f:if condition="{data.uploads_type} == 2">
-						<f:if condition="{f:uri.image(src: 'file:{f:if(condition: file.originalFile, then: \'file:{file.originalFile.uid}\', else: \'file:{file.uid}\')}')} != '/'">
-							<f:then>
-								<a href="{file.publicUrl}" {f:if(condition:data.target,then: ' target="{data.target}"')}>
-									<f:media file="{file}" width="150" alt="{file.properties.alternative}" />
-								</a>
-							</f:then>
-							<f:else>
-								<img src="{f:uri.resource(path: 'Icons/FileIcons/{file.extension}.gif', extensionName: 'frontend')}" alt="">
-							</f:else>
+						<f:if condition="{file.type} > 1">
+							<f:if condition="{f:uri.image(src: 'file:{f:if(condition: file.originalFile, then: \'file:{file.originalFile.uid}\', else: \'file:{file.uid}\')}')} != '/'">
+								<f:then>
+									<a href="{file.publicUrl}" {f:if(condition:data.target,then: ' target="{data.target}"')}{f:if(condition: file.title, then: ' title="{file.title}"')}>
+										<f:media file="{file}" width="150" alt="{file.properties.alternative}" />
+									</a>
+								</f:then>
+								<f:else>
+									<img src="{f:uri.resource(path: 'Icons/FileIcons/{file.extension}.gif', extensionName: 'frontend')}" alt="">
+								</f:else>
+							</f:if>
 						</f:if>
 					</f:if>
 					<div>
-						<a href="{file.publicUrl}" {f:if(condition:data.target,then: ' target="{data.target}"')}>
+						<a href="{file.publicUrl}" {f:if(condition:data.target,then: ' target="{data.target}"')}{f:if(condition: file.title, then: ' title="{file.title}"')}>
 							<span class="ce-uploads-fileName">{f:if(condition: file.properties.title, then: file.properties.title, else: file.name) -> f:format.htmlspecialchars()}</span>
 						</a>
 						<f:if condition="{file.properties.description}">

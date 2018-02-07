@@ -38,7 +38,7 @@ class ValidatorTaskAdditionalFieldProvider implements AdditionalFieldProviderInt
      * Render additional information fields within the scheduler backend.
      *
      * @param array $taskInfo Array information of task to return
-     * @param ValidatorTask $task Task object
+     * @param ValidatorTask|null $task The task object being edited. Null when adding a task!
      * @param SchedulerModuleController $schedulerModule Reference to the BE module of the Scheduler
      * @return array Additional fields
      * @see AdditionalFieldProviderInterface->getAdditionalFields($taskInfo, $task, $schedulerModule)
@@ -292,9 +292,8 @@ class ValidatorTaskAdditionalFieldProvider implements AdditionalFieldProviderInt
         $page = BackendUtility::getRecord('pages', $pageId, 'title', '', false);
         if ($page === null) {
             return '';
-        } else {
-            return $page['title'];
         }
+        return $page['title'];
     }
 
     /**

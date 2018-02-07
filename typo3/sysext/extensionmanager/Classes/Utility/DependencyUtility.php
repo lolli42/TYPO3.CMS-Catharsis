@@ -241,7 +241,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface
             if (!($dependency->getLowestVersion() === '') && version_compare(PHP_VERSION, $dependency->getLowestVersion()) === -1) {
                 throw new Exception\UnresolvedPhpDependencyException(
                     'Your PHP version is lower than necessary. You need at least PHP version ' . $dependency->getLowestVersion(),
-                     1377977857
+                    1377977857
                 );
             }
             if (!($dependency->getHighestVersion() === '') && version_compare($dependency->getHighestVersion(), PHP_VERSION) === -1) {
@@ -396,12 +396,11 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface
                         'The extension ' . $extensionKey . ' is not available from TER.',
                         1399161266
                     );
-                } else {
-                    throw new Exception\MissingExtensionDependencyException(
+                }
+                throw new Exception\MissingExtensionDependencyException(
                         'The extension ' . $extensionKey . ' could not be checked. Please update your Extension-List from TYPO3 Extension Repository (TER).',
                         1430580308
                     );
-                }
             }
             return;
         }
@@ -517,7 +516,9 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface
     {
         $versions = $this->getLowestAndHighestIntegerVersions($dependency);
         $count = $this->extensionRepository->countByVersionRangeAndExtensionKey(
-            $dependency->getIdentifier(), $versions['lowestIntegerVersion'], $versions['highestIntegerVersion']
+            $dependency->getIdentifier(),
+            $versions['lowestIntegerVersion'],
+            $versions['highestIntegerVersion']
         );
         return !empty($count);
     }
@@ -624,12 +625,11 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface
             if (!array_key_exists($extensionKey, $filteredExtensions)) {
                 $filteredExtensions[$extensionKey] = $extension;
                 continue;
-            } else {
-                $currentVersion = $filteredExtensions[$extensionKey]->getVersion();
-                $newVersion = $extension->getVersion();
-                if (version_compare($newVersion, $currentVersion, '>')) {
-                    $filteredExtensions[$extensionKey] = $extension;
-                }
+            }
+            $currentVersion = $filteredExtensions[$extensionKey]->getVersion();
+            $newVersion = $extension->getVersion();
+            if (version_compare($newVersion, $currentVersion, '>')) {
+                $filteredExtensions[$extensionKey] = $extension;
             }
         }
         return $filteredExtensions;

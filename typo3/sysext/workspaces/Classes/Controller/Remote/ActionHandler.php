@@ -205,9 +205,8 @@ class ActionHandler extends AbstractHandler
     {
         if (is_array($GLOBALS['BE_USER']->uc['moduleData']['Workspaces'][$GLOBALS['BE_USER']->workspace]['columns'])) {
             return $GLOBALS['BE_USER']->uc['moduleData']['Workspaces'][$GLOBALS['BE_USER']->workspace]['columns'];
-        } else {
-            return [];
         }
+        return [];
     }
 
     /**
@@ -357,7 +356,7 @@ class ActionHandler extends AbstractHandler
                 $uc = $beUserRecord['uc'] ? unserialize($beUserRecord['uc']) : [];
                 $recipients[$beUserRecord['email']] = [
                     'email' => $beUserRecord['email'],
-                    'lang' => isset($uc['lang']) ? $uc['lang'] : $beUserRecord['lang']
+                    'lang' => $uc['lang'] ?? $beUserRecord['lang']
                 ];
             }
         }
@@ -375,7 +374,7 @@ class ActionHandler extends AbstractHandler
                     $uc = (!empty($preselectedBackendUser['uc']) ? unserialize($preselectedBackendUser['uc']) : []);
                     $recipients[$preselectedBackendUser['email']] = [
                         'email' => $preselectedBackendUser['email'],
-                        'lang' => (isset($uc['lang']) ? $uc['lang'] : $preselectedBackendUser['lang'])
+                        'lang' => ($uc['lang'] ?? $preselectedBackendUser['lang'])
                     ];
                 }
             }
@@ -462,8 +461,8 @@ class ActionHandler extends AbstractHandler
                     $cmdMapArray[$tableName][$item->t3ver_oid]['version']['swapWith'] = $item->uid;
                     $cmdMapArray[$tableName][$item->t3ver_oid]['version']['comment'] = $comment;
                     $cmdMapArray[$tableName][$item->t3ver_oid]['version']['notificationAlternativeRecipients'] = $recipients;
-                // Setting stage uses version id in command map
                 } else {
+                    // Setting stage uses version id in command map
                     $cmdMapArray[$tableName][$item->uid]['version']['action'] = 'setStage';
                     $cmdMapArray[$tableName][$item->uid]['version']['stageId'] = $stageId;
                     $cmdMapArray[$tableName][$item->uid]['version']['comment'] = $comment;

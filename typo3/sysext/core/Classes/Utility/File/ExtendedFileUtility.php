@@ -202,7 +202,8 @@ class ExtendedFileUtility extends BasicFileUtility
                 $uploads = $this->fileCmdMap['upload'];
                 foreach ($uploads as $upload) {
                     if (empty($_FILES['upload_' . $upload['data']]['name'])
-                        || (is_array($_FILES['upload_' . $upload['data']]['name'])
+                        || (
+                            is_array($_FILES['upload_' . $upload['data']]['name'])
                             && empty($_FILES['upload_' . $upload['data']]['name'][0])
                         )
                     ) {
@@ -267,14 +268,12 @@ class ExtendedFileUtility extends BasicFileUtility
                                 break;
                         }
                         // Hook for post-processing the action
-                        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'])) {
-                            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'] as $className) {
-                                $hookObject = GeneralUtility::makeInstance($className);
-                                if (!$hookObject instanceof ExtendedFileUtilityProcessDataHookInterface) {
-                                    throw new \UnexpectedValueException($className . ' must implement interface ' . ExtendedFileUtilityProcessDataHookInterface::class, 1279719168);
-                                }
-                                $hookObject->processData_postProcessAction($action, $cmdArr, $result[$action], $this);
+                        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'] ?? [] as $className) {
+                            $hookObject = GeneralUtility::makeInstance($className);
+                            if (!$hookObject instanceof ExtendedFileUtilityProcessDataHookInterface) {
+                                throw new \UnexpectedValueException($className . ' must implement interface ' . ExtendedFileUtilityProcessDataHookInterface::class, 1279719168);
                             }
+                            $hookObject->processData_postProcessAction($action, $cmdArr, $result[$action], $this);
                         }
                     }
                 }
@@ -630,7 +629,7 @@ class ExtendedFileUtility extends BasicFileUtility
      * $cmds['altName'] (string): Use an alternative name if the target already exists
      *
      * @param array $cmds Command details as described above
-     * @return \TYPO3\CMS\Core\Resource\File
+     * @return \TYPO3\CMS\Core\Resource\File|false
      */
     protected function func_copy($cmds)
     {
@@ -720,7 +719,7 @@ class ExtendedFileUtility extends BasicFileUtility
      * $cmds['altName'] (string): Use an alternative name if the target already exists
      *
      * @param array $cmds Command details as described above
-     * @return \TYPO3\CMS\Core\Resource\File
+     * @return \TYPO3\CMS\Core\Resource\File|false
      */
     protected function func_move($cmds)
     {
@@ -883,7 +882,7 @@ class ExtendedFileUtility extends BasicFileUtility
      * + example "2:targetpath/targetfolder/"
      *
      * @param array $cmds Command details as described above
-     * @return \TYPO3\CMS\Core\Resource\Folder Returns the new foldername upon success
+     * @return \TYPO3\CMS\Core\Resource\Folder|false Returns the new foldername upon success
      */
     public function func_newfolder($cmds)
     {

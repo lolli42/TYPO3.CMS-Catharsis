@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\Tests\Unit\ExtensionScanner\Php\Matcher\Fixtures;
 
 /*
@@ -27,6 +27,7 @@ class ClassConstantMatcherFixture
         // Matches
         $foo = \TYPO3\CMS\Backend\Template\DocumentTemplate::STATUS_ICON_ERROR;
         $foo = DocumentTemplate::STATUS_ICON_ERROR;
+        $foo = \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_NAMESPACE_DEFAULT;
 
         // No match
         $foo = \My\Project\AClass::MY_CONSTANT;

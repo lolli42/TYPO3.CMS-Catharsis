@@ -25,13 +25,14 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\RelationHandler;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Resource\FileRepository;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -240,7 +241,7 @@ abstract class AbstractItemProvider
                     // Item configuration:
                     $items[] = [
                         rtrim($excludeArray['origin'] === 'flexForm' ? $excludeArray['fieldLabel'] : $languageService->sL($GLOBALS['TCA'][$excludeArray['table']]['columns'][$excludeArray['fieldName']]['label']), ':') . ' (' . $excludeArray['fieldName'] . ')',
-                        $excludeArray['table'] . ':' . $excludeArray['fullField'] ,
+                        $excludeArray['table'] . ':' . $excludeArray['fullField'],
                         'empty-empty',
                         $helpText
                     ];
@@ -397,8 +398,8 @@ abstract class AbstractItemProvider
             ) {
                 $fileExtensionList = $result['processedTca']['columns'][$fieldName]['config']['fileFolder_extList'];
             }
-            $recursionLevels = isset($fieldValue['config']['fileFolder_recursions'])
-                ? MathUtility::forceIntegerInRange($fieldValue['config']['fileFolder_recursions'], 0, 99)
+            $recursionLevels = isset($result['processedTca']['columns'][$fieldName]['config']['fileFolder_recursions'])
+                ? MathUtility::forceIntegerInRange($result['processedTca']['columns'][$fieldName]['config']['fileFolder_recursions'], 0, 99)
                 : 99;
             $fileArray = GeneralUtility::getAllFilesAndFoldersInPath([], $fileFolder, $fileExtensionList, 0, $recursionLevels);
             $fileArray = GeneralUtility::removePrefixPathFromList($fileArray, $fileFolder);
@@ -479,6 +480,7 @@ abstract class AbstractItemProvider
         }
 
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        $fileRepository = GeneralUtility::makeInstance(FileRepository::class);
 
         while ($foreignRow = $queryResult->fetch()) {
             BackendUtility::workspaceOL($foreignTable, $foreignRow);
@@ -486,20 +488,34 @@ abstract class AbstractItemProvider
                 // If the foreign table sets selicon_field, this field can contain an image
                 // that represents this specific row.
                 $iconFieldName = '';
+                $isReferenceField = false;
                 if (!empty($GLOBALS['TCA'][$foreignTable]['ctrl']['selicon_field'])) {
                     $iconFieldName = $GLOBALS['TCA'][$foreignTable]['ctrl']['selicon_field'];
+                    if ($GLOBALS['TCA'][$foreignTable]['columns'][$iconFieldName]['config']['type'] === 'inline'
+                        && $GLOBALS['TCA'][$foreignTable]['columns'][$iconFieldName]['config']['foreign_table'] === 'sys_file_reference') {
+                        $isReferenceField = true;
+                    }
                 }
-                $iconPath = '';
-                if (!empty($GLOBALS['TCA'][$foreignTable]['ctrl']['selicon_field_path'])) {
-                    $iconPath = $GLOBALS['TCA'][$foreignTable]['ctrl']['selicon_field_path'];
-                }
-                if ($iconFieldName && $iconPath && $foreignRow[$iconFieldName]) {
-                    // Prepare the row icon if available
-                    $iParts = GeneralUtility::trimExplode(',', $foreignRow[$iconFieldName], true);
-                    $icon = $iconPath . '/' . trim($iParts[0]);
+                $icon = '';
+                if ($isReferenceField) {
+                    $references = $fileRepository->findByRelation($foreignTable, $iconFieldName, $foreignRow['uid']);
+                    if (is_array($references) && !empty($references)) {
+                        $icon = reset($references);
+                        $icon = $icon->getPublicUrl();
+                    }
                 } else {
-                    // Else, determine icon based on record type, or a generic fallback
-                    $icon = $iconFactory->mapRecordTypeToIconIdentifier($foreignTable, $foreignRow);
+                    $iconPath = '';
+                    if (!empty($GLOBALS['TCA'][$foreignTable]['ctrl']['selicon_field_path'])) {
+                        $iconPath = $GLOBALS['TCA'][$foreignTable]['ctrl']['selicon_field_path'];
+                    }
+                    if ($iconFieldName && $iconPath && $foreignRow[$iconFieldName]) {
+                        // Prepare the row icon if available
+                        $iParts = GeneralUtility::trimExplode(',', $foreignRow[$iconFieldName], true);
+                        $icon = $iconPath . '/' . trim($iParts[0]);
+                    } else {
+                        // Else, determine icon based on record type, or a generic fallback
+                        $icon = $iconFactory->mapRecordTypeToIconIdentifier($foreignTable, $foreignRow);
+                    }
                 }
                 // Add the item
                 $items[] = [
@@ -533,8 +549,7 @@ abstract class AbstractItemProvider
         }
 
         // If keepItems is set but is an empty list all current items get removed
-        if (empty($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'])
-            && $result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'] !== '0') {
+        if ($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['keepItems'] === '') {
             return [];
         }
 
@@ -560,19 +575,20 @@ abstract class AbstractItemProvider
     protected function removeItemsByRemoveItemsPageTsConfig(array $result, $fieldName, array $items)
     {
         $table = $result['tableName'];
-        if (empty($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['removeItems'])
+        if (!isset($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['removeItems'])
             || !is_string($result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['removeItems'])
+            || $result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['removeItems'] === ''
         ) {
             return $items;
         }
 
-        $removeItems = GeneralUtility::trimExplode(
+        $removeItems = array_flip(GeneralUtility::trimExplode(
             ',',
             $result['pageTsConfig']['TCEFORM.'][$table . '.'][$fieldName . '.']['removeItems'],
             true
-        );
+        ));
         foreach ($items as $key => $itemValues) {
-            if (in_array($itemValues[1], $removeItems)) {
+            if (isset($removeItems[$itemValues[1]])) {
                 unset($items[$key]);
             }
         }
@@ -655,8 +671,7 @@ abstract class AbstractItemProvider
         $table = $result['tableName'];
         $backendUser = $this->getBackendUser();
         // Guard clause returns if not correct table and field or if user is admin
-        if ($table !== 'pages' && $table !== 'pages_language_overlay'
-            || $fieldName !== 'doktype' || $backendUser->isAdmin()
+        if ($table !== 'pages' || $fieldName !== 'doktype' || $backendUser->isAdmin()
         ) {
             return $items;
         }
@@ -669,6 +684,40 @@ abstract class AbstractItemProvider
         }
 
         return $items;
+    }
+
+    /**
+     * Remove items if sys_file_storage is not allowed for non-admin users.
+     *
+     * Used by TcaSelectItems data providers
+     *
+     * @param array $result Result array
+     * @param string $fieldName Current handle field name
+     * @param array $items Incoming items
+     * @return array Modified item array
+     */
+    protected function removeItemsByUserStorageRestriction(array $result, $fieldName, array $items)
+    {
+        $referencedTableName = $result['processedTca']['columns'][$fieldName]['config']['foreign_table'] ?? null;
+        if ($referencedTableName !== 'sys_file_storage') {
+            return $items;
+        }
+
+        $allowedStorageIds = array_map(
+            function (\TYPO3\CMS\Core\Resource\ResourceStorage $storage) {
+                return $storage->getUid();
+            },
+            $this->getBackendUser()->getFileStorages()
+        );
+
+        return array_filter(
+            $items,
+            function (array $item) use ($allowedStorageIds) {
+                $itemValue = $item[1] ?? null;
+                return empty($itemValue)
+                    || in_array((int)$itemValue, $allowedStorageIds, true);
+            }
+        );
     }
 
     /**
@@ -854,33 +903,35 @@ abstract class AbstractItemProvider
                                 $languageService->sL($GLOBALS['TCA'][$table]['ctrl']['title']) . ': '
                                 . $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
                             foreach ($fieldConfig['items'] as $iVal) {
-                                // Values '' is not controlled by this setting.
-                                if ((string)$iVal[1] !== '') {
-                                    // Find iMode
-                                    $iMode = '';
-                                    switch ((string)$fieldConfig['authMode']) {
-                                        case 'explicitAllow':
+                                $itemIdentifier = (string)$iVal[1];
+                                // Values '' and '--div--' are not controlled by this setting.
+                                if ($itemIdentifier === '' || $itemIdentifier === '--div--') {
+                                    continue;
+                                }
+                                // Find iMode
+                                $iMode = '';
+                                switch ((string)$fieldConfig['authMode']) {
+                                    case 'explicitAllow':
+                                        $iMode = 'ALLOW';
+                                        break;
+                                    case 'explicitDeny':
+                                        $iMode = 'DENY';
+                                        break;
+                                    case 'individual':
+                                        if ($iVal[4] === 'EXPL_ALLOW') {
                                             $iMode = 'ALLOW';
-                                            break;
-                                        case 'explicitDeny':
+                                        } elseif ($iVal[4] === 'EXPL_DENY') {
                                             $iMode = 'DENY';
-                                            break;
-                                        case 'individual':
-                                            if ($iVal[4] === 'EXPL_ALLOW') {
-                                                $iMode = 'ALLOW';
-                                            } elseif ($iVal[4] === 'EXPL_DENY') {
-                                                $iMode = 'DENY';
-                                            }
-                                            break;
-                                    }
-                                    // Set iMode
-                                    if ($iMode) {
-                                        $allowDenyOptions[$table . ':' . $field]['items'][$iVal[1]] = [
-                                            $iMode,
-                                            $languageService->sL($iVal[0]),
-                                            $adLabel[$iMode]
-                                        ];
-                                    }
+                                        }
+                                        break;
+                                }
+                                // Set iMode
+                                if ($iMode) {
+                                    $allowDenyOptions[$table . ':' . $field]['items'][$itemIdentifier] = [
+                                        $iMode,
+                                        $languageService->sL($iVal[0]),
+                                        $adLabel[$iMode]
+                                    ];
                                 }
                             }
                         }
@@ -907,6 +958,7 @@ abstract class AbstractItemProvider
         $foreignTableClauseArray = $this->processForeignTableClause($result, $foreignTableName, $localFieldName);
 
         $fieldList = BackendUtility::getCommonSelectFields($foreignTableName, $foreignTableName . '.');
+        /** @var QueryBuilder $queryBuilder */
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable($foreignTableName);
 
@@ -920,7 +972,7 @@ abstract class AbstractItemProvider
             ->where($foreignTableClauseArray['WHERE']);
 
         if (!empty($foreignTableClauseArray['GROUPBY'])) {
-            $queryBuilder->groupBy($foreignTableClauseArray['GROUPBY']);
+            $queryBuilder->groupBy(...$foreignTableClauseArray['GROUPBY']);
         }
 
         if (!empty($foreignTableClauseArray['ORDERBY'])) {
@@ -962,7 +1014,7 @@ abstract class AbstractItemProvider
                 )
             );
         } else {
-            $queryBuilder->andWhere($backendUser->getPagePermsClause(1));
+            $queryBuilder->andWhere($backendUser->getPagePermsClause(Permission::PAGE_SHOW));
             if ($foreignTableName !== 'pages') {
                 $queryBuilder
                     ->from('pages')
@@ -1015,7 +1067,7 @@ abstract class AbstractItemProvider
                         $whereClauseSubParts = explode('###', $value, 2);
                         // @todo: Throw exception if there is no value? What happens for NEW records?
                         $databaseRowKey = empty($result['flexParentDatabaseRow']) ? 'databaseRow' : 'flexParentDatabaseRow';
-                        $rowFieldValue = isset($result[$databaseRowKey][$whereClauseSubParts[0]]) ? $result[$databaseRowKey][$whereClauseSubParts[0]] : '';
+                        $rowFieldValue = $result[$databaseRowKey][$whereClauseSubParts[0]] ?? '';
                         if (is_array($rowFieldValue)) {
                             // If a select or group field is used here, it may have been processed already and
                             // is now an array. Use first selected value in this case.
@@ -1034,8 +1086,8 @@ abstract class AbstractItemProvider
                 // Use pid from parent page clause if in flex form context
                 if (!empty($result['flexParentDatabaseRow']['pid'])) {
                     $effectivePid = $result['flexParentDatabaseRow']['pid'];
-                // Use pid from database row if in inline context
                 } elseif (!$effectivePid && !empty($result['databaseRow']['pid'])) {
+                    // Use pid from database row if in inline context
                     $effectivePid = $result['databaseRow']['pid'];
                 }
             }
@@ -1106,19 +1158,19 @@ abstract class AbstractItemProvider
         ];
         // Find LIMIT
         $reg = [];
-        if (preg_match('/^(.*)[[:space:]]+LIMIT[[:space:]]+([[:alnum:][:space:],._]+)$/i', $foreignTableClause, $reg)) {
+        if (preg_match('/^(.*)[[:space:]]+LIMIT[[:space:]]+([[:alnum:][:space:],._]+)$/is', $foreignTableClause, $reg)) {
             $foreignTableClauseArray['LIMIT'] = GeneralUtility::intExplode(',', trim($reg[2]), true);
             $foreignTableClause = $reg[1];
         }
         // Find ORDER BY
         $reg = [];
-        if (preg_match('/^(.*)[[:space:]]+ORDER[[:space:]]+BY[[:space:]]+([[:alnum:][:space:],._]+)$/i', $foreignTableClause, $reg)) {
+        if (preg_match('/^(.*)[[:space:]]+ORDER[[:space:]]+BY[[:space:]]+([[:alnum:][:space:],._]+)$/is', $foreignTableClause, $reg)) {
             $foreignTableClauseArray['ORDERBY'] = QueryHelper::parseOrderBy(trim($reg[2]));
             $foreignTableClause = $reg[1];
         }
         // Find GROUP BY
         $reg = [];
-        if (preg_match('/^(.*)[[:space:]]+GROUP[[:space:]]+BY[[:space:]]+([[:alnum:][:space:],._]+)$/i', $foreignTableClause, $reg)) {
+        if (preg_match('/^(.*)[[:space:]]+GROUP[[:space:]]+BY[[:space:]]+([[:alnum:][:space:],._]+)$/is', $foreignTableClause, $reg)) {
             $foreignTableClauseArray['GROUPBY'] = QueryHelper::parseGroupBy(trim($reg[2]));
             $foreignTableClause = $reg[1];
         }

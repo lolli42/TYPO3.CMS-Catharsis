@@ -60,7 +60,6 @@ class Query implements QueryInterface
 
     /**
      * @var \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface
-
      */
     protected $persistenceManager;
 
@@ -207,9 +206,8 @@ class Query implements QueryInterface
         $source = $this->getSource();
         if ($source instanceof \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SelectorInterface) {
             return $source->getSelectorName();
-        } else {
-            return '';
         }
+        return '';
     }
 
     /**
@@ -236,9 +234,8 @@ class Query implements QueryInterface
     {
         if ($returnRawQueryResult) {
             return $this->persistenceManager->getObjectDataByQuery($this);
-        } else {
-            return $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\QueryResultInterface::class, $this);
         }
+        return $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\QueryResultInterface::class, $this);
     }
 
     /**
@@ -386,7 +383,7 @@ class Query implements QueryInterface
     /**
      * Gets the constraint for this query.
      *
-     * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface|NULL the constraint, or null if none
+     * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ConstraintInterface|null the constraint, or null if none
      * @api
      */
     public function getConstraint()

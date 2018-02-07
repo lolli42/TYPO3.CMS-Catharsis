@@ -19,10 +19,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Routing\Exception\InvalidRequestTokenException;
 use TYPO3\CMS\Backend\Routing\Route;
 use TYPO3\CMS\Backend\Routing\Router;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\Dispatcher;
 use TYPO3\CMS\Core\Http\DispatcherInterface;
+use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Dispatcher which resolves a route to call a controller and method (but also a callable)
@@ -45,10 +49,14 @@ class RouteDispatcher extends Dispatcher implements DispatcherInterface
         /** @var Route $route */
         $route = $router->matchRequest($request);
         $request = $request->withAttribute('route', $route);
+        $request = $request->withAttribute('target', $route->getOption('target'));
         if (!$this->isValidRequest($request)) {
             throw new InvalidRequestTokenException('Invalid request for route "' . $route->getPath() . '"', 1425389455);
         }
 
+        if ($route->getOption('module')) {
+            $this->addAndValidateModuleConfiguration($request, $route);
+        }
         $targetIdentifier = $route->getOption('target');
         $target = $this->getCallableFromTarget($targetIdentifier);
         return call_user_func_array($target, [$request, $response]);
@@ -79,7 +87,56 @@ class RouteDispatcher extends Dispatcher implements DispatcherInterface
         if ($route->getOption('access') === 'public') {
             return true;
         }
-        $token = (string)(isset($request->getParsedBody()['token']) ? $request->getParsedBody()['token'] : $request->getQueryParams()['token']);
+        $token = (string)($request->getParsedBody()['token'] ?? $request->getQueryParams()['token']);
         return $this->getFormProtection()->validateToken($token, 'route', $route->getOption('_identifier'));
+    }
+
+    /**
+     * Adds configuration for a module and checks module permissions for the
+     * current user.
+     *
+     * @param ServerRequestInterface $request
+     * @param Route $route
+     * @throws \RuntimeException
+     */
+    protected function addAndValidateModuleConfiguration(ServerRequestInterface $request, Route $route)
+    {
+        $moduleName = $route->getOption('moduleName');
+        $moduleConfiguration = $this->getModuleConfiguration($moduleName);
+        $route->setOption('moduleConfiguration', $moduleConfiguration);
+
+        $backendUserAuthentication = $GLOBALS['BE_USER'];
+
+        // Check permissions and exit if the user has no permission for entry
+        // @todo please do not use "true" here, what a bad coding paradigm
+        $backendUserAuthentication->modAccess($moduleConfiguration, true);
+        $id = $request->getQueryParams()['id'] ?? $request->getParsedBody()['id'];
+        if (MathUtility::canBeInterpretedAsInteger($id) && $id > 0) {
+            $permClause = $backendUserAuthentication->getPagePermsClause(Permission::PAGE_SHOW);
+            // Check page access
+            if (!is_array(BackendUtility::readPageAccess($id, $permClause))) {
+                // Check if page has been deleted
+                $deleteField = $GLOBALS['TCA']['pages']['ctrl']['delete'];
+                $pageInfo = BackendUtility::getRecord('pages', $id, $deleteField, $permClause ? ' AND ' . $permClause : '', false);
+                if (!$pageInfo[$deleteField]) {
+                    throw new \RuntimeException('You don\'t have access to this page', 1289917924);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the module configuration which is provided during module registration
+     *
+     * @param string $moduleName
+     * @return array
+     * @throws \RuntimeException
+     */
+    protected function getModuleConfiguration($moduleName)
+    {
+        if (!isset($GLOBALS['TBE_MODULES']['_configuration'][$moduleName])) {
+            throw new \RuntimeException('Module ' . $moduleName . ' is not configured.', 1289918325);
+        }
+        return $GLOBALS['TBE_MODULES']['_configuration'][$moduleName];
     }
 }

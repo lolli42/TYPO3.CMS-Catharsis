@@ -11,7 +11,7 @@ Description
 
 The :code:`TCA` on field level has been changed. Nearly all column types are affected.
 In general, the sub-section :code:`wizards` is gone and replaced by a combination of new
-:code:`renderType`s and a new set of configuration options. Wizards are now divided into
+:code:`renderType's` and a new set of configuration options. Wizards are now divided into
 three different kinds:
 
 * :code:`fieldInformation` - Informational HTML, typically displayed between the element label
@@ -597,7 +597,7 @@ Example after:
              'rootLevel' => 1,
              'size' => 5,
              'autoSizeMax' => 20,
-             'fieldControls' => [
+             'fieldControl' => [
                  'editPopup' => [
                      'disabled' => false,
                  ],
@@ -695,7 +695,7 @@ Example after:
             'type' => 'group',
             'internal_type' => 'db',
             'allowed' => 'be_users,be_groups',
-            'fieldControls' => [
+            'fieldControl' => [
                 'editPopup' => [
                     'disabled' => false,
                 ],
@@ -713,6 +713,8 @@ Example after:
 
 
 Disable other parts of type=group:
+
+.. code-block:: php
 
     'group_db_1' => [
         'label' => 'group_db_1',
@@ -775,4 +777,4 @@ An automatic TCA migration transfers from old TCA settings to new ones and throw
 hints which changes should be incorporated. For flex form data structure definitions, the TCA migration is called
 when opening an according record and logs, too.
 
-.. index:: Backend, TCA
+.. index:: Backend, TCA, RTE

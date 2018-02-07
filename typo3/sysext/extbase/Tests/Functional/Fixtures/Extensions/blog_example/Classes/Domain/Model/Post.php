@@ -14,6 +14,8 @@ namespace ExtbaseTeam\BlogExample\Domain\Model;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Extbase\Annotation as Extbase;
+
 /**
  * A blog post
  */
@@ -41,6 +43,11 @@ class Post extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
     protected $author = null;
 
     /**
+     * @var \ExtbaseTeam\BlogExample\Domain\Model\Person
+     */
+    protected $reviewer = null;
+
+    /**
      * @var string
      * @validate StringLength(minimum = 3)
      */
@@ -58,14 +65,14 @@ class Post extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
 
     /**
      * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\ExtbaseTeam\BlogExample\Domain\Model\Comment>
-     * @lazy
-     * @cascade remove
+     * @Extbase\ORM\Lazy
+     * @Extbase\ORM\Cascade("remove")
      */
     protected $comments = null;
 
     /**
      * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\ExtbaseTeam\BlogExample\Domain\Model\Post>
-     * @lazy
+     * @Extbase\ORM\Lazy
      */
     protected $relatedPosts = null;
 
@@ -249,6 +256,22 @@ class Post extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
     public function getAuthor()
     {
         return $this->author;
+    }
+
+    /**
+     * @return \ExtbaseTeam\BlogExample\Domain\Model\Person
+     */
+    public function getReviewer()
+    {
+        return $this->reviewer;
+    }
+
+    /**
+     * @param \ExtbaseTeam\BlogExample\Domain\Model\Person $reviewer
+     */
+    public function setReviewer(\ExtbaseTeam\BlogExample\Domain\Model\Person $reviewer)
+    {
+        $this->reviewer = $reviewer;
     }
 
     /**

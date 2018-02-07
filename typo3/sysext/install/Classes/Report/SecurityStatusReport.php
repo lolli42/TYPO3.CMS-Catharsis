@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Install\Report;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\Service\EnableFileService;
 use TYPO3\CMS\Reports\Status;
@@ -32,11 +31,10 @@ class SecurityStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
     public function getStatus()
     {
         $this->executeAdminCommand();
-        $statuses = [
+        return [
             'installToolPassword' => $this->getInstallToolPasswordStatus(),
             'installToolProtection' => $this->getInstallToolProtectionStatus()
         ];
-        return $statuses;
     }
 
     /**
@@ -52,7 +50,7 @@ class SecurityStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
         $validPassword = true;
         $installToolPassword = $GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword'];
         $saltFactory = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance($installToolPassword);
-        if (is_object($saltFactory)) {
+        if ($installToolPassword !== '' && is_object($saltFactory)) {
             $validPassword = !$saltFactory->checkPassword('joh316', $installToolPassword);
         } elseif ($installToolPassword === md5('joh316')) {
             $validPassword = false;
@@ -60,12 +58,22 @@ class SecurityStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
         if (!$validPassword) {
             $value = $GLOBALS['LANG']->getLL('status_insecure');
             $severity = Status::ERROR;
-            $changeInstallToolPasswordUrl = BackendUtility::getModuleUrl('system_extinstall');
-            $message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.installtool_default_password'),
-                '<a href="' . htmlspecialchars($changeInstallToolPasswordUrl) . '">', '</a>');
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+            $changeInstallToolPasswordUrl = (string)$uriBuilder->buildUriFromRoute('tools_toolssettings');
+            $message = sprintf(
+                $GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.installtool_default_password'),
+                '<a href="' . htmlspecialchars($changeInstallToolPasswordUrl) . '">',
+                '</a>'
+            );
         }
-        return GeneralUtility::makeInstance(Status::class,
-            $GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_installToolPassword'), $value, $message, $severity);
+        return GeneralUtility::makeInstance(
+            Status::class,
+            $GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_installToolPassword'),
+            $value,
+            $message,
+            $severity
+        );
     }
 
     /**
@@ -84,8 +92,10 @@ class SecurityStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
                 $severity = Status::WARNING;
                 $disableInstallToolUrl = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL') . '&adminCmd=remove_ENABLE_INSTALL_TOOL';
                 $value = $GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_enabledPermanently');
-                $message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.install_enabled'),
-                    '<code style="white-space: nowrap;">' . $enableInstallToolFile . '</code>');
+                $message = sprintf(
+                    $GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.install_enabled'),
+                    '<code style="white-space: nowrap;">' . $enableInstallToolFile . '</code>'
+                );
                 $message .= ' <a href="' . htmlspecialchars($disableInstallToolUrl) . '">' .
                     $GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.install_enabled_cmd') . '</a>';
             } else {
@@ -95,15 +105,23 @@ class SecurityStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
                     $severity = Status::NOTICE;
                     $disableInstallToolUrl = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL') . '&adminCmd=remove_ENABLE_INSTALL_TOOL';
                     $value = $GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_enabledTemporarily');
-                    $message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_installEnabledTemporarily'),
-                        '<code style="white-space: nowrap;">' . $enableInstallToolFile . '</code>', floor((@filemtime($enableInstallToolFile) + EnableFileService::INSTALL_TOOL_ENABLE_FILE_LIFETIME - time()) / 60));
+                    $message = sprintf(
+                        $GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_installEnabledTemporarily'),
+                        '<code style="white-space: nowrap;">' . $enableInstallToolFile . '</code>',
+                        floor((@filemtime($enableInstallToolFile) + EnableFileService::INSTALL_TOOL_ENABLE_FILE_LIFETIME - time()) / 60)
+                    );
                     $message .= ' <a href="' . htmlspecialchars($disableInstallToolUrl) . '">' .
                         $GLOBALS['LANG']->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.install_enabled_cmd') . '</a>';
                 }
             }
         }
-        return GeneralUtility::makeInstance(Status::class,
-            $GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_installTool'), $value, $message, $severity);
+        return GeneralUtility::makeInstance(
+            Status::class,
+            $GLOBALS['LANG']->sL('LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf:status_installTool'),
+            $value,
+            $message,
+            $severity
+        );
     }
 
     /**

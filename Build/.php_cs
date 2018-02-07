@@ -53,6 +53,7 @@ return PhpCsFixer\Config::create()
     ->setRiskyAllowed(true)
     ->setRules([
         '@PSR2' => true,
+        '@DoctrineAnnotation' => true,
         'no_leading_import_slash' => true,
         'no_trailing_comma_in_singleline_array' => true,
         'no_singleline_whitespace_before_semicolons' => true,
@@ -74,10 +75,13 @@ return PhpCsFixer\Config::create()
         'lowercase_cast' => true,
         'no_leading_namespace_whitespace' => true,
         'native_function_casing' => true,
-        'self_accessor' => true,
         'no_short_bool_cast' => true,
         'no_unneeded_control_parentheses' => true,
         'phpdoc_no_empty_return' => true,
-        'phpdoc_trim' => true
+        'phpdoc_trim' => true,
+        'no_superfluous_elseif' => true,
+        'no_useless_else' => true,
+        'phpdoc_types' => true,
+        'phpdoc_types_order' => ['null_adjustment' => 'always_last', 'sort_algorithm' => 'none'],
     ])
     ->setFinder($finder);

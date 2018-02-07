@@ -37,6 +37,7 @@ $GLOBALS['PAGES_TYPES'] = [
  */
 $GLOBALS['TBE_MODULES'] = [
     'web' => 'list',
+    'site' => '',
     'file' => '',
     'user' => '',
     'tools' => '',
@@ -47,6 +48,12 @@ $GLOBALS['TBE_MODULES'] = [
             'labels' => 'LLL:EXT:core/Resources/Private/Language/locallang_mod_web.xlf',
             'name' => 'web',
             'iconIdentifier' => 'module-web'
+        ],
+        'site' => [
+            'labels' => 'LLL:EXT:core/Resources/Private/Language/locallang_mod_site.xlf',
+            'name' => 'site',
+            'workspaces' => 'online',
+            'iconIdentifier' => 'module-site',
         ],
         'file' => [
             'labels' => 'LLL:EXT:core/Resources/Private/Language/locallang_mod_file.xlf',
@@ -79,7 +86,7 @@ $GLOBALS['TBE_MODULES'] = [
 ];
 
 // Register the page tree core navigation component
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addCoreNavigationComponent('web', 'typo3-pagetree');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addCoreNavigationComponent('web', 'TYPO3/CMS/Backend/PageTree/PageTreeElement');
 
 /**
  * $TBE_STYLES configures backend styles and colors; Basically this contains
@@ -95,7 +102,6 @@ $GLOBALS['TBE_STYLES'] = [];
  * documentation found in "Inside TYPO3"
  */
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('pages', 'EXT:core/Resources/Private/Language/locallang_csh_pages.xlf');
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('pages_language_overlay', 'EXT:core/Resources/Private/Language/locallang_csh_pageslol.xlf');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('be_users', 'EXT:core/Resources/Private/Language/locallang_csh_be_users.xlf');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('be_groups', 'EXT:core/Resources/Private/Language/locallang_csh_be_groups.xlf');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('sys_filemounts', 'EXT:core/Resources/Private/Language/locallang_csh_sysfilem.xlf');
@@ -105,8 +111,3 @@ $GLOBALS['TBE_STYLES'] = [];
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('sys_news', 'EXT:core/Resources/Private/Language/locallang_csh_sysnews.xlf');
 // General Core
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('xMOD_csh_corebe', 'EXT:core/Resources/Private/Language/locallang_csh_corebe.xlf');
-
-if (TYPO3_MODE === 'BE' || TYPO3_MODE === 'FE' && isset($GLOBALS['BE_USER'])) {
-    // extJS theme
-    $GLOBALS['TBE_STYLES']['extJS']['theme'] = 'EXT:core/Resources/Public/ExtJs/xtheme-t3skin.css';
-}

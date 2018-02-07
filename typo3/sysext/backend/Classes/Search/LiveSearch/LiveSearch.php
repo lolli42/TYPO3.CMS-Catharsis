@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Search\LiveSearch;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -81,7 +82,7 @@ class LiveSearch
      */
     public function __construct()
     {
-        $this->userPermissions = $GLOBALS['BE_USER']->getPagePermsClause(1);
+        $this->userPermissions = $GLOBALS['BE_USER']->getPagePermsClause(Permission::PAGE_SHOW);
         $this->queryParser = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Search\LiveSearch\QueryParser::class);
     }
 
@@ -262,8 +263,9 @@ class LiveSearch
         }
         // "Edit" link - Only if permissions to edit the page-record of the content of the parent page ($this->id)
         if ($permsEdit) {
-            $returnUrl = BackendUtility::getModuleUrl('web_list', ['id' => $row['pid']]);
-            $editLink = BackendUtility::getModuleUrl('record_edit', [
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+            $returnUrl = (string)$uriBuilder->buildUriFromRoute('web_list', ['id' => $row['pid']]);
+            $editLink = (string)$uriBuilder->buildUriFromRoute('record_edit', [
                 'edit[' . $tableName . '][' . $row['uid'] . ']' => 'edit',
                 'returnUrl' => $returnUrl
             ]);

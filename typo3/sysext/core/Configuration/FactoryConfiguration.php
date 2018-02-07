@@ -8,7 +8,7 @@
 return [
     'BE' => [
         'explicitADmode' => 'explicitAllow',
-        'loginSecurityLevel' => 'rsa',
+        'loginSecurityLevel' => 'normal',
     ],
     'DB' => [
         'Connections' => [
@@ -18,35 +18,10 @@ return [
             ],
         ],
     ],
-    'EXT' => [
-        'extConf' => [
-            'rsaauth' => 'a:1:{s:18:"temporaryDirectory";s:0:"";}',
-            'saltedpasswords' => serialize([
-                'BE.' => [
-                    'saltedPWHashingMethod' => \TYPO3\CMS\Saltedpasswords\Salt\Pbkdf2Salt::class,
-                    'forceSalted' => 0,
-                    'onlyAuthService' => 0,
-                    'updatePasswd' => 1,
-                ],
-                'FE.' => [
-                    'enabled' => 1,
-                    'saltedPWHashingMethod' => \TYPO3\CMS\Saltedpasswords\Salt\Pbkdf2Salt::class,
-                    'forceSalted' => 0,
-                    'onlyAuthService' => 0,
-                    'updatePasswd' => 1,
-                ],
-            ]),
-        ],
-    ],
     'FE' => [
-        'loginSecurityLevel' => 'rsa',
-    ],
-    'GFX' => [
-        'jpg_quality' => '80',
+        'loginSecurityLevel' => 'normal',
     ],
     'SYS' => [
-        'isInitialInstallationInProgress' => true,
-        'isInitialDatabaseImportDone' => false,
         'sitename' => 'New TYPO3 site',
     ],
 ];

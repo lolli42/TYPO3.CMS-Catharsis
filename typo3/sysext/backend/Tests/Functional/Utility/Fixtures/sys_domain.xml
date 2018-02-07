@@ -6,7 +6,6 @@
         <tstamp>1487563944</tstamp>
         <hidden>0</hidden>
         <domainName>example.com</domainName>
-        <forced>1</forced>
     </sys_domain>
     <sys_domain>
         <uid>2</uid>
@@ -14,8 +13,5 @@
         <tstamp>1487563945</tstamp>
         <hidden>0</hidden>
         <domainName>www.example.net</domainName>
-        <redirectTo>http://example.com/</redirectTo>
-        <redirectHttpStatusCode>301</redirectHttpStatusCode>
-        <forced>0</forced>
     </sys_domain>
 </dataset>

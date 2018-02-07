@@ -14,9 +14,10 @@ namespace TYPO3\CMS\Backend\Template;
  * The TYPO3 project - inspiring people to share!
  */
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -38,8 +39,10 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  *
  * Please refer to Inside TYPO3 for a discussion of how to use this API.
  */
-class DocumentTemplate
+class DocumentTemplate implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     // Vars you typically might want to/should set from outside after making instance of this class:
     /**
      * This can be set to the HTML-code for a formtag.
@@ -251,10 +254,10 @@ function jumpToUrl(URL) {
         $this->templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
 
         // Setting default scriptID, trim forward slash from route
-        $this->scriptID = GeneralUtility::_GET('M') !== null ? GeneralUtility::_GET('M') : ltrim(GeneralUtility::_GET('route'), '/');
+        $this->scriptID = ltrim(GeneralUtility::_GET('route'), '/');
         $this->bodyTagId = preg_replace('/[^A-Za-z0-9-]/', '-', $this->scriptID);
         // Individual configuration per script? If so, make a recursive merge of the arrays:
-        if (is_array($GLOBALS['TBE_STYLES']['scriptIDindex'][$this->scriptID])) {
+        if (is_array($GLOBALS['TBE_STYLES']['scriptIDindex'][$this->scriptID] ?? false)) {
             // Make copy
             $ovr = $GLOBALS['TBE_STYLES']['scriptIDindex'][$this->scriptID];
             // merge styles.
@@ -263,16 +266,16 @@ function jumpToUrl(URL) {
             unset($GLOBALS['TBE_STYLES']['scriptIDindex'][$this->scriptID]);
         }
         // Main Stylesheets:
-        if ($GLOBALS['TBE_STYLES']['stylesheet']) {
+        if (!empty($GLOBALS['TBE_STYLES']['stylesheet'])) {
             $this->styleSheetFile = $GLOBALS['TBE_STYLES']['stylesheet'];
         }
-        if ($GLOBALS['TBE_STYLES']['stylesheet2']) {
+        if (!empty($GLOBALS['TBE_STYLES']['stylesheet2'])) {
             $this->styleSheetFile2 = $GLOBALS['TBE_STYLES']['stylesheet2'];
         }
-        if ($GLOBALS['TBE_STYLES']['styleSheetFile_post']) {
+        if (!empty($GLOBALS['TBE_STYLES']['styleSheetFile_post'])) {
             $this->styleSheetFile_post = $GLOBALS['TBE_STYLES']['styleSheetFile_post'];
         }
-        if ($GLOBALS['TBE_STYLES']['inDocStyles_TBEstyle']) {
+        if (!empty($GLOBALS['TBE_STYLES']['inDocStyles_TBEstyle'])) {
             $this->inDocStylesArray['TBEstyle'] = $GLOBALS['TBE_STYLES']['inDocStyles_TBEstyle'];
         }
         // include all stylesheets
@@ -395,11 +398,11 @@ function jumpToUrl(URL) {
      * @param bool $textarea A flag you can set for textareas - DEPRECATED as there is no difference any more between the two
      * @param string $styleOverride A string which will be returned as attribute-value for style="" instead of the calculated width (if CSS is enabled)
      * @return string Tag attributes for an <input> tag (regarding width)
-     * @deprecated since TYPO3 CMS 9, will be removed in TYPO3 CMS 10.
+     * @deprecated
      */
     public function formWidth($size = 48, $textarea = false, $styleOverride = '')
     {
-        GeneralUtility::logDeprecatedFunction();
+        trigger_error('This method will be removed in TYPO3 10 - use responsive code or direct inline styles to format your input fields instead.', E_USER_DEPRECATED);
         return ' style="' . ($styleOverride ?: 'width:' . ceil($size * 9.58) . 'px;') . '"';
     }
 
@@ -453,16 +456,11 @@ function jumpToUrl(URL) {
     public function startPage($title)
     {
         // hook pre start page
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preStartPageHook'])) {
-            $preStartPageHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preStartPageHook'];
-            if (is_array($preStartPageHook)) {
-                $hookParameters = [
-                    'title' => &$title
-                ];
-                foreach ($preStartPageHook as $hookFunction) {
-                    GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
-                }
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preStartPageHook'] ?? [] as $hookFunction) {
+            $hookParameters = [
+                'title' => &$title
+            ];
+            GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
         }
         // alternative template for Header and Footer
         if ($this->pageHeaderFooterTemplateFile) {
@@ -483,13 +481,12 @@ function jumpToUrl(URL) {
         $this->pageRenderer->setHeadTag('<head>' . LF . '<!-- TYPO3 Script ID: ' . htmlspecialchars($this->scriptID) . ' -->');
         header('Content-Type:text/html;charset=utf-8');
         $this->pageRenderer->setCharSet('utf-8');
-        $this->pageRenderer->addMetaTag($this->generator());
-        $this->pageRenderer->addMetaTag('<meta name="robots" content="noindex,follow">');
-        $this->pageRenderer->addMetaTag('<meta charset="utf-8">');
-        $this->pageRenderer->addMetaTag('<meta name="viewport" content="width=device-width, initial-scale=1">');
+        $this->pageRenderer->setMetaTag('name', 'generator', $this->generator());
+        $this->pageRenderer->setMetaTag('name', 'robots', 'noindex,follow');
+        $this->pageRenderer->setMetaTag('name', 'viewport', 'width=device-width, initial-scale=1');
         $this->pageRenderer->setFavIcon($this->getBackendFavicon());
         if ($this->useCompatibilityTag) {
-            $this->pageRenderer->addMetaTag($this->xUaCompatible($this->xUaCompatibilityVersion));
+            $this->pageRenderer->setMetaTag('http-equiv', 'X-UA-Compatible', $this->xUaCompatibilityVersion);
         }
         $this->pageRenderer->setTitle($title);
         // add docstyles
@@ -507,16 +504,11 @@ function jumpToUrl(URL) {
         $this->pageRenderer->addJsFile('EXT:core/Resources/Public/JavaScript/Contrib/bootstrap/bootstrap.js');
 
         // hook for additional headerData
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preHeaderRenderHook'])) {
-            $preHeaderRenderHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preHeaderRenderHook'];
-            if (is_array($preHeaderRenderHook)) {
-                $hookParameters = [
-                    'pageRenderer' => &$this->pageRenderer
-                ];
-                foreach ($preHeaderRenderHook as $hookFunction) {
-                    GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
-                }
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preHeaderRenderHook'] ?? [] as $hookFunction) {
+            $hookParameters = [
+                'pageRenderer' => &$this->pageRenderer
+            ];
+            GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
         }
         // Construct page header.
         $str = $this->pageRenderer->render(PageRenderer::PART_HEADER);
@@ -554,7 +546,7 @@ function jumpToUrl(URL) {
 </div>' : '') . $this->endOfPageJsBlock;
 
         // Logging: Can't find better place to put it:
-        GeneralUtility::devLog('END of BACKEND session', \TYPO3\CMS\Backend\Template\DocumentTemplate::class, 0, ['_FLUSH' => true]);
+        $this->logger->debug('END of BACKEND session', ['_FLUSH' => true]);
         return $str;
     }
 
@@ -703,18 +695,19 @@ function jumpToUrl(URL) {
      */
     public function generator()
     {
-        $str = 'TYPO3 CMS, ' . TYPO3_URL_GENERAL . ', &#169; Kasper Sk&#229;rh&#248;j ' . TYPO3_copyright_year . ', extensions are copyright of their respective owners.';
-        return '<meta name="generator" content="' . $str . '" />';
+        return 'TYPO3 CMS, ' . TYPO3_URL_GENERAL . ', &#169; Kasper Sk&#229;rh&#248;j ' . TYPO3_copyright_year . ', extensions are copyright of their respective owners.';
     }
 
     /**
      * Returns X-UA-Compatible meta tag
+     * @deprecated
      *
      * @param string $content Content of the compatible tag (default: IE-8)
      * @return string <meta http-equiv="X-UA-Compatible" content="???" />
      */
     public function xUaCompatible($content = 'IE=8')
     {
+        trigger_error('Method DocumentTemplate->xUaCompatible is deprecated and will be removed with v10. Use pageRenderer->setMetaTag instead.', E_USER_DEPRECATED);
         return '<meta http-equiv="X-UA-Compatible" content="' . $content . '" />';
     }
 
@@ -739,18 +732,8 @@ function jumpToUrl(URL) {
         if ($GLOBALS['TBE_STYLES']['htmlTemplates'][$filename]) {
             $filename = $GLOBALS['TBE_STYLES']['htmlTemplates'][$filename];
         }
-        if (GeneralUtility::isFirstPartOfStr($filename, 'EXT:')) {
-            $filename = GeneralUtility::getFileAbsFileName($filename);
-        } elseif (!GeneralUtility::isAbsPath($filename)) {
-            $filename = GeneralUtility::resolveBackPath($filename);
-        } elseif (!GeneralUtility::isAllowedAbsPath($filename)) {
-            $filename = '';
-        }
-        $htmlTemplate = '';
-        if ($filename !== '') {
-            $htmlTemplate = file_get_contents($filename);
-        }
-        return $htmlTemplate;
+        $filename = GeneralUtility::getFileAbsFileName($filename);
+        return $filename !== '' ? file_get_contents($filename) : '';
     }
 
     /**
@@ -804,7 +787,7 @@ function jumpToUrl(URL) {
             }
         }
         // Hook for adding more markers/content to the page, like the version selector
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['moduleBodyPostProcess'])) {
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['moduleBodyPostProcess'] ?? [] as $funcRef) {
             $params = [
                 'moduleTemplateFilename' => &$this->moduleTemplateFilename,
                 'moduleTemplate' => &$this->moduleTemplate,
@@ -812,9 +795,7 @@ function jumpToUrl(URL) {
                 'markers' => &$markerArray,
                 'parentObject' => &$this
             ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['moduleBodyPostProcess'] as $funcRef) {
-                GeneralUtility::callUserFunction($funcRef, $params, $this);
-            }
+            GeneralUtility::callUserFunction($funcRef, $params, $this);
         }
         // Replacing all markers with the finished markers and return the HTML content
         return $this->templateService->substituteMarkerArray($moduleBody, $markerArray, '###|###');
@@ -832,34 +813,6 @@ function jumpToUrl(URL) {
         /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
         $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
         return $defaultFlashMessageQueue->renderFlashMessages();
-    }
-
-    /**
-     * Renders the FlashMessages from queue and returns them as AJAX.
-     *
-     * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
-     * @return ResponseInterface
-     */
-    public function renderQueuedFlashMessages(ServerRequestInterface $request, ResponseInterface $response)
-    {
-        /** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-        $flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
-        /** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
-        $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-        $flashMessages = $defaultFlashMessageQueue->getAllMessagesAndFlush();
-
-        $messages = [];
-        foreach ($flashMessages as $flashMessage) {
-            $messages[] = [
-                'title' => $flashMessage->getTitle(),
-                'message' => $flashMessage->getMessage(),
-                'severity' => $flashMessage->getSeverity()
-            ];
-        }
-
-        $response->getBody()->write(json_encode($messages));
-        return $response;
     }
 
     /**
@@ -895,15 +848,13 @@ function jumpToUrl(URL) {
             $markers['BUTTONLIST_' . strtoupper($key)] = str_replace(LF, '', $buttonTemplate);
         }
         // Hook for manipulating docHeaderButtons
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['docHeaderButtonsHook'])) {
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['docHeaderButtonsHook'] ?? [] as $funcRef) {
             $params = [
                 'buttons' => $buttons,
                 'markers' => &$markers,
                 'pObj' => &$this
             ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['docHeaderButtonsHook'] as $funcRef) {
-                GeneralUtility::callUserFunction($funcRef, $params, $this);
-            }
+            GeneralUtility::callUserFunction($funcRef, $params, $this);
         }
         return $markers;
     }
@@ -962,8 +913,8 @@ function jumpToUrl(URL) {
             // On root-level of page tree
             // Make Icon
             $iconImg = '<span title="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '">' . $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL)->render() . '</span>';
-            if ($GLOBALS['BE_USER']->user['admin']) {
-                $theIcon = BackendUtility::wrapClickMenuOnIcon($iconImg, 'pages', 0);
+            if ($GLOBALS['BE_USER']->isAdmin()) {
+                $theIcon = BackendUtility::wrapClickMenuOnIcon($iconImg, 'pages');
             } else {
                 $theIcon = $iconImg;
             }
@@ -976,16 +927,15 @@ function jumpToUrl(URL) {
     }
 
     /**
-    * Retrieves configured favicon for backend (with fallback)
-    *
-    * @return string
-    */
+     * Retrieves configured favicon for backend (with fallback)
+     *
+     * @return string
+     */
     protected function getBackendFavicon()
     {
-        $extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['backend'], ['allowed_classes' => false]);
-
-        if (!empty($extConf['backendFavicon'])) {
-            $path =  $this->getUriForFileName($extConf['backendFavicon']);
+        $backendFavicon = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('backend', 'backendFavicon');
+        if (!empty($backendFavicon)) {
+            $path = $this->getUriForFileName($backendFavicon);
         } else {
             $path = ExtensionManagementUtility::extPath('backend') . 'Resources/Public/Icons/favicon.ico';
         }

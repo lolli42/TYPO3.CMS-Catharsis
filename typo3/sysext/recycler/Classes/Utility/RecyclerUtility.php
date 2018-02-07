@@ -177,7 +177,7 @@ class RecyclerUtility
      * Gets the TCA of the table used in the current context.
      *
      * @param string $tableName Name of the table to get TCA for
-     * @return array|FALSE TCA of the table used in the current context
+     * @return array|false TCA of the table used in the current context
      */
     public static function getTableTCA($tableName)
     {
@@ -213,7 +213,7 @@ class RecyclerUtility
      */
     public static function getModifyableTables()
     {
-        if ((bool)$GLOBALS['BE_USER']->user['admin']) {
+        if ($GLOBALS['BE_USER']->isAdmin()) {
             $tables = array_keys($GLOBALS['TCA']);
         } else {
             $tables = explode(',', $GLOBALS['BE_USER']->groupData['tables_modify']);

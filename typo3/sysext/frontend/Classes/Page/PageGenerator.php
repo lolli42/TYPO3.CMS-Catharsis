@@ -34,6 +34,7 @@ class PageGenerator
     /**
      * Do not render title tag
      * Typoscript setting: [config][noPageTitle]
+     * @deprecated will not be used anymore, and will be removed in TYPO3 v10.
      */
     const NO_PAGE_TITLE = 2;
 
@@ -270,12 +271,6 @@ class PageGenerator
                 self::addCssToPageRenderer($stylesFromPlugins, false, 'InlineDefaultCss');
             }
         }
-        if ($tsfe->pSetup['stylesheet']) {
-            $ss = $tsfe->tmpl->getFileName($tsfe->pSetup['stylesheet']);
-            if ($ss) {
-                $pageRenderer->addCssFile($ss);
-            }
-        }
         /**********************************************************************/
         /* config.includeCSS / config.includeCSSLibs
         /**********************************************************************/
@@ -348,16 +343,8 @@ class PageGenerator
             }
         }
 
-        // Stylesheets
-        $style = '';
-        // Setting body tag margins in CSS:
-        if (isset($tsfe->pSetup['bodyTagMargins']) && $tsfe->pSetup['bodyTagMargins.']['useCSS']) {
-            $margins = (int)$tsfe->pSetup['bodyTagMargins'];
-            $style .= '
-	BODY {margin: ' . $margins . 'px ' . $margins . 'px ' . $margins . 'px ' . $margins . 'px;}';
-        }
         // CSS_inlineStyle from TS
-        $style .= trim($tsfe->pSetup['CSS_inlineStyle']);
+        $style = trim($tsfe->pSetup['CSS_inlineStyle']);
         $style .= $tsfe->cObj->cObjGet($tsfe->pSetup['cssInline.'], 'cssInline.');
         if (trim($style)) {
             self::addCssToPageRenderer($style, true, 'additionalTSFEInlineStyle');
@@ -368,16 +355,11 @@ class PageGenerator
             if (!empty($tsfe->pSetup['javascriptLibs.']['jQuery'])) {
                 $jQueryTS = $tsfe->pSetup['javascriptLibs.']['jQuery.'];
                 // Check if version / source is set, if not set variable to "NULL" to use the default of the page renderer
-                $version = isset($jQueryTS['version']) ? $jQueryTS['version'] : null;
-                $source = isset($jQueryTS['source']) ? $jQueryTS['source'] : null;
+                $version = $jQueryTS['version'] ?? null;
+                $source = $jQueryTS['source'] ?? null;
                 // When "noConflict" is not set or "1" enable the default jQuery noConflict mode, otherwise disable the namespace
                 if (!isset($jQueryTS['noConflict']) || !empty($jQueryTS['noConflict'])) {
-                    // Set namespace to the "noConflict.namespace" value if "noConflict.namespace" has a value
-                    if (!empty($jQueryTS['noConflict.']['namespace'])) {
-                        $namespace = $jQueryTS['noConflict.']['namespace'];
-                    } else {
-                        $namespace = PageRenderer::JQUERY_NAMESPACE_DEFAULT_NOCONFLICT;
-                    }
+                    $namespace = 'noConflict';
                 } else {
                     $namespace = PageRenderer::JQUERY_NAMESPACE_NONE;
                 }
@@ -398,7 +380,10 @@ class PageGenerator
                         if (!$type) {
                             $type = 'text/javascript';
                         }
-
+                        $crossorigin = $jsFileConfig['crossorigin'];
+                        if (!$crossorigin && $jsFileConfig['integrity'] && $jsFileConfig['external']) {
+                            $crossorigin = 'anonymous';
+                        }
                         $pageRenderer->addJsLibrary(
                             $key,
                             $ss,
@@ -409,7 +394,9 @@ class PageGenerator
                             (bool)$jsFileConfig['excludeFromConcatenation'],
                             $jsFileConfig['allWrap.']['splitChar'],
                             (bool)$jsFileConfig['async'],
-                            $jsFileConfig['integrity']
+                            $jsFileConfig['integrity'],
+                            (bool)$jsFileConfig['defer'],
+                            $crossorigin
                         );
                         unset($jsFileConfig);
                     }
@@ -429,6 +416,10 @@ class PageGenerator
                         if (!$type) {
                             $type = 'text/javascript';
                         }
+                        $crossorigin = $jsFileConfig['crossorigin'];
+                        if (!$crossorigin && $jsFileConfig['integrity'] && $jsFileConfig['external']) {
+                            $crossorigin = 'anonymous';
+                        }
                         $pageRenderer->addJsFooterLibrary(
                             $key,
                             $ss,
@@ -439,7 +430,9 @@ class PageGenerator
                             (bool)$jsFileConfig['excludeFromConcatenation'],
                             $jsFileConfig['allWrap.']['splitChar'],
                             (bool)$jsFileConfig['async'],
-                            $jsFileConfig['integrity']
+                            $jsFileConfig['integrity'],
+                            (bool)$jsFileConfig['defer'],
+                            $crossorigin
                         );
                         unset($jsFileConfig);
                     }
@@ -460,6 +453,10 @@ class PageGenerator
                         if (!$type) {
                             $type = 'text/javascript';
                         }
+                        $crossorigin = $jsConfig['crossorigin'];
+                        if (!$crossorigin && $jsConfig['integrity'] && $jsConfig['external']) {
+                            $crossorigin = 'anonymous';
+                        }
                         $pageRenderer->addJsFile(
                             $ss,
                             $type,
@@ -469,7 +466,9 @@ class PageGenerator
                             (bool)$jsConfig['excludeFromConcatenation'],
                             $jsConfig['allWrap.']['splitChar'],
                             (bool)$jsConfig['async'],
-                            $jsConfig['integrity']
+                            $jsConfig['integrity'],
+                            (bool)$jsConfig['defer'],
+                            $crossorigin
                         );
                         unset($jsConfig);
                     }
@@ -489,6 +488,10 @@ class PageGenerator
                         if (!$type) {
                             $type = 'text/javascript';
                         }
+                        $crossorigin = $jsConfig['crossorigin'];
+                        if (!$crossorigin && $jsConfig['integrity'] && $jsConfig['external']) {
+                            $crossorigin = 'anonymous';
+                        }
                         $pageRenderer->addJsFooterFile(
                             $ss,
                             $type,
@@ -498,7 +501,9 @@ class PageGenerator
                             (bool)$jsConfig['excludeFromConcatenation'],
                             $jsConfig['allWrap.']['splitChar'],
                             (bool)$jsConfig['async'],
-                            $jsConfig['integrity']
+                            $jsConfig['integrity'],
+                            (bool)$jsConfig['defer'],
+                            $crossorigin
                         );
                         unset($jsConfig);
                     }
@@ -513,16 +518,12 @@ class PageGenerator
         if (is_array($tsfe->pSetup['footerData.'])) {
             $pageRenderer->addFooterData($tsfe->cObj->cObjGet($tsfe->pSetup['footerData.'], 'footerData.'));
         }
-        static::generatePageTitle();
+        $tsfe->generatePageTitle();
 
-        $metaTagsHtml = static::generateMetaTagHtml(
-            isset($tsfe->pSetup['meta.']) ? $tsfe->pSetup['meta.'] : [],
-            $tsfe->xhtmlVersion,
+        static::generateMetaTagHtml(
+            $tsfe->pSetup['meta.'] ?? [],
             $tsfe->cObj
         );
-        foreach ($metaTagsHtml as $metaTag) {
-            $pageRenderer->addMetaTag($metaTag);
-        }
 
         unset($tsfe->additionalHeaderData['JSCode']);
         if (is_array($tsfe->config['INTincScript'])) {
@@ -719,13 +720,6 @@ class PageGenerator
         } else {
             $defBT = $tsfe->pSetup['bodyTagCObject'] ? $tsfe->cObj->cObjGetSingle($tsfe->pSetup['bodyTagCObject'], $tsfe->pSetup['bodyTagCObject.'], 'bodyTagCObject') : '<body>';
             $bodyTag = $tsfe->pSetup['bodyTag'] ? $tsfe->pSetup['bodyTag'] : $defBT;
-            if (isset($tsfe->pSetup['bodyTagMargins'])) {
-                $margins = (int)$tsfe->pSetup['bodyTagMargins'];
-                if ($tsfe->pSetup['bodyTagMargins.']['useCSS']) {
-                } else {
-                    $bodyTag = preg_replace('/>$/', '', trim($bodyTag)) . ' leftmargin="' . $margins . '" topmargin="' . $margins . '" marginwidth="' . $margins . '" marginheight="' . $margins . '">';
-                }
-            }
             if (trim($tsfe->pSetup['bodyTagAdd'])) {
                 $bodyTag = preg_replace('/>$/', '', trim($bodyTag)) . ' ' . trim($tsfe->pSetup['bodyTagAdd']) . '>';
             }
@@ -803,9 +797,12 @@ class PageGenerator
      * @param string $haystack The string in which to find $needle
      * @param string $needle The string to find in $haystack
      * @return bool Returns TRUE if $needle matches or is found in $haystack
+     *
+     * @deprecated since TYPO3 v9, will be removed in TYPO3 v10, is now called within TSFE itself, if needed outside the regular calculations, reimplement the method on your own.
      */
     public static function isAllowedLinkVarValue($haystack, $needle)
     {
+        trigger_error('The method will be removed in TYPO3 v10.0, if needed outside of linkVar calculation, re-implement the method in your own extension', E_USER_DEPRECATED);
         $OK = false;
         // Integer
         if ($needle === 'int' || $needle === 'integer') {
@@ -844,45 +841,13 @@ class PageGenerator
      * Takes the settings [config][noPageTitle], [config][pageTitleFirst], [config][titleTagFunction]
      * [config][pageTitleSeparator] and [config][noPageTitle] into account.
      * Furthermore $GLOBALS[TSFE]->altPageTitle is observed.
+     *
+     * @deprecated since TYPO3 v9, will be removed in TYPO3 v10.0, as TSFE->generatePageTitle() should be used instead.
      */
     public static function generatePageTitle()
     {
-        /** @var TypoScriptFrontendController $tsfe */
-        $tsfe = $GLOBALS['TSFE'];
-
-        $pageTitleSeparator = '';
-
-        // check for a custom pageTitleSeparator, and perform stdWrap on it
-        if (isset($tsfe->config['config']['pageTitleSeparator']) && $tsfe->config['config']['pageTitleSeparator'] !== '') {
-            $pageTitleSeparator = $tsfe->config['config']['pageTitleSeparator'];
-
-            if (isset($tsfe->config['config']['pageTitleSeparator.']) && is_array($tsfe->config['config']['pageTitleSeparator.'])) {
-                $pageTitleSeparator = $tsfe->cObj->stdWrap($pageTitleSeparator, $tsfe->config['config']['pageTitleSeparator.']);
-            } else {
-                $pageTitleSeparator .= ' ';
-            }
-        }
-
-        $titleTagContent = $tsfe->tmpl->printTitle(
-            $tsfe->altPageTitle ?: $tsfe->page['title'],
-            $tsfe->config['config']['noPageTitle'],
-            $tsfe->config['config']['pageTitleFirst'],
-            $pageTitleSeparator
-        );
-        if ($tsfe->config['config']['titleTagFunction']) {
-            $titleTagContent = $tsfe->cObj->callUserFunction(
-                $tsfe->config['config']['titleTagFunction'],
-                [],
-                $titleTagContent
-            );
-        }
-        // stdWrap around the title tag
-        if (isset($tsfe->config['config']['pageTitle.']) && is_array($tsfe->config['config']['pageTitle.'])) {
-            $titleTagContent = $tsfe->cObj->stdWrap($titleTagContent, $tsfe->config['config']['pageTitle.']);
-        }
-        if ($titleTagContent !== '' && (int)$tsfe->config['config']['noPageTitle'] !== self::NO_PAGE_TITLE) {
-            static::getPageRenderer()->setTitle($titleTagContent);
-        }
+        trigger_error('This method will be removed in TYPO3 v10.0. Use $TSFE->generatePageTitle() instead.', E_USER_DEPRECATED);
+        $GLOBALS['TSFE']->generatePageTitle();
     }
 
     /**
@@ -891,23 +856,17 @@ class PageGenerator
      * @param array $metaTagTypoScript TypoScript configuration for meta tags (e.g. $GLOBALS['TSFE']->pSetup['meta.'])
      * @param bool $xhtml Whether xhtml tag-style should be used. (e.g. pass $GLOBALS['TSFE']->xhtmlVersion here)
      * @param ContentObjectRenderer $cObj
-     * @return array Array of HTML meta tags
      */
-    protected static function generateMetaTagHtml(array $metaTagTypoScript, $xhtml, ContentObjectRenderer $cObj)
+    protected static function generateMetaTagHtml(array $metaTagTypoScript, ContentObjectRenderer $cObj)
     {
-        // Add ending slash only to documents rendered as xhtml
-        $endingSlash = $xhtml ? ' /' : '';
-
-        $metaTags = [
-            '<meta name="generator" content="TYPO3 CMS"' . $endingSlash . '>'
-        ];
+        $pageRenderer = static::getPageRenderer();
 
         /** @var TypoScriptService $typoScriptService */
         $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
         $conf = $typoScriptService->convertTypoScriptArrayToPlainArray($metaTagTypoScript);
         foreach ($conf as $key => $properties) {
             if (is_array($properties)) {
-                $nodeValue = isset($properties['_typoScriptNodeValue']) ? $properties['_typoScriptNodeValue'] : '';
+                $nodeValue = $properties['_typoScriptNodeValue'] ?? '';
                 $value = trim($cObj->stdWrap($nodeValue, $metaTagTypoScript[$key . '.']));
                 if ($value === '' && !empty($properties['value'])) {
                     $value = $properties['value'];
@@ -929,11 +888,10 @@ class PageGenerator
             }
             foreach ($value as $subValue) {
                 if (trim($subValue) !== '') {
-                    $metaTags[] = '<meta ' . $attribute . '="' . $key . '" content="' . htmlspecialchars($subValue) . '"' . $endingSlash . '>';
+                    $pageRenderer->setMetaTag($attribute, $key, $subValue);
                 }
             }
         }
-        return $metaTags;
     }
 
     /**

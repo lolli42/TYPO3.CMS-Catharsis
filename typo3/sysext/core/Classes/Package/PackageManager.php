@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\Package;
 
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
+use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Compatibility\LoadedExtensionArrayElement;
 use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Core\ClassLoadingInformation;
@@ -37,7 +38,7 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
     protected $dependencyResolver;
 
     /**
-     * @var \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend
+     * @var FrontendInterface
      */
     protected $coreCache;
 
@@ -110,9 +111,9 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
     }
 
     /**
-     * @param \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend $coreCache
+     * @param FrontendInterface $coreCache
      */
-    public function injectCoreCache(\TYPO3\CMS\Core\Cache\Frontend\PhpFrontend $coreCache)
+    public function injectCoreCache(FrontendInterface $coreCache)
     {
         $this->coreCache = $coreCache;
     }
@@ -482,9 +483,8 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
         $lowercasedComposerName = strtolower($composerName);
         if (isset($this->composerNameToPackageKeyMap[$lowercasedComposerName])) {
             return $this->composerNameToPackageKeyMap[$lowercasedComposerName];
-        } else {
-            return $composerName;
         }
+        return $composerName;
     }
 
     /**
@@ -517,6 +517,11 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      */
     public function isPackageAvailable($packageKey)
     {
+        // If activePackages is empty, the PackageManager is currently initializing
+        // thus packages should not be scanned
+        if (!$this->availablePackagesScanned && !empty($this->activePackages)) {
+            $this->scanAvailablePackages();
+        }
         if (isset($this->packageAliasMap[$lowercasedPackageKey = strtolower($packageKey)])) {
             $packageKey = $this->packageAliasMap[$lowercasedPackageKey];
         }
@@ -714,7 +719,7 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      * Returns an array of suggested package keys for the given package.
      *
      * @param string $packageKey The package key to fetch the suggestions for
-     * @return array|NULL An array of directly suggested packages
+     * @return array|null An array of directly suggested packages
      */
     protected function getSuggestionArrayForPackage($packageKey)
     {
@@ -975,7 +980,7 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      * @param string $packageKey The package key to fetch the dependencies for
      * @param array $dependentPackageKeys
      * @param array $trace An array of already visited package keys, to detect circular dependencies
-     * @return array|NULL An array of direct or indirect dependent packages
+     * @return array|null An array of direct or indirect dependent packages
      * @throws Exception\InvalidPackageKeyException
      */
     protected function getDependencyArrayForPackage($packageKey, array &$dependentPackageKeys = [], array $trace = [])
@@ -1023,10 +1028,9 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
         if (isset($manifest->type) && substr($manifest->type, 0, 10) === 'typo3-cms-') {
             $packageKey = basename($packagePath);
             return preg_replace('/[^A-Za-z0-9._-]/', '', $packageKey);
-        } else {
-            $packageKey = str_replace('/', '.', $manifest->name);
-            return preg_replace('/[^A-Za-z0-9.]/', '', $packageKey);
         }
+        $packageKey = str_replace('/', '.', $manifest->name);
+        return preg_replace('/[^A-Za-z0-9.]/', '', $packageKey);
     }
 
     /**
@@ -1037,16 +1041,27 @@ class PackageManager implements \TYPO3\CMS\Core\SingletonInterface
      */
     protected function getPackageBasePaths()
     {
-        if (empty($this->packagesBasePaths)) {
+        if (count($this->packagesBasePaths) < 3) {
             // Check if the directory even exists and if it is not empty
-            if (is_dir(PATH_typo3conf . 'ext') && count(scandir(PATH_typo3conf . 'ext')) > 2) {
+            if (is_dir(PATH_typo3conf . 'ext') && $this->hasSubDirectories(PATH_typo3conf . 'ext')) {
                 $this->packagesBasePaths['local'] = PATH_typo3conf . 'ext/*/';
             }
-            if (is_dir(PATH_typo3 . 'ext') && count(scandir(PATH_typo3 . 'ext')) > 2) {
+            if (is_dir(PATH_typo3 . 'ext') && $this->hasSubDirectories(PATH_typo3 . 'ext')) {
                 $this->packagesBasePaths['global'] = PATH_typo3 . 'ext/*/';
             }
             $this->packagesBasePaths['system'] = PATH_typo3 . 'sysext/*/';
         }
         return $this->packagesBasePaths;
+    }
+
+    /**
+     * Returns true if the given path has valid subdirectories, false otherwise.
+     *
+     * @param string $path
+     * @return bool
+     */
+    protected function hasSubDirectories(string $path): bool
+    {
+        return !empty(glob(rtrim($path, '/\\') . '/*', GLOB_ONLYDIR));
     }
 }

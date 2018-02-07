@@ -79,10 +79,9 @@ class File extends AbstractFile
     {
         if (parent::hasProperty($key)) {
             return parent::getProperty($key);
-        } else {
-            $metaData = $this->_getMetaData();
-            return isset($metaData[$key]) ? $metaData[$key] : null;
         }
+        $metaData = $this->_getMetaData();
+        return $metaData[$key] ?? null;
     }
 
     /**
@@ -168,7 +167,7 @@ class File extends AbstractFile
     /**
      * Returns TRUE if this file is indexed
      *
-     * @return bool|NULL
+     * @return bool|null
      */
     public function isIndexed()
     {
@@ -366,9 +365,8 @@ class File extends AbstractFile
     {
         if ($this->isMissing() || $this->deleted) {
             return false;
-        } else {
-            return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
         }
+        return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
     }
 
     /**

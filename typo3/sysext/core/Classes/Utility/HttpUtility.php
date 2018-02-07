@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+
 /**
  * HTTP Utility class
  */
@@ -113,10 +115,28 @@ class HttpUtility
         return (isset($urlParts['scheme']) ? $urlParts['scheme'] . '://' : '') .
             (isset($urlParts['user']) ? $urlParts['user'] .
             (isset($urlParts['pass']) ? ':' . $urlParts['pass'] : '') . '@' : '') .
-            (isset($urlParts['host']) ? $urlParts['host'] : '') .
+            ($urlParts['host'] ?? '') .
             (isset($urlParts['port']) ? ':' . $urlParts['port'] : '') .
-            (isset($urlParts['path']) ? $urlParts['path'] : '') .
+            ($urlParts['path'] ?? '') .
             (isset($urlParts['query']) ? '?' . $urlParts['query'] : '') .
             (isset($urlParts['fragment']) ? '#' . $urlParts['fragment'] : '');
+    }
+
+    /**
+     * Send Response to client and exit
+     *
+     * @param ResponseInterface $response
+     * @internal not part of public/stable API yet
+     */
+    public static function sendResponse(ResponseInterface $response)
+    {
+        if (!headers_sent()) {
+            header('HTTP/' . $response->getProtocolVersion() . ' ' . $response->getStatusCode() . ' ' . $response->getReasonPhrase());
+            foreach ($response->getHeaders() as $name => $values) {
+                header($name . ': ' . implode(', ', $values));
+            }
+        }
+        echo $response->getBody()->__toString();
+        exit;
     }
 }

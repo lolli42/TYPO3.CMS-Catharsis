@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Extensionmanager\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 
@@ -29,11 +31,6 @@ class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\Abst
     protected $tagName = 'form';
 
     /**
-     * @var \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility
-     */
-    protected $configurationUtility;
-
-    /**
      * @var \TYPO3\CMS\Extbase\Service\ExtensionService
      */
     protected $extensionService;
@@ -44,14 +41,6 @@ class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\Abst
     public function injectExtensionService(\TYPO3\CMS\Extbase\Service\ExtensionService $extensionService)
     {
         $this->extensionService = $extensionService;
-    }
-
-    /**
-     * @param \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility
-     */
-    public function injectConfigurationUtility(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility)
-    {
-        $this->configurationUtility = $configurationUtility;
     }
 
     /**
@@ -90,7 +79,7 @@ class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\Abst
 			</li>';
         }
         $pathSelector .= '</ul>';
-        $uriBuilder = $this->controllerContext->getUriBuilder();
+        $uriBuilder = $this->renderingContext->getControllerContext()->getUriBuilder();
         $action = 'checkDependencies';
         $uriBuilder->reset();
         $uriBuilder->setFormat('json');
@@ -99,7 +88,7 @@ class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\Abst
         ], 'Download');
         $this->tag->addAttribute('data-href', $uri);
 
-        $automaticInstallation = $this->configurationUtility->getCurrentConfiguration('extensionmanager')['automaticInstallation']['value'];
+        $automaticInstallation = (bool)GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('extensionmanager', 'automaticInstallation');
         $labelKeySuffix = $automaticInstallation ? '' : '.downloadOnly';
         $label = '
 			<div class="btn-group">
@@ -127,9 +116,8 @@ class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\Abst
     {
         if ($this->hasArgument('fieldNamePrefix')) {
             return $this->arguments['fieldNamePrefix'];
-        } else {
-            return $this->getDefaultFieldNamePrefix();
         }
+        return $this->getDefaultFieldNamePrefix();
     }
 
     /**
@@ -139,7 +127,7 @@ class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\Abst
      */
     protected function getDefaultFieldNamePrefix()
     {
-        $request = $this->controllerContext->getRequest();
+        $request = $this->renderingContext->getControllerContext()->getRequest();
         if ($this->hasArgument('extensionName')) {
             $extensionName = $this->arguments['extensionName'];
         } else {
@@ -152,8 +140,7 @@ class DownloadExtensionViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\Abst
         }
         if ($extensionName !== null && $pluginName != null) {
             return $this->extensionService->getPluginNamespace($extensionName, $pluginName);
-        } else {
-            return '';
         }
+        return '';
     }
 }

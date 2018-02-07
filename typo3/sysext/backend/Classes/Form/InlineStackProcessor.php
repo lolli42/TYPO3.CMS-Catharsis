@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\Form;
  */
 
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -81,7 +80,6 @@ class InlineStackProcessor
                     if (!$TSconfig['disabled']) {
                         $unstable['config'] = FormEngineUtility::overrideFieldConf($unstable['config'], $TSconfig);
                     }
-                    $unstable['localizationMode'] = BackendUtility::getInlineLocalizationMode($unstable['table'], $unstable['config']);
 
                     // Extract FlexForm from field part (if any)
                     if (strpos($unstable['field'], ':') !== false) {
@@ -119,10 +117,6 @@ class InlineStackProcessor
         }
         $current = &$this->inlineStructure['stable'][$level];
         $current['config'] = $config;
-        $current['localizationMode'] = BackendUtility::getInlineLocalizationMode(
-            $current['table'],
-            $current['config']
-        );
     }
 
     /**
@@ -193,9 +187,8 @@ class InlineStackProcessor
 
         if ($level !== false) {
             return $this->inlineStructure['stable'][$level];
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -222,11 +215,11 @@ class InlineStackProcessor
     protected function calculateStructureLevel($level)
     {
         $result = false;
-        $inlineStructureCount = count($this->inlineStructure['stable']);
+        $structureCount = $this->getStructureDepth();
         if ($level < 0) {
-            $level = $inlineStructureCount + $level;
+            $level = $structureCount + $level;
         }
-        if ($level >= 0 && $level < $inlineStructureCount) {
+        if ($level >= 0 && $level < $structureCount) {
             $result = $level;
         }
         return $result;
@@ -260,6 +253,9 @@ class InlineStackProcessor
      */
     public function getStructureDepth()
     {
+        if (!isset($this->inlineStructure['stable']) || !is_array($this->inlineStructure['stable'])) {
+            return 0;
+        }
         return count($this->inlineStructure['stable']);
     }
 

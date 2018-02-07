@@ -74,6 +74,10 @@ TYPO3:
               FormElement-ContentElement: 'Stage/ContentElement'
               FormElement-FileUpload: 'Stage/FileUploadTemplate'
               FormElement-ImageUpload: 'Stage/FileUploadTemplate'
+              FormElement-Email: 'Stage/SimpleTemplate'
+              FormElement-Telephone: 'Stage/SimpleTemplate'
+              FormElement-Url: 'Stage/SimpleTemplate'
+              FormElement-Number: 'Stage/SimpleTemplate'
 
               # modals
               Modal-InsertElements: 'Modals/InsertElements'
@@ -109,10 +113,14 @@ TYPO3:
                 errorMessage: 'formEditor.formElementPropertyValidatorsDefinition.FormElementIdentifierWithinCurlyBraces.label'
               FormElementIdentifierWithinCurlyBracesExclusive:
                 errorMessage: 'formEditor.formElementPropertyValidatorsDefinition.FormElementIdentifierWithinCurlyBraces.label'
+              FileSize:
+                errorMessage: 'formEditor.formElementPropertyValidatorsDefinition.FileSize.label'
 
             formElementGroups:
               input:
                 label: 'formEditor.formElementGroups.input.label'
+              html5:
+                label: 'formEditor.formElementGroups.html5.label'
               select:
                 label: 'formEditor.formElementGroups.select.label'
               custom:
@@ -131,6 +139,8 @@ TYPO3:
 
                 saveSuccessFlashMessageTitle: 'formEditor.elements.Form.saveSuccessFlashMessageTitle'
                 saveSuccessFlashMessageMessage: 'formEditor.elements.Form.saveSuccessFlashMessageMessage'
+                saveErrorFlashMessageTitle: 'formEditor.elements.Form.saveErrorFlashMessageTitle'
+                saveErrorFlashMessageMessage: 'formEditor.elements.Form.saveErrorFlashMessageMessage'
 
                 modalValidationErrorsDialogTitle: 'formEditor.modals.validationErrors.dialogTitle'
                 modalValidationErrorsConfirmButton: 'formEditor.modals.validationErrors.confirmButton'
@@ -467,11 +477,137 @@ TYPO3:
                 groupSorting: 200
                 iconIdentifier: 't3-form-icon-textarea'
                 editors:
-                  600: null
                   900:
                     selectOptions:
                       # remove email validator
                       50: null
+
+            ### FORM ELEMENTS: HTML5 ###
+            Email:
+              formEditor:
+                label: 'formEditor.elements.Email.label'
+                group: html5
+                groupSorting: 100
+                iconIdentifier: 't3-form-icon-email'
+                predefinedDefaults:
+                  validators:
+                    -
+                      identifier: EmailAddress
+                editors:
+                  500:
+                    propertyValidators:
+                      10: 'NaiveEmailOrEmpty'
+                  900:
+                    selectOptions:
+                      20: null
+                      30: null
+                      40: null
+                      60: null
+                      70: null
+                      80: null
+                      90: null
+
+                propertyCollections:
+                  validators:
+                    40:
+                      editors:
+                        9999: null
+
+            Telephone:
+              formEditor:
+                label: 'formEditor.elements.Telephone.label'
+                group: html5
+                groupSorting: 200
+                iconIdentifier: 't3-form-icon-telephone'
+
+                editors:
+                  900:
+                    selectOptions:
+                      20: null
+                      30: null
+                      40: null
+                      50: null
+                      60: null
+                      70: null
+                      80: null
+
+                propertyCollections:
+                  validators:
+                    80:
+                      editors:
+                        9999: null
+
+            Url:
+              formEditor:
+                label: 'formEditor.elements.Url.label'
+                group: html5
+                groupSorting: 300
+                iconIdentifier: 't3-form-icon-url'
+
+                editors:
+                  900:
+                    selectOptions:
+                      20: null
+                      30: null
+                      40: null
+                      50: null
+                      60: null
+                      70: null
+                      80: null
+
+                propertyCollections:
+                  validators:
+                    80:
+                      editors:
+                        9999: null
+
+            Number:
+              formEditor:
+                label: 'formEditor.elements.Number.label'
+                group: html5
+                groupSorting: 400
+                iconIdentifier: 't3-form-icon-number'
+                predefinedDefaults:
+                  properties:
+                    fluidAdditionalAttributes:
+                      step: 1
+                  validators:
+                    -
+                      identifier: Number
+                editors:
+                  500:
+                   propertyValidators:
+                      10: 'IntegerOrEmpty'
+                  700:
+                    identifier: 'step'
+                    templateName: 'Inspector-TextEditor'
+                    label: 'formEditor.elements.TextMixin.editor.step.label'
+                    propertyPath: 'properties.fluidAdditionalAttributes.step'
+                    propertyValidators:
+                      10: 'Integer'
+
+                  900:
+                    selectOptions:
+                      20: null
+                      30: null
+                      40: null
+                      50: null
+                      60:
+                        value: 'Number'
+                        label: 'formEditor.elements.Number.editor.validators.Number.label'
+                      70: null
+                      90: null
+
+                propertyCollections:
+                  validators:
+                    60:
+                      identifier: 'Number'
+                      editors:
+                        __inheritances:
+                          10: 'TYPO3.CMS.Form.mixins.formElementMixins.BaseCollectionEditorsMixin'
+                        100:
+                          label: 'formEditor.elements.TextMixin.validators.Number.editor.header.label'
+                        9999: null
 
             ### FORM ELEMENTS: SELECT ###
             Checkbox:
@@ -809,6 +945,10 @@ TYPO3:
               formEditor:
                 iconIdentifier: 't3-form-icon-validator'
                 label: 'formEditor.elements.TextMixin.editor.validators.Float.label'
+            Number:
+              formEditor:
+                iconIdentifier: 't3-form-icon-validator'
+                label: 'formEditor.elements.TextMixin.editor.validators.Number.label'
             NumberRange:
               formEditor:
                 iconIdentifier: 't3-form-icon-validator'
@@ -832,6 +972,14 @@ TYPO3:
                   options:
                     minimum: ''
                     maximum: ''
+            FileSize:
+              formEditor:
+                iconIdentifier: 't3-form-icon-validator'
+                label: 'formEditor.elements.FileUploadMixin.validators.FileSize.editor.header.label'
+                predefinedDefaults:
+                  options:
+                    minimum: '0B'
+                    maximum: '10M'
 
       ########### MIXINS ###########
       mixins:
@@ -874,19 +1022,15 @@ TYPO3:
               templateName: 'Inspector-TextEditor'
               label: 'formEditor.elements.MinimumMaximumEditorsMixin.editor.minimum.label'
               propertyPath: 'options.minimum'
-              propertyValidatorsMode: 'OR'
               propertyValidators:
                 10: 'Integer'
-                20: 'FormElementIdentifierWithinCurlyBracesExclusive'
             300:
               identifier: 'maximum'
               templateName: 'Inspector-TextEditor'
               label: 'formEditor.elements.MinimumMaximumEditorsMixin.editor.maximum.label'
               propertyPath: 'options.maximum'
-              propertyValidatorsMode: 'OR'
               propertyValidators:
                 10: 'Integer'
-                20: 'FormElementIdentifierWithinCurlyBracesExclusive'
 
           ReadOnlyFormElementMixin:
             formEditor:
@@ -1043,6 +1187,12 @@ TYPO3:
                         20: 'TYPO3.CMS.Form.mixins.formElementMixins.MinimumMaximumEditorsMixin'
                       100:
                         label: 'formEditor.elements.TextMixin.validators.NumberRange.editor.header.label'
+                      200:
+                        additionalElementPropertyPaths:
+                          10: 'properties.fluidAdditionalAttributes.min'
+                      300:
+                        additionalElementPropertyPaths:
+                          10: 'properties.fluidAdditionalAttributes.max'
                   80:
                     identifier: 'RegularExpression'
                     editors:
@@ -1127,6 +1277,34 @@ TYPO3:
                     10:
                       value: '1:/user_upload/'
                       label: '1:/user_upload/'
+                900:
+                  identifier: 'validators'
+                  templateName: 'Inspector-ValidatorsEditor'
+                  label: 'formEditor.elements.FileUploadMixin.editor.validators.label'
+                  selectOptions:
+                    10:
+                      value: ''
+                      label: 'formEditor.elements.FileUploadMixin.editor.validators.EmptyValue.label'
+                    20:
+                      value: 'FileSize'
+                      label: 'formEditor.elements.FileUploadMixin.editor.validators.FileSize.label'
+
+              propertyCollections:
+                validators:
+                  10:
+                    identifier: 'FileSize'
+                    editors:
+                      __inheritances:
+                        10: 'TYPO3.CMS.Form.mixins.formElementMixins.BaseCollectionEditorsMixin'
+                        20: 'TYPO3.CMS.Form.mixins.formElementMixins.MinimumMaximumEditorsMixin'
+                      100:
+                        label: 'formEditor.elements.FileUploadMixin.validators.FileSize.editor.header.label'
+                      200:
+                        propertyValidators:
+                          10: 'FileSize'
+                      300:
+                        propertyValidators:
+                          10: 'FileSize'
 
           formEmailFinisherMixin:
             editors:

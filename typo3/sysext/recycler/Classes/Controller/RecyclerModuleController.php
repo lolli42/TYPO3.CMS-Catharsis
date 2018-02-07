@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Recycler\Controller;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
@@ -80,7 +81,7 @@ class RecyclerModuleController extends ActionController
     {
         $this->id = (int)GeneralUtility::_GP('id');
         $backendUser = $this->getBackendUser();
-        $this->perms_clause = $backendUser->getPagePermsClause(1);
+        $this->perms_clause = $backendUser->getPagePermsClause(Permission::PAGE_SHOW);
         $this->pageRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($this->id, $this->perms_clause);
         $this->isAccessibleForCurrentUser = $this->id && is_array($this->pageRecord) || !$this->id && $this->getBackendUser()->isAdmin();
 
@@ -148,7 +149,7 @@ class RecyclerModuleController extends ActionController
         $extensionName = $currentRequest->getControllerExtensionName();
         if (count($getVars) === 0) {
             $modulePrefix = strtolower('tx_' . $extensionName . '_' . $moduleName);
-            $getVars = ['id', 'M', $modulePrefix];
+            $getVars = ['id', 'route', $modulePrefix];
         }
         $shortcutButton = $buttonBar->makeShortcutButton()
             ->setModuleName($moduleName)

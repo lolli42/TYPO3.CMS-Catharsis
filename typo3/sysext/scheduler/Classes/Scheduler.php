@@ -14,13 +14,12 @@ namespace TYPO3\CMS\Scheduler;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Registry;
-use TYPO3\CMS\Core\Utility\CommandUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * TYPO3 Scheduler. This class handles scheduling and execution of tasks.
@@ -41,12 +40,9 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
     public function __construct()
     {
         // Get configuration from the extension manager
-        $this->extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['scheduler'], ['allowed_classes' => false]);
+        $this->extConf = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('scheduler');
         if (empty($this->extConf['maxLifetime'])) {
             $this->extConf['maxLifetime'] = 1440;
-        }
-        if (empty($this->extConf['useAtdaemon'])) {
-            $this->extConf['useAtdaemon'] = 0;
         }
         // Clean up the serialized execution arrays
         $this->cleanExecutionArrays();
@@ -231,12 +227,9 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
         if (!empty($taskUid)) {
             $result = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getConnectionForTable('tx_scheduler_task')
-                ->delete('tx_scheduler_task', ['uid' => $taskUid]);
+                ->update('tx_scheduler_task', ['deleted' => 1], ['uid' => $taskUid]);
         } else {
             $result = false;
-        }
-        if ($result) {
-            $this->scheduleNextSchedulerRunUsingAtDaemon();
         }
         return $result;
     }
@@ -280,9 +273,6 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
                 );
         } else {
             $result = false;
-        }
-        if ($result) {
-            $this->scheduleNextSchedulerRunUsingAtDaemon();
         }
         return $result;
     }
@@ -336,27 +326,28 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
         $row = $queryBuilder->execute()->fetch();
         if ($row === false) {
             throw new \OutOfBoundsException('Query could not be executed. Possible defect in tables tx_scheduler_task or tx_scheduler_task_group or DB server problems', 1422044826);
-        } elseif (empty($row)) {
+        }
+        if (empty($row)) {
             // If there are no available tasks, thrown an exception
             throw new \OutOfBoundsException('No task', 1247827244);
+        }
+        /** @var $task Task\AbstractTask */
+        $task = unserialize($row['serialized_task_object']);
+        if ($this->isValidTaskObject($task)) {
+            // The task is valid, return it
+            $task->setScheduler();
         } else {
-            /** @var $task Task\AbstractTask */
-            $task = unserialize($row['serialized_task_object']);
-            if ($this->isValidTaskObject($task)) {
-                // The task is valid, return it
-                $task->setScheduler();
-            } else {
-                // Forcibly set the disable flag to 1 in the database,
-                // so that the task does not come up again and again for execution
-                $connectionPool->getConnectionForTable('tx_scheduler_task')->update(
+            // Forcibly set the disable flag to 1 in the database,
+            // so that the task does not come up again and again for execution
+            $connectionPool->getConnectionForTable('tx_scheduler_task')->update(
                     'tx_scheduler_task',
                     ['disable' => 1],
                     ['uid' => (int)$row['uid']]
                 );
-                // Throw an exception to raise the problem
-                throw new \UnexpectedValueException('Could not unserialize task', 1255083671);
-            }
+            // Throw an exception to raise the problem
+            throw new \UnexpectedValueException('Could not unserialize task', 1255083671);
         }
+
         return $task;
     }
 
@@ -394,30 +385,28 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
      */
     public function fetchTasksWithCondition($where, $includeDisabledTasks = false)
     {
+        $tasks = [];
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tx_scheduler_task');
 
-        $constraints = [];
-        $tasks = [];
+        $queryBuilder
+            ->select('serialized_task_object')
+            ->from('tx_scheduler_task')
+            ->where(
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
+            );
 
         if (!$includeDisabledTasks) {
-            $constraints[] = $queryBuilder->expr()->eq(
-                'disable',
-                $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT))
             );
-        } else {
-            $constraints[] = '1=1';
         }
 
         if (!empty($where)) {
-            $constraints[] = QueryHelper::stripLogicalOperatorPrefix($where);
+            $queryBuilder->andWhere(QueryHelper::stripLogicalOperatorPrefix($where));
         }
 
-        $result = $queryBuilder->select('serialized_task_object')
-            ->from('tx_scheduler_task')
-            ->where(...$constraints)
-            ->execute();
-
+        $result = $queryBuilder->execute();
         while ($row = $result->fetch()) {
             /** @var Task\AbstractTask $task */
             $task = unserialize($row['serialized_task_object']);
@@ -462,66 +451,5 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface
         if (!empty($this->extConf['enableBELog'])) {
             $GLOBALS['BE_USER']->writelog(4, 0, $status, 0, '[scheduler]: ' . $code . ' - ' . $message, []);
         }
-    }
-
-    /**
-     * Schedule the next run of scheduler
-     * For the moment only the "at"-daemon is used, and only if it is enabled
-     *
-     * @return bool Successfully scheduled next execution using "at"-daemon
-     * @see tx_scheduler::fetchTask()
-     */
-    public function scheduleNextSchedulerRunUsingAtDaemon()
-    {
-        if ((int)$this->extConf['useAtdaemon'] !== 1) {
-            return false;
-        }
-        /** @var $registry Registry */
-        $registry = GeneralUtility::makeInstance(Registry::class);
-        // Get at job id from registry and remove at job
-        $atJobId = $registry->get('tx_scheduler', 'atJobId');
-        if (MathUtility::canBeInterpretedAsInteger($atJobId)) {
-            shell_exec('atrm ' . (int)$atJobId . ' 2>&1');
-        }
-        // Can not use fetchTask() here because if tasks have just executed
-        // they are not in the list of next executions
-        $tasks = $this->fetchTasksWithCondition('');
-        $nextExecution = false;
-        foreach ($tasks as $task) {
-            try {
-                /** @var $task Task\AbstractTask */
-                $tempNextExecution = $task->getNextDueExecution();
-                if ($nextExecution === false || $tempNextExecution < $nextExecution) {
-                    $nextExecution = $tempNextExecution;
-                }
-            } catch (\OutOfBoundsException $e) {
-                // The event will not be executed again or has already ended - we don't have to consider it for
-                // scheduling the next "at" run
-            }
-        }
-        if ($nextExecution !== false) {
-            if ($nextExecution > $GLOBALS['EXEC_TIME']) {
-                $startTime = strftime('%H:%M %F', $nextExecution);
-            } else {
-                $startTime = 'now+1minute';
-            }
-            $cliDispatchPath = PATH_site . 'typo3/sysext/core/bin/typo3';
-            list($cliDispatchPathEscaped, $startTimeEscaped) =
-                CommandUtility::escapeShellArguments([$cliDispatchPath, $startTime]);
-            $cmd = 'echo ' . $cliDispatchPathEscaped . ' scheduler:run | at ' . $startTimeEscaped . ' 2>&1';
-            $output = shell_exec($cmd);
-            $outputParts = '';
-            foreach (explode(LF, $output) as $outputLine) {
-                if (GeneralUtility::isFirstPartOfStr($outputLine, 'job')) {
-                    $outputParts = explode(' ', $outputLine, 3);
-                    break;
-                }
-            }
-            if ($outputParts[0] === 'job' && MathUtility::canBeInterpretedAsInteger($outputParts[1])) {
-                $atJobId = (int)$outputParts[1];
-                $registry->set('tx_scheduler', 'atJobId', $atJobId);
-            }
-        }
-        return true;
     }
 }

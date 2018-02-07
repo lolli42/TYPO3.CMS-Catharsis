@@ -76,27 +76,11 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
             $this->constants = $this->templateService->generateConfig_constants();
             // The returned constants are sorted in categories, that goes into the $tmpl->categories array
             $this->templateService->ext_categorizeEditableConstants($this->constants);
-            // This array will contain key=[expanded constant name], value=line number in template. (after edit_divider, if any)
+            // This array will contain key=[expanded constant name], value=line number in template.
             $this->templateService->ext_regObjectPositions($this->templateRow['constants']);
             return true;
         }
         return false;
-    }
-
-    /**
-     * Get the data for display of an example
-     *
-     * @return array
-     */
-    public function getHelpConfig()
-    {
-        $result = [];
-        if ($this->templateService->helpConfig['description'] || $this->templateService->helpConfig['header']) {
-            $result['header'] = $this->templateService->helpConfig['header'];
-            $result['description'] = explode('//', $this->templateService->helpConfig['description']);
-            $result['bulletList'] = explode('//', $this->templateService->helpConfig['bulletlist']);
-        }
-        return $result;
     }
 
     /**
@@ -157,7 +141,6 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
             }
             // Category and constant editor config:
             $category = $this->pObj->MOD_SETTINGS['constant_editor_cat'];
-            $this->templateService->ext_getTSCE_config($category);
 
             $printFields = trim($this->templateService->ext_printFields($this->constants, $category));
             foreach ($this->templateService->getInlineJavaScript() as $name => $inlineJavaScript) {
@@ -166,10 +149,6 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
 
             if ($printFields) {
                 $assigns['printFields'] = $printFields;
-            }
-            $BE_USER_modOptions = BackendUtility::getModTSconfig(0, 'mod.' . $this->pObj->MCONF['name']);
-            if ($BE_USER_modOptions['properties']['constantEditor.']['example'] !== 'top') {
-                $assigns['helpConfig'] = $this->getHelpConfig();
             }
             // Rendering of the output via fluid
             $view = GeneralUtility::makeInstance(StandaloneView::class);

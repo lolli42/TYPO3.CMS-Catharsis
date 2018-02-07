@@ -16,9 +16,10 @@ namespace TYPO3\CMS\Install\Service;
 
 use TYPO3\CMS\Core\Configuration\ConfigurationManager;
 use TYPO3\CMS\Core\Crypto\Random;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Install\Controller\Exception\RedirectException;
+use TYPO3\CMS\Install\Service\Exception\ConfigurationChangedException;
 
 /**
  * Execute "silent" LocalConfiguration upgrades if needed.
@@ -27,7 +28,7 @@ use TYPO3\CMS\Install\Controller\Exception\RedirectException;
  * This class handles upgrades of these settings. It is called by
  * the step controller at an early point.
  *
- * Every change is encapsulated in one method an must throw a RedirectException
+ * Every change is encapsulated in one method an must throw a ConfigurationChangedException
  * if new data is written to LocalConfiguration. This is caught by above
  * step controller to initiate a redirect and start again with adapted configuration.
  */
@@ -97,6 +98,31 @@ class SilentConfigurationUpgradeService
         // #80711
         'FE/noPHPscriptInclude',
         'FE/maxSessionDataSize',
+        // #82162
+        'SYS/enable_errorDLOG',
+        'SYS/enable_exceptionDLOG',
+        // #82377
+        'EXT/allowSystemInstall',
+        // #82421
+        'SYS/sqlDebug',
+        'SYS/no_pconnect',
+        'SYS/setDBinit',
+        'SYS/dbClientCompress',
+        // #82430
+        'SYS/syslogErrorReporting',
+        // #82639
+        'SYS/enable_DLOG',
+        'SC_OPTIONS/t3lib/class.t3lib_userauth.php/writeDevLog',
+        'SC_OPTIONS/t3lib/class.t3lib_userauth.php/writeDevLogBE',
+        'SC_OPTIONS/t3lib/class.t3lib_userauth.php/writeDevLogFE',
+        // #82438
+        'SYS/enableDeprecationLog',
+        // #82680
+        'GFX/png_truecolor',
+        // #82803
+        'FE/content_doktypes',
+        // #83081
+        'BE/fileExtensions'
     ];
 
     public function __construct(ConfigurationManager $configurationManager = null)
@@ -106,7 +132,7 @@ class SilentConfigurationUpgradeService
 
     /**
      * Executed configuration upgrades. Single upgrade methods must throw a
-     * RedirectException if something was written to LocalConfiguration.
+     * ConfigurationChangedException if something was written to LocalConfiguration.
      */
     public function execute()
     {
@@ -122,6 +148,8 @@ class SilentConfigurationUpgradeService
         $this->migrateDatabaseConnectionCharset();
         $this->migrateDatabaseDriverOptions();
         $this->migrateLangDebug();
+        $this->migrateCacheHashOptions();
+        $this->migrateExceptionErrors();
 
         // Should run at the end to prevent that obsolete settings are removed before migration
         $this->removeObsoleteLocalConfigurationSettings();
@@ -139,7 +167,7 @@ class SilentConfigurationUpgradeService
 
         // If something was changed: Trigger a reload to have new values in next request
         if ($removed) {
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -155,16 +183,18 @@ class SilentConfigurationUpgradeService
             $currentLoginSecurityLevelValue = $this->configurationManager->getLocalConfigurationValueByPath('BE/loginSecurityLevel');
             if ($rsaauthLoaded && $currentLoginSecurityLevelValue !== 'rsa') {
                 $this->configurationManager->setLocalConfigurationValueByPath('BE/loginSecurityLevel', 'rsa');
-                $this->throwRedirectException();
+                $this->throwConfigurationChangedException();
             } elseif (!$rsaauthLoaded && $currentLoginSecurityLevelValue !== 'normal') {
                 $this->configurationManager->setLocalConfigurationValueByPath('BE/loginSecurityLevel', 'normal');
-                $this->throwRedirectException();
+                $this->throwConfigurationChangedException();
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // If an exception is thrown, the value is not set in LocalConfiguration
-            $this->configurationManager->setLocalConfigurationValueByPath('BE/loginSecurityLevel',
-                $rsaauthLoaded ? 'rsa' : 'normal');
-            $this->throwRedirectException();
+            $this->configurationManager->setLocalConfigurationValueByPath(
+                'BE/loginSecurityLevel',
+                $rsaauthLoaded ? 'rsa' : 'normal'
+            );
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -178,7 +208,7 @@ class SilentConfigurationUpgradeService
     {
         try {
             $currentValue = $this->configurationManager->getLocalConfigurationValueByPath('SYS/encryptionKey');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // If an exception is thrown, the value is not set in LocalConfiguration
             $currentValue = '';
         }
@@ -186,7 +216,7 @@ class SilentConfigurationUpgradeService
         if (empty($currentValue)) {
             $randomKey = GeneralUtility::makeInstance(Random::class)->generateRandomHexString(96);
             $this->configurationManager->setLocalConfigurationValueByPath('SYS/encryptionKey', $randomKey);
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -204,42 +234,46 @@ class SilentConfigurationUpgradeService
             // Check if the adapter option is set, if so, set it to the parameters that are obsolete
             $this->configurationManager->getLocalConfigurationValueByPath('HTTP/adapter');
             $obsoleteParameters[] = 'HTTP/adapter';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
         }
         try {
             $newParameters['HTTP/version'] = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/protocol_version');
             $obsoleteParameters[] = 'HTTP/protocol_version';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
         }
         try {
             $this->configurationManager->getLocalConfigurationValueByPath('HTTP/ssl_verify_host');
             $obsoleteParameters[] = 'HTTP/ssl_verify_host';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
         }
         try {
             $legacyUserAgent = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/userAgent');
             $newParameters['HTTP/headers/User-Agent'] = $legacyUserAgent;
             $obsoleteParameters[] = 'HTTP/userAgent';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
         }
 
         // Redirects
         try {
             $legacyFollowRedirects = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/follow_redirects');
             $obsoleteParameters[] = 'HTTP/follow_redirects';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyFollowRedirects = '';
         }
         try {
             $legacyMaximumRedirects = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/max_redirects');
             $obsoleteParameters[] = 'HTTP/max_redirects';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyMaximumRedirects = '';
         }
         try {
             $legacyStrictRedirects = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/strict_redirects');
             $obsoleteParameters[] = 'HTTP/strict_redirects';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyStrictRedirects = '';
         }
 
@@ -265,32 +299,32 @@ class SilentConfigurationUpgradeService
             // Currently without protocol or port
             $legacyProxyHost = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/proxy_host');
             $obsoleteParameters[] = 'HTTP/proxy_host';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyProxyHost = '';
         }
         try {
             $legacyProxyPort = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/proxy_port');
             $obsoleteParameters[] = 'HTTP/proxy_port';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyProxyPort = '';
         }
         try {
             $legacyProxyUser = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/proxy_user');
             $obsoleteParameters[] = 'HTTP/proxy_user';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyProxyUser = '';
         }
         try {
             $legacyProxyPassword = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/proxy_password');
             $obsoleteParameters[] = 'HTTP/proxy_password';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyProxyPassword = '';
         }
         // Auth Scheme: Basic, digest etc.
         try {
             $legacyProxyAuthScheme = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/proxy_auth_scheme');
             $obsoleteParameters[] = 'HTTP/proxy_auth_scheme';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacyProxyAuthScheme = '';
         }
 
@@ -311,7 +345,7 @@ class SilentConfigurationUpgradeService
         try {
             $legacySslVerifyPeer = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/ssl_verify_peer');
             $obsoleteParameters[] = 'HTTP/ssl_verify_peer';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacySslVerifyPeer = '';
         }
 
@@ -319,14 +353,14 @@ class SilentConfigurationUpgradeService
         try {
             $legacySslCaPath = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/ssl_capath');
             $obsoleteParameters[] = 'HTTP/ssl_capath';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacySslCaPath = '';
         }
         // Certificate Authority file to verify the peer with (use when ssl_verify_peer is TRUE)
         try {
             $legacySslCaFile = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/ssl_cafile');
             $obsoleteParameters[] = 'HTTP/ssl_cafile';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacySslCaFile = '';
         }
         if ($legacySslVerifyPeer !== '') {
@@ -342,7 +376,7 @@ class SilentConfigurationUpgradeService
         try {
             $legacySslLocalCert = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/ssl_local_cert');
             $obsoleteParameters[] = 'HTTP/ssl_local_cert';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacySslLocalCert = '';
         }
 
@@ -350,7 +384,7 @@ class SilentConfigurationUpgradeService
         try {
             $legacySslPassphrase = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/ssl_passphrase');
             $obsoleteParameters[] = 'HTTP/ssl_passphrase';
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $legacySslPassphrase = '';
         }
 
@@ -375,7 +409,7 @@ class SilentConfigurationUpgradeService
             $changed = true;
         }
         if ($changed) {
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -392,31 +426,31 @@ class SilentConfigurationUpgradeService
         $changedValues = [];
         try {
             $currentImValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/processor_enabled');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentImValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/processor_enabled');
         }
 
         try {
             $currentImPathValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/processor_path');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentImPathValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/processor_path');
         }
 
         try {
             $currentImPathLzwValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/processor_path_lzw');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentImPathLzwValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/processor_path_lzw');
         }
 
         try {
             $currentImageFileExtValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/imagefile_ext');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentImageFileExtValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/imagefile_ext');
         }
 
         try {
             $currentThumbnailsValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/thumbnails');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentThumbnailsValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/thumbnails');
         }
 
@@ -436,7 +470,7 @@ class SilentConfigurationUpgradeService
         }
         if (!empty($changedValues)) {
             $this->configurationManager->setLocalConfigurationValuesByPathValuePairs($changedValues);
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -453,19 +487,19 @@ class SilentConfigurationUpgradeService
         $changedValues = [];
         try {
             $currentProcessorValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/processor');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentProcessorValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/processor');
         }
 
         try {
             $currentProcessorMaskValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/processor_allowTemporaryMasksAsPng');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentProcessorMaskValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/processor_allowTemporaryMasksAsPng');
         }
 
         try {
             $currentProcessorEffectsValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/processor_effects');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentProcessorEffectsValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/processor_effects');
         }
 
@@ -481,7 +515,7 @@ class SilentConfigurationUpgradeService
         }
         if (!empty($changedValues)) {
             $this->configurationManager->setLocalConfigurationValuesByPathValuePairs($changedValues);
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -511,7 +545,7 @@ class SilentConfigurationUpgradeService
                 $value = $this->configurationManager->getLocalConfigurationValueByPath($oldPath);
                 $this->configurationManager->setLocalConfigurationValueByPath($newPath, $value);
                 $changedSettings[$oldPath] = true;
-            } catch (\RuntimeException $e) {
+            } catch (MissingArrayPathException $e) {
                 // If an exception is thrown, the value is not set in LocalConfiguration
                 $changedSettings[$oldPath] = false;
             }
@@ -526,38 +560,44 @@ class SilentConfigurationUpgradeService
         if (!empty($changedSettings['GFX/im_noScaleUp'])) {
             $currentProcessorValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/im_noScaleUp');
             $newProcessorValue = !$currentProcessorValue;
-            $this->configurationManager->setLocalConfigurationValueByPath('GFX/processor_allowUpscaling',
-                $newProcessorValue);
+            $this->configurationManager->setLocalConfigurationValueByPath(
+                'GFX/processor_allowUpscaling',
+                $newProcessorValue
+            );
         }
 
         if (!empty($changedSettings['GFX/im_noFramePrepended'])) {
             $currentProcessorValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/im_noFramePrepended');
             $newProcessorValue = !$currentProcessorValue;
-            $this->configurationManager->setLocalConfigurationValueByPath('GFX/processor_allowFrameSelection',
-                $newProcessorValue);
+            $this->configurationManager->setLocalConfigurationValueByPath(
+                'GFX/processor_allowFrameSelection',
+                $newProcessorValue
+            );
         }
 
         if (!empty($changedSettings['GFX/im_mask_temp_ext_gif'])) {
             $currentProcessorValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/im_mask_temp_ext_gif');
             $newProcessorValue = !$currentProcessorValue;
-            $this->configurationManager->setLocalConfigurationValueByPath('GFX/processor_allowTemporaryMasksAsPng',
-                $newProcessorValue);
+            $this->configurationManager->setLocalConfigurationValueByPath(
+                'GFX/processor_allowTemporaryMasksAsPng',
+                $newProcessorValue
+            );
         }
 
         if (!empty(array_filter($changedSettings))) {
             $this->configurationManager->removeLocalConfigurationKeysByPath(array_keys($changedSettings));
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
     /**
      * Throw exception after configuration change to trigger a redirect.
      *
-     * @throws RedirectException
+     * @throws ConfigurationChangedException
      */
-    protected function throwRedirectException()
+    protected function throwConfigurationChangedException()
     {
-        throw new RedirectException(
+        throw new ConfigurationChangedException(
             'Configuration updated, reload needed',
             1379024938
         );
@@ -571,7 +611,7 @@ class SilentConfigurationUpgradeService
         $changedValues = [];
         try {
             $currentThumbnailsPngValue = $this->configurationManager->getLocalConfigurationValueByPath('GFX/thumbnails_png');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $currentThumbnailsPngValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/thumbnails_png');
         }
 
@@ -580,7 +620,7 @@ class SilentConfigurationUpgradeService
         }
         if (!empty($changedValues)) {
             $this->configurationManager->setLocalConfigurationValuesByPathValuePairs($changedValues);
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -594,9 +634,9 @@ class SilentConfigurationUpgradeService
             // check if the current option is an integer/string and if it is active
             if (!is_bool($currentOption) && (int)$currentOption > 0) {
                 $this->configurationManager->setLocalConfigurationValueByPath('BE/lockSSL', true);
-                $this->throwRedirectException();
+                $this->throwConfigurationChangedException();
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // no change inside the LocalConfiguration.php found, so nothing needs to be modified
         }
     }
@@ -615,15 +655,15 @@ class SilentConfigurationUpgradeService
             $value = $confManager->getLocalConfigurationValueByPath('DB/username');
             $removeSettings[] = 'DB/username';
             $newSettings['DB/Connections/Default/user'] = $value;
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
         try {
-            $value= $confManager->getLocalConfigurationValueByPath('DB/password');
+            $value = $confManager->getLocalConfigurationValueByPath('DB/password');
             $removeSettings[] = 'DB/password';
             $newSettings['DB/Connections/Default/password'] = $value;
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
@@ -631,7 +671,7 @@ class SilentConfigurationUpgradeService
             $value = $confManager->getLocalConfigurationValueByPath('DB/host');
             $removeSettings[] = 'DB/host';
             $newSettings['DB/Connections/Default/host'] = $value;
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
@@ -639,7 +679,7 @@ class SilentConfigurationUpgradeService
             $value = $confManager->getLocalConfigurationValueByPath('DB/port');
             $removeSettings[] = 'DB/port';
             $newSettings['DB/Connections/Default/port'] = $value;
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
@@ -650,7 +690,7 @@ class SilentConfigurationUpgradeService
             if (!empty($value)) {
                 $newSettings['DB/Connections/Default/unix_socket'] = $value;
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
@@ -658,7 +698,7 @@ class SilentConfigurationUpgradeService
             $value = $confManager->getLocalConfigurationValueByPath('DB/database');
             $removeSettings[] = 'DB/database';
             $newSettings['DB/Connections/Default/dbname'] = $value;
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
@@ -670,7 +710,7 @@ class SilentConfigurationUpgradeService
                     'flags' => MYSQLI_CLIENT_COMPRESS,
                 ];
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
@@ -680,7 +720,7 @@ class SilentConfigurationUpgradeService
             if (!$value) {
                 $newSettings['DB/Connections/Default/persistentConnection'] = true;
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
@@ -688,20 +728,20 @@ class SilentConfigurationUpgradeService
             $value = $confManager->getLocalConfigurationValueByPath('SYS/setDBinit');
             $removeSettings[] = 'SYS/setDBinit';
             $newSettings['DB/Connections/Default/initCommands'] = $value;
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Old setting does not exist, do nothing
         }
 
         try {
             $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/charset');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // If there is no charset option yet, add it.
             $newSettings['DB/Connections/Default/charset'] = 'utf8';
         }
 
         try {
             $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/driver');
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // Use the mysqli driver by default if no value has been provided yet
             $newSettings['DB/Connections/Default/driver'] = 'mysqli';
         }
@@ -716,7 +756,7 @@ class SilentConfigurationUpgradeService
 
         // Throw redirect if something was changed
         if (!empty($newSettings) || !empty($removeSettings)) {
-            $this->throwRedirectException();
+            $this->throwConfigurationChangedException();
         }
     }
 
@@ -732,9 +772,9 @@ class SilentConfigurationUpgradeService
             $charset = $confManager->getLocalConfigurationValueByPath('DB/Connections/Default/charset');
             if (in_array($driver, ['mysqli', 'pdo_mysql', 'drizzle_pdo_mysql'], true) && $charset === 'utf-8') {
                 $confManager->setLocalConfigurationValueByPath('DB/Connections/Default/charset', 'utf8');
-                $this->throwRedirectException();
+                $this->throwConfigurationChangedException();
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // no incompatible charset configuration found, so nothing needs to be modified
         }
     }
@@ -753,7 +793,7 @@ class SilentConfigurationUpgradeService
                     ['flags' => (int)$options]
                 );
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             // no driver options found, nothing needs to be modified
         }
     }
@@ -770,7 +810,83 @@ class SilentConfigurationUpgradeService
             if (isset($currentOption) && is_bool($currentOption)) {
                 $confManager->setLocalConfigurationValueByPath('BE/languageDebug', $currentOption);
             }
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
+            // no change inside the LocalConfiguration.php found, so nothing needs to be modified
+        }
+    }
+
+    /**
+     * Migrate single cache hash related options under "FE" into "FE/cacheHash"
+     */
+    protected function migrateCacheHashOptions()
+    {
+        $confManager = $this->configurationManager;
+        $removeSettings = [];
+        $newSettings = [];
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('FE/cHashOnlyForParameters');
+            $removeSettings[] = 'FE/cHashOnlyForParameters';
+            $newSettings['FE/cacheHash/cachedParametersWhiteList'] = GeneralUtility::trimExplode(',', $value, true);
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
+        }
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('FE/cHashExcludedParameters');
+            $removeSettings[] = 'FE/cHashExcludedParameters';
+            $newSettings['FE/cacheHash/excludedParameters'] = GeneralUtility::trimExplode(',', $value, true);
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
+        }
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('FE/cHashRequiredParameters');
+            $removeSettings[] = 'FE/cHashRequiredParameters';
+            $newSettings['FE/cacheHash/requireCacheHashPresenceParameters'] = GeneralUtility::trimExplode(',', $value, true);
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
+        }
+
+        try {
+            $value = $confManager->getLocalConfigurationValueByPath('FE/cHashExcludedParametersIfEmpty');
+            $removeSettings[] = 'FE/cHashExcludedParametersIfEmpty';
+            if (trim($value) === '*') {
+                $newSettings['FE/cacheHash/excludeAllEmptyParameters'] = true;
+            } else {
+                $newSettings['FE/cacheHash/excludedParametersIfEmpty'] = GeneralUtility::trimExplode(',', $value, true);
+            }
+        } catch (MissingArrayPathException $e) {
+            // Migration done already
+        }
+
+        // Add new settings and remove old ones
+        if (!empty($newSettings)) {
+            $confManager->setLocalConfigurationValuesByPathValuePairs($newSettings);
+        }
+        if (!empty($removeSettings)) {
+            $confManager->removeLocalConfigurationKeysByPath($removeSettings);
+        }
+
+        // Throw redirect if something was changed
+        if (!empty($newSettings) || !empty($removeSettings)) {
+            $this->throwConfigurationChangedException();
+        }
+    }
+
+    /**
+     * Migrate SYS/exceptionalErrors to not contain E_USER_DEPRECATED
+     */
+    protected function migrateExceptionErrors()
+    {
+        $confManager = $this->configurationManager;
+        try {
+            $currentOption = (int)$confManager->getLocalConfigurationValueByPath('SYS/exceptionalErrors');
+            // make sure E_USER_DEPRECATED is not part of the exceptionalErrors
+            if ($currentOption & E_USER_DEPRECATED) {
+                $confManager->setLocalConfigurationValueByPath('SYS/exceptionalErrors', $currentOption & ~E_USER_DEPRECATED);
+            }
+        } catch (MissingArrayPathException $e) {
             // no change inside the LocalConfiguration.php found, so nothing needs to be modified
         }
     }

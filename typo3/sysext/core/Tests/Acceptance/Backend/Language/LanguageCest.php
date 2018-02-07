@@ -77,18 +77,16 @@ class LanguageCest
      */
     public function activateAndDeactivateALanguage(Admin $I)
     {
-        $I->wantTo('Install a language');
+        $I->wantTo('Activate a language');
+        $I->seeElement('#language-pt_BR.disabled');
 
-        $I->seeElement('#language-da');
-        $I->seeElement('#language-da.disabled');
-        $I->click('#language-da td a.activateLanguageLink');
-        $I->seeElement('#language-da.enabled');
-
+        $I->click('#language-pt_BR td a.activateLanguageLink');
         $this->seeAlert($I, 'Success', 'Language was successfully activated.');
 
-        $I->click('#language-da td a.deactivateLanguageLink');
-        $I->seeElement('#language-da.disabled');
+        $I->wantTo('Deactivate a language');
+        $I->seeElement('#language-pt_BR.enabled');
 
+        $I->click('#language-pt_BR td a.deactivateLanguageLink');
         $this->seeAlert($I, 'Success', 'Language was successfully deactivated.');
     }
 
@@ -98,6 +96,7 @@ class LanguageCest
     public function downloadALanguage(Admin $I)
     {
         $I->wantTo('Download a language with no selection and see error message');
+        $I->seeElement('#language-pt_BR.disabled');
 
         $I->click('a[data-action="updateActiveLanguages"]');
         $this->seeAlert($I, 'Error', 'No language activated. Please activate at least one language.');
@@ -105,12 +104,11 @@ class LanguageCest
         // Download only a single translation for a specific extension for performance reasons
         $I->wantTo('Download a single translation for a selected language');
 
-        $I->seeElement('#language-da');
-        $I->seeElement('#language-da.disabled');
-        $I->click('#language-da td a.activateLanguageLink');
+        $I->click('#language-pt_BR td a.activateLanguageLink');
 
         $I->selectOption('.t3-js-jumpMenuBox', 'Translation Overview');
         $I->waitForElementVisible('#typo3-translation-list');
+        $I->waitForElementVisible('#extension-beuser td a.updateTranslationLink');
         $I->click('#extension-beuser td a.updateTranslationLink');
         $I->waitForElement('#extension-beuser td:nth-child(3).complete');
         $this->seeAlert($I, 'Success', 'The translation update has been successfully completed.');
@@ -156,7 +154,7 @@ class LanguageCest
         $I->switchToIFrame();
 
         $I->wait(1);
-        $I->waitForElement('//div[contains(@role, "alert")]', 2);
+        $I->waitForElement('//div[contains(@role, "alert")]', 10);
         $I->see($alertTitle);
         $I->see($alertMessage);
 

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Model\Renderable;
 
 /*
@@ -30,7 +30,7 @@ interface RenderableInterface extends RootRenderableInterface
     /**
      * Return the parent renderable
      *
-     * @return null|CompositeRenderableInterface the parent renderable
+     * @return CompositeRenderableInterface|null the parent renderable
      * @internal
      */
     public function getParentRenderable();

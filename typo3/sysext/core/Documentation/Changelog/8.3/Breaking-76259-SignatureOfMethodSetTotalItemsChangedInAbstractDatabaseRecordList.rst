@@ -11,7 +11,7 @@ Description
 ===========
 
 As part of migrating the core code to use Doctrine DBAL the signature of the method
-:php:`PageLayoutView::getResult()` has changed.
+:php:`AbstractDatabaseRecordList::setTotalItems()` has changed.
 
 The new signature is:
 
@@ -51,4 +51,4 @@ Migration
 Instead of passing an array of parameters built using the deprecated ::php::`makeQueryArray()` method
 explicitly pass in the table name, page id and any additional query restrictions required.
 
-.. index:: Database, PHP-API
+.. index:: Database, PHP-API, Backend

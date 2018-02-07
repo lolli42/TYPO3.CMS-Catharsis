@@ -61,8 +61,8 @@ class RenderViewHelper extends AbstractViewHelper
     {
         $section = $this->arguments['section'];
         $partial = $this->arguments['partial'];
-        $arguments = (array) $this->arguments['arguments'];
-        $optional = (boolean) $this->arguments['optional'];
+        $arguments = (array)$this->arguments['arguments'];
+        $optional = (boolean)$this->arguments['optional'];
         $contentAs = $this->arguments['contentAs'];
         $tagContent = $this->renderChildren();
 
@@ -80,7 +80,7 @@ class RenderViewHelper extends AbstractViewHelper
         // not set, NULL is returned and cast to a new, empty string
         // outside of this ViewHelper.
         if ($content === '') {
-            $content = isset($this->arguments['default']) ? $this->arguments['default'] : $tagContent;
+            $content = $this->arguments['default'] ?? $tagContent;
         }
 
         $cssRules = [];

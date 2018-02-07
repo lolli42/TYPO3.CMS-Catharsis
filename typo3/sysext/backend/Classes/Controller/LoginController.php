@@ -18,8 +18,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Exception;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\FormProtection\BackendFormProtection;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
@@ -116,7 +118,12 @@ class LoginController
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_login.xlf');
 
         // Setting the redirect URL to "index.php?M=main" if no alternative input is given
-        $this->redirectToURL = $this->redirectUrl ?: BackendUtility::getModuleUrl('main');
+        if ($this->redirectUrl) {
+            $this->redirectToURL = $this->redirectUrl;
+        } else {
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+            $this->redirectToURL = (string)$uriBuilder->buildUriFromRoute('main');
+        }
 
         // If "L" is "OUT", then any logged in is logged out. If redirect_url is given, we redirect to it
         if (GeneralUtility::_GP('L') === 'OUT' && is_object($this->getBackendUserAuthentication())) {
@@ -159,19 +166,23 @@ class LoginController
         $this->checkRedirect();
 
         // Extension Configuration
-        $extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['backend'], ['allowed_classes' => false]);
+        $extConf = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('backend');
 
         // Background Image
         if (!empty($extConf['loginBackgroundImage'])) {
             $backgroundImage = $this->getUriForFileName($extConf['loginBackgroundImage']);
             $this->getDocumentTemplate()->inDocStylesArray[] = '
-				@media (min-width: 768px){
-					.typo3-login-carousel-control.right,
-					.typo3-login-carousel-control.left,
-					.panel-login { border: 0; }
-					.typo3-login { background-image: url("' . $backgroundImage . '"); }
-				}
+				.typo3-login-carousel-control.right,
+				.typo3-login-carousel-control.left,
+				.panel-login { border: 0; }
+				.typo3-login { background-image: url("' . $backgroundImage . '"); }
+				.typo3-login-footnote { background-color: #000000; color: #ffffff; opacity: 0.5; }
 			';
+        }
+
+        // Login Footnote
+        if (!empty($extConf['loginFootnote'])) {
+            $this->view->assign('loginFootnote', strip_tags(trim($extConf['loginFootnote'])));
         }
 
         // Add additional css to use the highlight color in the login screen
@@ -273,10 +284,9 @@ class LoginController
                  */
                 throw new \RuntimeException('Login-error: Yeah, that\'s a classic. No cookies, no TYPO3. ' .
                     'Please accept cookies from TYPO3 - otherwise you\'ll not be able to use the system.', 1294586846);
-            } else {
-                // try it once again - that might be needed for auto login
-                $this->redirectToURL = 'index.php?commandLI=setCookie';
             }
+            // try it once again - that might be needed for auto login
+            $this->redirectToURL = 'index.php?commandLI=setCookie';
         }
         $redirectToUrl = (string)$this->getBackendUserAuthentication()->getTSConfigVal('auth.BE.redirectToURL');
         if (empty($redirectToUrl)) {
@@ -288,7 +298,8 @@ class LoginController
                     break;
                 case 'backend':
                     $interface = 'backend';
-                    $this->redirectToURL = BackendUtility::getModuleUrl('main');
+                    $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+                    $this->redirectToURL = (string)$uriBuilder->buildUriFromRoute('main');
                     break;
                 default:
                     $interface = '';
@@ -330,10 +341,11 @@ class LoginController
             $parts = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['BE']['interfaces']);
             if (count($parts) > 1) {
                 // Only if more than one interface is defined we will show the selector
+                $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
                 $interfaces = [
                     'backend' => [
                         'label' => $this->getLanguageService()->getLL('interface.backend'),
-                        'jumpScript' => BackendUtility::getModuleUrl('main'),
+                        'jumpScript' => (string)$uriBuilder->buildUriFromRoute('main'),
                         'interface' => 'backend'
                     ],
                     'frontend' => [
@@ -443,14 +455,10 @@ class LoginController
      */
     protected function validateAndSortLoginProviders()
     {
-        if (
-            !isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'])
-            || !is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'])
-            || empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'])
-        ) {
+        $providers = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'] ?? [];
+        if (empty($providers) || !is_array($providers)) {
             throw new \RuntimeException('No login providers are registered in $GLOBALS[\'TYPO3_CONF_VARS\'][\'EXTCONF\'][\'backend\'][\'loginProviders\'].', 1433417281);
         }
-        $providers = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'];
         foreach ($providers as $identifier => $configuration) {
             if (empty($configuration) || !is_array($configuration)) {
                 throw new \RuntimeException('Missing configuration for login provider "' . $identifier . '".', 1433416043);

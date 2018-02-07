@@ -67,7 +67,7 @@ class StorageRepository extends AbstractRepository
     /**
      * @param int $uid
      *
-     * @return NULL|ResourceStorage
+     * @return ResourceStorage|null
      */
     public function findByUid($uid)
     {
@@ -220,7 +220,7 @@ class StorageRepository extends AbstractRepository
         $flexObj = GeneralUtility::makeInstance(FlexFormTools::class);
         $flexFormXml = $flexObj->flexArray2Xml($flexFormData, true);
 
-            // create the record
+        // create the record
         $field_values = [
             'pid' => 0,
             'tstamp' => $GLOBALS['EXEC_TIME'],

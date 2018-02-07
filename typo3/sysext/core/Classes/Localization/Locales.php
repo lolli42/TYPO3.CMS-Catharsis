@@ -111,7 +111,8 @@ class Locales implements \TYPO3\CMS\Core\SingletonInterface
         'vi' => 'vn', // Vietnamese
         'zh' => 'hk', // Chinese (China)
         'zh_CN' => 'ch', // Chinese (Simplified)
-        'zh_HK' => 'hk'
+        'zh_HK' => 'hk', // Chinese (Simplified Hong Kong)
+        'zh_Hans_CN' => 'ch' // Chinese (Simplified Han)
     ];
 
     /**
@@ -137,11 +138,9 @@ class Locales implements \TYPO3\CMS\Core\SingletonInterface
         $instance = GeneralUtility::makeInstance(self::class);
         $instance->isoMapping = array_flip($instance->isoReverseMapping);
         // Allow user-defined locales
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['user']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['user'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['user'] as $locale => $name) {
-                if (!isset($instance->languages[$locale])) {
-                    $instance->languages[$locale] = $name;
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['user'] ?? [] as $locale => $name) {
+            if (!isset($instance->languages[$locale])) {
+                $instance->languages[$locale] = $name;
             }
         }
         // Initializes the locale dependencies with TYPO3 supported locales
@@ -152,9 +151,7 @@ class Locales implements \TYPO3\CMS\Core\SingletonInterface
             }
         }
         // Merge user-provided locale dependencies
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['dependencies']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['dependencies'])) {
-            ArrayUtility::mergeRecursiveWithOverrule($instance->localeDependencies, $GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['dependencies']);
-        }
+        ArrayUtility::mergeRecursiveWithOverrule($instance->localeDependencies, $GLOBALS['TYPO3_CONF_VARS']['SYS']['localization']['locales']['dependencies'] ?? []);
     }
 
     /**
@@ -219,7 +216,7 @@ class Locales implements \TYPO3\CMS\Core\SingletonInterface
     public function getPreferredClientLanguage($languageCodesList)
     {
         $allLanguageCodesFromLocales = ['en' => 'default'];
-        foreach ($this->getIsoMapping() as $typo3Lang => $isoLang) {
+        foreach ($this->isoReverseMapping as $isoLang => $typo3Lang) {
             $isoLang = str_replace('_', '-', $isoLang);
             $allLanguageCodesFromLocales[$isoLang] = $typo3Lang;
         }

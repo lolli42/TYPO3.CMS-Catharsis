@@ -76,6 +76,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         // Test part: getConstraint returns no constraint object, andWhere() should not be called
         $queryProphecy->getConstraint()->willReturn(null);
@@ -102,6 +103,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         // Test part: getConstraint returns not implemented object
         $constraintProphecy = $this->prophesize(ConstraintInterface::class);
@@ -130,6 +132,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         // Test part: getConstraint returns simple constraint, and should push to andWhere()
         $constraintProphecy = $this->prophesize(ComparisonInterface::class);
@@ -158,6 +161,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         $constraintProphecy = $this->prophesize(NotInterface::class);
         $subConstraintProphecy = $this->prophesize(ComparisonInterface::class);
@@ -187,6 +191,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         $constraintProphecy = $this->prophesize(AndInterface::class);
         $queryProphecy->getConstraint()->willReturn($constraintProphecy->reveal());
@@ -224,6 +229,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         $constraintProphecy = $this->prophesize(AndInterface::class);
         $queryProphecy->getConstraint()->willReturn($constraintProphecy->reveal());
@@ -256,6 +262,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         $constraintProphecy = $this->prophesize(OrInterface::class);
         $queryProphecy->getConstraint()->willReturn($constraintProphecy->reveal());
@@ -293,6 +300,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
         $sourceProphecy = $this->prophesize(SourceInterface::class);
         $queryProphecy->getSource()->willReturn($sourceProphecy->reveal());
         $queryProphecy->getOrderings()->willReturn([]);
+        $queryProphecy->getStatement()->willReturn(null);
 
         $constraintProphecy = $this->prophesize(OrInterface::class);
         $queryProphecy->getConstraint()->willReturn($constraintProphecy->reveal());
@@ -609,9 +617,9 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
     {
         return [
             'in be: include all' => ['BE', true, [], true, ''],
-            'in be: ignore enable fields but do not include deleted' => ['BE', true, [], false, 'tx_foo_table.deleted_column = 0'],
+            'in be: ignore enable fields but do not include deleted' => ['BE', true, [], false, 'tx_foo_table.deleted_column=0'],
             'in be: respect enable fields but include deleted' => ['BE', false, [], true, '(tx_foo_table.disabled_column = 0) AND (tx_foo_table.starttime_column <= 123456789)'],
-            'in be: respect enable fields and do not include deleted' => ['BE', false, [], false, '(tx_foo_table.disabled_column = 0) AND (tx_foo_table.starttime_column <= 123456789) AND tx_foo_table.deleted_column = 0'],
+            'in be: respect enable fields and do not include deleted' => ['BE', false, [], false, '(tx_foo_table.disabled_column = 0) AND (tx_foo_table.starttime_column <= 123456789) AND tx_foo_table.deleted_column=0'],
             'in fe: include all' => ['FE', true, [], true, ''],
             'in fe: ignore enable fields but do not include deleted' => ['FE', true, [], false, 'tx_foo_table.deleted_column=0'],
             'in fe: ignore only starttime and do not include deleted' => ['FE', true, ['starttime'], false, '(tx_foo_table.deleted_column = 0) AND (tx_foo_table.disabled_column = 0)'],
@@ -680,7 +688,7 @@ class Typo3DbQueryParserTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestC
     {
         return [
             'in be: respectEnableFields=false' => ['BE', false, ''],
-            'in be: respectEnableFields=true' => ['BE', true, '(tx_foo_table.disabled_column = 0) AND (tx_foo_table.starttime_column <= 123456789) AND tx_foo_table.deleted_column = 0'],
+            'in be: respectEnableFields=true' => ['BE', true, '(tx_foo_table.disabled_column = 0) AND (tx_foo_table.starttime_column <= 123456789) AND tx_foo_table.deleted_column=0'],
             'in FE: respectEnableFields=false' => ['FE', false, ''],
             'in FE: respectEnableFields=true' => ['FE', true, '(tx_foo_table.deleted_column = 0) AND (tx_foo_table.disabled_column = 0) AND (tx_foo_table.starttime_column <= 123456789)']
         ];

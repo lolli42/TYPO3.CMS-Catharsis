@@ -11,7 +11,7 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-import $ = require('jquery');
+import * as $ from 'jquery';
 import Modal = require('TYPO3/CMS/Backend/Modal');
 import Severity = require('TYPO3/CMS/Backend/Severity');
 
@@ -45,7 +45,7 @@ class RenameFile {
         fileTarget: form.find('input[name="data[rename][0][destination]"]').val(),
       },
       success: (response: any): void => {
-        const fileExists: boolean = response !== false;
+        const fileExists: boolean = typeof response.uid !== 'undefined';
         const originalFileName: string = fileNameField.data('original');
         const newFileName: string = fileNameField.val();
 
@@ -77,8 +77,10 @@ class RenameFile {
             ]);
 
           modal.on('button.clicked', (event: any): void => {
-            conflictModeField.val(event.target.name);
-            form.submit();
+            if (event.target.name !== 'cancel') {
+              conflictModeField.val(event.target.name);
+              form.submit();
+            }
             Modal.dismiss();
           });
         } else {

@@ -41,7 +41,7 @@ class SystemEnvironmentBuilderTest extends \TYPO3\TestingFramework\Core\Unit\Uni
     {
         $fileName = $this->getUniqueId('filename');
         $data = [];
-        $phpExtensions = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', 'php,php3,php4,php5,php6,phpsh,phtml', true);
+        $phpExtensions = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', 'php,php3,php4,php5,php6,phpsh,phtml,pht', true);
         foreach ($phpExtensions as $extension) {
             $data[] = [$fileName . '.' . $extension];
             $data[] = [$fileName . '.' . $extension . '.txt'];
@@ -108,16 +108,6 @@ class SystemEnvironmentBuilderTest extends \TYPO3\TestingFramework\Core\Unit\Uni
     /**
      * @test
      */
-    public function initializeGlobalVariablesUnsetsGlobalErrorArray()
-    {
-        $GLOBALS['error'] = 'foo';
-        $this->subject->_call('initializeGlobalVariables');
-        $this->assertFalse(isset($GLOBALS['error']));
-    }
-
-    /**
-     * @test
-     */
     public function initializeGlobalVariablesSetsGlobalTypo3MiscArray()
     {
         unset($GLOBALS['TYPO3_MISC']);
@@ -153,7 +143,6 @@ class SystemEnvironmentBuilderTest extends \TYPO3\TestingFramework\Core\Unit\Uni
     public function initializeGlobalTimeTrackingVariablesSetsGlobalVariablesDataProvider()
     {
         return [
-            'PARSETIME_START' => ['PARSETIME_START'],
             'EXEC_TIME' => ['EXEC_TIME'],
             'ACCESS_TIME' => ['ACCESS_TIME'],
             'SIM_EXEC_TIME' => ['SIM_EXEC_TIME'],

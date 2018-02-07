@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Core\Authentication;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -38,6 +39,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class BackendUserAuthentication extends AbstractUserAuthentication
 {
+    const ROLE_SYSTEMMAINTAINER = 'systemMaintainer';
+
     /**
      * Should be set to the usergroup-column (id-list) in the user-record
      * @var string
@@ -159,7 +162,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
 
     /**
      * Cache for checkWorkspaceCurrent()
-     * @var array|NULL
+     * @var array|null
      */
     public $checkWorkspaceCurrent_cache = null;
 
@@ -244,7 +247,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
     public $writeAttemptLog = true;
 
     /**
-     * Session timeout (on the server)
+     * Session timeout (on the server), defaults to 8 hours for backend user
      *
      * If >0: session-timeout in seconds.
      * If <=0: Instant logout after login.
@@ -252,7 +255,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
      *
      * @var int
      */
-    public $sessionTimeout = 6000;
+    public $sessionTimeout = 28800;
 
     /**
      * @var int
@@ -366,7 +369,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
      * @param string $readPerms Content of "->getPagePermsClause(1)" (read-permissions). If not set, they will be internally calculated (but if you have the correct value right away you can save that database lookup!)
      * @param bool|int $exitOnError If set, then the function will exit with an error message.
      * @throws \RuntimeException
-     * @return int|NULL The page UID of a page in the rootline that matched a mount point
+     * @return int|null The page UID of a page in the rootline that matched a mount point
      */
     public function isInWebMount($id, $readPerms = '', $exitOnError = 0)
     {
@@ -380,7 +383,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             $id = (int)$checkRec['t3ver_oid'];
         }
         if (!$readPerms) {
-            $readPerms = $this->getPagePermsClause(1);
+            $readPerms = $this->getPagePermsClause(Permission::PAGE_SHOW);
         }
         if ($id > 0) {
             $wM = $this->returnWebmounts();
@@ -426,6 +429,13 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             }
             return false;
         }
+        // Returns false if conf[access] is set to system maintainers and the user is system maintainer
+        if (strpos($conf['access'], self::ROLE_SYSTEMMAINTAINER) !== false && !$this->isSystemMaintainer()) {
+            if ($exitOnError) {
+                throw new \RuntimeException('This module "' . $conf['name'] . '" is only available as system maintainer', 1504804727);
+            }
+            return false;
+        }
         // Returns TRUE if conf[access] is not set at all or if the user is admin
         if (!$conf['access'] || $this->isAdmin()) {
             return true;
@@ -437,9 +447,47 @@ class BackendUserAuthentication extends AbstractUserAuthentication
         }
         if (!$acs && $exitOnError) {
             throw new \RuntimeException('Access Error: You don\'t have access to this module.', 1294586448);
-        } else {
-            return $acs;
         }
+        return $acs;
+    }
+
+    /**
+     * Checks if the user is in the valid list of allowed system maintainers. if the list is not set,
+     * then all admins are system maintainers. If the list is empty, no one is system maintainer (good for production
+     * systems). If the currently logged in user is in "switch user" mode, this method will return false.
+     *
+     * @return bool
+     */
+    public function isSystemMaintainer(): bool
+    {
+        if ((int)$GLOBALS['BE_USER']->user['ses_backuserid'] !== 0) {
+            return false;
+        }
+        if (GeneralUtility::getApplicationContext()->isDevelopment() && $this->isAdmin()) {
+            return true;
+        }
+        $systemMaintainers = $GLOBALS['TYPO3_CONF_VARS']['SYS']['systemMaintainers'] ?? [];
+        $systemMaintainers = array_map('intval', $systemMaintainers);
+        if (!empty($systemMaintainers)) {
+            return in_array((int)$this->user['uid'], $systemMaintainers, true);
+        }
+        // No system maintainers set up yet, so any admin is allowed to access the modules
+        // but explicitly no system maintainers allowed (empty string in TYPO3_CONF_VARS).
+        // @todo: this needs to be adjusted once system maintainers can log into the install tool with their credentials
+        if (isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['systemMaintainers'])
+            && empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['systemMaintainers'])) {
+            return false;
+        }
+        return $this->isAdmin();
+    }
+
+    /**
+     * If a user has actually logged in and switched to a different user (admins can use the SU switch user method)
+     * the real UID is sometimes needed (when checking for permissions for example).
+     */
+    protected function getRealUserId(): int
+    {
+        return (int)($GLOBALS['BE_USER']->user['ses_backuserid'] ?: $this->user['uid']);
     }
 
     /**
@@ -508,16 +556,13 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             // ****************
             // getPagePermsClause-HOOK
             // ****************
-            if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getPagePermsClause'])) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getPagePermsClause'] as $_funcRef) {
-                    $_params = ['currentClause' => $constraint, 'perms' => $perms];
-                    $constraint = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-                }
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getPagePermsClause'] ?? [] as $_funcRef) {
+                $_params = ['currentClause' => $constraint, 'perms' => $perms];
+                $constraint = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
             }
             return $constraint;
-        } else {
-            return ' 1=0';
         }
+        return ' 1=0';
     }
 
     /**
@@ -536,7 +581,8 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             return Permission::ALL;
         }
         // Return 0 if page is not within the allowed web mount
-        if (!$this->isInWebMount($row['uid'])) {
+        // Always do this for the default language page record
+        if (!$this->isInWebMount($row[$GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField']] ?: $row['uid'])) {
             return Permission::NOTHING;
         }
         $out = Permission::NOTHING;
@@ -555,14 +601,12 @@ class BackendUserAuthentication extends AbstractUserAuthentication
         // ****************
         // CALCPERMS hook
         // ****************
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['calcPerms'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['calcPerms'] as $_funcRef) {
-                $_params = [
-                    'row' => $row,
-                    'outputPermissions' => $out
-                ];
-                $out = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['calcPerms'] ?? [] as $_funcRef) {
+            $_params = [
+                'row' => $row,
+                'outputPermissions' => $out
+            ];
+            $out = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
         }
         return $out;
     }
@@ -688,25 +732,16 @@ class BackendUserAuthentication extends AbstractUserAuthentication
     public function checkFullLanguagesAccess($table, $record)
     {
         $recordLocalizationAccess = $this->checkLanguageAccess(0);
-        if ($recordLocalizationAccess && (BackendUtility::isTableLocalizable($table) || $table === 'pages')) {
-            if ($table === 'pages') {
-                $l10nTable = 'pages_language_overlay';
-                $pointerField = $GLOBALS['TCA'][$l10nTable]['ctrl']['transOrigPointerField'];
-                $pointerValue = $record['uid'];
-            } else {
-                $l10nTable = $table;
-                $pointerField = $GLOBALS['TCA'][$l10nTable]['ctrl']['transOrigPointerField'];
-                $pointerValue = $record[$pointerField] > 0 ? $record[$pointerField] : $record['uid'];
-            }
-
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($l10nTable);
+        if ($recordLocalizationAccess && BackendUtility::isTableLocalizable($table)) {
+            $pointerField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
+            $pointerValue = $record[$pointerField] > 0 ? $record[$pointerField] : $record['uid'];
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
             $queryBuilder->getRestrictions()
                 ->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
                 ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
-
             $recordLocalization = $queryBuilder->select('*')
-                ->from($l10nTable)
+                ->from($table)
                 ->where(
                     $queryBuilder->expr()->eq(
                         $pointerField,
@@ -719,7 +754,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
 
             if (is_array($recordLocalization)) {
                 $languageAccess = $this->checkLanguageAccess(
-                    $recordLocalization[$GLOBALS['TCA'][$l10nTable]['ctrl']['languageField']]
+                    $recordLocalization[$GLOBALS['TCA'][$table]['ctrl']['languageField']]
                 );
                 $recordLocalizationAccess = $recordLocalizationAccess && $languageAccess;
             }
@@ -764,13 +799,17 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             }
         }
         // Checking languages:
+        if ($table === 'pages' && $checkFullLanguageAccess && !$this->checkFullLanguagesAccess($table, $idOrRow)) {
+            return false;
+        }
         if ($GLOBALS['TCA'][$table]['ctrl']['languageField']) {
             // Language field must be found in input row - otherwise it does not make sense.
             if (isset($idOrRow[$GLOBALS['TCA'][$table]['ctrl']['languageField']])) {
                 if (!$this->checkLanguageAccess($idOrRow[$GLOBALS['TCA'][$table]['ctrl']['languageField']])) {
                     $this->errorMsg = 'ERROR: Language was not allowed.';
                     return false;
-                } elseif (
+                }
+                if (
                     $checkFullLanguageAccess && $idOrRow[$GLOBALS['TCA'][$table]['ctrl']['languageField']] == 0
                     && !$this->checkFullLanguagesAccess($table, $idOrRow)
                 ) {
@@ -782,11 +821,6 @@ class BackendUserAuthentication extends AbstractUserAuthentication
                     . $GLOBALS['TCA'][$table]['ctrl']['languageField'] . '" was not found in testing record!';
                 return false;
             }
-        } elseif (
-            $table === 'pages' && $checkFullLanguageAccess &&
-            !$this->checkFullLanguagesAccess($table, $idOrRow)
-        ) {
-            return false;
         }
         // Checking authMode fields:
         if (is_array($GLOBALS['TCA'][$table]['columns'])) {
@@ -822,16 +856,14 @@ class BackendUserAuthentication extends AbstractUserAuthentication
         // Checking record permissions
         // THIS is where we can include a check for "perms_" fields for other records than pages...
         // Process any hooks
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['recordEditAccessInternals'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['recordEditAccessInternals'] as $funcRef) {
-                $params = [
-                    'table' => $table,
-                    'idOrRow' => $idOrRow,
-                    'newRecord' => $newRecord
-                ];
-                if (!GeneralUtility::callUserFunction($funcRef, $params, $this)) {
-                    return false;
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['recordEditAccessInternals'] ?? [] as $funcRef) {
+            $params = [
+                'table' => $table,
+                'idOrRow' => $idOrRow,
+                'newRecord' => $newRecord
+            ];
+            if (!GeneralUtility::callUserFunction($funcRef, $params, $this)) {
+                return false;
             }
         }
         // Finally, return TRUE if all is well.
@@ -916,36 +948,32 @@ class BackendUserAuthentication extends AbstractUserAuthentication
                     // No versioning, basic error, inconsistency even! Such records should not have a pid of -1!
                     if (!$GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
                         return 'Versioning disabled for table';
-                    } elseif ((int)$recData['t3ver_wsid'] !== $this->workspace) {
+                    }
+                    if ((int)$recData['t3ver_wsid'] !== $this->workspace) {
                         // So does workspace match?
                         return 'Workspace ID of record didn\'t match current workspace';
-                    } else {
-                        // So is the user allowed to "use" the edit stage within the workspace?
-                        return $this->workspaceCheckStageForCurrent(0)
+                    }
+                    // So is the user allowed to "use" the edit stage within the workspace?
+                    return $this->workspaceCheckStageForCurrent(0)
                             ? false
                             : 'User\'s access level did not allow for editing';
-                    }
-                } else {
-                    // We are testing a "live" record:
-                    // For "Live" records, check that PID for table allows editing
-                    if ($res = $this->workspaceAllowLiveRecordsInPID($recData['pid'], $table)) {
-                        // Live records are OK in this branch, but what about the stage of branch point, if any:
-                        // OK
-                        return $res > 0
+                }
+                // We are testing a "live" record:
+                // For "Live" records, check that PID for table allows editing
+                if ($res = $this->workspaceAllowLiveRecordsInPID($recData['pid'], $table)) {
+                    // Live records are OK in this branch, but what about the stage of branch point, if any:
+                    // OK
+                    return $res > 0
                             ? false
                             : 'Stage for versioning root point and users access level did not allow for editing';
-                    } else {
-                        // If not offline and not in versionized branch, output error:
-                        return 'Online record was not in versionized branch!';
-                    }
                 }
-            } else {
-                return 'No record';
+                // If not offline and not in versionized branch, output error:
+                return 'Online record was not in versionized branch!';
             }
-        } else {
-            // OK because workspace is 0
-            return false;
+            return 'No record';
         }
+        // OK because workspace is 0
+        return false;
     }
 
     /**
@@ -965,15 +993,12 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             if (is_array($recData)) {
                 if ((int)$recData['pid'] === -1) {
                     return $this->workspaceCannotEditRecord($table, $recData);
-                } else {
-                    return 'Not an offline version';
                 }
-            } else {
-                return 'No record';
+                return 'Not an offline version';
             }
-        } else {
-            return 'Table does not support versioning.';
+            return 'No record';
         }
+        return 'Table does not support versioning.';
     }
 
     /**
@@ -998,10 +1023,9 @@ class BackendUserAuthentication extends AbstractUserAuthentication
         ) {
             // OK to create for this table.
             return 2;
-        } else {
-            // If the answer is FALSE it means the only valid way to create or edit records in the PID is by versioning
-            return false;
         }
+        // If the answer is FALSE it means the only valid way to create or edit records in the PID is by versioning
+        return false;
     }
 
     /**
@@ -1094,9 +1118,8 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             } elseif ($stage == -10 || $stage == -20) {
                 if ($stat['_ACCESS'] === 'owner') {
                     return true;
-                } else {
-                    return false;
                 }
+                return false;
             } else {
                 $memberStageLimit = $this->workspaceRec['review_stage_edit'] ? 1 : 0;
                 if (
@@ -1159,9 +1182,8 @@ class BackendUserAuthentication extends AbstractUserAuthentication
     {
         if ($this->workspace > 0 && (int)$this->workspaceRec['swap_modes'] === 2) {
             return false;
-        } else {
-            return true;
         }
+        return true;
     }
 
     /**
@@ -1184,12 +1206,12 @@ class BackendUserAuthentication extends AbstractUserAuthentication
         if ($key !== '') {
             if (count($parts) > 1 && $parts[1] !== '') {
                 // Go on, get the next level
-                if (is_array($config[$key . '.'])) {
+                if (is_array($config[$key . '.'] ?? false)) {
                     $TSConf = $this->getTSConfig($parts[1], $config[$key . '.']);
                 }
             } else {
-                $TSConf['value'] = $config[$key];
-                $TSConf['properties'] = $config[$key . '.'];
+                $TSConf['value'] = $config[$key] ?? null;
+                $TSConf['properties'] = $config[$key . '.'] ?? null;
             }
         }
         return $TSConf;
@@ -1346,14 +1368,15 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             } else {
                 // Parsing the user TSconfig (or getting from cache)
                 $hash = md5('userTS:' . $this->userTS_text);
-                $cachedContent = BackendUtility::getHash($hash);
+                $cache = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
+                $cachedContent = $cache->get($hash);
                 if (is_array($cachedContent) && !$this->userTS_dontGetCached) {
                     $this->userTS = $cachedContent;
                 } else {
                     $parseObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
                     $parseObj->parse($this->userTS_text);
                     $this->userTS = $parseObj->setup;
-                    BackendUtility::storeHash($hash, $this->userTS, 'BE_USER_TSconfig');
+                    $cache->set($hash, $this->userTS, ['ident_BE_USER_TSconfig'], 0);
                     // Update UC:
                     $this->userTSUpdated = true;
                 }
@@ -1390,7 +1413,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
                     ->from('pages')
                     // @todo DOCTRINE: check how to make getPagePermsClause() portable
                     ->where(
-                        $this->getPagePermsClause(1),
+                        $this->getPagePermsClause(Permission::PAGE_SHOW),
                         $queryBuilder->expr()->in(
                             'uid',
                             $queryBuilder->createNamedParameter(
@@ -1451,12 +1474,10 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             )
         );
         // Hook for manipulation of the WHERE sql sentence which controls which BE-groups are included
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['fetchGroupQuery'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['fetchGroupQuery'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'fetchGroupQuery_processQuery')) {
-                    $constraints = $hookObj->fetchGroupQuery_processQuery($this, $grList, $idList, (string)$constraints);
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['fetchGroupQuery'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'fetchGroupQuery_processQuery')) {
+                $constraints = $hookObj->fetchGroupQuery_processQuery($this, $grList, $idList, (string)$constraints);
             }
         }
         $res = $queryBuilder->select('*')
@@ -1511,11 +1532,9 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             }
         }
         // HOOK: fetchGroups_postProcessing
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['fetchGroups_postProcessing'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['fetchGroups_postProcessing'] as $_funcRef) {
-                $_params = [];
-                GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['fetchGroups_postProcessing'] ?? [] as $_funcRef) {
+            $_params = [];
+            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
         }
     }
 
@@ -1948,33 +1967,30 @@ class BackendUserAuthentication extends AbstractUserAuthentication
         }
 
         // HOOK: getDefaultUploadFolder
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getDefaultUploadFolder'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getDefaultUploadFolder'] as $_funcRef) {
-                $_params = [
-                    'uploadFolder' => $uploadFolder,
-                    'pid' => $pid,
-                    'table' => $table,
-                    'field' => $field,
-                ];
-                $uploadFolder = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['getDefaultUploadFolder'] ?? [] as $_funcRef) {
+            $_params = [
+                'uploadFolder' => $uploadFolder,
+                'pid' => $pid,
+                'table' => $table,
+                'field' => $field,
+            ];
+            $uploadFolder = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
         }
 
         if ($uploadFolder instanceof \TYPO3\CMS\Core\Resource\Folder) {
             return $uploadFolder;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
-    * Returns a \TYPO3\CMS\Core\Resource\Folder object that could be used for uploading
-    * temporary files in user context. The folder _temp_ below the default upload folder
-    * of the user is used.
-    *
-    * @return NULL|\TYPO3\CMS\Core\Resource\Folder
-    * @see \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::getDefaultUploadFolder();
-    */
+     * Returns a \TYPO3\CMS\Core\Resource\Folder object that could be used for uploading
+     * temporary files in user context. The folder _temp_ below the default upload folder
+     * of the user is used.
+     *
+     * @return \TYPO3\CMS\Core\Resource\Folder|null
+     * @see \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::getDefaultUploadFolder();
+     */
     public function getDefaultUploadTemporaryFolder()
     {
         $defaultTemporaryFolder = null;
@@ -2037,7 +2053,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
      */
     protected function initializeDbMountpointsInWorkspace()
     {
-        $dbMountpoints = trim($this->workspaceRec['db_mountpoints']);
+        $dbMountpoints = trim($this->workspaceRec['db_mountpoints'] ?? '');
         if ($this->workspace > 0 && $dbMountpoints != '') {
             $filteredDbMountpoints = [];
             // Notice: We cannot call $this->getPagePermsClause(1);
@@ -2097,8 +2113,8 @@ class BackendUserAuthentication extends AbstractUserAuthentication
         if (is_array($wsRec)) {
             if ($this->isAdmin()) {
                 return array_merge($wsRec, ['_ACCESS' => 'admin']);
-            } else {
-                switch ((string)$wsRec['uid']) {
+            }
+            switch ((string)$wsRec['uid']) {
                     case '0':
                         $retVal = $this->groupData['workspace_perms'] & Permission::PAGE_SHOW
                             ? array_merge($wsRec, ['_ACCESS' => 'online'])
@@ -2136,7 +2152,6 @@ class BackendUserAuthentication extends AbstractUserAuthentication
                             }
                         }
                 }
-            }
         }
         return $retVal;
     }
@@ -2245,7 +2260,7 @@ class BackendUserAuthentication extends AbstractUserAuthentication
             // Traverse custom workspaces:
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_workspace');
             $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(RootLevelRestriction::class));
-            $workspaces = $queryBuilder->select('uid', 'title', 'adminusers', 'reviewers')
+            $workspaces = $queryBuilder->select('uid', 'title', 'adminusers', 'members', 'reviewers')
                 ->from('sys_workspace')
                 ->orderBy('title')
                 ->execute()
@@ -2501,8 +2516,16 @@ This is a dump of the failures:
                 if ($this->isUserAllowedToLogin()) {
                     // Setting the UC array. It's needed with fetchGroupData first, due to default/overriding of values.
                     $this->backendSetUC();
-                    // Email at login - if option set.
-                    $this->emailAtLogin();
+                    if ($this->loginSessionStarted) {
+                        // Process hooks
+                        $hooks = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauthgroup.php']['backendUserLogin'];
+                        foreach ($hooks ?? [] as $_funcRef) {
+                            $_params = ['user' => $this->user];
+                            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
+                        }
+                        // Email at login, if feature is enabled in configuration
+                        $this->emailAtLogin();
+                    }
                 } else {
                     throw new \RuntimeException('Login Error: TYPO3 is in maintenance mode at the moment. Only administrators are allowed access.', 1294585860);
                 }
@@ -2585,54 +2608,51 @@ This is a dump of the failures:
     }
 
     /**
-     * Will send an email notification to warning_email_address/the login users email address when a login session is just started.
-     * Depends on various parameters whether mails are send and to whom.
+     * Sends an email notification to warning_email_address and/or the logged-in user's email address.
      *
      * @access private
      */
     private function emailAtLogin()
     {
-        if ($this->loginSessionStarted) {
-            // Send notify-mail
-            $subject = 'At "' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '"' . ' from '
-                . GeneralUtility::getIndpEnv('REMOTE_ADDR')
-                . (GeneralUtility::getIndpEnv('REMOTE_HOST') ? ' (' . GeneralUtility::getIndpEnv('REMOTE_HOST') . ')' : '');
-            $msg = sprintf(
-                'User "%s" logged in from %s (%s) at "%s" (%s)',
-                $this->user['username'],
-                GeneralUtility::getIndpEnv('REMOTE_ADDR'),
-                GeneralUtility::getIndpEnv('REMOTE_HOST'),
-                $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'],
-                GeneralUtility::getIndpEnv('HTTP_HOST')
-            );
-            // Warning email address
-            if ($GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr']) {
-                $warn = 0;
-                $prefix = '';
-                if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['warning_mode'] & 1) {
-                    // first bit: All logins
-                    $warn = 1;
-                    $prefix = $this->isAdmin() ? '[AdminLoginWarning]' : '[LoginWarning]';
-                }
-                if ($this->isAdmin() && (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['warning_mode'] & 2) {
-                    // second bit: Only admin-logins
-                    $warn = 1;
-                    $prefix = '[AdminLoginWarning]';
-                }
-                if ($warn) {
-                    /** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
-                    $mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
-                    $mail->setTo($GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'])->setSubject($prefix . ' ' . $subject)->setBody($msg);
-                    $mail->send();
-                }
+        // Send notify-mail
+        $subject = 'At "' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '"' . ' from '
+            . GeneralUtility::getIndpEnv('REMOTE_ADDR')
+            . (GeneralUtility::getIndpEnv('REMOTE_HOST') ? ' (' . GeneralUtility::getIndpEnv('REMOTE_HOST') . ')' : '');
+        $msg = sprintf(
+            'User "%s" logged in from %s (%s) at "%s" (%s)',
+            $this->user['username'],
+            GeneralUtility::getIndpEnv('REMOTE_ADDR'),
+            GeneralUtility::getIndpEnv('REMOTE_HOST'),
+            $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'],
+            GeneralUtility::getIndpEnv('HTTP_HOST')
+        );
+        // Warning email address
+        if ($GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr']) {
+            $warn = 0;
+            $prefix = '';
+            if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['warning_mode'] & 1) {
+                // first bit: All logins
+                $warn = 1;
+                $prefix = $this->isAdmin() ? '[AdminLoginWarning]' : '[LoginWarning]';
             }
-            // If An email should be sent to the current user, do that:
-            if ($this->uc['emailMeAtLogin'] && strstr($this->user['email'], '@')) {
+            if ($this->isAdmin() && (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['warning_mode'] & 2) {
+                // second bit: Only admin-logins
+                $warn = 1;
+                $prefix = '[AdminLoginWarning]';
+            }
+            if ($warn) {
                 /** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
                 $mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
-                $mail->setTo($this->user['email'])->setSubject($subject)->setBody($msg);
+                $mail->setTo($GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'])->setSubject($prefix . ' ' . $subject)->setBody($msg);
                 $mail->send();
             }
+        }
+        // Trigger an email to the current BE user, if this has been enabled in the user configuration
+        if ($this->uc['emailMeAtLogin'] && strstr($this->user['email'], '@')) {
+            /** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
+            $mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
+            $mail->setTo($this->user['email'])->setSubject($subject)->setBody($msg);
+            $mail->send();
         }
     }
 

@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Linkvalidator\LinkAnalyzer;
 
@@ -162,20 +163,18 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
         } else {
             $this->searchLevel = $this->pObj->MOD_SETTINGS['searchlevel'];
         }
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] as $linkType => $value) {
-                // Compile list of all available types. Used for checking with button "Check Links".
-                if (strpos($this->modTS['linktypes'], $linkType) !== false) {
-                    $this->availableOptions[$linkType] = 1;
-                }
-                // Compile list of types currently selected by the checkboxes
-                if ($this->pObj->MOD_SETTINGS[$linkType] && empty($set) || $set[$linkType]) {
-                    $this->checkOpt[$linkType] = 1;
-                    $this->pObj->MOD_SETTINGS[$linkType] = 1;
-                } else {
-                    $this->pObj->MOD_SETTINGS[$linkType] = 0;
-                    unset($this->checkOpt[$linkType]);
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] ?? [] as $linkType => $value) {
+            // Compile list of all available types. Used for checking with button "Check Links".
+            if (strpos($this->modTS['linktypes'], $linkType) !== false) {
+                $this->availableOptions[$linkType] = 1;
+            }
+            // Compile list of types currently selected by the checkboxes
+            if ($this->pObj->MOD_SETTINGS[$linkType] && empty($set) || $set[$linkType]) {
+                $this->checkOpt[$linkType] = 1;
+                $this->pObj->MOD_SETTINGS[$linkType] = 1;
+            } else {
+                $this->pObj->MOD_SETTINGS[$linkType] = 0;
+                unset($this->checkOpt[$linkType]);
             }
         }
         $this->getBackendUser()->pushModuleData('web_info', $this->pObj->MOD_SETTINGS);
@@ -226,8 +225,6 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
             ];
         }
 
-        // @todo: Use $this-moduleTemplate as soon as this class extends from AbstractModule
-        /** @var ModuleTemplate $moduleTemplate */
         $moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         return $moduleTemplate->getDynamicTabMenu($menuItems, 'report-linkvalidator');
     }
@@ -237,16 +234,14 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
      */
     protected function initialize()
     {
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] as $linkType => $className) {
-                $this->hookObjectsArr[$linkType] = GeneralUtility::makeInstance($className);
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] ?? [] as $linkType => $className) {
+            $this->hookObjectsArr[$linkType] = GeneralUtility::makeInstance($className);
         }
 
         $this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
         $this->doc->setModuleTemplate('EXT:linkvalidator/Resources/Private/Templates/mod_template.html');
 
-        $this->pageRecord = BackendUtility::readPageAccess($this->pObj->id, $this->getBackendUser()->getPagePermsClause(1));
+        $this->pageRecord = BackendUtility::readPageAccess($this->pObj->id, $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW));
         if ($this->pObj->id && is_array($this->pageRecord) || !$this->pObj->id && $this->isCurrentUserAdmin()) {
             $this->isAccessibleForCurrentUser = true;
         }
@@ -285,7 +280,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
                 $this->pObj->id,
                 $this->searchLevel,
                 0,
-                $this->getBackendUser()->getPagePermsClause(1),
+                $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW),
                 $this->modTS['checkhidden']
             );
             if ($this->pObj->pageinfo['hidden'] == 0 || $this->modTS['checkhidden']) {
@@ -437,7 +432,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
             $currentPageUid,
             $this->searchLevel,
             0,
-            $this->getBackendUser()->getPagePermsClause(1),
+            $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW),
             $this->modTS['checkhidden']
         );
         // Always add the current page, because we are just displaying the results
@@ -551,7 +546,9 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
         $requestUri = GeneralUtility::getIndpEnv('REQUEST_URI') .
             '&id=' . $this->pObj->id .
             '&search_levels=' . $this->searchLevel;
-        $url = BackendUtility::getModuleUrl('record_edit', [
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $url = (string)$uriBuilder->buildUriFromRoute('record_edit', [
             'edit' => [
                 $table => [
                     $row['record_uid'] => 'edit'
@@ -655,7 +652,8 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 
                         $hookSectionContent .= $this->templateService->substituteMarkerArray(
                             $hookSectionTemplate,
-                            $hookSectionMarker, '###|###',
+                            $hookSectionMarker,
+                            '###|###',
                             true,
                             true
                         );

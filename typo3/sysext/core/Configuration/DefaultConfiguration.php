@@ -16,7 +16,7 @@
  * This file contains the default array definition that is
  * later populated as $GLOBALS['TYPO3_CONF_VARS']
  *
- * The description of the various options is stored in the DefaultConfigurationDescription.php file
+ * The description of the various options is stored in the DefaultConfigurationDescription.yaml file
  */
 return [
     'GFX' => [ // Configuration of the image processing features in TYPO3. 'IM' and 'GD' are short for ImageMagick and GD library respectively.
@@ -30,15 +30,14 @@ return [
         'processor_path' => '/usr/bin/',
         'processor_path_lzw' => '/usr/bin/',
         'processor' => 'ImageMagick',
-        'processor_effects' => 0,
+        'processor_effects' => false,
         'processor_allowUpscaling' => true,
         'processor_allowFrameSelection' => true,
         'processor_allowTemporaryMasksAsPng' => false,
         'processor_stripColorProfileByDefault' => true,
         'processor_stripColorProfileCommand' => '+profile \'*\'',
         'processor_colorspace' => 'RGB',
-        'jpg_quality' => 70,
-        'png_truecolor' => true,
+        'jpg_quality' => 85,
     ],
     'SYS' => [
         // System related concerning both frontend and backend.
@@ -68,6 +67,9 @@ return [
         ],
         'fileCreateMask' => '0664',
         'folderCreateMask' => '2775',
+        'features' => [
+            'redirects.hitCount' => false
+        ],
         'createGroup' => '',
         'sitename' => 'TYPO3',
         'encryptionKey' => '',
@@ -77,8 +79,6 @@ return [
         'recursiveDomainSearch' => false,
         'trustedHostsPattern' => 'SERVER_NAME',
         'devIPmask' => '127.0.0.1,::1',
-        'sqlDebug' => 0,
-        'enable_DLOG' => false,
         'ddmmyy' => 'd-m-y',
         'hhmm' => 'H:i',
         'USdateFormat' => false,
@@ -88,16 +88,13 @@ return [
         'mediafile_ext' => 'gif,jpg,jpeg,bmp,png,pdf,svg,ai,mp3,wav,mp4,ogg,flac,opus,webm,youtube,vimeo',
         'binPath' => '',
         'binSetup' => '',
-        'no_pconnect' => true,
-        'dbClientCompress' => false,
-        'setDBinit' => '',
         'setMemoryLimit' => 0,
         'phpTimeZone' => '',
-        'systemLog' => '',
+        'systemLog' => false,
         'systemLogLevel' => 0,
-        'enableDeprecationLog' => '',
         'UTF8filesystem' => false,
         'systemLocale' => '',
+        'systemMaintainers' => null,    // @todo: This will be set up as an empty array once the installer can define a system maintainers
         'reverseProxyIP' => '',
         'reverseProxyHeaderMultiValue' => 'none',
         'reverseProxyPrefix' => '',
@@ -137,14 +134,6 @@ return [
                         'defaultLifetime' => 2592000, // 30 days; set this to a lower value in case your cache gets too big
                     ],
                     'groups' => ['pages']
-                ],
-                'cache_phpcode' => [
-                    'frontend' => \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend::class,
-                    'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
-                    'options' => [
-                        'defaultLifetime' => 0,
-                    ],
-                    'groups' => ['system']
                 ],
                 'cache_runtime' => [
                     'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
@@ -189,17 +178,9 @@ return [
                     'frontend' => \TYPO3\CMS\Fluid\Core\Cache\FluidTemplateCache::class,
                     'groups' => ['system'],
                 ],
-                'extbase_object' => [
-                    'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
-                    'backend' => \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class,
-                    'options' => [
-                        'defaultLifetime' => 0,
-                    ],
-                    'groups' => ['system']
-                ],
                 'extbase_reflection' => [
                     'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
-                    'backend' => \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class,
+                    'backend' => \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend::class,
                     'options' => [
                         'defaultLifetime' => 0,
                     ],
@@ -218,10 +199,7 @@ return [
         'debugExceptionHandler' => \TYPO3\CMS\Core\Error\DebugExceptionHandler::class,
         'errorHandler' => \TYPO3\CMS\Core\Error\ErrorHandler::class,
         'errorHandlerErrors' => E_ALL & ~(E_STRICT | E_NOTICE | E_COMPILE_WARNING | E_COMPILE_ERROR | E_CORE_WARNING | E_CORE_ERROR | E_PARSE | E_ERROR),
-        'exceptionalErrors' => E_ALL & ~(E_STRICT | E_NOTICE | E_COMPILE_WARNING | E_COMPILE_ERROR | E_CORE_WARNING | E_CORE_ERROR | E_PARSE | E_ERROR | E_DEPRECATED | E_WARNING | E_USER_ERROR | E_USER_NOTICE | E_USER_WARNING),
-        'enable_errorDLOG' => 0,
-        'enable_exceptionDLOG' => 0, // Boolean: If set,
-        'syslogErrorReporting' => E_ALL & ~(E_STRICT | E_NOTICE),
+        'exceptionalErrors' => E_ALL & ~(E_STRICT | E_NOTICE | E_COMPILE_WARNING | E_COMPILE_ERROR | E_CORE_WARNING | E_CORE_ERROR | E_PARSE | E_ERROR | E_DEPRECATED | E_USER_DEPRECATED | E_WARNING | E_USER_ERROR | E_USER_NOTICE | E_USER_WARNING),
         'belogErrorReporting' => E_ALL & ~(E_STRICT | E_NOTICE),
         'locallangXMLOverride' => [], // For extension/overriding of the arrays in 'locallang' files in frontend  and backend. See 'Inside TYPO3' for more information.
         'generateApacheHtaccess' => 1,
@@ -289,6 +267,16 @@ return [
         ],
         'fluid' => [
             'interceptors' => [],
+            'preProcessors' => [
+                \TYPO3Fluid\Fluid\Core\Parser\TemplateProcessor\EscapingModifierTemplateProcessor::class,
+                \TYPO3Fluid\Fluid\Core\Parser\TemplateProcessor\PassthroughSourceModifierTemplateProcessor::class,
+                \TYPO3Fluid\Fluid\Core\Parser\TemplateProcessor\NamespaceDetectionTemplateProcessor::class
+            ],
+            'expressionNodeTypes' => [
+                \TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\Expression\CastingExpressionNode::class,
+                \TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\Expression\MathExpressionNode::class,
+                \TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\Expression\TernaryExpressionNode::class
+            ],
             'namespaces' => [
                 'core' => [
                     'TYPO3\\CMS\\Core\\ViewHelpers'
@@ -308,17 +296,20 @@ return [
             'record' => \TYPO3\CMS\Core\LinkHandling\RecordLinkHandler::class,
         ],
         'livesearch' => [],  // Array: keywords used for commands to search for specific tables
-        'isInitialInstallationInProgress' => false,
-        'isInitialDatabaseImportDone' => true,
         'formEngine' => [
             'nodeRegistry' => [], // Array: Registry to add or overwrite FormEngine nodes. Main key is a timestamp of the date when an entry is added, sub keys type, priority and class are required. Class must implement TYPO3\CMS\Backend\Form\NodeInterface.
             'nodeResolver' => [], // Array: Additional node resolver. Main key is a timestamp of the date when an entry is added, sub keys type, priority and class are required. Class must implement TYPO3\CMS\Backend\Form\NodeResolverInterface.
             'formDataGroup' => [ // Array: Registry of form data providers for form data groups
                 'tcaDatabaseRecord' => [
                     \TYPO3\CMS\Backend\Form\FormDataProvider\ReturnUrl::class => [],
-                    \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class => [
+                    \TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class => [
                         'depends' => [
                             \TYPO3\CMS\Backend\Form\FormDataProvider\ReturnUrl::class,
+                        ],
+                    ],
+                    \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class => [
+                        'depends' => [
+                            \TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
                         ]
                     ],
                     \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow::class => [
@@ -326,9 +317,16 @@ return [
                             \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class,
                         ],
                     ],
-                    \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUserPermissionCheck::class => [
+                    \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseDefaultLanguagePageRow::class => [
                         'depends' => [
                             \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow::class,
+                        ],
+                    ],
+                    \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUserPermissionCheck::class => [
+                        'depends' => [
+                            \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseDefaultLanguagePageRow::class,
+                            \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow::class,
+                            \TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
                         ],
                     ],
                     \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEffectivePid::class => [
@@ -353,14 +351,9 @@ return [
                             \TYPO3\CMS\Backend\Form\FormDataProvider\UserTsConfig::class
                         ],
                     ],
-                    \TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class => [
-                        'depends' => [
-                            \TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfig::class,
-                        ],
-                    ],
                     \TYPO3\CMS\Backend\Form\FormDataProvider\InlineOverrideChildTca::class => [
                         'depends' => [
-                            \TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+                            \TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfig::class,
                         ],
                     ],
                     \TYPO3\CMS\Backend\Form\FormDataProvider\ParentPageTca::class => [
@@ -576,9 +569,14 @@ return [
                             \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class,
                         ],
                     ],
-                    \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUserPermissionCheck::class => [
+                    \TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class => [
                         'depends' => [
                             \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow::class,
+                        ],
+                    ],
+                    \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUserPermissionCheck::class => [
+                        'depends' => [
+                            \TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
                         ],
                     ],
                     \TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEffectivePid::class => [
@@ -809,25 +807,7 @@ return [
     'EXT' => [ // Options related to the Extension Management
         'allowGlobalInstall' => false,
         'allowLocalInstall' => true,
-        'allowSystemInstall' => false,
         'excludeForPackaging' => '(?:\\..*(?!htaccess)|.*~|.*\\.swp|.*\\.bak|\\.sass-cache|node_modules|bower_components)',
-        'extConf' => [
-            'saltedpasswords' => serialize([
-                'BE.' => [
-                    'saltedPWHashingMethod' => \TYPO3\CMS\Saltedpasswords\Salt\PhpassSalt::class,
-                    'forceSalted' => 0,
-                    'onlyAuthService' => 0,
-                    'updatePasswd' => 1,
-                ],
-                'FE.' => [
-                    'enabled' => 0,
-                    'saltedPWHashingMethod' => \TYPO3\CMS\Saltedpasswords\Salt\PhpassSalt::class,
-                    'forceSalted' => 0,
-                    'onlyAuthService' => 0,
-                    'updatePasswd' => 1,
-                ],
-            ]),
-        ],
         'runtimeActivatedPackages' => [],
     ],
     'BE' => [
@@ -842,7 +822,7 @@ return [
         'warning_email_addr' => '',
         'warning_mode' => '',
         'lockIP' => 4,
-        'sessionTimeout' => 3600,
+        'sessionTimeout' => 28800,  // a backend user logged in for 8 hours
         'IPmaskList' => '',
         'lockBeUserToDBmounts' => true,
         'lockSSL' => false,
@@ -858,45 +838,44 @@ return [
         'installToolPassword' => '',
         'checkStoredRecords' => true,
         'checkStoredRecordsLoose' => true,
-        'pageTree' => [
-            'preloadLimit' => 50
-        ],
         'defaultUserTSconfig' => 'options.enableBookmarks=1
-			options.file_list.enableDisplayBigControlPanel=selectable
-			options.file_list.enableDisplayThumbnails=selectable
-			options.file_list.enableClipBoard=selectable
-			options.pageTree {
-				doktypesToShowInNewPageDragArea = 1,6,4,7,3,254,255,199
-			}
+            options.file_list.enableDisplayBigControlPanel=selectable
+            options.file_list.enableDisplayThumbnails=selectable
+            options.file_list.enableClipBoard=selectable
+            options.file_list.thumbnail {
+                width = 64
+                height = 64
+            }
+            options.pageTree {
+                doktypesToShowInNewPageDragArea = 1,6,4,7,3,254,255,199
+            }
 
-			options.contextMenu {
-				table {
-					pages {
-						disableItems =
-						tree.disableItems =
-					}
-					sys_file {
-						disableItems =
-						tree.disableItems =
-					}
-					sys_filemounts {
-						disableItems =
-						tree.disableItems =
-					}
-				}
-			}
-		',
+            options.contextMenu {
+                table {
+                    pages {
+                        disableItems =
+                        tree.disableItems =
+                    }
+                    sys_file {
+                        disableItems =
+                        tree.disableItems =
+                    }
+                    sys_filemounts {
+                        disableItems =
+                        tree.disableItems =
+                    }
+                }
+            }
+        ',
         // String (exclude). Enter lines of default backend user/group TSconfig.
         'defaultPageTSconfig' => '
             mod.web_list.enableDisplayBigControlPanel=selectable
             mod.web_list.enableClipBoard=selectable
-            mod.web_list.enableLocalizationView=selectable
             mod.web_list.tableDisplayOrder {
                 be_users.after = be_groups
                 sys_filemounts.after = be_users
                 sys_file_storage.after = sys_filemounts
                 sys_language.after = sys_file_storage
-                pages_language_overlay.before = pages
                 fe_users.after = fe_groups
                 fe_users.before = pages
                 sys_template.after = pages
@@ -979,18 +958,24 @@ return [
                 iphone4.height = 480
 
             }
+            mod.web_info.fieldDefinitions {
+                0 {
+                    label = LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:pages_0
+                    fields = title,uid,alias,starttime,endtime,fe_group,target,url,shortcut,shortcut_mode
+                }
+                1 {
+                    label = LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:pages_1
+                    fields = title,uid,###ALL_TABLES###
+                }
+                2 {
+                    label = LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:pages_2
+                    fields = title,uid,lastUpdated,newUntil,cache_timeout,php_tree_stop,TSconfig,is_siteroot,fe_login_mode
+                }
+            }
         ',
         // String (exclude).Enter lines of default Page TSconfig.
         'defaultPermissions' => [],
         'defaultUC' => [],
-        // The control of file extensions goes in two categories. Webspace and Ftpspace. Webspace is folders accessible from a webbrowser (below TYPO3_DOCUMENT_ROOT) and ftpspace is everything else.
-        // The control is done like this: If an extension matches 'allow' then the check returns TRUE. If not and an extension matches 'deny' then the check return FALSE. If no match at all, returns TRUE.
-        // You list extensions comma-separated. If the value is a '*' every extension is matched
-        // If no file extension, TRUE is returned if 'allow' is '*', FALSE if 'deny' is '*' and TRUE if none of these matches
-        // This configuration below accepts everything in ftpspace and everything in webspace except php3,php4,php5 or php files
-        'fileExtensions' => [
-            'webspace' => ['allow' => '', 'deny' => PHP_EXTENSIONS_DEFAULT]
-        ],
         'customPermOptions' => [], // Array with sets of custom permission options. Syntax is; 'key' => array('header' => 'header string, language split', 'items' => array('key' => array('label, language split','icon reference', 'Description text, language split'))). Keys cannot contain ":|," characters.
         'fileDenyPattern' => FILE_DENY_PATTERN_DEFAULT,
         'interfaces' => 'backend',
@@ -1012,6 +997,7 @@ return [
         'compressionLevel' => 0,
         'pageNotFound_handling' => '',
         'pageNotFound_handling_statheader' => 'HTTP/1.0 404 Not Found',
+        'pageNotFound_handling_accessdeniedheader' => 'HTTP/1.0 403 Access denied',
         'pageNotFoundOnCHashError' => true,
         'pageUnavailable_handling' => '',
         'pageUnavailable_handling_statheader' => 'HTTP/1.0 503 Service Temporarily Unavailable',
@@ -1021,6 +1007,7 @@ return [
         'lockIP' => 2,
         'loginSecurityLevel' => '',
         'lifetime' => 0,
+        'sessionTimeout' => 6000,
         'sessionDataLifetime' => 86400,
         'permalogin' => 0,
         'cookieDomain' => '',
@@ -1035,16 +1022,17 @@ return [
             // array('IPmaskList_1','fe_group uid'), array('IPmaskList_2','fe_group uid')
         ],
         'get_url_id_token' => '#get_URL_ID_TOK#',
-        'content_doktypes' => '1,2,5,7',
         'enable_mount_pids' => true,
         'hidePagesIfNotTranslatedByDefault' => false,
         'eID_include' => [], // Array of key/value pairs where key is "tx_[ext]_[optional suffix]" and value is relative filename of class to include. Key is used as "?eID=" for \TYPO3\CMS\Frontend\Http\RequestHandlerRequestHandler to include the code file which renders the page from that point. (Useful for functionality that requires a low initialization footprint, eg. frontend ajax applications)
         'disableNoCacheParameter' => false,
-        'cacheHash' => [], // Array: Processed values of the cHash* parameters, handled by core bootstrap internally
-        'cHashExcludedParameters' => 'L, pk_campaign, pk_kwd, utm_source, utm_medium, utm_campaign, utm_term, utm_content',
-        'cHashOnlyForParameters' => '',
-        'cHashRequiredParameters' => '',
-        'cHashExcludedParametersIfEmpty' => '',
+        'cacheHash' => [
+            'cachedParametersWhiteList' => [],
+            'excludedParameters' => ['L', 'pk_campaign', 'pk_kwd', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'],
+            'requireCacheHashPresenceParameters' => [],
+            'excludeAllEmptyParameters' => false,
+            'excludedParametersIfEmpty' => []
+        ],
         'workspacePreviewLogoutTemplate' => '',
         'versionNumberInFilename' => 'querystring',
         'contentRenderingTemplates' => [], // Array to define the TypoScript parts that define the main content rendering. Extensions like "fluid_styled_content" provide content rendering templates. Other extensions like "felogin" or "indexed search" extend these templates and their TypoScript parts are added directly after the content templates. See EXT:fluid_styled_content/ext_localconf.php and EXT:frontend/Classes/TypoScript/TemplateService.php
@@ -1083,7 +1071,7 @@ return [
         'verify' => true,
         'version' => '1.1',
         'headers' => [ // Additional HTTP headers sent by every request TYPO3 executes.
-            'User-Agent' => 'TYPO3/' . TYPO3_version // String: Default user agent. If empty, this will be "TYPO3/x.y.z", while x.y.z is the current version. This overrides the constant <em>TYPO3_user_agent</em>.
+            'User-Agent' => 'TYPO3' // String: Default user agent. Defaults to TYPO3.
         ]
     ],
     'LOG' => [
@@ -1127,5 +1115,5 @@ return [
             'update' => [],
         ],
     ],
-    'SVCONF' => []
+    'SVCONF' => [],
 ];

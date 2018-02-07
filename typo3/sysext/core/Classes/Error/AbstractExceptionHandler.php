@@ -14,7 +14,10 @@ namespace TYPO3\CMS\Core\Error;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -22,8 +25,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * This file is a backport from TYPO3 Flow
  */
-abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, \TYPO3\CMS\Core\SingletonInterface
+abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, SingletonInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     const CONTEXT_WEB = 'WEB';
     const CONTEXT_CLI = 'CLI';
 
@@ -50,7 +55,6 @@ abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, \T
      *
      * @param \Throwable $exception The throwable object.
      * @param string $context The context where the exception was thrown, WEB or CLI
-     * @see \TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(), \TYPO3\CMS\Core\Utility\GeneralUtility::devLog()
      */
     protected function writeLogEntries(\Throwable $exception, $context)
     {
@@ -66,17 +70,13 @@ abstract class AbstractExceptionHandler implements ExceptionHandlerInterface, \T
         if ($context === 'WEB') {
             $logMessage .= '. Requested URL: ' . GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
         }
-        $backtrace = $exception->getTrace();
-        // Write error message to the configured syslogs
-        GeneralUtility::sysLog($logMessage, $logTitle, GeneralUtility::SYSLOG_SEVERITY_FATAL);
         // When database credentials are wrong, the exception is probably
         // caused by this. Therefor we cannot do any database operation,
         // otherwise this will lead into recurring exceptions.
         try {
-            // Write error message to devlog
-            GeneralUtility::devLog($logMessage, $logTitle, 3, [
+            $this->logger->critical($logTitle . ': ' . $logMessage, [
                 'TYPO3_MODE' => TYPO3_MODE,
-                'backtrace' => $backtrace
+                'exception' => $exception
             ]);
             // Write error message to sys_log table
             $this->writeLog($logTitle . ': ' . $logMessage);

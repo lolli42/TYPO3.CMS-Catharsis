@@ -118,11 +118,6 @@ class ProcessedFile extends AbstractFile
         $this->originalFileSha1 = $this->originalFile->getSha1();
         $this->storage = $originalFile->getStorage()->getProcessingFolder()->getStorage();
         $this->taskType = $taskType;
-        if ($taskType === self::CONTEXT_IMAGEPREVIEW) {
-            $processingConfiguration = array_merge(['width' => 64, 'height' => 64], $processingConfiguration);
-            $processingConfiguration['width'] = MathUtility::forceIntegerInRange($processingConfiguration['width'], 1, 1000);
-            $processingConfiguration['height'] = MathUtility::forceIntegerInRange($processingConfiguration['height'], 1, 1000);
-        }
         $this->processingConfiguration = $processingConfiguration;
         if (is_array($databaseRow)) {
             $this->reconstituteFromDatabaseRecord($databaseRow);
@@ -316,9 +311,8 @@ class ProcessedFile extends AbstractFile
     {
         if ($this->usesOriginalFile()) {
             return $this->originalFile->getName();
-        } else {
-            return $this->name;
         }
+        return $this->name;
     }
 
     /**
@@ -450,9 +444,8 @@ class ProcessedFile extends AbstractFile
         // The uid always (!) has to come from this file and never the original file (see getOriginalFile() to get this)
         if ($this->isUnchanged() && $key !== 'uid') {
             return $this->originalFile->getProperty($key);
-        } else {
-            return $this->properties[$key];
         }
+        return $this->properties[$key];
     }
 
     /**
@@ -558,16 +551,16 @@ class ProcessedFile extends AbstractFile
      * Returns a publicly accessible URL for this file
      *
      * @param bool $relativeToCurrentScript Determines whether the URL returned should be relative to the current script, in case it is relative at all
-     * @return NULL|string NULL if file is deleted, the generated URL otherwise
+     * @return string|null NULL if file is deleted, the generated URL otherwise
      */
     public function getPublicUrl($relativeToCurrentScript = false)
     {
         if ($this->deleted) {
             return null;
-        } elseif ($this->usesOriginalFile()) {
-            return $this->getOriginalFile()->getPublicUrl($relativeToCurrentScript);
-        } else {
-            return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
         }
+        if ($this->usesOriginalFile()) {
+            return $this->getOriginalFile()->getPublicUrl($relativeToCurrentScript);
+        }
+        return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
     }
 }

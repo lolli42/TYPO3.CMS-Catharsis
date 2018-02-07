@@ -53,7 +53,7 @@ class LocalCropScaleMaskHelper
      * with the returned width and height. This is for example useful for SVG images.
      *
      * @param TaskInterface $task
-     * @return array|NULL
+     * @return array|null
      */
     public function process(TaskInterface $task)
     {
@@ -65,7 +65,6 @@ class LocalCropScaleMaskHelper
         /** @var $gifBuilder GifBuilder */
         $gifBuilder = GeneralUtility::makeInstance(GifBuilder::class);
         $gifBuilder->init();
-        $gifBuilder->absPrefix = PATH_site;
 
         $configuration = $targetFile->getProcessingConfiguration();
         $configuration['additionalParameters'] = $this->modifyImageMagickStripProfileParameters($configuration['additionalParameters'], $configuration);
@@ -121,9 +120,8 @@ class LocalCropScaleMaskHelper
                     1 => $newDimensions['height'],
                     3 => '' // no file = use original
                 ];
-
-            // all other images
             } else {
+                // all other images
                 // the result info is an array with 0=width,1=height,2=extension,3=filename
                 $result = $gifBuilder->imageMagickConvert(
                     $originalFileName,

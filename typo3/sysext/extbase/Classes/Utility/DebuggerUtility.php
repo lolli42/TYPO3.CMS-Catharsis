@@ -188,9 +188,8 @@ class DebuggerUtility
         }
         if ($plainText) {
             return $header . $content;
-        } else {
-            return '<span class="extbase-debugger-tree">' . $header . '<span class="extbase-debug-content">' . $content . '</span></span>';
         }
+        return '<span class="extbase-debugger-tree">' . $header . '<span class="extbase-debug-content">' . $content . '</span></span>';
     }
 
     /**
@@ -212,9 +211,8 @@ class DebuggerUtility
         }
         if ($plainText) {
             return $header . $content;
-        } else {
-            return '<span class="extbase-debugger-tree"><input type="checkbox" /><span class="extbase-debug-header">' . $header . '</span><span class="extbase-debug-content">' . $content . '</span></span>';
         }
+        return '<span class="extbase-debugger-tree"><input type="checkbox" /><span class="extbase-debug-header">' . $header . '</span><span class="extbase-debug-content">' . $content . '</span></span>';
     }
 
     /**
@@ -263,9 +261,9 @@ class DebuggerUtility
         if ($plainText) {
             $dump .= self::ansiEscapeWrap($className, '36', $ansiColors);
         } else {
-            $dump .= '<span class="extbase-debug-type">' . $className . '</span>';
+            $dump .= '<span class="extbase-debug-type">' . htmlspecialchars($className) . '</span>';
         }
-        if (! $object instanceof \Closure) {
+        if (!$object instanceof \Closure) {
             if ($object instanceof \TYPO3\CMS\Core\SingletonInterface) {
                 $scope = 'singleton';
             } else {
@@ -378,13 +376,16 @@ class DebuggerUtility
                     if ($parameter->isPassedByReference()) {
                         $parameterDump .= '&';
                     }
+                    if ($parameter->isVariadic()) {
+                        $parameterDump .= '...';
+                    }
                     if ($plainText) {
                         $parameterDump .= self::ansiEscapeWrap('$' . $parameter->name, '37', $ansiColors);
                     } else {
                         $parameterDump .= '<span class="extbase-debug-property">'
                             . htmlspecialchars('$' . $parameter->name) . '</span>';
                     }
-                    if ($parameter->isOptional()) {
+                    if ($parameter->isDefaultValueAvailable()) {
                         $parameterDump .= ' = ';
                         if ($plainText) {
                             $parameterDump .= self::ansiEscapeWrap(var_export($parameter->getDefaultValue(), true), '33', $ansiColors);
@@ -402,7 +403,7 @@ class DebuggerUtility
                     $dump .= '<span class="extbase-debug-closure">) {' . PHP_EOL . '</span>';
                 }
                 $lines = file($reflectionFunction->getFileName());
-                for ($l = $reflectionFunction->getStartLine(); $l < $reflectionFunction->getEndLine() -1; ++$l) {
+                for ($l = $reflectionFunction->getStartLine(); $l < $reflectionFunction->getEndLine() - 1; ++$l) {
                     $dump .= $plainText ? $lines[$l] : htmlspecialchars($lines[$l]);
                 }
                 $dump .= str_repeat(self::PLAINTEXT_INDENT, $level);
@@ -463,7 +464,13 @@ class DebuggerUtility
     {
         $dump = '';
         foreach ($collection as $key => $value) {
-            $dump .= PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, $level) . ($plainText ? '' : '<span class="extbase-debug-property">') . self::ansiEscapeWrap($key, '37', $ansiColors) . ($plainText ? '' : '</span>') . ' => ';
+            $dump .= PHP_EOL . str_repeat(self::PLAINTEXT_INDENT, $level);
+            if ($plainText) {
+                $dump .= self::ansiEscapeWrap($key, '37', $ansiColors);
+            } else {
+                $dump .= '<span class="extbase-debug-property">' . htmlspecialchars($key) . '</span>';
+            }
+            $dump .= ' => ';
             $dump .= self::renderDump($value, $level, $plainText, $ansiColors);
         }
         if ($collection instanceof \Iterator) {
@@ -484,9 +491,8 @@ class DebuggerUtility
     {
         if ($enable) {
             return '[' . $ansiColors . 'm' . $string . '[0m';
-        } else {
-            return $string;
         }
+        return $string;
     }
 
     /**
@@ -569,9 +575,9 @@ class DebuggerUtility
         self::$blacklistedPropertyNames = $backupBlacklistedPropertyNames;
         if ($return === true) {
             return $css . $output;
-        } else {
-            echo $css . $output;
         }
+        echo $css . $output;
+
         return '';
     }
 }

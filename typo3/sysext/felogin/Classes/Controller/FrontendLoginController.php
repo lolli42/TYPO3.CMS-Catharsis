@@ -14,18 +14,23 @@ namespace TYPO3\CMS\Felogin\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Frontend\Plugin\AbstractPlugin;
 
 /**
  * Plugin 'Website User Login' for the 'felogin' extension.
  */
-class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
+class FrontendLoginController extends AbstractPlugin implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * Same as class name
      *
@@ -142,8 +147,8 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         $this->redirectUrl = $this->validateRedirectUrl($this->redirectUrl);
         // Get Template
         $templateFile = $this->conf['templateFile'] ?: 'EXT:felogin/Resources/Private/Templates/FrontendLogin.html';
-        $template = $this->getTypoScriptFrontendController()->tmpl->getFileName($templateFile);
-        if ($template !== null && file_exists($template)) {
+        $template = GeneralUtility::getFileAbsFileName($templateFile);
+        if ($template !== '' && file_exists($template)) {
             $this->template = file_get_contents($template);
         }
         // Is user logged in?
@@ -176,34 +181,24 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                 $content .= $this->cObj->stdWrap($this->pi_getLL('cookie_warning'), $this->conf['cookieWarning_stdWrap.']);
             } else {
                 // Add hook for extra processing before redirect
-                if (
-                    isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['beforeRedirect']) &&
-                    is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['beforeRedirect'])
-                ) {
-                    $_params = [
-                        'loginType' => $this->logintype,
-                        'redirectUrl' => &$this->redirectUrl
-                    ];
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['beforeRedirect'] as $_funcRef) {
-                        if ($_funcRef) {
-                            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-                        }
+                $_params = [
+                    'loginType' => $this->logintype,
+                    'redirectUrl' => &$this->redirectUrl
+                ];
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['beforeRedirect'] ?? [] as $_funcRef) {
+                    if ($_funcRef) {
+                        GeneralUtility::callUserFunction($_funcRef, $_params, $this);
                     }
                 }
                 \TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->redirectUrl);
             }
         }
         // Adds hook for processing of extra item markers / special
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['postProcContent'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['postProcContent'])
-        ) {
-            $_params = [
-                'content' => $content
-            ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['postProcContent'] as $_funcRef) {
-                $content = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-            }
+        $_params = [
+            'content' => $content
+        ];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['postProcContent'] ?? [] as $_funcRef) {
+            $content = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
         }
         return $this->conf['wrapContentInBaseClass'] ? $this->pi_wrapInBaseClass($content) : $content;
     }
@@ -227,7 +222,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($userTable);
                 $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
                 $row = $queryBuilder
-                    ->select('uid', 'username', 'password', 'email')
+                    ->select('*')
                     ->from($userTable)
                     ->where(
                         $queryBuilder->expr()->orX(
@@ -338,15 +333,19 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                 $postData = GeneralUtility::_POST($this->prefixId);
                 if (isset($postData['changepasswordsubmit'])) {
                     if (strlen($postData['password1']) < $minLength) {
-                        $markerArray['###STATUS_MESSAGE###'] = sprintf($this->getDisplayText(
+                        $markerArray['###STATUS_MESSAGE###'] = sprintf(
+                            $this->getDisplayText(
                             'change_password_tooshort_message',
-                            $this->conf['changePasswordTooShortMessage_stdWrap.']),
+                            $this->conf['changePasswordTooShortMessage_stdWrap.']
+                        ),
                             $minLength
                         );
                     } elseif ($postData['password1'] != $postData['password2']) {
-                        $markerArray['###STATUS_MESSAGE###'] = sprintf($this->getDisplayText(
+                        $markerArray['###STATUS_MESSAGE###'] = sprintf(
+                            $this->getDisplayText(
                             'change_password_notequal_message',
-                            $this->conf['changePasswordNotEqualMessage_stdWrap.']),
+                            $this->conf['changePasswordNotEqualMessage_stdWrap.']
+                        ),
                             $minLength
                         );
                     } else {
@@ -473,18 +472,13 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         }
         $msg = sprintf($this->pi_getLL('ll_forgot_validate_reset_password'), $user['username'], $link, $validEndString);
         // Add hook for extra processing of mail message
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['forgotPasswordMail'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['forgotPasswordMail'])
-        ) {
-            $params = [
-                'message' => &$msg,
-                'user' => &$user
-            ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['forgotPasswordMail'] as $reference) {
-                if ($reference) {
-                    GeneralUtility::callUserFunction($reference, $params, $this);
-                }
+        $params = [
+            'message' => &$msg,
+            'user' => &$user
+        ];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['forgotPasswordMail'] ?? [] as $reference) {
+            if ($reference) {
+                GeneralUtility::callUserFunction($reference, $params, $this);
             }
         }
         if ($user['email']) {
@@ -543,12 +537,10 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                 $markerArray = array_merge($markerArray, $this->getUserFieldMarkers());
                 $subpartArray['###LOGIN_FORM###'] = '';
                 // Hook for general actions after after login has been confirmed (by Thomas Danzl <thomas@danzl.org>)
-                if ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['login_confirmed']) {
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['login_confirmed'] ?? [] as $_funcRef) {
                     $_params = [];
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['login_confirmed'] as $_funcRef) {
-                        if ($_funcRef) {
-                            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-                        }
+                    if ($_funcRef) {
+                        GeneralUtility::callUserFunction($_funcRef, $_params, $this);
                     }
                 }
                 // show logout form directly
@@ -558,15 +550,10 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                 }
             } else {
                 // Hook for general actions on login error
-                if (
-                    isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['login_error'])
-                    && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['login_error'])
-                ) {
-                    $params = [];
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['login_error'] as $funcRef) {
-                        if ($funcRef) {
-                            GeneralUtility::callUserFunction($funcRef, $params, $this);
-                        }
+                $params = [];
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['login_error'] ?? [] as $funcRef) {
+                    if ($funcRef) {
+                        GeneralUtility::callUserFunction($funcRef, $params, $this);
                     }
                 }
                 // login error
@@ -602,13 +589,11 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                 }
             }
         }
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['loginFormOnSubmitFuncs'])) {
-            $_params = [];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['loginFormOnSubmitFuncs'] as $funcRef) {
-                list($onSub, $hid) = GeneralUtility::callUserFunction($funcRef, $_params, $this);
-                $onSubmitAr[] = $onSub;
-                $extraHiddenAr[] = $hid;
-            }
+        $_params = [];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['loginFormOnSubmitFuncs'] ?? [] as $funcRef) {
+            list($onSub, $hid) = GeneralUtility::callUserFunction($funcRef, $_params, $this);
+            $onSubmitAr[] = $onSub;
+            $extraHiddenAr[] = $hid;
         }
         if (!empty($onSubmitAr)) {
             $onSubmit = implode('; ', $onSubmitAr) . '; return true;';
@@ -805,12 +790,10 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
                 } elseif ($this->logintype === 'logout') {
                     // after logout
                     // Hook for general actions after after logout has been confirmed
-                    if ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['logout_confirmed']) {
+                    foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['logout_confirmed'] ?? [] as $_funcRef) {
                         $_params = [];
-                        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['felogin']['logout_confirmed'] as $_funcRef) {
-                            if ($_funcRef) {
-                                GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-                            }
+                        if ($_funcRef) {
+                            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
                         }
                     }
                     switch ($redirMethod) {
@@ -923,9 +906,8 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
         }
         if ($returnUrl) {
             return htmlspecialchars($this->cObj->typoLink_URL($this->conf['linkConfig.']));
-        } else {
-            return $this->cObj->typoLink($label, $this->conf['linkConfig.']);
         }
+        return $this->cObj->typoLink($label, $this->conf['linkConfig.']);
     }
 
     /**
@@ -1028,7 +1010,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
             return $url;
         }
         // URL is not allowed
-        GeneralUtility::sysLog(sprintf($this->pi_getLL('noValidRedirectUrl'), $url), 'felogin', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+        $this->logger->warning('Url "' . $url . '" for redirect was not accepted!');
         return '';
     }
 

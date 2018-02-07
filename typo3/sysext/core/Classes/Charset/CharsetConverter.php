@@ -629,7 +629,8 @@ class CharsetConverter implements SingletonInterface
      * PLEASE SEE: http://www.unicode.org/Public/MAPPINGS/
      *
      * @param string $charset The charset to be initialized. Use lowercase charset always (the charset must match exactly with a filename in csconvtbl/ folder ([charset].tbl)
-     * @return int Returns '1' if already loaded. Returns FALSE if charset conversion table was not found. Returns '2' if the charset conversion table was found and parsed.
+     * @return int Returns '1' if already loaded, '2' if the charset conversion table was found and parsed.
+     * @throws UnknownCharsetException if no charset table was found
      * @access private
      */
     public function initCharset($charset)
@@ -683,12 +684,10 @@ class CharsetConverter implements SingletonInterface
                     }
                 }
                 return 2;
-            } else {
-                return false;
             }
-        } else {
-            return 1;
+            throw new UnknownCharsetException(sprintf('Unknown charset "%s"', $charset), 1508916031);
         }
+        return 1;
     }
 
     /**
@@ -907,10 +906,9 @@ class CharsetConverter implements SingletonInterface
                 $ord = hexdec($code_value);
                 if ($ord > 127) {
                     continue 2;
-                } else {
-                    // Skip decompositions containing non-ASCII chars
-                    $code_decomp[] = chr($ord);
                 }
+                // Skip decompositions containing non-ASCII chars
+                $code_decomp[] = chr($ord);
             }
             $ascii[$this->UnumberToChar(hexdec($from))] = implode('', $code_decomp);
         }

@@ -65,31 +65,31 @@ class TerService extends TerUtility implements SingletonInterface
         $index = [];
         xml_parser_set_option($parser, XML_OPTION_CASE_FOLDING, 0);
         xml_parser_set_option($parser, XML_OPTION_SKIP_WHITE, 0);
-            // Parse content
+        // Parse content
         xml_parse_into_struct($parser, $string, $values, $index);
         libxml_disable_entity_loader($previousValueOfEntityLoader);
-            // If error, return error message
+        // If error, return error message
         if (xml_get_error_code($parser)) {
             $line = xml_get_current_line_number($parser);
             $error = xml_error_string(xml_get_error_code($parser));
             xml_parser_free($parser);
             throw new XmlParserException('Error in XML parser while decoding l10n XML file. Line ' . $line . ': ' . $error, 1345736517);
-        } else {
-            // Init vars
-            $stack = [[]];
-            $stacktop = 0;
-            $current = [];
-            $tagName = '';
-            $documentTag = '';
-                // Traverse the parsed XML structure:
-            foreach ($values as $val) {
-                // First, process the tag-name (which is used in both cases, whether "complete" or "close")
-                $tagName = (string)($val['tag'] === 'languagepack' && $val['type'] === 'open') ? $val['attributes']['language'] : $val['tag'];
-                if (!$documentTag) {
-                    $documentTag = $tagName;
-                }
-                    // Setting tag-values, manage stack:
-                switch ($val['type']) {
+        }
+        // Init vars
+        $stack = [[]];
+        $stacktop = 0;
+        $current = [];
+        $tagName = '';
+        $documentTag = '';
+        // Traverse the parsed XML structure:
+        foreach ($values as $val) {
+            // First, process the tag-name (which is used in both cases, whether "complete" or "close")
+            $tagName = (string)($val['tag'] === 'languagepack' && $val['type'] === 'open') ? $val['attributes']['language'] : $val['tag'];
+            if (!$documentTag) {
+                $documentTag = $tagName;
+            }
+            // Setting tag-values, manage stack:
+            switch ($val['type']) {
                         // If open tag it means there is an array stored in sub-elements.
                         // Therefore increase the stackpointer and reset the accumulation array
                     case 'open':
@@ -115,9 +115,9 @@ class TerService extends TerUtility implements SingletonInterface
                         }
                         break;
                 }
-            }
-            $result = $current[$tagName];
         }
+        $result = $current[$tagName];
+
         return $result;
     }
 
@@ -143,7 +143,7 @@ class TerService extends TerUtility implements SingletonInterface
                     throw new LanguageException('Given path is invalid.', 1352565336);
                 }
                 if (!is_dir($absoluteLanguagePath)) {
-                    GeneralUtility::mkdir_deep(PATH_typo3conf, $relativeLanguagePath);
+                    GeneralUtility::mkdir_deep($absoluteLanguagePath);
                 }
                 GeneralUtility::writeFileToTypo3tempDir($absolutePathToZipFile, $l10n[0]);
                 if (is_dir($absoluteExtensionLanguagePath)) {
@@ -193,9 +193,8 @@ class TerService extends TerUtility implements SingletonInterface
         $l10nResponse = GeneralUtility::getUrl($mirrorUrl . $packageUrl);
         if ($l10nResponse === false) {
             throw new XmlParserException('Error: Translation could not be fetched.', 1345736785);
-        } else {
-            return [$l10nResponse];
         }
+        return [$l10nResponse];
     }
 
     /**
@@ -217,16 +216,17 @@ class TerService extends TerUtility implements SingletonInterface
             while (($zipEntry = zip_read($zip)) !== false) {
                 $zipEntryName = zip_entry_name($zipEntry);
                 if (strpos($zipEntryName, '/') !== false) {
-                    $zipEntryPathSegments =  explode('/', $zipEntryName);
+                    $zipEntryPathSegments = explode('/', $zipEntryName);
                     $fileName = array_pop($zipEntryPathSegments);
                     // It is a folder, because the last segment is empty, let's create it
                     if (empty($fileName)) {
-                        GeneralUtility::mkdir_deep($path, implode('/', $zipEntryPathSegments));
+                        GeneralUtility::mkdir_deep($path . implode('/', $zipEntryPathSegments));
                     } else {
                         $absoluteTargetPath = GeneralUtility::getFileAbsFileName($path . implode('/', $zipEntryPathSegments) . '/' . $fileName);
                         if (trim($absoluteTargetPath) !== '') {
                             $return = GeneralUtility::writeFile(
-                                $absoluteTargetPath, zip_entry_read($zipEntry, zip_entry_filesize($zipEntry))
+                                $absoluteTargetPath,
+                                zip_entry_read($zipEntry, zip_entry_filesize($zipEntry))
                             );
                             if ($return === false) {
                                 throw new LanguageException('Could not write file ' . $zipEntryName, 1345304560);

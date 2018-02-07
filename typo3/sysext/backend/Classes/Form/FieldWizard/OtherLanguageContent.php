@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\FieldWizard;
 
 /*
@@ -137,15 +137,16 @@ class OtherLanguageContent extends AbstractNode
                         $field,
                         '',
                         '',
-                        $config['config']['uploadfolder'], 0, ' align="middle"'
+                        $config['config']['uploadfolder'],
+                        0,
+                        ' align="middle"'
                     ) .
-                    ($absFilePath ? BackendUtility::wrapClickMenuOnIcon($fileIcon, $absFilePath, 0) : $fileIcon) .
+                    ($absFilePath ? BackendUtility::wrapClickMenuOnIcon($fileIcon, $absFilePath) : $fileIcon) .
                     $imgPath .
                     '</span>';
             }
             return implode('<br />', $imgs);
-        } else {
-            return nl2br(htmlspecialchars($value));
         }
+        return nl2br(htmlspecialchars($value));
     }
 }

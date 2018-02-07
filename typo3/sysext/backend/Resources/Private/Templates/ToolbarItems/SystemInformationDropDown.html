@@ -5,9 +5,9 @@
 <h3 class="dropdown-headline">
 	<f:translate key="systemmessage.header"/>
 </h3>
-<p class="dropdown-text typo3-module-menu-item submodule mod-system_extinstall" data-modulename="system_extinstall">
+<p class="dropdown-text typo3-module-menu-item submodule mod-tools_toolsenvironment" data-modulename="tools_toolsenvironment">
 	<f:format.raw>
-		<f:translate key="systemmessage.intro" arguments="{0: '{installToolUrl}'}"/>
+		<f:translate key="systemmessage.intro" arguments="{0: '{environmentToolUrl}'}"/>
 	</f:format.raw>
 </p>
 
@@ -16,7 +16,7 @@
 	<div class="dropdown-table">
 		<f:for each="{systemInformation}" as="info">
 			<div class="dropdown-table-row">
-				<div class="dropdown-table-column dropdown-table-icon">
+				<div class="dropdown-table-column dropdown-table-column-top dropdown-table-icon">
 					<f:if condition="{info.iconIdentifier}">
 						<f:then>
 							<core:icon identifier="{info.iconIdentifier}" size="small"/>
@@ -24,12 +24,12 @@
 						<f:else>{info.icon -> f:format.raw()}</f:else>
 					</f:if>
 				</div>
-				<div class="dropdown-table-column dropdown-table-title">
+				<div class="dropdown-table-column dropdown-table-column-top dropdown-table-title">
 					<f:translate key="{info.title}" default="{info.title}"/>
 					<f:if condition="{info.titleAddition}"> ({info.titleAddition -> f:format.htmlspecialchars()})</f:if>
 				</div>
 				<div
-					class="dropdown-table-column dropdown-table-value {f:if(condition: info.status, then: 'text-{info.status}')}">
+					class="dropdown-table-column dropdown-table-column-top dropdown-table-value {f:if(condition: info.status, then: 'text-{info.status}')}">
 					{info.value}
 				</div>
 			</div>
@@ -46,7 +46,7 @@
 				<f:then>
 					<p id="systeminformation_{message.module}"
 						 class="dropdown-text t3js-systeminformation-module typo3-module-menu-item submodule mod-{message.module}"
-						 data-modulename="{message.module}">
+						 data-modulename="{message.module}" data-moduleparams="{message.params}">
 						<span class="text-{message.status}"><f:format.raw>{message.text}</f:format.raw></span>
 					</p>
 				</f:then>

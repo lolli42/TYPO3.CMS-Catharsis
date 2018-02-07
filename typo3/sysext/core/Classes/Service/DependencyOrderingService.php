@@ -240,12 +240,11 @@ class DependencyOrderingService
         foreach (array_filter($graph[$from]) as $node => $_) {
             if ($node === $to) {
                 return [$from, $to];
-            } else {
-                $subPath = $this->findPathInGraph($graph, $node, $to);
-                if (!empty($subPath)) {
-                    array_unshift($subPath, $from);
-                    return $subPath;
-                }
+            }
+            $subPath = $this->findPathInGraph($graph, $node, $to);
+            if (!empty($subPath)) {
+                array_unshift($subPath, $from);
+                return $subPath;
             }
         }
         return [];
@@ -267,7 +266,7 @@ class DependencyOrderingService
     {
         $preparedDependencies = [];
         foreach ($dependencies as $id => $dependency) {
-            foreach ([ $beforeKey, $afterKey ] as $relation) {
+            foreach ([$beforeKey, $afterKey] as $relation) {
                 if (!isset($dependency[$relation]) || !is_array($dependency[$relation])) {
                     $dependency[$relation] = [];
                 }

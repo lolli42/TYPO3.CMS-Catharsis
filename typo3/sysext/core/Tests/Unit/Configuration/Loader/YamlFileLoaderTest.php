@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Tests\Unit\Configuration\Loader;
 
 /*
@@ -18,7 +18,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Configuration\Loader;
 use TYPO3\CMS\Core\Configuration\Loader\YamlFileLoader;
 
 /**
- * Test case for the yaml file loader class
+ * Test case for the YAML file loader class
  */
 class YamlFileLoaderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {

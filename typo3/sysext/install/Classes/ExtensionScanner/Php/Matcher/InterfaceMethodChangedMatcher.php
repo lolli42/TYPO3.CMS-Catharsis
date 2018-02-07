@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\ExtensionScanner\Php\Matcher;
 
 /*
@@ -48,7 +48,7 @@ class InterfaceMethodChangedMatcher extends AbstractCoreMatcher
      * Test for "->like($arg1, $arg2, $arg3); (weak match)
      *
      * @param Node $node
-     * @return null|void
+     * @return void|null
      */
     public function enterNode(Node $node)
     {

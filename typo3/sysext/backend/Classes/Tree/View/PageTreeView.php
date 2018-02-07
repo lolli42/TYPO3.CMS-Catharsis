@@ -70,7 +70,7 @@ class PageTreeView extends AbstractTreeView
      */
     public function init($clause = '', $orderByFields = '')
     {
-        parent::init(' AND deleted=0 ' . $clause, 'sorting');
+        parent::init(' AND deleted=0 AND sys_language_uid=0 ' . $clause, 'sorting');
     }
 
     /**
@@ -126,16 +126,16 @@ class PageTreeView extends AbstractTreeView
         $lang = $this->getLanguageService();
         if ($this->ext_showNavTitle && isset($row['nav_title']) && trim($row['nav_title']) !== '') {
             $title = '<span title="' . htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:title')) . ' '
-                     . htmlspecialchars(trim($row['title'])) . '">'
-                     . htmlspecialchars(GeneralUtility::fixed_lgd_cs($row['nav_title'], $titleLen))
-                     . '</span>';
+                        . htmlspecialchars(trim($row['title'])) . '">'
+                        . htmlspecialchars(GeneralUtility::fixed_lgd_cs($row['nav_title'], $titleLen))
+                        . '</span>';
         } else {
             $title = htmlspecialchars(GeneralUtility::fixed_lgd_cs($row['title'], $titleLen));
             if (isset($row['nav_title']) && trim($row['nav_title']) !== '') {
                 $title = '<span title="'
-                         . htmlspecialchars($lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.nav_title'))
-                         . ' ' . htmlspecialchars(trim($row['nav_title'])) . '">' . $title
-                         . '</span>';
+                            . htmlspecialchars($lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.nav_title'))
+                            . ' ' . htmlspecialchars(trim($row['nav_title'])) . '">' . $title
+                            . '</span>';
             }
             $title = trim($row['title']) === ''
                 ? '<em>[' . htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.no_title')) . ']</em>'

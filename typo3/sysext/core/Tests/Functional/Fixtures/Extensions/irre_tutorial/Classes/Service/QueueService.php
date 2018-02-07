@@ -65,7 +65,7 @@ class QueueService implements \TYPO3\CMS\Core\SingletonInterface
     }
 
     /**
-     * @return NULL|array
+     * @return array|null
      */
     public function shift()
     {

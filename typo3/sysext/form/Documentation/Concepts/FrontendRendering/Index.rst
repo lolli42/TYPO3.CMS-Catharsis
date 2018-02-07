@@ -329,7 +329,7 @@ Override the option using the ``form definition``:
 
     finishers:
       -
-        identifier: Custom
+        identifier: CustomFinisher
         options:
           yourCustomOption: 'Björn'
 
@@ -365,7 +365,7 @@ method.
 .. code-block:: php
 
     <?php
-    declare(strict_types=1);
+    declare(strict_types = 1);
     namespace VENDOR\MySitePackage\Domain\Finishers;
 
     class CustomFinisher extends \TYPO3\CMS\Form\Domain\Finishers\AbstractFinisher
@@ -991,9 +991,11 @@ specific pattern. Furthermore, the fallback chain exists here as well. Thus,
 the following translation scenarios are possible:
 
 - translation of validation messages for a specific validator of a concrete
-  form element and form
+  form element and concrete form
 - translation of validation messages for a specific validator of various
   form elements within a concrete form
+- translation of validation messages for a specific validator of a concrete
+  form element in various forms
 - translation of validation messages for a specific validator within various
   forms
 
@@ -1004,9 +1006,10 @@ are valid. Read more about :ref:`concrete validator configurations <typo3.cms.fo
 The look-up process searches for translation keys in all given translation
 files based on the following order:
 
-- ``<formDefinitionIdentifier>.validation.<elementIdentifier>.<validationErrorCode>``
-- ``<formDefinitionIdentifier>.validation.<validationErrorCode>``
-- ``validation.<validationErrorCode>``
+- ``<formDefinitionIdentifier>.validation.error.<elementIdentifier>.<validationErrorCode>``
+- ``<formDefinitionIdentifier>.validation.error.<validationErrorCode>``
+- ``validation.error.<elementIdentifier>.<validationErrorCode>``
+- ``validation.error.<validationErrorCode>``
 
 
 Example
@@ -1043,9 +1046,10 @@ name", the ``NotEmpty`` validator fails. Now, the look-up process searches
 for the following translation keys for the ``NotEmpty`` validator combined
 with the form element ``LastName``:
 
-- ContactForm.validation.LastName.1221560910
-- ContactForm.validation.1221560910
-- validation.1221560910
+- ContactForm.validation.error.LastName.1221560910
+- ContactForm.validation.error.1221560910
+- validation.error.LastName.1221560910
+- validation.error.1221560910
 
 As mentioned above, if there is no corresponding translation key available,
 the default message of the Extbase framework will be shown.

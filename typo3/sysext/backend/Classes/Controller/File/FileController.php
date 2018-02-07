@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\Controller\File;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\DuplicationBehavior;
@@ -98,7 +99,8 @@ class FileController
             $this->redirect = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('redirect'));
         } else {
             $mode = key($this->file);
-            $this->redirect = GeneralUtility::sanitizeLocalUrl($this->file[$mode][0]['redirect']);
+            $elementKey = key($this->file[$mode]);
+            $this->redirect = GeneralUtility::sanitizeLocalUrl($this->file[$mode][$elementKey]['redirect']);
         }
         $this->CB = GeneralUtility::_GP('CB');
 
@@ -180,22 +182,26 @@ class FileController
 
         // go and edit the new created file
         if ($request->getParsedBody()['edit']) {
+            /** @var \TYPO3\CMS\Core\Resource\File $file */
+            $file = $this->fileData['newfile'][0];
+            $properties = $file->getProperties();
             $urlParameters = [
-                'target' => $this->file['newfile'][0]['target'] . $this->file['newfile'][0]['data']
+                'target' =>  $properties['storage'] . ':' . $properties['identifier']
             ];
             if ($this->redirect) {
                 $urlParameters['returnUrl'] = $this->redirect;
             }
-            $this->redirect = BackendUtility::getModuleUrl('file_edit', $urlParameters);
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+            $this->redirect = (string)$uriBuilder->buildUriFromRoute('file_edit', $urlParameters);
         }
         if ($this->redirect) {
             return $response
                     ->withHeader('Location', GeneralUtility::locationHeaderUrl($this->redirect))
                     ->withStatus(303);
-        } else {
-            // empty response
-            return $response;
         }
+        // empty response
+        return $response;
     }
 
     /**
@@ -230,7 +236,7 @@ class FileController
                     }
                 }
             }
-            $response->getBody()->write(json_encode($flatResult));
+            return GeneralUtility::makeInstance(JsonResponse::class)->setPayload($flatResult);
         }
         return $response;
     }
@@ -239,13 +245,12 @@ class FileController
      * Ajax entry point to check if a file exists in a folder
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function fileExistsInFolderAction(ServerRequestInterface $request, ResponseInterface $response)
+    public function fileExistsInFolderAction(ServerRequestInterface $request)
     {
-        $fileName = isset($request->getParsedBody()['fileName']) ? $request->getParsedBody()['fileName'] : $request->getQueryParams()['fileName'];
-        $fileTarget = isset($request->getParsedBody()['fileTarget']) ? $request->getParsedBody()['fileTarget'] : $request->getQueryParams()['fileTarget'];
+        $fileName = $request->getParsedBody()['fileName'] ?? $request->getQueryParams()['fileName'];
+        $fileTarget = $request->getParsedBody()['fileTarget'] ?? $request->getQueryParams()['fileTarget'];
 
         /** @var \TYPO3\CMS\Core\Resource\ResourceFactory $fileFactory */
         $fileFactory = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
@@ -253,12 +258,11 @@ class FileController
         $fileTargetObject = $fileFactory->retrieveFileOrFolderObject($fileTarget);
         $processedFileName = $fileTargetObject->getStorage()->sanitizeFileName($fileName, $fileTargetObject);
 
-        $result = false;
+        $result = [];
         if ($fileTargetObject->hasFile($processedFileName)) {
             $result = $this->flattenResultDataValue($fileTargetObject->getStorage()->getFileInFolder($processedFileName, $fileTargetObject));
         }
-        $response->getBody()->write(json_encode($result));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class)->setPayload($result);
     }
 
     /**

@@ -13,15 +13,18 @@ namespace TYPO3\CMS\Core\Type\File;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
-use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * A SPL FileInfo class providing information related to an image.
  */
-class ImageInfo extends FileInfo
+class ImageInfo extends FileInfo implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * @var array
      */
@@ -69,7 +72,7 @@ class ImageInfo extends FileInfo
 
             // In case the image size could not be retrieved, log the incident as a warning.
             if (empty($this->imageSizes)) {
-                $this->getLogger()->warning('I could not retrieve the image size for file ' . $this->getPathname());
+                $this->logger->warning('I could not retrieve the image size for file ' . $this->getPathname());
                 $this->imageSizes = [0, 0];
             }
         }
@@ -80,7 +83,7 @@ class ImageInfo extends FileInfo
      * Try to read SVG as XML file and
      * find width and height
      *
-     * @return FALSE|array
+     * @return false|array
      */
     protected function extractSvgImageSizes()
     {
@@ -89,32 +92,26 @@ class ImageInfo extends FileInfo
         $fileContent = file_get_contents($this->getPathname());
         // Disables the functionality to allow external entities to be loaded when parsing the XML, must be kept
         $previousValueOfEntityLoader = libxml_disable_entity_loader(true);
-        $xml = simplexml_load_string($fileContent);
+        $xml = simplexml_load_string($fileContent, 'SimpleXMLElement', LIBXML_NOERROR);
+
+        // If something went wrong with simpleXml don't try to read information
+        if ($xml === false) {
+            return false;
+        }
+
         libxml_disable_entity_loader($previousValueOfEntityLoader);
         $xmlAttributes = $xml->attributes();
 
         // First check if width+height are set
         if (!empty($xmlAttributes['width']) && !empty($xmlAttributes['height'])) {
             $imagesSizes = [(int)$xmlAttributes['width'], (int)$xmlAttributes['height']];
-
-        // Fallback to viewBox
         } elseif (!empty($xmlAttributes['viewBox'])) {
+            // Fallback to viewBox
             $viewBox = explode(' ', $xmlAttributes['viewBox']);
             $imagesSizes = [(int)$viewBox[2], (int)$viewBox[3]];
         }
 
         return $imagesSizes !== [] ? $imagesSizes : false;
-    }
-
-    /**
-     * @return \TYPO3\CMS\Core\Log\Logger
-     */
-    protected function getLogger()
-    {
-        /** @var $loggerManager LogManager */
-        $loggerManager = GeneralUtility::makeInstance(LogManager::class);
-
-        return $loggerManager->getLogger(get_class($this));
     }
 
     /**
@@ -126,6 +123,7 @@ class ImageInfo extends FileInfo
 
         if ($graphicalFunctions === null) {
             $graphicalFunctions = GeneralUtility::makeInstance(GraphicalFunctions::class);
+            $graphicalFunctions->init();
         }
 
         return $graphicalFunctions;

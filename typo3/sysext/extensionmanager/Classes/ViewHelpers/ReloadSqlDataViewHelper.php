@@ -70,11 +70,10 @@ class ReloadSqlDataViewHelper extends Link\ActionViewHelper
             $languageKey = 'extensionList.databaseImport';
         }
 
-        $uriBuilder = $this->controllerContext->getUriBuilder();
+        $uriBuilder = $this->renderingContext->getControllerContext()->getUriBuilder();
         $uriBuilder->reset();
         $uri = $uriBuilder->uriFor('reloadExtensionData', ['extension' => $extension['key']], 'Action');
         $this->tag->addAttribute('href', $uri);
-        $this->tag->addAttribute('class', 'downloadExtensionData btn btn-default');
         $this->tag->addAttribute('title', LocalizationUtility::translate($languageKey, 'extensionmanager'));
         $this->tag->setContent($iconFactory->getIcon($iconIdentifier, Icon::SIZE_SMALL)->render());
 

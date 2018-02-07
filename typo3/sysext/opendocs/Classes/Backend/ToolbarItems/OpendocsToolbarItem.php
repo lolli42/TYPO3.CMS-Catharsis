@@ -138,7 +138,9 @@ class OpendocsToolbarItem implements ToolbarItemInterface
         $result['record'] = $record;
         $label = htmlspecialchars(strip_tags(htmlspecialchars_decode($document[0])));
         $result['label'] = $label;
-        $link = BackendUtility::getModuleUrl('record_edit') . '&' . $document[2];
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $link = (string)$uriBuilder->buildUriFromRoute('record_edit') . '&' . $document[2];
         $pageId = (int)$document[3]['uid'];
         if ($document[3]['table'] !== 'pages') {
             $pageId = (int)$document[3]['pid'];
@@ -199,7 +201,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface
      */
     public function closeDocument(ServerRequestInterface $request, ResponseInterface $response)
     {
-        $md5sum = isset($request->getParsedBody()['md5sum']) ? $request->getParsedBody()['md5sum'] : $request->getQueryParams()['md5sum'];
+        $md5sum = $request->getParsedBody()['md5sum'] ?? $request->getQueryParams()['md5sum'];
         if ($md5sum && isset($this->openDocs[$md5sum])) {
             $backendUser = $this->getBackendUser();
             // Add the document to be closed to the recent documents

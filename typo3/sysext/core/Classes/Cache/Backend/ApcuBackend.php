@@ -140,14 +140,13 @@ class ApcuBackend extends AbstractBackend implements TaggableBackendInterface
             throw new Cache\Exception\InvalidDataException('The specified data is of type "' . gettype($data) . '" but a string is expected.', 1232986125);
         }
         $tags[] = '%APCBE%' . $this->cacheIdentifier;
-        $expiration = $lifetime !== null ? $lifetime : $this->defaultLifetime;
+        $expiration = $lifetime ?? $this->defaultLifetime;
         $success = apcu_store($this->getIdentifierPrefix() . $entryIdentifier, $data, $expiration);
         if ($success === true) {
             $this->removeIdentifierFromAllTags($entryIdentifier);
             $this->addIdentifierToTags($entryIdentifier, $tags);
         } else {
-            $errorMessage = 'Error using APCu: Could not save data in the cache.';
-            GeneralUtility::sysLog($errorMessage, 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+            $this->logger->alert('Error using APCu: Could not save data in the cache.');
         }
     }
 
@@ -208,9 +207,8 @@ class ApcuBackend extends AbstractBackend implements TaggableBackendInterface
         $identifiers = apcu_fetch($this->getIdentifierPrefix() . 'tag_' . $tag, $success);
         if ($success === false) {
             return [];
-        } else {
-            return (array)$identifiers;
         }
+        return (array)$identifiers;
     }
 
     /**

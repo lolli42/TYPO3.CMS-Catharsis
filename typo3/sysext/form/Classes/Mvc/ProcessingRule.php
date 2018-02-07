@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Mvc;
 
 /*
@@ -18,9 +18,7 @@ namespace TYPO3\CMS\Form\Mvc;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Error\Result;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
-use TYPO3\CMS\Extbase\Property\PropertyMapper;
 use TYPO3\CMS\Extbase\Property\PropertyMappingConfiguration;
-use TYPO3\CMS\Extbase\Validation\Validator\ConjunctionValidator;
 use TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface;
 
 /**
@@ -142,6 +140,18 @@ class ProcessingRule
     public function addValidator(ValidatorInterface $validator)
     {
         $this->validator->addValidator($validator);
+    }
+
+    /**
+     * Removes the specified validator.
+     *
+     * @param ValidatorInterface $validator The validator to remove
+     * @throws \TYPO3\CMS\Extbase\Validation\Exception\NoSuchValidatorException
+     * @internal
+     */
+    public function removeValidator(ValidatorInterface $validator)
+    {
+        $this->validator->removeValidator($validator);
     }
 
     /**

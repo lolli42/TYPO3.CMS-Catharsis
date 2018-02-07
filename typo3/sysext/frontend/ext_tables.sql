@@ -1,16 +1,4 @@
 #
-# Table structure for table 'cache_md5params'
-#
-CREATE TABLE cache_md5params (
-	md5hash varchar(20) DEFAULT '' NOT NULL,
-	tstamp int(11) DEFAULT '0' NOT NULL,
-	type tinyint(3) DEFAULT '0' NOT NULL,
-	params text,
-
-	PRIMARY KEY (md5hash)
-) ENGINE=InnoDB;
-
-#
 # Table structure for table 'cache_treelist'
 #
 CREATE TABLE cache_treelist (
@@ -141,7 +129,6 @@ CREATE TABLE pages_language_overlay (
 	author_email varchar(80) DEFAULT '' NOT NULL,
 	l18n_diffsource mediumblob,
 	url varchar(255) DEFAULT '' NOT NULL,
-	urltype tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	shortcut int(10) unsigned DEFAULT '0' NOT NULL,
 	shortcut_mode int(10) unsigned DEFAULT '0' NOT NULL,
 
@@ -160,16 +147,12 @@ CREATE TABLE sys_domain (
 	crdate int(11) unsigned DEFAULT '0' NOT NULL,
 	cruser_id int(11) unsigned DEFAULT '0' NOT NULL,
 	hidden tinyint(4) unsigned DEFAULT '0' NOT NULL,
-	domainName varchar(80) DEFAULT '' NOT NULL,
-	redirectTo varchar(255) DEFAULT '' NOT NULL,
-	redirectHttpStatusCode int(4) unsigned DEFAULT '301' NOT NULL,
+	domainName varchar(255) DEFAULT '' NOT NULL,
 	sorting int(10) unsigned DEFAULT '0' NOT NULL,
-	prepend_params int(10) DEFAULT '0' NOT NULL,
-	forced tinyint(3) unsigned DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),
-	KEY getSysDomain (redirectTo,hidden),
+	KEY getSysDomain (hidden),
 	KEY getDomainStartPage (pid,hidden,domainName)
 );
 
@@ -330,7 +313,7 @@ CREATE TABLE backend_layout (
 	title varchar(255) DEFAULT '' NOT NULL,
 	description text,
 	config text NOT NULL,
-	icon text NOT NULL,
+	icon text,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),

@@ -13,8 +13,15 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Object\Container;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Log\Logger;
+use TYPO3\CMS\Extbase\Object\Container\Container;
 use TYPO3\CMS\Extbase\Object\Exception;
 use TYPO3\CMS\Extbase\Object\Exception\CannotBuildObjectException;
+use TYPO3\CMS\Extbase\Reflection\Exception\UnknownClassException;
+use TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures\ArgumentTestClassForPublicPropertyInjection;
+use TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures\ProtectedPropertyInjectClass;
+use TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures\PublicPropertyInjectClass;
 
 /**
  * Test case
@@ -25,6 +32,11 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      * @var \TYPO3\CMS\Extbase\Object\Container\Container
      */
     protected $container;
+
+    /**
+     * @var LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $logger;
 
     /**
      * @var \TYPO3\CMS\Extbase\Object\Container\ClassInfo
@@ -39,10 +51,17 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             ->getMock();
         $mockedCache->expects($this->any())->method('get')->will($this->returnValue(false));
         $mockedCache->expects($this->never())->method('has');
+
+        $this->logger = $this->getMockBuilder(Logger::class)
+            ->setMethods(['notice'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $this->container = $this->getMockBuilder(\TYPO3\CMS\Extbase\Object\Container\Container::class)
-            ->setMethods(['log', 'getClassInfoCache'])
+            ->setMethods(['getLogger', 'getClassInfoCache'])
             ->getMock();
         $this->container->expects($this->any())->method('getClassInfoCache')->will($this->returnValue($mockedCache));
+        $this->container->expects($this->any())->method('getLogger')->will($this->returnValue($this->logger));
     }
 
     /**
@@ -180,31 +199,9 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function getInstanceThrowsExceptionIfClassWasNotFound()
     {
-        $this->expectException(Exception::class);
-        $this->expectExceptionCode(1289386765);
+        $this->expectException(UnknownClassException::class);
+        $this->expectExceptionCode(1278450972);
         $this->container->getInstance('nonextistingclass_bla');
-    }
-
-    /**
-     * @test
-     */
-    public function getInstanceUsesClassNameMd5AsCacheKey()
-    {
-        $className = \TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures\NamespacedClass::class;
-        $classNameHash = md5($className);
-        $mockedCache = $this->getMockBuilder(\TYPO3\CMS\Extbase\Object\Container\ClassInfoCache::class)
-            ->setMethods(['has', 'set', 'get'])
-            ->getMock();
-        $container = $this->getMockBuilder(\TYPO3\CMS\Extbase\Object\Container\Container::class)
-            ->setMethods(['log', 'getClassInfoCache'])
-            ->getMock();
-        $container->expects($this->any())->method('getClassInfoCache')->will($this->returnValue($mockedCache));
-        $mockedCache->expects($this->never())->method('has');
-        $mockedCache->expects($this->once())->method('get')->with($classNameHash)->will($this->returnValue(false));
-        $mockedCache->expects($this->once())->method('set')->with($classNameHash, $this->anything())->will($this->returnCallback([$this, 'setClassInfoCacheCallback']));
-        $container->getInstance($className);
-        $this->assertInstanceOf(\TYPO3\CMS\Extbase\Object\Container\ClassInfo::class, $this->cachedClassInfo);
-        $this->assertEquals($className, $this->cachedClassInfo->getClassName());
     }
 
     /**
@@ -214,17 +211,6 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     {
         $instance = $this->container->getInstance('t3lib_object_tests_initializable');
         $this->assertTrue($instance->isInitialized());
-    }
-
-    /**
-     * Callback for getInstanceUsesClassNameSha1AsCacheKey
-     *
-     * @param string $id
-     * @param \TYPO3\CMS\Extbase\Object\Container\ClassInfo $value
-     */
-    public function setClassInfoCacheCallback($id, \TYPO3\CMS\Extbase\Object\Container\ClassInfo $value)
-    {
-        $this->cachedClassInfo = $value;
     }
 
     /**
@@ -290,7 +276,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function singletonWhichRequiresPrototypeViaSetterInjectionWorksAndAddsDebugMessage()
     {
-        $this->container->expects($this->once())->method('log')->with('The singleton "t3lib_object_singletonNeedsPrototype" needs a prototype in "injectDependency". This is often a bad code smell; often you rather want to inject a singleton.', 1);
+        $this->logger->expects($this->once())->method('notice')->with('The singleton "t3lib_object_singletonNeedsPrototype" needs a prototype in "injectDependency". This is often a bad code smell; often you rather want to inject a singleton.');
         $object = $this->container->getInstance('t3lib_object_singletonNeedsPrototype');
         $this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
     }
@@ -300,7 +286,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function singletonWhichRequiresSingletonViaSetterInjectionWorks()
     {
-        $this->container->expects($this->never())->method('log');
+        $this->logger->expects($this->never())->method('notice');
         $object = $this->container->getInstance('t3lib_object_singletonNeedsSingleton');
         $this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
     }
@@ -310,7 +296,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function prototypeWhichRequiresPrototypeViaSetterInjectionWorks()
     {
-        $this->container->expects($this->never())->method('log');
+        $this->logger->expects($this->never())->method('notice');
         $object = $this->container->getInstance('t3lib_object_prototypeNeedsPrototype');
         $this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
     }
@@ -320,7 +306,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function prototypeWhichRequiresSingletonViaSetterInjectionWorks()
     {
-        $this->container->expects($this->never())->method('log');
+        $this->logger->expects($this->never())->method('notice');
         $object = $this->container->getInstance('t3lib_object_prototypeNeedsSingleton');
         $this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
     }
@@ -330,7 +316,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function singletonWhichRequiresPrototypeViaConstructorInjectionWorksAndAddsDebugMessage()
     {
-        $this->container->expects($this->once())->method('log')->with('The singleton "t3lib_object_singletonNeedsPrototypeInConstructor" needs a prototype in the constructor. This is often a bad code smell; often you rather want to inject a singleton.', 1);
+        $this->logger->expects($this->once())->method('notice')->with('The singleton "t3lib_object_singletonNeedsPrototypeInConstructor" needs a prototype in the constructor. This is often a bad code smell; often you rather want to inject a singleton.');
         $object = $this->container->getInstance('t3lib_object_singletonNeedsPrototypeInConstructor');
         $this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
     }
@@ -340,7 +326,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function singletonWhichRequiresSingletonViaConstructorInjectionWorks()
     {
-        $this->container->expects($this->never())->method('log');
+        $this->logger->expects($this->never())->method('notice');
         $object = $this->container->getInstance('t3lib_object_singletonNeedsSingletonInConstructor');
         $this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
     }
@@ -350,7 +336,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function prototypeWhichRequiresPrototypeViaConstructorInjectionWorks()
     {
-        $this->container->expects($this->never())->method('log');
+        $this->logger->expects($this->never())->method('notice');
         $object = $this->container->getInstance('t3lib_object_prototypeNeedsPrototypeInConstructor');
         $this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
     }
@@ -360,7 +346,7 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
      */
     public function prototypeWhichRequiresSingletonViaConstructorInjectionWorks()
     {
-        $this->container->expects($this->never())->method('log');
+        $this->logger->expects($this->never())->method('notice');
         $object = $this->container->getInstance('t3lib_object_prototypeNeedsSingletonInConstructor');
         $this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
     }
@@ -896,7 +882,8 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     public function getInstanceOnTwoOptionalGivesNoArgumentsToConstructorIfNoneAreGiven()
     {
         $object = $this->container->getInstance(
-            \TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures\TwoConstructorArgumentsBothOptional::class);
+            \TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures\TwoConstructorArgumentsBothOptional::class
+        );
         $this->assertInstanceOf(
             \TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures\TwoConstructorArgumentsBothOptional::class,
             $object
@@ -969,5 +956,25 @@ class ContainerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             $second,
             $object->argumentTestClassTwo
         );
+    }
+
+    /**
+     * @test
+     */
+    public function getInstanceInjectsPublicProperties()
+    {
+        $container = new Container();
+        $object = $container->getInstance(PublicPropertyInjectClass::class);
+        self::assertInstanceOf(ArgumentTestClassForPublicPropertyInjection::class, $object->foo);
+    }
+
+    /**
+     * @test
+     */
+    public function getInstanceInjectsProtectedProperties()
+    {
+        $container = new Container();
+        $object = $container->getInstance(ProtectedPropertyInjectClass::class);
+        self::assertInstanceOf(ArgumentTestClassForPublicPropertyInjection::class, $object->getFoo());
     }
 }

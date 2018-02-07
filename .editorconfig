@@ -32,8 +32,8 @@ indent_size = 4
 
 # JS-Files
 [*.js]
-indent_style = tab
-indent_size = 4
+indent_style = space
+indent_size = 2
 
 # JSON-Files
 [*.json]
@@ -72,6 +72,9 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 [*.typoscript]
+indent_style = space
+indent_size = 2
+[*.tsconfig]
 indent_style = space
 indent_size = 2
 

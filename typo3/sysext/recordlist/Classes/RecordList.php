@@ -17,12 +17,13 @@ namespace TYPO3\CMS\Recordlist;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Clipboard\Clipboard;
-use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -33,11 +34,12 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
  * Script Class for the Web > List module; rendering the listing of records on a page
  */
-class RecordList extends AbstractModule
+class RecordList
 {
     /**
      * Page Id for which to make the listing
@@ -188,11 +190,18 @@ class RecordList extends AbstractModule
     protected $iconFactory;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_mod_web_list.xlf');
         $this->moduleTemplate->getPageRenderer()->loadJquery();
         $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Recordlist/FieldSelectBox');
@@ -206,7 +215,7 @@ class RecordList extends AbstractModule
     {
         $this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
         $backendUser = $this->getBackendUserAuthentication();
-        $this->perms_clause = $backendUser->getPagePermsClause(1);
+        $this->perms_clause = $backendUser->getPagePermsClause(Permission::PAGE_SHOW);
         // Get session data
         $sessionData = $backendUser->getSessionData(__CLASS__);
         $this->search_field = !empty($sessionData['search_field']) ? $sessionData['search_field'] : '';
@@ -239,7 +248,6 @@ class RecordList extends AbstractModule
         $this->MOD_MENU = [
             'bigControlPanel' => '',
             'clipBoard' => '',
-            'localization' => ''
         ];
         // Loading module configuration:
         $this->modTSconfig = BackendUtility::getModTSconfig($this->id, 'mod.' . $this->moduleName);
@@ -268,7 +276,7 @@ class RecordList extends AbstractModule
         $lang = $this->getLanguageService();
         // Loading current page record and checking access:
         $this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
-        $access = is_array($this->pageinfo) ? 1 : 0;
+        $access = is_array($this->pageinfo);
         // Start document template object:
         // We need to keep this due to deeply nested dependencies
         $this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
@@ -300,22 +308,17 @@ class RecordList extends AbstractModule
                 $this->MOD_SETTINGS['clipBoard'] = true;
             }
         }
-        // Set predefined value for LocalizationView:
-        if ($this->modTSconfig['properties']['enableLocalizationView'] === 'activated') {
-            $this->MOD_SETTINGS['localization'] = true;
-        } elseif ($this->modTSconfig['properties']['enableLocalizationView'] === 'deactivated') {
-            $this->MOD_SETTINGS['localization'] = false;
-        }
 
         // Initialize the dblist object:
         /** @var $dblist RecordList\DatabaseRecordList */
         $dblist = GeneralUtility::makeInstance(RecordList\DatabaseRecordList::class);
-        $dblist->script = BackendUtility::getModuleUrl('web_list');
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $dblist->script = (string)$uriBuilder->buildUriFromRoute('web_list');
         $dblist->calcPerms = $calcPerms;
         $dblist->thumbs = $backendUser->uc['thumbnailsByDefault'];
         $dblist->returnUrl = $this->returnUrl;
         $dblist->allFields = $this->MOD_SETTINGS['bigControlPanel'] || $this->table ? 1 : 0;
-        $dblist->localizationView = $this->MOD_SETTINGS['localization'];
         $dblist->showClipboard = 1;
         $dblist->disableSingleTableView = $this->modTSconfig['properties']['disableSingleTableView'];
         $dblist->listOnlyInSingleTableMode = $this->modTSconfig['properties']['listOnlyInSingleTableView'];
@@ -327,7 +330,7 @@ class RecordList extends AbstractModule
         $dblist->newWizards = $this->modTSconfig['properties']['newWizards'] ? 1 : 0;
         $dblist->pageRow = $this->pageinfo;
         $dblist->counter++;
-        $dblist->MOD_MENU = ['bigControlPanel' => '', 'clipBoard' => '', 'localization' => ''];
+        $dblist->MOD_MENU = ['bigControlPanel' => '', 'clipBoard' => ''];
         $dblist->modTSconfig = $this->modTSconfig;
         $clickTitleMode = trim($this->modTSconfig['properties']['clickTitleMode']);
         $dblist->clickTitleMode = $clickTitleMode === '' ? 'edit' : $clickTitleMode;
@@ -380,7 +383,7 @@ class RecordList extends AbstractModule
                     if (isset($cmd['pages'])) {
                         BackendUtility::setUpdateSignal('updatePageTree');
                     }
-                    $tce->printLogErrorMessages(GeneralUtility::getIndpEnv('REQUEST_URI'));
+                    $tce->printLogErrorMessages();
                 }
             }
             // Initialize the listing object, dblist, for rendering the list:
@@ -420,7 +423,7 @@ class RecordList extends AbstractModule
 				' . $this->moduleTemplate->redirectUrls($listUrl) . '
 				' . $dblist->CBfunctions() . '
 				function editRecords(table,idList,addParams,CBflag) {	//
-					window.location.href="' . BackendUtility::getModuleUrl('record_edit', ['returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')]) . '&edit["+table+"]["+idList+"]=edit"+addParams;
+					window.location.href="' . (string)$uriBuilder->buildUriFromRoute('record_edit', ['returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')]) . '&edit["+table+"]["+idList+"]=edit"+addParams;
 				}
 				function editList(table,idList) {	//
 					var list="";
@@ -457,12 +460,33 @@ class RecordList extends AbstractModule
             $title = $this->pageinfo['title'];
         }
         $this->body = $this->moduleTemplate->header($title);
+
+        // Additional header content
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['recordlist/Modules/Recordlist/index.php']['drawHeaderHook'] ?? [] as $hook) {
+            $params = [];
+            $this->body .= GeneralUtility::callUserFunction($hook, $params, $this);
+        }
+
         $this->moduleTemplate->setTitle($title);
 
+        $output = '';
+        // Show the selector to add page translations and the list of translations of the current page
+        // but only when in "default" mode
+        if ($this->id && !$dblist->csvOutput && !$this->search_field && !$this->cmd && !$this->table) {
+            $output .= $this->languageSelector($this->id);
+            $pageTranslationsDatabaseRecordList = clone $dblist;
+            $pageTranslationsDatabaseRecordList->listOnlyInSingleTableMode = false;
+            $pageTranslationsDatabaseRecordList->disableSingleTableView = true;
+            $pageTranslationsDatabaseRecordList->deniedNewTables = ['pages'];
+            $pageTranslationsDatabaseRecordList->hideTranslations = '';
+            $pageTranslationsDatabaseRecordList->iLimit = $pageTranslationsDatabaseRecordList->itemsLimitPerTable;
+            $pageTranslationsDatabaseRecordList->showOnlyTranslatedRecords(true);
+            $output .= $pageTranslationsDatabaseRecordList->getTable('pages', $this->id);
+        }
+
         if (!empty($dblist->HTMLcode)) {
-            $output = $dblist->HTMLcode;
+            $output .= $dblist->HTMLcode;
         } else {
-            $output = '';
             $flashMessage = GeneralUtility::makeInstance(
                 FlashMessage::class,
                 $lang->getLL('noRecordsOnThisPage'),
@@ -489,7 +513,7 @@ class RecordList extends AbstractModule
             $this->body .= '
 
 					<!--
-						Listing options for extended view, clipboard and localization view
+						Listing options for extended view and clipboard view
 					-->
 					<div class="typo3-listOptions">
 						<form action="" method="post">';
@@ -516,16 +540,6 @@ class RecordList extends AbstractModule
                 }
             }
 
-            // Add "localization view" checkbox:
-            if ($this->modTSconfig['properties']['enableLocalizationView'] === 'selectable') {
-                $this->body .= '<div class="checkbox">' .
-                    '<label for="checkLocalization">' .
-                    BackendUtility::getFuncCheck($this->id, 'SET[localization]', $this->MOD_SETTINGS['localization'], '', $this->table ? '&table=' . $this->table : '', 'id="checkLocalization"') .
-                    BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_options', htmlspecialchars($lang->getLL('localization'))) .
-                    '</label>' .
-                    '</div>';
-            }
-
             $this->body .= '
 						</form>
 					</div>';
@@ -535,12 +549,9 @@ class RecordList extends AbstractModule
             $this->body .= '<div class="db_list-dashboard">' . $dblist->clipObj->printClipboard() . '</div>';
         }
         // Additional footer content
-        $footerContentHook = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['recordlist/Modules/Recordlist/index.php']['drawFooterHook'];
-        if (is_array($footerContentHook)) {
-            foreach ($footerContentHook as $hook) {
-                $params = [];
-                $this->body .= GeneralUtility::callUserFunction($hook, $params, $this);
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['recordlist/Modules/Recordlist/index.php']['drawFooterHook'] ?? [] as $hook) {
+            $params = [];
+            $this->body .= GeneralUtility::callUserFunction($hook, $params, $this);
         }
         // Setting up the buttons for docheader
         $dblist->getDocHeaderButtons($this->moduleTemplate);
@@ -555,8 +566,11 @@ class RecordList extends AbstractModule
                 ->setClasses('t3js-toggle-search-toolbox')
                 ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.title.searchIcon'))
                 ->setIcon($this->iconFactory->getIcon('actions-search', Icon::SIZE_SMALL));
-            $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->addButton($searchButton,
-                ButtonBar::BUTTON_POSITION_LEFT, 90);
+            $this->moduleTemplate->getDocHeaderComponent()->getButtonBar()->addButton(
+                $searchButton,
+                ButtonBar::BUTTON_POSITION_LEFT,
+                90
+            );
         }
 
         if ($this->pageinfo) {
@@ -585,6 +599,150 @@ class RecordList extends AbstractModule
         $this->moduleTemplate->setContent($this->content);
         $response->getBody()->write($this->moduleTemplate->renderContent());
         return $response;
+    }
+
+    /**
+     * Make selector box for creating new translation in a language
+     * Displays only languages which are not yet present for the current page and
+     * that are not disabled with page TS.
+     *
+     * @param int $id Page id for which to create a new translation record of pages
+     * @return string <select> HTML element (if there were items for the box anyways...)
+     */
+    protected function languageSelector(int $id): string
+    {
+        if ($this->getBackendUserAuthentication()->check('tables_modify', 'pages')) {
+            // First, select all
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_language');
+            $queryBuilder->getRestrictions()->removeAll();
+            $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(HiddenRestriction::class));
+            $statement = $queryBuilder->select('uid', 'title')
+                ->from('sys_language')
+                ->orderBy('sorting')
+                ->execute();
+            $availableTranslations = [];
+            while ($row = $statement->fetch()) {
+                if ($this->getBackendUserAuthentication()->checkLanguageAccess($row['uid'])) {
+                    $availableTranslations[(int)$row['uid']] = $row['title'];
+                }
+            }
+            // Then, subtract the languages which are already on the page:
+            $localizationParentField = $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'];
+            $languageField = $GLOBALS['TCA']['pages']['ctrl']['languageField'];
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_language');
+            $queryBuilder->getRestrictions()->removeAll();
+            $queryBuilder->select('sys_language.uid AS uid', 'sys_language.title AS title')
+                ->from('sys_language')
+                ->join(
+                    'sys_language',
+                    'pages',
+                    'pages',
+                    $queryBuilder->expr()->eq('sys_language.uid', $queryBuilder->quoteIdentifier('pages.' . $languageField))
+                )
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'pages.deleted',
+                        $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
+                    ),
+                    $queryBuilder->expr()->eq(
+                        'pages.' . $localizationParentField,
+                        $queryBuilder->createNamedParameter($this->id, \PDO::PARAM_INT)
+                    ),
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->gte(
+                            'pages.t3ver_state',
+                            $queryBuilder->createNamedParameter(
+                                (string)new VersionState(VersionState::DEFAULT_STATE),
+                                \PDO::PARAM_INT
+                            )
+                        ),
+                        $queryBuilder->expr()->eq(
+                            'pages.t3ver_wsid',
+                            $queryBuilder->createNamedParameter($this->getBackendUserAuthentication()->workspace, \PDO::PARAM_INT)
+                        )
+                    )
+                )
+                ->groupBy(
+                    'pages.' . $languageField,
+                    'sys_language.uid',
+                    'sys_language.pid',
+                    'sys_language.tstamp',
+                    'sys_language.hidden',
+                    'sys_language.title',
+                    'sys_language.language_isocode',
+                    'sys_language.static_lang_isocode',
+                    'sys_language.flag',
+                    'sys_language.sorting'
+                )
+                ->orderBy('sys_language.sorting');
+            if (!$this->getBackendUserAuthentication()->isAdmin()) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq(
+                        'sys_language.hidden',
+                        $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
+                    )
+                );
+            }
+            $statement = $queryBuilder->execute();
+            while ($row = $statement->fetch()) {
+                unset($availableTranslations[(int)$row['uid']]);
+            }
+            // Remove disallowed languages
+            if (!empty($availableTranslations)
+                && !$this->getBackendUserAuthentication()->isAdmin()
+                && $this->getBackendUserAuthentication()->groupData['allowed_languages'] !== ''
+            ) {
+                $allowed_languages = array_flip(explode(',', $this->getBackendUserAuthentication()->groupData['allowed_languages']));
+                if (!empty($allowed_languages)) {
+                    foreach ($availableTranslations as $key => $value) {
+                        if (!isset($allowed_languages[$key]) && $key != 0) {
+                            unset($availableTranslations[$key]);
+                        }
+                    }
+                }
+            }
+            // Remove disabled languages
+            $modSharedTSconfig = BackendUtility::getModTSconfig($id, 'mod.SHARED');
+            $disableLanguages = isset($modSharedTSconfig['properties']['disableLanguages'])
+                ? GeneralUtility::trimExplode(',', $modSharedTSconfig['properties']['disableLanguages'], true)
+                : [];
+            if (!empty($availableTranslations) && !empty($disableLanguages)) {
+                foreach ($disableLanguages as $language) {
+                    if ($language != 0 && isset($availableTranslations[$language])) {
+                        unset($availableTranslations[$language]);
+                    }
+                }
+            }
+            // If any languages are left, make selector:
+            if (!empty($availableTranslations)) {
+                $output = '<option value="">' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:new_language')) . '</option>';
+                foreach ($availableTranslations as $languageUid => $languageTitle) {
+                    // Build localize command URL to DataHandler (tce_db)
+                    // which redirects to FormEngine (record_edit)
+                    // which, when finished editing should return back to the current page (returnUrl)
+                    $parameters = [
+                        'justLocalized' => 'pages:' . $id . ':' . $languageUid,
+                        'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+                    ];
+                    /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+                    $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+                    $redirectUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', $parameters);
+                    $targetUrl = BackendUtility::getLinkToDataHandlerAction(
+                        '&cmd[pages][' . $id . '][localize]=' . $languageUid,
+                        $redirectUrl
+                    );
+
+                    $output .= '<option value="' . htmlspecialchars($targetUrl) . '">' . htmlspecialchars($languageTitle) . '</option>';
+                }
+
+                return '<div class="form-inline form-inline-spaced">'
+                    . '<div class="form-group">'
+                    . '<select class="form-control input-sm" name="createNewLanguage" onchange="window.location.href=this.options[this.selectedIndex].value">'
+                    . $output
+                    . '</select></div></div>';
+            }
+        }
+        return '';
     }
 
     /**

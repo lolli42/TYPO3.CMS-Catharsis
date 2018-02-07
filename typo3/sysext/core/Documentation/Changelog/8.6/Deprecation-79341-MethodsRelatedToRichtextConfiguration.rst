@@ -11,8 +11,8 @@ Description
 
 The following methods and method arguments have been deprecated:
 
-* Method :php:`\TYPO3\CMS\Backend\UtilityBackendUtility::getSpecConfParametersFromArray()`
-* Method :php:`\TYPO3\CMS\Backend\UtilityBackendUtility::RTEsetup()`
+* Method :php:`\TYPO3\CMS\Backend\Utility\BackendUtility::getSpecConfParametersFromArray()`
+* Method :php:`\TYPO3\CMS\Backend\Utility\BackendUtility::RTEsetup()`
 * Second argument :php:`$specConf` of :php:`\TYPO3\CMS\Core\Html\RteHtmlParser->RTE_transform()`
 
 
@@ -34,4 +34,4 @@ Migration
 If not otherwise possible, class :php:`\TYPO3\CMS\Core\Configuration\Richtext` can be used to fetch richtext configuration.
 Be aware this class is marked @internal and is likely to change or vanish in TYPO3 v9 again.
 
-.. index:: Backend, RTE
+.. index:: Backend, RTE, PHP-API

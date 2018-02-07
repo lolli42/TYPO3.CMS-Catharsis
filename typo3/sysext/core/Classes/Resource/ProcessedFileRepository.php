@@ -14,16 +14,19 @@ namespace TYPO3\CMS\Core\Resource;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Repository for accessing files
  * it also serves as the public API for the indexing part of files in general
  */
-class ProcessedFileRepository extends AbstractRepository
+class ProcessedFileRepository extends AbstractRepository implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * The main object type of this class. In some cases (fileReference) this
      * repository can also return FileReference objects, implementing the
@@ -40,6 +43,14 @@ class ProcessedFileRepository extends AbstractRepository
      * @var string
      */
     protected $table = 'sys_file_processedfile';
+
+    /**
+     * As determining the table columns is a costly operation this is done only once during runtime and cached then
+     *
+     * @var array
+     * @see cleanUnavailableColumns()
+     */
+    protected $tableColumns = [];
 
     /**
      * Creates this object.
@@ -91,7 +102,7 @@ class ProcessedFileRepository extends AbstractRepository
      * @param ResourceStorage $storage
      * @param string $identifier
      *
-     * @return null|ProcessedFile
+     * @return ProcessedFile|null
      */
     public function findByStorageAndIdentifier(ResourceStorage $storage, $identifier)
     {
@@ -239,7 +250,7 @@ class ProcessedFileRepository extends AbstractRepository
     /**
      * Removes all processed files and also deletes the associated physical files
      *
-     * @param int|NULL $storageUid If not NULL, only the processed files of the given storage are removed
+     * @param int|null $storageUid If not NULL, only the processed files of the given storage are removed
      * @return int Number of failed deletions
      */
     public function removeAll($storageUid = null)
@@ -253,7 +264,6 @@ class ProcessedFileRepository extends AbstractRepository
             )
             ->execute();
 
-        $logger = $this->getLogger();
         $errorCount = 0;
 
         while ($row = $result->fetch()) {
@@ -265,7 +275,7 @@ class ProcessedFileRepository extends AbstractRepository
                 $file->getStorage()->setEvaluatePermissions(false);
                 $file->delete(true);
             } catch (\Exception $e) {
-                $logger->error(
+                $this->logger->error(
                     'Failed to delete file "' . $row['identifier'] . '" in storage uid ' . $row['storage'] . '.',
                     [
                         'exception' => $e
@@ -291,18 +301,14 @@ class ProcessedFileRepository extends AbstractRepository
      */
     protected function cleanUnavailableColumns(array $data)
     {
-        $tableColumns = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable($this->table)
-            ->getSchemaManager()
-            ->listTableColumns($this->table);
-        return array_intersect_key($data, $tableColumns);
-    }
+        // As determining the table columns is a costly operation this is done only once during runtime and cached then
+        if (empty($this->tableColumns[$this->table])) {
+            $this->tableColumns[$this->table] = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable($this->table)
+                ->getSchemaManager()
+                ->listTableColumns($this->table);
+        }
 
-    /**
-     * @return \TYPO3\CMS\Core\Log\Logger
-     */
-    protected function getLogger()
-    {
-        return GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
+        return array_intersect_key($data, $this->tableColumns[$this->table]);
     }
 }

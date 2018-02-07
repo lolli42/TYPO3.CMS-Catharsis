@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\ExtensionScanner\Php\Matcher;
 
 /*
@@ -89,7 +89,7 @@ abstract class AbstractCoreMatcher extends NodeVisitorAbstract implements CodeSc
     protected function validateMatcherDefinitions(array $requiredArrayKeys = [])
     {
         foreach ($this->matcherDefinitions as $key => $matcherDefinition) {
-            // Each config must point to at least on .rst file
+            // Each config must point to at least one .rst file
             if (empty($matcherDefinition['restFiles'])) {
                 throw new \InvalidArgumentException(
                     'Each configuration must have at least one referenced "restFiles" entry. Offending key: ' . $key,

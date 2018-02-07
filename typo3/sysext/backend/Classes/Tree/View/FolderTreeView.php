@@ -134,7 +134,7 @@ class FolderTreeView extends AbstractTreeView
     {
         if (empty($this->scope)) {
             $this->scope = [
-                'class' => get_class($this),
+                'class' => static::class,
                 'script' => $this->thisScript,
                 'ext_noTempRecyclerDirs' => $this->ext_noTempRecyclerDirs
             ];
@@ -146,9 +146,8 @@ class FolderTreeView extends AbstractTreeView
             $scopeHash = GeneralUtility::hmac($scopeData);
             $js = htmlspecialchars('Tree.load(' . GeneralUtility::quoteJSvalue($cmd) . ', ' . (int)$isExpand . ', this, ' . GeneralUtility::quoteJSvalue($scopeData) . ', ' . GeneralUtility::quoteJSvalue($scopeHash) . ');');
             return '<a class="list-tree-control' . (!$isExpand ? ' list-tree-control-open' : ' list-tree-control-closed') . '" onclick="' . $js . '"><i class="fa"></i></a>';
-        } else {
-            return $icon;
         }
+        return $icon;
     }
 
     /**
@@ -237,7 +236,7 @@ class FolderTreeView extends AbstractTreeView
     }
 
     /**
-     * Returns the title for the input record. If blank, a "no title" labele (localized) will be returned.
+     * Returns the title for the input record. If blank, a "no title" label (localized) will be returned.
      * '_title' is used for setting an alternative title for folders.
      *
      * @param array $row The input row array (where the key "_title" is used for the title)
@@ -246,7 +245,7 @@ class FolderTreeView extends AbstractTreeView
      */
     public function getTitleStr($row, $titleLen = 30)
     {
-        return $row['_title'] ?: parent::getTitleStr($row, $titleLen);
+        return $row['_title'] ?? parent::getTitleStr($row, $titleLen);
     }
 
     /**
@@ -493,7 +492,7 @@ class FolderTreeView extends AbstractTreeView
         foreach ($treeItems as $treeItem) {
             /** @var $folderObject Folder */
             $folderObject = $treeItem['row']['folder'];
-            $classAttr = $treeItem['row']['_CSSCLASS'];
+            $classAttr = $treeItem['row']['_CSSCLASS'] ?? '';
             $folderIdentifier = $folderObject->getCombinedIdentifier();
             // this is set if the AJAX request has just opened this folder (via the PM command)
             $isExpandedFolderIdentifier = $expandedFolderHash == GeneralUtility::md5int($folderIdentifier);
@@ -501,27 +500,27 @@ class FolderTreeView extends AbstractTreeView
             $itemHTML = '';
             // If this item is the start of a new level,
             // then a new level <ul> is needed, but not in ajax mode
-            if ($treeItem['isFirst'] && !$doCollapse && !($doExpand && $isExpandedFolderIdentifier)) {
+            if (!empty($treeItem['isFirst']) && !$doCollapse && !($doExpand && $isExpandedFolderIdentifier)) {
                 $itemHTML = '<ul class="list-tree">';
             }
             // Add CSS classes to the list item
-            if ($treeItem['hasSub']) {
+            if (!empty($treeItem['hasSub'])) {
                 $classAttr .= ' list-tree-control-open';
             }
             $itemHTML .= '
 				<li id="' . $idAttr . '" ' . ($classAttr ? ' class="' . trim($classAttr) . '"' : '') . '><span class="list-tree-group">' . $treeItem['HTML'] . $this->wrapTitle($this->getTitleStr($treeItem['row'], $titleLength), $folderObject, $treeItem['bank']) . '</span>';
-            if (!$treeItem['hasSub']) {
+            if (empty($treeItem['hasSub'])) {
                 $itemHTML .= '</li>';
             }
             // We have to remember if this is the last one
             // on level X so the last child on level X+1 closes the <ul>-tag
-            if ($treeItem['isLast'] && !($doExpand && $isExpandedFolderIdentifier)) {
+            if (!empty($treeItem['isLast']) && !($doExpand && $isExpandedFolderIdentifier)) {
                 $closeDepth[$treeItem['invertedDepth']] = 1;
             }
             // If this is the last one and does not have subitems, we need to close
             // the tree as long as the upper levels have last items too
-            if ($treeItem['isLast'] && !$treeItem['hasSub'] && !$doCollapse && !($doExpand && $isExpandedFolderIdentifier)) {
-                for ($i = $treeItem['invertedDepth']; $closeDepth[$i] == 1; $i++) {
+            if (!empty($treeItem['isLast']) && empty($treeItem['hasSub']) && !$doCollapse && !($doExpand && $isExpandedFolderIdentifier)) {
+                for ($i = $treeItem['invertedDepth']; !empty($closeDepth[$i]); $i++) {
                     $closeDepth[$i] = 0;
                     $itemHTML .= '</ul></li>';
                 }
@@ -644,12 +643,10 @@ class FolderTreeView extends AbstractTreeView
         if ($storageObject) {
             if ($startingPointFolder) {
                 return $this->storageHashNumbers[$storageObject->getUid() . $startingPointFolder->getCombinedIdentifier()];
-            } else {
-                return $this->storageHashNumbers[$storageObject->getUid()];
             }
-        } else {
-            return null;
+            return $this->storageHashNumbers[$storageObject->getUid()];
         }
+        return null;
     }
 
     /**
@@ -673,9 +670,9 @@ class FolderTreeView extends AbstractTreeView
             }
         }
         // Take the first three parameters
-        list($mountKey, $doExpand, $folderIdentifier) = explode('_', $PM, 3);
+        list($mountKey, $doExpand, $folderIdentifier) = array_pad(explode('_', $PM, 3), 3, null);
         // In case the folder identifier contains "_", we just need to get the fourth/last parameter
-        list($folderIdentifier, $treeName) = GeneralUtility::revExplode('_', $folderIdentifier, 2);
+        list($folderIdentifier, $treeName) = array_pad(GeneralUtility::revExplode('_', $folderIdentifier, 2), 2, null);
         return [
             $mountKey,
             $doExpand,
@@ -697,10 +694,10 @@ class FolderTreeView extends AbstractTreeView
     protected function generateExpandCollapseParameter($mountKey = null, $doExpand = false, Folder $folderObject = null, $treeName = null)
     {
         $parts = [
-            $mountKey !== null ? $mountKey : $this->bank,
+            $mountKey ?? $this->bank,
             $doExpand == 1 ? 1 : 0,
             $folderObject !== null ? GeneralUtility::md5int($folderObject->getCombinedIdentifier()) : '',
-            $treeName !== null ? $treeName : $this->treeName
+            $treeName ?? $this->treeName
         ];
         return implode('_', $parts);
     }

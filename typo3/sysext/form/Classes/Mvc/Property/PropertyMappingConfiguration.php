@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Mvc\Property;
 
 /*
@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Extbase\Validation\Validator\NotEmptyValidator;
 use TYPO3\CMS\Form\Domain\Model\FormElements\FileUpload;
 use TYPO3\CMS\Form\Domain\Model\Renderable\RenderableInterface;
 use TYPO3\CMS\Form\Mvc\Property\TypeConverter\UploadedFileReferenceConverter;
@@ -49,25 +50,35 @@ class PropertyMappingConfiguration
      */
     public function afterBuildingFinished(RenderableInterface $renderable)
     {
-        if (get_class($renderable) === FileUpload::class) {
+        if ($renderable instanceof FileUpload) {
             /** @var \TYPO3\CMS\Extbase\Property\PropertyMappingConfiguration $propertyMappingConfiguration */
             $propertyMappingConfiguration = $renderable->getRootForm()->getProcessingRule($renderable->getIdentifier())->getPropertyMappingConfiguration();
 
             $mimeTypeValidator = GeneralUtility::makeInstance(ObjectManager::class)
                 ->get(MimeTypeValidator::class, ['allowedMimeTypes' => $renderable->getProperties()['allowedMimeTypes']]);
+
+            $processingRule = $renderable->getRootForm()->getProcessingRule($renderable->getIdentifier());
+            $validators = [$mimeTypeValidator];
+            foreach ($processingRule->getValidators() as $validator) {
+                if (!($validator instanceof NotEmptyValidator)) {
+                    $validators[] = $validator;
+                    $processingRule->removeValidator($validator);
+                }
+            }
+
             $uploadConfiguration = [
-                UploadedFileReferenceConverter::CONFIGURATION_FILE_VALIDATORS => [$mimeTypeValidator],
+                UploadedFileReferenceConverter::CONFIGURATION_FILE_VALIDATORS => $validators,
                 UploadedFileReferenceConverter::CONFIGURATION_UPLOAD_CONFLICT_MODE => 'rename',
             ];
 
-            $saveToFileMountIdentifier = (isset($renderable->getProperties()['saveToFileMount'])) ? $renderable->getProperties()['saveToFileMount'] : null;
+            $saveToFileMountIdentifier = $renderable->getProperties()['saveToFileMount'] ?? '';
             if ($this->checkSaveFileMountAccess($saveToFileMountIdentifier)) {
                 $uploadConfiguration[UploadedFileReferenceConverter::CONFIGURATION_UPLOAD_FOLDER] = $saveToFileMountIdentifier;
             } else {
                 $persistenceIdentifier = $renderable->getRootForm()->getPersistenceIdentifier();
                 if (!empty($persistenceIdentifier)) {
                     $pathinfo = PathUtility::pathinfo($persistenceIdentifier);
-                    $saveToFileMountIdentifier  = $pathinfo['dirname'];
+                    $saveToFileMountIdentifier = $pathinfo['dirname'];
                     if ($this->checkSaveFileMountAccess($saveToFileMountIdentifier)) {
                         $uploadConfiguration[UploadedFileReferenceConverter::CONFIGURATION_UPLOAD_FOLDER] = $saveToFileMountIdentifier;
                     }

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Mvc\Persistence;
 
 /*
@@ -27,7 +27,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Form\Mvc\Configuration\ConfigurationManagerInterface;
-use TYPO3\CMS\Form\Mvc\Configuration\YamlSource;
+use TYPO3\CMS\Form\Mvc\Configuration\Exception\FileWriteException;
 use TYPO3\CMS\Form\Mvc\Persistence\Exception\NoUniqueIdentifierException;
 use TYPO3\CMS\Form\Mvc\Persistence\Exception\NoUniquePersistenceIdentifierException;
 use TYPO3\CMS\Form\Mvc\Persistence\Exception\PersistenceManagerException;
@@ -106,7 +106,22 @@ class FormPersistenceManager implements FormPersistenceManagerInterface
         } else {
             $file = $this->getFileByIdentifier($persistenceIdentifier);
         }
-        return $this->yamlSource->load([$file]);
+
+        try {
+            $yaml = $this->yamlSource->load([$file]);
+        } catch (\Exception $e) {
+            $yaml = [
+                'identifier' => $file->getCombinedIdentifier(),
+                'label' => $e->getMessage(),
+                'error' => [
+                    'code' => $e->getCode(),
+                    'message' => $e->getMessage()
+                ],
+                'invalid' => true,
+            ];
+        }
+
+        return $yaml;
     }
 
     /**
@@ -140,7 +155,15 @@ class FormPersistenceManager implements FormPersistenceManagerInterface
             $fileToSave = $this->getOrCreateFile($persistenceIdentifier);
         }
 
-        $this->yamlSource->save($fileToSave, $formDefinition);
+        try {
+            $this->yamlSource->save($fileToSave, $formDefinition);
+        } catch (FileWriteException $e) {
+            throw new PersistenceManagerException(sprintf(
+                'The file "%s" could not be saved: %s',
+                $persistenceIdentifier,
+                $e->getMessage()
+            ), 1512582637, $e);
+        }
     }
 
     /**
@@ -225,6 +248,12 @@ class FormPersistenceManager implements FormPersistenceManagerInterface
             $storage = $folder->getStorage();
             $storage->addFileAndFolderNameFilter([$fileExtensionFilter, 'filterFileList']);
 
+            // TODO: deprecated since TYPO3 v9, will be removed in TYPO3 v10
+            $formReadOnly = false;
+            if ($folder->getCombinedIdentifier() === '1:/user_upload/') {
+                $formReadOnly = true;
+            }
+
             $files = $folder->getFiles(0, 0, Folder::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS, true);
             foreach ($files as $file) {
                 $persistenceIdentifier = $storage->getUid() . ':' . $file->getIdentifier();
@@ -232,12 +261,14 @@ class FormPersistenceManager implements FormPersistenceManagerInterface
                 $form = $this->load($persistenceIdentifier);
                 $forms[] = [
                     'identifier' => $form['identifier'],
-                    'name' => isset($form['label']) ? $form['label'] : $form['identifier'],
+                    'name' => $form['label'] ?? $form['identifier'],
                     'persistenceIdentifier' => $persistenceIdentifier,
-                    'readOnly' => false,
+                    'readOnly' => $formReadOnly,
                     'removable' => true,
                     'location' => 'storage',
                     'duplicateIdentifier' => false,
+                    'invalid' => $form['invalid'],
+                    'error' => $form['error'],
                 ];
                 $identifiers[$form['identifier']]++;
             }
@@ -253,12 +284,14 @@ class FormPersistenceManager implements FormPersistenceManagerInterface
                 $form = $this->load($relativePath . $fileInfo->getFilename());
                 $forms[] = [
                     'identifier' => $form['identifier'],
-                    'name' => isset($form['label']) ? $form['label'] : $form['identifier'],
+                    'name' => $form['label'] ?? $form['identifier'],
                     'persistenceIdentifier' => $relativePath . $fileInfo->getFilename(),
                     'readOnly' => $this->formSettings['persistenceManager']['allowSaveToExtensionPaths'] ? false: true,
                     'removable' => $this->formSettings['persistenceManager']['allowDeleteFromExtensionPaths'] ? true: false,
                     'location' => 'extension',
                     'duplicateIdentifier' => false,
+                    'invalid' => $form['invalid'],
+                    'error' => $form['error'],
                 ];
                 $identifiers[$form['identifier']]++;
             }
@@ -312,6 +345,7 @@ class FormPersistenceManager implements FormPersistenceManagerInterface
             try {
                 $folder = $storage->getFolder($fileMountIdentifier);
             } catch (FolderDoesNotExistException $e) {
+                $storage->createFolder($fileMountIdentifier);
                 continue;
             } catch (InsufficientFolderAccessPermissionsException $e) {
                 continue;
@@ -478,7 +512,13 @@ class FormPersistenceManager implements FormPersistenceManagerInterface
         if (!$storage->hasFolder($pathinfo['dirname'])) {
             throw new PersistenceManagerException(sprintf('Could not create folder "%s".', $pathinfo['dirname']), 1471630579);
         }
-        $folder = $storage->getFolder($pathinfo['dirname']);
+
+        try {
+            $folder = $storage->getFolder($pathinfo['dirname']);
+        } catch (InsufficientFolderAccessPermissionsException $e) {
+            throw new PersistenceManagerException(sprintf('No read access to folder "%s".', $pathinfo['dirname']), 1512583307);
+        }
+
         if (!$storage->checkFolderActionPermission('write', $folder)) {
             throw new PersistenceManagerException(sprintf('No write access to folder "%s".', $pathinfo['dirname']), 1471630580);
         }

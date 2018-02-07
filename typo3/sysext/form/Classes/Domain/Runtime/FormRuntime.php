@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Runtime;
 
 /*
@@ -18,6 +18,7 @@ namespace TYPO3\CMS\Form\Domain\Runtime;
  */
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Error\Result;
 use TYPO3\CMS\Extbase\Mvc\Controller\Arguments;
@@ -26,7 +27,6 @@ use TYPO3\CMS\Extbase\Mvc\Web\Request;
 use TYPO3\CMS\Extbase\Mvc\Web\Response;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 use TYPO3\CMS\Extbase\Property\Exception as PropertyException;
-use TYPO3\CMS\Extbase\Reflection\PropertyReflection;
 use TYPO3\CMS\Form\Domain\Exception\RenderingException;
 use TYPO3\CMS\Form\Domain\Finishers\FinisherContext;
 use TYPO3\CMS\Form\Domain\Model\FormDefinition;
@@ -205,20 +205,15 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     {
         if (!$this->formState->isFormSubmitted()) {
             $this->currentPage = $this->formDefinition->getPageByIndex(0);
-            if (
-                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
-            ) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'] as $className) {
-                    $hookObj = GeneralUtility::makeInstance($className);
-                    if (method_exists($hookObj, 'afterInitializeCurrentPage')) {
-                        $this->currentPage = $hookObj->afterInitializeCurrentPage(
-                            $this,
-                            $this->currentPage,
-                            null,
-                            $this->request->getArguments()
-                        );
-                    }
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'] ?? [] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'afterInitializeCurrentPage')) {
+                    $this->currentPage = $hookObj->afterInitializeCurrentPage(
+                        $this,
+                        $this->currentPage,
+                        null,
+                        $this->request->getArguments()
+                    );
                 }
             }
             return;
@@ -240,20 +235,15 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
             $this->currentPage = $this->formDefinition->getPageByIndex($currentPageIndex);
         }
 
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'afterInitializeCurrentPage')) {
-                    $this->currentPage = $hookObj->afterInitializeCurrentPage(
-                        $this,
-                        $this->currentPage,
-                        $this->lastDisplayedPage,
-                        $this->request->getArguments()
-                    );
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterInitializeCurrentPage'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'afterInitializeCurrentPage')) {
+                $this->currentPage = $hookObj->afterInitializeCurrentPage(
+                    $this,
+                    $this->currentPage,
+                    $this->lastDisplayedPage,
+                    $this->request->getArguments()
+                );
             }
         }
     }
@@ -333,7 +323,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
 
     /**
      * @param Page $page
-     * return null|string
+     * @return string|null
      */
     protected function getHoneypotNameFromSession(Page $page)
     {
@@ -436,44 +426,35 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
         };
 
         $value = null;
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'afterSubmit')) {
-                    $value = $hookObj->afterSubmit(
-                        $this,
-                        $page,
-                        $value,
-                        $requestArguments
-                    );
-                }
+
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'afterSubmit')) {
+                $value = $hookObj->afterSubmit(
+                    $this,
+                    $page,
+                    $value,
+                    $requestArguments
+                );
             }
         }
 
         foreach ($page->getElementsRecursively() as $element) {
             try {
                 $value = ArrayUtility::getValueByPath($requestArguments, $element->getIdentifier(), '.');
-            } catch (\RuntimeException $exception) {
+            } catch (MissingArrayPathException $exception) {
                 $value = null;
             }
 
-            if (
-                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'])
-            ) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'] as $className) {
-                    $hookObj = GeneralUtility::makeInstance($className);
-                    if (method_exists($hookObj, 'afterSubmit')) {
-                        $value = $hookObj->afterSubmit(
-                            $this,
-                            $element,
-                            $value,
-                            $requestArguments
-                        );
-                    }
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['afterSubmit'] ?? [] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'afterSubmit')) {
+                    $value = $hookObj->afterSubmit(
+                        $this,
+                        $element,
+                        $value,
+                        $requestArguments
+                    );
                 }
             }
 
@@ -526,7 +507,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     /**
      * Render this form.
      *
-     * @return null|string rendered form
+     * @return string|null rendered form
      * @throws RenderingException
      * @api
      */
@@ -560,7 +541,8 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
      */
     protected function invokeFinishers()
     {
-        $finisherContext = $this->objectManager->get(FinisherContext::class,
+        $finisherContext = $this->objectManager->get(
+            FinisherContext::class,
             $this,
             $this->getControllerContext()
         );
@@ -623,7 +605,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     /**
      * Returns the previous page of the currently selected one or NULL if there is no previous page
      *
-     * @return null|Page
+     * @return Page|null
      * @api
      */
     public function getPreviousPage()
@@ -638,7 +620,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
     /**
      * Returns the next page of the currently selected one or NULL if there is no next page
      *
-     * @return null|Page
+     * @return Page|null
      * @api
      */
     public function getNextPage()
@@ -699,7 +681,7 @@ class FormRuntime implements RootRenderableInterface, \ArrayAccess
             return true;
         }
         if (property_exists($this, $identifier)) {
-            $propertyReflection = new PropertyReflection($this, $identifier);
+            $propertyReflection = new \ReflectionProperty($this, $identifier);
             return $propertyReflection->isPublic();
         }
 

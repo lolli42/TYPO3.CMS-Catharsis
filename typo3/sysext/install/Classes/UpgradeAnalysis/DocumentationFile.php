@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace TYPO3\CMS\Install\UpgradeAnalysis;
 
@@ -53,7 +53,7 @@ class DocumentationFile
         if ($this->registry === null) {
             $this->registry = new Registry();
         }
-        $this->changelogPath = $changelogDir !== '' ? $changelogDir : realpath(PATH_site . ExtensionManagementUtility::siteRelPath('core') . 'Documentation/Changelog');
+        $this->changelogPath = $changelogDir !== '' ? $changelogDir : realpath(ExtensionManagementUtility::extPath('core') . 'Documentation/Changelog');
         $this->changelogPath = strtr($this->changelogPath, '\\', '/');
     }
 

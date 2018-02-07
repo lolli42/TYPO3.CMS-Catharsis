@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace TYPO3\CMS\Frontend\Http;
 
 /*
@@ -14,10 +15,12 @@ namespace TYPO3\CMS\Frontend\Http;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\Http\Dispatcher;
+use TYPO3\CMS\Core\Http\NullResponse;
 use TYPO3\CMS\Core\Http\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
@@ -49,9 +52,9 @@ class EidRequestHandler implements RequestHandlerInterface
      * Handles a frontend request based on the _GP "eID" variable.
      *
      * @param ServerRequestInterface $request
-     * @return NULL|\Psr\Http\Message\ResponseInterface
+     * @return ResponseInterface
      */
-    public function handleRequest(ServerRequestInterface $request)
+    public function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
         // Starting time tracking
         $configuredCookieName = trim($GLOBALS['TYPO3_CONF_VARS']['BE']['cookieName']) ?: 'be_typo_user';
@@ -61,13 +64,9 @@ class EidRequestHandler implements RequestHandlerInterface
         $timeTracker->start();
 
         // Hook to preprocess the current request
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['preprocessRequest'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['preprocessRequest'] as $hookFunction) {
-                $hookParameters = [];
-                GeneralUtility::callUserFunction($hookFunction, $hookParameters, $hookParameters);
-            }
-            unset($hookFunction);
-            unset($hookParameters);
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/index_ts.php']['preprocessRequest'] ?? [] as $hookFunction) {
+            $hookParameters = [];
+            GeneralUtility::callUserFunction($hookFunction, $hookParameters, $hookParameters);
         }
 
         // Remove any output produced until now
@@ -81,7 +80,7 @@ class EidRequestHandler implements RequestHandlerInterface
      * @param ServerRequestInterface $request The request to process
      * @return bool If the request is not an eID request, TRUE otherwise FALSE
      */
-    public function canHandleRequest(ServerRequestInterface $request)
+    public function canHandleRequest(ServerRequestInterface $request): bool
     {
         return !empty($request->getQueryParams()['eID']) || !empty($request->getParsedBody()['eID']);
     }
@@ -92,7 +91,7 @@ class EidRequestHandler implements RequestHandlerInterface
      *
      * @return int The priority of the request handler.
      */
-    public function getPriority()
+    public function getPriority(): int
     {
         return 80;
     }
@@ -101,17 +100,15 @@ class EidRequestHandler implements RequestHandlerInterface
      * Dispatches the request to the corresponding eID class or eID script
      *
      * @param ServerRequestInterface $request
-     * @return NULL|\Psr\Http\Message\ResponseInterface
+     * @return ResponseInterface
      * @throws Exception
      */
-    protected function dispatch($request)
+    protected function dispatch(ServerRequestInterface $request): ResponseInterface
     {
         /** @var Response $response */
         $response = GeneralUtility::makeInstance(Response::class);
 
-        $eID = isset($request->getParsedBody()['eID'])
-            ? $request->getParsedBody()['eID']
-            : (isset($request->getQueryParams()['eID']) ? $request->getQueryParams()['eID'] : '');
+        $eID = $request->getParsedBody()['eID'] ?? $request->getQueryParams()['eID'] ?? '';
 
         if (empty($eID) || !isset($GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include'][$eID])) {
             return $response->withStatus(404, 'eID not registered');
@@ -132,6 +129,6 @@ class EidRequestHandler implements RequestHandlerInterface
             throw new Exception('Registered eID has invalid script path.', 1416391467);
         }
         include $scriptPath;
-        return null;
+        return new NullResponse();
     }
 }

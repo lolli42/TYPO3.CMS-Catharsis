@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\ContextMenu\ItemProviders;
 
 /*
@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Backend\ContextMenu\ItemProviders;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
@@ -293,16 +294,15 @@ class RecordProvider extends AbstractProvider
         }
         if ($itemName === 'newWizard' && $this->table === 'tt_content') {
             $tsConfig = BackendUtility::getModTSconfig($this->record['pid'], 'mod');
-            $moduleName = isset($tsConfig['properties']['newContentElementWizard.']['override'])
-                ? $tsConfig['properties']['newContentElementWizard.']['override']
-                : 'new_content_element';
+            $moduleName = $tsConfig['properties']['newContentElementWizard.']['override'] ?? 'new_content_element_wizard';
             $urlParameters = [
                 'id' => $this->record['pid'],
                 'sys_language_uid' => $this->record['sys_language_uid'],
                 'colPos' => $this->record['colPos'],
                 'uid_pid' => -$this->record['uid']
             ];
-            $url = BackendUtility::getModuleUrl($moduleName, $urlParameters);
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+            $url = (string)$uriBuilder->buildUriFromRoute($moduleName, $urlParameters);
             $attributes += [
                 'data-new-wizard-url' => htmlspecialchars($url)
             ];
@@ -416,12 +416,22 @@ class RecordProvider extends AbstractProvider
      */
     protected function getViewLink(): string
     {
-        $anchorSection = $this->table === 'tt_content' ? '#c' . $this->record['uid'] : '';
+        $anchorSection = '';
+        $additionalParams = '';
+        if ($this->table === 'tt_content') {
+            $anchorSection = '#c' . $this->record['uid'];
+            $language = (int)$this->record[$GLOBALS['TCA']['tt_content']['ctrl']['languageField']];
+            if ($language > 0) {
+                $additionalParams = '&L=' . $language;
+            }
+        }
         $javascriptLink = BackendUtility::viewOnClick(
             $this->getPreviewPid(),
             '',
             null,
-            $anchorSection
+            $anchorSection,
+            '',
+            $additionalParams
         );
         $extractedLink = '';
         if (preg_match('/window\\.open\\(\'([^\']+)\'/i', $javascriptLink, $match)) {
@@ -486,15 +496,25 @@ class RecordProvider extends AbstractProvider
     }
 
     /**
+     * Checks if disableDelete flag is set in TSConfig for the current table
+     *
+     * @return bool
+     */
+    protected function isDeletionDisabledInTS(): bool
+    {
+        $disableDeleteTS = $this->backendUser->getTSConfig('options.disableDelete');
+        $disableDelete = (bool)trim($disableDeleteTS['properties'][$this->table] ?? (string)$disableDeleteTS['value']);
+        return $disableDelete;
+    }
+
+    /**
      * Checks if the user has the right to delete the page
      *
      * @return bool
      */
     protected function canBeDeleted(): bool
     {
-        $disableDeleteTS = $this->backendUser->getTSConfig('options.disableDelete');
-        $disableDelete = (bool) trim(isset($disableDeleteTS['properties'][$this->table]) ? $disableDeleteTS['properties'][$this->table] : (string)$disableDeleteTS['value']);
-        return !$disableDelete && $this->canBeEdited();
+        return !$this->isDeletionDisabledInTS() && $this->canBeEdited();
     }
 
     /**

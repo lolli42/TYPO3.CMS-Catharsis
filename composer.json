@@ -4,7 +4,7 @@
 	"keywords": ["typo3", "cms", "content management system", "extbase"],
 	"homepage": "https://typo3.org/",
 	"type": "typo3-cms-core",
-	"license": "GPL-2.0+",
+	"license": "GPL-2.0-or-later",
 	"authors": [
 		{
 			"name": "TYPO3 CMS Core Team",
@@ -24,47 +24,51 @@
 		"news": "nntp://lists.typo3.org"
 	},
 	"config": {
-		"bin-dir": "bin"
+		"bin-dir": "bin",
+		"platform": {
+			"php": "7.2.0"
+		}
 	},
 	"require": {
-		"php": "^7.0",
+		"php": "^7.2",
 		"ext-json": "*",
 		"ext-pcre": "*",
 		"ext-session": "*",
 		"ext-xml": "*",
 		"psr/log": "~1.0.0",
 		"swiftmailer/swiftmailer": "~5.4.5",
-		"symfony/console": "^2.7 || ^3.0",
-		"symfony/finder": "^2.7 || ^3.0",
-		"symfony/yaml": "^2.7 || ^3.0",
+		"symfony/console": "^2.7 || ^3.0 || ^4.0",
+		"symfony/finder": "^2.7 || ^3.0 || ^4.0",
+		"symfony/yaml": "^2.7 || ^3.0 || ^4.0",
 		"symfony/polyfill-mbstring": "^1.2",
 		"doctrine/instantiator": "~1.0.4",
+		"doctrine/annotations": "^1.3",
 		"typo3/cms-cli": "^1.0",
 		"typo3/class-alias-loader": "^1.0",
-		"typo3/cms-composer-installers": "^1.4",
+		"typo3/cms-composer-installers": "^2.0",
 		"psr/http-message": "~1.0",
 		"cogpowered/finediff": "~0.3.1",
 		"mso/idna-convert": "^1.1.0",
-		"typo3fluid/fluid": "^2.3",
-		"guzzlehttp/guzzle": "^6.2.1",
-		"doctrine/dbal": "~2.5.4",
-		"nikic/php-parser": "~3.0.6"
+		"typo3fluid/fluid": "^2.4",
+		"guzzlehttp/guzzle": "^6.3.0",
+		"doctrine/dbal": "^2.6",
+		"nikic/php-parser": "^3.1",
+		"symfony/polyfill-intl-icu": "^1.6"
 	},
 	"require-dev": {
-		"typo3/testing-framework": "~1.1.0",
 		"codeception/codeception": "^2.3",
-		"se/selenium-server-standalone": "~3.4.0",
 		"enm1989/chromedriver": "~2.30",
-		"typo3/cms-styleguide": "~8.0.8",
 		"friendsofphp/php-cs-fixer": "^2.0",
-		"fiunchinho/phpunit-randomizer": "~3.0.0"
+		"fiunchinho/phpunit-randomizer": "~3.0.0",
+		"typo3/cms-styleguide": "~9.0.1",
+		"typo3/testing-framework": "^2.0.3"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
 		"ext-fileinfo": "Used for proper file type detection in the file abstraction layer",
 		"ext-zlib": "TYPO3 uses zlib for amongst others output compression and un/packing t3x extension files",
+		"ext-intl": "TYPO3 with unicode-based filesystems",
 		"ext-openssl": "",
-		"ext-soap": "",
 		"ext-zip": "",
 		"ext-mysqli": ""
 	},
@@ -72,15 +76,20 @@
 		"typo3/class-alias-loader": {
 			"always-add-alias-loader": true,
 			"class-alias-maps": [
+				"typo3/sysext/backend/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/core/Migrations/Code/ClassAliasMap.php",
+				"typo3/sysext/documentation/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/extbase/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/fluid/Migrations/Code/ClassAliasMap.php",
 				"typo3/sysext/info/Migrations/Code/ClassAliasMap.php",
-				"typo3/sysext/version/Migrations/Code/ClassAliasMap.php"
+				"typo3/sysext/lowlevel/Migrations/Code/ClassAliasMap.php",
+				"typo3/sysext/reports/Migrations/Code/ClassAliasMap.php",
+				"typo3/sysext/saltedpasswords/Migrations/Code/ClassAliasMap.php",
+				"typo3/sysext/workspaces/Migrations/Code/ClassAliasMap.php"
 			]
 		},
 		"branch-alias": {
-			"dev-master": "9.x-dev"
+			"dev-master": "9.2.x-dev"
 		}
 	},
 	"non-feature-branches": [
@@ -93,7 +102,6 @@
 		"typo3/cms-beuser": "self.version",
 		"typo3/cms-context-help": "self.version",
 		"typo3/cms-core": "self.version",
-		"typo3/cms-cshmanual": "self.version",
 		"typo3/cms-documentation": "self.version",
 		"typo3/cms-extbase": "self.version",
 		"typo3/cms-extensionmanager": "self.version",
@@ -108,7 +116,6 @@
 		"typo3/cms-impexp": "self.version",
 		"typo3/cms-indexed-search": "self.version",
 		"typo3/cms-info": "self.version",
-		"typo3/cms-info-pagetsconfig": "self.version",
 		"typo3/cms-install": "self.version",
 		"typo3/cms-lang": "self.version",
 		"typo3/cms-linkvalidator": "self.version",
@@ -138,9 +145,7 @@
 			"TYPO3\\CMS\\Backend\\": "typo3/sysext/backend/Classes/",
 			"TYPO3\\CMS\\Belog\\": "typo3/sysext/belog/Classes/",
 			"TYPO3\\CMS\\Beuser\\": "typo3/sysext/beuser/Classes/",
-			"TYPO3\\CMS\\ContextHelp\\": "typo3/sysext/context_help/Classes/",
 			"TYPO3\\CMS\\Core\\": "typo3/sysext/core/Classes/",
-			"TYPO3\\CMS\\Cshmanual\\": "typo3/sysext/cshmanual/Classes/",
 			"TYPO3\\CMS\\Documentation\\": "typo3/sysext/documentation/Classes/",
 			"TYPO3\\CMS\\Extbase\\": "typo3/sysext/extbase/Classes/",
 			"TYPO3\\CMS\\Extensionmanager\\": "typo3/sysext/extensionmanager/Classes/",
@@ -153,9 +158,7 @@
 			"TYPO3\\CMS\\Frontend\\": "typo3/sysext/frontend/Classes/",
 			"TYPO3\\CMS\\Impexp\\": "typo3/sysext/impexp/Classes/",
 			"TYPO3\\CMS\\IndexedSearch\\": "typo3/sysext/indexed_search/Classes/",
-			"TYPO3\\CMS\\IndexedSearchMysql\\": "typo3/sysext/indexed_search_mysql/Classes/",
 			"TYPO3\\CMS\\Info\\": "typo3/sysext/info/Classes/",
-			"TYPO3\\CMS\\InfoPagetsconfig\\": "typo3/sysext/info_pagetsconfig/Classes/",
 			"TYPO3\\CMS\\Install\\": "typo3/sysext/install/Classes/",
 			"TYPO3\\CMS\\Lang\\": "typo3/sysext/lang/Classes/",
 			"TYPO3\\CMS\\Linkvalidator\\": "typo3/sysext/linkvalidator/Classes/",
@@ -163,6 +166,7 @@
 			"TYPO3\\CMS\\Opendocs\\": "typo3/sysext/opendocs/Classes/",
 			"TYPO3\\CMS\\Recordlist\\": "typo3/sysext/recordlist/Classes/",
 			"TYPO3\\CMS\\Recycler\\": "typo3/sysext/recycler/Classes/",
+			"TYPO3\\CMS\\Redirects\\": "typo3/sysext/redirects/Classes/",
 			"TYPO3\\CMS\\Reports\\": "typo3/sysext/reports/Classes/",
 			"TYPO3\\CMS\\Rsaauth\\": "typo3/sysext/rsaauth/Classes/",
 			"TYPO3\\CMS\\RteCKEditor\\": "typo3/sysext/rte_ckeditor/Classes/",
@@ -174,7 +178,6 @@
 			"TYPO3\\CMS\\T3editor\\": "typo3/sysext/t3editor/Classes/",
 			"TYPO3\\CMS\\Taskcenter\\": "typo3/sysext/taskcenter/Classes/",
 			"TYPO3\\CMS\\Tstemplate\\": "typo3/sysext/tstemplate/Classes/",
-			"TYPO3\\CMS\\Version\\": "typo3/sysext/version/Classes/",
 			"TYPO3\\CMS\\Viewpage\\": "typo3/sysext/viewpage/Classes/",
 			"TYPO3\\CMS\\Workspaces\\": "typo3/sysext/workspaces/Classes/"
 		},

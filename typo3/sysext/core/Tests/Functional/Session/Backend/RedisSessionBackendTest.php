@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Tests\Functional\Session\Backend;
 
 /*
@@ -238,7 +238,8 @@ class RedisSessionBackendTest extends FunctionalTestCase
         // assert that we set anonymous session correctly
         $this->assertArraySubset(
             $anonymousSession,
-            $this->subject->get('anonymousSession'));
+            $this->subject->get('anonymousSession')
+        );
 
         // Run the garbage collection
         $GLOBALS['EXEC_TIME'] = 200;
@@ -248,7 +249,8 @@ class RedisSessionBackendTest extends FunctionalTestCase
         // Authenticated session should still be there
         $this->assertArraySubset(
             $authenticatedSession,
-            $this->subject->get('authenticatedSession'));
+            $this->subject->get('authenticatedSession')
+        );
 
         // Non-authenticated session should be removed
         $this->expectException(SessionNotFoundException::class);

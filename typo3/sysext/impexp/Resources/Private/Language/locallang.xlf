@@ -4,10 +4,10 @@
 		<header/>
 		<body>
 			<trans-unit id="import">
-				<source>Import from .t3d</source>
+				<source>Import</source>
 			</trans-unit>
 			<trans-unit id="export">
-				<source>Export to .t3d</source>
+				<source>Export</source>
 			</trans-unit>
 			<trans-unit id="title">
 				<source>Import / Export</source>
@@ -77,9 +77,6 @@
 			</trans-unit>
 			<trans-unit id="makeconfig_includeTables">
 				<source>Include tables:</source>
-			</trans-unit>
-			<trans-unit id="makeconfig_maxNumberOfRecords">
-				<source>Max number of records:</source>
 			</trans-unit>
 			<trans-unit id="makeconfig_exportSingleRecord">
 				<source>Export single record:</source>
@@ -203,9 +200,6 @@
 			</trans-unit>
 			<trans-unit id="makesavefo_fileFormat">
 				<source>File format:</source>
-			</trans-unit>
-			<trans-unit id="makesavefo_maxSizeOfFiles">
-				<source>Max size of files to include (kb):</source>
 			</trans-unit>
 			<trans-unit id="makesavefo_filenameSavedInS">
 				<source>Filename (saved in "%s"):</source>
@@ -362,9 +356,6 @@
 			</trans-unit>
 			<trans-unit id="impexpcore_displaycon_title">
 				<source>Title:</source>
-			</trans-unit>
-			<trans-unit id="impexpcore_displaycon_size">
-				<source>Size:</source>
 			</trans-unit>
 			<trans-unit id="impexpcore_displaycon_message">
 				<source>Message:</source>

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\FieldWizard;
 
 /*
@@ -64,7 +64,7 @@ class RecordsOverview extends AbstractNode
                 $selectedItem['uid']
             );
             $linkedTitle = BackendUtility::wrapClickMenuOnIcon(
-                $shortenedTitle,
+                htmlspecialchars($shortenedTitle),
                 $selectedItem['table'],
                 $selectedItem['uid']
             );

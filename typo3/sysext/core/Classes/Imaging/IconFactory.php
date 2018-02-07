@@ -80,7 +80,7 @@ class IconFactory
         $parsedBody = $request->getParsedBody();
         $queryParams = $request->getQueryParams();
         $requestedIcon = json_decode(
-            isset($parsedBody['icon']) ? $parsedBody['icon'] : $queryParams['icon'],
+            $parsedBody['icon'] ?? $queryParams['icon'],
             true
         );
 
@@ -138,9 +138,6 @@ class IconFactory
     {
         $iconIdentifier = $this->mapRecordTypeToIconIdentifier($table, $row);
         $overlayIdentifier = $this->mapRecordTypeToOverlayIdentifier($table, $row);
-        if (empty($overlayIdentifier)) {
-            $overlayIdentifier = null;
-        }
         return $this->getIcon($iconIdentifier, $size, $overlayIdentifier);
     }
 
@@ -326,13 +323,10 @@ class IconFactory
         }
 
         // Hook to define an alternative iconName
-        if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['overrideIconOverlay'])) {
-            $hookObjects = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['overrideIconOverlay'];
-            foreach ($hookObjects as $className) {
-                $hookObject = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObject, 'postOverlayPriorityLookup')) {
-                    $iconName = $hookObject->postOverlayPriorityLookup($table, $row, $status, $iconName);
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][self::class]['overrideIconOverlay'] ?? [] as $className) {
+            $hookObject = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObject, 'postOverlayPriorityLookup')) {
+                $iconName = $hookObject->postOverlayPriorityLookup($table, $row, $status, $iconName);
             }
         }
 
@@ -425,8 +419,6 @@ class IconFactory
                     $overlayIdentifier = 'overlay-locked';
                 }
             }
-
-        // File
         } elseif ($resource instanceof File) {
             $mimeTypeIcon = $this->iconRegistry->getIconIdentifierForMimeType($resource->getMimeType());
 
@@ -477,7 +469,7 @@ class IconFactory
         $icon->setIdentifier($identifier);
         $icon->setSize($size);
         $icon->setState($iconConfiguration['state'] ?: new IconState());
-        if ($overlayIdentifier !== null) {
+        if (!empty($overlayIdentifier)) {
             $icon->setOverlayIcon($this->getIcon($overlayIdentifier, Icon::SIZE_OVERLAY));
         }
         if (!empty($iconConfiguration['options']['spinning'])) {

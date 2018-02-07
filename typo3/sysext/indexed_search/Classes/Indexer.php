@@ -14,6 +14,7 @@ namespace TYPO3\CMS\IndexedSearch;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
@@ -133,7 +134,7 @@ class Indexer
     public $indexerConfig = [];
 
     /**
-     * Indexer configuration, coming from $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search']
+     * Indexer configuration, coming from TYPO3's system configuration for EXT:indexed_search
      *
      * @var array
      */
@@ -251,7 +252,7 @@ class Indexer
     public function hook_indexContent(&$pObj)
     {
         // Indexer configuration from Extension Manager interface:
-        $indexerConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search'], ['allowed_classes' => false]);
+        $disableFrontendIndexing = (bool)GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('indexed_search', 'disableFrontendIndexing');
         // Crawler activation:
         // Requirements are that the crawler is loaded, a crawler session is running and re-indexing requested as processing instruction:
         if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('crawler') && $pObj->applicationData['tx_crawler']['running'] && in_array('tx_indexedsearch_reindex', $pObj->applicationData['tx_crawler']['parameters']['procInstructions'])) {
@@ -265,7 +266,7 @@ class Indexer
         // Determine if page should be indexed, and if so, configure and initialize indexer
         if ($pObj->config['config']['index_enable']) {
             $this->log_push('Index page', '');
-            if (!$indexerConfig['disableFrontendIndexing'] || $this->crawlerActive) {
+            if (!$disableFrontendIndexing || $this->crawlerActive) {
                 if (!$pObj->page['no_search']) {
                     if (!$pObj->no_cache) {
                         if ((int)$pObj->sys_language_uid === (int)$pObj->sys_language_content) {
@@ -302,14 +303,14 @@ class Indexer
                             // Alternative title for indexing
                             $this->conf['metaCharset'] = $pObj->metaCharset;
                             // Character set of content (will be converted to utf-8 during indexing)
-                            $this->conf['mtime'] = isset($pObj->register['SYS_LASTCHANGED']) ? $pObj->register['SYS_LASTCHANGED'] : $pObj->page['SYS_LASTCHANGED'];
+                            $this->conf['mtime'] = $pObj->register['SYS_LASTCHANGED'] ?? $pObj->page['SYS_LASTCHANGED'];
                             // Most recent modification time (seconds) of the content on the page. Used to evaluate whether it should be re-indexed.
                             // Configuration of behavior:
                             $this->conf['index_externals'] = $pObj->config['config']['index_externals'];
                             // Whether to index external documents like PDF, DOC etc. (if possible)
                             $this->conf['index_descrLgd'] = $pObj->config['config']['index_descrLgd'];
                             // Length of description text (max 250, default 200)
-                            $this->conf['index_metatags'] = isset($pObj->config['config']['index_metatags']) ? $pObj->config['config']['index_metatags'] : true;
+                            $this->conf['index_metatags'] = $pObj->config['config']['index_metatags'] ?? true;
                             // Set to zero:
                             $this->conf['recordUid'] = 0;
                             $this->conf['freeIndexUid'] = 0;
@@ -378,7 +379,7 @@ class Indexer
         // Set to defaults
         $this->conf['freeIndexUid'] = 0;
         $this->conf['freeIndexSetId'] = 0;
-        $this->conf['page_cache_reg1'] = '';
+        $this->conf['page_cache_reg1'] = 0;
         // Root line uids
         $this->conf['rootline_uids'] = $uidRL;
         // Configuration of behavior:
@@ -469,7 +470,7 @@ class Indexer
         // Setting phash / phash_grouping which identifies the indexed page based on some of these variables:
         $this->setT3Hashes();
         // Indexer configuration from Extension Manager interface:
-        $this->indexerConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search'], ['allowed_classes' => false]);
+        $this->indexerConfig = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('indexed_search');
         $this->tstamp_minAge = MathUtility::forceIntegerInRange($this->indexerConfig['minAge'] * 3600, 0);
         $this->tstamp_maxAge = MathUtility::forceIntegerInRange($this->indexerConfig['maxAge'] * 3600, 0);
         $this->maxExternalFiles = MathUtility::forceIntegerInRange($this->indexerConfig['maxExternalFiles'], 0, 1000, 5);
@@ -504,14 +505,12 @@ class Indexer
      */
     public function initializeExternalParsers()
     {
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] as $extension => $className) {
-                $this->external_parsers[$extension] = GeneralUtility::makeInstance($className);
-                $this->external_parsers[$extension]->pObj = $this;
-                // Init parser and if it returns FALSE, unset its entry again:
-                if (!$this->external_parsers[$extension]->initParser($extension)) {
-                    unset($this->external_parsers[$extension]);
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'] ?? [] as $extension => $className) {
+            $this->external_parsers[$extension] = GeneralUtility::makeInstance($className);
+            $this->external_parsers[$extension]->pObj = $this;
+            // Init parser and if it returns FALSE, unset its entry again:
+            if (!$this->external_parsers[$extension]->initParser($extension)) {
+                unset($this->external_parsers[$extension]);
             }
         }
     }
@@ -612,7 +611,7 @@ class Indexer
         // get title
         $this->embracingTags($headPart, 'TITLE', $contentArr['title'], $dummy2, $dummy);
         $titleParts = explode(':', $contentArr['title'], 2);
-        $contentArr['title'] = trim(isset($titleParts[1]) ? $titleParts[1] : $titleParts[0]);
+        $contentArr['title'] = trim($titleParts[1] ?? $titleParts[0]);
         // get keywords and description metatags
         if ($this->conf['index_metatags']) {
             $meta = [];
@@ -741,9 +740,8 @@ class Indexer
                 }
             }
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -2063,10 +2061,8 @@ class Indexer
         $fieldArray['rl0'] = (int)$this->conf['rootline_uids'][0];
         $fieldArray['rl1'] = (int)$this->conf['rootline_uids'][1];
         $fieldArray['rl2'] = (int)$this->conf['rootline_uids'][2];
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['addRootLineFields'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['addRootLineFields'] as $fieldName => $rootLineLevel) {
-                $fieldArray[$fieldName] = (int)$this->conf['rootline_uids'][$rootLineLevel];
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['addRootLineFields'] ?? [] as $fieldName => $rootLineLevel) {
+            $fieldArray[$fieldName] = (int)$this->conf['rootline_uids'][$rootLineLevel];
         }
     }
 

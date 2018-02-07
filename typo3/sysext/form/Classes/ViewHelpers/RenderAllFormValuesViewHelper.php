@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\ViewHelpers;
 
 /*
@@ -19,12 +19,11 @@ namespace TYPO3\CMS\Form\ViewHelpers;
 
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Extbase\Domain\Model\FileReference;
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Form\Domain\Model\FormElements\FormElementInterface;
 use TYPO3\CMS\Form\Domain\Model\Renderable\CompositeRenderableInterface;
 use TYPO3\CMS\Form\Domain\Model\Renderable\RootRenderableInterface;
-use TYPO3\CMS\Form\Domain\Runtime\FormRuntime;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
 
 /**
@@ -49,7 +48,6 @@ class RenderAllFormValuesViewHelper extends AbstractViewHelper
      */
     public function initializeArguments()
     {
-        parent::initializeArguments();
         $this->registerArgument('renderable', RootRenderableInterface::class, 'A RootRenderableInterface instance', true);
         $this->registerArgument('as', 'string', 'The name within the template', false, 'formValue');
     }
@@ -74,7 +72,7 @@ class RenderAllFormValuesViewHelper extends AbstractViewHelper
             $elements = [$renderable];
         }
 
-        $formRuntime =  $renderingContext
+        $formRuntime = $renderingContext
             ->getViewHelperVariableContainer()
             ->get(RenderRenderableViewHelper::class, 'formRuntime');
 
@@ -84,10 +82,17 @@ class RenderAllFormValuesViewHelper extends AbstractViewHelper
 
             if (
                 !$element instanceof FormElementInterface
-                || $element->getType() === 'Honeypot'
                 || (
                     isset($renderingOptions['_isCompositeFormElement'])
-                    && $renderingOptions['_isCompositeFormElement'] = true
+                    && $renderingOptions['_isCompositeFormElement'] === true
+                )
+                || (
+                    isset($renderingOptions['_isHiddenFormElement'])
+                    && $renderingOptions['_isHiddenFormElement'] === true
+                )
+                || (
+                    isset($renderingOptions['_isReadOnlyFormElement'])
+                    && $renderingOptions['_isReadOnlyFormElement'] === true
                 )
             ) {
                 continue;
@@ -131,9 +136,8 @@ class RenderAllFormValuesViewHelper extends AbstractViewHelper
             );
             if (is_array($value)) {
                 return self::mapValuesToOptions($value, $properties['options']);
-            } else {
-                return self::mapValueToOption($value, $properties['options']);
             }
+            return self::mapValueToOption($value, $properties['options']);
         }
         if (is_object($value)) {
             return self::processObject($element, $value);
@@ -168,7 +172,7 @@ class RenderAllFormValuesViewHelper extends AbstractViewHelper
      */
     public static function mapValueToOption($value, array $options)
     {
-        return isset($options[$value]) ? $options[$value] : $value;
+        return $options[$value] ?? $value;
     }
 
     /**

@@ -14,6 +14,8 @@ namespace ExtbaseTeam\BlogExample\Domain\Model;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Extbase\Annotation as Extbase;
+
 /**
  * A blog
  */
@@ -26,6 +28,13 @@ class Blog extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
      * @validate StringLength(minimum = 1, maximum = 80)
      */
     protected $title = '';
+
+    /**
+     * The blog's subtitle
+     *
+     * @var string
+     */
+    protected $subtitle;
 
     /**
      * A short description of the blog
@@ -46,8 +55,8 @@ class Blog extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
      * The posts of this blog
      *
      * @var \TYPO3\CMS\Extbase\Persistence\ObjectStorage<\ExtbaseTeam\BlogExample\Domain\Model\Post>
-     * @lazy
-     * @cascade remove
+     * @Extbase\ORM\Lazy
+     * @Extbase\ORM\Cascade("remove")
      */
     protected $posts = null;
 
@@ -60,7 +69,7 @@ class Blog extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
      * The blog's administrator
      *
      * @var \ExtbaseTeam\BlogExample\Domain\Model\Administrator
-     * @lazy
+     * @Extbase\ORM\Lazy
      */
     protected $administrator = null;
 
@@ -70,6 +79,14 @@ class Blog extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
     public function __construct()
     {
         $this->posts = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
+    }
+
+    /**
+     * @return string
+     */
+    public function getSubtitle()
+    {
+        return $this->subtitle;
     }
 
     /**
@@ -224,5 +241,13 @@ class Blog extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
     public function getAdministrator()
     {
         return $this->administrator;
+    }
+
+    /**
+     * @param ?string $subtitle
+     */
+    public function setSubtitle($subtitle)
+    {
+        $this->subtitle = $subtitle;
     }
 }

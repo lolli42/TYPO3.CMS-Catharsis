@@ -177,7 +177,7 @@ class ShortcutButton implements ButtonInterface, PositionInterface
      */
     public function getType()
     {
-        return get_class($this);
+        return static::class;
     }
 
     /**
@@ -239,7 +239,7 @@ class ShortcutButton implements ButtonInterface, PositionInterface
 
         // Set default GET parameters
         if ($emptyGetVariables) {
-            $this->getVariables = ['id', 'M'];
+            $this->getVariables = ['id', 'route'];
         }
 
         // Automatically determine module name in Extbase context

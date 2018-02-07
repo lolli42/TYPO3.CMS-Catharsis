@@ -34,7 +34,7 @@ class QueryResult implements QueryResultInterface
     protected $persistenceManager;
 
     /**
-     * @var int|NULL
+     * @var int|null
      */
     protected $numberOfResults;
 
@@ -45,7 +45,6 @@ class QueryResult implements QueryResultInterface
 
     /**
      * @var array
-     * @transient
      */
     protected $queryResult;
 
@@ -171,7 +170,7 @@ class QueryResult implements QueryResultInterface
     public function offsetGet($offset)
     {
         $this->initialize();
-        return isset($this->queryResult[$offset]) ? $this->queryResult[$offset] : null;
+        return $this->queryResult[$offset] ?? null;
     }
 
     /**

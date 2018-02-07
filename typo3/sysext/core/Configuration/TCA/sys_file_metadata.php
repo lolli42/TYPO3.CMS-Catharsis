@@ -89,6 +89,7 @@ return [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'foreign_table' => 'sys_file',
+                'foreign_table_where' => 'AND sys_file.uid = ###REC_FIELD_file###',
                 'minitems' => 1,
                 'maxitems' => 1,
                 'size' => 1,
@@ -122,24 +123,47 @@ return [
             ]
         ],
         'width' => [
-            'l10n_mode' => 'exclude'
+            'exclude' => true,
+            'l10n_mode' => 'exclude',
+            'l10n_display' => 'defaultAsReadonly',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:file.width',
+            'config' => [
+                'type' => 'input',
+                'size' => 10,
+                'max' => 20,
+                'eval' => 'int',
+                'default' => 0,
+                'readOnly' => true,
+            ],
         ],
         'height' => [
-            'l10n_mode' => 'exclude'
-        ]
+            'exclude' => true,
+            'l10n_mode' => 'exclude',
+            'l10n_display' => 'defaultAsReadonly',
+            'label' => 'LLL:EXT:lang/Resources/Private/Language/locallang_tca.xlf:file.height',
+            'config' => [
+                'type' => 'input',
+                'size' => 10,
+                'max' => 20,
+                'eval' => 'int',
+                'default' => 0,
+                'readOnly' => true,
+            ],
+        ],
     ],
     'types' => [
         '1' => ['showitem' => '
             --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
-                fileinfo, title, description, alternative,
-            --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:language,
-                --palette--;;language,
+                fileinfo, title, description, alternative, --palette--;;language,
             --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:categories,
                 categories,
             --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:extended,
         ']
     ],
     'palettes' => [
-        'language' => ['showitem' => 'sys_language_uid, l10n_parent'],
+        'language' => [
+            'showitem' => 'sys_language_uid, l10n_parent',
+            'isHiddenPalette' => true,
+        ],
     ]
 ];

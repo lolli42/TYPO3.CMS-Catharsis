@@ -16,9 +16,8 @@ namespace TYPO3\CMS\Backend\Controller\File;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Resource\DuplicationBehavior;
 use TYPO3\CMS\Core\Resource\File;
@@ -29,7 +28,7 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
 /**
  * Script Class for the rename-file form.
  */
-class RenameFileController extends AbstractModule
+class RenameFileController
 {
     /**
      * Name of the filemount
@@ -69,11 +68,18 @@ class RenameFileController extends AbstractModule
     public $content;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $GLOBALS['SOBE'] = $this;
         $this->init();
     }
@@ -109,9 +115,11 @@ class RenameFileController extends AbstractModule
             $parsedUrl = parse_url($this->returnUrl);
             $queryParts = GeneralUtility::explodeUrl2Array(urldecode($parsedUrl['query']));
             if ($queryParts['id'] === $this->fileOrFolderObject->getCombinedIdentifier()) {
-                $this->returnUrl = str_replace(urlencode($queryParts['id']),
+                $this->returnUrl = str_replace(
+                    urlencode($queryParts['id']),
                     urlencode($this->fileOrFolderObject->getStorage()->getRootLevelFolder()->getCombinedIdentifier()),
-                    $this->returnUrl);
+                    $this->returnUrl
+                );
             }
         }
 
@@ -138,7 +146,9 @@ class RenameFileController extends AbstractModule
     public function main()
     {
         $assigns = [];
-        $assigns['moduleUrlTceFile'] = BackendUtility::getModuleUrl('tce_file');
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $assigns['moduleUrlTceFile'] = (string)$uriBuilder->buildUriFromRoute('tce_file');
         $assigns['returnUrl'] = $this->returnUrl;
 
         if ($this->fileOrFolderObject instanceof Folder) {

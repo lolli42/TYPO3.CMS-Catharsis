@@ -16,18 +16,19 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Module\AbstractModule;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Tree\View\ContentMovingPagePositionMap;
 use TYPO3\CMS\Backend\Tree\View\PageMovingPagePositionMap;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Script Class for rendering the move-element wizard display
  */
-class MoveElementController extends AbstractModule
+class MoveElementController
 {
     /**
      * @var int
@@ -79,11 +80,18 @@ class MoveElementController extends AbstractModule
     public $content;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_misc.xlf');
         $GLOBALS['SOBE'] = $this;
         $this->init();
@@ -103,7 +111,7 @@ class MoveElementController extends AbstractModule
         $this->moveUid = $this->input_moveUid ? $this->input_moveUid : $this->page_id;
         $this->makeCopy = GeneralUtility::_GP('makeCopy');
         // Select-pages where clause for read-access:
-        $this->perms_clause = $this->getBackendUser()->getPagePermsClause(1);
+        $this->perms_clause = $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW);
     }
 
     /**
@@ -229,7 +237,7 @@ class MoveElementController extends AbstractModule
                 'EXT:backend/Resources/Private/Templates/ContentElement/MoveElement.html'
             ));
             $view->assignMultiple($assigns);
-            $this->content .=  $view->render();
+            $this->content .= $view->render();
         }
         // Setting up the buttons and markers for docheader
         $this->getButtons();

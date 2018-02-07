@@ -14,12 +14,10 @@ namespace TYPO3\CMS\Reports\Report\Status;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\TypoScript\ConfigurationForm;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Reports\Status as ReportStatus;
 use TYPO3\CMS\Reports\StatusProviderInterface;
@@ -42,7 +40,6 @@ class SecurityStatus implements StatusProviderInterface
         $statuses = [
             'trustedHostsPattern' => $this->getTrustedHostsPatternStatus(),
             'adminUserAccount' => $this->getAdminAccountStatus(),
-            'encryptionKeyEmpty' => $this->getEncryptionKeyStatus(),
             'fileDenyPattern' => $this->getFileDenyPatternStatus(),
             'htaccessUpload' => $this->getHtaccessUploadStatus(),
             'saltedpasswords' => $this->getSaltedPasswordsStatus(),
@@ -110,13 +107,15 @@ class SecurityStatus implements StatusProviderInterface
                 $secure = false;
             }
             if (!$secure) {
+                /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+                $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
                 $value = $this->getLanguageService()->getLL('status_insecure');
                 $severity = ReportStatus::ERROR;
-                $editUserAccountUrl = BackendUtility::getModuleUrl(
+                $editUserAccountUrl = (string)$uriBuilder->buildUriFromRoute(
                     'record_edit',
                     [
                         'edit[be_users][' . $row['uid'] . ']' => 'edit',
-                        'returnUrl' => BackendUtility::getModuleUrl('system_ReportsTxreportsm1')
+                        'returnUrl' => (string)$uriBuilder->buildUriFromRoute('system_ReportsTxreportsm1')
                     ]
                 );
                 $message = sprintf(
@@ -127,29 +126,6 @@ class SecurityStatus implements StatusProviderInterface
             }
         }
         return GeneralUtility::makeInstance(ReportStatus::class, $this->getLanguageService()->getLL('status_adminUserAccount'), $value, $message, $severity);
-    }
-
-    /**
-     * Checks whether the encryption key is empty.
-     *
-     * @return \TYPO3\CMS\Reports\Status An object representing whether the encryption key is empty or not
-     */
-    protected function getEncryptionKeyStatus()
-    {
-        $value = $this->getLanguageService()->getLL('status_ok');
-        $message = '';
-        $severity = ReportStatus::OK;
-        if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'])) {
-            $value = $this->getLanguageService()->getLL('status_insecure');
-            $severity = ReportStatus::ERROR;
-            $url = 'install/index.php?redirect_url=index.php' . urlencode('?TYPO3_INSTALL[type]=config#set_encryptionKey');
-            $message = sprintf(
-                $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.install_encryption'),
-                '<a href="' . $url . '">',
-                '</a>'
-            );
-        }
-        return GeneralUtility::makeInstance(ReportStatus::class, $this->getLanguageService()->getLL('status_encryptionKey'), $value, $message, $severity);
     }
 
     /**
@@ -209,7 +185,7 @@ class SecurityStatus implements StatusProviderInterface
         $configCheck = GeneralUtility::makeInstance(ExtensionManagerConfigurationUtility::class);
         $message = '<p>' . $this->getLanguageService()->getLL('status_saltedPasswords_infoText') . '</p>';
         $messageDetail = '';
-        $resultCheck = $configCheck->checkConfigurationBackend([], new ConfigurationForm());
+        $resultCheck = $configCheck->checkConfigurationBackend([]);
         switch ($resultCheck['errorType']) {
             case FlashMessage::INFO:
                 $messageDetail .= $resultCheck['html'];

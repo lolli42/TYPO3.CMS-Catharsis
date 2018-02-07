@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ExtbaseTeam\BlogExample\Controller;
 
@@ -16,13 +16,15 @@ namespace ExtbaseTeam\BlogExample\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Extbase\Annotation as Extbase;
+
 /**
  * ContentController
  */
 class ContentController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController
 {
     /**
-     * @inject
+     * @Extbase\Inject
      * @var \ExtbaseTeam\BlogExample\Domain\Repository\TtContentRepository
      */
     protected $contentRepository;
@@ -33,7 +35,7 @@ class ContentController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControll
     protected $defaultViewObjectName = \TYPO3\CMS\Extbase\Mvc\View\JsonView::class;
 
     /**
-     * @inject
+     * @Extbase\Inject
      * @var \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapFactory
      */
     protected $dataMapFactory;
@@ -45,7 +47,20 @@ class ContentController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControll
     {
         $content = $this->contentRepository->findAll();
         $value[$this->getRuntimeIdentifier()] = $this->getStructure($content);
-
+        // this is required so we don't try to json_encode content of the image
+        $this->view->setConfiguration(['value' => [
+            '_descendAll' => [
+                '_descendAll' => [
+                    '_descendAll' => [
+                        '_descendAll' => [
+                            '_descendAll' => [
+                                '_exclude' => ['contents']
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]]);
         $this->view->assign('value', $value);
     }
 
@@ -95,6 +110,13 @@ class ContentController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControll
                 } else {
                     $structureItem[$propertyName] = $propertyValue;
                 }
+            }
+            //let's flatten the structure and put file reference properties level up, so we can use StructureHasRecordConstraint
+            if ($entity instanceof \TYPO3\CMS\Extbase\Domain\Model\FileReference
+                && isset($structureItem['originalResource'])
+                && $structureItem['originalResource'] instanceof \TYPO3\CMS\Core\Resource\FileReference
+            ) {
+                $structureItem = $structureItem['originalResource']->getProperties();
             }
             $structure[$identifier] = $structureItem;
         }

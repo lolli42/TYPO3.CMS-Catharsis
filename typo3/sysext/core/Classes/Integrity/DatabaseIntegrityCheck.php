@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Depends on \TYPO3\CMS\Core\Database\RelationHandler
  *
  * @todo Need to really extend this class when the DataHandler library has been updated and the whole API is better defined. There are some known bugs in this library. Further it would be nice with a facility to not only analyze but also clean up!
- * @see \TYPO3\CMS\Lowlevel\View\DatabaseIntegrityView::func_relations(), \TYPO3\CMS\Lowlevel\View\DatabaseIntegrityView::func_records()
+ * @see \TYPO3\CMS\Lowlevel\Controller\DatabaseIntegrityController::func_relations(), \TYPO3\CMS\Lowlevel\Controller\DatabaseIntegrityController::func_records()
  */
 class DatabaseIntegrityCheck
 {
@@ -52,6 +52,11 @@ class DatabaseIntegrityCheck
      * @var array Will hold id/rec pairs from genTree()
      */
     public $page_idArray = [];
+
+    /**
+     * @var array Will hold id/rec pairs from genTree() that are not default language
+     */
+    protected $page_translatedPageIDArray = [];
 
     /**
      * @var array
@@ -93,6 +98,14 @@ class DatabaseIntegrityCheck
     public $lostPagesList = '';
 
     /**
+     * @return array
+     */
+    public function getPageTranslatedPageIDArray(): array
+    {
+        return $this->page_translatedPageIDArray;
+    }
+
+    /**
      * Generates a list of Page-uid's that corresponds to the tables in the tree.
      * This list should ideally include all records in the pages-table.
      *
@@ -107,7 +120,7 @@ class DatabaseIntegrityCheck
         if (!$this->genTree_includeDeleted) {
             $queryBuilder->getRestrictions()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
         }
-        $queryBuilder->select('uid', 'title', 'doktype', 'deleted', 'hidden')
+        $queryBuilder->select('uid', 'title', 'doktype', 'deleted', 'hidden', 'sys_language_uid')
             ->from('pages')
             ->orderBy('sorting');
         if ($versions) {
@@ -126,7 +139,11 @@ class DatabaseIntegrityCheck
         while ($row = $result->fetch()) {
             $newID = $row['uid'];
             // Register various data for this item:
-            $this->page_idArray[$newID] = $row;
+            if ($row['sys_language_uid'] === 0) {
+                $this->page_idArray[$newID] = $row;
+            } else {
+                $this->page_translatedPageIDArray[$newID] = $row;
+            }
             $this->recStats['all_valid']['pages'][$newID] = $newID;
             if ($row['deleted']) {
                 $this->recStats['deleted']['pages'][$newID] = $newID;
@@ -264,7 +281,7 @@ class DatabaseIntegrityCheck
      */
     public function fixLostRecord($table, $uid)
     {
-        if ($table && $GLOBALS['TCA'][$table] && $uid && is_array($this->lRecords[$table][$uid]) && $GLOBALS['BE_USER']->user['admin']) {
+        if ($table && $GLOBALS['TCA'][$table] && $uid && is_array($this->lRecords[$table][$uid]) && $GLOBALS['BE_USER']->isAdmin()) {
             $updateFields = [
                 'pid' => 0
             ];
@@ -276,9 +293,8 @@ class DatabaseIntegrityCheck
                 ->getConnectionForTable($table)
                 ->update($table, $updateFields, ['uid' => (int)$uid]);
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**

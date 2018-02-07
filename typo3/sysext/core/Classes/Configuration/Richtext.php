@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Configuration;
 
 /*
@@ -53,7 +53,7 @@ class Richtext
         // The main problem here is that all parameters that the processing needs is handed over to as TSconfig
         // "dotted array" syntax. We convert at least the processing information available under "processing"
         // together with pageTS, this way it can be overridden and understood in RteHtmlParser.
-        // However, all other parts of the core will depend on the non-dotted syntax (coming from Yaml directly)
+        // However, all other parts of the core will depend on the non-dotted syntax (coming from YAML directly)
 
         $pageTs = $this->getPageTsConfiguration($table, $field, $pid, $recordType);
 
@@ -66,7 +66,7 @@ class Richtext
         // overlay preset configuration with pageTs
         ArrayUtility::mergeRecursiveWithOverrule(
             $configuration,
-            $this->cleanDotsFromEditorConfigKeys($pageTs)
+            $this->addFlattenedPageTsConfig($pageTs)
         );
 
         // Handle "mode" / "transformation" config when overridden
@@ -113,7 +113,7 @@ class Richtext
 
     /**
      * Returns an array with Typoscript the old way (with dot)
-     * Since the functionality in Yaml is without the dots, but the new configuration is used without the dots
+     * Since the functionality in YAML is without the dots, but the new configuration is used without the dots
      * this functionality adds also an explicit = 1 to the arrays
      *
      * @param array $plainArray An array
@@ -144,18 +144,22 @@ class Richtext
     }
 
     /**
-     * Strip dots from the 'editor.' part of a given TypoScript array
+     * Add all PageTS.RTE options keys to configuration without dots
      *
-     * @param array $typoScriptArray TypoScriptArray (with dots) that may contain an 'editor.' subarray
-     * @return array array with dots stripped from the editor subarray
+     * We need to keep the dotted keys for backwards compatibility like ext:rtehtmlarea
+     *
+     * @param array $typoScriptArray TypoScriptArray
+     * @return array array with config without dots added
      */
-    protected function cleanDotsFromEditorConfigKeys(array $typoScriptArray): array
+    protected function addFlattenedPageTsConfig(array $typoScriptArray): array
     {
-        if (isset($typoScriptArray['editor.'])) {
+        foreach ($typoScriptArray as $key => $data) {
+            if (substr($key, -1) !== '.') {
+                continue;
+            }
             /** @var TypoScriptService $typoScriptService */
             $typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
-            $typoScriptArray['editor'] = $typoScriptService->convertTypoScriptArrayToPlainArray($typoScriptArray['editor.']);
-            unset($typoScriptArray['editor.']);
+            $typoScriptArray[substr($key, 0, -1)] = $typoScriptService->convertTypoScriptArrayToPlainArray($typoScriptArray[$key]);
         }
 
         return $typoScriptArray;
@@ -177,8 +181,8 @@ class Richtext
         // Load PageTSconfig configuration
         $fullPageTsConfig = $this->getRtePageTsConfigOfPid($pid);
         $fullPageTsConfig = !empty($fullPageTsConfig['properties']) ? $fullPageTsConfig['properties'] : [];
-        $defaultPageTsConfigOverrides = isset($fullPageTsConfig['default.']) ? $fullPageTsConfig['default.'] : null;
-        $fieldSpecificPageTsConfigOverrides = isset($fullPageTsConfig['config.'][$table . '.'][$field . '.']) ? $fullPageTsConfig['config.'][$table . '.'][$field . '.'] : null;
+        $defaultPageTsConfigOverrides = $fullPageTsConfig['default.'] ?? null;
+        $fieldSpecificPageTsConfigOverrides = $fullPageTsConfig['config.'][$table . '.'][$field . '.'] ?? null;
         unset($fullPageTsConfig['default.'], $fullPageTsConfig['config.']);
 
         // First use RTE.*

@@ -28,7 +28,7 @@ namespace TYPO3\CMS\Fluid\Core\Widget;
 class WidgetContext
 {
     /**
-     * Uniquely idenfies a Widget Instance on a certain page.
+     * Uniquely identifies a Widget Instance on a certain page.
      *
      * @var string
      */
@@ -60,8 +60,7 @@ class WidgetContext
      * The child nodes of the Widget ViewHelper.
      * Only available inside non-AJAX requests.
      *
-     * @var \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode
-     * @transient
+     * @var \TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\RootNode
      */
     protected $viewHelperChildNodes;
 
@@ -71,7 +70,6 @@ class WidgetContext
      * @todo rename to something more meaningful.
      *
      * @var \TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface
-     * @transient
      */
     protected $viewHelperChildNodeRenderingContext;
 
@@ -240,17 +238,17 @@ class WidgetContext
     }
 
     /**
-     * @param \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes
+     * @param \TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes
      * @param \TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface $viewHelperChildNodeRenderingContext
      */
-    public function setViewHelperChildNodes(\TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes, \TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface $viewHelperChildNodeRenderingContext)
+    public function setViewHelperChildNodes(\TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes, \TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface $viewHelperChildNodeRenderingContext)
     {
         $this->viewHelperChildNodes = $viewHelperChildNodes;
         $this->viewHelperChildNodeRenderingContext = $viewHelperChildNodeRenderingContext;
     }
 
     /**
-     * @return \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode
+     * @return \TYPO3Fluid\Fluid\Core\Parser\SyntaxTree\RootNode
      */
     public function getViewHelperChildNodes()
     {

@@ -2,7 +2,7 @@ INSTALLING TYPO3
 ================
 
 TYPO3 is an open source PHP based web content management system released
-under the GNU GPL. TYPO3 is copyright (c) 1999-2016 by Kasper Skaarhoj.
+under the GNU GPL. TYPO3 is copyright (c) 1999-2017 by Kasper Skaarhoj.
 
 This document describes:
 
@@ -13,7 +13,7 @@ This document describes:
 Client browser support
 ----------------------
 
-The TYPO3 backend is accessed through a web browser. TYPO3 v8
+The TYPO3 backend is accessed through a web browser. TYPO3 v9
 supports the following web browsers:
 
 * Internet Explorer 11 and later
@@ -27,10 +27,10 @@ Server system requirements
 --------------------------
 
 TYPO3 requires a web server with a PHP environment and a database. The minimum
-system requirements for running TYPO3 v8 are:
+system requirements for running TYPO3 v9 are:
 
 * Webserver capable of running PHP applications (Apache, Nginx, IIS or other)
-* PHP 7
+* PHP 7.2
 * MySQL 5.5 up to 5.7 or compatible
 * more than 200 MB of disk space
 
@@ -74,7 +74,6 @@ check if these are available.
   * openssl
   * pcre >= 8.38
   * session
-  * soap
   * SPL
   * standard
   * xml
@@ -83,6 +82,7 @@ check if these are available.
 
 * These might have to be installed separately:
   * gd
+  * intl
   * json
   * mysqli
 
@@ -102,7 +102,7 @@ functionality:
 * GraphicsMagick or ImageMagick v6 or newer installed on the server
 
 * PHP
-  * version 7.0 or later
+  * version 7.2 or later
   * memory_limit set to at least 128M
   * max_execution_time set to at least 240
   * max_input_vars set to at least 1500
@@ -132,10 +132,10 @@ Installation
 ### Important note for upgrades from TYPO3 CMS versions **below 7 LTS**
 
 It is not possible to upgrade any version below 7 LTS to 8 directly,
-since some upgrade wizards are not available anymore on 8.
+since some upgrade wizards are not available anymore on 8 and 9.
 
 It is highly recommended to upgrade to 7 LTS first and continue with
-a second upgrade to 8.
+a second upgrade to 8 and then upgrade to 9.
 
 ### If SSH and symlinks are possible
 
@@ -143,11 +143,11 @@ If you have SSH access to your webserver and are able to create symlinks,
 this is the recommended way of setting up TYPO3 so that it can easily
 be upgraded later through the Install Tool:
 
-* Uncompress the `typo3_src-8.x.x.tar.gz` file one level above the Document
+* Uncompress the `typo3_src-9.x.x.tar.gz` file one level above the Document
   Root of your Web server:
 ```
 /var/www/site/htdocs/ $ cd ..
-/var/www/site/ $ tar xzf typo3_src-8.x.x.tar.gz
+/var/www/site/ $ tar xzf typo3_src-9.x.x.tar.gz
 ```
 
 * Important: If you use GIT to fetch the sources, don't forget to run the following commands,
@@ -161,7 +161,7 @@ cd ..
 * Create the symlinks in your Document Root:
 ```
   cd htdocs
-  ln -s ../typo3_src-8.x.x typo3_src
+  ln -s ../typo3_src-9.x.x typo3_src
   ln -s typo3_src/index.php
   ln -s typo3_src/typo3
 ```
@@ -171,14 +171,20 @@ cd ..
   cp typo3_src/_.htaccess .htaccess
 ```
 
+* In case you use IIS, install the URL Rewrite 2.x module and copy the web.config to your Document Root:
+```
+  cp typo3_src/_web.config web.config
+```
+
 You end up with the follow structure of files:
 
 ```
-  typo3_src-8.x.x/
-  htdocs/typo3_src -> ../typo3_src-8.x.x/
+  typo3_src-9.x.x/
+  htdocs/typo3_src -> ../typo3_src-9.x.x/
   htdocs/typo3 -> typo3_src/typo3/
   htdocs/index.php -> typo3_src/index.php
-  htdocs/.htaccess
+  htdocs/.htaccess (only on Apache)
+  htdocs/web.config (only on IIS)
 ```
 
 This allows you to upgrade TYPO3 later by simply replacing the symlink
@@ -191,9 +197,10 @@ be found in the Install Tool.
 
 On Windows Vista and newer you can create symbolic links using the `mklink` tool:
 ```
-  mklink /D C:\<dir>\example.com\typo3_src C:\<dir>\typo3_src-8.x.x
-  mklink C:\<dir>\example.com\index.php C:\<dir>\typo3_src-8.x.x\index.php
+  mklink /D C:\<dir>\example.com\typo3_src C:\<dir>\typo3_src-9.x.x
+  mklink C:\<dir>\example.com\index.php C:\<dir>\typo3_src-9.x.x\index.php
 ```
+Be aware that administrator rights might be needed in order to create the symlinks.
 
 Windows users might need to copy `index.php` from the source directory to the
 web site root directory in case the Windows version does not support links
@@ -228,21 +235,21 @@ installation once a new patch-level release is out.
 
 Please note that this is not a recommended setup!
 
-* Uncompress `typo3_src-8.x.x.zip` locally
+* Uncompress `typo3_src-9.x.x.zip` locally
 * Upload all files and subdirectories directly in your Document Root
   (where files that are served by your webserver are located).
 * In case your provider uses Apache, rename the file `_.htaccess` to `.htaccess`.
+* In case your provider uses IIS, rename the file `_web.config` to `web.config`.
 
 You end up with this files in your Document Root:
 
 ```
- .htaccess
- ChangeLog
- GPL.txt
+ .htaccess (only on Apache)
+ web.config (only on IIS)
+ CONTRIBUTING.md
  index.php
  INSTALL.md
  LICENSE.txt
- NEWS.txt
  README.md
  typo3/
 ```
@@ -259,7 +266,7 @@ and gives you some suggestions on what to change in case there are any
 discrepancies.
 
 The Install Tool will create the required directory structure for you
-(typo3conf, uploads, fileadmin, typo3temp).
+(typo3conf, fileadmin, typo3temp).
 
 TYPO3 Security
 --------------

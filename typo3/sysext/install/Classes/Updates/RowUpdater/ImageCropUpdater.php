@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\Updates\RowUpdater;
 
 /*
@@ -185,7 +185,7 @@ class ImageCropUpdater implements RowUpdaterInterface
      *
      * @param array $row
      * @param string $fieldName
-     * @return null|\TYPO3\CMS\Core\Resource\File
+     * @return \TYPO3\CMS\Core\Resource\File|null
      */
     private function getFile(array $row, $fieldName)
     {

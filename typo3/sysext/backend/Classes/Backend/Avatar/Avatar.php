@@ -1,4 +1,5 @@
 <?php
+
 namespace TYPO3\CMS\Backend\Backend\Avatar;
 
 /*
@@ -18,8 +19,8 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Service\DependencyOrderingService;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
@@ -53,9 +54,10 @@ class Avatar
         }
 
         $cacheId = 'avatar_' . md5(
-                $backendUser['uid'] . '/' .
-                (string)$size . '/' .
-                (string)$showIcon);
+            $backendUser['uid'] . '/' .
+            (string)$size . '/' .
+            (string)$showIcon
+        );
 
         $avatar = static::getCache()->get($cacheId);
 
@@ -96,7 +98,7 @@ class Avatar
         if (!$avatarImage) {
             $avatarImage = GeneralUtility::makeInstance(
                 Image::class,
-                ExtensionManagementUtility::siteRelPath('core') . 'Resources/Public/Icons/T3Icons/avatar/avatar-default.svg',
+                PathUtility::stripPathSitePrefix(GeneralUtility::getFileAbsFileName('EXT:core/Resources/Public/Icons/T3Icons/avatar/avatar-default.svg')),
                 $size,
                 $size
             );
@@ -113,7 +115,7 @@ class Avatar
      *
      * @param array $backendUser be_users record
      * @param int $size
-     * @return Image|NULL
+     * @return Image|null
      */
     public function getImage(array $backendUser, $size)
     {
@@ -133,19 +135,25 @@ class Avatar
      */
     protected function validateSortAndInitiateAvatarProviders()
     {
-        if (
-            empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['avatarProviders'])
-            || !is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['avatarProviders'])
-        ) {
+        $providers = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['avatarProviders'] ?? [];
+        if (empty($providers)) {
             return;
         }
-        $providers = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['avatarProviders'];
         foreach ($providers as $identifier => $configuration) {
             if (empty($configuration) || !is_array($configuration)) {
-                throw new \RuntimeException('Missing configuration for avatar provider "' . $identifier . '".', 1439317801);
+                throw new \RuntimeException(
+                    'Missing configuration for avatar provider "' . $identifier . '".',
+                    1439317801
+                );
             }
-            if (!is_string($configuration['provider']) || empty($configuration['provider']) || !class_exists($configuration['provider']) || !is_subclass_of($configuration['provider'], AvatarProviderInterface::class)) {
-                throw new \RuntimeException('The avatar provider "' . $identifier . '" defines an invalid provider. Ensure the class exists and implements the "' . AvatarProviderInterface::class . '".', 1439317802);
+            if (!is_string($configuration['provider']) || empty($configuration['provider']) || !class_exists($configuration['provider']) || !is_subclass_of(
+                $configuration['provider'],
+                    AvatarProviderInterface::class
+            )) {
+                throw new \RuntimeException(
+                    'The avatar provider "' . $identifier . '" defines an invalid provider. Ensure the class exists and implements the "' . AvatarProviderInterface::class . '".',
+                    1439317802
+                );
             }
         }
 

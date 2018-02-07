@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Model\Renderable;
 
 /*
@@ -147,7 +147,7 @@ abstract class AbstractRenderable implements RenderableInterface
         if (isset($options['renderingOptions'])) {
             foreach ($options['renderingOptions'] as $key => $value) {
                 if (is_array($value)) {
-                    $currentValue = isset($this->getRenderingOptions()[$key]) ? $this->getRenderingOptions()[$key] : [];
+                    $currentValue = $this->getRenderingOptions()[$key] ?? [];
                     ArrayUtility::mergeRecursiveWithOverrule($currentValue, $value);
                     $this->setRenderingOption($key, $currentValue);
                 } else {
@@ -158,7 +158,7 @@ abstract class AbstractRenderable implements RenderableInterface
 
         if (isset($options['validators'])) {
             foreach ($options['validators'] as $validatorConfiguration) {
-                $this->createValidator($validatorConfiguration['identifier'], isset($validatorConfiguration['options']) ? $validatorConfiguration['options'] : []);
+                $this->createValidator($validatorConfiguration['identifier'], $validatorConfiguration['options'] ?? []);
             }
         }
 
@@ -182,7 +182,7 @@ abstract class AbstractRenderable implements RenderableInterface
         $validatorsDefinition = $this->getRootForm()->getValidatorsDefinition();
         if (isset($validatorsDefinition[$validatorIdentifier]) && is_array($validatorsDefinition[$validatorIdentifier]) && isset($validatorsDefinition[$validatorIdentifier]['implementationClassName'])) {
             $implementationClassName = $validatorsDefinition[$validatorIdentifier]['implementationClassName'];
-            $defaultOptions = isset($validatorsDefinition[$validatorIdentifier]['options']) ? $validatorsDefinition[$validatorIdentifier]['options'] : [];
+            $defaultOptions = $validatorsDefinition[$validatorIdentifier]['options'] ?? [];
 
             ArrayUtility::mergeRecursiveWithOverrule($defaultOptions, $options);
 
@@ -190,9 +190,8 @@ abstract class AbstractRenderable implements RenderableInterface
                 ->get($implementationClassName, $defaultOptions);
             $this->addValidator($validator);
             return $validator;
-        } else {
-            throw new ValidatorPresetNotFoundException('The validator preset identified by "' . $validatorIdentifier . '" could not be found, or the implementationClassName was not specified.', 1328710202);
         }
+        throw new ValidatorPresetNotFoundException('The validator preset identified by "' . $validatorIdentifier . '" could not be found, or the implementationClassName was not specified.', 1328710202);
     }
 
     /**
@@ -269,7 +268,7 @@ abstract class AbstractRenderable implements RenderableInterface
     /**
      * Get the parent renderable
      *
-     * @return null|CompositeRenderableInterface
+     * @return CompositeRenderableInterface|null
      * @api
      */
     public function getParentRenderable()
@@ -330,17 +329,12 @@ abstract class AbstractRenderable implements RenderableInterface
      */
     public function onRemoveFromParentRenderable()
     {
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRemoveFromParentRenderable'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRemoveFromParentRenderable'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRemoveFromParentRenderable'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'beforeRemoveFromParentRenderable')) {
-                    $hookObj->beforeRemoveFromParentRenderable(
-                        $this
-                    );
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRemoveFromParentRenderable'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'beforeRemoveFromParentRenderable')) {
+                $hookObj->beforeRemoveFromParentRenderable(
+                    $this
+                );
             }
         }
 

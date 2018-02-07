@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Core\Cache\Backend;
 
 use TYPO3\CMS\Core\Cache\Exception;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * A caching backend which stores cache entries by using Memcached.
@@ -235,7 +234,7 @@ class MemcachedBackend extends AbstractBackend implements TaggableBackendInterfa
             throw new Exception('No cache frontend has been set yet via setCache().', 1207149215);
         }
         $tags[] = '%MEMCACHEBE%' . $this->cacheIdentifier;
-        $expiration = $lifetime !== null ? $lifetime : $this->defaultLifetime;
+        $expiration = $lifetime ?? $this->defaultLifetime;
 
         // Memcached consideres values over 2592000 sec (30 days) as UNIX timestamp
         // thus $expiration should be converted from lifetime to UNIX timestamp
@@ -262,7 +261,7 @@ class MemcachedBackend extends AbstractBackend implements TaggableBackendInterfa
                 throw new Exception('Could not set data to memcache server.', 1275830266);
             }
         } catch (\Exception $exception) {
-            GeneralUtility::sysLog('Memcache: could not set value. Reason: ' . $exception->getMessage(), 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+            $this->logger->alert('Memcache: could not set value.', ['exception' => $exception]);
         }
     }
 
@@ -278,9 +277,8 @@ class MemcachedBackend extends AbstractBackend implements TaggableBackendInterfa
     {
         if ($this->usedPeclModule === 'memcache') {
             return $this->memcache->set($this->identifierPrefix . $entryIdentifier, $data, $this->flags, $expiration);
-        } else {
-            return $this->memcache->set($this->identifierPrefix . $entryIdentifier, $data, $expiration);
         }
+        return $this->memcache->set($this->identifierPrefix . $entryIdentifier, $data, $expiration);
     }
 
     /**
@@ -349,9 +347,8 @@ class MemcachedBackend extends AbstractBackend implements TaggableBackendInterfa
         $identifiers = $this->memcache->get($this->identifierPrefix . 'tag_' . $tag);
         if ($identifiers !== false) {
             return (array)$identifiers;
-        } else {
-            return [];
         }
+        return [];
     }
 
     /**

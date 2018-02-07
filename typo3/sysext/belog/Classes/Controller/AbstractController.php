@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Belog\Controller;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
+use TYPO3\CMS\Extbase\Property\TypeConverter\PersistentObjectConverter;
 
 /**
  * Abstract class to show log entries from sys_log
@@ -99,7 +100,6 @@ abstract class AbstractController extends ActionController
     {
         if ($view instanceof BackendTemplateView) {
             parent::initializeView($view);
-            $view->getModuleTemplate()->getPageRenderer()->loadExtJS();
             $view->getModuleTemplate()->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/DateTimePicker');
         }
     }
@@ -138,6 +138,8 @@ abstract class AbstractController extends ActionController
         if (!isset($this->settings['timeFormat'])) {
             $this->settings['timeFormat'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'];
         }
+        $constraintConfiguration = $this->arguments->getArgument('constraint')->getPropertyMappingConfiguration();
+        $constraintConfiguration->allowProperties('action')->setTypeConverterOption(PersistentObjectConverter::class, PersistentObjectConverter::CONFIGURATION_CREATION_ALLOWED, true);
     }
 
     /**
@@ -169,11 +171,11 @@ abstract class AbstractController extends ActionController
     /**
      * Get module states (the constraint object) from user data
      *
-     * @return \TYPO3\CMS\Belog\Domain\Model\Constraint|NULL
+     * @return \TYPO3\CMS\Belog\Domain\Model\Constraint|null
      */
     protected function getConstraintFromBeUserData()
     {
-        $serializedConstraint = $GLOBALS['BE_USER']->getModuleData(get_class($this));
+        $serializedConstraint = $GLOBALS['BE_USER']->getModuleData(static::class);
         if (!is_string($serializedConstraint) || empty($serializedConstraint)) {
             return null;
         }
@@ -187,7 +189,7 @@ abstract class AbstractController extends ActionController
      */
     protected function persistConstraintInBeUserData(\TYPO3\CMS\Belog\Domain\Model\Constraint $constraint)
     {
-        $GLOBALS['BE_USER']->pushModuleData(get_class($this), serialize($constraint));
+        $GLOBALS['BE_USER']->pushModuleData(static::class, serialize($constraint));
     }
 
     /**
@@ -355,12 +357,33 @@ abstract class AbstractController extends ActionController
                 $startTime = mktime(0, 0, 0) - 31 * 3600 * 24;
                 break;
             case self::TIMEFRAME_CUSTOM:
-                $startTime = $constraint->getStartTimestamp();
-                if ($constraint->getEndTimestamp() > $constraint->getStartTimestamp()) {
-                    $endTime = $constraint->getEndTimestamp();
-                } else {
-                    $endTime = $GLOBALS['EXEC_TIME'];
+                $startDate = $constraint->getManualDateStart();
+                $endDate = $constraint->getManualDateStop();
+                $endTime = $GLOBALS['EXEC_TIME'];
+                if (!$startDate) {
+                    $startDate = \DateTime::createFromFormat(
+                        'U',
+                        0
+                    );
+                    $constraint->setManualDateStart(
+                        $startDate
+                    );
                 }
+
+                if (!$endDate) {
+                    $endDate = \DateTime::createFromFormat(
+                        'U',
+                        $endTime
+                    )->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+                    $constraint->setManualDateStop(
+                        $endDate
+                    );
+                }
+                $startTime = $startDate->getTimestamp();
+                if ($endDate->getTimestamp() > $startDate->getTimestamp()) {
+                    $endTime = $endDate->getTimestamp();
+                }
+
                 break;
             default:
         }

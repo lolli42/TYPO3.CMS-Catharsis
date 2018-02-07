@@ -148,6 +148,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
     {
         $this->configurationManager = $configurationManager;
         $this->referenceIndex = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ReferenceIndex::class);
+        $this->referenceIndex->enableRuntimeCache();
         $this->aggregateRootObjects = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
         $this->deletedEntities = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
         $this->changedEntities = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
@@ -258,7 +259,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
      * backend. Otherwise NULL is returned.
      *
      * @param object $object
-     * @return string|NULL The identifier for the object if it is known, or NULL
+     * @return string|null The identifier for the object if it is known, or NULL
      */
     public function getIdentifierByObject($object)
     {
@@ -277,18 +278,17 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
      *
      * @param string $identifier
      * @param string $className
-     * @return object|NULL The object for the identifier if it is known, or NULL
+     * @return object|null The object for the identifier if it is known, or NULL
      */
     public function getObjectByIdentifier($identifier, $className)
     {
         if ($this->session->hasIdentifier($identifier, $className)) {
             return $this->session->getObjectByIdentifier($identifier, $className);
-        } else {
-            $query = $this->persistenceManager->createQueryForType($className);
-            $query->getQuerySettings()->setRespectStoragePage(false);
-            $query->getQuerySettings()->setRespectSysLanguage(false);
-            return $query->matching($query->equals('uid', $identifier))->execute()->getFirst();
         }
+        $query = $this->persistenceManager->createQueryForType($className);
+        $query->getQuerySettings()->setRespectStoragePage(false);
+        $query->getQuerySettings()->setRespectSysLanguage(false);
+        return $query->matching($query->equals('uid', $identifier))->execute()->getFirst();
     }
 
     /**
@@ -398,14 +398,11 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
                     if ($propertyValue->_isNew()) {
                         $this->insertObject($propertyValue, $object, $propertyName);
                     }
-                    // Check explicitly for NULL, as getPlainValue would convert this to 'NULL'
-                    $row[$columnMap->getColumnName()] = $propertyValue !== null
-                        ? $this->dataMapper->getPlainValue($propertyValue)
-                        : null;
+                    $row[$columnMap->getColumnName()] = $this->getPlainValue($propertyValue);
                 }
                 $queue[] = $propertyValue;
             } elseif ($object->_isNew() || $object->_isDirty($propertyName)) {
-                $row[$columnMap->getColumnName()] = $this->dataMapper->getPlainValue($propertyValue, $columnMap);
+                $row[$columnMap->getColumnName()] = $this->getPlainValue($propertyValue, $columnMap);
             }
         }
         if (!empty($row)) {
@@ -439,9 +436,10 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
     }
 
     /**
-     * Persists an object storage. Objects of a 1:n or m:n relation are queued and processed with the parent object. A 1:1 relation
-     * gets persisted immediately. Objects which were removed from the property were detached from the parent object. They will not be
-     * deleted by default. You have to annotate the property with "@cascade remove" if you want them to be deleted as well.
+     * Persists an object storage. Objects of a 1:n or m:n relation are queued and processed with the parent object.
+     * A 1:1 relation gets persisted immediately. Objects which were removed from the property were detached from
+     * the parent object. They will not be deleted by default. You have to annotate the property
+     * with '@TYPO3\CMS\Extbase\Annotation\ORM\Cascade("remove")' if you want them to be deleted as well.
      *
      * @param \TYPO3\CMS\Extbase\Persistence\ObjectStorage $objectStorage The object storage to be persisted.
      * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject The parent object. One of the properties holds the object storage.
@@ -455,7 +453,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
         $propertyMetaData = $this->reflectionService->getClassSchema($className)->getProperty($propertyName);
         foreach ($this->getRemovedChildObjects($parentObject, $propertyName) as $removedObject) {
             $this->detachObjectFromParentObject($removedObject, $parentObject, $propertyName);
-            if ($columnMap->getTypeOfRelation() === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY && $propertyMetaData['cascade'] === 'remove') {
+            if ($columnMap->getTypeOfRelation() === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY && $propertyMetaData['annotations']['cascade'] === 'remove') {
                 $this->removeEntity($removedObject);
             }
         }
@@ -677,7 +675,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
                     $row[$columnMap->getColumnName()] = 0;
                 }
             } elseif ($propertyValue !== null) {
-                $row[$columnMap->getColumnName()] = $this->dataMapper->getPlainValue($propertyValue, $columnMap);
+                $row[$columnMap->getColumnName()] = $this->getPlainValue($propertyValue, $columnMap);
             }
         }
         $this->addCommonFieldsToRow($object, $row);
@@ -812,7 +810,8 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
         }
         $res = $this->storageBackend->updateRelationTableRow(
             $relationTableName,
-            $row);
+            $row
+        );
         return $res;
     }
 
@@ -915,7 +914,8 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
         $result = $this->storageBackend->getMaxValueFromTable(
             $tableName,
             $matchFields,
-            $sortByFieldName);
+            $sortByFieldName
+        );
         return $result;
     }
 
@@ -1076,7 +1076,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
                 continue;
             }
             $propertyMetaData = $classSchema->getProperty($propertyName);
-            if ($propertyMetaData['cascade'] === 'remove') {
+            if ($propertyMetaData['annotations']['cascade'] === 'remove') {
                 if ($columnMap->getTypeOfRelation() === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY) {
                     foreach ($propertyValue as $containedObject) {
                         $this->removeEntity($containedObject);
@@ -1120,5 +1120,22 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
         }
         $storagePidList = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $frameworkConfiguration['persistence']['storagePid']);
         return (int)$storagePidList[0];
+    }
+
+    /**
+     * Returns a plain value
+     *
+     * i.e. objects are flattened out if possible.
+     * Checks explicitly for null values as DataMapper's getPlainValue would convert this to 'NULL'
+     *
+     * @param mixed $input The value that will be converted
+     * @param ColumnMap $columnMap Optional column map for retrieving the date storage format
+     * @return int|string|null
+     */
+    protected function getPlainValue($input, ColumnMap $columnMap = null)
+    {
+        return $input !== null
+            ? $this->dataMapper->getPlainValue($input, $columnMap)
+            : null;
     }
 }

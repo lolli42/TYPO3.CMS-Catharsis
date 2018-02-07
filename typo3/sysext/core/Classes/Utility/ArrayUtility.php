@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
+
 /**
  * Class with helper functions for array handling
  */
@@ -36,7 +38,8 @@ class ArrayUtility
                     'The options "%s" were not allowed (allowed were: "%s")',
                     implode(', ', $notAllowedArrayKeys),
                     implode(', ', $allowedArrayKeys)
-                ), 1325697085
+                ),
+                1325697085
             );
         }
     }
@@ -141,9 +144,8 @@ class ArrayUtility
     {
         $isValid = true;
         try {
-            // Use late static binding to enable mocking of this call in unit tests
             static::getValueByPath($array, $path, $delimiter);
-        } catch (\RuntimeException $e) {
+        } catch (MissingArrayPathException $e) {
             $isValid = false;
         }
         return $isValid;
@@ -179,10 +181,12 @@ class ArrayUtility
         // Extract parts of the path
         if (is_string($path)) {
             if ($path === '') {
+                // Programming error has to be sanitized before calling the method -> global exception
                 throw new \RuntimeException('Path must not be empty', 1341397767);
             }
             $path = str_getcsv($path, $delimiter);
         } elseif (!is_array($path)) {
+            // Programming error has to be sanitized before calling the method -> global exception
             throw new \InvalidArgumentException('getValueByPath() expects $path to be string or array, "' . gettype($path) . '" given.', 1476557628);
         }
         // Loop through each part and extract its value
@@ -192,8 +196,8 @@ class ArrayUtility
                 // Replace current value with child
                 $value = $value[$segment];
             } else {
-                // Fail if key does not exist
-                throw new \RuntimeException('Path does not exist in array', 1341397869);
+                // Throw specific exception if there is no such path
+                throw new MissingArrayPathException('Segment ' . $segment . ' of path ' . $path . ' does not exist in array', 1341397869);
             }
         }
         return $value;
@@ -325,7 +329,7 @@ class ArrayUtility
                 throw new \RuntimeException('Invalid path segment specified', 1371757720);
             }
             if (!array_key_exists($segment, $pointer)) {
-                throw new \RuntimeException('Path segment ' . $segment . ' does not exist in array', 1371758436);
+                throw new MissingArrayPathException('Segment ' . $segment . ' of path ' . $path . ' does not exist in array', 1371758436);
             }
             if ($currentDepth === $pathDepth) {
                 unset($pointer[$segment]);
@@ -571,7 +575,7 @@ class ArrayUtility
         $level++;
         $allKeysAreNumeric = true;
         foreach ($array as $key => $_) {
-            if (is_numeric($key) === false || (is_string($key) && StringUtility::endsWith($key, '.'))) {
+            if (is_int($key) === false) {
                 $allKeysAreNumeric = false;
                 break;
             }
@@ -684,10 +688,11 @@ class ArrayUtility
             }
             // Do the filtering:
             if (is_array($keepItems) && !empty($keepItems)) {
+                $keepItems = array_flip($keepItems);
                 foreach ($array as $key => $value) {
                     // Get the value to compare by using the callback function:
                     $keepValue = isset($getValueFunc) ? call_user_func($getValueFunc, $value) : $value;
-                    if (!in_array($keepValue, $keepItems)) {
+                    if (!isset($keepItems[$keepValue])) {
                         unset($array[$key]);
                     }
                 }
@@ -827,5 +832,32 @@ class ArrayUtility
             }
         }
         return $result;
+    }
+
+    /**
+     * Recursively filter an array
+     *
+     * @param array $array
+     * @param callable|null $callback
+     * @return array the filtered array
+     * @see https://secure.php.net/manual/en/function.array-filter.php
+     */
+    public static function filterRecursive(array $array, callable $callback = null): array
+    {
+        $callback = $callback ?: function ($value) {
+            return (bool)$value;
+        };
+
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $array[$key] = self::filterRecursive($value, $callback);
+            }
+
+            if (!$callback($value)) {
+                unset($array[$key]);
+            }
+        }
+
+        return $array;
     }
 }

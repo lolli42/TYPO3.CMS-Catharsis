@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\ViewHelpers\Form;
 
 /*
@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Form\ViewHelpers\Form;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Extbase\Property\PropertyMapper;
 use TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper;
 use TYPO3\CMS\Form\ViewHelpers\RenderRenderableViewHelper;
 
@@ -93,12 +92,12 @@ class TimePickerViewHelper extends AbstractFormFieldViewHelper
     }
 
     /**
-     * @return null|\DateTime
+     * @return \DateTime|null
      */
     protected function getSelectedDate()
     {
         /** @var FormRuntime $formRuntime */
-        $formRuntime =  $this->renderingContext
+        $formRuntime = $this->renderingContext
             ->getViewHelperVariableContainer()
             ->get(RenderRenderableViewHelper::class, 'formRuntime');
 

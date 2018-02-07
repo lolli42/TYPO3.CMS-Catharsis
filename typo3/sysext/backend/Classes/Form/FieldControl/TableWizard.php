@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\FieldControl;
 
 /*
@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Backend\Form\FieldControl;
  */
 
 use TYPO3\CMS\Backend\Form\AbstractNode;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -53,7 +52,7 @@ class TableWizard extends AbstractNode
             $flexFormPath = str_replace('][', '/', substr($itemName, strlen($prefixOfFormElName) + 1, -1));
         }
 
-        $urlParameters  = [
+        $urlParameters = [
             'P' => [
                 'params' => [
                     'xmlOutput' => $xmlOutput,
@@ -70,13 +69,14 @@ class TableWizard extends AbstractNode
         $onClick = [];
         $onClick[] = 'this.blur();';
         $onClick[] = 'return !TBE_EDITOR.isFormChanged();';
-
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         return [
             'iconIdentifier' => 'content-table',
             'title' => $title,
             'linkAttributes' => [
                 'onClick' => implode('', $onClick),
-                'href' => BackendUtility::getModuleUrl('wizard_table', $urlParameters),
+                'href' => (string)$uriBuilder->buildUriFromRoute('wizard_table', $urlParameters),
             ],
         ];
     }

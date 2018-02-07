@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Console;
 
 /*
@@ -27,7 +28,7 @@ interface RequestHandlerInterface
      * Handles a CLI request
      *
      * @param InputInterface $input
-     * @return NULL|OutputInterface
+     * @return OutputInterface|null
      * @api
      */
     public function handleRequest(InputInterface $input);

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Controller;
 
 /*
@@ -30,6 +30,7 @@ use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\View\JsonView;
 use TYPO3\CMS\Form\Exception as FormException;
+use TYPO3\CMS\Form\Mvc\Persistence\Exception\PersistenceManagerException;
 use TYPO3\CMS\Form\Service\TranslationService;
 
 /**
@@ -46,17 +47,6 @@ class FormManagerController extends AbstractBackendController
      * @var BackendTemplateView
      */
     protected $defaultViewObjectName = BackendTemplateView::class;
-
-    /**
-     * Initialize the references action.
-     * This action use the Fluid JsonView::class as view.
-     *
-     * @internal
-     */
-    public function initializeReferencesAction()
-    {
-        $this->defaultViewObjectName = JsonView::class;
-    }
 
     /**
      * Displays the Form Manager
@@ -79,17 +69,27 @@ class FormManagerController extends AbstractBackendController
     }
 
     /**
+     * Initialize the create action.
+     * This action uses the Fluid JsonView::class as view.
+     *
+     * @internal
+     */
+    public function initializeCreateAction()
+    {
+        $this->defaultViewObjectName = JsonView::class;
+    }
+
+    /**
      * Creates a new Form and redirects to the Form Editor
      *
      * @param string $formName
      * @param string $templatePath
      * @param string $prototypeName
      * @param string $savePath
-     * @return string
      * @throws FormException
      * @internal
      */
-    public function createAction(string $formName, string $templatePath, string $prototypeName, string $savePath): string
+    public function createAction(string $formName, string $templatePath, string $prototypeName, string $savePath)
     {
         if (!$this->isValidTemplatePath($prototypeName, $templatePath)) {
             throw new FormException(sprintf('The template path "%s" is not allowed', $templatePath), 1329233410);
@@ -106,24 +106,48 @@ class FormManagerController extends AbstractBackendController
 
         $formPersistenceIdentifier = $this->formPersistenceManager->getUniquePersistenceIdentifier($form['identifier'], $savePath);
 
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormCreate'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormCreate'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormCreate'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'beforeFormCreate')) {
-                    $form = $hookObj->beforeFormCreate(
-                        $formPersistenceIdentifier,
-                        $form
-                    );
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormCreate'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'beforeFormCreate')) {
+                $form = $hookObj->beforeFormCreate(
+                    $formPersistenceIdentifier,
+                    $form
+                );
             }
         }
 
-        $this->formPersistenceManager->save($formPersistenceIdentifier, $form);
+        $response = [
+            'status' => 'success',
+            'url' => $this->controllerContext->getUriBuilder()->uriFor('index', ['formPersistenceIdentifier' => $formPersistenceIdentifier], 'FormEditor')
+        ];
 
-        return $this->controllerContext->getUriBuilder()->uriFor('index', ['formPersistenceIdentifier' => $formPersistenceIdentifier], 'FormEditor');
+        try {
+            $this->formPersistenceManager->save($formPersistenceIdentifier, $form);
+        } catch (PersistenceManagerException $e) {
+            $response = [
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ];
+        }
+
+        $this->view->assign('response', $response);
+        // createAction uses the Extbase JsonView::class.
+        // That's why we have to set the view variables in this way.
+        $this->view->setVariablesToRender([
+            'response',
+        ]);
+    }
+
+    /**
+     * Initialize the duplicate action.
+     * This action uses the Fluid JsonView::class as view.
+     *
+     * @internal
+     */
+    public function initializeDuplicateAction()
+    {
+        $this->defaultViewObjectName = JsonView::class;
     }
 
     /**
@@ -132,10 +156,9 @@ class FormManagerController extends AbstractBackendController
      * @param string $formName
      * @param string $formPersistenceIdentifier persistence identifier of the form to duplicate
      * @param string $savePath
-     * @return string
      * @internal
      */
-    public function duplicateAction(string $formName, string $formPersistenceIdentifier, string $savePath): string
+    public function duplicateAction(string $formName, string $formPersistenceIdentifier, string $savePath)
     {
         $formToDuplicate = $this->formPersistenceManager->load($formPersistenceIdentifier);
         $formToDuplicate['label'] = $formName;
@@ -143,24 +166,48 @@ class FormManagerController extends AbstractBackendController
 
         $formPersistenceIdentifier = $this->formPersistenceManager->getUniquePersistenceIdentifier($formToDuplicate['identifier'], $savePath);
 
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDuplicate'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDuplicate'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDuplicate'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'beforeFormDuplicate')) {
-                    $formToDuplicate = $hookObj->beforeFormDuplicate(
-                        $formPersistenceIdentifier,
-                        $formToDuplicate
-                    );
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDuplicate'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'beforeFormDuplicate')) {
+                $formToDuplicate = $hookObj->beforeFormDuplicate(
+                    $formPersistenceIdentifier,
+                    $formToDuplicate
+                );
             }
         }
 
-        $this->formPersistenceManager->save($formPersistenceIdentifier, $formToDuplicate);
+        $response = [
+            'status' => 'success',
+            'url' => $this->controllerContext->getUriBuilder()->uriFor('index', ['formPersistenceIdentifier' => $formPersistenceIdentifier], 'FormEditor')
+        ];
 
-        return $this->controllerContext->getUriBuilder()->uriFor('index', ['formPersistenceIdentifier' => $formPersistenceIdentifier], 'FormEditor');
+        try {
+            $this->formPersistenceManager->save($formPersistenceIdentifier, $formToDuplicate);
+        } catch (PersistenceManagerException $e) {
+            $response = [
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ];
+        }
+
+        $this->view->assign('response', $response);
+        // createAction uses the Extbase JsonView::class.
+        // That's why we have to set the view variables in this way.
+        $this->view->setVariablesToRender([
+            'response',
+        ]);
+    }
+
+    /**
+     * Initialize the references action.
+     * This action uses the Fluid JsonView::class as view.
+     *
+     * @internal
+     */
+    public function initializeReferencesAction()
+    {
+        $this->defaultViewObjectName = JsonView::class;
     }
 
     /**
@@ -190,17 +237,12 @@ class FormManagerController extends AbstractBackendController
     public function deleteAction(string $formPersistenceIdentifier)
     {
         if (empty($this->getReferences($formPersistenceIdentifier))) {
-            if (
-                isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'])
-                && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'])
-            ) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'] as $className) {
-                    $hookObj = GeneralUtility::makeInstance($className);
-                    if (method_exists($hookObj, 'beforeFormDelete')) {
-                        $hookObj->beforeFormDelete(
-                            $formPersistenceIdentifier
-                        );
-                    }
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormDelete'] ?? [] as $className) {
+                $hookObj = GeneralUtility::makeInstance($className);
+                if (method_exists($hookObj, 'beforeFormDelete')) {
+                    $hookObj->beforeFormDelete(
+                        $formPersistenceIdentifier
+                    );
                 }
             }
 
@@ -235,6 +277,11 @@ class FormManagerController extends AbstractBackendController
     {
         $preparedAccessibleFormStorageFolders = [];
         foreach ($this->formPersistenceManager->getAccessibleFormStorageFolders() as $identifier => $folder) {
+            // TODO: deprecated since TYPO3 v9, will be removed in TYPO3 v10
+            if ($folder->getCombinedIdentifier() === '1:/user_upload/') {
+                continue;
+            }
+
             $preparedAccessibleFormStorageFolders[] = [
                 'label' => $folder->getName(),
                 'value' => $identifier
@@ -422,7 +469,7 @@ class FormManagerController extends AbstractBackendController
             $extensionName = $currentRequest->getControllerExtensionName();
             if (count($getVars) === 0) {
                 $modulePrefix = strtolower('tx_' . $extensionName . '_' . $moduleName);
-                $getVars = ['id', 'M', $modulePrefix];
+                $getVars = ['id', 'route', $modulePrefix];
             }
 
             $shortcutButton = $buttonBar->makeShortcutButton()
@@ -466,7 +513,7 @@ class FormManagerController extends AbstractBackendController
      *
      * @param string $table
      * @param int $uid
-     * @return array|NULL
+     * @return array|null
      */
     protected function getRecord(string $table, int $uid)
     {
@@ -495,7 +542,9 @@ class FormManagerController extends AbstractBackendController
      */
     protected function getModuleUrl(string $moduleName, array $urlParameters = []): string
     {
-        return BackendUtility::getModuleUrl($moduleName, $urlParameters);
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        return (string)$uriBuilder->buildUriFromRoute($moduleName, $urlParameters);
     }
 
     /**

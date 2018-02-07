@@ -1105,26 +1105,17 @@ Do you want to refresh it now?</source>
 			<trans-unit id="cm.allowedFileExtensions">
 				<source>Allowed file extensions:</source>
 			</trans-unit>
+			<trans-unit id="cm.allowEmbedSources">
+				<source>Allowed media sources:</source>
+			</trans-unit>
 			<trans-unit id="sortable.dragmove">
 				<source>Drag to move</source>
 			</trans-unit>
 			<trans-unit id="tree.defaultPageTitle">
 				<source>[Default Title]</source>
 			</trans-unit>
-			<trans-unit id="tree.copyHint">
-				<source>Press Ctrl to copy.</source>
-			</trans-unit>
 			<trans-unit id="tree.activeFilterMode">
 				<source>Active Filtering Mode</source>
-			</trans-unit>
-			<trans-unit id="tree.dropToRemove">
-				<source>Drop here to delete</source>
-			</trans-unit>
-			<trans-unit id="tree.dropZoneElementRemoved">
-				<source>Click here to undelete</source>
-			</trans-unit>
-			<trans-unit id="tree.dropZoneElementRestored">
-				<source>Page restored</source>
 			</trans-unit>
 			<trans-unit id="tree.buttonNewNode">
 				<source>Create new pages</source>
@@ -1161,9 +1152,6 @@ Do you want to refresh it now?</source>
 			</trans-unit>
 			<trans-unit id="warning.install_trustedhosts">
 				<source>The trusted hosts pattern check is disabled. Please define the allowed hosts in the [SYS][trustedHostsPattern] section of the Install Tool.</source>
-			</trans-unit>
-			<trans-unit id="warning.install_encryption">
-				<source>The encryption key is not set. Set it in the %sBasic Configuration section%s of the Install Tool.</source>
 			</trans-unit>
 			<trans-unit id="warning.install_update">
 				<source>This installation is not configured for the TYPO3 version it is running. If you did so intentionally, this message can be safely ignored. If you are unsure, visit the Update Wizard section of the %sInstall Tool%s to see how TYPO3 would change.</source>
@@ -1276,17 +1264,6 @@ Do you want to refresh it now?</source>
 			<trans-unit id="toolbarItems.sysinfo.typo3-version">
 				<source>TYPO3 Version</source>
 			</trans-unit>
-			<trans-unit id="ExtDirect.namespaceError" xml:space="preserve">
-				<source>Ext Direct error in "%s" with namespace: "%s"\n
-Try to clear the TYPO3 cache and / or use parameter no_cache=1 as parameter in URL typo3/index.php\n\n
-Check also the following points:\n
-- configuration in ext_localconf.php: registration key should be like "TYPO3.MyExtension.Sample"\n
-- URL typo3/index.php: namespace parameter should be like: "TYPO3.MyExtension"\n
-- javascript: method\'s name should be like: "TYPO3.MyExtension.Sample.myMethod"\n</source>
-			</trans-unit>
-			<trans-unit id="ExtDirect.noNamespace">
-				<source>Ext Direct error in "%s": no namespace has been found.</source>
-			</trans-unit>
 			<trans-unit id="extension.not.installed">
 				<source>Extension "%s" is not installed.</source>
 			</trans-unit>
@@ -1322,6 +1299,15 @@ Check also the following points:\n
 			</trans-unit>
 			<trans-unit id="labels.editTitle">
 				<source>Edit this Constant</source>
+			</trans-unit>
+			<trans-unit id="pageTranslation">
+				<source>Page Translation</source>
+			</trans-unit>
+			<trans-unit id="filestorage.invalidpathexception.title">
+				<source>Error in Path</source>
+			</trans-unit>
+			<trans-unit id="filestorage.invalidpathexception.message">
+				<source>You entered an invalid path for this File Storage. Note that "../" and "//" are not allowed when using an absolute path.</source>
 			</trans-unit>
 		</body>
 	</file>

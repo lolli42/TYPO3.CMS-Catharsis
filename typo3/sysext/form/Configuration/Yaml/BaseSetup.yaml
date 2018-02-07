@@ -3,7 +3,8 @@ TYPO3:
     Form:
       persistenceManager:
         allowedFileMounts:
-          10: 1:/user_upload/
+          10: 1:/form_definitions/
+          20: 1:/user_upload/
         allowSaveToExtensionPaths: false
         allowDeleteFromExtensionPaths: false
         #allowedExtensionPaths:
@@ -149,10 +150,47 @@ TYPO3:
               properties:
                 renderAsHiddenField: false
                 styleAttribute: 'position:absolute; margin:0 0 0 -999em;'
+              renderingOptions:
+                _isHiddenFormElement: true
 
             Hidden:
               __inheritances:
                 10: 'TYPO3.CMS.Form.mixins.formElementMixins.FormElementMixin'
+              renderingOptions:
+                _isHiddenFormElement: true
+
+            ### FORM ELEMENTS: HTML5 ###
+            Email:
+              __inheritances:
+                10: 'TYPO3.CMS.Form.mixins.formElementMixins.TextMixin'
+              validators:
+                -
+                  identifier: EmailAddress
+
+            Telephone:
+              __inheritances:
+                10: 'TYPO3.CMS.Form.mixins.formElementMixins.TextMixin'
+              validators:
+                -
+                  identifier: RegularExpression
+                  options:
+                    regularExpression: '/^.*$/'
+
+            Url:
+              __inheritances:
+                10: 'TYPO3.CMS.Form.mixins.formElementMixins.TextMixin'
+              validators:
+                -
+                  identifier: RegularExpression
+                  options:
+                    regularExpression: '/^.*$/'
+
+            Number:
+              __inheritances:
+                10: 'TYPO3.CMS.Form.mixins.formElementMixins.TextMixin'
+              validators:
+                -
+                  identifier: Number
 
             ### FORM ELEMENTS: SELECT ###
             Checkbox:
@@ -308,6 +346,8 @@ TYPO3:
               implementationClassName: 'TYPO3\CMS\Extbase\Validation\Validator\IntegerValidator'
             Float:
               implementationClassName: 'TYPO3\CMS\Extbase\Validation\Validator\FloatValidator'
+            Number:
+              implementationClassName: 'TYPO3\CMS\Extbase\Validation\Validator\NumberValidator'
             NumberRange:
               implementationClassName: 'TYPO3\CMS\Extbase\Validation\Validator\NumberRangeValidator'
               #options:
@@ -322,6 +362,11 @@ TYPO3:
               #options:
                 #minimum: 0
                 #maximum: 0
+            FileSize:
+              implementationClassName: 'TYPO3\CMS\Form\Mvc\Validation\FileSizeValidator'
+              #options:
+                #minimum: '0B'
+                #maximum: '10M'
 
       ########### MIXINS ###########
       mixins:
@@ -341,6 +386,8 @@ TYPO3:
             __inheritances:
               10: 'TYPO3.CMS.Form.mixins.formElementMixins.BaseFormElementMixin'
             implementationClassName: 'TYPO3\CMS\Form\Domain\Model\FormElements\GenericFormElement'
+            renderingOptions:
+              _isReadOnlyFormElement: true
 
           FormElementMixin:
             __inheritances:

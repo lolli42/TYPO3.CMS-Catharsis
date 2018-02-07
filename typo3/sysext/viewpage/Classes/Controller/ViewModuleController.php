@@ -23,6 +23,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
@@ -64,8 +65,10 @@ class ViewModuleController extends ActionController
             $languageMenu = $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
             $languageMenu->setIdentifier('_langSelector');
             $languageUid = $this->getCurrentLanguage();
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
             foreach ($languages as $value => $label) {
-                $href = BackendUtility::getModuleUrl(
+                $href = (string)$uriBuilder->buildUriFromRoute(
                     'web_ViewpageView',
                     [
                         'id' => (int)GeneralUtility::_GP('id'),
@@ -103,7 +106,7 @@ class ViewModuleController extends ActionController
         $extensionName = $currentRequest->getControllerExtensionName();
         if (count($getVars) === 0) {
             $modulePrefix = strtolower('tx_' . $extensionName . '_' . $moduleName);
-            $getVars = ['id', 'M', $modulePrefix];
+            $getVars = ['id', 'route', $modulePrefix];
         }
         $shortcutButton = $buttonBar->makeShortcutButton()
             ->setModuleName($moduleName)
@@ -141,13 +144,13 @@ class ViewModuleController extends ActionController
         $icons['unidentified'] = $iconFactory->getIcon('actions-device-unidentified', Icon::SIZE_SMALL)->render('inline');
 
         $current = ($this->getBackendUser()->uc['moduleData']['web_view']['States']['current'] ?: []);
-        $current['label'] = (isset($current['label']) ? $current['label'] : $this->getLanguageService()->sL('LLL:EXT:viewpage/Resources/Private/Language/locallang.xlf:custom'));
-        $current['width'] = (isset($current['width']) && (int) $current['width'] >= 300 ? (int) $current['width'] : 320);
-        $current['height'] = (isset($current['height']) && (int) $current['height'] >= 300 ? (int) $current['height'] : 480);
+        $current['label'] = ($current['label'] ?? $this->getLanguageService()->sL('LLL:EXT:viewpage/Resources/Private/Language/locallang.xlf:custom'));
+        $current['width'] = (isset($current['width']) && (int)$current['width'] >= 300 ? (int)$current['width'] : 320);
+        $current['height'] = (isset($current['height']) && (int)$current['height'] >= 300 ? (int)$current['height'] : 480);
 
         $custom = ($this->getBackendUser()->uc['moduleData']['web_view']['States']['custom'] ?: []);
-        $custom['width'] = (isset($current['custom']) && (int) $current['custom'] >= 300 ? (int) $current['custom'] : 320);
-        $custom['height'] = (isset($current['custom']) && (int) $current['custom'] >= 300 ? (int) $current['custom'] : 480);
+        $custom['width'] = (isset($current['custom']) && (int)$current['custom'] >= 300 ? (int)$current['custom'] : 320);
+        $custom['height'] = (isset($current['custom']) && (int)$current['custom'] >= 300 ? (int)$current['custom'] : 480);
 
         $this->view->assign('icons', $icons);
         $this->view->assign('current', $current);
@@ -165,7 +168,7 @@ class ViewModuleController extends ActionController
     {
         $pageIdToShow = (int)GeneralUtility::_GP('id');
 
-        $permissionClause = $this->getBackendUser()->getPagePermsClause(1);
+        $permissionClause = $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW);
         $pageRecord = BackendUtility::readPageAccess($pageIdToShow, $permissionClause);
         if ($pageRecord) {
             $this->view->getModuleTemplate()->getDocHeaderComponent()->setMetaInformation($pageRecord);
@@ -197,9 +200,8 @@ class ViewModuleController extends ActionController
                 }
             }
             return $protocolAndHost . '/index.php?id=' . $finalPageIdToShow . $this->getTypeParameterIfSet($finalPageIdToShow) . $mountPointMpParameter . $adminCommand . $languageParameter;
-        } else {
-            return '#';
         }
+        return '#';
     }
 
     /**
@@ -211,7 +213,7 @@ class ViewModuleController extends ActionController
     protected function getAdminCommand($pageId)
     {
         // The page will show only if there is a valid page and if this page may be viewed by the user
-        $pageinfo = BackendUtility::readPageAccess($pageId, $this->getBackendUser()->getPagePermsClause(1));
+        $pageinfo = BackendUtility::readPageAccess($pageId, $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW));
         $addCommand = '';
         if (is_array($pageinfo)) {
             $addCommand = '&ADMCMD_editIcons=1' . BackendUtility::ADMCMD_previewCmds($pageinfo);
@@ -242,7 +244,7 @@ class ViewModuleController extends ActionController
      * Get domain name for requested page id
      *
      * @param int $pageId
-     * @return string|NULL Domain name from first sys_domains-Record or from TCEMAIN.previewDomain, NULL if neither is configured
+     * @return string|null Domain name from first sys_domains-Record or from TCEMAIN.previewDomain, NULL if neither is configured
      */
     protected function getDomainName($pageId)
     {
@@ -274,12 +276,12 @@ class ViewModuleController extends ActionController
             foreach ($modTSconfig['properties']['previewFrameWidths.'] as $item => $conf) {
                 $data = [
                     'key' => substr($item, 0, -1),
-                    'label' => (isset($conf['label']) ? $conf['label'] : null),
-                    'type' => (isset($conf['type']) ? $conf['type'] : 'unknown'),
-                    'width' => ((isset($conf['width']) && (int) $conf['width'] > 0 && strpos($conf['width'], '%') === false) ? (int) $conf['width'] : null),
-                    'height' => ((isset($conf['height']) && (int) $conf['height'] > 0 && strpos($conf['height'], '%') === false) ? (int) $conf['height'] : null),
+                    'label' => ($conf['label'] ?? null),
+                    'type' => ($conf['type'] ?? 'unknown'),
+                    'width' => ((isset($conf['width']) && (int)$conf['width'] > 0 && strpos($conf['width'], '%') === false) ? (int)$conf['width'] : null),
+                    'height' => ((isset($conf['height']) && (int)$conf['height'] > 0 && strpos($conf['height'], '%') === false) ? (int)$conf['height'] : null),
                 ];
-                $width = (int) substr($item, 0, -1);
+                $width = (int)substr($item, 0, -1);
                 if (!isset($data['width']) && $width > 0) {
                     $data['width'] = $width;
                 }
@@ -307,6 +309,8 @@ class ViewModuleController extends ActionController
      */
     protected function getPreviewLanguages()
     {
+        $localizationParentField = $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'];
+        $languageField = $GLOBALS['TCA']['pages']['ctrl']['languageField'];
         $pageIdToShow = (int)GeneralUtility::_GP('id');
         $modSharedTSconfig = BackendUtility::getModTSconfig($pageIdToShow, 'mod.SHARED');
         if ($modSharedTSconfig['properties']['view.']['disableLanguageSelector'] === '1') {
@@ -330,13 +334,13 @@ class ViewModuleController extends ActionController
             ->from('sys_language')
             ->join(
                 'sys_language',
-                'pages_language_overlay',
+                'pages',
                 'o',
-                $queryBuilder->expr()->eq('o.sys_language_uid', $queryBuilder->quoteIdentifier('sys_language.uid'))
+                $queryBuilder->expr()->eq('o.' . $languageField, $queryBuilder->quoteIdentifier('sys_language.uid'))
             )
             ->where(
                 $queryBuilder->expr()->eq(
-                    'o.pid',
+                    'o.' . $localizationParentField,
                     $queryBuilder->createNamedParameter($pageIdToShow, \PDO::PARAM_INT)
                 )
             )

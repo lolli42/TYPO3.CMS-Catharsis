@@ -14,10 +14,10 @@ namespace TYPO3\CMS\SysNote\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
 
 /**
@@ -34,7 +34,6 @@ class DeleteLinkViewHelper extends AbstractViewHelper
      */
     public function initializeArguments()
     {
-        parent::initializeArguments();
         $this->registerArgument('id', 'int', 'uid of the note', true);
     }
 
@@ -53,6 +52,7 @@ class DeleteLinkViewHelper extends AbstractViewHelper
             'cmd[sys_note][' . $arguments['id'] . '][delete]' => 1,
             'redirect' => GeneralUtility::getIndpEnv('REQUEST_URI')
         ];
-        return BackendUtility::getModuleUrl('tce_db', $urlParameters);
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        return (string)$uriBuilder->buildUriFromRoute('tce_db', $urlParameters);
     }
 }

@@ -14,12 +14,14 @@ namespace TYPO3\CMS\Install\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Secure session handling for the install tool.
  */
-class SessionService implements \TYPO3\CMS\Core\SingletonInterface
+class SessionService implements SingletonInterface
 {
     /**
      * The path to our typo3temp/var/ (where we can write our sessions). Set in the
@@ -82,7 +84,8 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface
             $sessionCreationError .= 'The PHP option session.auto-start is enabled. Disable this option in php.ini or .htaccess:<br />';
             $sessionCreationError .= '<pre>php_value session.auto_start Off</pre>';
             throw new \TYPO3\CMS\Install\Exception($sessionCreationError, 1294587485);
-        } elseif (defined('SID')) {
+        }
+        if (defined('SID')) {
             $sessionCreationError = 'Session already started by session_start().<br />';
             $sessionCreationError .= 'Make sure no installed extension is starting a session in its ext_localconf.php or ext_tables.php.';
             throw new \TYPO3\CMS\Install\Exception($sessionCreationError, 1294587486);
@@ -250,6 +253,21 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface
     }
 
     /**
+     * Marks this session as an "authorized by backend user" one.
+     * This is called by BackendModuleController from backend context.
+     */
+    public function setAuthorizedBackendSession()
+    {
+        $_SESSION['authorized'] = true;
+        $_SESSION['lastSessionId'] = time();
+        $_SESSION['tstamp'] = time();
+        $_SESSION['expires'] = time() + $this->expireTimeInMinutes * 60;
+        $_SESSION['isBackendSession'] = true;
+        // Renew the session id to avoid session fixation
+        $this->renewSession();
+    }
+
+    /**
      * Check if we have an already authorized session
      *
      * @return bool TRUE if this session has been authorized before (by a correct password)
@@ -257,6 +275,23 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface
     public function isAuthorized()
     {
         if (!$_SESSION['authorized']) {
+            return false;
+        }
+        if ($_SESSION['expires'] < time()) {
+            // This session has already expired
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Check if we have an authorized session from a system maintainer
+     *
+     * @return bool TRUE if this session has been authorized before and initialized by a backend system maintainer
+     */
+    public function isAuthorizedBackendUserSession()
+    {
+        if (!$_SESSION['authorized'] || !$_SESSION['isBackendSession']) {
             return false;
         }
         if ($_SESSION['expires'] < time()) {
@@ -305,9 +340,9 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface
     /**
      * Add a message to "Flash" message storage.
      *
-     * @param \TYPO3\CMS\Install\Status\StatusInterface $message A message to add
+     * @param FlashMessage $message A message to add
      */
-    public function addMessage(\TYPO3\CMS\Install\Status\StatusInterface $message)
+    public function addMessage(FlashMessage $message)
     {
         if (!is_array($_SESSION['messages'])) {
             $_SESSION['messages'] = [];
@@ -318,7 +353,7 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface
     /**
      * Return stored session messages and flush.
      *
-     * @return array<\TYPO3\CMS\Install\Status\StatusInterface> Messages
+     * @return FlashMessage[] Messages
      */
     public function getMessagesAndFlush()
     {

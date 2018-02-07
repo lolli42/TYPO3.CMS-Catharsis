@@ -45,6 +45,7 @@ Small           small           csc-space-before-small            2em
 Medium          medium          csc-space-before-medium           3em
 Large           large           csc-space-before-large            4em
 Extra Large     extra-large     csc-space-before-extra-large      5em
+=============   =============   ===============================   =============
 
 
 Example Output
@@ -89,4 +90,4 @@ Impact
 
 SpaceBefore and SpaceAfter is now available to all CSS Styled Content elements.
 
-.. index:: Frontend
+.. index:: Frontend, ext:css_styled_content, TypoScript

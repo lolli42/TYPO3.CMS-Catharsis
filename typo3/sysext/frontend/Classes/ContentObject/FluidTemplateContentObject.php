@@ -21,6 +21,7 @@ use TYPO3\CMS\Extbase\Configuration\ConfigurationManager;
 use TYPO3\CMS\Extbase\Mvc\Web\RequestBuilder;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Fluid\View\StandaloneView;
+use TYPO3\CMS\Frontend\ContentObject\Exception\ContentRenderingException;
 
 /**
  * Contains FLUIDTEMPLATE class object
@@ -84,12 +85,14 @@ class FluidTemplateContentObject extends AbstractContentObject
      */
     public function render($conf = [])
     {
-        $parentView = $this->view;
-        $this->initializeStandaloneViewInstance();
-
         if (!is_array($conf)) {
             $conf = [];
         }
+        $variables = $this->getContentObjectVariables($conf);
+        $variables = $this->contentDataProcessor->process($this->cObj, $conf, $variables);
+
+        $parentView = $this->view;
+        $this->initializeStandaloneViewInstance();
 
         $this->setFormat($conf);
         $this->setTemplate($conf);
@@ -97,8 +100,6 @@ class FluidTemplateContentObject extends AbstractContentObject
         $this->setPartialRootPath($conf);
         $this->setExtbaseVariables($conf);
         $this->assignSettings($conf);
-        $variables = $this->getContentObjectVariables($conf);
-        $variables = $this->contentDataProcessor->process($this->cObj, $conf, $variables);
 
         $this->view->assignMultiple($variables);
 
@@ -156,20 +157,25 @@ class FluidTemplateContentObject extends AbstractContentObject
             $templateRootPaths = $this->applyStandardWrapToFluidPaths($conf['templateRootPaths.']);
             $this->view->setTemplateRootPaths($templateRootPaths);
             $templateName = isset($conf['templateName.'])
-                ? $this->cObj->stdWrap(isset($conf['templateName']) ? $conf['templateName'] : '', $conf['templateName.'])
+                ? $this->cObj->stdWrap($conf['templateName'] ?? '', $conf['templateName.'])
                 : $conf['templateName'];
             $this->view->setTemplate($templateName);
-        // Fetch the Fluid template by template cObject
         } elseif (!empty($conf['template']) && !empty($conf['template.'])) {
+            // Fetch the Fluid template by template cObject
             $templateSource = $this->cObj->cObjGetSingle($conf['template'], $conf['template.']);
+            if ($templateSource === '') {
+                throw new ContentRenderingException(
+                    'Could not find template source for ' . $conf['template'],
+                    1437420865
+                );
+            }
             $this->view->setTemplateSource($templateSource);
-        // Fetch the Fluid template by file stdWrap
         } else {
+            // Fetch the Fluid template by file stdWrap
             $file = isset($conf['file.']) ? $this->cObj->stdWrap($conf['file'], $conf['file.']) : $conf['file'];
-            /** @var $templateService \TYPO3\CMS\Core\TypoScript\TemplateService */
-            $templateService = $GLOBALS['TSFE']->tmpl;
-            $templatePathAndFilename = $templateService->getFileName($file);
-            $this->view->setTemplatePathAndFilename(PATH_site . $templatePathAndFilename);
+            // Get the absolute file name
+            $templatePathAndFilename = GeneralUtility::getFileAbsFileName($file);
+            $this->view->setTemplatePathAndFilename($templatePathAndFilename);
         }
     }
 

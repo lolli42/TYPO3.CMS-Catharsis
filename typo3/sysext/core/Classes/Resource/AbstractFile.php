@@ -122,9 +122,8 @@ abstract class AbstractFile implements FileInterface
     {
         if ($this->hasProperty($key)) {
             return $this->properties[$key];
-        } else {
-            return null;
         }
+        return null;
     }
 
     /**
@@ -531,15 +530,14 @@ abstract class AbstractFile implements FileInterface
      * web-based authentication. You have to take care of this yourself.
      *
      * @param bool $relativeToCurrentScript Determines whether the URL returned should be relative to the current script, in case it is relative at all (only for the LocalDriver)
-     * @return NULL|string NULL if file is deleted, the generated URL otherwise
+     * @return string|null NULL if file is deleted, the generated URL otherwise
      */
     public function getPublicUrl($relativeToCurrentScript = false)
     {
         if ($this->deleted) {
             return null;
-        } else {
-            return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
         }
+        return $this->getStorage()->getPublicUrl($this, $relativeToCurrentScript);
     }
 
     /**

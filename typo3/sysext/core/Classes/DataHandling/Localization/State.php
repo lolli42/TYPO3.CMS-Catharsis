@@ -27,7 +27,7 @@ class State
 
     /**
      * @param string $tableName
-     * @return null|State
+     * @return State|null
      */
     public static function create(string $tableName)
     {
@@ -44,7 +44,7 @@ class State
     /**
      * @param string $tableName
      * @param string|null $json
-     * @return null|State
+     * @return State|null
      */
     public static function fromJSON(string $tableName, string $json = null)
     {
@@ -82,7 +82,7 @@ class State
     {
         return array_keys(
             array_filter(
-                $GLOBALS['TCA'][$tableName]['columns'],
+                $GLOBALS['TCA'][$tableName]['columns'] ?? [],
                 function (array $fieldConfiguration) {
                     return !empty(
                         $fieldConfiguration['config']
@@ -139,6 +139,15 @@ class State
     protected $originalStates;
 
     /**
+     * @var array
+     */
+    protected $validStates = [
+        self::STATE_CUSTOM,
+        self::STATE_SOURCE,
+        self::STATE_PARENT,
+    ];
+
+    /**
      * @param string $tableName
      * @param array $states
      */
@@ -148,8 +157,9 @@ class State
         $this->states = $states;
         $this->originalStates = $states;
 
-        $this->states = $this->sanitize($states);
-        $this->states = $this->enrich($states);
+        $this->states = $this->enrich(
+            $this->sanitize($states)
+        );
     }
 
     /**
@@ -258,7 +268,7 @@ class State
 
     /**
      * @param string $fieldName
-     * @return null|string
+     * @return string|null
      */
     public function getState(string $fieldName)
     {
@@ -311,7 +321,12 @@ class State
     protected function enrich(array $states)
     {
         foreach (static::getFieldNames($this->tableName) as $fieldName) {
-            if (!empty($states[$fieldName])) {
+            $isValid = in_array(
+                $states[$fieldName] ?? null,
+                $this->validStates,
+                true
+            );
+            if ($isValid) {
                 continue;
             }
             $states[$fieldName] = static::STATE_PARENT;

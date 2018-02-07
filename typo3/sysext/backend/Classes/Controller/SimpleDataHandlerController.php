@@ -19,6 +19,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Clipboard\Clipboard;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -78,25 +79,11 @@ class SimpleDataHandlerController
     public $redirect;
 
     /**
-     * Boolean. If set, errors will be printed on screen instead of redirection. Should always be used, otherwise you will see no errors if they happen.
-     *
-     * @var int
-     */
-    public $prErr;
-
-    /**
      * Clipboard command array. May trigger changes in "cmd"
      *
      * @var array
      */
     public $CB;
-
-    /**
-     * Boolean. Update Page Tree Trigger. If set and the manipulated records are pages then the update page tree signal will be set.
-     *
-     * @var int
-     */
-    public $uPT;
 
     /**
      * TYPO3 Core Engine
@@ -127,9 +114,7 @@ class SimpleDataHandlerController
         $this->mirror = GeneralUtility::_GP('mirror');
         $this->cacheCmd = GeneralUtility::_GP('cacheCmd');
         $this->redirect = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('redirect'));
-        $this->prErr = GeneralUtility::_GP('prErr');
         $this->CB = GeneralUtility::_GP('CB');
-        $this->uPT = GeneralUtility::_GP('uPT');
         // Creating DataHandler object
         $this->tce = GeneralUtility::makeInstance(DataHandler::class);
         // Configuring based on user prefs.
@@ -167,7 +152,7 @@ class SimpleDataHandlerController
                 $this->cmd = $clipObj->makePasteCmdArray(
                     $this->CB['paste'],
                     $this->cmd,
-                    isset($this->CB['update']) ? $this->CB['update'] : null
+                    $this->CB['update'] ?? null
                 );
             }
             if ($this->CB['delete']) {
@@ -203,7 +188,7 @@ class SimpleDataHandlerController
                 $this->tce->clear_cacheCmd($this->cacheCmd);
             }
             // Update page tree?
-            if ($this->uPT && (isset($this->data['pages']) || isset($this->cmd['pages']))) {
+            if (isset($this->data['pages']) || isset($this->cmd['pages'])) {
                 BackendUtility::setUpdateSignal('updatePageTree');
             }
         }
@@ -223,9 +208,7 @@ class SimpleDataHandlerController
         $this->main();
 
         // Write errors to flash message queue
-        if ($this->prErr) {
-            $this->tce->printLogErrorMessages($this->redirect);
-        }
+        $this->tce->printLogErrorMessages();
         if ($this->redirect) {
             $response = $response
                 ->withHeader('Location', GeneralUtility::locationHeaderUrl($this->redirect))
@@ -238,10 +221,9 @@ class SimpleDataHandlerController
      * Processes all AJAX calls and returns a JSON formatted string
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function processAjaxRequest(ServerRequestInterface $request, ResponseInterface $response)
+    public function processAjaxRequest(ServerRequestInterface $request): ResponseInterface
     {
         // do the regular / main logic
         $this->initClipboard();
@@ -257,10 +239,7 @@ class SimpleDataHandlerController
         ];
 
         // Prints errors (= write them to the message queue)
-        if ($this->prErr) {
-            $content['hasErrors'] = true;
-            $this->tce->printLogErrorMessages($this->redirect);
-        }
+        $this->tce->printLogErrorMessages();
 
         $messages = $flashMessageService->getMessageQueueByIdentifier()->getAllMessagesAndFlush();
         if (!empty($messages)) {
@@ -275,9 +254,7 @@ class SimpleDataHandlerController
                 }
             }
         }
-
-        $response->getBody()->write(json_encode($content));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class, $content);
     }
 
     /**

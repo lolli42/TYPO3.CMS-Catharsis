@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\Updates;
 
 /*
@@ -137,9 +137,8 @@ class DatabaseRowsUpdateWizard extends AbstractUpdate
         foreach ($listOfAllTables as $key => $table) {
             if ($table === $startPosition['table']) {
                 break;
-            } else {
-                unset($listOfAllTables[$key]);
             }
+            unset($listOfAllTables[$key]);
         }
 
         // Ask each row updater if it potentially has field updates for rows of a table
@@ -180,7 +179,7 @@ class DatabaseRowsUpdateWizard extends AbstractUpdate
                 $updatedFields = array_diff_assoc($row, $rowBefore);
                 if (empty($updatedFields)) {
                     // Updaters changed no field of that row
-                    $rowCountWithoutUpdate ++;
+                    $rowCountWithoutUpdate++;
                     if ($rowCountWithoutUpdate >= 200) {
                         // Update startPosition if there were many rows without data change
                         $startPosition = [

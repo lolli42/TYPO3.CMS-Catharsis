@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Tests\Unit\Configuration\FlexForm\Fixtures;
 
 /*
@@ -34,8 +34,7 @@ class DataStructureParsePreProcessHookReturnString
                     <sheets></sheets>
                 </T3DataStructure>
             ';
-        } else {
-            return '';
         }
+        return '';
     }
 }

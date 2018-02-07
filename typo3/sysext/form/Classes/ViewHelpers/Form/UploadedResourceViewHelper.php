@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\ViewHelpers\Form;
 
 /*
@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Form\ViewHelpers\Form;
  */
 
 use TYPO3\CMS\Extbase\Domain\Model\FileReference;
-use TYPO3\CMS\Extbase\Property\PropertyMapper;
 use TYPO3\CMS\Extbase\Security\Cryptography\HashService;
 use TYPO3\CMS\Fluid\ViewHelpers\Form\UploadViewHelper;
 
@@ -114,7 +113,7 @@ class UploadedResourceViewHelper extends UploadViewHelper
      * Return a previously uploaded resource.
      * Return NULL if errors occurred during property mapping for this property.
      *
-     * @return null|FileReference
+     * @return FileReference|null
      */
     protected function getUploadedResource()
     {

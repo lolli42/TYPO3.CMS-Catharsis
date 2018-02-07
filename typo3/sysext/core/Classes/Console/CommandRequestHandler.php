@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Console;
 
 /*
@@ -20,7 +21,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use TYPO3\CMS\Core\Authentication\CommandLineUserAuthentication;
 use TYPO3\CMS\Core\Core\Bootstrap;
-use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -80,7 +80,7 @@ class CommandRequestHandler implements RequestHandlerInterface
      * @param InputInterface $input
      * @return bool Always TRUE
      */
-    public function canHandleRequest(InputInterface $input)
+    public function canHandleRequest(InputInterface $input): bool
     {
         return true;
     }
@@ -90,35 +90,22 @@ class CommandRequestHandler implements RequestHandlerInterface
      *
      * @return int The priority of the request handler.
      */
-    public function getPriority()
+    public function getPriority(): int
     {
         return 50;
     }
 
     /**
      * Put all available commands inside the application
+     * @throws \TYPO3\CMS\Core\Console\CommandNameAlreadyInUseException
      */
     protected function populateAvailableCommands()
     {
-        /** @var PackageManager $packageManager */
-        $packageManager = Bootstrap::getInstance()->getEarlyInstance(PackageManager::class);
+        $commands = GeneralUtility::makeInstance(CommandRegistry::class);
 
-        foreach ($packageManager->getActivePackages() as $package) {
-            $commandsOfExtension = $package->getPackagePath() . 'Configuration/Commands.php';
-            if (@is_file($commandsOfExtension)) {
-                $commands = require_once $commandsOfExtension;
-                if (is_array($commands)) {
-                    foreach ($commands as $commandName => $commandDescription) {
-                        /** @var Command $cmd */
-                        $cmd = GeneralUtility::makeInstance($commandDescription['class'], $commandName);
-                        // Check if the command name is already in use
-                        if ($this->application->has($commandName)) {
-                            throw new CommandNameAlreadyInUseException('Command "' . $commandName . '" registered by "' . $package->getPackageKey() . '" is already in use', 1484486383);
-                        }
-                        $this->application->add($cmd);
-                    }
-                }
-            }
+        foreach ($commands as $commandName => $command) {
+            /** @var Command $command */
+            $this->application->add($command);
         }
     }
 }

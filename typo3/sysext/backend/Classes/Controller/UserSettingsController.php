@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -30,20 +31,17 @@ class UserSettingsController
      * Processes all AJAX calls and returns a JSON for the data
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function processAjaxRequest(ServerRequestInterface $request, ResponseInterface $response)
+    public function processAjaxRequest(ServerRequestInterface $request): ResponseInterface
     {
         // do the regular / main logic, depending on the action parameter
-        $action = isset($request->getParsedBody()['action']) ? $request->getParsedBody()['action'] : $request->getQueryParams()['action'];
-        $key = isset($request->getParsedBody()['key']) ? $request->getParsedBody()['key'] : $request->getQueryParams()['key'];
-        $value = isset($request->getParsedBody()['value']) ? $request->getParsedBody()['value'] : $request->getQueryParams()['value'];
+        $action = $request->getParsedBody()['action'] ?? $request->getQueryParams()['action'];
+        $key = $request->getParsedBody()['key'] ?? $request->getQueryParams()['key'];
+        $value = $request->getParsedBody()['value'] ?? $request->getQueryParams()['value'];
 
         $content = $this->process($action, $key, $value);
-
-        $response->getBody()->write(json_encode($content));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class)->setPayload($content);
     }
 
     /**

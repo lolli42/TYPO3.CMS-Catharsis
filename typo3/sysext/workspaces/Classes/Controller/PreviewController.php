@@ -61,12 +61,14 @@ class PreviewController extends AbstractController
     protected function initializeAction()
     {
         parent::initializeAction();
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         $this->stageService = GeneralUtility::makeInstance(StagesService::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceService::class);
         $states = $this->getBackendUser()->uc['moduleData']['Workspaces']['States'];
         $this->pageRenderer->addInlineSetting('Workspaces', 'States', $states);
-        $this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', BackendUtility::getModuleUrl('record_edit'));
-        $this->pageRenderer->addInlineSetting('RecordHistory', 'moduleUrl', BackendUtility::getModuleUrl('record_history'));
+        $this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', (string)$uriBuilder->buildUriFromRoute('record_edit'));
+        $this->pageRenderer->addInlineSetting('RecordHistory', 'moduleUrl', (string)$uriBuilder->buildUriFromRoute('record_history'));
         // @todo this part should be done with inlineLocallanglabels
         $this->pageRenderer->addJsInlineCode('workspace-inline-code', $this->generateJavascript());
     }
@@ -87,7 +89,7 @@ class PreviewController extends AbstractController
 
         // Remove the GET parameters related to the workspaces module and the page id
         unset($queryParameters['tx_workspaces_web_workspacesworkspaces']);
-        unset($queryParameters['M']);
+        unset($queryParameters['route']);
         unset($queryParameters['id']);
 
         // Assemble a query string from the retrieved parameters
@@ -217,25 +219,12 @@ class PreviewController extends AbstractController
         }
         $t3Configuration = [
             'username' => htmlspecialchars($backendUser->user['username']),
-            'uniqueID' => GeneralUtility::shortMD5(uniqid('', true)),
             'pageModule' => $pageModule,
             'inWorkspace' => $backendUser->workspace !== 0,
             'showRefreshLoginPopup' => isset($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) ? (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup'] : false
         ];
 
-        return '
-		TYPO3.configuration = ' . json_encode($t3Configuration) . ';
-
-		/**
-		 * TypoSetup object.
-		 */
-		function typoSetup()	{	//
-			this.username = TYPO3.configuration.username;
-			this.uniqueID = TYPO3.configuration.uniqueID;
-		}
-		var TS = new typoSetup();
-			//backwards compatibility
-		';
+        return 'TYPO3.configuration = ' . json_encode($t3Configuration) . ';';
     }
 
     /**

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Renderer;
 
 /*
@@ -21,7 +21,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Fluid\View\TemplateView;
 use TYPO3\CMS\Form\Domain\Exception\RenderingException;
-use TYPO3\CMS\Form\Domain\Runtime\FormRuntime;
 use TYPO3\CMS\Form\ViewHelpers\RenderRenderableViewHelper;
 
 /**
@@ -175,18 +174,13 @@ class FluidFormRenderer extends AbstractElementRenderer implements RendererInter
         // from the renderable
         $view->getTemplatePaths()->fillFromConfigurationArray($renderingOptions);
 
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRendering'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRendering'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRendering'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'beforeRendering')) {
-                    $hookObj->beforeRendering(
-                        $this->formRuntime,
-                        $this->formRuntime->getFormDefinition()
-                    );
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeRendering'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'beforeRendering')) {
+                $hookObj->beforeRendering(
+                    $this->formRuntime,
+                    $this->formRuntime->getFormDefinition()
+                );
             }
         }
 

@@ -17,8 +17,8 @@ namespace TYPO3\CMS\Setup\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Backend\Avatar\DefaultAvatarProvider;
-use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -36,7 +36,7 @@ use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 /**
  * Script class for the Setup module
  */
-class SetupModuleController extends AbstractModule
+class SetupModuleController
 {
     /**
      * Flag if password has not been updated
@@ -166,11 +166,18 @@ class SetupModuleController extends AbstractModule
     protected $beUser;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Instantiate the form protection before a simulated user is initialized.
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $this->formProtection = FormProtectionFactory::get();
         $pageRenderer = $this->moduleTemplate->getPageRenderer();
         $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
@@ -249,11 +256,9 @@ class SetupModuleController extends AbstractModule
                 // If email and name is changed, set it in the users record:
                 $be_user_data = $d['be_users'];
                 // Possibility to modify the transmitted values. Useful to do transformations, like RSA password decryption
-                if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['modifyUserDataBeforeSave'])) {
-                    foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['modifyUserDataBeforeSave'] as $function) {
-                        $params = ['be_user_data' => &$be_user_data];
-                        GeneralUtility::callUserFunction($function, $params, $this);
-                    }
+                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['modifyUserDataBeforeSave'] ?? [] as $function) {
+                    $params = ['be_user_data' => &$be_user_data];
+                    GeneralUtility::callUserFunction($function, $params, $this);
                 }
                 $this->passwordIsSubmitted = (string)$be_user_data['password'] !== '';
                 $passwordIsConfirmed = $this->passwordIsSubmitted && $be_user_data['password'] === $be_user_data['password2'];
@@ -357,11 +362,9 @@ class SetupModuleController extends AbstractModule
     protected function getJavaScript()
     {
         $javaScript = '';
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['setupScriptHook'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['setupScriptHook'] as $function) {
-                $params = [];
-                $javaScript .= GeneralUtility::callUserFunction($function, $params, $this);
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/setup/mod/index.php']['setupScriptHook'] ?? [] as $function) {
+            $params = [];
+            $javaScript .= GeneralUtility::callUserFunction($function, $params, $this);
         }
         return $javaScript;
     }
@@ -371,7 +374,9 @@ class SetupModuleController extends AbstractModule
      */
     public function main()
     {
-        $this->content .= '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" id="SetupModuleController" name="usersetup" enctype="multipart/form-data">';
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $this->content .= '<form action="' . (string)$uriBuilder->buildUriFromRoute('user_setup') . '" method="post" id="SetupModuleController" name="usersetup" enctype="multipart/form-data">';
         if ($this->languageUpdate) {
             $this->moduleTemplate->addJavaScriptCode('languageUpdate', '
                 if (top && top.TYPO3.ModuleMenu.App) {
@@ -785,7 +790,9 @@ class SetupModuleController extends AbstractModule
                 $opt[] = '<option value="' . (int)$rr['uid'] . '"' . ($this->simUser === (int)$rr['uid'] ? ' selected="selected"' : '') . '>' . htmlspecialchars($label) . '</option>';
             }
             if (!empty($opt)) {
-                $this->simulateSelector = '<select id="field_simulate" class="form-control" name="simulateUser" onchange="window.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('user_setup') . '&simUser=') . '+this.options[this.selectedIndex].value;"><option></option>' . implode('', $opt) . '</select>';
+                /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+                $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+                $this->simulateSelector = '<select id="field_simulate" class="form-control" name="simulateUser" onchange="window.location.href=' . GeneralUtility::quoteJSvalue((string)$uriBuilder->buildUriFromRoute('user_setup') . '&simUser=') . '+this.options[this.selectedIndex].value;"><option></option>' . implode('', $opt) . '</select>';
             }
         }
         // This can only be set if the previous code was executed.
@@ -814,11 +821,11 @@ class SetupModuleController extends AbstractModule
         }
 
         return '<div class="form-inline"><div class="form-group"><p>'
-             . '<label for="field_simulate" style="margin-right: 20px;">'
-             . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:setup/Resources/Private/Language/locallang.xlf:simulate'))
-             . '</label>'
-             . $this->simulateSelector
-             . '</p></div></div>';
+                . '<label for="field_simulate" style="margin-right: 20px;">'
+                . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:setup/Resources/Private/Language/locallang.xlf:simulate'))
+                . '</label>'
+                . $this->simulateSelector
+                . '</p></div></div>';
     }
 
     /**
@@ -1046,11 +1053,13 @@ class SetupModuleController extends AbstractModule
      */
     protected function addAvatarButtonJs($fieldName)
     {
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         $this->moduleTemplate->addJavaScriptCode('avatar-button', '
             var browserWin="";
 
             function openFileBrowser() {
-                var url = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('wizard_element_browser', ['mode' => 'file', 'bparams' => '||||dummy|setFileUid'])) . ';
+                var url = ' . GeneralUtility::quoteJSvalue((string)$uriBuilder->buildUriFromRoute('wizard_element_browser', ['mode' => 'file', 'bparams' => '||||dummy|setFileUid'])) . ';
                 browserWin = window.open(url,"Typo3WinBrowser","height=650,width=800,status=0,menubar=0,resizable=1,scrollbars=1");
                 browserWin.focus();
             }

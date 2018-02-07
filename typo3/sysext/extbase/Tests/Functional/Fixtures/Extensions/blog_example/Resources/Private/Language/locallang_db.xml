@@ -15,6 +15,7 @@
 			<label index="tx_blogexample_domain_model_post">Post</label>
 			<label index="tx_blogexample_domain_model_post.blog">Related to</label>
 			<label index="tx_blogexample_domain_model_post.title">Title</label>
+			<label index="tx_blogexample_domain_model_post.subtitle">Title</label>
 			<label index="tx_blogexample_domain_model_post.date">Date</label>
 			<label index="tx_blogexample_domain_model_post.author">Author</label>
 			<label index="tx_blogexample_domain_model_post.content">Content</label>
@@ -33,12 +34,14 @@
 			<label index="tx_blogexample_domain_model_comment">Comment</label>
 			<label index="tx_blogexample_domain_model_comment.date">Date</label>
 			<label index="tx_blogexample_domain_model_comment.author">Author</label>
+			<label index="tx_blogexample_domain_model_comment.reviewer">Reviewer</label>
 			<label index="tx_blogexample_domain_model_comment.email">Email</label>
 			<label index="tx_blogexample_domain_model_comment.content">Content</label>
 			<label index="tx_blogexample_domain_model_tag">Tag</label>
 			<label index="tx_blogexample_domain_model_tag.name">Name</label>
 			<label index="tx_blogexample_domain_model_tag.posts">Related posts</label>
-			<label index="fe_users.tx_extbase_type.Tx_BlogExample_Domain_Model_Administrator">Blog Admin (BlogExample)</label>
+			<label index="tx_blogexample_domain_model_dateexample">Date example</label>
+			<label index="fe_users.tx_extbase_type.ExtbaseTeam\BlogExample\Domain\Model\Administrator">Blog Admin (BlogExample)</label>
 		</languageKey>
 	</data>
 </T3locallang>

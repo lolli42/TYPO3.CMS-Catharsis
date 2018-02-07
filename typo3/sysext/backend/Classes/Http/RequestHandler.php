@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Http;
 
 /*
@@ -18,6 +19,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Routing\Exception\InvalidRequestTokenException;
 use TYPO3\CMS\Core\Core\Bootstrap;
+use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Http\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -57,24 +59,31 @@ class RequestHandler implements RequestHandlerInterface
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      */
-    public function handleRequest(ServerRequestInterface $request)
+    public function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
+        // Check if a module URL is requested and deprecate this call
+        $moduleName = $request->getQueryParams()['M'] ?? $request->getParsedBody()['M'] ?? null;
         // Allow the login page to be displayed if routing is not used and on index.php
-        $pathToRoute = (string)$request->getQueryParams()['route'] ?: '/login';
+        $pathToRoute = $request->getQueryParams()['route'] ?? $request->getParsedBody()['route'] ?? $moduleName ?? '/login';
         $request = $request->withAttribute('routePath', $pathToRoute);
 
         // skip the BE user check on the login page
         // should be handled differently in the future by checking the Bootstrap directly
         $this->boot($pathToRoute === '/login');
 
+        if ($moduleName !== null) {
+            trigger_error('Calling the TYPO3 Backend with "M" GET parameter will be removed in TYPO3 v10,'
+                . ' the calling code calls this script with "&M=' . $moduleName . '" and needs to be adapted'
+                . ' to use the TYPO3 API.', E_USER_DEPRECATED);
+        }
+
         // Check if the router has the available route and dispatch.
         try {
             return $this->dispatch($request);
-
-        // When token was invalid redirect to login
         } catch (InvalidRequestTokenException $e) {
+            // When token was invalid redirect to login
             $url = GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir;
-            \TYPO3\CMS\Core\Utility\HttpUtility::redirect($url);
+            return new RedirectResponse($url);
         }
     }
 
@@ -83,7 +92,7 @@ class RequestHandler implements RequestHandlerInterface
      *
      * @param bool $proceedIfNoUserIsLoggedIn option to allow to render the request even if no user is logged in
      */
-    protected function boot($proceedIfNoUserIsLoggedIn)
+    protected function boot(bool $proceedIfNoUserIsLoggedIn)
     {
         $this->bootstrap
             ->checkLockedBackendAndRedirectOrDie()
@@ -106,7 +115,7 @@ class RequestHandler implements RequestHandlerInterface
      * @param ServerRequestInterface $request
      * @return bool If the request is not a CLI script, TRUE otherwise FALSE
      */
-    public function canHandleRequest(ServerRequestInterface $request)
+    public function canHandleRequest(ServerRequestInterface $request): bool
     {
         return TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_BE && !(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI);
     }
@@ -117,7 +126,7 @@ class RequestHandler implements RequestHandlerInterface
      *
      * @return int The priority of the request handler.
      */
-    public function getPriority()
+    public function getPriority(): int
     {
         return 50;
     }
@@ -130,7 +139,7 @@ class RequestHandler implements RequestHandlerInterface
      * @throws InvalidRequestTokenException if the request could not be verified
      * @throws \InvalidArgumentException when a route is found but the target of the route cannot be called
      */
-    protected function dispatch($request)
+    protected function dispatch(ServerRequestInterface $request): ResponseInterface
     {
         /** @var Response $response */
         $response = GeneralUtility::makeInstance(Response::class);

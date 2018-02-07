@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Controller;
 
 /*
@@ -16,19 +16,20 @@ namespace TYPO3\CMS\Form\Controller;
  */
 
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Mvc\View\JsonView;
 use TYPO3\CMS\Fluid\View\TemplateView;
 use TYPO3\CMS\Form\Domain\Configuration\ConfigurationService;
 use TYPO3\CMS\Form\Domain\Exception\RenderingException;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
 use TYPO3\CMS\Form\Mvc\Persistence\Exception\PersistenceManagerException;
 use TYPO3\CMS\Form\Service\TranslationService;
+use TYPO3\CMS\Form\Type\FormDefinitionArray;
 
 /**
  * The form editor controller
@@ -74,7 +75,7 @@ class FormEditorController extends AbstractBackendController
         $formDefinition = $this->formPersistenceManager->load($formPersistenceIdentifier);
         $formDefinition = ArrayUtility::stripTagsFromValuesRecursive($formDefinition);
         if (empty($prototypeName)) {
-            $prototypeName = isset($formDefinition['prototypeName']) ? $formDefinition['prototypeName'] : 'standard';
+            $prototypeName = $formDefinition['prototypeName'] ?? 'standard';
         }
         $formDefinition['prototypeName'] = $prototypeName;
 
@@ -109,10 +110,11 @@ class FormEditorController extends AbstractBackendController
         if (!empty($popupWindowSize)) {
             list($popupWindowWidth, $popupWindowHeight) = GeneralUtility::intExplode('x', $popupWindowSize);
         }
-
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         $addInlineSettings = [
             'FormEditor' => [
-                'typo3WinBrowserUrl' => BackendUtility::getModuleUrl('wizard_element_browser'),
+                'typo3WinBrowserUrl' => (string)$uriBuilder->buildUriFromRoute('wizard_element_browser'),
             ],
             'Popup' => [
                 'PopupWindow' => [
@@ -130,57 +132,76 @@ class FormEditorController extends AbstractBackendController
     }
 
     /**
+     * Initialize the save action.
+     * This action uses the Fluid JsonView::class as view.
+     *
+     * @internal
+     */
+    public function initializeSaveFormAction()
+    {
+        $this->defaultViewObjectName = JsonView::class;
+    }
+
+    /**
      * Save a formDefinition which was build by the form editor.
      *
      * @param string $formPersistenceIdentifier
-     * @param array $formDefinition
-     * @return string
+     * @param FormDefinitionArray $formDefinition
      * @internal
      */
-    public function saveFormAction(string $formPersistenceIdentifier, array $formDefinition): string
+    public function saveFormAction(string $formPersistenceIdentifier, FormDefinitionArray $formDefinition)
     {
-        $formDefinition = ArrayUtility::stripTagsFromValuesRecursive($formDefinition);
-        $formDefinition = $this->convertJsonArrayToAssociativeArray($formDefinition);
-
-        if (
-            isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'])
-        ) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'] as $className) {
-                $hookObj = GeneralUtility::makeInstance($className);
-                if (method_exists($hookObj, 'beforeFormSave')) {
-                    $formDefinition = $hookObj->beforeFormSave(
-                        $formPersistenceIdentifier,
-                        $formDefinition
-                    );
-                }
+        $formDefinition = $formDefinition->getArrayCopy();
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/form']['beforeFormSave'] ?? [] as $className) {
+            $hookObj = GeneralUtility::makeInstance($className);
+            if (method_exists($hookObj, 'beforeFormSave')) {
+                $formDefinition = $hookObj->beforeFormSave(
+                    $formPersistenceIdentifier,
+                    $formDefinition
+                );
             }
         }
 
-        $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
-        return '';
+        $response = [
+            'status' => 'success',
+        ];
+
+        try {
+            $this->formPersistenceManager->save($formPersistenceIdentifier, $formDefinition);
+        } catch (PersistenceManagerException $e) {
+            $response = [
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ];
+        }
+
+        $this->view->assign('response', $response);
+        // saveFormAction uses the extbase JsonView::class.
+        // That's why we have to set the view variables in this way.
+        $this->view->setVariablesToRender([
+            'response',
+        ]);
     }
 
     /**
      * Render a page from the formDefinition which was build by the form editor.
      * Use the frontend rendering and set the form framework to preview mode.
      *
-     * @param array $formDefinition
+     * @param FormDefinitionArray $formDefinition
      * @param int $pageIndex
      * @param string $prototypeName
      * @return string
      * @internal
      */
-    public function renderFormPageAction(array $formDefinition, int $pageIndex, string $prototypeName = null): string
+    public function renderFormPageAction(FormDefinitionArray $formDefinition, int $pageIndex, string $prototypeName = null): string
     {
-        $formDefinition = ArrayUtility::stripTagsFromValuesRecursive($formDefinition);
-        $formDefinition = $this->convertJsonArrayToAssociativeArray($formDefinition);
         if (empty($prototypeName)) {
-            $prototypeName = isset($formDefinition['prototypeName']) ? $formDefinition['prototypeName'] : 'standard';
+            $prototypeName = $formDefinition['prototypeName'] ?? 'standard';
         }
 
         $formFactory = $this->objectManager->get(ArrayFormFactory::class);
-        $formDefinition = $formFactory->build($formDefinition, $prototypeName);
+        $formDefinition = $formFactory->build($formDefinition->getArrayCopy(), $prototypeName);
         $formDefinition->setRenderingOption('previewMode', true);
         $form = $formDefinition->bind($this->request, $this->response);
         $form->overrideCurrentPage($pageIndex);
@@ -188,7 +209,7 @@ class FormEditorController extends AbstractBackendController
     }
 
     /**
-     * Prepare the formElements.*.formEditor section from the yaml settings.
+     * Prepare the formElements.*.formEditor section from the YAML settings.
      * Sort all formElements into groups and add additional data.
      *
      * @param array $formElementsDefinition
@@ -196,7 +217,7 @@ class FormEditorController extends AbstractBackendController
      */
     protected function getInsertRenderablesPanelConfiguration(array $formElementsDefinition): array
     {
-        $formElementGroups = isset($this->prototypeConfiguration['formEditor']['formElementGroups']) ? $this->prototypeConfiguration['formEditor']['formElementGroups'] : [];
+        $formElementGroups = $this->prototypeConfiguration['formEditor']['formElementGroups'] ?? [];
         $formElementsByGroup = [];
 
         foreach ($formElementsDefinition as $formElementName => $formElementConfiguration) {
@@ -248,7 +269,7 @@ class FormEditorController extends AbstractBackendController
     }
 
     /**
-     * Reduce the Yaml settings by the 'formEditor' keyword.
+     * Reduce the YAML settings by the 'formEditor' keyword.
      *
      * @return array
      */
@@ -298,10 +319,12 @@ class FormEditorController extends AbstractBackendController
                 ->setValue('new-page')
                 ->setClasses('t3-form-element-new-page-button hidden')
                 ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-page-new', Icon::SIZE_SMALL));
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
 
             $closeButton = $buttonBar->makeLinkButton()
                 ->setDataAttributes(['identifier' => 'closeButton'])
-                ->setHref(BackendUtility::getModuleUrl('web_FormFormbuilder'))
+                ->setHref((string)$uriBuilder->buildUriFromRoute('web_FormFormbuilder'))
                 ->setClasses('t3-form-element-close-form-button hidden')
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:rm.closeDoc'))
                 ->setIcon($this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-close', Icon::SIZE_SMALL));
@@ -347,42 +370,6 @@ class FormEditorController extends AbstractBackendController
             $buttonBar->addButton($undoButton, ButtonBar::BUTTON_POSITION_LEFT, 5);
             $buttonBar->addButton($redoButton, ButtonBar::BUTTON_POSITION_LEFT, 5);
         }
-    }
-
-    /**
-     * Some data which is build by the form editor needs a transformation before
-     * it can be used by the framework.
-     * Multivalue elements like select elements produce data like:
-     *
-     * [
-     *   _label => 'label'
-     *   _value => 'value'
-     * ]
-     *
-     * This method transform this into:
-     *
-     * [
-     *   'value' => 'label'
-     * ]
-     *
-     * @param array $input
-     * @return array
-     */
-    protected function convertJsonArrayToAssociativeArray(array $input): array
-    {
-        $output = [];
-        foreach ($input as $key => $value) {
-            if (is_int($key) && is_array($value) && isset($value['_label']) && isset($value['_value'])) {
-                $key = $value['_value'];
-                $value = $value['_label'];
-            }
-            if (is_array($value)) {
-                $output[$key] = $this->convertJsonArrayToAssociativeArray($value);
-            } else {
-                $output[$key] = $value;
-            }
-        }
-        return $output;
     }
 
     /**

@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\Exception;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Taskcenter\Controller\TaskModuleController;
 use TYPO3\CMS\Taskcenter\TaskInterface;
@@ -49,7 +50,9 @@ class ImportExportTask implements TaskInterface
      */
     public function __construct(TaskModuleController $taskObject)
     {
-        $this->moduleUrl = BackendUtility::getModuleUrl('user_task');
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $this->moduleUrl = (string)$uriBuilder->buildUriFromRoute('user_task');
         $this->taskObject = $taskObject;
         $this->getLanguageService()->includeLLFile('EXT:impexp/Resources/Private/Language/locallang_csh.xlf');
     }
@@ -84,9 +87,11 @@ class ImportExportTask implements TaskInterface
     {
         $content = '';
         $id = (int)GeneralUtility::_GP('display');
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         // If a preset is found, it is rendered using an iframe
         if ($id > 0) {
-            $url = BackendUtility::getModuleUrl(
+            $url = (string)$uriBuilder->buildUriFromRoute(
                 'xMOD_tximpexp',
                 [
                     'tx_impexp[action]' => 'export',
@@ -100,7 +105,7 @@ class ImportExportTask implements TaskInterface
             // Header
             $lang = $this->getLanguageService();
             $content .= $this->taskObject->description($lang->getLL('.alttitle'), $lang->getLL('.description'));
-            $clause = $this->getBackendUser()->getPagePermsClause(1);
+            $clause = $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW);
             $usernames = BackendUtility::getUserNames();
             // Create preset links:
             $presets = $this->getPresets();
@@ -118,15 +123,17 @@ class ImportExportTask implements TaskInterface
                     }
                     // Owner
                     $description[] = $lang->getLL('task.owner') . ': '
-                                     . ($presetCfg['user_uid'] === $GLOBALS['BE_USER']->user['uid']
+                        . (
+                            $presetCfg['user_uid'] === $GLOBALS['BE_USER']->user['uid']
                             ? $lang->getLL('task.own')
                             : '[' . htmlspecialchars($usernames[$presetCfg['user_uid']]['username']) . ']'
-                                     );
+                        );
                     // Page & path
                     if ($configuration['pagetree']['id']) {
                         $description[] = $lang->getLL('task.page') . ': ' . $configuration['pagetree']['id'];
                         $description[] = $lang->getLL('task.path') . ': ' . htmlspecialchars(
-                                BackendUtility::getRecordPath($configuration['pagetree']['id'], $clause, 20));
+                            BackendUtility::getRecordPath($configuration['pagetree']['id'], $clause, 20)
+                        );
                     } else {
                         $description[] = $lang->getLL('single-record');
                     }
@@ -152,7 +159,7 @@ class ImportExportTask implements TaskInterface
                         'icon' => $icon,
                         'title' => $title,
                         'descriptionHtml' => implode('<br />', $description),
-                        'link' => BackendUtility::getModuleUrl('user_task') . '&SET[function]=impexp.TYPO3\\CMS\\Impexp\\Task\\ImportExportTask&display=' . $presetCfg['uid']
+                        'link' => (string)$uriBuilder->buildUriFromRoute('user_task') . '&SET[function]=impexp.TYPO3\\CMS\\Impexp\\Task\\ImportExportTask&display=' . $presetCfg['uid']
                     ];
                 }
                 // Render preset list
@@ -210,7 +217,7 @@ class ImportExportTask implements TaskInterface
      * to the server and is also used for uploading import files.
      *
      * @throws \InvalidArgumentException
-     * @return NULL|\TYPO3\CMS\Core\Resource\Folder
+     * @return \TYPO3\CMS\Core\Resource\Folder|null
      */
     protected function getDefaultImportExportFolder()
     {

@@ -15,6 +15,8 @@ namespace TYPO3\CMS\Core\Database;
  */
 
 use Doctrine\DBAL\DBALException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
@@ -42,8 +44,10 @@ use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
  * maintaining the index for workspace records. Or we can say that the index is precise for all Live elements while glitches might happen in an offline workspace?
  * Anyway, I just wanted to document this finding - I don't think we can find a solution for it. And its very TemplaVoila specific.
  */
-class ReferenceIndex
+class ReferenceIndex implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * Definition of tables to exclude from the ReferenceIndex
      *
@@ -142,9 +146,15 @@ class ReferenceIndex
     /**
      * Runtime Cache to store and retrieve data computed for a single request
      *
-     * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+     * @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
      */
     protected $runtimeCache = null;
+
+    /**
+     * Enables $runtimeCache and $recordCache
+     * @var bool
+     */
+    protected $useRuntimeCache = false;
 
     /**
      * Constructor
@@ -212,7 +222,7 @@ class ReferenceIndex
 
         // Fetch tableRelationFields and save them in cache if not there yet
         $cacheId = static::$cachePrefixTableRelationFields . $tableName;
-        if (!$this->runtimeCache->has($cacheId)) {
+        if (!$this->useRuntimeCache || !$this->runtimeCache->has($cacheId)) {
             $tableRelationFields = $this->fetchTableRelationFields($tableName);
             $this->runtimeCache->set($cacheId, $tableRelationFields);
         } else {
@@ -899,13 +909,15 @@ class ReferenceIndex
         // Get IRRE relations
         if (empty($conf)) {
             return false;
-        } elseif ($conf['type'] === 'inline' && !empty($conf['foreign_table']) && empty($conf['MM'])) {
+        }
+        if ($conf['type'] === 'inline' && !empty($conf['foreign_table']) && empty($conf['MM'])) {
             $dbAnalysis = GeneralUtility::makeInstance(RelationHandler::class);
             $dbAnalysis->setUseLiveReferenceIds(false);
             $dbAnalysis->start($value, $conf['foreign_table'], '', $uid, $table, $conf);
             return $dbAnalysis->itemArray;
             // DB record lists:
-        } elseif ($this->isDbReferenceField($conf)) {
+        }
+        if ($this->isDbReferenceField($conf)) {
             $allowedTables = $conf['type'] === 'group' ? $conf['allowed'] : $conf['foreign_table'];
             if ($conf['MM_opposite_field']) {
                 return [];
@@ -1042,21 +1054,20 @@ class ReferenceIndex
                     // Data Array, now ready to be sent to DataHandler
                     if ($returnDataArray) {
                         return $dataArray;
-                    } else {
-                        // Execute CMD array:
-                        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                        $dataHandler->dontProcessTransformations = true;
-                        $dataHandler->bypassWorkspaceRestrictions = true;
-                        $dataHandler->bypassFileHandling = true;
-                        // Otherwise this cannot update things in deleted records...
-                        $dataHandler->bypassAccessCheckForRecords = true;
-                        // Check has been done previously that there is a backend user which is Admin and also in live workspace
-                        $dataHandler->start($dataArray, []);
-                        $dataHandler->process_datamap();
-                        // Return errors if any:
-                        if (!empty($dataHandler->errorLog)) {
-                            return LF . 'DataHandler:' . implode((LF . 'DataHandler:'), $dataHandler->errorLog);
-                        }
+                    }
+                    // Execute CMD array:
+                    $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                    $dataHandler->dontProcessTransformations = true;
+                    $dataHandler->bypassWorkspaceRestrictions = true;
+                    $dataHandler->bypassFileHandling = true;
+                    // Otherwise this cannot update things in deleted records...
+                    $dataHandler->bypassAccessCheckForRecords = true;
+                    // Check has been done previously that there is a backend user which is Admin and also in live workspace
+                    $dataHandler->start($dataArray, []);
+                    $dataHandler->process_datamap();
+                    // Return errors if any:
+                    if (!empty($dataHandler->errorLog)) {
+                        return LF . 'DataHandler:' . implode((LF . 'DataHandler:'), $dataHandler->errorLog);
                     }
                 }
             }
@@ -1322,9 +1333,11 @@ class ReferenceIndex
                     ->from($tableName)
                     ->execute();
             } catch (DBALException $e) {
-                // Table exists in $TCA but does not exist in the database
-                // @todo: improve / change message and add actual sql error?
-                GeneralUtility::sysLog(sprintf('Table "%s" exists in $TCA but does not exist in the database. You should run the Database Analyzer in the Install Tool to fix this.', $tableName), 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+                // Table exists in TCA but does not exist in the database
+                $msg = 'Table "' .
+                        $tableName .
+                        '" exists in TCA but does not exist in the database. You should run the Database Analyzer in the Install Tool to fix this.';
+                $this->logger->error($msg, ['exception' => $e]);
                 continue;
             }
 
@@ -1348,14 +1361,7 @@ class ReferenceIndex
 
             // Subselect based queries only work on the same connection
             if ($refIndexConnectionName !== $tableConnectionName) {
-                GeneralUtility::sysLog(
-                    sprintf(
-                        'Not checking table "%s" for lost indexes, "sys_refindex" table uses a different connection',
-                        $tableName
-                    ),
-                    'core',
-                    GeneralUtility::SYSLOG_SEVERITY_ERROR
-                );
+                $this->logger->error('Not checking table "' . $tableName . '" for lost indexes, "sys_refindex" table uses a different connection');
                 continue;
             }
 
@@ -1477,6 +1483,10 @@ class ReferenceIndex
      * - Relations may change during indexing, which is why only the origin record is cached and all relations are re-process even when repeating
      *   indexing of the same origin record
      *
+     * Please note that the cache is disabled by default but can be enabled using $this->enableRuntimeCaches()
+     * due to possible side-effects while handling references that were changed during one single
+     * request.
+     *
      * @param string $tableName
      * @param int $uid
      * @return array|false
@@ -1484,13 +1494,15 @@ class ReferenceIndex
     protected function getRecordRawCached(string $tableName, int $uid)
     {
         $recordCacheId = $tableName . ':' . $uid;
-        if (!isset($this->recordCache[$recordCacheId])) {
+        if (!$this->useRuntimeCache || !isset($this->recordCache[$recordCacheId])) {
 
             // Fetch fields of the table which might contain relations
             $cacheId = static::$cachePrefixTableRelationFields . $tableName;
-            if (!$this->runtimeCache->has($cacheId)) {
+            if (!$this->useRuntimeCache || !$this->runtimeCache->has($cacheId)) {
                 $tableRelationFields = $this->fetchTableRelationFields($tableName);
-                $this->runtimeCache->set($cacheId, $tableRelationFields);
+                if ($this->useRuntimeCache) {
+                    $this->runtimeCache->set($cacheId, $tableRelationFields);
+                }
             } else {
                 $tableRelationFields = $this->runtimeCache->get($cacheId);
             }
@@ -1577,6 +1589,24 @@ class ReferenceIndex
         }
 
         return true;
+    }
+
+    /**
+     * Enables the runtime-based caches
+     * Could lead to side effects, depending if the reference index instance is run multiple times
+     * while records would be changed.
+     */
+    public function enableRuntimeCache()
+    {
+        $this->useRuntimeCache = true;
+    }
+
+    /**
+     * Disables the runtime-based cache
+     */
+    public function disableRuntimeCache()
+    {
+        $this->useRuntimeCache = false;
     }
 
     /**

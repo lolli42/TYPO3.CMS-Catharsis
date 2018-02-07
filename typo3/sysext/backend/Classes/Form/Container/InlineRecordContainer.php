@@ -24,7 +24,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Localization\LanguageService;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
@@ -196,7 +195,7 @@ class InlineRecordContainer extends AbstractContainer
 							' . $this->renderForeignRecordHeader($data) . '
 						</div>
 					</div>
-					<div class="panel-collapse" id="' . htmlspecialchars($objectId) . '_fields" data-expandSingle="' . ($inlineConfig['appearance']['expandSingle'] ? 1 : 0) . '" data-returnURL="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . $html . $combinationHtml . '</div>
+					<div class="panel-collapse" id="' . htmlspecialchars($objectId) . '_fields">' . $html . $combinationHtml . '</div>
 				</div>';
         }
 
@@ -411,7 +410,7 @@ class InlineRecordContainer extends AbstractContainer
         $nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($data['inlineFirstPid']);
         $nameObjectFt = $nameObject . '-' . $foreignTable;
         $nameObjectFtId = $nameObjectFt . '-' . $rec['uid'];
-        $calcPerms = $backendUser->calcPerms(BackendUtility::readPageAccess($rec['pid'], $backendUser->getPagePermsClause(1)));
+        $calcPerms = $backendUser->calcPerms(BackendUtility::readPageAccess($rec['pid'], $backendUser->getPagePermsClause(Permission::PAGE_SHOW)));
         // If the listed table is 'pages' we have to request the permission settings for each page:
         $localCalcPerms = false;
         if ($isPagesTable) {
@@ -495,7 +494,7 @@ class InlineRecordContainer extends AbstractContainer
                     </a>';
             }
             // "Edit" link:
-            if (($rec['table_local'] === 'sys_file') && !$isNewItem) {
+            if (($rec['table_local'] === 'sys_file') && !$isNewItem && $backendUser->check('tables_modify', 'sys_file_metadata')) {
                 $sys_language_uid = 0;
                 if (!empty($rec['sys_language_uid'])) {
                     $sys_language_uid = $rec['sys_language_uid'][0];
@@ -518,10 +517,11 @@ class InlineRecordContainer extends AbstractContainer
                     ->setMaxResults(1)
                     ->execute()
                     ->fetch();
-                if ($backendUser->check('tables_modify', 'sys_file_metadata')) {
-                    $url = BackendUtility::getModuleUrl('record_edit', [
+                if (!empty($recordInDatabase)) {
+                    $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+                    $url = (string)$uriBuilder->buildUriFromRoute('record_edit', [
                         'edit[sys_file_metadata][' . (int)$recordInDatabase['uid'] . ']' => 'edit',
-                        'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+                        'returnUrl' => $this->data['returnUrl']
                     ]);
                     $title = $languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.editMetadata');
                     $cells['edit'] = '
@@ -582,7 +582,7 @@ class InlineRecordContainer extends AbstractContainer
         if ($lockInfo = BackendUtility::isRecordLocked($foreignTable, $rec['uid'])) {
             $cells['locked'] = '
 				<a class="btn btn-default" href="#" data-toggle="tooltip" data-title="' . htmlspecialchars($lockInfo['msg']) . '">
-					' . '<span title="' . htmlspecialchars($lockInfo['msg']) . '">' . $this->iconFactory->getIcon('status-warning-in-use', Icon::SIZE_SMALL)->render() . '</span>' . '
+					' . '<span title="' . htmlspecialchars($lockInfo['msg']) . '">' . $this->iconFactory->getIcon('warning-in-use', Icon::SIZE_SMALL)->render() . '</span>' . '
 				</a>';
         }
         // Hook: Post-processing of single controls for specific child records:
@@ -631,17 +631,12 @@ class InlineRecordContainer extends AbstractContainer
     protected function initHookObjects()
     {
         $this->hookObjects = [];
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['tceformsInlineHook'])) {
-            $tceformsInlineHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['tceformsInlineHook'];
-            if (is_array($tceformsInlineHook)) {
-                foreach ($tceformsInlineHook as $className) {
-                    $processObject = GeneralUtility::makeInstance($className);
-                    if (!$processObject instanceof InlineElementHookInterface) {
-                        throw new \UnexpectedValueException($className . ' must implement interface ' . InlineElementHookInterface::class, 1202072000);
-                    }
-                    $this->hookObjects[] = $processObject;
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['tceformsInlineHook'] ?? [] as $className) {
+            $processObject = GeneralUtility::makeInstance($className);
+            if (!$processObject instanceof InlineElementHookInterface) {
+                throw new \UnexpectedValueException($className . ' must implement interface ' . InlineElementHookInterface::class, 1202072000);
             }
+            $this->hookObjects[] = $processObject;
         }
     }
 

@@ -23,8 +23,10 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\AbstractFile;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
@@ -121,7 +123,7 @@ class ElementInformationController
         $this->table = GeneralUtility::_GET('table');
         $this->uid = GeneralUtility::_GET('uid');
 
-        $this->permsClause = $this->getBackendUser()->getPagePermsClause(1);
+        $this->permsClause = $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW);
         $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $this->moduleTemplate->getDocHeaderComponent()->disable();
 
@@ -144,13 +146,13 @@ class ElementInformationController
         if ($this->uid && $this->getBackendUser()->check('tables_select', $this->table)) {
             if ((string)$this->table === 'pages') {
                 $this->pageInfo = BackendUtility::readPageAccess($this->uid, $this->permsClause);
-                $this->access = is_array($this->pageInfo) ? 1 : 0;
+                $this->access = is_array($this->pageInfo);
                 $this->row = $this->pageInfo;
             } else {
                 $this->row = BackendUtility::getRecordWSOL($this->table, $this->uid);
                 if ($this->row) {
                     $this->pageInfo = BackendUtility::readPageAccess($this->row['pid'], $this->permsClause);
-                    $this->access = is_array($this->pageInfo) ? 1 : 0;
+                    $this->access = is_array($this->pageInfo);
                 }
             }
         }
@@ -167,7 +169,7 @@ class ElementInformationController
             $this->folderObject = $fileOrFolderObject;
             $this->access = $this->folderObject->checkActionPermission('read');
             $this->type = 'folder';
-        } else {
+        } elseif ($fileOrFolderObject instanceof File) {
             $this->fileObject = $fileOrFolderObject;
             $this->access = $this->fileObject->checkActionPermission('read');
             $this->type = 'file';
@@ -203,18 +205,22 @@ class ElementInformationController
      */
     public function main()
     {
-        if (!$this->access) {
-            return;
-        }
-
         $content = '';
 
-        // render type by user func
-        $typeRendered = false;
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/show_item.php']['typeRendering'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/show_item.php']['typeRendering'] as $className) {
+        // Rendering of the output via fluid
+        $view = GeneralUtility::makeInstance(StandaloneView::class);
+        $view->setTemplateRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates')]);
+        $view->setPartialRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Partials')]);
+        $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName(
+            'EXT:backend/Resources/Private/Templates/ContentElement/ElementInformation.html'
+        ));
+
+        if ($this->access) {
+            // render type by user func
+            $typeRendered = false;
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/show_item.php']['typeRendering'] ?? [] as $className) {
                 $typeRenderObj = GeneralUtility::makeInstance($className);
-                if (method_exists($typeRenderObj, 'isValid') && method_exists($typeRenderObj, 'render')) {
+                if (is_object($typeRenderObj) && method_exists($typeRenderObj, 'isValid') && method_exists($typeRenderObj, 'render')) {
                     if ($typeRenderObj->isValid($this->type, $this)) {
                         $content .= $typeRenderObj->render($this->type, $this);
                         $typeRendered = true;
@@ -222,24 +228,21 @@ class ElementInformationController
                     }
                 }
             }
+
+            if (!$typeRendered) {
+                $view->assign('accessAllowed', true);
+                $view->assignMultiple($this->getPageTitle());
+                $view->assignMultiple($this->getPreview());
+                $view->assignMultiple($this->getPropertiesForTable());
+                $view->assignMultiple($this->getReferences());
+                $view->assignMultiple($this->getBackButton());
+                $view->assign('maxTitleLength', $this->getBackendUser()->uc['titleLen'] ?? 20);
+                $content .= $view->render();
+            }
+        } else {
+            $content .= $view->render();
         }
 
-        if (!$typeRendered) {
-            // Rendering of the output via fluid
-            $view = GeneralUtility::makeInstance(StandaloneView::class);
-            $view->setTemplateRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates')]);
-            $view->setPartialRootPaths([GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Partials')]);
-            $view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName(
-                'EXT:backend/Resources/Private/Templates/ContentElement/ElementInformation.html'
-            ));
-            $view->assignMultiple($this->getPageTitle());
-            $view->assignMultiple($this->getPreview());
-            $view->assignMultiple($this->getPropertiesForTable());
-            $view->assignMultiple($this->getReferences());
-            $view->assignMultiple($this->getBackButton());
-            $view->assign('maxTitleLength', $this->getBackendUser()->uc['titleLen'] ?? 20);
-            $content .=  $view->render();
-        }
         $this->moduleTemplate->setContent($content);
     }
 
@@ -282,7 +285,7 @@ class ElementInformationController
 
         // check if file is marked as missing
         if ($this->fileObject->isMissing()) {
-            $preview['missingFile'] =$this->fileObject->getName();
+            $preview['missingFile'] = $this->fileObject->getName();
         } else {
             /** @var \TYPO3\CMS\Core\Resource\Rendering\RendererRegistry $rendererRegistry */
             $rendererRegistry = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\Rendering\RendererRegistry::class);
@@ -321,9 +324,12 @@ class ElementInformationController
     protected function getPropertiesForTable() : array
     {
         $propertiesForTable = [];
-        $extraFields = [];
-
         $lang = $this->getLanguageService();
+
+        $extraFields = [
+            'uid' => htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:show_item.php.uid'))
+        ];
+
         if (in_array($this->type, ['folder', 'file'], true)) {
             if ($this->type === 'file') {
                 $extraFields['creation_date'] = htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_general.xlf:LGL.creationDate'));
@@ -344,7 +350,7 @@ class ElementInformationController
             foreach ($extraFields as $fieldName => $fieldLabel) {
                 if (isset($GLOBALS['TCA'][$this->table]['ctrl'][$fieldName])) {
                     $extraFields[$GLOBALS['TCA'][$this->table]['ctrl'][$fieldName]] = $fieldLabel;
-                } else {
+                } elseif ($fieldName !== 'uid') {
                     unset($extraFields[$fieldName]);
                 }
             }
@@ -496,18 +502,20 @@ class ElementInformationController
             ],
             'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
         ];
-        $actions['recordEditUrl'] = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $actions['recordEditUrl'] = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
 
         // History button
         $urlParameters = [
             'element' => $table . ':' . $uid,
             'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
         ];
-        $actions['recordHistoryUrl'] = BackendUtility::getModuleUrl('record_history', $urlParameters);
+        $actions['recordHistoryUrl'] = (string)$uriBuilder->buildUriFromRoute('record_history', $urlParameters);
 
         if ($table === 'pages') {
             // Recordlist button
-            $actions['webListUrl'] = BackendUtility::getModuleUrl('web_list', ['id' => $uid, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')]);
+            $actions['webListUrl'] = (string)$uriBuilder->buildUriFromRoute('web_list', ['id' => $uid, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')]);
 
             // View page button
             $actions['viewOnClick'] = BackendUtility::viewOnClick($uid, '', BackendUtility::BEgetRootLine($uid));
@@ -581,7 +589,9 @@ class ElementInformationController
                     ],
                     'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
                 ];
-                $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+                /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+                $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+                $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
                 $line['url'] = $url;
                 $line['icon'] = $this->iconFactory->getIconForRecord($row['tablename'], $record, Icon::SIZE_SMALL)->render();
                 $line['row'] = $row;
@@ -645,7 +655,9 @@ class ElementInformationController
                     ],
                     'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
                 ];
-                $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+                /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+                $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+                $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
                 $line['url'] = $url;
                 $line['icon'] = $this->iconFactory->getIconForRecord($row['tablename'], $record, Icon::SIZE_SMALL)->render();
                 $line['row'] = $row;

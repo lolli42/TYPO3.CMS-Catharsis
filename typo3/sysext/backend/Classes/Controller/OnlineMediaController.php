@@ -16,6 +16,8 @@ namespace TYPO3\CMS\Backend\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Http\JsonResponse;
+use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -33,10 +35,9 @@ class OnlineMediaController
      * AJAX endpoint for storing the URL as a sys_file record
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function createAction(ServerRequestInterface $request, ResponseInterface $response)
+    public function createAction(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $url = $request->getParsedBody()['url'];
         $targetFolderIdentifier = $request->getParsedBody()['targetFolder'];
@@ -50,21 +51,21 @@ class OnlineMediaController
             } else {
                 $data['error'] = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:online_media.error.invalid_url');
             }
-            $response->getBody()->write(json_encode($data));
+            return GeneralUtility::makeInstance(JsonResponse::class, $data);
         }
         return $response;
     }
 
     /**
-     * Process add media request
+     * Process add media request, and redirects to the previous page
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function mainAction(ServerRequestInterface $request, ResponseInterface $response)
+    public function mainAction(ServerRequestInterface $request)
     {
-        $files = $request->getParsedBody()['file'];
+        $files = $request->getParsedBody()['data'];
+        $redirect = $request->getParsedBody()['redirect'];
         $newMedia = [];
         if (isset($files['newMedia'])) {
             $newMedia = (array)$files['newMedia'];
@@ -92,25 +93,25 @@ class OnlineMediaController
                     );
                 }
                 $this->addFlashMessage($flashMessage);
+                if (empty($redirect) && $media['redirect']) {
+                    $redirect = $media['redirect'];
+                }
             }
         }
 
-        $redirect = isset($request->getParsedBody()['redirect']) ? $request->getParsedBody()['redirect'] : $request->getQueryParams()['redirect'];
         $redirect = GeneralUtility::sanitizeLocalUrl($redirect);
         if ($redirect) {
-            $response = $response
-                ->withHeader('Location', GeneralUtility::locationHeaderUrl($redirect))
-                ->withStatus(303);
+            return new RedirectResponse($redirect, 303);
         }
 
-        return $response;
+        throw new \RuntimeException('No redirect after uploading a media found, probably a mis-use of the template not sending the proper Return URL.', 1511945040);
     }
 
     /**
      * @param string $url
      * @param string $targetFolderIdentifier
      * @param string[] $allowedExtensions
-     * @return File|NULL
+     * @return File|null
      */
     protected function addMediaFromUrl($url, $targetFolderIdentifier, array $allowedExtensions = [])
     {

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Factory;
 
 /*
@@ -45,9 +45,9 @@ class ArrayFormFactory extends AbstractFormFactory
     public function build(array $configuration, string $prototypeName = null): FormDefinition
     {
         if (empty($prototypeName)) {
-            $prototypeName = isset($configuration['prototypeName']) ? $configuration['prototypeName'] : 'standard';
+            $prototypeName = $configuration['prototypeName'] ?? 'standard';
         }
-        $persistenceIdentifier = (isset($configuration['persistenceIdentifier'])) ? $configuration['persistenceIdentifier'] : null;
+        $persistenceIdentifier = $configuration['persistenceIdentifier'] ?? null;
 
         $prototypeConfiguration = GeneralUtility::makeInstance(ObjectManager::class)
             ->get(ConfigurationService::class)
@@ -71,7 +71,6 @@ class ArrayFormFactory extends AbstractFormFactory
         unset($configuration['renderables']);
         unset($configuration['type']);
         unset($configuration['identifier']);
-        unset($configuration['label']);
         $form->setOptions($configuration);
 
         $this->triggerFormBuildingFinished($form);

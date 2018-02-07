@@ -80,9 +80,8 @@ class PersistentObjectConverterTest extends \TYPO3\TestingFramework\Core\Unit\Un
                 $reflectionClass = new \ReflectionClass($className);
                 if (empty($arguments)) {
                     return $reflectionClass->newInstance();
-                } else {
-                    return $reflectionClass->newInstanceArgs($arguments);
                 }
+                return $reflectionClass->newInstanceArgs($arguments);
             }));
         $this->inject($this->converter, 'objectManager', $this->mockObjectManager);
 
@@ -256,7 +255,7 @@ class PersistentObjectConverterTest extends \TYPO3\TestingFramework\Core\Unit\Un
     public function setupMockQuery($numberOfResults, $howOftenIsGetFirstCalled)
     {
         $mockClassSchema = $this->getMockBuilder(\TYPO3\CMS\Extbase\Reflection\ClassSchema::class)
-            ->setConstructorArgs(['Dummy'])
+            ->setConstructorArgs([\TYPO3\CMS\Extbase\Tests\Unit\Property\TypeConverter\Fixtures\Query::class])
             ->getMock();
         $mockClassSchema->expects($this->any())->method('getIdentityProperties')->will($this->returnValue(['key1' => 'someType']));
         $this->mockReflectionService->expects($this->any())->method('getClassSchema')->with('SomeType')->will($this->returnValue($mockClassSchema));

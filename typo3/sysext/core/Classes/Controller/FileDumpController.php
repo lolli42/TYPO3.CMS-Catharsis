@@ -32,7 +32,7 @@ class FileDumpController
      *
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
-     * @return NULL|ResponseInterface
+     * @return ResponseInterface|null
      *
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
@@ -55,7 +55,7 @@ class FileDumpController
             $parameters['p'] = $p;
         }
 
-        if (GeneralUtility::hmac(implode('|', $parameters), 'resourceStorageDumpFile') === $this->getGetOrPost($request, 'token')) {
+        if (hash_equals(GeneralUtility::hmac(implode('|', $parameters), 'resourceStorageDumpFile'), $this->getGetOrPost($request, 'token'))) {
             if (isset($parameters['f'])) {
                 try {
                     $file = ResourceFactory::getInstance()->getFileObject($parameters['f']);
@@ -77,32 +77,27 @@ class FileDumpController
             }
 
             // Hook: allow some other process to do some security/access checks. Hook should issue 403 if access is rejected
-            if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['FileDumpEID.php']['checkFileAccess'])) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['FileDumpEID.php']['checkFileAccess'] as $className) {
-                    $hookObject = GeneralUtility::makeInstance($className);
-                    if (!$hookObject instanceof FileDumpEIDHookInterface) {
-                        throw new \UnexpectedValueException($className . ' must implement interface ' . FileDumpEIDHookInterface::class, 1394442417);
-                    }
-                    $hookObject->checkFileAccess($file);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['FileDumpEID.php']['checkFileAccess'] ?? [] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
+                if (!$hookObject instanceof FileDumpEIDHookInterface) {
+                    throw new \UnexpectedValueException($className . ' must implement interface ' . FileDumpEIDHookInterface::class, 1394442417);
                 }
+                $hookObject->checkFileAccess($file);
             }
             $file->getStorage()->dumpFileContents($file);
             // @todo Refactor FAL to not echo directly, but to implement a stream for output here and use response
             return null;
-        } else {
-            return $response->withStatus(403);
         }
+        return $response->withStatus(403);
     }
 
     /**
      * @param ServerRequestInterface $request
      * @param string $parameter
-     * @return NULL|mixed
+     * @return mixed|null
      */
     protected function getGetOrPost(ServerRequestInterface $request, $parameter)
     {
-        return isset($request->getParsedBody()[$parameter])
-            ? $request->getParsedBody()[$parameter]
-            : (isset($request->getQueryParams()[$parameter]) ? $request->getQueryParams()[$parameter] : null);
+        return $request->getParsedBody()[$parameter] ?? $request->getQueryParams()[$parameter] ?? null;
     }
 }

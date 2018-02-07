@@ -15,6 +15,8 @@ namespace TYPO3\CMS\Extbase\Scheduler;
  */
 
 use TYPO3\CMS\Extbase\Utility\TypeHandlingUtility;
+use TYPO3\CMS\Scheduler\Controller\SchedulerModuleController;
+use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
 /**
  * Field provider for Extbase CommandController Scheduler task
@@ -50,21 +52,21 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
      */
     public function __construct(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager = null, \TYPO3\CMS\Extbase\Mvc\Cli\CommandManager $commandManager = null, \TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService = null)
     {
-        $this->objectManager = $objectManager !== null ? $objectManager : \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
-        $this->commandManager = $commandManager !== null ? $commandManager : $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\Cli\CommandManager::class);
-        $this->reflectionService = $reflectionService !== null ? $reflectionService : $this->objectManager->get(\TYPO3\CMS\Extbase\Reflection\ReflectionService::class);
+        $this->objectManager = $objectManager ?? \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
+        $this->commandManager = $commandManager ?? $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\Cli\CommandManager::class);
+        $this->reflectionService = $reflectionService ?? $this->objectManager->get(\TYPO3\CMS\Extbase\Reflection\ReflectionService::class);
     }
 
     /**
      * Render additional information fields within the scheduler backend.
      *
      * @param array &$taskInfo Array information of task to return
-     * @param mixed $task \TYPO3\CMS\Scheduler\Task\AbstractTask or \TYPO3\CMS\Scheduler\Execution instance
-     * @param \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $schedulerModule Reference to the calling object (BE module of the Scheduler)
+     * @param AbstractTask|null $task When editing, reference to the current task. NULL when adding.
+     * @param SchedulerModuleController $schedulerModule Reference to the calling object (BE module of the Scheduler)
      * @return array Additional fields
      * @see \TYPO3\CMS\Scheduler\AdditionalFieldProvider#getAdditionalFields($taskInfo, $task, $schedulerModule)
      */
-    public function getAdditionalFields(array &$taskInfo, $task, \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $schedulerModule)
+    public function getAdditionalFields(array &$taskInfo, $task, SchedulerModuleController $schedulerModule)
     {
         $this->task = $task;
         if ($this->task !== null) {
@@ -86,10 +88,10 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
      * Validates additional selected fields
      *
      * @param array &$submittedData
-     * @param \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $schedulerModule
+     * @param SchedulerModuleController $schedulerModule
      * @return bool
      */
-    public function validateAdditionalFields(array &$submittedData, \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $schedulerModule)
+    public function validateAdditionalFields(array &$submittedData, SchedulerModuleController $schedulerModule)
     {
         return true;
     }
@@ -98,10 +100,10 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
      * Saves additional field values
      *
      * @param array $submittedData
-     * @param \TYPO3\CMS\Scheduler\Task\AbstractTask $task
+     * @param AbstractTask $task
      * @return bool
      */
-    public function saveAdditionalFields(array $submittedData, \TYPO3\CMS\Scheduler\Task\AbstractTask $task)
+    public function saveAdditionalFields(array $submittedData, AbstractTask $task)
     {
         $task->setCommandIdentifier($submittedData['task_extbase']['action']);
         $task->setArguments((array)$submittedData['task_extbase']['arguments']);
@@ -179,7 +181,7 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
             $name = $argument->getName();
             $defaultValue = $this->getDefaultArgumentValue($argument);
             $this->task->addDefaultValue($name, $defaultValue);
-            $value = isset($argumentValues[$name]) ? $argumentValues[$name] : $defaultValue;
+            $value = $argumentValues[$name] ?? $defaultValue;
             $fields[$name] = [
                 'code' => $this->renderField($argument, $value),
                 'label' => $this->getArgumentLabel($argument)

@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Install\Report;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\Service\Exception;
@@ -26,23 +25,17 @@ use TYPO3\CMS\Reports\Status;
 class InstallStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
 {
     /**
-     * @var string
-     */
-    protected $reportList = 'FileSystem,RemainingUpdates,NewVersion';
-
-    /**
      * Compiles a collection of system status checks as a status report.
      *
      * @return Status[]
      */
     public function getStatus()
     {
-        $reports = [];
-        $reportMethods = explode(',', $this->reportList);
-        foreach ($reportMethods as $reportMethod) {
-            $reports[$reportMethod] = $this->{'get' . $reportMethod . 'Status'}();
-        }
-        return $reports;
+        return [
+            'FileSystem' => $this->getFileSystemStatus(),
+            'RemainingUpdates' => $this->getRemainingUpdatesStatus(),
+            'NewVersion' => $this->getNewVersionStatus(),
+        ];
     }
 
     /**
@@ -79,8 +72,6 @@ class InstallStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
             'typo3conf/' => 2,
             'typo3conf/ext/' => 0,
             'typo3conf/l10n/' => 0,
-            'uploads/' => 2,
-            'uploads/media/' => 0,
             $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] => -1,
             $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . '_temp_/' => 0,
         ];
@@ -145,7 +136,8 @@ class InstallStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
         $value = $languageService->getLL('status_updateComplete');
         $message = '';
         $severity = Status::OK;
-
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         // check if there are update wizards left to perform
         if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'])) {
             $versionAsInt = \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
@@ -155,7 +147,7 @@ class InstallStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterface
                     // at least one wizard was found
                     $value = $languageService->getLL('status_updateIncomplete');
                     $severity = Status::WARNING;
-                    $url = BackendUtility::getModuleUrl('system_extinstall');
+                    $url = (string)$uriBuilder->buildUriFromRoute('tools_toolsupgrade');
                     $message = sprintf($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:warning.install_update'), '<a href="' . htmlspecialchars($url) . '">', '</a>');
                     break;
                 }

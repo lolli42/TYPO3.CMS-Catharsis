@@ -34,14 +34,6 @@ use TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatch
 class ExtendedTemplateService extends TemplateService
 {
     /**
-     * This string is used to indicate the point in a template from where the editable constants are listed.
-     * Any vars before this point (if it exists though) is regarded as default values.
-     *
-     * @var string
-     */
-    public $edit_divider = '###MOD_TS:EDITABLE_CONSTANTS###';
-
-    /**
      * Disabled in backend context
      *
      * @var bool
@@ -195,7 +187,7 @@ class ExtendedTemplateService extends TemplateService
     public $templateTitles = [];
 
     /**
-     * @var array|NULL
+     * @var array|null
      */
     protected $lnToScript = null;
 
@@ -218,11 +210,6 @@ class ExtendedTemplateService extends TemplateService
      * @var bool
      */
     public $linkObjects = false;
-
-    /**
-     * @var array
-     */
-    public $helpConfig = [];
 
     /**
      * @var bool
@@ -287,10 +274,10 @@ class ExtendedTemplateService extends TemplateService
         $marker = substr(md5($matches[0]), 0, 6);
         switch ($this->constantMode) {
             case 'const':
-                $ret_val = isset($this->flatSetup[$matches[1]]) && !is_array($this->flatSetup[$matches[1]]) ? '##' . $marker . '_B##' . $matches[0] . '##' . $marker . '_E##' : $matches[0];
+                $ret_val = isset($this->flatSetup[$matches[1]]) && !is_array($this->flatSetup[$matches[1]]) ? '##' . $marker . '_B##' . $this->flatSetup[$matches[1]] . '##' . $marker . '_M##' . $matches[0] . '##' . $marker . '_E##' : $matches[0];
                 break;
             case 'subst':
-                $ret_val = isset($this->flatSetup[$matches[1]]) && !is_array($this->flatSetup[$matches[1]]) ? '##' . $marker . '_B##' . $this->flatSetup[$matches[1]] . '##' . $marker . '_E##' : $matches[0];
+                $ret_val = isset($this->flatSetup[$matches[1]]) && !is_array($this->flatSetup[$matches[1]]) ? '##' . $marker . '_B##' . $matches[0] . '##' . $marker . '_M##' . $this->flatSetup[$matches[1]] . '##' . $marker . '_E##' : $matches[0];
                 break;
             case 'untouched':
                 $ret_val = $matches[0];
@@ -302,7 +289,8 @@ class ExtendedTemplateService extends TemplateService
     }
 
     /**
-     * Substitute markers
+     * Substitute markers added in substituteConstantsCallBack()
+     * with ##6chars_B##value1##6chars_M##value2##6chars_E##
      *
      * @param string $all
      * @return string
@@ -313,9 +301,9 @@ class ExtendedTemplateService extends TemplateService
             case 'const':
             case 'subst':
                 $all = preg_replace(
-                    '/##[a-z0-9]{6}_B##((?:(?!##[a-z0-9]{6}_E##).)+)?##[a-z0-9]{6}_E##/',
-                        '<strong style="color: green;">$1</strong>',
-                        $all
+                    '/##[a-z0-9]{6}_B##(.*?)##[a-z0-9]{6}_M##(.*?)##[a-z0-9]{6}_E##/',
+                    '<strong class="text-success" data-toggle="tooltip" data-placement="top" data-title="$1" title="$1">$2</strong>',
+                    $all
                 );
                 break;
             default:
@@ -348,11 +336,6 @@ class ExtendedTemplateService extends TemplateService
         foreach ($this->constants as $str) {
             $c++;
             if ($c == $cc) {
-                if (strstr($str, $this->edit_divider)) {
-                    $parts = explode($this->edit_divider, $str, 2);
-                    $str = $parts[1];
-                    $constants->parse($parts[0], $matchObj);
-                }
                 $this->flatSetup = [];
                 $this->flattenSetup($constants->setup, '');
                 $defaultConstants = $this->flatSetup;
@@ -376,16 +359,13 @@ class ExtendedTemplateService extends TemplateService
         if ((string)$parts[0] !== '' && is_array($theSetup[$parts[0] . '.'])) {
             if (trim($parts[1]) !== '') {
                 return $this->ext_getSetup($theSetup[$parts[0] . '.'], trim($parts[1]));
-            } else {
-                return [$theSetup[$parts[0] . '.'], $theSetup[$parts[0]]];
             }
-        } else {
-            if (trim($theKey) !== '') {
-                return [[], $theSetup[$theKey]];
-            } else {
-                return [$theSetup, ''];
-            }
+            return [$theSetup[$parts[0] . '.'], $theSetup[$parts[0]]];
         }
+        if (trim($theKey) !== '') {
+            return [[], $theSetup[$theKey]];
+        }
+        return [$theSetup, ''];
     }
 
     /**
@@ -407,6 +387,8 @@ class ExtendedTemplateService extends TemplateService
         }
         $keyArr_num = [];
         $keyArr_alpha = [];
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         foreach ($arr as $key => $value) {
             // Don't do anything with comments / linenumber registrations...
             if (substr($key, -2) !== '..') {
@@ -430,7 +412,7 @@ class ExtendedTemplateService extends TemplateService
             // This excludes all constants starting with '_' from being shown.
             if ($this->bType !== 'const' || $depth[0] !== '_') {
                 $goto = substr(md5($depth), 0, 6);
-                $deeper = is_array($arr[$key . '.']) && ($this->tsbrowser_depthKeys[$depth] || $this->ext_expandAllNotes) ? 1 : 0;
+                $deeper = is_array($arr[$key . '.']) && ($this->tsbrowser_depthKeys[$depth] || $this->ext_expandAllNotes);
                 $PM = is_array($arr[$key . '.']) && !$this->ext_noPMicons ? ($deeper ? 'minus' : 'plus') : 'join';
                 $HTML .= $depthData . '<li>';
                 if ($PM !== 'join') {
@@ -441,7 +423,7 @@ class ExtendedTemplateService extends TemplateService
                     if (GeneralUtility::_GP('breakPointLN')) {
                         $urlParameters['breakPointLN'] = GeneralUtility::_GP('breakPointLN');
                     }
-                    $aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters) . '#' . $goto;
+                    $aHref = (string)$uriBuilder->buildUriFromRoute('web_ts', $urlParameters) . '#' . $goto;
                     $HTML .= '<a class="list-tree-control' . ($PM === 'minus' ? ' list-tree-control-open' : ' list-tree-control-closed') . '" name="' . $goto . '" href="' . htmlspecialchars($aHref) . '"><i class="fa"></i></a>';
                 }
                 $label = $key;
@@ -457,7 +439,7 @@ class ExtendedTemplateService extends TemplateService
                         if (GeneralUtility::_GP('breakPointLN')) {
                             $urlParameters['breakPointLN'] = GeneralUtility::_GP('breakPointLN');
                         }
-                        $aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
+                        $aHref = (string)$uriBuilder->buildUriFromRoute('web_ts', $urlParameters);
                         if ($this->bType !== 'const') {
                             $ln = is_array($arr[$key . '.ln..']) ? 'Defined in: ' . $this->lineNumberToScript($arr[$key . '.ln..']) : 'N/A';
                         } else {
@@ -658,6 +640,8 @@ class ExtendedTemplateService extends TemplateService
         }
         $a = 0;
         $c = count($keyArr);
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         /** @var IconFactory $iconFactory */
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
         foreach ($keyArr as $key => $value) {
@@ -678,7 +662,7 @@ class ExtendedTemplateService extends TemplateService
                     'id' => $GLOBALS['SOBE']->id,
                     'template' => $row['templateID']
                 ];
-                $aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
+                $aHref = (string)$uriBuilder->buildUriFromRoute('web_ts', $urlParameters);
                 $A_B = '<a href="' . htmlspecialchars($aHref) . '">';
                 $A_E = '</a>';
                 if (GeneralUtility::_GP('template') == $row['templateID']) {
@@ -747,7 +731,12 @@ class ExtendedTemplateService extends TemplateService
      * @return string
      */
     public function ext_outputTS(
-        array $config, $lineNumbers = false, $comments = false, $crop = false, $syntaxHL = false, $syntaxHLBlockmode = 0
+        array $config,
+        $lineNumbers = false,
+        $comments = false,
+        $crop = false,
+        $syntaxHL = false,
+        $syntaxHLBlockmode = 0
     ) {
         $all = '';
         foreach ($config as $str) {
@@ -758,9 +747,8 @@ class ExtendedTemplateService extends TemplateService
             $tsparser->lineNumberOffset = $this->ext_lineNumberOffset + 1;
             $tsparser->parentObject = $this;
             return $tsparser->doSyntaxHighlight($all, $lineNumbers ? [$this->ext_lineNumberOffset + 1] : '', $syntaxHLBlockmode);
-        } else {
-            return $this->ext_formatTS($all, $lineNumbers, $comments, $crop);
         }
+        return $this->ext_formatTS($all, $lineNumbers, $comments, $crop);
     }
 
     /**
@@ -780,9 +768,8 @@ class ExtendedTemplateService extends TemplateService
                     $string = GeneralUtility::fixed_lgd_cs(substr($string, 12, -12), ($chars - 3));
                     $marker = substr(md5($string), 0, 6);
                     return '##' . $marker . '_B##' . $string . '##' . $marker . '_E##';
-                } else {
-                    return GeneralUtility::fixed_lgd_cs($string, $chars - 3);
                 }
+                return GeneralUtility::fixed_lgd_cs($string, $chars - 3);
             }
         }
         return $string;
@@ -1082,37 +1069,6 @@ class ExtendedTemplateService extends TemplateService
     }
 
     /**
-     * @param string $category
-     */
-    public function ext_getTSCE_config($category)
-    {
-        $catConf = $this->setup['constants']['TSConstantEditor.'][$category . '.'];
-        $out = [];
-        if (is_array($catConf)) {
-            foreach ($catConf as $key => $val) {
-                switch ($key) {
-                    case 'description':
-                    case 'bulletlist':
-                    case 'header':
-                        $out[$key] = $val;
-                        break;
-                    default:
-                        if (MathUtility::canBeInterpretedAsInteger($key)) {
-                            $constRefs = explode(',', $val);
-                            foreach ($constRefs as $const) {
-                                $const = trim($const);
-                                if ($const) {
-                                    $out['constants'][$const] .= '<span class="label label-danger">' . $key . '</span>';
-                                }
-                            }
-                        }
-                }
-            }
-        }
-        $this->helpConfig = $out;
-    }
-
-    /**
      * @param array $params
      * @return array
      */
@@ -1142,7 +1098,6 @@ class ExtendedTemplateService extends TemplateService
         $output = '';
         $subcat = '';
         if (is_array($this->categories[$category])) {
-            $help = $this->helpConfig;
             if (!$this->doNotSortCategoriesBeforeMakingForm) {
                 asort($this->categories[$category]);
             }
@@ -1234,7 +1189,7 @@ class ExtendedTemplateService extends TemplateService
                                 foreach ($typeDat['params'] as $val) {
                                     $vParts = explode('=', $val, 2);
                                     $label = $vParts[0];
-                                    $val = isset($vParts[1]) ? $vParts[1] : $vParts[0];
+                                    $val = $vParts[1] ?? $vParts[0];
                                     // option tag:
                                     $sel = '';
                                     if ($val === $params['value']) {
@@ -1248,17 +1203,17 @@ class ExtendedTemplateService extends TemplateService
                         case 'boolean':
                             $sel = $fV ? 'checked' : '';
                             $p_field =
-                                '<label class="btn btn-default btn-checkbox">'
-                                    . '<input type="hidden" name="' . $fN . '" value="0" />'
-                                    . '<input id="' . $idName . '" type="checkbox" name="' . $fN . '" value="' . ($typeDat['paramstr'] ? $typeDat['paramstr'] : 1) . '" ' . $sel . ' onClick="uFormUrl(' . $aname . ')" />'
-                                    . '<span class="t3-icon fa"></span>'
+                                '<input type="hidden" name="' . $fN . '" value="0" />'
+                                . '<label class="btn btn-default btn-checkbox">'
+                                . '<input id="' . $idName . '" type="checkbox" name="' . $fN . '" value="' . ($typeDat['paramstr'] ? $typeDat['paramstr'] : 1) . '" ' . $sel . ' onClick="uFormUrl(' . $aname . ')" />'
+                                . '<span class="t3-icon fa"></span>'
                                 . '</label>';
                             break;
                         case 'comment':
                             $sel = $fV ? 'checked' : '';
                             $p_field =
-                                '<label class="btn btn-default btn-checkbox">'
-                                . '<input type="hidden" name="' . $fN . '" value="#" />'
+                                '<input type="hidden" name="' . $fN . '" value="#" />'
+                                . '<label class="btn btn-default btn-checkbox">'
                                 . '<input id="' . $idName . '" type="checkbox" name="' . $fN . '" value="" ' . $sel . ' onClick="uFormUrl(' . $aname . ')" />'
                                 . '<span class="t3-icon fa"></span>'
                                 . '</label>';
@@ -1351,7 +1306,7 @@ class ExtendedTemplateService extends TemplateService
 
                     $output .=
                         '<fieldset class="form-section">'
-                            . '<a name="' . $raname . '"></a>' . $help['constants'][$params['name']]
+                            . '<a name="' . $raname . '"></a>'
                             . '<div class="form-group">'
                                 . $constantLabel . $constantName . $constantDescription . $constantData
                             . '</div>'
@@ -1391,10 +1346,6 @@ class ExtendedTemplateService extends TemplateService
         // Works with regObjectPositions. "expands" the names of the TypoScript objects
         while (isset($this->raw[$this->rawP])) {
             $line = ltrim($this->raw[$this->rawP]);
-            if (strstr($line, $this->edit_divider)) {
-                // Resetting the objReg if the divider is found!!
-                $this->objReg = [];
-            }
             $this->rawP++;
             if ($line) {
                 if ($line[0] === '[') {

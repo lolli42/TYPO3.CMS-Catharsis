@@ -99,7 +99,7 @@ class TextExtractorRegistry implements SingletonInterface
      * and returns it.
      *
      * @param FileInterface $file
-     * @return NULL|TextExtractorInterface
+     * @return TextExtractorInterface|null
      */
     public function getTextExtractor(FileInterface $file)
     {

@@ -14,11 +14,15 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface as CacheFrontendInterface;
 use TYPO3\CMS\Core\Core\ApplicationContext;
+use TYPO3\CMS\Core\LinkHandling\LinkService;
+use TYPO3\CMS\Core\Log\Logger;
 use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Resource\Exception\InvalidPathException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
@@ -127,8 +131,13 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $pageRepositoryMock =
             $this->getAccessibleMock(PageRepository::class, ['getRawRecord', 'getMountPointInfo']);
         $this->frontendControllerMock =
-            $this->getAccessibleMock(TypoScriptFrontendController::class,
-            ['dummy'], [], '', false);
+            $this->getAccessibleMock(
+                TypoScriptFrontendController::class,
+            ['sL'],
+                [],
+                '',
+                false
+            );
         $this->frontendControllerMock->tmpl = $this->templateServiceMock;
         $this->frontendControllerMock->config = [];
         $this->frontendControllerMock->page =  [];
@@ -258,8 +267,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     {
         $className = TextContentObject::class;
         $contentObjectName = 'TEST_TEXT';
-        $this->subject->registerContentObjectClass($className,
-            $contentObjectName);
+        $this->subject->registerContentObjectClass(
+            $className,
+            $contentObjectName
+        );
         $object = $this->subject->getContentObject($contentObjectName);
         $this->assertInstanceOf($className, $object);
     }
@@ -317,8 +328,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     public function willThrowAnExceptionForARegisteredNonContentObject()
     {
         $this->expectException(ContentRenderingException::class);
-        $this->subject->registerContentObjectClass(\stdClass::class,
-            'STDCLASS');
+        $this->subject->registerContentObjectClass(
+            \stdClass::class,
+            'STDCLASS'
+        );
         $this->subject->getContentObject('STDCLASS');
     }
 
@@ -348,7 +361,8 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         string $className
     ) {
         $this->assertTrue(
-            is_subclass_of($className, AbstractContentObject::class));
+            is_subclass_of($className, AbstractContentObject::class)
+        );
         $object = $this->subject->getContentObject($objectName);
         $this->assertInstanceOf($className, $object);
     }
@@ -852,8 +866,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     public function cropHTML($expect, $content, $conf)
     {
         $this->handleCharset($content, $expect);
-        $this->assertSame($expect,
-            $this->subject->cropHTML($content, $conf));
+        $this->assertSame(
+            $expect,
+            $this->subject->cropHTML($content, $conf)
+        );
     }
 
     /**
@@ -922,8 +938,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function round($expect, $content, $conf)
     {
-        $this->assertSame($expect,
-            $this->subject->_call('round', $content, $conf));
+        $this->assertSame(
+            $expect,
+            $this->subject->_call('round', $content, $conf)
+        );
     }
 
     /**
@@ -1019,8 +1037,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function numberFormat($expects, $content, $conf)
     {
-        $this->assertSame($expects,
-            $this->subject->numberFormat($content, $conf));
+        $this->assertSame(
+            $expects,
+            $this->subject->numberFormat($content, $conf)
+        );
     }
 
     /**
@@ -1087,8 +1107,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function replacement($expects, $content, $conf)
     {
-        $this->assertSame($expects,
-            $this->subject->_call('replacement', $content, $conf));
+        $this->assertSame(
+            $expects,
+            $this->subject->_call('replacement', $content, $conf)
+        );
     }
 
     /**
@@ -1140,8 +1162,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function calcAge($expect, $timestamp, $labels)
     {
-        $this->assertSame($expect,
-            $this->subject->calcAge($timestamp, $labels));
+        $this->assertSame(
+            $expect,
+            $this->subject->calcAge($timestamp, $labels)
+        );
     }
 
     /**
@@ -1558,10 +1582,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     {
         $key = $this->getUniqueId('someKey');
         $value = $this->getUniqueId('someValue');
-        $language = $this->getUniqueId('someLanguage');
-        $GLOBALS['TSFE']->LL_labels_cache[$language]['LLL:' . $key] = $value;
-        $GLOBALS['TSFE']->lang = $language;
-
+        $GLOBALS['TSFE']->expects($this->once())->method('sL')->with('LLL:' . $key)->will($this->returnValue($value));
         $this->assertEquals($value, $this->subject->getData('lll:' . $key));
     }
 
@@ -2087,7 +2108,8 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function getImageSourceCollectionHookCalled()
     {
-        $this->subject = $this->getAccessibleMock(ContentObjectRenderer::class,
+        $this->subject = $this->getAccessibleMock(
+            ContentObjectRenderer::class,
             ['getResourceFactory', 'stdWrap', 'getImgResource']
         );
         $this->subject->start([], 'tt_content');
@@ -2106,7 +2128,8 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
 
         $className = $this->getUniqueId('tx_coretest_getImageSourceCollectionHookCalled');
         $getImageSourceCollectionHookMock = $this->getMockBuilder(
-            ContentObjectOneSourceCollectionHookInterface::class)
+            ContentObjectOneSourceCollectionHookInterface::class
+        )
             ->setMethods(['getOneSourceCollection'])
             ->setMockClassName($className)
             ->getMock();
@@ -3059,6 +3082,36 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     /**
      * @test
      */
+    public function typoLinkReturnsOnlyLinkTextIfNoLinkResolvingIsPossible()
+    {
+        $linkService = $this->prophesize(LinkService::class);
+        GeneralUtility::setSingletonInstance(LinkService::class, $linkService->reveal());
+        $linkService->resolve('foo')->willThrow(InvalidPathException::class);
+
+        $this->assertSame('foo', $this->subject->typoLink('foo', ['parameter' => 'foo']));
+    }
+
+    /**
+     * @test
+     */
+    public function typoLinkLogsErrorIfNoLinkResolvingIsPossible()
+    {
+        $linkService = $this->prophesize(LinkService::class);
+        GeneralUtility::setSingletonInstance(LinkService::class, $linkService->reveal());
+        $linkService->resolve('foo')->willThrow(InvalidPathException::class);
+
+        $logManager = $this->prophesize(LogManager::class);
+        GeneralUtility::setSingletonInstance(LogManager::class, $logManager->reveal());
+        $logger = $this->prophesize(Logger::class);
+        $logger->warning('The link could not be generated', Argument::any())->shouldBeCalled();
+        $logManager->getLogger(Argument::any())->willReturn($logger->reveal());
+
+        $this->subject->typoLink('foo', ['parameter' => 'foo']);
+    }
+
+    /**
+     * @test
+     */
     public function stdWrap_splitObjReturnsCount()
     {
         $conf = [
@@ -3207,7 +3260,9 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     public function getFromCache($expect, $conf, $cacheKey, $times, $cached)
     {
         $subject = $this->getAccessibleMock(
-            ContentObjectRenderer::class, ['calculateCacheKey']);
+            ContentObjectRenderer::class,
+            ['calculateCacheKey']
+        );
         $subject
             ->expects($this->exactly(1))
             ->method('calculateCacheKey')
@@ -3224,7 +3279,9 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('getCache')
             ->willReturn($cacheFrontend);
         GeneralUtility::setSingletonInstance(
-            CacheManager::class, $cacheManager);
+            CacheManager::class,
+            $cacheManager
+        );
         $this->assertSame($expect, $subject->_call('getFromCache', $conf));
     }
 
@@ -3337,20 +3394,22 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
          ];
     }
 
-     /**
-      * Check if caseshift works properly.
-      *
-      * @test
-      * @dataProvider caseshiftDataProvider
-      * @param string $expect The expected output.
-      * @param string $content The given input.
-      * @param string $case The given type of conversion.
-      */
-     public function caseshift($expect, $content, $case)
-     {
-         $this->assertSame($expect,
-             $this->subject->caseshift($content, $case));
-     }
+    /**
+     * Check if caseshift works properly.
+     *
+     * @test
+     * @dataProvider caseshiftDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @param string $case The given type of conversion.
+     */
+    public function caseshift($expect, $content, $case)
+    {
+        $this->assertSame(
+             $expect,
+             $this->subject->caseshift($content, $case)
+         );
+    }
 
     /**
      * Data provider for HTMLcaseshift.
@@ -3372,49 +3431,48 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                 ['', 'TEXT']
             ],
             'multiple nested tags with classes' => [
-                NL . '<div class="typo3">' .
-                NL . '<p>A <b>BOLD<\b> WORD.</p>' .
-                NL . '<p>AN <i>ITALIC<\i> WORD.</p>' .
-                NL . '</div>',
-                NL . '<div class="typo3">' .
-                NL . '<p>A <b>bold<\b> word.</p>' .
-                NL . '<p>An <i>italic<\i> word.</p>' .
-                NL . '</div>',
+                '<div class="typo3">'
+                . '<p>A <b>BOLD<\b> WORD.</p>'
+                . '<p>AN <i>ITALIC<\i> WORD.</p>'
+                . '</div>',
+                '<div class="typo3">'
+                . '<p>A <b>bold<\b> word.</p>'
+                . '<p>An <i>italic<\i> word.</p>'
+                . '</div>',
                 $case,
                 [
-                    [NL, $case],
-                    [NL, $case],
+                    ['', $case],
+                    ['', $case],
                     ['A ', $case],
                     ['bold', $case],
                     [' word.', $case],
-                    [NL, $case],
+                    ['', $case],
                     ['An ', $case],
                     ['italic', $case],
                     [' word.', $case],
-                    [NL, $case],
+                    ['', $case],
                 ],
-                [NL, NL, 'A ', 'BOLD', ' WORD.',
-                NL, 'AN ', 'ITALIC', ' WORD.', NL]
+                [ '', '', 'A ', 'BOLD', ' WORD.', '', 'AN ', 'ITALIC', ' WORD.', '']
             ],
         ];
     }
 
-     /**
-      * Check if HTMLcaseshift works properly.
-      *
-      * Show:
-      *
-      * - Only shifts the case of characters not part of tags.
-      * - Delegates to the method caseshift.
-      *
-      * @test
-      * @dataProvider HTMLcaseshiftDataProvider
-      * @param string $expect The expected output.
-      * @param string $content The given input.
-      * @param string $case The given type of conversion.
-      * @param array $with Consecutive args expected by caseshift.
-      * @param array $will Consecutive return values of caseshfit.
-      */
+    /**
+     * Check if HTMLcaseshift works properly.
+     *
+     * Show:
+     *
+     * - Only shifts the case of characters not part of tags.
+     * - Delegates to the method caseshift.
+     *
+     * @test
+     * @dataProvider HTMLcaseshiftDataProvider
+     * @param string $expect The expected output.
+     * @param string $content The given input.
+     * @param string $case The given type of conversion.
+     * @param array $with Consecutive args expected by caseshift.
+     * @param array $will Consecutive return values of caseshfit.
+     */
     public function HTMLcaseshift($expect, $content, $case, $with, $will)
     {
         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
@@ -3424,8 +3482,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('caseshift')
             ->withConsecutive(...$with)
             ->will($this->onConsecutiveCalls(...$will));
-        $this->assertSame($expect,
-            $subject->HTMLcaseshift($content, $case));
+        $this->assertSame(
+            $expect,
+            $subject->HTMLcaseshift($content, $case)
+        );
     }
 
     /***************************************************************************
@@ -3460,7 +3520,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             }
         }
         $this->assertSame(1, $notCallable);
-        $this->assertSame(89, $callable);
+        $this->assertSame(85, $callable);
     }
 
     /**
@@ -3484,12 +3544,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function notAllStdWrapProcessorsAreCallableWithEmptyConfiguration()
     {
-        $expectExceptions = ['numRows', 'split'];
-        if (!version_compare(PHP_VERSION, '7.1', '<')) {
-            // PHP >= 7.1 throws "A non-numeric value encountered" in GeneralUtility::formatSize()
-            // @todo: If that is sanitized in a better way in formatSize(), this call needs adaption
-            $expectExceptions[] = 'bytes';
-        }
+        $expectExceptions = ['numRows', 'split', 'bytes'];
         $count = 0;
         $processors = [];
         $exceptions = [];
@@ -3507,7 +3562,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             }
         }
         $this->assertSame($expectExceptions, $exceptions);
-        $this->assertSame(89, $count);
+        $this->assertSame(85, $count);
     }
 
     /***************************************************************************
@@ -3557,26 +3612,31 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $hookObjectCall: The expected hook object call.
      */
     public function fourTypesOfStdWrapHookObjectProcessors(
-        $stdWrapMethod, $hookObjectCall)
-    {
+        $stdWrapMethod,
+        $hookObjectCall
+    ) {
         $conf = [$this->getUniqueId('conf')];
         $content = $this->getUniqueId('content');
         $processed1 = $this->getUniqueId('processed1');
         $processed2 = $this->getUniqueId('processed2');
         $hookObject1 = $this->createMock(
-            ContentObjectStdWrapHookInterface::class);
+            ContentObjectStdWrapHookInterface::class
+        );
         $hookObject1->expects($this->once())
             ->method($hookObjectCall)
             ->with($content, $conf)
             ->willReturn($processed1);
         $hookObject2 = $this->createMock(
-            ContentObjectStdWrapHookInterface::class);
+            ContentObjectStdWrapHookInterface::class
+        );
         $hookObject2->expects($this->once())
             ->method($hookObjectCall)
             ->with($processed1, $conf)
             ->willReturn($processed2);
-        $this->subject->_set('stdWrapHookObjects',
-            [$hookObject1, $hookObject2]);
+        $this->subject->_set(
+            'stdWrapHookObjects',
+            [$hookObject1, $hookObject2]
+        );
         $result = $this->subject->$stdWrapMethod($content, $conf);
         $this->assertSame($processed2, $result);
     }
@@ -3629,8 +3689,12 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $will Return of HTMLparser_TSbridge.
      */
     public function stdWrap_HTMLparser(
-        $expect, $content, $conf, $times, $will)
-    {
+        $expect,
+        $content,
+        $conf,
+        $times,
+        $will
+    ) {
         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
             ->setMethods(['HTMLparser_TSbridge'])->getMock();
         $subject
@@ -3638,70 +3702,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('HTMLparser_TSbridge')
             ->with($content, $conf['HTMLparser.'])
             ->willReturn($will);
-        $this->assertSame($expect,
-            $subject->stdWrap_HTMLparser($content, $conf));
-    }
-
-    /**
-     * Data provider ofr stdWrap_TCAselectItem.
-     *
-     * @return array [$expect, $content, $conf, $times, $will]
-     */
-    public function stdWrap_TCAselectItemDataProvider()
-    {
-        $content = $this->getUniqueId('content');
-        $array = [$this->getUniqueId('TCAselectItem.')];
-        $will = $this->getUniqueId('will');
-        return [
-            'empty conf' => [
-                $content, $content, [], 0, $will
-            ],
-            'no array' => [
-                $content, $content, ['TCAselectItem.' => true], 0, $will
-            ],
-            'empty array' => [
-                $will, $content, ['TCAselectItem.' => []], 1, $will
-            ],
-            'array' => [
-                $will, $content, ['TCAselectItem.' => $array], 1, $will
-            ]
-        ];
-    }
-
-    /**
-     * Check that stdWrap_TCAselectItem works properly.
-     *
-     * Show:
-     *
-     * - Checks if $conf['TCAselectItem'] is an array.
-     * - If NO:
-     *   - Returns $content as is.
-     * - If YES:
-     *   - Delegates to method TCAlookup.
-     *   - Parameter 1 is $content.
-     *   - Parameter 2 is $conf['TCAselectItem.'].
-     *   - Returns the return value.
-     *
-     *  @test
-     *  @dataProvider stdWrap_TCAselectItemDataProvider
-     *  @param mixed $expect The expected output.
-     *  @param mixed $content The the given input.
-     *  @param mixed $conf The the given configuration.
-     *  @param int $times Times TCAlookup is called.
-     *  @param string $will Return value of TCAlookup.
-     */
-    public function stdWrap_TCAselectItem(
-        $expect, $content, $conf, $times, $will)
-    {
-        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
-            ->setMethods(['TCAlookup'])->getMock();
-        $subject
-            ->expects($this->exactly($times))
-            ->method('TCAlookup')
-            ->with($content, $conf['TCAselectItem.'])
-            ->willReturn($will);
-        $this->assertSame($expect,
-            $subject->stdWrap_TCAselectItem($content, $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_HTMLparser($content, $conf)
+        );
     }
 
     /**
@@ -3767,8 +3771,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('addParams')
             ->with($content, $conf['addParams.'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_addParams($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_addParams($content, $conf)
+        );
     }
 
     /**
@@ -3830,8 +3836,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('cObjGetSingle')
             ->with($conf['append'], $conf['append.'], $debugKey)
             ->willReturn($return);
-        $this->assertSame($content . $return,
-            $subject->stdWrap_append($content, $conf));
+        $this->assertSame(
+            $content . $return,
+            $subject->stdWrap_append($content, $conf)
+        );
     }
 
     /**
@@ -3984,8 +3992,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             $this->markTestSkipped('Locale ' . $locale . ' is not available.');
         }
         $conf = ['bytes.' => $conf];
-        $this->assertSame($expect,
-            $this->subject->stdWrap_bytes($content, $conf));
+        $this->assertSame(
+            $expect,
+            $this->subject->stdWrap_bytes($content, $conf)
+        );
     }
 
     /**
@@ -4017,8 +4027,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('cObjGetSingle')
             ->with($conf['cObject'], $conf['cObject.'], $debugKey)
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_cObject($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_cObject($content, $conf)
+        );
     }
 
     /**
@@ -4084,8 +4096,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('stdWrap')
             ->withConsecutive([$content, $firstConf], [$between, $secondConf])
             ->will($this->onConsecutiveCalls($between, $expect));
-        $this->assertSame($expect,
-            $subject->stdWrap_orderedStdWrap($content, $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_orderedStdWrap($content, $conf)
+        );
     }
 
     /**
@@ -4134,17 +4148,26 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string|false $will Return value of mocked method.
      */
     public function stdWrap_cacheRead(
-        $expect, $input, $conf, $times, $with, $will)
-    {
+        $expect,
+        $input,
+        $conf,
+        $times,
+        $with,
+        $will
+    ) {
         $subject = $this->getAccessibleMock(
-            ContentObjectRenderer::class, ['getFromCache']);
+            ContentObjectRenderer::class,
+            ['getFromCache']
+        );
         $subject
             ->expects($this->exactly($times))
             ->method('getFromCache')
             ->with($with)
             ->willReturn($will);
-        $this->assertSame($expect,
-            $subject->stdWrap_cacheRead($input, $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_cacheRead($input, $conf)
+        );
     }
 
     /**
@@ -4191,8 +4214,11 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param int $times Times the other methods are called.
      */
     public function stdWrap_cacheStore(
-        $confCache, $timesCCK, $key, $times)
-    {
+        $confCache,
+        $timesCCK,
+        $key,
+        $times
+    ) {
         $content = $this->getUniqueId('content');
         $conf['cache.'] = $confCache;
         $tags = [$this->getUniqueId('tags')];
@@ -4200,8 +4226,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $params = ['key' => $key, 'content' => $content,
             'lifetime' => $lifetime, 'tags' => $tags];
         $subject = $this->getAccessibleMock(
-            ContentObjectRenderer::class, ['calculateCacheKey',
-            'calculateCacheTags', 'calculateCacheLifetime']);
+            ContentObjectRenderer::class,
+            ['calculateCacheKey',
+            'calculateCacheTags', 'calculateCacheLifetime']
+        );
         $subject
             ->expects($this->exactly($timesCCK))
             ->method('calculateCacheKey')
@@ -4228,7 +4256,9 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('getCache')
             ->willReturn($cacheFrontend);
         GeneralUtility::setSingletonInstance(
-            CacheManager::class, $cacheManager);
+            CacheManager::class,
+            $cacheManager
+        );
         list($countCalls, $test) = [0, $this];
         $closure = function ($par1, $par2) use (
             $test, $subject, $params, &$countCalls) {
@@ -4237,8 +4267,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             $countCalls++;
         };
         $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap_cacheStore'] = [$closure, $closure, $closure];
-        $this->assertSame($content,
-            $subject->stdWrap_cacheStore($content, $conf));
+        $this->assertSame(
+            $content,
+            $subject->stdWrap_cacheStore($content, $conf)
+        );
         $this->assertSame($times * 3, $countCalls);
     }
 
@@ -4269,8 +4301,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('HTMLcaseshift')
             ->with($content, $conf['case'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_case($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_case($content, $conf)
+        );
     }
 
     /**
@@ -4312,8 +4346,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('crop')
             ->with($content, $conf['crop'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_crop($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_crop($content, $conf)
+        );
     }
 
     /**
@@ -4343,8 +4379,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('cropHTML')
             ->with($content, $conf['cropHTML'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_cropHTML($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_cropHTML($content, $conf)
+        );
     }
 
     /**
@@ -4399,8 +4437,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_csConv($expected, $input, $conf)
     {
-        $this->assertSame($expected,
-            $this->subject->stdWrap_csConv($input, $conf));
+        $this->assertSame(
+            $expected,
+            $this->subject->stdWrap_csConv($input, $conf)
+        );
     }
 
     /**
@@ -4421,13 +4461,19 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             'currentValue_new' => 'new',
         ];
         $this->subject->_set('data', $data);
-        $this->assertSame('currentValue_kidjls9dksoje',
-            $this->subject->_get('currentValKey'));
-        $this->assertSame('default',
-            $this->subject->stdWrap_current('discarded', ['discarded']));
+        $this->assertSame(
+            'currentValue_kidjls9dksoje',
+            $this->subject->_get('currentValKey')
+        );
+        $this->assertSame(
+            'default',
+            $this->subject->stdWrap_current('discarded', ['discarded'])
+        );
         $this->subject->_set('currentValKey', 'currentValue_new');
-        $this->assertSame('new',
-            $this->subject->stdWrap_current('discarded', ['discarded']));
+        $this->assertSame(
+            'new',
+            $this->subject->stdWrap_current('discarded', ['discarded'])
+        );
     }
 
     /**
@@ -4473,7 +4519,9 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $conf = ['data' => $this->getUniqueId('conf.data')];
         $return = $this->getUniqueId('return');
         $subject = $this->getAccessibleMock(
-            ContentObjectRenderer::class, ['getData']);
+            ContentObjectRenderer::class,
+            ['getData']
+        );
         $subject->_set('data', $data);
         $subject->_set('alternativeData', $alt);
         $subject
@@ -4512,8 +4560,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('dataWrap')
             ->with($content, $conf['dataWrap'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_dataWrap($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_dataWrap($content, $conf)
+        );
     }
 
     /**
@@ -4569,8 +4619,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     public function stdWrap_date($expected, $content, $conf, $now)
     {
         $GLOBALS['EXEC_TIME'] = $now;
-        $this->assertEquals($expected,
-            $this->subject->stdWrap_date($content, $conf));
+        $this->assertEquals(
+            $expected,
+            $this->subject->stdWrap_date($content, $conf)
+        );
     }
 
     /**
@@ -4625,7 +4677,7 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $result = $this->subject->stdWrap_debugData($content);
         $out = ob_get_clean();
         $this->assertSame($result, $content);
-        $this->assertNotContains('$cObj->data', $out);
+        $this->assertContains('$cObj->data', $out);
         $this->assertContains($value, $out);
         $this->assertNotContains($altValue, $out);
         // By adding alternative data both are returned together.
@@ -4837,8 +4889,14 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $will Return value of editIcons.
      */
     public function stdWrap_editIcons(
-        $expect, $content, $conf, $login, $times, $param3, $will)
-    {
+        $expect,
+        $content,
+        $conf,
+        $login,
+        $times,
+        $param3,
+        $will
+    ) {
         $GLOBALS['TSFE']->beUserLogin = $login;
         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
             ->setMethods(['editIcons'])->getMock();
@@ -4847,8 +4905,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('editIcons')
             ->with($content, $conf['editIcons'], $param3)
             ->willReturn($will);
-        $this->assertSame($expect,
-            $subject->stdWrap_editIcons($content, $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_editIcons($content, $conf)
+        );
     }
 
     /**
@@ -4863,24 +4923,26 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *
      * @test
      */
-     public function stdWrap_encapsLines()
-     {
-         $content = $this->getUniqueId('content');
-         $conf = [
+    public function stdWrap_encapsLines()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
              'encapsLines' => [$this->getUniqueId('not used')],
              'encapsLines.' => [$this->getUniqueId('encapsLines.')],
          ];
-         $return = $this->getUniqueId('return');
-         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
              ->setMethods(['encaps_lineSplit'])->getMock();
-         $subject
+        $subject
              ->expects($this->once())
              ->method('encaps_lineSplit')
              ->with($content, $conf['encapsLines.'])
              ->willReturn($return);
-         $this->assertSame($return,
-             $subject->stdWrap_encapsLines($content, $conf));
-     }
+        $this->assertSame(
+             $return,
+             $subject->stdWrap_encapsLines($content, $conf)
+         );
+    }
 
     /**
      * Data provider for stdWrap_editPanel.
@@ -4923,8 +4985,12 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      * @param string $will Return value of editPanel.
      */
     public function stdWrap_editPanel(
-        $expect, $content, $login, $times, $will)
-    {
+        $expect,
+        $content,
+        $login,
+        $times,
+        $will
+    ) {
         $GLOBALS['TSFE']->beUserLogin = $login;
         $conf = ['editPanel.' => [$this->getUniqueId('editPanel.')]];
         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
@@ -4934,8 +5000,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('editPanel')
             ->with($content, $conf['editPanel.'])
             ->willReturn($will);
-        $this->assertSame($expect,
-            $subject->stdWrap_editPanel($content, $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_editPanel($content, $conf)
+        );
     }
 
     /**
@@ -4980,8 +5048,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_encodeForJavaScriptValue($expect, $content)
     {
-        $this->assertSame($expect,
-            $this->subject->stdWrap_encodeForJavaScriptValue($content));
+        $this->assertSame(
+            $expect,
+            $this->subject->stdWrap_encodeForJavaScriptValue($content)
+        );
     }
 
     /**
@@ -5013,8 +5083,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_expandList($expected, $content)
     {
-        $this->assertEquals($expected,
-            $this->subject->stdWrap_expandList($content));
+        $this->assertEquals(
+            $expected,
+            $this->subject->stdWrap_expandList($content)
+        );
     }
 
     /**
@@ -5038,8 +5110,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('getFieldVal')
             ->with($conf['field'])
             ->willReturn($expect);
-        $this->assertSame($expect,
-            $subject->stdWrap_field('discarded', $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_field('discarded', $conf)
+        );
     }
 
     /**
@@ -5124,8 +5198,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $subject->_set('data', $data);
         $subject->_set('stdWrapRecursionLevel', 1);
         $subject->_set('stopRendering', [1 => false]);
-        $this->assertSame($expect,
-            $subject->stdWrap_fieldRequired($content, $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_fieldRequired($content, $conf)
+        );
         $this->assertSame($stop, $subject->_get('stopRendering')[1]);
     }
 
@@ -5152,8 +5228,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->setMethods(['filelink'])->getMock();
         $subject->expects($this->once())->method('filelink')
             ->with($content, $conf['filelink.'])->willReturn('return');
-        $this->assertSame('return',
-            $subject->stdWrap_filelink($content, $conf));
+        $this->assertSame(
+            'return',
+            $subject->stdWrap_filelink($content, $conf)
+        );
     }
 
     /**
@@ -5177,8 +5255,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->setMethods(['filelist'])->getMock();
         $subject->expects($this->once())->method('filelist')
             ->with($conf['filelist'])->willReturn('return');
-        $this->assertSame('return',
-            $subject->stdWrap_filelist('discard', $conf));
+        $this->assertSame(
+            'return',
+            $subject->stdWrap_filelist('discard', $conf)
+        );
     }
 
     /**
@@ -5232,8 +5312,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_hash($expect, $content, $conf)
     {
-        $this->assertSame($expect,
-            $this->subject->stdWrap_hash($content, $conf));
+        $this->assertSame(
+            $expect,
+            $this->subject->stdWrap_hash($content, $conf)
+        );
     }
 
     /**
@@ -5278,8 +5360,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_htmlSpecialChars($expected, $input, $conf)
     {
-        $this->assertSame($expected,
-            $this->subject->stdWrap_htmlSpecialChars($input, $conf));
+        $this->assertSame(
+            $expected,
+            $this->subject->stdWrap_htmlSpecialChars($input, $conf)
+        );
     }
 
     /**
@@ -5344,7 +5428,9 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     public function stdWrap_if($expect, $stop, $content, $conf, $times, $will)
     {
         $subject = $this->getAccessibleMock(
-            ContentObjectRenderer::class, ['checkIf']);
+            ContentObjectRenderer::class,
+            ['checkIf']
+        );
         $subject->_set('stdWrapRecursionLevel', 1);
         $subject->_set('stopRendering', [1 => false]);
         $subject
@@ -5546,8 +5632,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_innerWrap($expected, $input, $conf)
     {
-        $this->assertSame($expected,
-            $this->subject->stdWrap_innerWrap($input, $conf));
+        $this->assertSame(
+            $expected,
+            $this->subject->stdWrap_innerWrap($input, $conf)
+        );
     }
 
     /**
@@ -5600,8 +5688,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_innerWrap2($expected, $input, $conf)
     {
-        $this->assertSame($expected,
-            $this->subject->stdWrap_innerWrap2($input, $conf));
+        $this->assertSame(
+            $expected,
+            $this->subject->stdWrap_innerWrap2($input, $conf)
+        );
     }
 
     /**
@@ -5624,8 +5714,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->setMethods(['insertData'])->getMock();
         $subject->expects($this->once())->method('insertData')
             ->with($content)->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_insertData($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_insertData($content, $conf)
+        );
     }
 
     /**
@@ -5844,8 +5936,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             $this->frontendControllerMock
                 ->config['config']['language'] = $language;
         }
-        $this->assertSame($expected,
-            $this->subject->stdWrap_lang($input, $conf));
+        $this->assertSame(
+            $expected,
+            $this->subject->stdWrap_lang($input, $conf)
+        );
     }
 
     /**
@@ -5882,8 +5976,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                 $conf['listNum.']['splitChar']
             )
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_listNum($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_listNum($content, $conf)
+        );
     }
 
     /**
@@ -5966,8 +6062,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_noTrimWrap($expect, $content, $conf)
     {
-        $this->assertSame($expect,
-            $this->subject->stdWrap_noTrimWrap($content, $conf));
+        $this->assertSame(
+            $expect,
+            $this->subject->stdWrap_noTrimWrap($content, $conf)
+        );
     }
 
     /**
@@ -5991,8 +6089,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->setMethods(['numRows'])->getMock();
         $subject->expects($this->once())->method('numRows')
             ->with($conf['numRows.'])->willReturn('return');
-        $this->assertSame('return',
-            $subject->stdWrap_numRows('discard', $conf));
+        $this->assertSame(
+            'return',
+            $subject->stdWrap_numRows('discard', $conf)
+        );
     }
 
     /**
@@ -6022,8 +6122,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('numberFormat')
             ->with($content, $conf['numberFormat.'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_numberFormat($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_numberFormat($content, $conf)
+        );
     }
 
     /**
@@ -6076,8 +6178,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_outerWrap($expected, $input, $conf)
     {
-        $this->assertSame($expected,
-            $this->subject->stdWrap_outerWrap($input, $conf));
+        $this->assertSame(
+            $expected,
+            $this->subject->stdWrap_outerWrap($input, $conf)
+        );
     }
 
     /**
@@ -6137,8 +6241,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_override($expect, $content, $conf)
     {
-        $this->assertSame($expect,
-            $this->subject->stdWrap_override($content, $conf));
+        $this->assertSame(
+            $expect,
+            $this->subject->stdWrap_override($content, $conf)
+        );
     }
 
     /**
@@ -6169,8 +6275,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('parseFunc')
             ->with($content, $conf['parseFunc.'], $conf['parseFunc'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_parseFunc($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_parseFunc($content, $conf)
+        );
     }
 
     /**
@@ -6202,8 +6310,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('cObjGetSingle')
             ->with($conf['postCObject'], $conf['postCObject.'], $debugKey)
             ->willReturn($return);
-        $this->assertSame($content . $return,
-            $subject->stdWrap_postCObject($content, $conf));
+        $this->assertSame(
+            $content . $return,
+            $subject->stdWrap_postCObject($content, $conf)
+        );
     }
 
     /**
@@ -6232,8 +6342,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('callUserFunction')
             ->with($conf['postUserFunc'], $conf['postUserFunc.'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_postUserFunc($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_postUserFunc($content, $conf)
+        );
     }
 
     /**
@@ -6271,9 +6383,14 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->with()->willReturn($uniqueHash);
         $frontend->config = [];
         $subject = $this->getAccessibleMock(
-            ContentObjectRenderer::class, null, [$frontend]);
-        $this->assertSame($expect,
-            $subject->stdWrap_postUserFuncInt($content, $conf));
+            ContentObjectRenderer::class,
+            null,
+            [$frontend]
+        );
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_postUserFuncInt($content, $conf)
+        );
         $array = [
             'content' => $content,
             'postUserFunc' => $conf['postUserFuncInt'],
@@ -6281,8 +6398,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             'type' => 'POSTUSERFUNC',
             'cObj' => serialize($subject)
         ];
-        $this->assertSame($array,
-            $frontend->config['INTincScript'][$substKey]);
+        $this->assertSame(
+            $array,
+            $frontend->config['INTincScript'][$substKey]
+        );
     }
 
     /**
@@ -6314,8 +6433,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('cObjGetSingle')
             ->with($conf['preCObject'], $conf['preCObject.'], $debugKey)
             ->willReturn($return);
-        $this->assertSame($return . $content,
-            $subject->stdWrap_preCObject($content, $conf));
+        $this->assertSame(
+            $return . $content,
+            $subject->stdWrap_preCObject($content, $conf)
+        );
     }
 
     /**
@@ -6352,14 +6473,16 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
                 $conf['preIfEmptyListNum.']['splitChar']
             )
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_preIfEmptyListNum($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_preIfEmptyListNum($content, $conf)
+        );
     }
 
     /**
      * Data provider for stdWrap_prefixComment.
      *
-     * @retunr array [$expect, $content, $conf, $disable, $times, $will]
+     * @return array [$expect, $content, $conf, $disable, $times, $will]
      */
     public function stdWrap_prefixCommentDataProvider()
     {
@@ -6395,8 +6518,13 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *  @dataProvider stdWrap_prefixCommentDataProvider
      */
     public function stdWrap_prefixComment(
-        $expect, $content, $conf, $disable, $times, $will)
-    {
+        $expect,
+        $content,
+        $conf,
+        $disable,
+        $times,
+        $will
+    ) {
         $this->frontendControllerMock
             ->config['config']['disablePrefixComment'] = $disable;
         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
@@ -6406,8 +6534,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('prefixComment')
             ->with($conf['prefixComment'], [], $content)
             ->willReturn($will);
-        $this->assertSame($expect,
-            $subject->stdWrap_prefixComment($content, $conf));
+        $this->assertSame(
+            $expect,
+            $subject->stdWrap_prefixComment($content, $conf)
+        );
     }
 
     /**
@@ -6439,8 +6569,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('cObjGetSingle')
             ->with($conf['prepend'], $conf['prepend.'], $debugKey)
             ->willReturn($return);
-        $this->assertSame($return . $content,
-            $subject->stdWrap_prepend($content, $conf));
+        $this->assertSame(
+            $return . $content,
+            $subject->stdWrap_prepend($content, $conf)
+        );
     }
 
     /**
@@ -6510,8 +6642,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $subject->expects($this->once())->method('callUserFunction')
             ->with($conf['preUserFunc'], $conf['preUserFunc.'], $content)
             ->willReturn('return');
-        $this->assertSame('return',
-            $subject->stdWrap_preUserFunc($content, $conf));
+        $this->assertSame(
+            'return',
+            $subject->stdWrap_preUserFunc($content, $conf)
+        );
     }
 
     /**
@@ -6543,8 +6677,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_rawUrlEncode($expect, $content)
     {
-        $this->assertSame($expect,
-            $this->subject->stdWrap_rawUrlEncode($content));
+        $this->assertSame(
+            $expect,
+            $this->subject->stdWrap_rawUrlEncode($content)
+        );
     }
 
     /**
@@ -6574,8 +6710,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('replacement')
             ->with($content, $conf['replacement.'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_replacement($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_replacement($content, $conf)
+        );
     }
 
     /**
@@ -6665,8 +6803,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     {
         $content = $this->getUniqueId('content');
         $this->assertNotSame($content, $this->subject->getData('current'));
-        $this->assertSame($content,
-            $this->subject->stdWrap_setContentToCurrent($content));
+        $this->assertSame(
+            $content,
+            $this->subject->stdWrap_setContentToCurrent($content)
+        );
         $this->assertSame($content, $this->subject->getData('current'));
     }
 
@@ -6729,109 +6869,6 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
     }
 
     /**
-     * Check if stdWrap_space works properly.
-     *
-     * Show:
-     *
-     *  - Delegates to method wrapSpace.
-     *  - Parameter 1 is $content.
-     *  - Parameter 2 is $conf['space'],
-     *  - trimmed.
-     *  - Parameter 3 is $conf['space.'].
-     *  - Returns the return value.
-     *
-     *  @test
-     */
-    public function stdWrap_space()
-    {
-        $content = $this->getUniqueId('content');
-        $trimmed = $this->getUniqueId('space trimmed');
-        $conf = [
-            'space' => TAB . ' ' . $trimmed . ' ' . TAB,
-            'space.' => [$this->getUniqueId('space.')],
-        ];
-        $return = $this->getUniqueId('return');
-        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
-            ->setMethods(['wrapSpace'])->getMock();
-        $subject
-            ->expects($this->once())
-            ->method('wrapSpace')
-            ->with($content, $trimmed, $conf['space.'])
-            ->willReturn($return);
-        $this->assertSame($return, $subject->stdWrap_space($content, $conf));
-    }
-
-    /**
-     * Check if stdWrap_spaceAfter works properly.
-     *
-     * Show:
-     *
-     *  - Delegates to method wrapSpace.
-     *  - Parameter 1 is $content.
-     *  - Parameter 2 is $conf['spaceAfter'],
-     *  - trimmed,
-     *  - prepended with '|'.
-     *  - Parameter 3 is $conf['space.'] !!!
-     *  - Returns the return value.
-     *
-     *  @test
-     */
-    public function stdWrap_spaceAfter()
-    {
-        $content = $this->getUniqueId('content');
-        $trimmed = $this->getUniqueId('spaceAfter trimmed');
-        $conf = [
-            'spaceAfter' => TAB . ' ' . $trimmed . ' ' . TAB,
-            'space.' => [$this->getUniqueId('space.')],
-        ];
-        $return = $this->getUniqueId('return');
-        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
-            ->setMethods(['wrapSpace'])->getMock();
-        $subject
-            ->expects($this->once())
-            ->method('wrapSpace')
-            ->with($content, '|' . $trimmed, $conf['space.'])
-            ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_spaceAfter($content, $conf));
-    }
-
-    /**
-     * Check if stdWrap_spaceBefore works properly.
-     *
-     * Show:
-     *
-     *  - Delegates to method wrapSpace.
-     *  - Parameter 1 is $content.
-     *  - Parameter 2 is $conf['spaceBefore'],
-     *  - trimmed,
-     *  - appended with '|'.
-     *  - Parameter 3 is $conf['space.'] !!!
-     *  - Returns the return value.
-     *
-     *  @test
-     */
-    public function stdWrap_spaceBefore()
-    {
-        $content = $this->getUniqueId('content');
-        $trimmed = $this->getUniqueId('spaceBefore trimmed');
-        $conf = [
-            'spaceBefore' => TAB . ' ' . $trimmed . ' ' . TAB,
-            'space.' => [$this->getUniqueId('space.')],
-        ];
-        $return = $this->getUniqueId('return');
-        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
-            ->setMethods(['wrapSpace'])->getMock();
-        $subject
-            ->expects($this->once())
-            ->method('wrapSpace')
-            ->with($content, $trimmed . '|', $conf['space.'])
-            ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_spaceBefore($content, $conf));
-    }
-
-    /**
      * Check if stdWrap_split works properly.
      *
      * Show:
@@ -6843,24 +6880,26 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      *
      * @test
      */
-     public function stdWrap_split()
-     {
-         $content = $this->getUniqueId('content');
-         $conf = [
+    public function stdWrap_split()
+    {
+        $content = $this->getUniqueId('content');
+        $conf = [
              'split' => $this->getUniqueId('not used'),
              'split.' => [$this->getUniqueId('split.')],
          ];
-         $return = $this->getUniqueId('return');
-         $subject = $this->getMockBuilder(ContentObjectRenderer::class)
+        $return = $this->getUniqueId('return');
+        $subject = $this->getMockBuilder(ContentObjectRenderer::class)
              ->setMethods(['splitObj'])->getMock();
-         $subject
+        $subject
              ->expects($this->once())
              ->method('splitObj')
              ->with($content, $conf['split.'])
              ->willReturn($return);
-         $this->assertSame($return,
-             $subject->stdWrap_split($content, $conf));
-     }
+        $this->assertSame(
+             $return,
+             $subject->stdWrap_split($content, $conf)
+         );
+    }
 
     /**
      * Check that stdWrap_stdWrap works properly.
@@ -7223,8 +7262,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
             ->method('substring')
             ->with($content, $conf['substring'])
             ->willReturn($return);
-        $this->assertSame($return,
-            $subject->stdWrap_substring($content, $conf));
+        $this->assertSame(
+            $return,
+            $subject->stdWrap_substring($content, $conf)
+        );
     }
 
     /**
@@ -7380,8 +7421,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
      */
     public function stdWrap_wrap($expected, $input, $conf)
     {
-        $this->assertSame($expected,
-            $this->subject->stdWrap_wrap($input, $conf));
+        $this->assertSame(
+            $expected,
+            $this->subject->stdWrap_wrap($input, $conf)
+        );
     }
 
     /**
@@ -7551,8 +7594,10 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         if ($wrapAlignConf !== null) {
             $conf['wrapAlign'] = $wrapAlignConf;
         }
-        $this->assertSame($expect,
-            $this->subject->stdWrap_wrapAlign($content, $conf));
+        $this->assertSame(
+            $expect,
+            $this->subject->stdWrap_wrapAlign($content, $conf)
+        );
     }
 
     /***************************************************************************
@@ -7664,25 +7709,40 @@ class ContentObjectRendererTest extends \TYPO3\TestingFramework\Core\Unit\UnitTe
         $indent2 = TAB . TAB;
         return [
             'indent one tab' => [
-                sprintf($format,
-                    $indent1, $comment,
-                    $indent1, $content,
-                    $indent1, $comment,
-                    $indent1),
+                sprintf(
+                    $format,
+                    $indent1,
+                    $comment,
+                    $indent1,
+                    $content,
+                    $indent1,
+                    $comment,
+                    $indent1
+                ),
                 '1|' . $comment, $content ],
             'indent two tabs' => [
-                sprintf($format,
-                    $indent2, $comment,
-                    $indent2, $content,
-                    $indent2, $comment,
-                    $indent2),
+                sprintf(
+                    $format,
+                    $indent2,
+                    $comment,
+                    $indent2,
+                    $content,
+                    $indent2,
+                    $comment,
+                    $indent2
+                ),
                 '2|' . $comment, $content ],
             'htmlspecialchars applies for comment only' => [
-                sprintf($format,
-                    $indent1, '&lt;' . $comment . '&gt;',
-                    $indent1, '<' . $content . '>',
-                    $indent1, '&lt;' . $comment . '&gt;',
-                    $indent1),
+                sprintf(
+                    $format,
+                    $indent1,
+                    '&lt;' . $comment . '&gt;',
+                    $indent1,
+                    '<' . $content . '>',
+                    $indent1,
+                    '&lt;' . $comment . '&gt;',
+                    $indent1
+                ),
                 '1|' . '<' . $comment . '>', '<' . $content . '>' ],
         ];
     }

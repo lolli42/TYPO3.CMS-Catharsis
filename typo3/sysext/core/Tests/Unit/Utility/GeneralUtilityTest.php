@@ -17,11 +17,13 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Package\Package;
 use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Tests\Unit\Utility\AccessibleProxies\ExtensionManagementUtilityAccessibleProxy;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFilesystemFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFixture;
+use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityMakeInstanceInjectLoggerFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\OriginalClassFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\OtherReplacementClassFixture;
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\ReplacementClassFixture;
@@ -2496,18 +2498,6 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $this->assertSame($testString, GeneralUtility::minifyJavaScript($testString));
     }
 
-    /**
-     * Callback function used in
-     * minifyJavaScriptReturnsErrorStringOfHookException and
-     * minifyJavaScriptWritesExceptionMessageToDevLog
-     *
-     * @throws \RuntimeException
-     */
-    public function minifyJavaScriptErroneousCallback()
-    {
-        throw new \RuntimeException('foo', 1344888548);
-    }
-
     ///////////////////////////////
     // Tests concerning fixPermissions
     ///////////////////////////////
@@ -2917,7 +2907,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         // Load fixture files and folders from disk
         FileStreamWrapper::init(PATH_site);
         FileStreamWrapper::registerOverlayPath('fileadmin', 'vfs://root/fileadmin', true);
-        GeneralUtility::mkdir_deep(PATH_site, $directoryToCreate);
+        GeneralUtility::mkdir_deep(PATH_site . $directoryToCreate);
         $this->assertTrue(is_dir(PATH_site . $directoryToCreate));
         FileStreamWrapper::destroy();
     }
@@ -2933,7 +2923,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $directory = $this->getUniqueId('mkdirdeeptest_');
         $oldUmask = umask(19);
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['folderCreateMask'] = '0777';
-        GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/', $directory);
+        GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/' . $directory);
         $this->testFilesToDelete[] = PATH_site . 'typo3temp/var/tests/' . $directory;
         clearstatcache();
         umask($oldUmask);
@@ -2952,7 +2942,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $subDirectory = $directory . '/bar';
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['folderCreateMask'] = '0777';
         $oldUmask = umask(19);
-        GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/', $subDirectory);
+        GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/' . $subDirectory);
         $this->testFilesToDelete[] = PATH_site . 'typo3temp/var/tests/' . $directory;
         clearstatcache();
         umask($oldUmask);
@@ -2973,7 +2963,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         @mkdir(($baseDirectory . $existingDirectory));
         $this->testFilesToDelete[] = $baseDirectory . $existingDirectory;
         chmod($baseDirectory . $existingDirectory, 482);
-        GeneralUtility::mkdir_deep($baseDirectory, $existingDirectory . $newSubDirectory);
+        GeneralUtility::mkdir_deep($baseDirectory . $existingDirectory . $newSubDirectory);
         $this->assertEquals('0742', substr(decoct(fileperms($baseDirectory . $existingDirectory)), 2));
     }
 
@@ -2986,7 +2976,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         if ($swapGroup !== false) {
             $GLOBALS['TYPO3_CONF_VARS']['SYS']['createGroup'] = $swapGroup;
             $directory = $this->getUniqueId('mkdirdeeptest_');
-            GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/', $directory);
+            GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/' . $directory);
             $this->testFilesToDelete[] = PATH_site . 'typo3temp/var/tests/' . $directory;
             clearstatcache();
             $resultDirectoryGroup = filegroup(PATH_site . 'typo3temp/var/tests/' . $directory);
@@ -3004,7 +2994,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             $GLOBALS['TYPO3_CONF_VARS']['SYS']['createGroup'] = $swapGroup;
             $directory = $this->getUniqueId('mkdirdeeptest_');
             $subDirectory = $directory . '/bar';
-            GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/', $subDirectory);
+            GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/' . $subDirectory);
             $this->testFilesToDelete[] = PATH_site . 'typo3temp/var/tests/' . $directory;
             clearstatcache();
             $resultDirectoryGroup = filegroup(PATH_site . 'typo3temp/var/tests/' . $directory);
@@ -3022,7 +3012,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             $GLOBALS['TYPO3_CONF_VARS']['SYS']['createGroup'] = $swapGroup;
             $directory = $this->getUniqueId('mkdirdeeptest_');
             $subDirectory = $directory . '/bar';
-            GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/', $subDirectory);
+            GeneralUtility::mkdir_deep(PATH_site . 'typo3temp/var/tests/' . $subDirectory);
             $this->testFilesToDelete[] = PATH_site . 'typo3temp/var/tests/' . $directory;
             clearstatcache();
             $resultDirectoryGroup = filegroup(PATH_site . 'typo3temp/var/tests/' . $directory);
@@ -3041,7 +3031,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         vfsStreamWrapper::register();
         $baseDirectory = $this->getUniqueId('test_');
         vfsStreamWrapper::setRoot(new vfsStreamDirectory($baseDirectory));
-        GeneralUtility::mkdir_deep('vfs://' . $baseDirectory . '/', 'sub');
+        GeneralUtility::mkdir_deep('vfs://' . $baseDirectory . '/sub');
         $this->assertTrue(is_dir('vfs://' . $baseDirectory . '/sub'));
     }
 
@@ -3228,6 +3218,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
                 'stuff.csv' => 'honey',
             ],
             'excludeMe.txt' => 'cocoa nibs',
+            'double.setup.typoscript' => 'cool TS',
             'testB.txt' => 'olive oil',
             'testA.txt' => 'eggs',
             'testC.txt' => 'carrots',
@@ -3282,16 +3273,16 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     {
         return [
             'no space' => [
-                'txt,js,css'
+                'setup.typoscript,txt,js,css'
             ],
             'spaces' => [
-                'txt, js, css'
+                'setup.typoscript, txt, js, css'
             ],
             'mixed' => [
-                'txt,js, css'
+                'setup.typoscript , txt,js, css'
             ],
             'wild' => [
-                'txt,     js  ,         css'
+                'setup.typoscript,  txt,     js  ,         css'
             ]
         ];
     }
@@ -3304,6 +3295,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     {
         $vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
         $files = GeneralUtility::getFilesInDir($vfsStreamUrl, $fileExtensions);
+        $this->assertContains('double.setup.typoscript', $files);
         $this->assertContains('testA.txt', $files);
         $this->assertContains('test.js', $files);
         $this->assertContains('test.css', $files);
@@ -3352,7 +3344,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $vfsStreamUrl = $this->getFilesInDirCreateTestDirectory();
         $this->assertSame(
             array_values(GeneralUtility::getFilesInDir($vfsStreamUrl, '', false)),
-            ['.secret.txt', 'excludeMe.txt', 'test.css', 'test.js', 'testA.txt', 'testB.txt', 'testC.txt']
+            ['.secret.txt', 'double.setup.typoscript', 'excludeMe.txt', 'test.css', 'test.js', 'testA.txt', 'testB.txt', 'testC.txt']
         );
     }
 
@@ -3854,6 +3846,15 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     /**
      * @test
      */
+    public function makeInstanceInjectsLogger()
+    {
+        $instance = GeneralUtility::makeInstance(GeneralUtilityMakeInstanceInjectLoggerFixture::class);
+        $this->assertInstanceOf(LoggerInterface::class, $instance->getLogger());
+    }
+
+    /**
+     * @test
+     */
     public function setSingletonInstanceForEmptyClassNameThrowsException()
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -4167,6 +4168,7 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             'Regular .php3 file' => ['file.php3'],
             'Regular .phpsh file' => ['file.phpsh'],
             'Regular .phtml file' => ['file.phtml'],
+            'Regular .pht file' => ['file.pht'],
             'PHP file in the middle' => ['file.php.txt'],
             '.htaccess file' => ['.htaccess'],
         ];
@@ -4201,7 +4203,6 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $targetDirectory = 'typo3temp/var/tests/' . $this->getUniqueId('test_') . '/';
         $absoluteTargetDirectory = PATH_site . $targetDirectory;
         $this->testFilesToDelete[] = $absoluteTargetDirectory;
-        GeneralUtility::mkdir($absoluteTargetDirectory);
 
         GeneralUtility::writeFileToTypo3tempDir($absoluteSourceDirectory . 'file', '42');
         GeneralUtility::mkdir($absoluteSourceDirectory . 'foo');
@@ -4226,7 +4227,6 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $targetDirectory = 'typo3temp/var/tests/' . $this->getUniqueId('test_') . '/';
         $absoluteTargetDirectory = PATH_site . $targetDirectory;
         $this->testFilesToDelete[] = $absoluteTargetDirectory;
-        GeneralUtility::mkdir($absoluteTargetDirectory);
 
         GeneralUtility::writeFileToTypo3tempDir($absoluteSourceDirectory . 'file', '42');
         GeneralUtility::mkdir($absoluteSourceDirectory . 'foo');
@@ -4239,48 +4239,8 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
-    // Tests concerning sysLog
+    // Tests concerning deprecation log
     /////////////////////////////////////////////////////////////////////////////////////
-    /**
-     * @test
-     */
-    public function syslogFixesPermissionsOnFileIfUsingFileLogging()
-    {
-        if (TYPO3_OS === 'WIN') {
-            $this->markTestSkipped(self::NO_FIX_PERMISSIONS_ON_WINDOWS);
-        }
-        // Fake all required settings
-        $GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLogLevel'] = 0;
-        $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['systemLogInit'] = true;
-        unset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['systemLog']);
-        $testLogFilename = PATH_site . 'typo3temp/var/tests/' . $this->getUniqueId('test_') . '.txt';
-        $GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLog'] = 'file,' . $testLogFilename . ',0';
-        $GLOBALS['TYPO3_CONF_VARS']['SYS']['fileCreateMask'] = '0777';
-        // Call method, get actual permissions and clean up
-        GeneralUtility::sysLog('testLog', 'test', GeneralUtility::SYSLOG_SEVERITY_NOTICE);
-        $this->testFilesToDelete[] = $testLogFilename;
-        clearstatcache();
-        $this->assertEquals('0777', substr(decoct(fileperms($testLogFilename)), 2));
-    }
-
-    /**
-     * @test
-     */
-    public function deprecationLogFixesPermissionsOnLogFile()
-    {
-        if (TYPO3_OS === 'WIN') {
-            $this->markTestSkipped(self::NO_FIX_PERMISSIONS_ON_WINDOWS);
-        }
-        $filePath = PATH_site . GeneralUtilityFixture::DEPRECATION_LOG_PATH;
-        @mkdir(dirname($filePath));
-        $this->testFilesToDelete[] = $filePath;
-        $GLOBALS['TYPO3_CONF_VARS']['SYS']['enableDeprecationLog'] = true;
-        $GLOBALS['TYPO3_CONF_VARS']['SYS']['fileCreateMask'] = '0777';
-        GeneralUtilityFixture::deprecationLog('foo');
-        clearstatcache();
-        $resultFilePermissions = substr(decoct(fileperms($filePath)), 2);
-        $this->assertEquals('0777', $resultFilePermissions);
-    }
 
     ///////////////////////////////////////////////////
     // Tests concerning callUserFunction
@@ -4394,12 +4354,12 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     }
 
     /**
-     * If the element is not empty, its contents might be treated as "something" (instead of "nothing") e.g. by Fluid
-     * view helpers, which is why we want to avoid that.
+     * If the element is not empty, its contents might be treated as "something" (instead of "nothing")
+     * e.g. by Fluid view helpers, which is why we want to avoid that.
      *
      * @test
      */
-    public function xml2ArrayConvertsEmptyArraysToElementWithoutContent()
+    public function array2xmlConvertsEmptyArraysToElementWithoutContent()
     {
         $input = [
             'el' => []
@@ -4413,64 +4373,67 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     }
 
     /**
-     * @return array
+     * @return string[][]
      */
-    public function providerForXml2Array(): array
+    public function xml2arrayHandlesWhitespacesDataProvider(): array
     {
-        return [
-            'inputWithoutWhitespaces' => [
-                '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-                <T3FlexForms>
-                    <data>
-                        <field index="settings.persistenceIdentifier">
-                            <value index="vDEF">egon</value>
-                        </field>
-                    </data>
-                </T3FlexForms>'
-            ],
-            'inputWithPrecedingWhitespaces' => [
-                '
-                <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-                <T3FlexForms>
-                    <data>
-                        <field index="settings.persistenceIdentifier">
-                            <value index="vDEF">egon</value>
-                        </field>
-                    </data>
-                </T3FlexForms>'
-            ],
-            'inputWithTrailingWhitespaces' => [
-                '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-                <T3FlexForms>
-                    <data>
-                        <field index="settings.persistenceIdentifier">
-                            <value index="vDEF">egon</value>
-                        </field>
-                    </data>
-                </T3FlexForms>
-                '
-            ],
-            'inputWithPrecedingAndTrailingWhitespaces' => [
-                '
-                <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-                <T3FlexForms>
-                    <data>
-                        <field index="settings.persistenceIdentifier">
-                            <value index="vDEF">egon</value>
-                        </field>
-                    </data>
-                </T3FlexForms>
-                '
-            ],
+        $headerVariants = [
+            'utf-8' => '<?xml version="1.0" encoding="utf-8" standalone="yes"?>',
+            'UTF-8' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+            'no-encoding' => '<?xml version="1.0" standalone="yes"?>',
+            'iso-8859-1' => '<?xml version="1.0" encoding="iso-8859-1" standalone="yes"?>',
+            'ISO-8859-1' => '<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?>',
         ];
+        $data = [];
+        foreach ($headerVariants as $identifier => $headerVariant) {
+            $data += [
+                'inputWithoutWhitespaces-' . $identifier => [
+                    $headerVariant . '<T3FlexForms>
+                        <data>
+                            <field index="settings.persistenceIdentifier">
+                                <value index="vDEF">egon</value>
+                            </field>
+                        </data>
+                    </T3FlexForms>'
+                ],
+                'inputWithPrecedingWhitespaces-' . $identifier => [
+                    CR . ' ' . $headerVariant . '<T3FlexForms>
+                        <data>
+                            <field index="settings.persistenceIdentifier">
+                                <value index="vDEF">egon</value>
+                            </field>
+                        </data>
+                    </T3FlexForms>'
+                ],
+                'inputWithTrailingWhitespaces-' . $identifier => [
+                    $headerVariant . '<T3FlexForms>
+                        <data>
+                            <field index="settings.persistenceIdentifier">
+                                <value index="vDEF">egon</value>
+                            </field>
+                        </data>
+                    </T3FlexForms>' . CR . ' '
+                ],
+                'inputWithPrecedingAndTrailingWhitespaces-' . $identifier => [
+                    CR . ' ' . $headerVariant . '<T3FlexForms>
+                        <data>
+                            <field index="settings.persistenceIdentifier">
+                                <value index="vDEF">egon</value>
+                            </field>
+                        </data>
+                    </T3FlexForms>' . CR . ' '
+                ],
+            ];
+        }
+        return $data;
     }
 
     /**
      * @test
-     * @dataProvider providerForXml2Array
+     * @dataProvider xml2arrayHandlesWhitespacesDataProvider
      * @param string $input
      */
-    public function xml2ArrayDealsProperlyWithWhitespace(string $input)
+    public function xml2arrayHandlesWhitespaces(string $input)
     {
         $expected = [
             'data' => [
@@ -4480,6 +4443,281 @@ class GeneralUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
             ],
         ];
         $this->assertSame($expected, GeneralUtility::xml2array($input));
+    }
+
+    /**
+     * @return string[][]
+     */
+    public function xml2arrayHandlesTagNamespacesDataProvider(): array
+    {
+        return [
+            'inputWithNameSpaceOnRootLevel' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3:T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </field>
+                    </data>
+                </T3:T3FlexForms>'
+            ],
+            'inputWithNameSpaceOnNonRootLevel' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3FlexForms>
+                    <data>
+                        <T3:field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </T3:field>
+                    </data>
+                </T3FlexForms>'
+            ],
+            'inputWithNameSpaceOnRootAndNonRootLevel' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3:T3FlexForms>
+                    <data>
+                        <T3:field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </T3:field>
+                    </data>
+                </T3:T3FlexForms>'
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider xml2arrayHandlesTagNamespacesDataProvider
+     * @param string $input
+     */
+    public function xml2arrayHandlesTagNamespaces(string $input)
+    {
+        $expected = [
+            'data' => [
+                'settings.persistenceIdentifier' => [
+                    'vDEF' => 'egon',
+                ]
+            ],
+        ];
+        $this->assertSame($expected, GeneralUtility::xml2array($input, 'T3:'));
+    }
+
+    /**
+     * @return array[]
+     */
+    public function xml2arrayHandlesDocumentTagDataProvider(): array
+    {
+        return [
+            'input' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </field>
+                    </data>
+                </T3FlexForms>',
+                'T3FlexForms'
+            ],
+            'input-with-root-namespace' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3:T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </field>
+                    </data>
+                </T3:T3FlexForms>',
+                'T3:T3FlexForms'
+            ],
+            'input-with-namespace' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3FlexForms>
+                    <data>
+                        <T3:field index="settings.persistenceIdentifier">
+                            <value index="vDEF">egon</value>
+                        </T3:field>
+                    </data>
+                </T3FlexForms>',
+                'T3FlexForms'
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider xml2arrayHandlesDocumentTagDataProvider
+     * @param string $input
+     * @param string $docTag
+     */
+    public function xml2arrayHandlesDocumentTag(string $input, string $docTag)
+    {
+        $expected = [
+            'data' => [
+                'settings.persistenceIdentifier' => [
+                    'vDEF' => 'egon',
+                ]
+            ],
+            '_DOCUMENT_TAG' => $docTag
+        ];
+        $this->assertSame($expected, GeneralUtility::xml2array($input, '', true));
+    }
+
+    /**
+     * @return array[]
+     */
+    public function xml2ArrayHandlesBigXmlContentDataProvider(): array
+    {
+        return [
+            '1mb' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3:T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">' . str_repeat('1', 1024 * 1024) . '</value>
+                        </field>
+                    </data>
+                </T3:T3FlexForms>',
+                str_repeat('1', 1024 * 1024)
+            ],
+            '5mb' => [
+                '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+                <T3:T3FlexForms>
+                    <data>
+                        <field index="settings.persistenceIdentifier">
+                            <value index="vDEF">' . str_repeat('1', 5 * 1024 * 1024) . '</value>
+                        </field>
+                    </data>
+                </T3:T3FlexForms>',
+                str_repeat('1', 5 * 1024 * 1024)
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider xml2ArrayHandlesBigXmlContentDataProvider
+     * @param string $input
+     * @param string $testValue
+     */
+    public function xml2ArrayHandlesBigXmlContent(string $input, string $testValue)
+    {
+        $expected = [
+            'data' => [
+                'settings.persistenceIdentifier' => [
+                    'vDEF' => $testValue,
+                ]
+            ],
+        ];
+        $this->assertSame($expected, GeneralUtility::xml2array($input));
+    }
+
+    /**
+     * @todo: The parser run into a memory issue with files bigger 10 MB
+     * @todo: This special tests documents the issue. If fixed, this test
+     * @todo: should become a data set of xml2ArrayHandlesBigXmlFilesDataProvider()
+     *
+     * @see https://forge.typo3.org/issues/83580
+     *
+     * @test
+     */
+    public function xml2ArrayFailsWithXmlContentBiggerThanTenMegabytes()
+    {
+        $input = '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+            <T3:T3FlexForms>
+                <data>
+                    <field index="settings.persistenceIdentifier">
+                        <value index="vDEF">' . str_repeat('1', 10 * 1024 * 1024) . '</value>
+                    </field>
+                </data>
+            </T3:T3FlexForms>';
+        $this->assertContains('No memory', GeneralUtility::xml2array($input));
+    }
+
+    /**
+     * @return array[]
+     */
+    public function xml2ArrayHandlesAttributeTypesDataProvider()
+    {
+        $prefix = '<?xml version="1.0" encoding="utf-8" standalone="yes"?><T3FlexForms><field index="index">';
+        $suffix = '</field></T3FlexForms>';
+        return [
+            'no-type string' => [
+                $prefix . '<value index="vDEF">foo bar</value>' . $suffix,
+                'foo bar'
+            ],
+            'no-type integer' => [
+                $prefix . '<value index="vDEF">123</value>' . $suffix,
+                '123'
+            ],
+            'no-type double' => [
+                $prefix . '<value index="vDEF">1.23</value>' . $suffix,
+                '1.23'
+            ],
+            'integer integer' => [
+                $prefix . '<value index="vDEF" type="integer">123</value>' . $suffix,
+                123
+            ],
+            'integer double' => [
+                $prefix . '<value index="vDEF" type="integer">1.23</value>' . $suffix,
+                1
+            ],
+            'double integer' => [
+                $prefix . '<value index="vDEF" type="double">123</value>' . $suffix,
+                123.0
+            ],
+            'double double' => [
+                $prefix . '<value index="vDEF" type="double">1.23</value>' . $suffix,
+                1.23
+            ],
+            'boolean 0' => [
+                $prefix . '<value index="vDEF" type="boolean">0</value>' . $suffix,
+                false
+            ],
+            'boolean 1' => [
+                $prefix . '<value index="vDEF" type="boolean">1</value>' . $suffix,
+                true
+            ],
+            'boolean true' => [
+                $prefix . '<value index="vDEF" type="boolean">true</value>' . $suffix,
+                true
+            ],
+            'boolean false' => [
+                $prefix . '<value index="vDEF" type="boolean">false</value>' . $suffix,
+                true // sic(!)
+            ],
+            'NULL' => [
+                $prefix . '<value index="vDEF" type="NULL"></value>' . $suffix,
+                null
+            ],
+            'NULL string' => [
+                $prefix . '<value index="vDEF" type="NULL">foo bar</value>' . $suffix,
+                null
+            ],
+            'NULL integer' => [
+                $prefix . '<value index="vDEF" type="NULL">123</value>' . $suffix,
+                null
+            ],
+            'NULL double' => [
+                $prefix . '<value index="vDEF" type="NULL">1.23</value>' . $suffix,
+                null
+            ],
+            'array' => [
+                $prefix . '<value index="vDEF" type="array"></value>' . $suffix,
+                []
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider xml2ArrayHandlesAttributeTypesDataProvider
+     * @param string $input
+     * @param $expected
+     */
+    public function xml2ArrayHandlesAttributeTypes(string $input, $expected)
+    {
+        $result = GeneralUtility::xml2array($input);
+        $this->assertSame($expected, $result['index']['vDEF']);
     }
 
     /**

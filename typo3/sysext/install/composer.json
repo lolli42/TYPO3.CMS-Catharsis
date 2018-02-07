@@ -3,7 +3,7 @@
 	"type": "typo3-cms-framework",
 	"description": "The Install Tool mounted as the module Tools>Install in TYPO3.",
 	"homepage": "https://typo3.org",
-	"license": ["GPL-2.0+"],
+	"license": ["GPL-2.0-or-later"],
 	"authors": [{
 			"name": "TYPO3 Core Team",
 			"email": "typo3cms@typo3.org",
@@ -11,11 +11,11 @@
 		}],
 
 	"require": {
-		"typo3/cms-core": ">=9.0.0 <=9.0.99",
-		"typo3/cms-extbase": ">=9.0.0 <=9.0.99",
-		"typo3/cms-fluid": ">=9.0.0 <=9.0.99",
-		"nikic/php-parser": "~3.0.6",
-		"symfony/finder": "^2.7 || ^3.0"
+		"typo3/cms-core": "9.2.*@dev",
+		"typo3/cms-extbase": "9.2.*@dev",
+		"typo3/cms-fluid": "9.2.*@dev",
+		"nikic/php-parser": "~3.1",
+		"symfony/finder": "^2.7 || ^3.0 || ^4.0"
 	},
 	"conflict": {
 		"typo3/cms": "*"
@@ -25,7 +25,7 @@
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "9.x-dev"
+			"dev-master": "9.2.x-dev"
 		},
 		"typo3/cms": {
 			"Package": {

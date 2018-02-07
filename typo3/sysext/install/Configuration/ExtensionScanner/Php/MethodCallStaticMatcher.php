@@ -414,11 +414,130 @@ return [
             'Deprecation-81201-EidUtilityinitTCA.rst',
         ],
     ],
-    'TYPO3\CMS\Core\Utility\BackendUtility::getListGroupNames' => [
+    'TYPO3\CMS\Backend\Utility\BackendUtility::getListGroupNames' => [
         'numberOfMandatoryArguments' => 0,
         'maximumNumberOfArguments' => 1,
         'restFiles' => [
             'Deprecation-81534-BackendUtilitygetListGroupNamesDeprecated.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\GeneralUtility::makeRedirectUrl' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 3,
+        'restFiles' => [
+            'Breaking-82572-RDCTFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Utility\BackendUtility::getInlineLocalizationMode' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-80700-DeprecatedFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-82438-DeprecationMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedViewHelperAttribute' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 3,
+        'restFiles' => [
+            'Deprecation-82438-DeprecationMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\GeneralUtility::getDeprecationLogFileName' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-82438-DeprecationMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-82438-DeprecationMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-82899-ExtensionManagementUtilityMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionKeyByPrefix' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-82899-ExtensionManagementUtilityMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\ExtensionManagementUtility::removeCacheFiles' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-82899-ExtensionManagementUtilityMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\ExtensionManagementUtility::configureModule' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-82902-CustomBackendModuleRegistrationMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Utility\BackendUtility::getOriginalTranslationTable' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-82445-PageTranslationRelatedFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\GeneralUtility::llXmlAutoFileName' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 3,
+        'restFiles' => [
+            'Deprecation-83083-GeneralUtilityllXmlAutoFileName.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Utility\BackendUtility::getHash' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-83116-CachingFrameworkWrapperMethodsInBackendUtility.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Utility\BackendUtility::storeHash' => [
+        'numberOfMandatoryArguments' => 3,
+        'maximumNumberOfArguments' => 3,
+        'restFiles' => [
+            'Deprecation-83116-CachingFrameworkWrapperMethodsInBackendUtility.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Deprecation-83118-DeleteClauseMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Page\PageGenerator::generatePageTitle' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-83254-MovedPageGenerationMethodsIntoTSFE.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Page\PageGenerator::isAllowedLinkVarValue' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-83254-MovedPageGenerationMethodsIntoTSFE.rst',
         ],
     ],
 ];

@@ -15,7 +15,7 @@ The file structures of CSS Styled Content and Fluid Styled Content have been str
 File structure of CSS Styled Content
 ------------------------------------
 
-.. code-block::
+.. code-block:: php
 
    - Configuration/TypoScript
    | - ContentElement
@@ -57,7 +57,7 @@ File structure of CSS Styled Content
 File structure of Fluid Styled Content
 --------------------------------------
 
-.. code-block::
+.. code-block:: php
 
    - Configuration/TypoScript
    | - ContentElement
@@ -139,4 +139,4 @@ Use the new locations for accessing the TypoScript configuration.
 - `Fluid Styled Content` = EXT:fluid_styled_content/Configuration/TypoScript/
 
 
-.. index:: Fluid, Frontend
+.. index:: Fluid, Frontend, ext:fluid_styled_content

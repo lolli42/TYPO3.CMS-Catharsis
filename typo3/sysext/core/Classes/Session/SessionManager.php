@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Session;
 
 /*
@@ -48,10 +48,10 @@ class SessionManager implements SingletonInterface
     public function getSessionBackend(string $identifier) : SessionBackendInterface
     {
         if (!isset($this->sessionBackends[$identifier])) {
-            if (!isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['session'][$identifier]) || !is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['session'][$identifier])) {
+            $configuration = $GLOBALS['TYPO3_CONF_VARS']['SYS']['session'][$identifier] ?? false;
+            if (!$configuration) {
                 throw new \InvalidArgumentException('Session configuration for identifier ' . $identifier . ' was not found', 1482234750);
             }
-            $configuration = $GLOBALS['TYPO3_CONF_VARS']['SYS']['session'][$identifier];
 
             $sessionBackend = $this->createSessionBackendFromConfiguration($identifier, $configuration);
 

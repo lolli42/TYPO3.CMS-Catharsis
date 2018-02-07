@@ -26,6 +26,16 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 class LocalPreviewHelper
 {
     /**
+     * Default preview configuration
+     *
+     * @var array
+     */
+    protected static $defaultConfiguration = [
+        'width' => 64,
+        'height' => 64,
+    ];
+
+    /**
      * @var LocalImageProcessor
      */
     protected $processor;
@@ -36,6 +46,20 @@ class LocalPreviewHelper
     public function __construct(LocalImageProcessor $processor)
     {
         $this->processor = $processor;
+    }
+
+    /**
+     * Enforce default configuration for preview processing
+     *
+     * @param array $configuration
+     * @return array
+     */
+    public static function preProcessConfiguration(array $configuration): array
+    {
+        $configuration = array_replace(static::$defaultConfiguration, $configuration);
+        $configuration['width'] = MathUtility::forceIntegerInRange($configuration['width'], 1, 1000);
+        $configuration['height'] = MathUtility::forceIntegerInRange($configuration['height'], 1, 1000);
+        return $configuration;
     }
 
     /**
@@ -55,16 +79,12 @@ class LocalPreviewHelper
      * with the returned width and height. This is for example useful for SVG images.
      *
      * @param TaskInterface $task
-     * @return array|NULL
+     * @return array|null
      */
     public function process(TaskInterface $task)
     {
         $sourceFile = $task->getSourceFile();
-
-        // Merge custom configuration with default configuration
-        $configuration = array_merge(['width' => 64, 'height' => 64], $task->getConfiguration());
-        $configuration['width'] = MathUtility::forceIntegerInRange($configuration['width'], 1);
-        $configuration['height'] = MathUtility::forceIntegerInRange($configuration['height'], 1);
+        $configuration = static::preProcessConfiguration($task->getConfiguration());
 
         // Do not scale up if the source file has a size and the target size is larger
         if ($sourceFile->getProperty('width') > 0 && $sourceFile->getProperty('height') > 0
@@ -103,6 +123,7 @@ class LocalPreviewHelper
         ) {
             // Create a default image
             $graphicalFunctions = GeneralUtility::makeInstance(GraphicalFunctions::class);
+            $graphicalFunctions->init();
             $graphicalFunctions->getTemporaryImageWithText(
                 $targetFilePath,
                 'Not imagefile!',
@@ -119,7 +140,6 @@ class LocalPreviewHelper
             /** @var $gifBuilder \TYPO3\CMS\Frontend\Imaging\GifBuilder */
             $gifBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Imaging\GifBuilder::class);
             $gifBuilder->init();
-            $gifBuilder->absPrefix = PATH_site;
             $info = $gifBuilder->getImageDimensions($originalFileName);
             $newInfo = $gifBuilder->getImageScale($info, $configuration['width'], $configuration['height'], []);
             $result = [
@@ -139,6 +159,7 @@ class LocalPreviewHelper
                 if (!file_exists($targetFilePath)) {
                     // Create an error gif
                     $graphicalFunctions = GeneralUtility::makeInstance(GraphicalFunctions::class);
+                    $graphicalFunctions->init();
                     $graphicalFunctions->getTemporaryImageWithText(
                         $targetFilePath,
                         'No thumb',

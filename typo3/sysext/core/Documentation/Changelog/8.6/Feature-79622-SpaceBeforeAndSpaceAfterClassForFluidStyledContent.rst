@@ -44,6 +44,7 @@ Small           small           frame-space-before-small           2em
 Medium          medium          frame-space-before-medium          3em
 Large           large           frame-space-before-large           4em
 Extra Large     extra-large     frame-space-before-extra-large     5em
+=============   =============   ===============================   =============
 
 
 Example Output
@@ -88,4 +89,4 @@ Impact
 
 SpaceBefore and SpaceAfter is now available to all Fluid Styled Content elements.
 
-.. index:: Fluid, Frontend
+.. index:: Fluid, Frontend, ext:fluid_styled_content, TypoScript

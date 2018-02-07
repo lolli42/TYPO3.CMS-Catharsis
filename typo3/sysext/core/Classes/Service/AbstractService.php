@@ -13,14 +13,21 @@ namespace TYPO3\CMS\Core\Service;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
+use TYPO3\CMS\Core\Utility\CommandUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Parent class for "Services" classes
  */
-abstract class AbstractService
+abstract class AbstractService implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * @var array service description array
      */
@@ -30,11 +37,6 @@ abstract class AbstractService
      * @var array error stack
      */
     public $error = [];
-
-    /**
-     * @var bool Defines if debug messages should be written with \TYPO3\CMS\Core\Utility\GeneralUtility::devLog
-     */
-    public $writeDevLog = false;
 
     /**
      * @var string The output content. That's what the services produced as result.
@@ -143,17 +145,17 @@ abstract class AbstractService
      *
      ***************************************/
     /**
-     * Logs debug messages to \TYPO3\CMS\Core\Utility\GeneralUtility::devLog()
+     * Logs debug messages to the Logging API
      *
      * @param string $msg Debug message
      * @param int $severity Severity: 0 is info, 1 is notice, 2 is warning, 3 is fatal error, -1 is "OK" message
-     * @param array|bool $dataVar dditional data you want to pass to the logger.
+     * @param array|bool $dataVar additional data you want to pass to the logger.
+     * @deprecated
      */
     public function devLog($msg, $severity = 0, $dataVar = false)
     {
-        if ($this->writeDevLog) {
-            GeneralUtility::devLog($msg, $this->info['serviceKey'], $severity, $dataVar);
-        }
+        trigger_error('Method devLog() is deprecated since v9 and will be removed with v10', E_USER_DEPRECATED);
+        $this->logger->debug($this->info['serviceKey'] . ': ' . $msg, (array)$dataVar);
     }
 
     /**
@@ -259,7 +261,7 @@ abstract class AbstractService
         $ret = true;
         $progList = GeneralUtility::trimExplode(',', $progList, true);
         foreach ($progList as $prog) {
-            if (!\TYPO3\CMS\Core\Utility\CommandUtility::checkCommand($prog)) {
+            if (!CommandUtility::checkCommand($prog)) {
                 // Program not found
                 $this->errorPush(T3_ERR_SV_PROG_NOT_FOUND, 'External program not found: ' . $prog);
                 $ret = false;
@@ -273,7 +275,7 @@ abstract class AbstractService
      */
     public function deactivateService()
     {
-        \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::deactivateService($this->info['serviceType'], $this->info['serviceKey']);
+        ExtensionManagementUtility::deactivateService($this->info['serviceType'], $this->info['serviceKey']);
     }
 
     /***************************************
@@ -367,7 +369,7 @@ abstract class AbstractService
     /**
      * Register file which should be deleted afterwards.
      *
-     * @param string File name with absolute path.
+     * @param string $absFile File name with absolute path.
      */
     public function registerTempFile($absFile)
     {

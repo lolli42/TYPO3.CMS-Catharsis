@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 
@@ -291,6 +292,10 @@ class QueryGenerator
                 $fC = $GLOBALS['TCA'][$this->table]['columns'][$fieldName];
                 $this->fields[$fieldName] = $fC['config'];
                 $this->fields[$fieldName]['exclude'] = $fC['exclude'];
+                if ($this->fields[$fieldName]['type'] === 'user' && !isset($this->fields[$fieldName]['type']['userFunc'])) {
+                    unset($this->fields[$fieldName]);
+                    continue;
+                }
                 if (is_array($fC) && $fC['label']) {
                     $this->fields[$fieldName]['label'] = rtrim(trim($this->getLanguageService()->sL($fC['label'])), ':');
                     switch ($this->fields[$fieldName]['type']) {
@@ -936,7 +941,7 @@ class QueryGenerator
                             ->orderBy('uid');
                         if (!$backendUserAuthentication->isAdmin() && $GLOBALS['TYPO3_CONF_VARS']['BE']['lockBeUserToDBmounts']) {
                             $webMounts = $backendUserAuthentication->returnWebmounts();
-                            $perms_clause = $backendUserAuthentication->getPagePermsClause(1);
+                            $perms_clause = $backendUserAuthentication->getPagePermsClause(Permission::PAGE_SHOW);
                             $webMountPageTree = '';
                             $webMountPageTreePrefix = '';
                             foreach ($webMounts as $webMount) {
@@ -1209,7 +1214,7 @@ class QueryGenerator
         $retArr = [];
         while (is_array($arr)) {
             reset($arr);
-            list($key, ) = each($arr);
+            $key = key($arr);
             $retArr[] = $key;
             $arr = $arr[$key];
         }
@@ -1591,7 +1596,9 @@ class QueryGenerator
         } else {
             $queryBuilder->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
         }
-        $fieldList = GeneralUtility::trimExplode(',', $this->extFieldLists['queryFields']
+        $fieldList = GeneralUtility::trimExplode(
+            ',',
+            $this->extFieldLists['queryFields']
             . ',pid'
             . ($GLOBALS['TCA'][$this->table]['ctrl']['delete'] ? ',' . $GLOBALS['TCA'][$this->table]['ctrl']['delete'] : '')
         );
@@ -1613,7 +1620,7 @@ class QueryGenerator
 
         if (!$backendUserAuthentication->isAdmin() && $GLOBALS['TYPO3_CONF_VARS']['BE']['lockBeUserToDBmounts']) {
             $webMounts = $backendUserAuthentication->returnWebmounts();
-            $perms_clause = $backendUserAuthentication->getPagePermsClause(1);
+            $perms_clause = $backendUserAuthentication->getPagePermsClause(Permission::PAGE_SHOW);
             $webMountPageTree = '';
             $webMountPageTreePrefix = '';
             foreach ($webMounts as $webMount) {

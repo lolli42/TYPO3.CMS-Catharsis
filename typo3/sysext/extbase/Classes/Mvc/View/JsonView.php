@@ -243,12 +243,12 @@ class JsonView extends AbstractView
     {
         if (count($this->variablesToRender) === 1) {
             $variableName = current($this->variablesToRender);
-            $valueToRender = isset($this->variables[$variableName]) ? $this->variables[$variableName] : null;
-            $configuration = isset($this->configuration[$variableName]) ? $this->configuration[$variableName] : [];
+            $valueToRender = $this->variables[$variableName] ?? null;
+            $configuration = $this->configuration[$variableName] ?? [];
         } else {
             $valueToRender = [];
             foreach ($this->variablesToRender as $variableName) {
-                $valueToRender[$variableName] = isset($this->variables[$variableName]) ? $this->variables[$variableName] : null;
+                $valueToRender[$variableName] = $this->variables[$variableName] ?? null;
             }
             $configuration = $this->configuration;
         }
@@ -277,15 +277,15 @@ class JsonView extends AbstractView
                     if (isset($configuration['_exclude']) && is_array($configuration['_exclude']) && in_array($key, $configuration['_exclude'])) {
                         continue;
                     }
-                    $array[$key] = $this->transformValue($element, isset($configuration[$key]) ? $configuration[$key] : []);
+                    $array[$key] = $this->transformValue($element, $configuration[$key] ?? []);
                 }
             }
             return $array;
-        } elseif (is_object($value)) {
-            return $this->transformObject($value, $configuration);
-        } else {
-            return $value;
         }
+        if (is_object($value)) {
+            return $this->transformObject($value, $configuration);
+        }
+        return $value;
     }
 
     /**
@@ -300,41 +300,40 @@ class JsonView extends AbstractView
     {
         if ($object instanceof \DateTime) {
             return $object->format(\DateTime::ATOM);
-        } else {
-            $propertyNames = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getGettablePropertyNames($object);
-
-            $propertiesToRender = [];
-            foreach ($propertyNames as $propertyName) {
-                if (isset($configuration['_only']) && is_array($configuration['_only']) && !in_array($propertyName, $configuration['_only'])) {
-                    continue;
-                }
-                if (isset($configuration['_exclude']) && is_array($configuration['_exclude']) && in_array($propertyName, $configuration['_exclude'])) {
-                    continue;
-                }
-
-                $propertyValue = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($object, $propertyName);
-
-                if (!is_array($propertyValue) && !is_object($propertyValue)) {
-                    $propertiesToRender[$propertyName] = $propertyValue;
-                } elseif (isset($configuration['_descend']) && array_key_exists($propertyName, $configuration['_descend'])) {
-                    $propertiesToRender[$propertyName] = $this->transformValue($propertyValue, $configuration['_descend'][$propertyName]);
-                }
-            }
-            if (isset($configuration['_exposeObjectIdentifier']) && $configuration['_exposeObjectIdentifier'] === true) {
-                if (isset($configuration['_exposedObjectIdentifierKey']) && strlen($configuration['_exposedObjectIdentifierKey']) > 0) {
-                    $identityKey = $configuration['_exposedObjectIdentifierKey'];
-                } else {
-                    $identityKey = '__identity';
-                }
-                $propertiesToRender[$identityKey] = $this->persistenceManager->getIdentifierByObject($object);
-            }
-            if (isset($configuration['_exposeClassName']) && ($configuration['_exposeClassName'] === self::EXPOSE_CLASSNAME_FULLY_QUALIFIED || $configuration['_exposeClassName'] === self::EXPOSE_CLASSNAME_UNQUALIFIED)) {
-                $className = get_class($object);
-                $classNameParts = explode('\\', $className);
-                $propertiesToRender['__class'] = ($configuration['_exposeClassName'] === self::EXPOSE_CLASSNAME_FULLY_QUALIFIED ? $className : array_pop($classNameParts));
-            }
-
-            return $propertiesToRender;
         }
+        $propertyNames = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getGettablePropertyNames($object);
+
+        $propertiesToRender = [];
+        foreach ($propertyNames as $propertyName) {
+            if (isset($configuration['_only']) && is_array($configuration['_only']) && !in_array($propertyName, $configuration['_only'])) {
+                continue;
+            }
+            if (isset($configuration['_exclude']) && is_array($configuration['_exclude']) && in_array($propertyName, $configuration['_exclude'])) {
+                continue;
+            }
+
+            $propertyValue = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($object, $propertyName);
+
+            if (!is_array($propertyValue) && !is_object($propertyValue)) {
+                $propertiesToRender[$propertyName] = $propertyValue;
+            } elseif (isset($configuration['_descend']) && array_key_exists($propertyName, $configuration['_descend'])) {
+                $propertiesToRender[$propertyName] = $this->transformValue($propertyValue, $configuration['_descend'][$propertyName]);
+            }
+        }
+        if (isset($configuration['_exposeObjectIdentifier']) && $configuration['_exposeObjectIdentifier'] === true) {
+            if (isset($configuration['_exposedObjectIdentifierKey']) && strlen($configuration['_exposedObjectIdentifierKey']) > 0) {
+                $identityKey = $configuration['_exposedObjectIdentifierKey'];
+            } else {
+                $identityKey = '__identity';
+            }
+            $propertiesToRender[$identityKey] = $this->persistenceManager->getIdentifierByObject($object);
+        }
+        if (isset($configuration['_exposeClassName']) && ($configuration['_exposeClassName'] === self::EXPOSE_CLASSNAME_FULLY_QUALIFIED || $configuration['_exposeClassName'] === self::EXPOSE_CLASSNAME_UNQUALIFIED)) {
+            $className = get_class($object);
+            $classNameParts = explode('\\', $className);
+            $propertiesToRender['__class'] = ($configuration['_exposeClassName'] === self::EXPOSE_CLASSNAME_FULLY_QUALIFIED ? $className : array_pop($classNameParts));
+        }
+
+        return $propertiesToRender;
     }
 }

@@ -17,11 +17,13 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -37,7 +39,7 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
 class ShortcutToolbarItem implements ToolbarItemInterface
 {
     /**
-     * @const integer Number of super global group
+     * @var int Number of super global group
      */
     const SUPERGLOBAL_GROUP = -100;
 
@@ -307,6 +309,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
 
     /**
      * Adds the correct token, if the url is an index.php script
+     * @todo: this needs love
      *
      * @param string $url
      * @return string
@@ -316,22 +319,23 @@ class ShortcutToolbarItem implements ToolbarItemInterface
         $parsedUrl = parse_url($url);
         parse_str($parsedUrl['query'], $parameters);
 
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
         // parse the returnUrl and replace the module token of it
         if (isset($parameters['returnUrl'])) {
             $parsedReturnUrl = parse_url($parameters['returnUrl']);
             parse_str($parsedReturnUrl['query'], $returnUrlParameters);
-            if (strpos($parsedReturnUrl['path'], 'index.php') !== false && isset($returnUrlParameters['M'])) {
-                $module = $returnUrlParameters['M'];
-                $returnUrl = BackendUtility::getModuleUrl($module, $returnUrlParameters);
-                $parameters['returnUrl'] = $returnUrl;
+            if (strpos($parsedReturnUrl['path'], 'index.php') !== false && !empty($returnUrlParameters['route'])) {
+                $module = $returnUrlParameters['route'];
+                $parameters['returnUrl'] = (string)$uriBuilder->buildUriFromRoutePath($module, $returnUrlParameters);
                 $url = $parsedUrl['path'] . '?' . http_build_query($parameters, '', '&', PHP_QUERY_RFC3986);
             }
         }
+        if (isset($parameters['M']) && empty($parameters['route'])) {
+            $parameters['route'] = $parameters['M'];
+            unset($parameters['M']);
+        }
 
-        if (strpos($parsedUrl['path'], 'index.php') !== false && isset($parameters['M'])) {
-            $module = $parameters['M'];
-            $url = BackendUtility::getModuleUrl($module, $parameters);
-        } elseif (strpos($parsedUrl['path'], 'index.php') !== false && isset($parameters['route'])) {
+        if (strpos($parsedUrl['path'], 'index.php') !== false && isset($parameters['route'])) {
             $routePath = $parameters['route'];
             /** @var \TYPO3\CMS\Backend\Routing\Router $router */
             $router = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\Router::class);
@@ -339,8 +343,6 @@ class ShortcutToolbarItem implements ToolbarItemInterface
                 $route = $router->match($routePath);
                 if ($route) {
                     $routeIdentifier = $route->getOption('_identifier');
-                    /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
-                    $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
                     unset($parameters['route']);
                     $url = (string)$uriBuilder->buildUriFromRoute($routeIdentifier, $parameters);
                 }
@@ -480,15 +482,14 @@ class ShortcutToolbarItem implements ToolbarItemInterface
      * Deletes a shortcut through an AJAX call
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function removeShortcutAction(ServerRequestInterface $request, ResponseInterface $response)
+    public function removeShortcutAction(ServerRequestInterface $request): ResponseInterface
     {
         $parsedBody = $request->getParsedBody();
         $queryParams = $request->getQueryParams();
 
-        $shortcutId = (int)(isset($parsedBody['shortcutId']) ? $parsedBody['shortcutId'] : $queryParams['shortcutId']);
+        $shortcutId = (int)($parsedBody['shortcutId'] ?? $queryParams['shortcutId']);
         $fullShortcut = $this->getShortcutById($shortcutId);
         $success = false;
         if ($fullShortcut['raw']['userid'] == $this->getBackendUser()->user['uid']) {
@@ -506,8 +507,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
                 $success = true;
             }
         }
-        $response->getBody()->write(json_encode(['success' => $success]));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class, ['success' => $success]);
     }
 
     /**
@@ -526,7 +526,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
         // Default name
         $shortcutName = 'Shortcut';
         $shortcutNamePrepend = '';
-        $url = isset($parsedBody['url']) ? $parsedBody['url'] : $queryParams['url'];
+        $url = $parsedBody['url'] ?? $queryParams['url'];
 
         // Use given display name
         if (!empty($parsedBody['displayName'])) {
@@ -655,9 +655,8 @@ class ShortcutToolbarItem implements ToolbarItemInterface
 
         if ($affectedRows === 1) {
             return 'success';
-        } else {
-            return 'failed';
         }
+        return 'failed';
     }
 
     /**
@@ -700,9 +699,9 @@ class ShortcutToolbarItem implements ToolbarItemInterface
         $queryParams = $request->getQueryParams();
 
         $backendUser = $this->getBackendUser();
-        $shortcutId = (int)(isset($parsedBody['shortcutId']) ? $parsedBody['shortcutId'] : $queryParams['shortcutId']);
-        $shortcutName = strip_tags(isset($parsedBody['shortcutTitle']) ? $parsedBody['shortcutTitle'] : $queryParams['shortcutTitle']);
-        $shortcutGroupId = (int)(isset($parsedBody['shortcutGroup']) ? $parsedBody['shortcutGroup'] : $queryParams['shortcutGroup']);
+        $shortcutId = (int)($parsedBody['shortcutId'] ?? $queryParams['shortcutId']);
+        $shortcutName = strip_tags($parsedBody['shortcutTitle'] ?? $queryParams['shortcutTitle']);
+        $shortcutGroupId = (int)($parsedBody['shortcutGroup'] ?? $queryParams['shortcutGroup']);
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('sys_be_shortcuts');
@@ -746,7 +745,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface
      */
     protected function getShortcutGroupLabel($groupId)
     {
-        return isset($this->shortcutGroups[$groupId]) ? $this->shortcutGroups[$groupId] : '';
+        return $this->shortcutGroups[$groupId] ?? '';
     }
 
     /**

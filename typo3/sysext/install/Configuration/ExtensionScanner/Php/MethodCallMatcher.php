@@ -1079,4 +1079,474 @@ return [
             'Deprecation-81540-DeprecateDocumentTemplateformWidth.rst',
         ],
     ],
+    'TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility->sendSqlDumpFileToBrowserAndDelete' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-82148-DownloadSQLDumpDroppedInEM.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->main' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->toggleHighlight' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->displaySettings' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->displayHistory' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->displayMultipleDiff' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->renderDiff' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 3,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->generateTitle' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->createRollbackLink' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 3,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->linkPage' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 4,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->removeFilefields' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->resolveElement' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\History\RecordHistory->resolveShUid' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Controller\ContentElement\ElementHistoryController->main' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\ConfigurationForm->ext_makeHelpInformationForCategory' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\ConfigurationForm->ext_displayExample' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\ExtendedTemplateService->ext_getTSCE_config' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extensionmanager\Domain\Model\ConfigurationCategory->setHighlightText' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extensionmanager\Domain\Model\ConfigurationCategory->getHighlightText' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extensionmanager\Domain\Model\ConfigurationItem->setHighlight' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extensionmanager\Domain\Model\ConfigurationItem->getHighlight' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82398-RemoveSpecialConstantTSConstantEditor.rst',
+        ],
+    ],
+    'TYPO3\CMS\SysNote\Domain\Repository\SysNoteRepository->findByPidsAndAuthor' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Deprecation-82506-RemoveBackendUserRepositoryInjectionInNoteController.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Service\AbstractService->devLog' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 3,
+        'restFiles' => [
+            'Deprecation-52694-DeprecatedGeneralUtilitydevLog.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->sendRedirect' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82572-RDCTFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->updateMD5paramsRecord' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-82572-RDCTFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Core\Bootstrap->ensureClassLoadingInformationExists' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-80700-DeprecatedFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Version\DataHandler\CommandMap->setWorkspacesConsiderReferences' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82701-AlwaysConsiderPublishingReferencesInWorkspaces.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->readLLfile' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-81217-TSFE-relatedLanguageMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->getLLL' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Deprecation-81217-TSFE-relatedLanguageMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->initLLvars' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-81217-TSFE-relatedLanguageMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Page\PageRenderer->addMetaTag' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-81464-AddAPIForMetaTagManagement.rst',
+
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\PropertyReflection->isTaggedWith' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\PropertyReflection->getTagsValues' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\PropertyReflection->getTagValues' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassSchema->addProperty' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 4,
+        'restFiles' => [
+            'Deprecation-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassSchema->setModelType' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassSchema->getModelType' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassSchema->setUuidPropertyName' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassSchema->getUuidPropertyName' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassSchema->markAsIdentityProperty' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassSchema->getIdentityProperties' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Scheduler\Scheduler->scheduleNextSchedulerRunUsingAtDaemon' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82832-UseAtDaemonDroppedFromScheduler.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->getDomainNameForPid' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-82926-DomainRelatedApiMethodInTSFE.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider->getTranslationTable' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-82445-PageTranslationRelatedFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider->isTranslationInOwnTable' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-82445-PageTranslationRelatedFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider->foreignTranslationTable' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-82445-PageTranslationRelatedFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\DataHandling\DataHandler->newlog2' => [
+        'numberOfMandatoryArguments' => 3,
+        'maximumNumberOfArguments' => 5,
+        'restFiles' => [
+            'Deprecation-83121-LoggingMethodDataHandler-newlog2.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Page\PageRepository->deleteClause' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-83118-DeleteClauseMethods.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer->stdWrap_spaceBefore' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-83124-RemoveStdWrapOptionsSpaceSpaceBeforeSpaceAfter.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer->stdWrap_spaceAfter' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-83124-RemoveStdWrapOptionsSpaceSpaceBeforeSpaceAfter.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer->stdWrap_space' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-83124-RemoveStdWrapOptionsSpaceSpaceBeforeSpaceAfter.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Controller\BackendController->loadResourcesForRegisteredNavigationComponents' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider->getNodeTypes' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider->loadResources' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Page\PageRenderer->setExtJsPath' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Page\PageRenderer->getExtJsPath' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Page\PageRenderer->addExtOnReadyCode' => [
+        'numberOfMandatoryArguments' => 1,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Page\PageRenderer->addExtDirectCode' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Page\PageRenderer->loadExtJS' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Page\PageRenderer->enableExtJsDebug' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication->extGetNumberOfCachedPages' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-81460-DeprecateGetByTagOnCacheFrontends.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer->stdWrap_TCAselectItem' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-83122-RemovedStdWrapOptionTCAselectItem.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer->TCAlookup' => [
+        'numberOfMandatoryArguments' => 2,
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-83122-RemovedStdWrapOptionTCAselectItem.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer->clean_directory' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-83256-RemovedLockFilePathFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\TemplateService->printTitle' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-83254-MovedPageGenerationMethodsIntoTSFE.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Html\RteHtmlParser->transformStyledATags' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-83252-Link-tagSyntaxProcesssing.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Html\RteHtmlParser->TS_links_rte' => [
+        'numberOfMandatoryArguments' => 0,
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Deprecation-83252-Link-tagSyntaxProcesssing.rst',
+        ],
+    ],
 ];

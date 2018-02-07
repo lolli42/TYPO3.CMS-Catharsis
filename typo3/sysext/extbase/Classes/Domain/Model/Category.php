@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Extbase\Domain\Model;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Extbase\Annotation as Extbase;
+
 /**
  * This model represents a category (for anything).
  *
@@ -33,8 +35,8 @@ class Category extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
     protected $description = '';
 
     /**
-     * @var \TYPO3\CMS\Extbase\Domain\Model\Category|NULL
-     * @lazy
+     * @var \TYPO3\CMS\Extbase\Domain\Model\Category|null
+     * @Extbase\ORM\Lazy
      */
     protected $parent = null;
 
@@ -85,7 +87,7 @@ class Category extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
     /**
      * Gets the parent category.
      *
-     * @return \TYPO3\CMS\Extbase\Domain\Model\Category|NULL the parent category
+     * @return \TYPO3\CMS\Extbase\Domain\Model\Category|null the parent category
      * @api
      */
     public function getParent()

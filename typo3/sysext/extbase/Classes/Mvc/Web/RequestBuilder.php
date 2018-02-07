@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Extbase\Mvc\Web;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Mvc\Exception as MvcException;
 
@@ -173,7 +175,7 @@ class RequestBuilder implements \TYPO3\CMS\Core\SingletonInterface
         $request->setRequestUri(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'));
         $request->setBaseUri(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL'));
         $request->setMethod($this->environmentService->getServerRequestMethod());
-        if (is_string($parameters['format']) && $parameters['format'] !== '') {
+        if (isset($parameters['format']) && is_string($parameters['format']) && $parameters['format'] !== '') {
             $request->setFormat(filter_var($parameters['format'], FILTER_SANITIZE_STRING));
         } else {
             $request->setFormat($this->defaultFormat);
@@ -208,7 +210,8 @@ class RequestBuilder implements \TYPO3\CMS\Core\SingletonInterface
             $configuration = $this->configurationManager->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
             if (isset($configuration['mvc']['throwPageNotFoundExceptionIfActionCantBeResolved']) && (bool)$configuration['mvc']['throwPageNotFoundExceptionIfActionCantBeResolved']) {
                 throw new \TYPO3\CMS\Core\Error\Http\PageNotFoundException('The requested resource was not found', 1313857897);
-            } elseif (isset($configuration['mvc']['callDefaultActionIfActionCantBeResolved']) && (bool)$configuration['mvc']['callDefaultActionIfActionCantBeResolved']) {
+            }
+            if (isset($configuration['mvc']['callDefaultActionIfActionCantBeResolved']) && (bool)$configuration['mvc']['callDefaultActionIfActionCantBeResolved']) {
                 return $this->defaultControllerName;
             }
             throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidControllerNameException(
@@ -246,7 +249,8 @@ class RequestBuilder implements \TYPO3\CMS\Core\SingletonInterface
             $configuration = $this->configurationManager->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
             if (isset($configuration['mvc']['throwPageNotFoundExceptionIfActionCantBeResolved']) && (bool)$configuration['mvc']['throwPageNotFoundExceptionIfActionCantBeResolved']) {
                 throw new \TYPO3\CMS\Core\Error\Http\PageNotFoundException('The requested resource was not found', 1313857898);
-            } elseif (isset($configuration['mvc']['callDefaultActionIfActionCantBeResolved']) && (bool)$configuration['mvc']['callDefaultActionIfActionCantBeResolved']) {
+            }
+            if (isset($configuration['mvc']['callDefaultActionIfActionCantBeResolved']) && (bool)$configuration['mvc']['callDefaultActionIfActionCantBeResolved']) {
                 return $defaultActionName;
             }
             throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidActionNameException('The action "' . $actionName . '" (controller "' . $controllerName . '") is not allowed by this plugin. Please check TYPO3\\CMS\\Extbase\\Utility\\ExtensionUtility::configurePlugin() in your ext_localconf.php.', 1313855175);
@@ -259,7 +263,6 @@ class RequestBuilder implements \TYPO3\CMS\Core\SingletonInterface
      *
      * @param array $convolutedFiles The _FILES superglobal
      * @return array Untangled files
-     * @see TYPO3\Flow\Utility\Environment
      */
     protected function untangleFilesArray(array $convolutedFiles)
     {
@@ -283,13 +286,13 @@ class RequestBuilder implements \TYPO3\CMS\Core\SingletonInterface
                 $fileInformation = [];
                 foreach ($convolutedFiles[$fieldPath[0]] as $key => $subStructure) {
                     try {
-                        $fileInformation[$key] = \TYPO3\CMS\Core\Utility\ArrayUtility::getValueByPath($subStructure, array_slice($fieldPath, 1));
-                    } catch (\RuntimeException $e) {
+                        $fileInformation[$key] = ArrayUtility::getValueByPath($subStructure, array_slice($fieldPath, 1));
+                    } catch (MissingArrayPathException $e) {
                         // do nothing if the path is invalid
                     }
                 }
             }
-            $untangledFiles = \TYPO3\CMS\Core\Utility\ArrayUtility::setValueByPath($untangledFiles, $fieldPath, $fileInformation);
+            $untangledFiles = ArrayUtility::setValueByPath($untangledFiles, $fieldPath, $fileInformation);
         }
         return $untangledFiles;
     }

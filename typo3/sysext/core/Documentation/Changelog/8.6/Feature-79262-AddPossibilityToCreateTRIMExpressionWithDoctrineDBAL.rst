@@ -26,11 +26,14 @@ The call to :php:`$queryBuilder->expr()-trim()` can be one of the following:
 
 * :php:`trim('fieldName')`
   results in :sql:`TRIM("tableName"."fieldName")`
+
 * :php:`trim('fieldName', AbstractPlatform::TRIM_LEADING, 'x')`
   results in :sql:`TRIM(LEADING "x" FROM "tableName"."fieldName")`
+
 * :php:`trim('fieldName', AbstractPlatform::TRIM_TRAILING, 'x')`
   results in :sql:`TRIM(TRAILING "x" FROM "tableName"."fieldName")`
+
 * :php:`trim('fieldName', AbstractPlatform::TRIM_BOTH, 'x')`
   results in :sql:`TRIM(BOTH "x" FROM "tableName"."fieldName")`
 
-.. index:: Database
+.. index:: Database, PHP-API

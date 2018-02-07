@@ -32,7 +32,6 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
      */
     protected $coreExtensionsToLoad = [
         'fluid',
-        'version',
         'workspaces',
     ];
 
@@ -54,7 +53,9 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     public function createContentAndAddRelation()
     {
         $newTableIds = $this->actionService->createNewRecord(
-            self::TABLE_Content, self::VALUE_PageId, ['header' => 'Testing #1', 'categories' => self::VALUE_CategoryIdSecond]
+            self::TABLE_Content,
+            self::VALUE_PageId,
+            ['header' => 'Testing #1', 'categories' => self::VALUE_CategoryIdSecond]
         );
         $this->recordIds['newContentId'] = $newTableIds[self::TABLE_Content][0];
     }
@@ -66,7 +67,9 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
     public function createCategoryAndAddRelation()
     {
         $newTableIds = $this->actionService->createNewRecord(
-            self::TABLE_Category, 0, ['title' => 'Testing #1', 'items' => 'tt_content_' . self::VALUE_ContentIdFirst]
+            self::TABLE_Category,
+            0,
+            ['title' => 'Testing #1', 'items' => 'tt_content_' . self::VALUE_ContentIdFirst]
         );
         $this->recordIds['newCategoryId'] = $newTableIds[self::TABLE_Category][0];
     }
@@ -118,7 +121,9 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
         $this->recordIds['newContentId'] = $newTableIds[self::TABLE_Content][0];
 
         $this->actionService->modifyRecord(
-            self::TABLE_Content, $this->recordIds['newContentId'], ['categories' => $this->recordIds['newCategoryId']]
+            self::TABLE_Content,
+            $this->recordIds['newContentId'],
+            ['categories' => $this->recordIds['newCategoryId']]
         );
     }
 
@@ -135,7 +140,9 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
         $this->recordIds['newCategoryId'] = $newTableIds[self::TABLE_Category][0];
 
         $this->actionService->modifyRecord(
-            self::TABLE_Category, $this->recordIds['newCategoryId'], ['items' => 'tt_content_' . $this->recordIds['newContentId']]
+            self::TABLE_Category,
+            $this->recordIds['newCategoryId'],
+            ['items' => 'tt_content_' . $this->recordIds['newContentId']]
         );
     }
 }

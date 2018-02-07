@@ -15,6 +15,7 @@ namespace TYPO3\CMS\IndexedSearch\Domain\Repository;
  */
 
 use Doctrine\DBAL\Driver\Statement;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
@@ -190,7 +191,7 @@ class IndexSearchRepository
         $this->sections = $searchData['sections'];
         $this->searchType = $searchData['searchType'];
         $this->languageUid = $searchData['languageUid'];
-        $this->mediaType = isset($searchData['mediaType']) ? $searchData['mediaType'] : false;
+        $this->mediaType = $searchData['mediaType'] ?? false;
         $this->sortOrder = $searchData['sortOrder'];
         $this->descendingSortOrderFlag = $searchData['desc'];
         $this->resultpagePointer = $searchData['pointer'];
@@ -208,20 +209,12 @@ class IndexSearchRepository
      */
     public function doSearch($searchWords, $freeIndexUid = -1)
     {
-        // unserializing the configuration so we can use it here:
-        $extConf = [];
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search'])) {
-            $extConf = unserialize(
-                $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search'],
-                ['allowed_classes' => false]
-            );
-        }
-
-            // Getting SQL result pointer:
+        $useMysqlFulltext = (bool)GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('indexed_search', 'useMysqlFulltext');
+        // Getting SQL result pointer:
         $this->getTimeTracker()->push('Searching result');
         if ($hookObj = &$this->hookRequest('getResultRows_SQLpointer')) {
             $result = $hookObj->getResultRows_SQLpointer($searchWords, $freeIndexUid);
-        } elseif (isset($extConf['useMysqlFulltext']) && $extConf['useMysqlFulltext'] === '1') {
+        } elseif ($useMysqlFulltext) {
             $result = $this->getResultRows_SQLpointerMysqlFulltext($searchWords, $freeIndexUid);
         } else {
             $result = $this->getResultRows_SQLpointer($searchWords, $freeIndexUid);
@@ -298,10 +291,9 @@ class IndexSearchRepository
                 'firstRow' => $firstRow,
                 'count' => $count
             ];
-        } else {
-            // No results found
-            return false;
         }
+        // No results found
+        return false;
     }
 
     /**
@@ -323,9 +315,8 @@ class IndexSearchRepository
             $res = $this->execFinalQuery($list, $freeIndexUid);
             $this->getTimeTracker()->pull();
             return $res;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -619,10 +610,10 @@ class IndexSearchRepository
                 case '10':
                     // Sounds like
                     /**
-                    * Indexer object
-                    *
-                    * @var Indexer
-                    */
+                     * Indexer object
+                     *
+                     * @var Indexer
+                     */
                     $indexerObj = GeneralUtility::makeInstance(Indexer::class);
                     // Perform metaphone search
                     $storeMetaphoneInfoAsWords = !$this->isTableUsed('index_words');
@@ -808,9 +799,9 @@ class IndexSearchRepository
                 $expressionBuilder->in('ISEC.rl2', GeneralUtility::intExplode(',', substr($this->sections, 4)))
             );
             $match = true;
-        } elseif (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['addRootLineFields'])) {
+        } else {
             // Traversing user configured fields to see if any of those are used to limit search to a section:
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['addRootLineFields'] as $fieldName => $rootLineLevel) {
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['addRootLineFields'] ?? [] as $fieldName => $rootLineLevel) {
                 if (substr($this->sections, 0, strlen($fieldName) + 1) == $fieldName . '_') {
                     $whereClause->add(
                         $expressionBuilder->in(
@@ -1186,17 +1177,17 @@ class IndexSearchRepository
                     'gr_list' => $this->frontendUserGroupList
                 ]
             );
-        } else {
-            // Ordinary TYPO3 pages:
-            if ((string)$row['gr_list'] !== (string)$this->frontendUserGroupList) {
-                // Selecting for the grlist records belonging to the phash-row where the current users gr_list exists.
-                // If it is found it is proof that this user has direct access to the phash-rows content although
-                // he did not himself initiate the indexing...
-                if (!$this->isTableUsed('index_grlist')) {
-                    return false;
-                }
+        }
+        // Ordinary TYPO3 pages:
+        if ((string)$row['gr_list'] !== (string)$this->frontendUserGroupList) {
+            // Selecting for the grlist records belonging to the phash-row where the current users gr_list exists.
+            // If it is found it is proof that this user has direct access to the phash-rows content although
+            // he did not himself initiate the indexing...
+            if (!$this->isTableUsed('index_grlist')) {
+                return false;
+            }
 
-                return (bool)$connection->count(
+            return (bool)$connection->count(
                     'phash',
                     'index_grlist',
                     [
@@ -1204,10 +1195,8 @@ class IndexSearchRepository
                         'gr_list' => $this->frontendUserGroupList
                     ]
                 );
-            } else {
-                return true;
-            }
         }
+        return true;
     }
 
     /**
@@ -1215,8 +1204,7 @@ class IndexSearchRepository
      * highest/lowest result order (piVars['desc'])
      *
      * @param bool $inverse If TRUE, inverse the order which is defined by piVars['desc']
-     * @return string " DESC" or
-     * @formallyknownas tx_indexedsearch_pi->isDescending
+     * @return string " DESC" or formerly known as tx_indexedsearch_pi->isDescending
      */
     protected function getDescendingSortOrderFlag($inverse = false)
     {
@@ -1271,7 +1259,7 @@ class IndexSearchRepository
      * Returns an object reference to the hook object if any
      *
      * @param string $functionName Name of the function you want to call / hook key
-     * @return object|NULL Hook object, if any. Otherwise NULL.
+     * @return object|null Hook object, if any. Otherwise NULL.
      */
     public function hookRequest($functionName)
     {

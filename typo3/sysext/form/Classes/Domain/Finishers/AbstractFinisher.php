@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Finishers;
 
 /*
@@ -18,6 +18,7 @@ namespace TYPO3\CMS\Form\Domain\Finishers;
  */
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Form\Service\TranslationService;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
@@ -78,6 +79,20 @@ abstract class AbstractFinisher implements FinisherInterface
     }
 
     /**
+     * @param string $finisherIdentifier The identifier for this finisher
+     */
+    public function __construct(string $finisherIdentifier = '')
+    {
+        if (empty($finisherIdentifier)) {
+            $this->finisherIdentifier = (new \ReflectionClass($this))->getShortName();
+        } else {
+            $this->finisherIdentifier = $finisherIdentifier;
+        }
+
+        $this->shortFinisherIdentifier = preg_replace('/Finisher$/', '', $this->finisherIdentifier);
+    }
+
+    /**
      * @param array $options configuration options in the format ['option1' => 'value1', 'option2' => 'value2', ...]
      * @api
      */
@@ -106,8 +121,6 @@ abstract class AbstractFinisher implements FinisherInterface
      */
     final public function execute(FinisherContext $finisherContext)
     {
-        $this->finisherIdentifier = (new \ReflectionClass($this))->getShortName();
-        $this->shortFinisherIdentifier = preg_replace('/Finisher$/', '', $this->finisherIdentifier);
         $this->finisherContext = $finisherContext;
         $this->executeInternal();
     }
@@ -141,12 +154,12 @@ abstract class AbstractFinisher implements FinisherInterface
 
         try {
             $optionValue = ArrayUtility::getValueByPath($this->options, $optionName, '.');
-        } catch (\RuntimeException $exception) {
+        } catch (MissingArrayPathException $exception) {
             $optionValue = null;
         }
         try {
             $defaultValue = ArrayUtility::getValueByPath($this->defaultOptions, $optionName, '.');
-        } catch (\RuntimeException $exception) {
+        } catch (MissingArrayPathException $exception) {
             $defaultValue = null;
         }
 
@@ -158,7 +171,11 @@ abstract class AbstractFinisher implements FinisherInterface
             return null;
         }
 
-        if (is_array($optionValue)) {
+        if (is_array($optionValue) || is_bool($optionValue)) {
+            return $optionValue;
+        }
+
+        if ($optionValue instanceof \Closure) {
             return $optionValue;
         }
 
@@ -189,7 +206,7 @@ abstract class AbstractFinisher implements FinisherInterface
                     );
                 }
             }
-            if (!is_string($value) && !is_int($value)) {
+            if (!is_string($value) && !is_numeric($value)) {
                 $value = '{' . $match[1] . '}';
             }
             return $value;

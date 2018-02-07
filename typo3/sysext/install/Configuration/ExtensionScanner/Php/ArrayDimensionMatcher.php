@@ -24,6 +24,56 @@ return [
             'Deprecation-80583-TYPO3_CONF_VARS_extensionAdded.rst',
         ],
     ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'enable_errorDLOG\']' => [
+        'restFiles' => [
+            'Breaking-82162-GlobalErrorConstantsRemoved.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'enable_exceptionDLOG\']' => [
+        'restFiles' => [
+            'Breaking-82162-GlobalErrorConstantsRemoved.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'sqlDebug\']' => [
+        'restFiles' => [
+            'Breaking-82421-DroppedOldDBRelatedConfigurationOptions.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'setDBinit\']' => [
+        'restFiles' => [
+            'Breaking-82421-DroppedOldDBRelatedConfigurationOptions.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'no_pconnect\']' => [
+        'restFiles' => [
+            'Breaking-82421-DroppedOldDBRelatedConfigurationOptions.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'dbClientCompress\']' => [
+        'restFiles' => [
+            'Breaking-82421-DroppedOldDBRelatedConfigurationOptions.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'enable_DLOG\']' => [
+        'restFiles' => [
+            'Breaking-82639-LoggingActivatedForAuthenticationAndServiceClasses.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'t3lib/class.t3lib_userauth.php\'][\'writeDevLog\']' => [
+        'restFiles' => [
+            'Breaking-82639-LoggingActivatedForAuthenticationAndServiceClasses.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'t3lib/class.t3lib_userauth.php\'][\'writeDevLogFE\']' => [
+        'restFiles' => [
+            'Breaking-82639-LoggingActivatedForAuthenticationAndServiceClasses.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'t3lib/class.t3lib_userauth.php\'][\'writeDevLogBE\']' => [
+        'restFiles' => [
+            'Breaking-82639-LoggingActivatedForAuthenticationAndServiceClasses.rst',
+        ],
+    ],
 
     // Hooks
     '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'t3lib/class.t3lib_befunc.php\'][\'getFlexFormDSClass\']' => [
@@ -52,6 +102,46 @@ return [
     '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'ext/tstemplate_info/class.tx_tstemplateinfo.php\'][\'postOutputProcessingHook\']' => [
         'restFiles' => [
             'Breaking-81171-EditAbilityOfTypoScriptTemplateInEXTtstemplateRemoved.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXT\'][\'extConf\']' => [
+        'restFiles' => [
+            'Deprecation-82254-DeprecateGLOBALSTYPO3_CONF_VARSEXTextConf.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'EXT\'][\'allowSystemInstall\']' => [
+        'restFiles' => [
+            'Breaking-82377-OptionToAllowUploadingSystemExtensionsRemoved.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'t3lib/class.t3lib_div.php\'][\'devLog\']' => [
+        'restFiles' => [
+            'Deprecation-52694-DeprecatedGeneralUtilitydevLog.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'enableDeprecationLog\']' => [
+        'restFiles' => [
+            'Deprecation-82438-DeprecationMethods.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'BE\'][\'fileExtensions\'][\'webspace\'][\'allow\']' => [
+        'restFiles' => [
+            'Breaking-83081-RemovedConfigurationOptionBeFileExtensionsWebspace.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'BE\'][\'fileExtensions\'][\'webspace\'][\'deny\']' => [
+        'restFiles' => [
+            'Breaking-83081-RemovedConfigurationOptionBeFileExtensionsWebspace.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'t3lib/class.t3lib_parsehtml_proc.php\'][\'modifyParams_LinksRte_PostProc\']' => [
+        'restFiles' => [
+            'Deprecation-83252-Link-tagSyntaxProcesssing.rst',
+        ],
+    ],
+    '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SC_OPTIONS\'][\'t3lib/class.t3lib_parsehtml_proc.php\'][\'modifyParams_LinksDb_PostProc\']' => [
+        'restFiles' => [
+            'Deprecation-83252-Link-tagSyntaxProcesssing.rst',
         ],
     ],
 ];

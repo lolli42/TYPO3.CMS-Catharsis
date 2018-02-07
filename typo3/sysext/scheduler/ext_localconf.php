@@ -2,10 +2,12 @@
 defined('TYPO3_MODE') or die();
 
 // Get the extensions's configuration
-$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['scheduler'], ['allowed_classes' => false]);
+$showSampleTasks = (bool)\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+    \TYPO3\CMS\Core\Configuration\ExtensionConfiguration::class
+)->get('scheduler', 'showSampleTasks');
 // If sample tasks should be shown,
 // register information for the test and sleep tasks
-if (!empty($extConf['showSampleTasks'])) {
+if ($showSampleTasks) {
     $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Example\TestTask::class] = [
         'extension' => 'scheduler',
         'title' => 'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:testTask.name',
@@ -19,6 +21,7 @@ if (!empty($extConf['showSampleTasks'])) {
         'additionalFields' => \TYPO3\CMS\Scheduler\Example\SleepTaskAdditionalFieldProvider::class
     ];
 }
+unset($showSampleTasks);
 
 // Add caching framework garbage collection task
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\CachingFrameworkGarbageCollectionTask::class] = [
@@ -53,17 +56,19 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Sched
     'additionalFields' => \TYPO3\CMS\Scheduler\Task\RecyclerGarbageCollectionAdditionalFieldProvider::class
 ];
 
+// Add execute schedulable command task
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\ExecuteSchedulableCommandTask::class] = [
+    'extension' => 'scheduler',
+    'title' => 'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:executeSchedulableCommandTask.name',
+    'description' => 'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:executeSchedulableCommandTask.name',
+    'additionalFields' => \TYPO3\CMS\Scheduler\Task\ExecuteSchedulableCommandAdditionalFieldProvider::class
+];
+
 // Save any previous option array for table garbage collection task
 // to temporary variable so it can be pre-populated by other
 // extensions and LocalConfiguration/AdditionalConfiguration
-$garbageCollectionTaskOptions = [];
-if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options'])) {
-    $garbageCollectionTaskOptions = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options'];
-}
-// Initialize tables sub-array if not set already
-if (!is_array($garbageCollectionTaskOptions['tables'])) {
-    $garbageCollectionTaskOptions['tables'] = [];
-}
+$garbageCollectionTaskOptions = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options'] ?? [];
+$garbageCollectionTaskOptions['tables'] = $garbageCollectionTaskOptions['tables'] ?? [];
 // Add table garbage collection task
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class] = [
     'extension' => 'scheduler',
@@ -75,14 +80,14 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Sched
 unset($garbageCollectionTaskOptions);
 
 // Register sys_log and sys_history table in table garbage collection task
-if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options']['tables']['sys_log'])) {
+if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options']['tables']['sys_log'] ?? false)) {
     $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options']['tables']['sys_log'] = [
         'dateField' => 'tstamp',
         'expirePeriod' => 180
     ];
 }
 
-if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options']['tables']['sys_history'])) {
+if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options']['tables']['sys_history'] ?? false)) {
     $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options']['tables']['sys_history'] = [
         'dateField' => 'tstamp',
         'expirePeriod' => 30

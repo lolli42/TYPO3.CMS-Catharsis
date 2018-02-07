@@ -18,10 +18,13 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
 use TYPO3\CMS\Backend\Domain\Repository\Localization\LocalizationRepository;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
  * LocalizationController handles the AJAX requests for record localization
@@ -29,12 +32,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class LocalizationController
 {
     /**
-     * @const string
+     * @var string
      */
     const ACTION_COPY = 'copyFromLanguage';
 
     /**
-     * @const string
+     * @var string
      */
     const ACTION_LOCALIZE = 'localize';
 
@@ -108,8 +111,7 @@ class LocalizationController
             }
         }
 
-        $response->getBody()->write(json_encode($availableLanguages));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class)->setPayload($availableLanguages);
     }
 
     /**
@@ -137,6 +139,10 @@ class LocalizationController
         );
 
         while ($row = $result->fetch()) {
+            BackendUtility::workspaceOL('tt_content', $row, -99, true);
+            if (!$row || VersionState::cast($row['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
+                continue;
+            }
             $records[] = [
                 'icon' => $this->iconFactory->getIconForRecord('tt_content', $row, Icon::SIZE_SMALL)->render(),
                 'title' => $row[$GLOBALS['TCA']['tt_content']['ctrl']['label']],
@@ -144,8 +150,7 @@ class LocalizationController
             ];
         }
 
-        $response->getBody()->write(json_encode($records));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class)->setPayload($records);
     }
 
     /**
@@ -178,8 +183,7 @@ class LocalizationController
 
         $this->process($params);
 
-        $response->getBody()->write(json_encode([]));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class)->setPayload([]);
     }
 
     /**

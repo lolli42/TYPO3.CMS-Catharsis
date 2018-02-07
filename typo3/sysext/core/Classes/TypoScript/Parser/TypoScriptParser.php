@@ -14,8 +14,11 @@ namespace TYPO3\CMS\Core\TypoScript\Parser;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Finder\Finder;
 use TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher as BackendConditionMatcher;
 use TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -294,7 +297,7 @@ class TypoScriptParser
      * Parsing the $this->raw TypoScript lines from pointer, $this->rawP
      *
      * @param array $setup Reference to the setup array in which to accumulate the values.
-     * @return string|NULL Returns the string of the condition found, the exit signal or possible nothing (if it completed parsing with no interruptions)
+     * @return string|null Returns the string of the condition found, the exit signal or possible nothing (if it completed parsing with no interruptions)
      */
     public function parseSub(array &$setup)
     {
@@ -360,12 +363,13 @@ class TypoScriptParser
                         $this->error('Line ' . ($this->lineNumberOffset + $this->rawP - 1) . ': On return to [GLOBAL] scope, the script was short of ' . $this->inBrace . ' end brace(s)', 1);
                         $this->inBrace = 0;
                         return $line;
-                    } elseif ($line[0] !== '}' && $line[0] !== '#' && $line[0] !== '/') {
+                    }
+                    if ($line[0] !== '}' && $line[0] !== '#' && $line[0] !== '/') {
                         // If not brace-end or comment
                         // Find object name string until we meet an operator
                         $varL = strcspn($line, TAB . ' {=<>(');
                         // check for special ":=" operator
-                        if ($varL > 0 && substr($line, $varL-1, 2) === ':=') {
+                        if ($varL > 0 && substr($line, $varL - 1, 2) === ':=') {
                             --$varL;
                         }
                         // also remove tabs after the object string name
@@ -583,11 +587,7 @@ class TypoScriptParser
                     $fakeThis = false;
                     $newValue = GeneralUtility::callUserFunction($hookMethod, $params, $fakeThis);
                 } else {
-                    GeneralUtility::sysLog(
-                        'Missing function definition for ' . $modifierName . ' on TypoScript',
-                        'core',
-                        GeneralUtility::SYSLOG_SEVERITY_WARNING
-                    );
+                    $this->getLogger()->warning('Missing function definition for ' . $modifierName . ' on TypoScript');
                 }
         }
         return $newValue;
@@ -644,11 +644,11 @@ class TypoScriptParser
                 $retArr[1] = $setup[$subKey];
             }
             return $retArr;
-        } else {
-            if ($setup[$subKey]) {
-                return $this->getVal($remainingKey, $setup[$subKey]);
-            }
         }
+        if ($setup[$subKey]) {
+            return $this->getVal($remainingKey, $setup[$subKey]);
+        }
+
         return [];
     }
 
@@ -789,7 +789,7 @@ class TypoScriptParser
     {
         $includedFiles = [];
         if ($cycle_counter > 100) {
-            GeneralUtility::sysLog('It appears like TypoScript code is looping over itself. Check your templates for "&lt;INCLUDE_TYPOSCRIPT: ..." tags', 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+            self::getLogger()->warning('It appears like TypoScript code is looping over itself. Check your templates for "<INCLUDE_TYPOSCRIPT: ..." tags');
             if ($returnFiles) {
                 return [
                     'typoscript' => '',
@@ -802,6 +802,9 @@ class TypoScriptParser
 ###
 ';
         }
+
+        // Checking for @import syntax imported files
+        $string = self::addImportsFromExternalFiles($string, $cycle_counter, $returnFiles, $includedFiles, $parentFilenameOrPath);
 
         // If no tags found, no need to do slower preg_split
         if (strpos($string, '<INCLUDE_TYPOSCRIPT:') !== false) {
@@ -909,6 +912,138 @@ class TypoScriptParser
     }
 
     /**
+     * Splits the unparsed TypoScript content into @import statements
+     *
+     * @param string $typoScript unparsed TypoScript
+     * @param int $cycleCounter counter to stop recursion
+     * @param bool $returnFiles whether to populate the included Files or not
+     * @param array $includedFiles - by reference - if any included files are added, they are added here
+     * @param string $parentFilenameOrPath the current imported file to resolve relative paths - handled by reference
+     * @return string the unparsed TypoScript with included external files
+     */
+    protected static function addImportsFromExternalFiles($typoScript, $cycleCounter, $returnFiles, &$includedFiles, &$parentFilenameOrPath)
+    {
+        // Check for new syntax "@import 'EXT:bennilove/Configuration/TypoScript/*'"
+        if (strpos($typoScript, '@import \'') !== false || strpos($typoScript, '@import "') !== false) {
+            $splitRegEx = '/\r?\n\s*@import\s[\'"]([^\'"]*)[\'"][\ \t]?/';
+            $parts = preg_split($splitRegEx, LF . $typoScript . LF, -1, PREG_SPLIT_DELIM_CAPTURE);
+            // First text part goes through
+            $newString = $parts[0] . LF;
+            $partCount = count($parts);
+            for ($i = 1; $i + 2 <= $partCount; $i += 2) {
+                $filename = $parts[$i];
+                $tsContentsTillNextInclude = $parts[$i + 1];
+                // Resolve a possible relative paths if a parent file is given
+                if ($parentFilenameOrPath !== '' && $filename[0] === '.') {
+                    $filename = PathUtility::getAbsolutePathOfRelativeReferencedFileOrPath($parentFilenameOrPath, $filename);
+                }
+                $newString .= self::importExternalTypoScriptFile($filename, $cycleCounter, $returnFiles, $includedFiles);
+                // Prepend next normal (not file) part to output string
+                $newString .= $tsContentsTillNextInclude;
+            }
+            // Add a line break before and after the included code in order to make sure that the parser always has a LF.
+            $typoScript = LF . trim($newString) . LF;
+        }
+        return $typoScript;
+    }
+
+    /**
+     * Include file $filename. Contents of the file will be returned, filename is added to &$includedFiles.
+     * Further include/import statements in the contents are processed recursively.
+     *
+     * @param string $filename Full absolute path+filename to the typoscript file to be included
+     * @param int $cycleCounter Counter for detecting endless loops
+     * @param bool $returnFiles When set, filenames of included files will be prepended to the array &$includedFiles
+     * @param array &$includedFiles Array to which the filenames of included files will be prepended (referenced)
+     * @return string the unparsed TypoScript content from external files
+     */
+    protected static function importExternalTypoScriptFile($filename, $cycleCounter, $returnFiles, array &$includedFiles)
+    {
+        if (strpos('..', $filename) !== false) {
+            return self::typoscriptIncludeError('Invalid filepath "' . $filename . '" (containing "..").');
+        }
+
+        $content = '';
+        $absoluteFileName = GeneralUtility::getFileAbsFileName($filename);
+        if ((string)$absoluteFileName === '') {
+            return self::typoscriptIncludeError('Illegal filepath "' . $filename . '".');
+        }
+
+        $finder = new Finder();
+        $finder
+            // no recursive mode on purpose
+            ->depth(0)
+            // no directories should be fetched
+            ->files()
+            ->sortByName();
+
+        // Search all files in the folder
+        if (is_dir($absoluteFileName)) {
+            $finder->in($absoluteFileName);
+            // Used for the TypoScript comments
+            $readableFilePrefix = $filename;
+        } else {
+            // Apparently this is not a folder, so the restriction
+            // is the folder so we restrict into this folder
+            $finder->in(dirname($absoluteFileName));
+            if (!is_file($absoluteFileName)
+                && strpos(basename($absoluteFileName), '*') === false
+                && substr(basename($absoluteFileName), -11) !== '.typoscript') {
+                $absoluteFileName .= '*.typoscript';
+            }
+            $finder->name(basename($absoluteFileName));
+            $readableFilePrefix = dirname($filename);
+        }
+
+        foreach ($finder as $fileObject) {
+            // Clean filename output for comments
+            $readableFileName = rtrim($readableFilePrefix, '/') . '/' . $fileObject->getFilename();
+            $content .= '### @import \'' . $readableFileName . '\' begin ###' . LF;
+            // Check for allowed files
+            if (!GeneralUtility::verifyFilenameAgainstDenyPattern($fileObject->getFilename())) {
+                $content .= self::typoscriptIncludeError('File "' . $readableFileName . '" was not included since it is not allowed due to fileDenyPattern.');
+            } else {
+                $includedFiles[] = $fileObject->getPathname();
+                // check for includes in included text
+                $included_text = self::checkIncludeLines($fileObject->getContents(), $cycleCounter++, $returnFiles, $absoluteFileName);
+                // If the method also has to return all included files, merge currently included
+                // files with files included by recursively calling itself
+                if ($returnFiles && is_array($included_text)) {
+                    $includedFiles = array_merge($includedFiles, $included_text['files']);
+                    $included_text = $included_text['typoscript'];
+                }
+                $content .= $included_text . LF;
+            }
+            $content .= '### @import \'' . $readableFileName . '\' end ###' . LF;
+
+            // load default TypoScript for content rendering templates like
+            // fluid_styled_content if those have been included through e.g.
+            // @import "fluid_styled_content/Configuration/TypoScript/setup.typoscript"
+            if (strpos(strtoupper($filename), 'EXT:') === 0) {
+                $filePointerPathParts = explode('/', substr($filename, 4));
+                // remove file part, determine whether to load setup or constants
+                list($includeType) = explode('.', array_pop($filePointerPathParts));
+
+                if (in_array($includeType, ['setup', 'constants'], true)) {
+                    // adapt extension key to required format (no underscores)
+                    $filePointerPathParts[0] = str_replace('_', '', $filePointerPathParts[0]);
+
+                    // load default TypoScript
+                    $defaultTypoScriptKey = implode('/', $filePointerPathParts) . '/';
+                    if (in_array($defaultTypoScriptKey, $GLOBALS['TYPO3_CONF_VARS']['FE']['contentRenderingTemplates'], true)) {
+                        $content .= $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $includeType . '.']['defaultContentRendering'];
+                    }
+                }
+            }
+        }
+
+        if (empty($content)) {
+            return self::typoscriptIncludeError('No file or folder found for importing TypoScript on "' . $filename . '".');
+        }
+        return $content;
+    }
+
+    /**
      * Include file $filename. Contents of the file will be prepended to &$newstring, filename to &$includedFiles
      * Further include_typoscript tags in the contents are processed recursively
      *
@@ -1006,7 +1141,7 @@ class TypoScriptParser
 
     /**
      * Process errors in INCLUDE_TYPOSCRIPT tags
-     * Errors are logged in sysLog and printed in the concatenated Typoscript result (as can be seen in Template Analyzer)
+     * Errors are logged and printed in the concatenated TypoScript result (as can be seen in Template Analyzer)
      *
      * @param string $error Text of the error message
      * @return string The error message encapsulated in comments
@@ -1014,7 +1149,7 @@ class TypoScriptParser
      */
     protected static function typoscriptIncludeError($error)
     {
-        GeneralUtility::sysLog($error, 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+        self::getLogger()->warning($error);
         return "\n###\n### ERROR: " . $error . "\n###\n\n";
     }
 
@@ -1048,7 +1183,7 @@ class TypoScriptParser
     public static function extractIncludes($string, $cycle_counter = 1, array $extractedFileNames = [], $parentFilenameOrPath = '')
     {
         if ($cycle_counter > 10) {
-            GeneralUtility::sysLog('It appears like TypoScript code is looping over itself. Check your templates for "&lt;INCLUDE_TYPOSCRIPT: ..." tags', 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+            self::getLogger()->warning('It appears like TypoScript code is looping over itself. Check your templates for "<INCLUDE_TYPOSCRIPT: ..." tags');
             return '
 ###
 ### ERROR: Recursion!
@@ -1096,7 +1231,6 @@ class TypoScriptParser
                     // If this is not a beginning commented include statement this line goes into the rest content
                     $restContent[] = $line;
                 }
-                //if (is_array($matches)) GeneralUtility::devLog('matches', 'TypoScriptParser', 0, $matches);
             } else {
                 // Inside commented include statements
                 // Search for the matching ending commented include statement
@@ -1343,5 +1477,18 @@ class TypoScriptParser
     protected function modifyHTMLColorAll($color, $all)
     {
         return $this->modifyHTMLColor($color, $all, $all, $all);
+    }
+
+    /**
+     * Get a logger instance
+     *
+     * This class uses logging mostly in static functions, hence we need a static getter for the logger.
+     * Injection of a logger instance via GeneralUtility::makeInstance is not possible.
+     *
+     * @return LoggerInterface
+     */
+    protected static function getLogger()
+    {
+        return GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
     }
 }

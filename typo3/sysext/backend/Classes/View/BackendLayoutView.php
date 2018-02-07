@@ -200,7 +200,8 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface
                         // If layout for "next level" is set to "none" - don't use any and stop searching
                         $this->selectedCombinedIdentifier[$pageId] = false;
                         break;
-                    } elseif ($this->selectedCombinedIdentifier[$pageId] !== '' && $this->selectedCombinedIdentifier[$pageId] !== '0') {
+                    }
+                    if ($this->selectedCombinedIdentifier[$pageId] !== '' && $this->selectedCombinedIdentifier[$pageId] !== '0') {
                         // Stop searching if a layout for "next level" is set
                         break;
                     }
@@ -326,7 +327,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface
      * Gets the selected backend layout
      *
      * @param int $pageId
-     * @return array|NULL $backendLayout
+     * @return array|null $backendLayout
      */
     public function getSelectedBackendLayout($pageId)
     {
@@ -416,7 +417,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface
      * Gets a page record.
      *
      * @param int $pageId
-     * @return NULL|array
+     * @return array|null
      */
     protected function getPage($pageId)
     {

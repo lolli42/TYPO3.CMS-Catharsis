@@ -215,7 +215,9 @@ class ImportExportController extends BaseScriptClass
             // flag doesn't exist initially; state is on by default
             $inData['excludeDisabled'] = 1;
         }
-        $this->standaloneView->assign('moduleUrl', BackendUtility::getModuleUrl('xMOD_tximpexp'));
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $this->standaloneView->assign('moduleUrl', (string)$uriBuilder->buildUriFromRoute('xMOD_tximpexp'));
         $this->standaloneView->assign('id', $this->id);
         $this->standaloneView->assign('inData', $inData);
 
@@ -330,7 +332,7 @@ class ImportExportController extends BaseScriptClass
         // Input data grabbed:
         $inData = GeneralUtility::_GP('tx_impexp');
         if ((string)$inData['action'] === 'import') {
-            if ($this->id && is_array($this->pageinfo) || $this->getBackendUser()->user['admin'] && !$this->id) {
+            if ($this->id && is_array($this->pageinfo) || $this->getBackendUser()->isAdmin() && !$this->id) {
                 if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
                     // View
                     $onClick = BackendUtility::viewOnClick(
@@ -366,9 +368,6 @@ class ImportExportController extends BaseScriptClass
     {
         // BUILDING EXPORT DATA:
         // Processing of InData array values:
-        $inData['pagetree']['maxNumber'] = MathUtility::forceIntegerInRange($inData['pagetree']['maxNumber'], 1, 1000000, 100);
-        $inData['listCfg']['maxNumber'] = MathUtility::forceIntegerInRange($inData['listCfg']['maxNumber'], 1, 1000000, 100);
-        $inData['maxFileSize'] = MathUtility::forceIntegerInRange($inData['maxFileSize'], 1, 1000000, 1000);
         $inData['filename'] = trim(preg_replace('/[^[:alnum:]._-]*/', '', preg_replace('/\\.(t3d|xml)$/', '', $inData['filename'])));
         if (strlen($inData['filename'])) {
             $inData['filename'] .= $inData['filetype'] === 'xml' ? '.xml' : '.t3d';
@@ -382,7 +381,6 @@ class ImportExportController extends BaseScriptClass
         // Create export object and configure it:
         $this->export = GeneralUtility::makeInstance(Export::class);
         $this->export->init(0);
-        $this->export->maxFileSize = $inData['maxFileSize'] * 1024;
         $this->export->excludeMap = (array)$inData['exclude'];
         $this->export->softrefCfg = (array)$inData['softrefCfg'];
         $this->export->extensionDependencies = ($inData['extension_dep'] === '') ? [] : (array)$inData['extension_dep'];
@@ -428,7 +426,7 @@ class ImportExportController extends BaseScriptClass
             foreach ($inData['list'] as $ref) {
                 $rParts = explode(':', $ref);
                 if ($beUser->check('tables_select', $rParts[0])) {
-                    $statement = $this->exec_listQueryPid($rParts[0], $rParts[1], MathUtility::forceIntegerInRange($inData['listCfg']['maxNumber'], 1));
+                    $statement = $this->exec_listQueryPid($rParts[0], $rParts[1]);
                     while ($subTrow = $statement->fetch()) {
                         $this->export->export_addRecord($rParts[0], $subTrow);
                     }
@@ -448,7 +446,7 @@ class ImportExportController extends BaseScriptClass
                 $this->treeHTML = $pagetree->printTree($tree);
                 $idH = $pagetree->buffer_idH;
             } elseif ($inData['pagetree']['levels'] == -2) {
-                $this->addRecordsForPid($inData['pagetree']['id'], $inData['pagetree']['tables'], $inData['pagetree']['maxNumber']);
+                $this->addRecordsForPid($inData['pagetree']['id'], $inData['pagetree']['tables']);
             } else {
                 // Based on depth
                 // Drawing tree:
@@ -492,7 +490,7 @@ class ImportExportController extends BaseScriptClass
                 $flatList = $this->export->setPageTree($idH);
                 foreach ($flatList as $k => $value) {
                     $this->export->export_addRecord('pages', BackendUtility::getRecord('pages', $k));
-                    $this->addRecordsForPid($k, $inData['pagetree']['tables'], $inData['pagetree']['maxNumber']);
+                    $this->addRecordsForPid($k, $inData['pagetree']['tables']);
                 }
             }
         }
@@ -519,6 +517,7 @@ class ImportExportController extends BaseScriptClass
                 case 't3d':
                     $this->export->dontCompress = 1;
                     // intentional fall-through
+                    // no break
                 default:
                     $out = $this->export->compileMemoryToFileContent();
                     $fExt = ($this->export->doOutputCompress() ? '-z' : '') . '.t3d';
@@ -602,9 +601,9 @@ class ImportExportController extends BaseScriptClass
      *
      * @param int $k Page id for which to select records to add
      * @param array $tables Array of table names to select from
-     * @param int $maxNumber Max amount of records to select
+     * @param int $maxNumber @deprecated since TYPO3 v9, will be removed in TYPO3 v10
      */
-    public function addRecordsForPid($k, $tables, $maxNumber)
+    public function addRecordsForPid($k, $tables, $maxNumber = null)
     {
         if (!is_array($tables)) {
             return;
@@ -612,7 +611,13 @@ class ImportExportController extends BaseScriptClass
         foreach ($GLOBALS['TCA'] as $table => $value) {
             if ($table !== 'pages' && (in_array($table, $tables) || in_array('_ALL', $tables))) {
                 if ($this->getBackendUser()->check('tables_select', $table) && !$GLOBALS['TCA'][$table]['ctrl']['is_static']) {
-                    $statement = $this->exec_listQueryPid($table, $k, MathUtility::forceIntegerInRange($maxNumber, 1));
+                    if ($maxNumber !== null) {
+                        // @deprecated since TYPO3 v9, will be removed in TYPO3 v10. Remove this if in v10
+                        // and the 3rd method argument. trigger_error() is called by method exec_listQueryPid() below
+                        $statement = $this->exec_listQueryPid($table, $k, MathUtility::forceIntegerInRange($maxNumber, 1));
+                    } else {
+                        $statement = $this->exec_listQueryPid($table, $k);
+                    }
                     while ($subTrow = $statement->fetch()) {
                         $this->export->export_addRecord($table, $subTrow);
                     }
@@ -626,11 +631,20 @@ class ImportExportController extends BaseScriptClass
      *
      * @param string $table Table to select from
      * @param int $pid Page ID to select from
-     * @param int $limit Max number of records to select
+     * @param int $limit @deprecated since TYPO3 v9, will be removed in TYPO3 v10
      * @return \Doctrine\DBAL\Driver\Statement Query statement
      */
-    public function exec_listQueryPid($table, $pid, $limit)
+    public function exec_listQueryPid($table, $pid, $limit = null)
     {
+        // @deprecated In v10, remove this if and the method argument
+        if ($limit !== null) {
+            trigger_error(
+                'The third argument of addRecordsForPid() and exec_listQueryPid() has been'
+                . ' deprecated, do not limit exports anymore. The parameter will be removed in TYPO3 v10.',
+                E_USER_DEPRECATED
+            );
+        }
+
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
 
         $orderBy = $GLOBALS['TCA'][$table]['ctrl']['sortby'] ?: $GLOBALS['TCA'][$table]['ctrl']['default_sortby'];
@@ -650,8 +664,12 @@ class ImportExportController extends BaseScriptClass
                     'pid',
                     $queryBuilder->createNamedParameter($pid, \PDO::PARAM_INT)
                 )
-            )
-            ->setMaxResults($limit);
+            );
+
+        // @deprecated In v10, remove this if
+        if ($limit !== null) {
+            $queryBuilder->setMaxResults($limit);
+        }
 
         foreach (QueryHelper::parseOrderBy((string)$orderBy) as $orderPair) {
             list($fieldName, $order) = $orderPair;
@@ -660,8 +678,8 @@ class ImportExportController extends BaseScriptClass
 
         $statement = $queryBuilder->execute();
 
-        // Warning about hitting limit:
-        if ($statement->rowCount() == $limit) {
+        // @deprecated In v10, remove this if, and the two getLL locallang target keys
+        if ($limit !== null && $statement->rowCount() == $limit) {
             $limitWarning = sprintf($this->lang->getLL('makeconfig_anSqlQueryReturned'), $limit);
             /** @var FlashMessage $flashMessage */
             $flashMessage = GeneralUtility::makeInstance(
@@ -791,11 +809,11 @@ class ImportExportController extends BaseScriptClass
 
         // Add file options:
         $opt = [];
+        $opt['xml'] = $this->lang->getLL('makesavefo_xml');
         if ($this->export->compress) {
             $opt['t3d_compressed'] = $this->lang->getLL('makesavefo_t3dFileCompressed');
         }
         $opt['t3d'] = $this->lang->getLL('makesavefo_t3dFile');
-        $opt['xml'] = $this->lang->getLL('makesavefo_xml');
 
         $this->standaloneView->assign('filetypeSelectOptions', $opt);
 
@@ -821,10 +839,10 @@ class ImportExportController extends BaseScriptClass
      */
     public function importData($inData)
     {
-        $access = is_array($this->pageinfo) ? 1 : 0;
+        $access = is_array($this->pageinfo);
         $beUser = $this->getBackendUser();
-        if ($this->id && $access || $beUser->user['admin'] && !$this->id) {
-            if ($beUser->user['admin'] && !$this->id) {
+        if ($this->id && $access || $beUser->isAdmin() && !$this->id) {
+            if ($beUser->isAdmin() && !$this->id) {
                 $this->pageinfo = ['title' => '[root-level]', 'uid' => 0, 'pid' => 0];
             }
             if ($inData['new_import']) {
@@ -925,7 +943,7 @@ class ImportExportController extends BaseScriptClass
      * to the server and is also used for uploading import files.
      *
      * @throws \InvalidArgumentException
-     * @return NULL|\TYPO3\CMS\Core\Resource\Folder
+     * @return \TYPO3\CMS\Core\Resource\Folder|null
      */
     protected function getDefaultImportExportFolder()
     {
@@ -1071,7 +1089,7 @@ class ImportExportController extends BaseScriptClass
      * Gets a file by combined identifier.
      *
      * @param string $combinedIdentifier
-     * @return NULL|\TYPO3\CMS\Core\Resource\File
+     * @return \TYPO3\CMS\Core\Resource\File|null
      */
     protected function getFile($combinedIdentifier)
     {

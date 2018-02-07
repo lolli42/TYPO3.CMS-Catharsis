@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Rsaauth\Backend;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Utility\CommandUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
@@ -54,14 +55,9 @@ class CommandLineBackend extends AbstractBackend
     {
         $this->opensslPath = CommandUtility::getCommand('openssl');
         // Get temporary directory from the configuration
-        $extconf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['rsaauth'], ['allowed_classes' => false]);
-        if (
-            $extconf['temporaryDirectory'] !== ''
-            && $extconf['temporaryDirectory'][0] === '/'
-            && @is_dir($extconf['temporaryDirectory'])
-            && is_writable($extconf['temporaryDirectory'])
-        ) {
-            $this->temporaryDirectory = $extconf['temporaryDirectory'];
+        $path = trim(GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('rsaauth', 'temporaryDirectory'));
+        if ($path !== '' && $path[0] === '/' && @is_dir($path) && is_writable($path)) {
+            $this->temporaryDirectory = $path;
         } else {
             $this->temporaryDirectory = PATH_site . 'typo3temp/var/transient';
         }
@@ -73,7 +69,7 @@ class CommandLineBackend extends AbstractBackend
      * There should only be one key pair per request because the second private key would overwrites the first private
      * key. So the submitting the form with the first public key would not work anymore.
      *
-     * @return \TYPO3\CMS\Rsaauth\Keypair|NULL a key pair or NULL in case of error
+     * @return \TYPO3\CMS\Rsaauth\Keypair|null a key pair or NULL in case of error
      */
     public function createNewKeyPair()
     {

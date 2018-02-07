@@ -33,7 +33,7 @@ class FolderBrowser extends AbstractElementBrowser implements ElementBrowserInte
      * If the value is NOT set, then it will be restored from the module session data.
      * Example value: "/www/htdocs/typo3/32/3dsplm/fileadmin/css/"
      *
-     * @var string|NULL
+     * @var string|null
      */
     protected $expandFolder;
 
@@ -215,7 +215,7 @@ class FolderBrowser extends AbstractElementBrowser implements ElementBrowserInte
     {
         return [
             'mode' => 'folder',
-            'expandFolder' => isset($values['identifier']) ? $values['identifier'] : $this->expandFolder,
+            'expandFolder' => $values['identifier'] ?? $this->expandFolder,
             'bparams' => $this->bparams
         ];
     }

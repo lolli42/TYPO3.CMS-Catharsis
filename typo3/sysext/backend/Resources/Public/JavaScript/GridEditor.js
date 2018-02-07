@@ -20,7 +20,7 @@ var __values = (this && this.__values) || function (o) {
         }
     };
 };
-define(["require", "exports", "TYPO3/CMS/Backend/Modal", "TYPO3/CMS/Backend/Severity", "jquery", "bootstrap"], function (require, exports, Modal, Severity, $) {
+define(["require", "exports", "jquery", "TYPO3/CMS/Backend/Modal", "TYPO3/CMS/Backend/Severity", "bootstrap"], function (require, exports, $, Modal, Severity) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     /**
@@ -615,7 +615,7 @@ define(["require", "exports", "TYPO3/CMS/Backend/Modal", "TYPO3/CMS/Backend/Seve
                     text: $(this).data('button-close-text') || TYPO3.lang['button.cancel'] || 'Cancel',
                 },
                 {
-                    btnClass: 'btn-' + Severity.getCssClass(Severity.notice),
+                    btnClass: 'btn-primary',
                     name: 'ok',
                     text: $(this).data('button-ok-text') || TYPO3.lang['button.ok'] || 'OK',
                 },

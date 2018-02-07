@@ -233,15 +233,17 @@ class Repository implements RepositoryInterface, \TYPO3\CMS\Core\SingletonInterf
             $query = $this->createQuery();
             $result = $query->matching($query->equals($propertyName, $arguments[0]))->execute();
             return $result;
-        } elseif (substr($methodName, 0, 9) === 'findOneBy' && strlen($methodName) > 10) {
+        }
+        if (substr($methodName, 0, 9) === 'findOneBy' && strlen($methodName) > 10) {
             $propertyName = lcfirst(substr($methodName, 9));
             $query = $this->createQuery();
 
             $result = $query->matching($query->equals($propertyName, $arguments[0]))->setLimit(1)->execute();
             if ($result instanceof QueryResultInterface) {
                 return $result->getFirst();
-            } elseif (is_array($result)) {
-                return isset($result[0]) ? $result[0] : null;
+            }
+            if (is_array($result)) {
+                return $result[0] ?? null;
             }
         } elseif (substr($methodName, 0, 7) === 'countBy' && strlen($methodName) > 8) {
             $propertyName = lcfirst(substr($methodName, 7));
@@ -259,6 +261,6 @@ class Repository implements RepositoryInterface, \TYPO3\CMS\Core\SingletonInterf
      */
     protected function getRepositoryClassName()
     {
-        return get_class($this);
+        return static::class;
     }
 }

@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Recordlist\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Routing\Router;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -135,15 +134,11 @@ abstract class AbstractLinkBrowserController
      */
     protected function initHookObjects()
     {
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['LinkBrowser']['hooks'])
-            && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['LinkBrowser']['hooks'])
-        ) {
-            $hooks = GeneralUtility::makeInstance(DependencyOrderingService::class)->orderByDependencies(
-                $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['LinkBrowser']['hooks']
-            );
-            foreach ($hooks as $key => $hook) {
-                $this->hookObjects[] = GeneralUtility::makeInstance($hook['handler']);
-            }
+        $hooks = GeneralUtility::makeInstance(DependencyOrderingService::class)->orderByDependencies(
+            $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['LinkBrowser']['hooks'] ?? []
+        );
+        foreach ($hooks as $key => $hook) {
+            $this->hookObjects[] = GeneralUtility::makeInstance($hook['handler']);
         }
     }
 
@@ -176,14 +171,11 @@ abstract class AbstractLinkBrowserController
 
         $options = '';
         foreach ($menuData as $id => $def) {
-            $class = $def['isActive'] ? 'active' : '';
-            $label = $def['label'];
-            $url = htmlspecialchars($def['url']);
-            $params = $def['addParams'];
+            $class = $def['isActive'] ? ' class="active"' : '';
 
-            $options .= '<li class="' . $class . '">' .
-                '<a href="' . $url . '" ' . $params . '>' . $label . '</a>' .
-                '</li>';
+            $options .= '<li' . $class . '>'
+                . '<a href="' . htmlspecialchars($def['url']) . '" ' . $def['addParams'] . '>' . htmlspecialchars($def['label']) . '</a>'
+                . '</li>';
         }
 
         $content .= '<div class="element-browser-panel element-browser-tabs"><ul class="nav nav-tabs" role="tablist">' .
@@ -209,12 +201,8 @@ abstract class AbstractLinkBrowserController
     protected function determineScriptUrl(ServerRequestInterface $request)
     {
         if ($routePath = $request->getQueryParams()['route']) {
-            $router = GeneralUtility::makeInstance(Router::class);
-            $route = $router->match($routePath);
             $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-            $this->thisScript = (string)$uriBuilder->buildUriFromRoute($route->getOption('_identifier'));
-        } elseif ($moduleName = $request->getQueryParams()['M']) {
-            $this->thisScript = BackendUtility::getModuleUrl($moduleName);
+            $this->thisScript = (string)$uriBuilder->buildUriFromRoutePath($routePath);
         } else {
             $this->thisScript = GeneralUtility::getIndpEnv('SCRIPT_NAME');
         }
@@ -226,9 +214,9 @@ abstract class AbstractLinkBrowserController
     protected function initVariables(ServerRequestInterface $request)
     {
         $queryParams = $request->getQueryParams();
-        $this->displayedLinkHandlerId = isset($queryParams['act']) ? $queryParams['act'] : '';
-        $this->parameters = isset($queryParams['P']) ? $queryParams['P'] : [];
-        $this->linkAttributeValues = isset($queryParams['linkAttributes']) ? $queryParams['linkAttributes'] : [];
+        $this->displayedLinkHandlerId = $queryParams['act'] ?? '';
+        $this->parameters = $queryParams['P'] ?? [];
+        $this->linkAttributeValues = $queryParams['linkAttributes'] ?? [];
     }
 
     /**
@@ -254,7 +242,7 @@ abstract class AbstractLinkBrowserController
             $handler->initialize(
                 $this,
                 $identifier,
-                isset($configuration['configuration.']) ? $configuration['configuration.'] : []
+                $configuration['configuration.'] ?? []
             );
 
             $label = !empty($configuration['label']) ? $lang->sL($configuration['label']) : '';
@@ -266,7 +254,7 @@ abstract class AbstractLinkBrowserController
                 'displayAfter' => isset($configuration['displayAfter']) ? GeneralUtility::trimExplode(',', $configuration['displayAfter']) : [],
                 'scanBefore' => isset($configuration['scanBefore']) ? GeneralUtility::trimExplode(',', $configuration['scanBefore']) : [],
                 'scanAfter' => isset($configuration['scanAfter']) ? GeneralUtility::trimExplode(',', $configuration['scanAfter']) : [],
-                'addParams' => isset($configuration['addParams']) ? $configuration['addParams'] : '',
+                'addParams' => $configuration['addParams'] ?? '',
             ];
         }
     }
@@ -390,7 +378,7 @@ abstract class AbstractLinkBrowserController
                 $addParams = $configuration['addParams'];
             } else {
                 $parameters = GeneralUtility::implodeArrayForUrl('', $this->getUrlParameters(['act' => $identifier]));
-                $addParams = 'onclick="jumpToUrl(' . GeneralUtility::quoteJSvalue('?' . ltrim($parameters, '&')) . ');return false;"';
+                $addParams = 'onclick="jumpToUrl(' . htmlspecialchars(GeneralUtility::quoteJSvalue('?' . ltrim($parameters, '&'))) . ');return false;"';
             }
             $menuDef[$identifier] = [
                 'isActive' => $isActive,
@@ -543,7 +531,7 @@ abstract class AbstractLinkBrowserController
                     <label class="col-xs-4 control-label">' . htmlspecialchars($lang->getLL('class')) . '</label>
                     <div class="col-xs-8">
                         <input type="text" name="lclass" class="form-control"
-                            value="' . htmlspecialchars($this->linkAttributeValues['class']) . '" /></td>
+                            value="' . htmlspecialchars($this->linkAttributeValues['class']) . '" />
                     </div>
                 </div>
             </form>';
@@ -571,7 +559,7 @@ abstract class AbstractLinkBrowserController
     public function getUrlParameters(array $overrides = null)
     {
         return [
-            'act' => isset($overrides['act']) ? $overrides['act'] : $this->displayedLinkHandlerId
+            'act' => $overrides['act'] ?? $this->displayedLinkHandlerId
         ];
     }
 
@@ -587,9 +575,9 @@ abstract class AbstractLinkBrowserController
         $parameters['pid'] = $this->parameters['pid'];
         $parameters['itemName'] = $this->parameters['itemName'];
         $parameters['formName'] = $this->parameters['formName'];
-        $parameters['params']['allowedExtensions'] = isset($this->parameters['params']['allowedExtensions']) ? $this->parameters['params']['allowedExtensions'] : '';
-        $parameters['params']['blindLinkOptions'] = isset($this->parameters['params']['blindLinkOptions']) ? $this->parameters['params']['blindLinkOptions'] : '';
-        $parameters['params']['blindLinkFields'] = isset($this->parameters['params']['blindLinkFields']) ? $this->parameters['params']['blindLinkFields']: '';
+        $parameters['params']['allowedExtensions'] = $this->parameters['params']['allowedExtensions'] ?? '';
+        $parameters['params']['blindLinkOptions'] = $this->parameters['params']['blindLinkOptions'] ?? '';
+        $parameters['params']['blindLinkFields'] = $this->parameters['params']['blindLinkFields'] ?? '';
         $addPassOnParams = GeneralUtility::implodeArrayForUrl('P', $parameters);
 
         $attributes = $this->displayedLinkHandler->getBodyTagAttributes();

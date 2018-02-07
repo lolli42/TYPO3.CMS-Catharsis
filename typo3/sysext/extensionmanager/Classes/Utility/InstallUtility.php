@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\Schema\SchemaMigrator;
 use TYPO3\CMS\Core\Database\Schema\SqlReader;
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
@@ -33,11 +34,6 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
     public $objectManager;
 
     /**
-     * @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService
-     */
-    public $installToolSqlParser;
-
-    /**
      * @var \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility
      */
     protected $dependencyUtility;
@@ -51,11 +47,6 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
      * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
      */
     protected $listUtility;
-
-    /**
-     * @var \TYPO3\CMS\Extensionmanager\Utility\DatabaseUtility
-     */
-    protected $databaseUtility;
 
     /**
      * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
@@ -91,14 +82,6 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
     }
 
     /**
-     * @param \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $installToolSqlParser
-     */
-    public function injectInstallToolSqlParser(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService $installToolSqlParser)
-    {
-        $this->installToolSqlParser = $installToolSqlParser;
-    }
-
-    /**
      * @param \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility $dependencyUtility
      */
     public function injectDependencyUtility(\TYPO3\CMS\Extensionmanager\Utility\DependencyUtility $dependencyUtility)
@@ -120,14 +103,6 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
     public function injectListUtility(\TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility)
     {
         $this->listUtility = $listUtility;
-    }
-
-    /**
-     * @param \TYPO3\CMS\Extensionmanager\Utility\DatabaseUtility $databaseUtility
-     */
-    public function injectDatabaseUtility(\TYPO3\CMS\Extensionmanager\Utility\DatabaseUtility $databaseUtility)
-    {
-        $this->databaseUtility = $databaseUtility;
     }
 
     /**
@@ -186,6 +161,9 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
         } else {
             $this->cacheManager->flushCachesInGroup('system');
         }
+        // TODO: Should be possible to move this call to processExtensionSetup.
+        // TODO: We need to check why our acceptance test on postgress fails then
+        $this->saveDefaultConfiguration($extensionKey);
         $this->reloadCaches();
         $this->processExtensionSetup($extensionKey);
 
@@ -202,7 +180,6 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
         $this->importInitialFiles($extension['siteRelPath'], $extensionKey);
         $this->processDatabaseUpdates($extension);
         $this->processRuntimeDatabaseUpdates($extensionKey);
-        $this->saveDefaultConfiguration($extensionKey);
     }
 
     /**
@@ -223,9 +200,8 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
                 ),
                 1342554622
             );
-        } else {
-            $this->unloadExtension($extensionKey);
         }
+        $this->unloadExtension($extensionKey);
     }
 
     /**
@@ -355,9 +331,8 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
         $availableExtensions = $this->listUtility->getAvailableExtensions();
         if (isset($availableExtensions[$extensionKey])) {
             return $availableExtensions[$extensionKey];
-        } else {
-            throw new ExtensionManagerException('Extension ' . $extensionKey . ' is not available', 1342864081);
         }
+        throw new ExtensionManagerException('Extension ' . $extensionKey . ' is not available', 1342864081);
     }
 
     /**
@@ -466,9 +441,8 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
      */
     protected function saveDefaultConfiguration($extensionKey)
     {
-        /** @var $configUtility \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility */
-        $configUtility = $this->objectManager->get(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility::class);
-        $configUtility->saveDefaultConfiguration($extensionKey);
+        $extensionConfiguration = $this->objectManager->get(ExtensionConfiguration::class);
+        $extensionConfiguration->synchronizeExtConfTemplateWithLocalConfiguration($extensionKey);
     }
 
     /**
@@ -520,38 +494,6 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface
         } else {
             throw new ExtensionManagerException('No valid extension path given.', 1342875724);
         }
-    }
-
-    /**
-     * Get the data dump for an extension
-     *
-     * @param string $extension
-     * @return array
-     */
-    public function getExtensionSqlDataDump($extension)
-    {
-        $extension = $this->enrichExtensionWithDetails($extension);
-        $filePrefix = PATH_site . $extension['siteRelPath'];
-        $sqlData['extTables'] = $this->getSqlDataDumpForFile($filePrefix . 'ext_tables.sql');
-        $sqlData['staticSql'] = $this->getSqlDataDumpForFile($filePrefix . 'ext_tables_static+adt.sql');
-        return $sqlData;
-    }
-
-    /**
-     * Gets the sql data dump for a specific sql file (for example ext_tables.sql)
-     *
-     * @param string $sqlFile
-     * @return string
-     */
-    protected function getSqlDataDumpForFile($sqlFile)
-    {
-        $sqlData = '';
-        if (file_exists($sqlFile)) {
-            $sqlContent = file_get_contents($sqlFile);
-            $fieldDefinitions = $this->installToolSqlParser->getFieldDefinitions_fileContent($sqlContent);
-            $sqlData = $this->databaseUtility->dumpStaticTables($fieldDefinitions);
-        }
-        return $sqlData;
     }
 
     /**

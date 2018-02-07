@@ -17,7 +17,9 @@ namespace TYPO3\CMS\Backend\Security;
 use TYPO3\CMS\Backend\Tree\TreeNode;
 use TYPO3\CMS\Backend\Tree\TreeNodeCollection;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * We do not have AOP in TYPO3 for now, thus the aspect which
@@ -47,13 +49,18 @@ class CategoryPermissionsAspect
     }
 
     /**
-     * The slot for the signal in DatabaseTreeDataProvider.
+     * The slot for the signal in DatabaseTreeDataProvider, which only affects the TYPO3 Backend
      *
      * @param DatabaseTreeDataProvider $dataProvider
      * @param TreeNode $treeData
      */
     public function addUserPermissionsToCategoryTreeData(DatabaseTreeDataProvider $dataProvider, $treeData)
     {
+        // Only evaluate this in the backend
+        if (!(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_BE)) {
+            return;
+        }
+
         if (!$this->backendUserAuthentication->isAdmin() && $dataProvider->getTableName() === $this->categoryTableName) {
 
             // Get User permissions related to category
@@ -63,6 +70,18 @@ class CategoryPermissionsAspect
             $treeNodeCollection = $treeData->getChildNodes();
 
             if (!empty($categoryMountPoints) && !empty($treeNodeCollection)) {
+
+                // Check the rootline against categoryMountPoints when tree was filtered
+                if ($dataProvider->getRootUid() !== null) {
+                    if (in_array($dataProvider->getRootUid(), $categoryMountPoints)) {
+                        return;
+                    }
+                    $uidsInRootline = $this->findUidsInRootline($dataProvider->getRootUid());
+                    if (!empty(array_intersect($categoryMountPoints, $uidsInRootline))) {
+                        // One of the parents was found in categoryMountPoints so all children are secure
+                        return;
+                    }
+                }
 
                 // First, remove all child nodes which must be analysed to be considered as "secure".
                 // The nodes were backed up in variable $treeNodeCollection beforehand.
@@ -90,7 +109,7 @@ class CategoryPermissionsAspect
      *
      * @param int $categoryMountPoint
      * @param TreeNodeCollection $treeNodeCollection
-     * @return NULL|TreeNode
+     * @return TreeNode|null
      */
     protected function lookUpCategoryMountPointInTreeNodes($categoryMountPoint, TreeNodeCollection $treeNodeCollection)
     {
@@ -109,12 +128,39 @@ class CategoryPermissionsAspect
 
                 /** @var TreeNode $node */
                 $node = $this->lookUpCategoryMountPointInTreeNodes($categoryMountPoint, $treeNode->getChildNodes());
-                if (! is_null($node)) {
+                if (!is_null($node)) {
                     $result = $node;
                     break;
                 }
             }
         }
         return $result;
+    }
+
+    /**
+     * Find parent uids in rootline
+     *
+     * @param int $uid
+     * @return array
+     */
+    protected function findUidsInRootline($uid)
+    {
+        /** @var \TYPO3\CMS\Core\Database\Query\QueryBuilder $queryBuilder */
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->categoryTableName);
+        $row = $queryBuilder
+            ->select('parent')
+            ->from($this->categoryTableName)
+            ->where(
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT))
+            )
+            ->execute()
+            ->fetch();
+
+        $parentUids = [];
+        if ($row['parent'] > 0) {
+            $parentUids = $this->findUidsInRootline($row['parent']);
+            $parentUids[] = $row['parent'];
+        }
+        return $parentUids;
     }
 }

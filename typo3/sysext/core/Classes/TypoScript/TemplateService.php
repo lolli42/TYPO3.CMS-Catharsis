@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\TypoScript;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Compatibility\PublicPropertyDeprecationTrait;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\AbstractRestrictionContainer;
@@ -39,6 +40,29 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
  */
 class TemplateService
 {
+    use PublicPropertyDeprecationTrait;
+
+    /**
+     * Properties which have been moved to protected status from public
+     * @var array
+     */
+    protected $deprecatedPublicProperties = [
+        'matchAll' => 'Using $matchAll of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'whereClause' => 'Using $whereClause of class TemplateService is discouraged, as this has been superseeded by Doctrine DBAL API.',
+        'debug' => 'Using $debug of class TemplateService is discouraged, as this option has no effect anymore.',
+        'allowedPaths' => 'Using $allowedPaths of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'simulationHiddenOrTime' => 'Using $simulationHiddenOrTime of class TemplateService is discouraged, as this has been superseeded by Doctrine DBAL API.',
+        'nextLevel' => 'Using $nextLevel of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'rootId' => 'Using $rootId of class TemplateService from the outside is discouraged, use TemplateService->getRootId() instead.',
+        'absoluteRootLine' => 'Using $absoluteRootLine of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'outermostRootlineIndexWithTemplate' => 'Using $outermostRootlineIndexWithTemplate of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'rowSum' => 'Using $rowSum of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'sitetitle' => 'Using $sitetitle of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'sectionsMatch' => 'Using $sectionsMatch of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'frames' => 'Using $frames of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+        'MPmap' => 'Using $MPmap of class TemplateService from the outside is discouraged, as this variable is only used for internal storage.',
+    ];
+
     /**
      * option to enable logging, time-tracking (FE-only)
      * usually, this is only done when
@@ -76,7 +100,7 @@ class TemplateService
      *
      * @var bool
      */
-    public $matchAll = false;
+    protected $matchAll = false;
 
     /**
      * Externally set breakpoints (used by Backend Modules)
@@ -105,12 +129,12 @@ class TemplateService
      *
      * @var string
      */
-    public $whereClause = '';
+    protected $whereClause = '';
 
     /**
      * @var bool
      */
-    public $debug = false;
+    protected $debug = false;
 
     /**
      * This is the only paths (relative!!) that are allowed for resources in TypoScript.
@@ -118,14 +142,14 @@ class TemplateService
      *
      * @var array
      */
-    public $allowedPaths = [];
+    protected $allowedPaths = [];
 
     /**
      * See init(); Set if preview of some kind is enabled.
      *
      * @var int
      */
-    public $simulationHiddenOrTime = 0;
+    protected $simulationHiddenOrTime = 0;
 
     /**
      * Set, if the TypoScript template structure is loaded and OK, see ->start()
@@ -179,21 +203,21 @@ class TemplateService
      *
      * @var array
      */
-    public $hierarchyInfoToRoot = [];
+    protected $hierarchyInfoToRoot = [];
 
     /**
      * Next-level flag (see runThroughTemplates())
      *
      * @var int
      */
-    public $nextLevel = 0;
+    protected $nextLevel = 0;
 
     /**
      * The Page UID of the root page
      *
      * @var int
      */
-    public $rootId;
+    protected $rootId;
 
     /**
      * The rootline from current page to the root page
@@ -207,28 +231,28 @@ class TemplateService
      *
      * @var array
      */
-    public $absoluteRootLine;
+    protected $absoluteRootLine;
 
     /**
      * A pointer to the last entry in the rootline where a template was found.
      *
      * @var int
      */
-    public $outermostRootlineIndexWithTemplate = 0;
+    protected $outermostRootlineIndexWithTemplate = 0;
 
     /**
      * Array of arrays with title/uid of templates in hierarchy
      *
      * @var array
      */
-    public $rowSum;
+    protected $rowSum;
 
     /**
      * The current site title field.
      *
      * @var string
      */
-    public $sitetitle = '';
+    protected $sitetitle = '';
 
     /**
      * Tracking all conditions found during parsing of TypoScript. Used for the "all" key in currentPageData
@@ -242,7 +266,7 @@ class TemplateService
      *
      * @var array
      */
-    public $sectionsMatch;
+    protected $sectionsMatch;
 
     /**
      * Used by Backend only (Typoscript Template Analyzer)
@@ -278,14 +302,14 @@ class TemplateService
      *
      * @var array
      */
-    public $frames = [];
+    protected $frames = [];
 
     /**
      * Contains mapping of Page id numbers to MP variables.
      *
      * @var string
      */
-    public $MPmap = '';
+    protected $MPmap = '';
 
     /**
      * Indicator that extension statics are processed.
@@ -658,17 +682,15 @@ class TemplateService
         }
 
         // Hook into the default TypoScript to add custom typoscript logic
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['Core/TypoScript/TemplateService']['runThroughTemplatesPostProcessing'])) {
-            $hookParameters = [
-                'extensionStaticsProcessed' => &$this->extensionStaticsProcessed,
-                'isDefaultTypoScriptAdded'  => &$this->isDefaultTypoScriptAdded,
-                'absoluteRootLine' => &$this->absoluteRootLine,
-                'rootLine'         => &$this->rootLine,
-                'startTemplateUid' => $start_template_uid,
-            ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['Core/TypoScript/TemplateService']['runThroughTemplatesPostProcessing'] as $listener) {
-                GeneralUtility::callUserFunction($listener, $hookParameters, $this);
-            }
+        $hookParameters = [
+            'extensionStaticsProcessed' => &$this->extensionStaticsProcessed,
+            'isDefaultTypoScriptAdded'  => &$this->isDefaultTypoScriptAdded,
+            'absoluteRootLine' => &$this->absoluteRootLine,
+            'rootLine'         => &$this->rootLine,
+            'startTemplateUid' => $start_template_uid,
+        ];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['Core/TypoScript/TemplateService']['runThroughTemplatesPostProcessing'] ?? [] as $listener) {
+            GeneralUtility::callUserFunction($listener, $hookParameters, $this);
         }
 
         // Process extension static files if not done yet, but explicitly requested
@@ -850,16 +872,14 @@ class TemplateService
     public function includeStaticTypoScriptSources($idList, $templateID, $pid, $row)
     {
         // Call function for link rendering:
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSources'])) {
-            $_params = [
-                'idList' => &$idList,
-                'templateId' => &$templateID,
-                'pid' => &$pid,
-                'row' => &$row
-            ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSources'] as $_funcRef) {
-                GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-            }
+        $_params = [
+            'idList' => &$idList,
+            'templateId' => &$templateID,
+            'pid' => &$pid,
+            'row' => &$row
+        ];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSources'] ?? [] as $_funcRef) {
+            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
         }
         // If "Include before all static templates if root-flag is set" is set:
         if ($row['static_file_mode'] == 3 && strpos($templateID, 'sys_') === 0 && $row['root']) {
@@ -898,16 +918,14 @@ class TemplateService
             $this->addExtensionStatics($idList, $templateID, $pid, $row);
         }
         // Include Static Template Records after all other TypoScript has been included.
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSourcesAtEnd'])) {
-            $_params = [
-                'idList' => &$idList,
-                'templateId' => &$templateID,
-                'pid' => &$pid,
-                'row' => &$row
-            ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSourcesAtEnd'] as $_funcRef) {
-                GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-            }
+        $_params = [
+            'idList' => &$idList,
+            'templateId' => &$templateID,
+            'pid' => &$pid,
+            'row' => &$row
+        ];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['includeStaticTypoScriptSourcesAtEnd'] ?? [] as $_funcRef) {
+            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
         }
     }
 
@@ -947,20 +965,27 @@ class TemplateService
 
         // @todo Change to use new API
         foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extKey => $files) {
-            if ((is_array($files) || $files instanceof \ArrayAccess) && ($files['ext_typoscript_constants.txt'] || $files['ext_typoscript_constants.typoscript'] || $files['ext_typoscript_setup.txt'] || $files['ext_typoscript_setup.typoscript'])) {
+            if ((is_array($files) || $files instanceof \ArrayAccess)
+                && (
+                    !empty($files['ext_typoscript_constants.txt'])
+                    || !empty($files['ext_typoscript_constants.typoscript'])
+                    || !empty($files['ext_typoscript_setup.txt'])
+                    || !empty($files['ext_typoscript_setup.typoscript'])
+                )
+            ) {
                 $mExtKey = str_replace('_', '', $extKey);
                 $constants = '';
                 $config = '';
 
-                if ($files['ext_typoscript_constants.typoscript']) {
+                if (!empty($files['ext_typoscript_constants.typoscript'])) {
                     $constants = @file_get_contents($files['ext_typoscript_constants.typoscript']);
-                } elseif ($files['ext_typoscript_constants.txt']) {
+                } elseif (!empty($files['ext_typoscript_constants.txt'])) {
                     $constants = @file_get_contents($files['ext_typoscript_constants.txt']);
                 }
 
-                if ($files['ext_typoscript_setup.typoscript']) {
+                if (!empty($files['ext_typoscript_setup.typoscript'])) {
                     $config = @file_get_contents($files['ext_typoscript_setup.typoscript']);
-                } elseif ($files['ext_typoscript_setup.txt']) {
+                } elseif (!empty($files['ext_typoscript_setup.txt'])) {
                     $config = @file_get_contents($files['ext_typoscript_setup.txt']);
                 }
 
@@ -1200,8 +1225,11 @@ class TemplateService
         $TSdataArray[] = $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig'];
         for ($a = 0; $a <= $this->outermostRootlineIndexWithTemplate; $a++) {
             if (trim($this->absoluteRootLine[$a]['tsconfig_includes'])) {
-                $includeTsConfigFileList = GeneralUtility::trimExplode(',',
-                    $this->absoluteRootLine[$a]['tsconfig_includes'], true);
+                $includeTsConfigFileList = GeneralUtility::trimExplode(
+                    ',',
+                    $this->absoluteRootLine[$a]['tsconfig_includes'],
+                    true
+                );
 
                 $TSdataArray = $this->mergeConstantsFromIncludedTsConfigFiles($includeTsConfigFileList, $TSdataArray);
             }
@@ -1263,13 +1291,10 @@ class TemplateService
     {
         if (is_array($setupArray)) {
             foreach ($setupArray as $key => $val) {
-                if ($prefix || strpos($key, 'TSConstantEditor') !== 0) {
-                    // We don't want 'TSConstantEditor' in the flattened setup on the first level (190201)
-                    if (is_array($val)) {
-                        $this->flattenSetup($val, $prefix . $key);
-                    } else {
-                        $this->flatSetup[$prefix . $key] = $val;
-                    }
+                if (is_array($val)) {
+                    $this->flattenSetup($val, $prefix . $key);
+                } else {
+                    $this->flatSetup[$prefix . $key] = $val;
                 }
             }
         }
@@ -1322,14 +1347,15 @@ class TemplateService
      * Returns the reference used for the frontend inclusion, checks against allowed paths for inclusion.
      *
      * @param string $fileFromSetup TypoScript "resource" data type value.
-     * @return string|NULL Resulting filename, is either a full absolute URL or a relative path. Returns NULL if invalid filename or a directory is given
+     * @return string|null Resulting filename, is either a full absolute URL or a relative path. Returns NULL if invalid filename or a directory is given
      */
     public function getFileName($fileFromSetup)
     {
         $file = trim($fileFromSetup);
         if (!$file) {
             return null;
-        } elseif (strpos($file, '../') !== false) {
+        }
+        if (strpos($file, '../') !== false) {
             if ($this->tt_track) {
                 $this->getTimeTracker()->setTSlogMessage('File path "' . $file . '" contained illegal string "../"!', 3);
             }
@@ -1381,9 +1407,11 @@ class TemplateService
      * @param string $pageTitleSeparator an alternative to the ": " as the separator between site title and page title
      * @return string The page title on the form "[sitetitle]: [input-title]". Not htmlspecialchar()'ed.
      * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::tempPageCacheContent(), \TYPO3\CMS\Frontend\Page\PageGenerator::renderContentWithHeader()
+     * @deprecated since TYPO3 v9, will be removed in TYPO3 v10, use $TSFE->generatePageTitle() instead.
      */
     public function printTitle($pageTitle, $noTitle = false, $showTitleFirst = false, $pageTitleSeparator = '')
     {
+        trigger_error('This method will be removed in TYPO3 v10. Title tag generation has been moved into TSFE itself, re-implement this method if you need to, otherwise use TSFE->generatePageTitle() for full usage.', E_USER_DEPRECATED);
         $siteTitle = trim($this->setup['sitetitle']);
         $pageTitle = $noTitle ? '' : $pageTitle;
         if ($showTitleFirst) {
@@ -1394,8 +1422,8 @@ class TemplateService
         // only show a separator if there are both site title and page title
         if ($pageTitle === '' || $siteTitle === '') {
             $pageTitleSeparator = '';
-        // use the default separator if non given
         } elseif (empty($pageTitleSeparator)) {
+            // use the default separator if non given
             $pageTitleSeparator = ': ';
         }
         return $siteTitle . $pageTitleSeparator . $pageTitle;
@@ -1419,6 +1447,16 @@ class TemplateService
         return false;
     }
 
+    /**
+     * Returns the page ID of the rootlevel
+     *
+     * @return int
+     */
+    public function getRootId(): int
+    {
+        return (int)$this->rootId;
+    }
+
     /*******************************************************************
      *
      * Functions for creating links
@@ -1430,7 +1468,7 @@ class TemplateService
      * Basically this function takes care of issues such as type,id,alias and Mount Points, URL rewriting (through hooks), M5/B6 encoded parameters etc.
      * It is important to pass all links created through this function since this is the guarantee that globally configured settings for link creating are observed and that your applications will conform to the various/many configuration options in TypoScript Templates regarding this.
      *
-     * @param array $page The page record of the page to which we are creating a link. Needed due to fields like uid, alias, target, no_cache, title and sectionIndex_uid.
+     * @param array $page The page record of the page to which we are creating a link. Needed due to fields like uid, alias, target, title and sectionIndex_uid.
      * @param string $oTarget Default target string to use IF not $page['target'] is set.
      * @param bool $no_cache If set, then the "&no_cache=1" parameter is included in the URL.
      * @param string $_ not in use anymore
@@ -1490,7 +1528,7 @@ class TemplateService
         // Preserving the type number.
         $LD['orig_type'] = $LD['type'];
         // noCache
-        $LD['no_cache'] = trim($page['no_cache']) || $no_cache ? '&no_cache=1' : '';
+        $LD['no_cache'] = $no_cache ? '&no_cache=1' : '';
         // linkVars
         if ($addParams) {
             $LD['linkVars'] = GeneralUtility::implodeArrayForUrl('', GeneralUtility::explodeUrl2Array($this->getTypoScriptFrontendController()->linkVars . $addParams), '', false, true);
@@ -1504,15 +1542,13 @@ class TemplateService
         // Compile the normal total url
         $LD['totalURL'] = rtrim($LD['url'] . $LD['type'] . $LD['no_cache'] . $LD['linkVars'] . $this->getTypoScriptFrontendController()->getMethodUrlIdToken, '?') . $LD['sectionIndex'];
         // Call post processing function for link rendering:
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['linkData-PostProc'])) {
-            $_params = [
-                'LD' => &$LD,
-                'args' => ['page' => $page, 'oTarget' => $oTarget, 'no_cache' => $no_cache, 'script' => $script, 'overrideArray' => $overrideArray, 'addParams' => $addParams, 'typeOverride' => $typeOverride, 'targetDomain' => $targetDomain],
-                'typeNum' => $typeNum
-            ];
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['linkData-PostProc'] as $_funcRef) {
-                GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-            }
+        $_params = [
+            'LD' => &$LD,
+            'args' => ['page' => $page, 'oTarget' => $oTarget, 'no_cache' => $no_cache, 'script' => $script, 'overrideArray' => $overrideArray, 'addParams' => $addParams, 'typeOverride' => $typeOverride, 'targetDomain' => $targetDomain],
+            'typeNum' => $typeNum
+        ];
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tstemplate.php']['linkData-PostProc'] ?? [] as $_funcRef) {
+            GeneralUtility::callUserFunction($_funcRef, $_params, $this);
         }
         // Return the LD-array
         return $LD;
@@ -1657,7 +1693,7 @@ class TemplateService
             array_unshift($this->config, (string)$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup']);
             array_unshift($this->templateIncludePaths, '');
             // prepare a proper entry to hierachyInfo (used by TemplateAnalyzer in BE)
-            $rootTemplateId = $this->hierarchyInfo[count($this->hierarchyInfo)-1]['templateID'];
+            $rootTemplateId = $this->hierarchyInfo[count($this->hierarchyInfo) - 1]['templateID'];
             $defaultTemplateInfo = [
                 'root' => '',
                 'next' => '',

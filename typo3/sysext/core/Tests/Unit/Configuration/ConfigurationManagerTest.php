@@ -134,7 +134,8 @@ class ConfigurationManagerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTes
         );
         $this->subject->expects($this->once())
                 ->method('getDefaultConfiguration')
-                ->will($this->returnValue([
+                ->will($this->returnValue(
+                    [
                     'path' => 'value',
                 ]
             ));
@@ -154,7 +155,8 @@ class ConfigurationManagerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTes
         );
         $this->subject->expects($this->once())
                 ->method('getLocalConfiguration')
-                ->will($this->returnValue([
+                ->will($this->returnValue(
+                    [
                     'path' => 'value',
                 ]
             ));
@@ -175,13 +177,15 @@ class ConfigurationManagerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTes
         );
         $this->subject->expects($this->once())
                 ->method('getDefaultConfiguration')
-                ->will($this->returnValue([
+                ->will($this->returnValue(
+                    [
                     'path' => 'value',
                 ]
             ));
         $this->subject->expects($this->once())
                 ->method('getLocalConfiguration')
-                ->will($this->returnValue([
+                ->will($this->returnValue(
+                    [
                     'path' => 'valueOverride',
                 ]
             ));
@@ -483,9 +487,9 @@ class ConfigurationManagerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTes
         $uniqueContentString = $this->getUniqueId('string_');
         $validFactoryConfigurationFileContent =
             '<?php' . LF .
-                'return array(' . LF .
-                    $uniqueContentString . ' => foo,' . LF .
-                ');' . LF;
+                'return [' . LF .
+                    '\'' . $uniqueContentString . '\' => \'foo\',' . LF .
+                '];' . LF;
         file_put_contents(
             $factoryConfigurationAbsoluteFile,
             $validFactoryConfigurationFileContent
@@ -528,7 +532,7 @@ class ConfigurationManagerTest extends \TYPO3\TestingFramework\Core\Unit\UnitTes
         $validAdditionalFactoryConfigurationFileContent =
             '<?php' . LF .
                 'return [' . LF .
-                    $uniqueContentString . ' => foo,' . LF .
+                    '\'' . $uniqueContentString . '\' => \'foo\',' . LF .
                 '];' . LF;
         file_put_contents(
             $additionalFactoryConfigurationAbsoluteFile,

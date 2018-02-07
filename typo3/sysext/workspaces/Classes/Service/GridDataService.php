@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Workspaces\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -22,8 +24,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Grid data service
  */
-class GridDataService
+class GridDataService implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     const SIGNAL_GenerateDataArray_BeforeCaching = 'generateDataArray.beforeCaching';
     const SIGNAL_GenerateDataArray_PostProcesss = 'generateDataArray.postProcess';
     const SIGNAL_GetDataArray_PostProcesss = 'getDataArray.postProcess';
@@ -90,11 +94,11 @@ class GridDataService
     public function generateGridListFromVersions($versions, $parameter, $currentWorkspace)
     {
         // Read the given parameters from grid. If the parameter is not set use default values.
-        $filterTxt = isset($parameter->filterTxt) ? $parameter->filterTxt : '';
+        $filterTxt = $parameter->filterTxt ?? '';
         $start = isset($parameter->start) ? (int)$parameter->start : 0;
         $limit = isset($parameter->limit) ? (int)$parameter->limit : 30;
-        $this->sort = isset($parameter->sort) ? $parameter->sort : 't3ver_oid';
-        $this->sortDir = isset($parameter->dir) ? $parameter->dir : 'ASC';
+        $this->sort = $parameter->sort ?? 't3ver_oid';
+        $this->sortDir = $parameter->dir ?? 'ASC';
         if (is_int($currentWorkspace)) {
             $this->currentWorkspace = $currentWorkspace;
         } else {
@@ -295,7 +299,7 @@ class GridDataService
     protected function setDataArrayIntoCache(array $versions, $filterTxt)
     {
         $hash = $this->calculateHash($versions, $filterTxt);
-        $this->workspacesCache->set($hash, $this->dataArray, [$this->currentWorkspace, 'user_' . $GLOBALS['BE_USER']->user['uid']]);
+        $this->workspacesCache->set($hash, $this->dataArray, [(string)$this->currentWorkspace, 'user_' . $GLOBALS['BE_USER']->user['uid']]);
     }
 
     /**
@@ -368,11 +372,7 @@ class GridDataService
                     // Do nothing
             }
         } else {
-            GeneralUtility::sysLog(
-                'Try to sort "' . $this->sort . '" in "TYPO3\\CMS\\Workspaces\\Service\\GridDataService::sortDataArray" but $this->dataArray is empty! This might be the Bug #26422 which could not reproduced yet.',
-                'workspaces',
-                GeneralUtility::SYSLOG_SEVERITY_ERROR
-            );
+            $this->logger->critical('Try to sort "' . $this->sort . '" in "\\TYPO3\\CMS\\Workspaces\\Service\\GridDataService::sortDataArray" but $this->dataArray is empty! This might be the bug #26422 which could not be reproduced yet.');
         }
         // Suggested slot method:
         // methodName(\TYPO3\CMS\Workspaces\Service\GridDataService $gridData, array $dataArray, $sortColumn, $sortDirection)
@@ -395,13 +395,15 @@ class GridDataService
         $path_cmp = strcasecmp($a['path_Workspace'], $b['path_Workspace']);
         if ($path_cmp < 0) {
             return $path_cmp;
-        } elseif ($path_cmp == 0) {
+        }
+        if ($path_cmp == 0) {
             if ($a[$this->sort] == $b[$this->sort]) {
                 return 0;
             }
             if ($this->sortDir === 'ASC') {
                 return $a[$this->sort] < $b[$this->sort] ? -1 : 1;
-            } elseif ($this->sortDir === 'DESC') {
+            }
+            if ($this->sortDir === 'DESC') {
                 return $a[$this->sort] > $b[$this->sort] ? -1 : 1;
             }
         } elseif ($path_cmp > 0) {
@@ -425,13 +427,15 @@ class GridDataService
         $path_cmp = strcasecmp($a['path_Workspace'], $b['path_Workspace']);
         if ($path_cmp < 0) {
             return $path_cmp;
-        } elseif ($path_cmp == 0) {
+        }
+        if ($path_cmp == 0) {
             if ($a[$this->sort] == $b[$this->sort]) {
                 return 0;
             }
             if ($this->sortDir === 'ASC') {
                 return strcasecmp($a[$this->sort], $b[$this->sort]);
-            } elseif ($this->sortDir === 'DESC') {
+            }
+            if ($this->sortDir === 'DESC') {
                 return strcasecmp($a[$this->sort], $b[$this->sort]) * -1;
             }
         } elseif ($path_cmp > 0) {
@@ -531,7 +535,7 @@ class GridDataService
      *
      * @param string $table Name of the table
      * @param string $type Type to be fetches (e.g. 'disabled', 'starttime', 'endtime', 'fe_group)
-     * @return string|NULL The accordant field name or NULL if not defined
+     * @return string|null The accordant field name or NULL if not defined
      */
     protected function getTcaEnableColumnsFieldName($table, $type)
     {
@@ -569,7 +573,7 @@ class GridDataService
      *
      * @param int $id sys_language uid
      * @param string $key Name of the value to be fetched (e.g. title)
-     * @return string|NULL
+     * @return string|null
      * @see getSystemLanguages
      */
     protected function getSystemLanguageValue($id, $key)

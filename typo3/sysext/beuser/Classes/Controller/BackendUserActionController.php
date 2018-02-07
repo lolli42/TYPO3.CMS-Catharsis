@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Beuser\Controller;
  */
 
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -74,17 +73,17 @@ class BackendUserActionController extends ActionController
             'index' => [
                 'controller' => 'BackendUser',
                 'action' => 'index',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xml:backendUsers')
+                'label' => $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xlf:backendUsers')
             ],
             'pages' => [
                 'controller' => 'BackendUserGroup',
                 'action' => 'index',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xml:backendUserGroupsMenu')
+                'label' => $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xlf:backendUserGroupsMenu')
             ],
             'online' => [
                 'controller' => 'BackendUser',
                 'action' => 'online',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xml:onlineUsers')
+                'label' => $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xlf:onlineUsers')
             ]
         ];
         $uriBuilder = $this->objectManager->get(UriBuilder::class);
@@ -125,14 +124,17 @@ class BackendUserActionController extends ActionController
         $extensionName = $currentRequest->getControllerExtensionName();
         if (count($getVars) === 0) {
             $modulePrefix = strtolower('tx_' . $extensionName . '_' . $moduleName);
-            $getVars = ['id', 'M', $modulePrefix];
+            $getVars = ['id', 'route', $modulePrefix];
         }
-        $shortcutName = $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xml:backendUsers');
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+
+        $shortcutName = $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xlf:backendUsers');
         if ($this->request->getControllerName() === 'BackendUser') {
             if ($this->request->getControllerActionName() === 'index') {
-                $returnUrl = rawurlencode(BackendUtility::getModuleUrl('system_BeuserTxBeuser'));
+                $returnUrl = rawurlencode((string)$uriBuilder->buildUriFromRoute('system_BeuserTxBeuser'));
                 $parameters = GeneralUtility::explodeUrl2Array('edit[be_users][0]=new&returnUrl=' . $returnUrl);
-                $addUserLink = BackendUtility::getModuleUrl('record_edit', $parameters);
+                $addUserLink = (string)$uriBuilder->buildUriFromRoute('record_edit', $parameters);
                 $title = $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newRecordGeneral');
                 $icon = $this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-add', Icon::SIZE_SMALL);
                 $addUserButton = $buttonBar->makeLinkButton()
@@ -142,7 +144,7 @@ class BackendUserActionController extends ActionController
                 $buttonBar->addButton($addUserButton, ButtonBar::BUTTON_POSITION_LEFT);
             }
             if ($this->request->getControllerActionName() === 'compare') {
-                $addUserLink = BackendUtility::getModuleUrl('system_BeuserTxBeuser');
+                $addUserLink = (string)$uriBuilder->buildUriFromRoute('system_BeuserTxBeuser');
                 $title = $this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.goBack');
                 $icon = $this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL);
                 $addUserButton = $buttonBar->makeLinkButton()
@@ -152,19 +154,19 @@ class BackendUserActionController extends ActionController
                 $buttonBar->addButton($addUserButton, ButtonBar::BUTTON_POSITION_LEFT);
             }
             if ($this->request->getControllerActionName() === 'online') {
-                $shortcutName = $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xml:onlineUsers');
+                $shortcutName = $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xlf:onlineUsers');
             }
         }
         if ($this->request->getControllerName() === 'BackendUserGroup') {
-            $shortcutName = $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xml:backendUserGroupsMenu');
-            $returnUrl = rawurlencode(BackendUtility::getModuleUrl('system_BeuserTxBeuser', [
+            $shortcutName = $this->getLanguageService()->sL('LLL:EXT:beuser/Resources/Private/Language/locallang.xlf:backendUserGroupsMenu');
+            $returnUrl = rawurlencode((string)$uriBuilder->buildUriFromRoute('system_BeuserTxBeuser', [
                 'tx_beuser_system_beusertxbeuser' => [
                     'action' => 'index',
                     'controller' => 'BackendUserGroup'
                 ]
             ]));
             $parameters = GeneralUtility::explodeUrl2Array('edit[be_groups][0]=new&returnUrl=' . $returnUrl);
-            $addUserLink = BackendUtility::getModuleUrl('record_edit', $parameters);
+            $addUserLink = (string)$uriBuilder->buildUriFromRoute('record_edit', $parameters);
             $title = $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newRecordGeneral');
             $icon = $this->view->getModuleTemplate()->getIconFactory()->getIcon('actions-add', Icon::SIZE_SMALL);
             $addUserGroupButton = $buttonBar->makeLinkButton()

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\ViewHelpers\Form;
 
 /*
@@ -19,7 +19,6 @@ namespace TYPO3\CMS\Form\ViewHelpers\Form;
 
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Property\PropertyMapper;
 use TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper;
 use TYPO3\CMS\Form\ViewHelpers\RenderRenderableViewHelper;
 
@@ -123,12 +122,12 @@ class DatePickerViewHelper extends AbstractFormFieldViewHelper
     }
 
     /**
-     * @return null|\DateTime
+     * @return \DateTime|null
      */
     protected function getSelectedDate()
     {
         /** @var FormRuntime $formRuntime */
-        $formRuntime =  $this->renderingContext
+        $formRuntime = $this->renderingContext
             ->getViewHelperVariableContainer()
             ->get(RenderRenderableViewHelper::class, 'formRuntime');
 
@@ -194,7 +193,8 @@ class DatePickerViewHelper extends AbstractFormFieldViewHelper
                         });
                     });
                 }
-            ');
+            '
+        );
     }
 
     /**

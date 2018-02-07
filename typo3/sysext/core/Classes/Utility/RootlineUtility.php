@@ -148,9 +148,8 @@ class RootlineUtility
         if ($this->mountPointParameter !== '') {
             if (!$GLOBALS['TYPO3_CONF_VARS']['FE']['enable_mount_pids']) {
                 throw new \RuntimeException('Mount-Point Pages are disabled for this installation. Cannot resolve a Rootline for a page with Mount-Points', 1343462896);
-            } else {
-                $this->parseMountPointParameter();
             }
+            $this->parseMountPointParameter();
         }
         if (self::$cache === null) {
             self::$cache = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_rootline');
@@ -274,7 +273,7 @@ class RootlineUtility
     /**
      * Resolve relations as defined in TCA and add them to the provided $pageRecord array.
      *
-     * @param int $uid Either pages.uid or pages_language_overlay.uid if localized
+     * @param int $uid page ID
      * @param array $pageRecord Page record (possibly overlaid) to be extended with relations
      * @throws \RuntimeException
      * @return array $pageRecord with additional relations
@@ -293,15 +292,13 @@ class RootlineUtility
                     $loadDBGroup->start(
                         $pageRecord[$column],
                         // @todo That depends on the type (group, select, inline)
-                        isset($configuration['allowed']) ? $configuration['allowed'] : $configuration['foreign_table'],
+                        $configuration['allowed'] ?? $configuration['foreign_table'],
                         $configuration['MM'],
                         $uid,
                         'pages',
                         $configuration
                     );
-                    $relatedUids = isset($loadDBGroup->tableArray[$configuration['foreign_table']])
-                        ? $loadDBGroup->tableArray[$configuration['foreign_table']]
-                        : [];
+                    $relatedUids = $loadDBGroup->tableArray[$configuration['foreign_table']] ?? [];
                 } else {
                     // @todo The assumption is wrong, since group can be used without "MM", but having "allowed"
                     $table = $configuration['foreign_table'];
@@ -337,7 +334,7 @@ class RootlineUtility
                             $queryBuilder->expr()->eq(
                                 trim($configuration['foreign_table_field']),
                                 $queryBuilder->createNamedParameter(
-                                    (int)$this->languageUid > 0 ? 'pages_language_overlay' : 'pages',
+                                    'pages',
                                     \PDO::PARAM_STR
                                 )
                             )

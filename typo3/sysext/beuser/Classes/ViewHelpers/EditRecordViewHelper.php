@@ -14,10 +14,9 @@ namespace TYPO3\CMS\Beuser\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
 
 /**
@@ -34,7 +33,6 @@ class EditRecordViewHelper extends AbstractViewHelper
      */
     public function initializeArguments()
     {
-        parent::initializeArguments();
         $this->registerArgument('parameters', 'string', 'Is a set of GET params to send to FormEngine', true);
     }
 
@@ -45,12 +43,14 @@ class EditRecordViewHelper extends AbstractViewHelper
      * @param \Closure $renderChildrenClosure
      * @param RenderingContextInterface $renderingContext
      *
-     * @see \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl()
+     * @see \TYPO3\CMS\Backend\Routing\UriBuilder::buildUriFromRoute()
      * @return string URL to FormEngine module + parameters
      */
     public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
     {
         $parameters = GeneralUtility::explodeUrl2Array($arguments['parameters']);
-        return BackendUtility::getModuleUrl('record_edit', $parameters);
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        return (string)$uriBuilder->buildUriFromRoute('record_edit', $parameters);
     }
 }

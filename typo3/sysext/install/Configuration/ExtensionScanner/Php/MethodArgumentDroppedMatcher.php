@@ -105,4 +105,46 @@ return [
             'Deprecation-81218-NoWSOLArgumentInPageRepository-getRawRecord.rst',
         ],
     ],
+    'TYPO3\CMS\Backend\History\RecordHistory->performRollback' => [
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController->__construct' => [
+        'maximumNumberOfArguments' => 7,
+        'restFiles' => [
+            'Breaking-82572-RDCTFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\DataHandling\DataHandler->printLogErrorMessages' => [
+        'maximumNumberOfArguments' => 0,
+        'restFiles' => [
+            'Breaking-82629-TceDbOptionsPrErrAndUPTRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\GeneralUtility->mkdir_deep' => [
+        'maximumNumberOfArguments' => 1,
+        'restFiles' => [
+            'Deprecation-82702-SecondArgumentOfGeneralUtilitymkdir_deep.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper->getPlainValue' => [
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Breaking-83241-ExtbaseRemovedCustomFunctionalityForDataMapper-getPlainValue.rst',
+        ],
+    ],
+    'TYPO3\CMS\Impexp\Controller\ImportExportController->addRecordsForPid' => [
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Deprecation-83592-ImpexpRemovedMaximumNumberOfRecordsRestriction.rst'
+        ],
+    ],
+    'TYPO3\CMS\Impexp\Controller\ImportExportController->exec_listQueryPid' => [
+        'maximumNumberOfArguments' => 2,
+        'restFiles' => [
+            'Deprecation-83592-ImpexpRemovedMaximumNumberOfRecordsRestriction.rst'
+        ],
+    ],
 ];

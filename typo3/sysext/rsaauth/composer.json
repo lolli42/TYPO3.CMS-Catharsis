@@ -3,7 +3,7 @@
 	"type": "typo3-cms-framework",
 	"description": "Contains a service to authenticate TYPO3 BE and FE users using private/public key encryption of passwords",
 	"homepage": "https://typo3.org",
-	"license": ["GPL-2.0+"],
+	"license": ["GPL-2.0-or-later"],
 	"authors": [{
 			"name": "TYPO3 Core Team",
 			"email": "typo3cms@typo3.org",
@@ -11,7 +11,7 @@
 		}],
 
 	"require": {
-		"typo3/cms-core": ">=9.0.0 <=9.0.99"
+		"typo3/cms-core": "9.2.*@dev"
 	},
 	"conflict": {
 		"typo3/cms": "*"
@@ -21,12 +21,9 @@
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "9.x-dev"
+			"dev-master": "9.2.x-dev"
 		},
 		"typo3/cms": {
-			"Package": {
-				"partOfFactoryDefault": true
-			},
 			"extension-key": "rsaauth"
 		}
 	},

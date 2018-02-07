@@ -415,7 +415,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface
 
         $version = $this->getExtensionVersion($extension);
         if (empty($version)) {
-            $version =  '0.0.0';
+            $version = '0.0.0';
         }
 
         if (!@is_dir(PATH_site . 'typo3temp/var/ExtensionManager/')) {
@@ -430,11 +430,11 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface
 
         // Get all the files of the extension, but exclude the ones specified in the excludePattern
         $files = GeneralUtility::getAllFilesAndFoldersInPath(
-            [],            // No files pre-added
-            $extensionPath,        // Start from here
-            '',                    // Do not filter files by extension
-            true,                // Include subdirectories
-            PHP_INT_MAX,        // Recursion level
+            [], // No files pre-added
+            $extensionPath, // Start from here
+            '', // Do not filter files by extension
+            true, // Include subdirectories
+            PHP_INT_MAX, // Recursion level
             $excludePattern        // Files and directories to exclude.
         );
 
@@ -509,27 +509,6 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface
         header('Content-Type: application/zip');
         header('Content-Length: ' . filesize($fileName));
         header('Content-Disposition: attachment; filename="' . $downloadName . '.zip"');
-        readfile($fileName);
-        unlink($fileName);
-        die;
-    }
-
-    /**
-     * Sends the sql dump file to the browser and deletes it afterwards
-     *
-     * @param string $fileName
-     * @param string $downloadName
-     */
-    public function sendSqlDumpFileToBrowserAndDelete($fileName, $downloadName = '')
-    {
-        if ($downloadName === '') {
-            $downloadName = basename($fileName, '.sql');
-        } else {
-            $downloadName = basename($downloadName, '.sql');
-        }
-        header('Content-Type: text');
-        header('Content-Length: ' . filesize($fileName));
-        header('Content-Disposition: attachment; filename="' . $downloadName . '.sql"');
         readfile($fileName);
         unlink($fileName);
         die;

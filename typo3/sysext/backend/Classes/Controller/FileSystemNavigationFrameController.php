@@ -16,10 +16,11 @@ namespace TYPO3\CMS\Backend\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -102,7 +103,7 @@ class FileSystemNavigationFrameController
         $scopeData = (string)GeneralUtility::_GP('scopeData');
         $scopeHash = (string)GeneralUtility::_GP('scopeHash');
 
-        if (!empty($scopeData) && GeneralUtility::hmac($scopeData) === $scopeHash) {
+        if (!empty($scopeData) && hash_equals(GeneralUtility::hmac($scopeData), $scopeHash)) {
             $this->scopeData = unserialize($scopeData);
         }
 
@@ -121,13 +122,9 @@ class FileSystemNavigationFrameController
                 $this->foldertree->setLinkParameterProvider($linkParamProvider);
             }
         } else {
+            $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
             $this->foldertree = GeneralUtility::makeInstance(FileListFolderTree::class);
-            $this->foldertree->thisScript = BackendUtility::getModuleUrl('file_navframe');
-        }
-        // Only set ext_IconMode if we are not running an ajax request from the ElementBrowser,
-        // which has this property hardcoded to "titlelink".
-        if (!$this->foldertree instanceof ElementBrowserFolderTreeView) {
-            $this->foldertree->ext_IconMode = $this->getBackendUser()->getTSConfigVal('options.folderTree.disableIconLinkToContextmenu');
+            $this->foldertree->thisScript = (string)$uriBuilder->buildUriFromRoute('file_navframe');
         }
     }
 
@@ -232,17 +229,14 @@ class FileSystemNavigationFrameController
      * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function ajaxExpandCollapse(ServerRequestInterface $request, ResponseInterface $response)
+    public function ajaxExpandCollapse(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->init();
         $tree = $this->foldertree->getBrowsableTree();
         if ($this->foldertree->getAjaxStatus() === false) {
-            $response = $response->withStatus(500);
-        } else {
-            $response->getBody()->write(json_encode($tree));
+            return $response->withStatus(500);
         }
-
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class, [$tree]);
     }
 
     /**

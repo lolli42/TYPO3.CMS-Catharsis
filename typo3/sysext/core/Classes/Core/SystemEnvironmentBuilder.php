@@ -83,8 +83,8 @@ class SystemEnvironmentBuilder
     protected static function defineBaseConstants()
     {
         // This version, branch and copyright
-        define('TYPO3_version', '9.0.0-dev');
-        define('TYPO3_branch', '9.0');
+        define('TYPO3_version', '9.2.0-dev');
+        define('TYPO3_branch', '9.2');
         define('TYPO3_copyright_year', '1998-2017');
 
         // TYPO3 external links
@@ -112,9 +112,9 @@ class SystemEnvironmentBuilder
         defined('CRLF') ?: define('CRLF', CR . LF);
 
         // Security related constant: Default value of fileDenyPattern
-        define('FILE_DENY_PATTERN_DEFAULT', '\\.(php[3-7]?|phpsh|phtml)(\\..*)?$|^\\.htaccess$');
+        define('FILE_DENY_PATTERN_DEFAULT', '\\.(php[3-7]?|phpsh|phtml|pht)(\\..*)?$|^\\.htaccess$');
         // Security related constant: List of file extensions that should be registered as php script file extensions
-        define('PHP_EXTENSIONS_DEFAULT', 'php,php3,php4,php5,php6,php7,phpsh,inc,phtml');
+        define('PHP_EXTENSIONS_DEFAULT', 'php,php3,php4,php5,php6,php7,phpsh,inc,phtml,pht');
 
         // Operating system identifier
         // Either "WIN" or empty string
@@ -166,7 +166,7 @@ class SystemEnvironmentBuilder
                 // Base the script path on the path taken from the environment
                 // to make relative path calculations work in case only one of both is symlinked
                 // or has the real path
-                $scriptName =  substr($scriptPath, strlen($rootPath));
+                $scriptName = substr($scriptPath, strlen($rootPath));
             }
             $rootPath = GeneralUtility::fixWindowsFilePath(getenv('TYPO3_PATH_ROOT'));
             $scriptPath = $rootPath . $scriptName;
@@ -198,13 +198,6 @@ class SystemEnvironmentBuilder
         if (!is_file(PATH_thisScript)) {
             static::exitWithMessage('Unable to determine path to entry script.');
         }
-        if (!is_dir(PATH_typo3 . 'sysext')) {
-            static::exitWithMessage('Calculated absolute path to typo3/sysext directory does not exist.' . LF . LF
-                . 'Something in the main file, folder and link structure is wrong and must be fixed! A typical document root contains a couple of symbolic links:' . LF
-                . '* A symlink "typo3_src" pointing to the TYPO3 CMS core.' . LF
-                . '* A symlink "typo3" - the backend entry point - pointing to "typo3_src/typo3"' . LF
-                . '* A symlink "index.php" - the frontend entry point - points to "typo3_src/index.php"');
-        }
     }
 
     /**
@@ -213,7 +206,6 @@ class SystemEnvironmentBuilder
     protected static function initializeGlobalVariables()
     {
         // Unset variable(s) in global scope (security issue #13959)
-        unset($GLOBALS['error']);
         $GLOBALS['TYPO3_MISC'] = [];
         $GLOBALS['T3_VAR'] = [];
         $GLOBALS['T3_SERVICES'] = [];
@@ -225,8 +217,6 @@ class SystemEnvironmentBuilder
      */
     protected static function initializeGlobalTimeTrackingVariables()
     {
-        // Set PARSETIME_START to the system time in milliseconds.
-        $GLOBALS['PARSETIME_START'] = GeneralUtility::milliseconds();
         // Microtime of (nearly) script start
         $GLOBALS['TYPO3_MISC']['microtime_start'] = microtime(true);
         // EXEC_TIME is set so that the rest of the script has a common value for the script execution time

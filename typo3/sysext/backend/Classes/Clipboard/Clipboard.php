@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Clipboard;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
@@ -77,9 +78,9 @@ class Clipboard
     /**
      * If set, clipboard is displaying files.
      *
-     * @var int
+     * @var bool
      */
-    public $fileMode = 0;
+    public $fileMode = false;
 
     /**
      * @var IconFactory
@@ -270,10 +271,11 @@ class Clipboard
             $optionArray = [];
             // Import / Export link:
             if (ExtensionManagementUtility::isLoaded('impexp')) {
-                $url = BackendUtility::getModuleUrl('xMOD_tximpexp', $this->exportClipElementParameters());
+                $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+                $url = $uriBuilder->buildUriFromRoute('xMOD_tximpexp', $this->exportClipElementParameters());
                 $optionArray[] = [
                     'label' => $this->clLabel('export', 'rm'),
-                    'uri' => $url
+                    'uri' => (string)$url
                 ];
             }
             // Edit:
@@ -299,7 +301,7 @@ class Clipboard
             );
             $title = $languageService
                 ->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.clipboard.delete_elements');
-            $returnUrl = $this->deleteUrl(1, ($this->fileMode ? 1 : 0));
+            $returnUrl = $this->deleteUrl(true, $this->fileMode);
             $btnOkText = $languageService
                 ->sL('LLL:EXT:lang/Resources/Private/Language/locallang_alt_doc.xlf:buttons.confirm.delete_elements.yes');
             $btnCancelText = $languageService
@@ -370,7 +372,7 @@ class Clipboard
     public function getContentFromTab($pad)
     {
         $lines = [];
-        if (is_array($this->clipData[$pad]['el'])) {
+        if (is_array($this->clipData[$pad]['el'] ?? false)) {
             foreach ($this->clipData[$pad]['el'] as $k => $v) {
                 if ($v) {
                     list($table, $uid) = explode('|', $k);
@@ -381,8 +383,12 @@ class Clipboard
                             $thumb = [];
                             $folder = $fileObject instanceof \TYPO3\CMS\Core\Resource\Folder;
                             $size = $folder ? '' : '(' . GeneralUtility::formatSize($fileObject->getSize()) . 'bytes)';
-                            if (!$folder && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'],
-                                    $fileObject->getExtension())
+                            if (
+                                !$folder
+                                && GeneralUtility::inList(
+                                    $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'],
+                                    $fileObject->getExtension()
+                                )
                             ) {
                                 $thumb = [
                                     'image' => $fileObject->process(\TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGEPREVIEW, []),
@@ -390,10 +396,14 @@ class Clipboard
                                 ];
                             }
                             $lines[] = [
-                                'icon' => '<span title="' . htmlspecialchars($fileObject->getName() . ' ' . $size) . '">' . $this->iconFactory->getIconForResource($fileObject,
-                                        Icon::SIZE_SMALL)->render() . '</span>',
-                                'title' => $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileObject->getName(),
-                                    $this->getBackendUser()->uc['titleLen'])), $fileObject->getName()),
+                                'icon' => '<span title="' . htmlspecialchars($fileObject->getName() . ' ' . $size) . '">' . $this->iconFactory->getIconForResource(
+                                    $fileObject,
+                                    Icon::SIZE_SMALL
+                                )->render() . '</span>',
+                                'title' => $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs(
+                                    $fileObject->getName(),
+                                    $this->getBackendUser()->uc['titleLen']
+                                )), $fileObject->getName()),
                                 'thumb' => $thumb,
                                 'infoLink' => htmlspecialchars('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($v) . '); return false;'),
                                 'removeLink' => $this->removeUrl('_FILE', GeneralUtility::shortMD5($v))
@@ -408,15 +418,20 @@ class Clipboard
                         $rec = BackendUtility::getRecordWSOL($table, $uid);
                         if (is_array($rec)) {
                             $lines[] = [
-                                'icon' => $this->linkItemText($this->iconFactory->getIconForRecord($table, $rec,
-                                    Icon::SIZE_SMALL)->render(), $rec, $table),
-                                'title' => $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs(BackendUtility::getRecordTitle($table,
-                                    $rec), $this->getBackendUser()->uc['titleLen'])), $rec, $table),
+                                'icon' => $this->linkItemText($this->iconFactory->getIconForRecord(
+                                    $table,
+                                    $rec,
+                                    Icon::SIZE_SMALL
+                                )->render(), $rec, $table),
+                                'title' => $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs(BackendUtility::getRecordTitle(
+                                    $table,
+                                    $rec
+                                ), $this->getBackendUser()->uc['titleLen'])), $rec, $table),
                                 'infoLink' => htmlspecialchars('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', \'' . (int)$uid . '\'); return false;'),
                                 'removeLink' => $this->removeUrl($table, $uid)
                             ];
 
-                            $localizationData = $this->getLocalizations($table, $rec, '', '');
+                            $localizationData = $this->getLocalizations($table, $rec);
                             if (!empty($localizationData)) {
                                 $lines = array_merge($lines, $localizationData);
                             }
@@ -453,15 +468,13 @@ class Clipboard
      *
      * @param string $table The table
      * @param array $parentRec The current record
-     * @param string $bgColClass Class for the background color of a column
-     * @param string $pad Pad reference
-     * @return string HTML table rows
+     * @return array HTML table rows
      */
-    public function getLocalizations($table, $parentRec, $bgColClass, $pad)
+    public function getLocalizations($table, $parentRec)
     {
         $lines = [];
         $tcaCtrl = $GLOBALS['TCA'][$table]['ctrl'];
-        if ($table !== 'pages' && BackendUtility::isTableLocalizable($table) && $table !== 'pages_language_overlay') {
+        if (BackendUtility::isTableLocalizable($table)) {
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
             $queryBuilder->getRestrictions()
                 ->removeAll()
@@ -528,19 +541,18 @@ class Clipboard
      */
     public function linkItemText($str, $rec, $table = '')
     {
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
         if (is_array($rec) && $table) {
             if ($this->fileMode) {
                 $str = '<span class="text-muted">' . $str . '</span>';
             } else {
-                $str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_list', ['id' => $rec['pid']])) . '">' . $str . '</a>';
+                $str = '<a href="' . htmlspecialchars((string)$uriBuilder->buildUriFromRoute('web_list', ['id' => $rec['pid']])) . '">' . $str . '</a>';
             }
         } elseif (file_exists($rec)) {
             if (!$this->fileMode) {
                 $str = '<span class="text-muted">' . $str . '</span>';
-            } else {
-                if (ExtensionManagementUtility::isLoaded('filelist')) {
-                    $str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('file_list', ['id' => dirname($rec)])) . '">' . $str . '</a>';
-                }
+            } elseif (ExtensionManagementUtility::isLoaded('filelist')) {
+                $str = '<a href="' . htmlspecialchars((string)$uriBuilder->buildUriFromRoute('file_list', ['id' => dirname($rec)])) . '">' . $str . '</a>';
             }
         }
         return $str;
@@ -593,14 +605,12 @@ class Clipboard
      * @param string $table Tablename (_FILE for files)
      * @param mixed $uid "destination": can be positive or negative indicating how the paste is done (paste into / paste after)
      * @param bool $setRedirect If set, then the redirect URL will point back to the current script, but with CB reset.
-     * @param array|NULL $update Additional key/value pairs which should get set in the moved/copied record (via DataHandler)
+     * @param array|null $update Additional key/value pairs which should get set in the moved/copied record (via DataHandler)
      * @return string
      */
     public function pasteUrl($table, $uid, $setRedirect = true, array $update = null)
     {
         $urlParameters = [
-            'prErr' => 1,
-            'uPT' => 1,
             'CB[paste]' => $table . '|' . $uid,
             'CB[pad]' => $this->current
         ];
@@ -610,28 +620,28 @@ class Clipboard
         if (is_array($update)) {
             $urlParameters['CB[update]'] = $update;
         }
-        return BackendUtility::getModuleUrl($table === '_FILE' ? 'tce_file' : 'tce_db', $urlParameters);
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        return (string)$uriBuilder->buildUriFromRoute($table === '_FILE' ? 'tce_file' : 'tce_db', $urlParameters);
     }
 
     /**
      * deleteUrl for current pad
      *
-     * @param bool|int $setRedirect If set, then the redirect URL will point back to the current script, but with CB reset.
-     * @param bool|int $file If set, then the URL will link to the tce_file.php script in the typo3/ dir.
+     * @param bool $setRedirect If set, then the redirect URL will point back to the current script, but with CB reset.
+     * @param bool $file If set, then the URL will link to the tce_file.php script in the typo3/ dir.
      * @return string
      */
-    public function deleteUrl($setRedirect = 1, $file = 0)
+    public function deleteUrl($setRedirect = true, $file = false)
     {
         $urlParameters = [
-            'prErr' => 1,
-            'uPT' => 1,
             'CB[delete]' => 1,
             'CB[pad]' => $this->current
         ];
         if ($setRedirect) {
             $urlParameters['redirect'] = GeneralUtility::linkThisScript(['CB' => '']);
         }
-        return BackendUtility::getModuleUrl($file ? 'tce_file' : 'tce_db', $urlParameters);
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        return (string)$uriBuilder->buildUriFromRoute($file ? 'tce_file' : 'tce_db', $urlParameters);
     }
 
     /**
@@ -650,7 +660,8 @@ class Clipboard
             list($table, $uid) = explode('|', $tP);
             $parameters['edit[' . $table . '][' . $uid . ']'] = 'edit';
         }
-        return BackendUtility::getModuleUrl('record_edit', $parameters);
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        return (string)$uriBuilder->buildUriFromRoute('record_edit', $parameters);
     }
 
     /**
@@ -680,7 +691,7 @@ class Clipboard
     {
         if ($this->getBackendUser()->jsConfirmation(JsConfirmation::COPY_MOVE_PASTE)) {
             $labelKey = 'LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:mess.' . ($this->currentMode() === 'copy' ? 'copy' : 'move') . ($this->current === 'normal' ? '' : 'cb') . '_' . $type;
-            $msg = $this->getLanguageService()->sL($labelKey . ($columnLabel ? '_colPos': ''));
+            $msg = $this->getLanguageService()->sL($labelKey . ($columnLabel ? '_colPos' : ''));
             if ($table === '_FILE') {
                 $thisRecTitle = basename($rec);
                 if ($this->current === 'normal') {
@@ -743,7 +754,7 @@ class Clipboard
         $params = [];
         $params['tx_impexp']['action'] = 'export';
         // Traverse items:
-        if (is_array($this->clipData[$pad]['el'])) {
+        if (is_array($this->clipData[$pad]['el'] ?? false)) {
             foreach ($this->clipData[$pad]['el'] as $k => $v) {
                 if ($v) {
                     list($table, $uid) = explode('|', $k);
@@ -799,7 +810,7 @@ class Clipboard
      */
     public function currentMode()
     {
-        return $this->clipData[$this->current]['mode'] === 'copy' ? 'copy' : 'cut';
+        return ($this->clipData[$this->current]['mode'] ?? '') === 'copy' ? 'copy' : 'cut';
     }
 
     /**
@@ -808,7 +819,7 @@ class Clipboard
      */
     public function cleanCurrent()
     {
-        if (is_array($this->clipData[$this->current]['el'])) {
+        if (is_array($this->clipData[$this->current]['el'] ?? false)) {
             foreach ($this->clipData[$this->current]['el'] as $k => $v) {
                 list($table, $uid) = explode('|', $k);
                 if ($table !== '_FILE') {
@@ -844,7 +855,7 @@ class Clipboard
     {
         $pad = $pad ? $pad : $this->current;
         $list = [];
-        if (is_array($this->clipData[$pad]['el'])) {
+        if (is_array($this->clipData[$pad]['el'] ?? false)) {
             foreach ($this->clipData[$pad]['el'] as $k => $v) {
                 if ($v) {
                     list($table, $uid) = explode('|', $k);
@@ -874,7 +885,7 @@ class Clipboard
     public function isSelected($table, $uid)
     {
         $k = $table . '|' . $uid;
-        return $this->clipData[$this->current]['el'][$k] ? ($this->current === 'normal' ? $this->currentMode() : 1) : '';
+        return !empty($this->clipData[$this->current]['el'][$k]) ? ($this->current === 'normal' ? $this->currentMode() : 1) : '';
     }
 
     /**
@@ -931,7 +942,7 @@ class Clipboard
      *
      * @param string $ref [tablename]:[paste-uid], see description
      * @param array $CMD Command-array
-     * @param NULL|array If additional values should get set in the copied/moved record this will be an array containing key=>value pairs
+     * @param array|null $update If additional values should get set in the copied/moved record this will be an array containing key=>value pairs
      * @return array Modified Command-array
      */
     public function makePasteCmdArray($ref, $CMD, array $update = null)

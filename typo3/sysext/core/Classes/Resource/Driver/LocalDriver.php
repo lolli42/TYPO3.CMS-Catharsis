@@ -231,7 +231,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
             $parts = array_map([$this, 'sanitizeFileName'], $parts);
             $newFolderName = implode('/', $parts);
             $newIdentifier = $parentFolderIdentifier . $newFolderName . '/';
-            GeneralUtility::mkdir_deep($this->getAbsolutePath($parentFolderIdentifier) . '/', $newFolderName);
+            GeneralUtility::mkdir_deep($this->getAbsolutePath($parentFolderIdentifier) . '/' . $newFolderName);
         }
         return $newIdentifier;
     }
@@ -410,7 +410,8 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
                 // If calling the method succeeded and thus we can't use that as a return value.
                 if ($result === -1) {
                     return false;
-                } elseif ($result === false) {
+                }
+                if ($result === false) {
                     throw new \RuntimeException(
                         'Could not apply file/folder name filter ' . $filter[0] . '::' . $filter[1],
                         1476046425
@@ -534,21 +535,26 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
         while ($iterator->valid()) {
             /** @var $entry \SplFileInfo */
             $entry = $iterator->current();
-            // skip non-files/non-folders, and empty entries
-            if ((!$entry->isFile() && !$entry->isDir()) || $entry->getFilename() == '' ||
-                ($entry->isFile() && !$includeFiles) || ($entry->isDir() && !$includeDirs)) {
+            $isFile = $entry->isFile();
+            $isDirectory = $isFile ? false : $entry->isDir();
+            if (
+                (!$isFile && !$isDirectory) // skip non-files/non-folders
+                || ($isFile && !$includeFiles) // skip files if they are excluded
+                || ($isDirectory && !$includeDirs) // skip directories if they are excluded
+                || $entry->getFilename() === '' // skip empty entries
+            ) {
                 $iterator->next();
                 continue;
             }
             $entryIdentifier = '/' . substr($entry->getPathname(), $pathLength);
             $entryName = PathUtility::basename($entryIdentifier);
-            if ($entry->isDir()) {
+            if ($isDirectory) {
                 $entryIdentifier .= '/';
             }
             $entryArray = [
                 'identifier' => $entryIdentifier,
                 'name' => $entryName,
-                'type' => $entry->isDir() ? 'dir' : 'file'
+                'type' => $isDirectory ? 'dir' : 'file'
             ];
             $directoryEntries[$entryIdentifier] = $entryArray;
             $iterator->next();
@@ -1144,7 +1150,9 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
             throw new \RuntimeException(
                 sprintf(
                     'Creating filename mapping after renaming "%1$s" to "%2$s" failed. Reverted rename operation.\\n\\nOriginal error: %3$s"',
-                    $sourcePath, $targetPath, $e->getMessage()
+                    $sourcePath,
+                    $targetPath,
+                    $e->getMessage()
                 ),
                 1334160746
             );
@@ -1237,9 +1245,8 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
     {
         if ($writable === false) {
             return $this->getAbsolutePath($fileIdentifier);
-        } else {
-            return $this->copyFileToTemporaryPath($fileIdentifier);
         }
+        return $this->copyFileToTemporaryPath($fileIdentifier);
     }
 
     /**
@@ -1304,7 +1311,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
             );
         }
         $parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
-        $fileIdentifier =  $this->canonicalizeAndCheckFileIdentifier(
+        $fileIdentifier = $this->canonicalizeAndCheckFileIdentifier(
             $parentFolderIdentifier . $this->sanitizeFileName(ltrim($fileName, '/'))
         );
         $absoluteFilePath = $this->getAbsolutePath($fileIdentifier);
@@ -1363,10 +1370,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
     public function getRole($folderIdentifier)
     {
         $name = PathUtility::basename($folderIdentifier);
-        $role = $this->mappingFolderNameToRole[$name];
-        if (empty($role)) {
-            $role = FolderInterface::ROLE_DEFAULT;
-        }
+        $role = $this->mappingFolderNameToRole[$name] ?? FolderInterface::ROLE_DEFAULT;
         return $role;
     }
 
@@ -1411,11 +1415,11 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver
             $recycleDirectory = $searchDirectory . '/' . $recyclerSubdirectory;
             if (is_dir($recycleDirectory)) {
                 return $recycleDirectory;
-            } elseif ($searchDirectory === $rootDirectory) {
-                return '';
-            } else {
-                $searchDirectory = PathUtility::dirname($searchDirectory);
             }
+            if ($searchDirectory === $rootDirectory) {
+                return '';
+            }
+            $searchDirectory = PathUtility::dirname($searchDirectory);
         }
 
         return '';

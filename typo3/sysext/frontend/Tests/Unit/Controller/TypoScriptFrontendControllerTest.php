@@ -108,6 +108,8 @@ class TypoScriptFrontendControllerTest extends \TYPO3\TestingFramework\Core\Unit
     public function localizationReturnsUnchangedStringIfNotLocallangLabel()
     {
         $string = $this->getUniqueId();
+        $this->subject->page = [];
+        $this->subject->settingLanguage();
         $this->assertEquals($string, $this->subject->sL($string));
     }
 
@@ -404,6 +406,60 @@ class TypoScriptFrontendControllerTest extends \TYPO3\TestingFramework\Core\Unit
                     '2'
                 ]
             ]
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider calculateLinkVarsDataProvider
+     * @param string $linkVars
+     * @param array $getVars
+     * @param string $expected
+     */
+    public function calculateLinkVarsConsidersCorrectVariables(string $linkVars, array $getVars, string $expected)
+    {
+        $_GET = $getVars;
+        $this->subject->config['config']['linkVars'] = $linkVars;
+        $this->subject->calculateLinkVars();
+        $this->assertEquals($expected, $this->subject->linkVars);
+    }
+
+    public function calculateLinkVarsDataProvider() : array
+    {
+        return [
+            'simple variable' => [
+                'L',
+                [
+                    'L' => 1
+                ],
+                '&L=1'
+            ],
+            'missing variable' => [
+                'L',
+                [
+                ],
+                ''
+            ],
+            'restricted variables' => [
+                'L(1-3),bar(3),foo(array),blub(array)',
+                [
+                    'L' => 1,
+                    'bar' => 2,
+                    'foo' => [ 1, 2, 'f' => [ 4, 5 ] ],
+                    'blub' => 123
+                ],
+                '&L=1&foo[0]=1&foo[1]=2&foo[f][0]=4&foo[f][1]=5'
+            ],
+            'nested variables' => [
+                'bar|foo(1-2)',
+                [
+                    'bar' => [
+                        'foo' => 1,
+                        'unused' => 'never'
+                    ]
+                ],
+                '&bar[foo]=1'
+            ],
         ];
     }
 }

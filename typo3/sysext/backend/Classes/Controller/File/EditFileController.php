@@ -18,10 +18,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Form\FormResultCompiler;
 use TYPO3\CMS\Backend\Form\NodeFactory;
-use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -34,7 +33,7 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
 /**
  * Script Class for rendering the file editing screen
  */
-class EditFileController extends AbstractModule
+class EditFileController
 {
     /**
      * Module content accumulated.
@@ -84,11 +83,18 @@ class EditFileController extends AbstractModule
     protected $fileObject;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $GLOBALS['SOBE'] = $this;
         $this->init();
     }
@@ -160,22 +166,19 @@ class EditFileController extends AbstractModule
 
         $this->getButtons();
         // Hook: before compiling the output
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['preOutputProcessingHook'])) {
-            $preOutputProcessingHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['preOutputProcessingHook'];
-            if (is_array($preOutputProcessingHook)) {
-                $hookParameters = [
-                    'content' => &$this->content,
-                    'target' => &$this->target,
-                    'dataColumnDefinition' => &$dataColumnDefinition,
-                ];
-                foreach ($preOutputProcessingHook as $hookFunction) {
-                    GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
-                }
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['preOutputProcessingHook'] ?? [] as $hookFunction) {
+            $hookParameters = [
+                'content' => &$this->content,
+                'target' => &$this->target,
+                'dataColumnDefinition' => &$dataColumnDefinition,
+            ];
+            GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
         }
 
         $assigns = [];
-        $assigns['moduleUrlTceFile'] = BackendUtility::getModuleUrl('tce_file');
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $assigns['moduleUrlTceFile'] = (string)$uriBuilder->buildUriFromRoute('tce_file');
         $assigns['fileName'] = $this->fileObject->getName();
 
         $extList = $GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'];
@@ -185,7 +188,7 @@ class EditFileController extends AbstractModule
             }
 
             // Making the formfields
-            $hValue = BackendUtility::getModuleUrl('file_edit', [
+            $hValue = (string)$uriBuilder->buildUriFromRoute('file_edit', [
                 'target' => $this->origTarget,
                 'returnUrl' => $this->returnUrl
             ]);
@@ -255,17 +258,12 @@ class EditFileController extends AbstractModule
         $pageContent = $view->render();
 
         // Hook: after compiling the output
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['postOutputProcessingHook'])) {
-            $postOutputProcessingHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['postOutputProcessingHook'];
-            if (is_array($postOutputProcessingHook)) {
-                $hookParameters = [
-                    'pageContent' => &$pageContent,
-                    'target' => &$this->target
-                ];
-                foreach ($postOutputProcessingHook as $hookFunction) {
-                    GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
-                }
-            }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/file_edit.php']['postOutputProcessingHook'] ?? [] as $hookFunction) {
+            $hookParameters = [
+                'pageContent' => &$pageContent,
+                'target' => &$this->target
+            ];
+            GeneralUtility::callUserFunction($hookFunction, $hookParameters, $this);
         }
 
         $this->content .= $pageContent;
@@ -305,20 +303,19 @@ class EditFileController extends AbstractModule
         $saveButton = $buttonBar->makeInputButton()
             ->setName('_save')
             ->setValue('1')
-            ->setOnClick('document.editform.submit();')
             ->setForm('EditFileController')
             ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_edit.php.submit'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-document-save', Icon::SIZE_SMALL));
 
         // Save and Close button
         $saveAndCloseButton = $buttonBar->makeInputButton()
-            ->setName('_saveandclose')
+            ->setName('_saveandclosedok')
             ->setValue('1')
             ->setForm('EditFileController')
             ->setOnClick(
-                'document.editform.redirect.value='
+                'document.editform.elements.namedItem("data[editfile][0][redirect]").value='
                 . GeneralUtility::quoteJSvalue($this->returnUrl)
-                . '; document.editform.submit();'
+                . ';'
             )
             ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:file_edit.php.saveAndClose'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon(

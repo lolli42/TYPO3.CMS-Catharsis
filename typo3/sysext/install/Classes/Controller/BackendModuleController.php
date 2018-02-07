@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\Controller;
 
 /*
@@ -16,17 +17,13 @@ namespace TYPO3\CMS\Install\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Template\ModuleTemplate;
-use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Fluid\View\StandaloneView;
-use TYPO3\CMS\Install\Service\EnableFileService;
+use TYPO3\CMS\Core\Http\RedirectResponse;
+use TYPO3\CMS\Install\Service\SessionService;
 
 /**
- * Backend module controller
- *
- * Embeds in backend and only shows the 'enable install tool button' or redirects
- * to step installer if install tool is enabled.
+ * Backend module controller to the install tool. Sets an install tool session
+ * marked as "initialized by a valid system administrator backend user" and
+ * redirects to the install tool entry point.
  *
  * This is a classic backend module that does not interfere with other code
  * within the install tool, it can be seen as a facade around install tool just
@@ -35,62 +32,65 @@ use TYPO3\CMS\Install\Service\EnableFileService;
 class BackendModuleController
 {
     /**
-     * Index action shows install tool / step installer or redirect to action to enable install tool
+     * Initialize session and redirect to "maintenance"
      *
      * @param ServerRequestInterface $request
      * @param ResponseInterface $response
      * @return ResponseInterface
-     * @throws \RuntimeException
      */
-    public function index(ServerRequestInterface $request, ResponseInterface $response)
+    public function maintenanceAction(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $enableFileService = GeneralUtility::makeInstance(EnableFileService::class);
+        return $this->setAuthorizedAndRedirect('maintenance');
+    }
 
-        $formProtection = FormProtectionFactory::get();
+    /**
+     * Initialize session and redirect to "settings"
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function settingsAction(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        return $this->setAuthorizedAndRedirect('settings');
+    }
 
-        $targetUrl = 'install.php?install[context]=backend';
-        if (!empty($request->getQueryParams()['install']['action'])) {
-            $subAction = !empty($request->getQueryParams()['install']['action'])
-                ? $request->getQueryParams()['install']['action']
-                : '';
-            $targetUrl .= '&install[controller]=tool&install[action]=' . $subAction;
-        }
+    /**
+     * Initialize session and redirect to "upgrade"
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function upgradeAction(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        return $this->setAuthorizedAndRedirect('upgrade');
+    }
 
-        if ($enableFileService->checkInstallToolEnableFile()) {
-            // Install tool is open and valid, redirect to it
-            $response = $response
-                ->withStatus(303)
-                ->withHeader('Location', $targetUrl);
-        } elseif ($request->getMethod() === 'POST' && $request->getParsedBody()['action'] === 'enableInstallTool') {
-            // Request to open the install tool
-            $installToolEnableToken = $request->getParsedBody()['installToolEnableToken'];
-            if (!$formProtection->validateToken($installToolEnableToken, 'installTool')) {
-                throw new \RuntimeException('Given form token was not valid', 1369161225);
-            }
-            $enableFileService->createInstallToolEnableFile();
+    /**
+     * Initialize session and redirect to "environment"
+     *
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @return ResponseInterface
+     */
+    public function environmentAction(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        return $this->setAuthorizedAndRedirect('environment');
+    }
 
-            // Install tool is open and valid, redirect to it
-            $response = $response
-                ->withStatus(303)
-                ->withHeader('Location', $targetUrl);
-        } else {
-            // Show the "create enable install tool" button
-            $token = $formProtection->generateToken('installTool');
-
-            $view = GeneralUtility::makeInstance(StandaloneView::class);
-            $view->setTemplatePathAndFilename(
-                GeneralUtility::getFileAbsFileName(
-                    'EXT:install/Resources/Private/Templates/BackendModule/ShowEnableInstallToolButton.html'
-                )
-            );
-            $view->assign('installToolEnableToken', $token);
-
-            $moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
-            $moduleTemplate->setContent($view->render());
-
-            $response->getBody()->write($moduleTemplate->renderContent());
-        }
-
-        return $response;
+    /**
+     * Starts / updates the session and redirects to the install tool
+     * with given action.
+     *
+     * @param $controller
+     * @return ResponseInterface
+     */
+    protected function setAuthorizedAndRedirect(string $controller): ResponseInterface
+    {
+        $sessionService = new SessionService();
+        $sessionService->setAuthorizedBackendSession();
+        $redirectLocation = 'install.php?install[controller]=' . $controller . '&install[context]=backend';
+        return new RedirectResponse($redirectLocation, 303);
     }
 }

@@ -143,7 +143,7 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response
             throw new \InvalidArgumentException('No message found for HTTP status code "' . $code . '".', 1220526014);
         }
         $this->statusCode = $code;
-        $this->statusMessage = $message === null ? $this->statusMessages[$code] : $message;
+        $this->statusMessage = $message ?? $this->statusMessages[$code];
     }
 
     /**
@@ -155,6 +155,17 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response
     public function getStatus()
     {
         return $this->statusCode . ' ' . $this->statusMessage;
+    }
+
+    /**
+     * Returns the status code, if not set, uses the OK status code 200
+     *
+     * @return int
+     * @internal only use for backend module handling
+     */
+    public function getStatusCode()
+    {
+        return $this->statusCode ?: 200;
     }
 
     /**
@@ -188,7 +199,7 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response
     {
         $preparedHeaders = [];
         if ($this->statusCode !== null) {
-            $protocolVersion = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0';
+            $protocolVersion = $_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.0';
             $statusHeader = $protocolVersion . ' ' . $this->statusCode . ' ' . $this->statusMessage;
             $preparedHeaders[] = $statusHeader;
         }
@@ -198,6 +209,17 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response
             }
         }
         return $preparedHeaders;
+    }
+
+    /**
+     * Returns the HTTP headers grouped by name without the status header
+     *
+     * @return array all headers set for this request
+     * @internal only used within TYPO3 Core to convert to PSR-7 response headers
+     */
+    public function getUnpreparedHeaders(): array
+    {
+        return $this->headers;
     }
 
     /**
@@ -284,7 +306,7 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response
     /**
      * Sends additional headers and returns the content
      *
-     * @return null|string
+     * @return string|null
      */
     public function shutdown()
     {

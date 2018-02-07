@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Controller;
 
 /*
@@ -57,8 +57,9 @@ class FormFrontendController extends ActionController
         if (!empty($this->settings['persistenceIdentifier'])) {
             $formDefinition = $this->formPersistenceManager->load($this->settings['persistenceIdentifier']);
             $formDefinition['persistenceIdentifier'] = $this->settings['persistenceIdentifier'];
-            $formDefinition = $this->overrideByFlexFormSettings($formDefinition);
             $formDefinition = $this->overrideByTypoScriptSettings($formDefinition);
+            $formDefinition = $this->overrideByFlexFormSettings($formDefinition);
+            $formDefinition['identifier'] .= '-' . $this->configurationManager->getContentObject()->data['uid'];
         }
         $this->view->assign('formConfiguration', $formDefinition);
     }
@@ -87,7 +88,7 @@ class FormFrontendController extends ActionController
             foreach ($formDefinition['finishers'] as &$finisherValue) {
                 $finisherIdentifier = $finisherValue['identifier'];
                 if ($this->settings['overrideFinishers'] && isset($this->settings['finishers'][$finisherIdentifier])) {
-                    $prototypeName = isset($formDefinition['prototypeName']) ? $formDefinition['prototypeName'] : 'standard';
+                    $prototypeName = $formDefinition['prototypeName'] ?? 'standard';
                     $configurationService = $this->objectManager->get(ConfigurationService::class);
                     $prototypeConfiguration = $configurationService->getPrototypeConfiguration($prototypeName);
 

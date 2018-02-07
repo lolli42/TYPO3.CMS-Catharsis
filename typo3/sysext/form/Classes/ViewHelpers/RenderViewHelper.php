@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\ViewHelpers;
 
 /*
@@ -21,10 +21,10 @@ use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Web\Response;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
-use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Form\Domain\Factory\ArrayFormFactory;
 use TYPO3\CMS\Form\Mvc\Persistence\FormPersistenceManagerInterface;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
 
 /**
@@ -59,7 +59,6 @@ class RenderViewHelper extends AbstractViewHelper
      */
     public function initializeArguments()
     {
-        parent::initializeArguments();
         $this->registerArgument('persistenceIdentifier', 'string', 'The persistence identifier for the form.', false, null);
         $this->registerArgument('factoryClass', 'string', 'The fully qualified class name of the factory', false, ArrayFormFactory::class);
         $this->registerArgument('prototypeName', 'string', 'Name of the prototype to use', false, null);
@@ -71,7 +70,6 @@ class RenderViewHelper extends AbstractViewHelper
      * @param \Closure $renderChildrenClosure
      * @param RenderingContextInterface $renderingContext
      * @return string
-     * @public
      */
     public static function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext)
     {
@@ -93,7 +91,7 @@ class RenderViewHelper extends AbstractViewHelper
         }
 
         if (empty($prototypeName)) {
-            $prototypeName = isset($overrideConfiguration['prototypeName']) ? $overrideConfiguration['prototypeName'] : 'standard';
+            $prototypeName = $overrideConfiguration['prototypeName'] ?? 'standard';
         }
 
         $factory = $objectManager->get($factoryClass);

@@ -622,9 +622,8 @@ class UriBuilder
     {
         if ($this->environmentService->isEnvironmentInBackendMode()) {
             return $this->buildBackendUri();
-        } else {
-            return $this->buildFrontendUri();
         }
+        return $this->buildFrontendUri();
     }
 
     /**
@@ -665,24 +664,32 @@ class UriBuilder
             }
         } else {
             $id = GeneralUtility::_GP('id');
-            $module = GeneralUtility::_GP('M');
+            $module = GeneralUtility::_GP('route');
             if ($id !== null) {
                 $arguments['id'] = $id;
             }
             if ($module !== null) {
-                $arguments['M'] = $module;
+                $arguments['route'] = $module;
             }
         }
         ArrayUtility::mergeRecursiveWithOverrule($arguments, $this->arguments);
         $arguments = $this->convertDomainObjectsToIdentityArrays($arguments);
         $this->lastArguments = $arguments;
-        $moduleName = $arguments['M'];
-        unset($arguments['M'], $arguments['moduleToken']);
+        $moduleName = $arguments['route'] ?? null;
+        unset($arguments['route'], $arguments['token']);
         $backendUriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
-        if ($this->request instanceof WebRequest && $this->createAbsoluteUri) {
-            $uri = (string)$backendUriBuilder->buildUriFromModule($moduleName, $arguments, \TYPO3\CMS\Backend\Routing\UriBuilder::ABSOLUTE_URL);
+        if (!empty($moduleName)) {
+            if ($this->request instanceof WebRequest && $this->createAbsoluteUri) {
+                $uri = (string)$backendUriBuilder->buildUriFromRoutePath($moduleName, $arguments, \TYPO3\CMS\Backend\Routing\UriBuilder::ABSOLUTE_URL);
+            } else {
+                $uri = (string)$backendUriBuilder->buildUriFromRoutePath($moduleName, $arguments, \TYPO3\CMS\Backend\Routing\UriBuilder::ABSOLUTE_PATH);
+            }
         } else {
-            $uri = (string)$backendUriBuilder->buildUriFromModule($moduleName, $arguments);
+            if ($this->request instanceof WebRequest && $this->createAbsoluteUri) {
+                $uri = (string)$backendUriBuilder->buildUriFromModule($moduleName, $arguments, \TYPO3\CMS\Backend\Routing\UriBuilder::ABSOLUTE_URL);
+            } else {
+                $uri = (string)$backendUriBuilder->buildUriFromModule($moduleName, $arguments, \TYPO3\CMS\Backend\Routing\UriBuilder::ABSOLUTE_PATH);
+            }
         }
         if ($this->section !== '') {
             $uri .= '#' . $this->section;
@@ -718,7 +725,7 @@ class UriBuilder
     protected function buildTypolinkConfiguration()
     {
         $typolinkConfiguration = [];
-        $typolinkConfiguration['parameter'] = $this->targetPageUid !== null ? $this->targetPageUid : $GLOBALS['TSFE']->id;
+        $typolinkConfiguration['parameter'] = $this->targetPageUid ?? $GLOBALS['TSFE']->id;
         if ($this->targetPageType !== 0) {
             $typolinkConfiguration['parameter'] .= ',' . $this->targetPageType;
         } elseif ($this->format !== '') {

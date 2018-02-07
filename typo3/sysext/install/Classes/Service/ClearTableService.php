@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\Service;
 
 /*
@@ -31,10 +31,6 @@ class ClearTableService
         [
             'name' => 'be_sessions',
             'description' => 'Backend user sessions'
-        ],
-        [
-            'name' => 'cache_md5params',
-            'description' => 'Frontend redirects',
         ],
         [
             'name' => 'fe_sessions',

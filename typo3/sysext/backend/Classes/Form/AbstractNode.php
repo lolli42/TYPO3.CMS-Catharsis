@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form;
 
 /*
@@ -15,14 +15,18 @@ namespace TYPO3\CMS\Backend\Form;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Base class for container and single elements - their abstracts extend from here.
  */
-abstract class AbstractNode implements NodeInterface
+abstract class AbstractNode implements NodeInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * Instance of the node factory to create sub elements, container and single element expansions.
      *
@@ -104,7 +108,9 @@ abstract class AbstractNode implements NodeInterface
     }
 
     /**
-     * Merge existing data with a child return array
+     * Merge existing data with a child return array.
+     * The incoming $childReturn array should be initialized
+     * using initializeResultArray() beforehand.
      *
      * @param array $existing Currently merged array
      * @param array $childReturn Array returned by child
@@ -116,27 +122,23 @@ abstract class AbstractNode implements NodeInterface
         if ($mergeHtml && !empty($childReturn['html'])) {
             $existing['html'] .= LF . $childReturn['html'];
         }
-        foreach ($childReturn['additionalJavaScriptPost'] as $value) {
+        foreach ($childReturn['additionalJavaScriptPost'] ?? [] as $value) {
             $existing['additionalJavaScriptPost'][] = $value;
         }
-        foreach ($childReturn['additionalJavaScriptSubmit'] as $value) {
+        foreach ($childReturn['additionalJavaScriptSubmit'] ?? [] as $value) {
             $existing['additionalJavaScriptSubmit'][] = $value;
         }
-        foreach ($childReturn['additionalHiddenFields'] as $value) {
+        foreach ($childReturn['additionalHiddenFields'] ?? [] as $value) {
             $existing['additionalHiddenFields'][] = $value;
         }
-        foreach ($childReturn['stylesheetFiles'] as $value) {
+        foreach ($childReturn['stylesheetFiles'] ?? [] as $value) {
             $existing['stylesheetFiles'][] = $value;
         }
-        if (!empty($childReturn['requireJsModules'])) {
-            foreach ($childReturn['requireJsModules'] as $module) {
-                $existing['requireJsModules'][] = $module;
-            }
+        foreach ($childReturn['requireJsModules'] ?? [] as $module) {
+            $existing['requireJsModules'][] = $module;
         }
-        if (!empty($childReturn['additionalInlineLanguageLabelFiles'])) {
-            foreach ($childReturn['additionalInlineLanguageLabelFiles'] as $inlineLanguageLabelFile) {
-                $existing['additionalInlineLanguageLabelFiles'][] = $inlineLanguageLabelFile;
-            }
+        foreach ($childReturn['additionalInlineLanguageLabelFiles'] ?? [] as $inlineLanguageLabelFile) {
+            $existing['additionalInlineLanguageLabelFiles'][] = $inlineLanguageLabelFile;
         }
         if (!empty($childReturn['inlineData'])) {
             $existingInlineData = $existing['inlineData'];

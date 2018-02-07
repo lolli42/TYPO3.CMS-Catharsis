@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\ExtensionScanner\Php;
 
 /*
@@ -55,7 +55,7 @@ class CodeStatistics extends NodeVisitorAbstract
         $startLineOfNode = $node->getAttribute('startLine');
         if ($startLineOfNode !== $this->currentLineNumber) {
             $this->currentLineNumber = $startLineOfNode;
-            $this->numberOfEffectiveCodeLines ++;
+            $this->numberOfEffectiveCodeLines++;
 
             // Class statements may contain the @extensionScannerIgnoreFile statements
             if ($node instanceof Class_) {
@@ -75,7 +75,7 @@ class CodeStatistics extends NodeVisitorAbstract
             if (!empty($comments)) {
                 foreach ($comments as $comment) {
                     if (strstr($comment->getText(), '@extensionScannerIgnoreLine') !== false) {
-                        $this->numberOfIgnoreLines ++;
+                        $this->numberOfIgnoreLines++;
                         break;
                     }
                 }

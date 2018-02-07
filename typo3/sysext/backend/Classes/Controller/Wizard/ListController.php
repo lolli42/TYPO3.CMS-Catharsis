@@ -56,7 +56,6 @@ class ListController extends AbstractWizardController
      */
     public function __construct()
     {
-        parent::__construct();
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_wizards.xlf');
         $GLOBALS['SOBE'] = $this;
         $this->P = GeneralUtility::_GP('P');
@@ -107,12 +106,16 @@ class ListController extends AbstractWizardController
         if ((string)$this->id !== '') {
             $redirectUrl = GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']);
         } else {
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
             // Otherwise, show the list:
             $urlParameters = [];
             $urlParameters['id'] = $this->pid;
             $urlParameters['table'] = $this->P['params']['table'];
-            $urlParameters['returnUrl'] = GeneralUtility::getIndpEnv('REQUEST_URI');
-            $redirectUrl = BackendUtility::getModuleUrl('web_list', $urlParameters);
+            $urlParameters['returnUrl'] = !empty($this->P['returnUrl'])
+                ? GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])
+                : GeneralUtility::getIndpEnv('REQUEST_URI');
+            $redirectUrl = (string)$uriBuilder->buildUriFromRoute('web_list', $urlParameters);
         }
         HttpUtility::redirect($redirectUrl);
     }

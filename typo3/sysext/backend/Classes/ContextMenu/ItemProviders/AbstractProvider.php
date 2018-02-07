@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\ContextMenu\ItemProviders;
 
 /*
@@ -86,7 +86,7 @@ class AbstractProvider implements ProviderInterface
      * @param string $identifier
      * @param string $context
      */
-    public function __construct(string $table, string $identifier, string $context='')
+    public function __construct(string $table, string $identifier, string $context = '')
     {
         $this->table = $table;
         $this->identifier = $identifier;
@@ -143,7 +143,7 @@ class AbstractProvider implements ProviderInterface
      */
     protected function initDisabledItems()
     {
-        $TSkey = $this->table . ($this->context ?  '.' . $this->context : '');
+        $TSkey = $this->table . ($this->context ? '.' . $this->context : '');
         $this->disabledItems = GeneralUtility::trimExplode(',', $this->backendUser->getTSConfigVal('options.contextMenu.table.' . $TSkey . '.disableItems'), true);
     }
 

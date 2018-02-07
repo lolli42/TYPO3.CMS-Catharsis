@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Mvc\Configuration;
 
 /*
@@ -15,7 +15,10 @@ namespace TYPO3\CMS\Form\Mvc\Configuration;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManager as ExtbaseConfigurationManager;
 use TYPO3\CMS\Form\Mvc\Configuration\Exception\ExtensionNameRequiredException;
 
@@ -27,17 +30,16 @@ use TYPO3\CMS\Form\Mvc\Configuration\Exception\ExtensionNameRequiredException;
  */
 class ConfigurationManager extends ExtbaseConfigurationManager implements ConfigurationManagerInterface
 {
+
+    /**
+     * @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+     */
+    protected $cache;
+
     /**
      * @var \TYPO3\CMS\Form\Mvc\Configuration\YamlSource
      */
     protected $yamlSource;
-
-    /**
-     * 1st level configuration cache
-     *
-     * @var array
-     */
-    protected $configurationCache = [];
 
     /**
      * @param \TYPO3\CMS\Form\Mvc\Configuration\YamlSource $yamlSource
@@ -66,12 +68,12 @@ class ConfigurationManager extends ExtbaseConfigurationManager implements Config
     }
 
     /**
-     * Load and parse yaml files which are configured within the TypoScript
+     * Load and parse YAML files which are configured within the TypoScript
      * path plugin.tx_extensionkey.settings.yamlConfigurations
      *
      * The following steps will be done:
      *
-     * * Convert each singe yaml file into an array
+     * * Convert each singe YAML file into an array
      * * merge this arrays together
      * * resolve all declared inheritances
      * * remove all keys if their values are NULL
@@ -93,19 +95,19 @@ class ConfigurationManager extends ExtbaseConfigurationManager implements Config
         }
         $ucFirstExtensioName = ucfirst($extensionName);
 
-        // 1st level cache
-        $configurationCacheKey = strtolower(self::CONFIGURATION_TYPE_YAML_SETTINGS . '|' . $extensionName);
-        if (isset($this->configurationCache[$configurationCacheKey])) {
-            return $this->configurationCache[$configurationCacheKey];
-        }
+        $typoscriptSettings = $this->getTypoScriptSettings($extensionName);
 
-        $typoscriptSettings = parent::getConfiguration(
-            ConfigurationManagerInterface::CONFIGURATION_TYPE_SETTINGS,
-            $extensionName
-        );
         $yamlSettingsFilePaths = isset($typoscriptSettings['yamlConfigurations'])
             ? ArrayUtility::sortArrayWithIntegerKeys($typoscriptSettings['yamlConfigurations'])
             : [];
+
+        $cacheKeySuffix = $extensionName . md5(json_encode($yamlSettingsFilePaths));
+
+        $yamlSettings = $this->getYamlSettingsFromCache($cacheKeySuffix);
+        if (!empty($yamlSettings)) {
+            return $this->overrideConfigurationByTypoScript($yamlSettings, $extensionName);
+        }
+
         $yamlSettings = InheritancesResolverService::create($this->yamlSource->load($yamlSettingsFilePaths))
             ->getResolvedConfiguration();
 
@@ -114,11 +116,9 @@ class ConfigurationManager extends ExtbaseConfigurationManager implements Config
             ? $yamlSettings['TYPO3']['CMS'][$ucFirstExtensioName]
             : [];
         $yamlSettings = ArrayUtility::sortArrayWithIntegerKeysRecursive($yamlSettings);
-        $yamlSettings = $this->overrideConfigurationByTypoScript($yamlSettings, $extensionName);
+        $this->setYamlSettingsIntoCache($cacheKeySuffix, $yamlSettings);
 
-        // 1st level cache
-        $this->configurationCache[$configurationCacheKey] = $yamlSettings;
-        return $yamlSettings;
+        return $this->overrideConfigurationByTypoScript($yamlSettings, $extensionName);
     }
 
     /**
@@ -141,5 +141,62 @@ class ConfigurationManager extends ExtbaseConfigurationManager implements Config
             }
         }
         return $yamlSettings;
+    }
+
+    /**
+     * @return \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+     */
+    protected function getCacheFrontend(): FrontendInterface
+    {
+        if ($this->cache === null) {
+            $this->cache = GeneralUtility::makeInstance(CacheManager::class)->getCache('assets');
+        }
+        return $this->cache;
+    }
+
+    /**
+     * @param string $cacheKeySuffix
+     * @return string
+     */
+    protected function getConfigurationCacheKey(string $cacheKeySuffix): string
+    {
+        return strtolower(self::CONFIGURATION_TYPE_YAML_SETTINGS . '_' . $cacheKeySuffix);
+    }
+
+    /**
+     * @param string $cacheKeySuffix
+     * @return mixed
+     */
+    protected function getYamlSettingsFromCache(string $cacheKeySuffix)
+    {
+        return $this->getCacheFrontend()->get(
+            $this->getConfigurationCacheKey($cacheKeySuffix)
+        );
+    }
+
+    /**
+     * @param string $cacheKeySuffix
+     * @param array $yamlSettings
+     */
+    protected function setYamlSettingsIntoCache(
+        string $cacheKeySuffix,
+        array $yamlSettings
+    ) {
+        $this->getCacheFrontend()->set(
+            $this->getConfigurationCacheKey($cacheKeySuffix),
+            $yamlSettings
+        );
+    }
+
+    /**
+     * @param string $extensionName
+     * @return null|[]
+     */
+    protected function getTypoScriptSettings(string $extensionName)
+    {
+        return parent::getConfiguration(
+            ConfigurationManagerInterface::CONFIGURATION_TYPE_SETTINGS,
+            $extensionName
+        );
     }
 }

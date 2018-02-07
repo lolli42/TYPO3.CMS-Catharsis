@@ -16,14 +16,16 @@ namespace TYPO3\CMS\Backend\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Module\AbstractModule;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Tree\View\NewRecordPageTreeView;
 use TYPO3\CMS\Backend\Tree\View\PagePositionMap;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
@@ -33,7 +35,7 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 /**
  * Script class for 'db_new'
  */
-class NewRecordController extends AbstractModule
+class NewRecordController
 {
     /**
      * @var array
@@ -147,11 +149,18 @@ class NewRecordController extends AbstractModule
     public $tRows;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $GLOBALS['SOBE'] = $this;
         $this->getLanguageService()->includeLLFile('EXT:lang/Resources/Private/Language/locallang_misc.xlf');
         $this->init();
@@ -164,7 +173,7 @@ class NewRecordController extends AbstractModule
     {
         $beUser = $this->getBackendUserAuthentication();
         // Page-selection permission clause (reading)
-        $this->perms_clause = $beUser->getPagePermsClause(1);
+        $this->perms_clause = $beUser->getPagePermsClause(Permission::PAGE_SHOW);
         // This will hide records from display - it has nothing to do with user rights!!
         if ($pidList = $beUser->getTSConfigVal('options.hideRecords.pages')) {
             if (!empty($pidList)) {
@@ -184,6 +193,19 @@ class NewRecordController extends AbstractModule
         // Setting up the context sensitive menu:
         $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ContextMenu');
         $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Tooltip');
+        $this->moduleTemplate->getPageRenderer()->loadRequireJsModule(
+            'TYPO3/CMS/Backend/Wizard/NewContentElement',
+            'function(NewContentElement) {
+                require([\'jquery\'], function($) {
+                    $(function() {
+                        $(\'.t3js-toggle-new-content-element-wizard\').click(function() {
+                            var $me = $(this);
+                            NewContentElement.wizard($me.data(\'url\'), $me.data(\'title\'));
+                        });
+                    });
+                });
+            }'
+        );
         // Creating content
         $this->content = '';
         $this->content .= '<h1>'
@@ -393,9 +415,7 @@ class NewRecordController extends AbstractModule
             ->fetchColumn(0);
 
         if ($numberOfPages > 0) {
-            $this->code .= '
-				<h3>' . htmlspecialchars($this->getLanguageService()->getLL('selectPosition')) . ':</h3>
-			';
+            $this->code .= '<h3>' . htmlspecialchars($this->getLanguageService()->getLL('selectPosition')) . ':</h3>';
             $positionMap = GeneralUtility::makeInstance(PagePositionMap::class, NewRecordPageTreeView::class);
             /** @var $positionMap \TYPO3\CMS\Backend\Tree\View\PagePositionMap */
             $this->code .= $positionMap->positionTree(
@@ -405,6 +425,8 @@ class NewRecordController extends AbstractModule
                 $this->returnUrl
             );
         } else {
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
             // No pages yet, no need to prompt for position, redirect to page creation.
             $urlParameters = [
                 'edit' => [
@@ -413,9 +435,9 @@ class NewRecordController extends AbstractModule
                     ]
                 ],
                 'returnNewPageId' => 1,
-                'returnUrl' => BackendUtility::getModuleUrl('db_new', ['id' => $this->id, 'pagesOnly' => '1'])
+                'returnUrl' => (string)$uriBuilder->buildUriFromRoute('db_new', ['id' => $this->id, 'pagesOnly' => '1'])
             ];
-            $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+            $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
             @ob_end_clean();
             HttpUtility::redirect($url);
         }
@@ -434,12 +456,10 @@ class NewRecordController extends AbstractModule
         // Finish initializing new pages options with TSconfig
         // Each new page option may be hidden by TSconfig
         // Enabled option for the position of a new page
-        $this->newPagesSelectPosition = !empty(
-            $pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageSelectPosition']
-        );
+        $this->newPagesSelectPosition = !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageSelectPosition']);
         // Pseudo-boolean (0/1) for backward compatibility
-        $displayNewPagesIntoLink = $this->newPagesInto && !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageInside']) ? 1 : 0;
-        $displayNewPagesAfterLink = $this->newPagesAfter && !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageAfter']) ? 1 : 0;
+        $displayNewPagesIntoLink = $this->newPagesInto && !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageInside']);
+        $displayNewPagesAfterLink = $this->newPagesAfter && !empty($pageTS['mod.']['wizards.']['newRecord.']['pages.']['show.']['pageAfter']);
         // Slight spacer from header:
         $this->code .= '';
         // New Page
@@ -454,12 +474,25 @@ class NewRecordController extends AbstractModule
         $rowContent = '';
         // New pages INSIDE this pages
         $newPageLinks = [];
-        if ($displayNewPagesIntoLink && $this->isTableAllowedForThisPage($this->pageinfo, 'pages') && $this->getBackendUserAuthentication()->check('tables_modify', 'pages') && $this->getBackendUserAuthentication()->workspaceCreateNewRecord(($this->pageinfo['_ORIG_uid'] ?: $this->id), 'pages')) {
+        if ($displayNewPagesIntoLink
+            && $this->isTableAllowedForThisPage($this->pageinfo, 'pages')
+            && $this->getBackendUserAuthentication()->check('tables_modify', 'pages')
+            && $this->getBackendUserAuthentication()->workspaceCreateNewRecord(($this->pageinfo['_ORIG_uid'] ?: $this->id), 'pages')
+        ) {
             // Create link to new page inside:
-            $newPageLinks[] = $this->linkWrap($this->moduleTemplate->getIconFactory()->getIconForRecord($table, [], Icon::SIZE_SMALL)->render() . htmlspecialchars($lang->sL($v['ctrl']['title'])) . ' (' . htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:db_new.php.inside')) . ')', $table, $this->id);
+            $recordIcon = $this->moduleTemplate->getIconFactory()->getIconForRecord($table, [], Icon::SIZE_SMALL)->render();
+            $newPageLinks[] = $this->linkWrap(
+                $recordIcon . htmlspecialchars($lang->sL($v['ctrl']['title'])) . ' (' . htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:db_new.php.inside')) . ')',
+                $table,
+                $this->id
+            );
         }
         // New pages AFTER this pages
-        if ($displayNewPagesAfterLink && $this->isTableAllowedForThisPage($this->pidInfo, 'pages') && $this->getBackendUserAuthentication()->check('tables_modify', 'pages') && $this->getBackendUserAuthentication()->workspaceCreateNewRecord($this->pidInfo['uid'], 'pages')) {
+        if ($displayNewPagesAfterLink
+            && $this->isTableAllowedForThisPage($this->pidInfo, 'pages')
+            && $this->getBackendUserAuthentication()->check('tables_modify', 'pages')
+            && $this->getBackendUserAuthentication()->workspaceCreateNewRecord($this->pidInfo['uid'], 'pages')
+        ) {
             $newPageLinks[] = $this->linkWrap($pageIcon . htmlspecialchars($lang->sL($v['ctrl']['title'])) . ' (' . htmlspecialchars($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:db_new.php.after')) . ')', 'pages', -$this->id);
         }
         // New pages at selection position
@@ -478,6 +511,8 @@ class NewRecordController extends AbstractModule
         } else {
             $rowContent = '<ul class="list-tree"><li><ul>' . $rowContent . '</li></ul>';
         }
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         // Compile table row
         $startRows = [$rowContent];
         $iconFile = [];
@@ -504,14 +539,20 @@ class NewRecordController extends AbstractModule
                         // If the table is 'tt_content', create link to wizard
                         if ($table === 'tt_content') {
                             $groupName = $lang->getLL('createNewContent');
-                            $rowContent = $newContentIcon . '<strong>' . $lang->getLL('createNewContent') . '</strong><ul>';
+                            $rowContent = $newContentIcon
+                                . '<strong>' . $lang->getLL('createNewContent') . '</strong>'
+                                . '<ul>';
                             // If mod.newContentElementWizard.override is set, use that extension's wizard instead:
                             $tsConfig = BackendUtility::getModTSconfig($this->id, 'mod');
-                            $moduleName = isset($tsConfig['properties']['newContentElementWizard.']['override'])
-                                ? $tsConfig['properties']['newContentElementWizard.']['override']
-                                : 'new_content_element';
-                            $url = BackendUtility::getModuleUrl($moduleName, ['id' => $this->id, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')]);
-                            $rowContent .= '<li>' . $newLink . ' ' . BackendUtility::wrapInHelp($table, '') . '</li><li><a href="' . htmlspecialchars($url) . '">' . $newContentIcon . htmlspecialchars($lang->getLL('clickForWizard')) . '</a></li></ul>';
+                            $moduleName = $tsConfig['properties']['newContentElementWizard.']['override'] ?? 'new_content_element_wizard';
+                            $url = (string)$uriBuilder->buildUriFromRoute($moduleName, ['id' => $this->id, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')]);
+                            $rowContent .= '<li>' . $newLink . ' ' . BackendUtility::wrapInHelp($table, '') . '</li>'
+                                . '<li>'
+                                . '<a href="#" data-url="' . htmlspecialchars($url) . '" data-title="' . htmlspecialchars($this->getLanguageService()->getLL('newContentElement')) . '" class="t3js-toggle-new-content-element-wizard">'
+                                . $newContentIcon . htmlspecialchars($lang->getLL('clickForWizard'))
+                                . '</a>'
+                                . '</li>'
+                                . '</ul>';
                         } else {
                             // Get the title
                             if ($v['ctrl']['readOnly'] || $v['ctrl']['hideTable'] || $v['ctrl']['is_static']) {
@@ -550,9 +591,6 @@ class NewRecordController extends AbstractModule
                                     $iconFile[$_EXTKEY] = '';
                                 }
                             } else {
-                                if ($table === 'pages_language_overlay' && !$this->checkIfLanguagesExist()) {
-                                    continue;
-                                }
                                 $_EXTKEY = 'system';
                                 $thisTitle = $lang->getLL('system_records');
                                 $iconFile['system'] = $this->moduleTemplate->getIconFactory()->getIcon('apps-pagetree-root', Icon::SIZE_SMALL)->render();
@@ -622,10 +660,9 @@ class NewRecordController extends AbstractModule
                 $ret = strnatcasecmp($this->tRows[$a]['title'], $this->tRows[$b]['title']);
             }
             return $ret;
-        } else {
-            // Return alphabetic order
-            return strnatcasecmp($this->tRows[$a]['title'], $this->tRows[$b]['title']);
         }
+        // Return alphabetic order
+        return strnatcasecmp($this->tRows[$a]['title'], $this->tRows[$b]['title']);
     }
 
     /**
@@ -650,10 +687,11 @@ class NewRecordController extends AbstractModule
         if ($table === 'pages' && $addContentTable) {
             $urlParameters['tt_content']['prev'] = 'new';
             $urlParameters['returnNewPageId'] = 1;
-        } elseif ($table === 'pages_language_overlay') {
-            $urlParameters['overrideVals']['pages_language_overlay']['doktype'] = (int)$this->pageinfo['doktype'];
+        } elseif ($table === 'pages') {
+            $urlParameters['overrideVals']['pages']['doktype'] = (int)$this->pageinfo['doktype'];
         }
-        $url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
         return '<a href="' . htmlspecialchars($url) . '">' . $linkText . '</a>';
     }
 

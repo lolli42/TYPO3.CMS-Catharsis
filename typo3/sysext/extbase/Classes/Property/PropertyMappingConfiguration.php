@@ -241,7 +241,8 @@ class PropertyMappingConfiguration implements PropertyMappingConfigurationInterf
     {
         if (isset($this->subConfigurationForProperty[$propertyName])) {
             return $this->subConfigurationForProperty[$propertyName];
-        } elseif (isset($this->subConfigurationForProperty[self::PROPERTY_PATH_PLACEHOLDER])) {
+        }
+        if (isset($this->subConfigurationForProperty[self::PROPERTY_PATH_PLACEHOLDER])) {
             return $this->subConfigurationForProperty[self::PROPERTY_PATH_PLACEHOLDER];
         }
 
@@ -377,7 +378,7 @@ class PropertyMappingConfiguration implements PropertyMappingConfigurationInterf
 
         $currentProperty = array_shift($splittedPropertyPath);
         if (!isset($this->subConfigurationForProperty[$currentProperty])) {
-            $type = get_class($this);
+            $type = static::class;
             if (isset($this->subConfigurationForProperty[self::PROPERTY_PATH_PLACEHOLDER])) {
                 $this->subConfigurationForProperty[$currentProperty] = clone $this->subConfigurationForProperty[self::PROPERTY_PATH_PLACEHOLDER];
             } else {

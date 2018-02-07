@@ -14,6 +14,11 @@ namespace TYPO3\CMS\Extbase\Core;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Routing\Route;
+use TYPO3\CMS\Extbase\Mvc\Web\Response;
+
 /**
  * Creates a request an dispatches it to the controller which was specified
  * by TS Setup, flexForm and returns the content to the v4 framework.
@@ -31,13 +36,6 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface
     public $cObj;
 
     /**
-     * The application context
-     *
-     * @var string
-     */
-    protected $context;
-
-    /**
      * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManager
      */
     protected $configurationManager;
@@ -46,16 +44,6 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface
      * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * @var \TYPO3\CMS\Core\Cache\CacheManager
-     */
-    protected $cacheManager;
-
-    /**
-     * @var \TYPO3\CMS\Extbase\Reflection\ReflectionService
-     */
-    protected $reflectionService;
 
     /**
      * @var \TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager
@@ -86,8 +74,6 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface
         $this->initializeObjectManager();
         $this->initializeConfiguration($configuration);
         $this->configureObjectManager();
-        $this->initializeCache();
-        $this->initializeReflection();
         $this->initializePersistence();
     }
 
@@ -111,7 +97,7 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface
     {
         $this->configurationManager = $this->objectManager->get(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::class);
         /** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject */
-        $contentObject = isset($this->cObj) ? $this->cObj : \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
+        $contentObject = $this->cObj ?? \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
         $this->configurationManager->setContentObject($contentObject);
         $this->configurationManager->setConfiguration($configuration);
     }
@@ -134,30 +120,6 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface
                 $originalClassName = rtrim($classNameWithDot, '.');
                 $objectContainer->registerImplementation($originalClassName, $classConfiguration['className']);
             }
-        }
-    }
-
-    /**
-     * Initializes the cache framework
-     *
-     * @see initialize()
-     */
-    protected function initializeCache()
-    {
-        $this->cacheManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class);
-    }
-
-    /**
-     * Initializes the Reflection Service
-     *
-     * @see initialize()
-     */
-    protected function initializeReflection()
-    {
-        $this->reflectionService = $this->objectManager->get(\TYPO3\CMS\Extbase\Reflection\ReflectionService::class);
-        $this->reflectionService->setDataCache($this->cacheManager->getCache('extbase_reflection'));
-        if (!$this->reflectionService->isInitialized()) {
-            $this->reflectionService->initialize();
         }
     }
 
@@ -201,7 +163,6 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface
         // This happens for instance, when a USER object was converted to a USER_INT
         // @see TYPO3\CMS\Extbase\Mvc\Web\FrontendRequestHandler::handleRequest()
         if ($response === null) {
-            $this->reflectionService->shutdown();
             $content = '';
         } else {
             $content = $response->shutdown();
@@ -216,12 +177,67 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface
     }
 
     /**
+     * Entrypoint for backend modules, handling PSR-7 requests/responses
+     *
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @internal
+     */
+    public function handleBackendRequest(ServerRequestInterface $request): ResponseInterface
+    {
+        // build the configuration from the Server request / route
+        /** @var Route $route */
+        $route = $request->getAttribute('route');
+        $moduleConfiguration = $route->getOption('moduleConfiguration');
+        $configuration = [
+            'extensionName' => $moduleConfiguration['extensionName'],
+            'pluginName' => $route->getOption('moduleName')
+        ];
+        if (isset($moduleConfiguration['vendorName'])) {
+            $configuration['vendorName'] = $moduleConfiguration['vendorName'];
+        }
+
+        $this->initialize($configuration);
+
+        /** @var $requestHandlerResolver \TYPO3\CMS\Extbase\Mvc\RequestHandlerResolver */
+        $requestHandlerResolver = $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\RequestHandlerResolver::class);
+        $requestHandler = $requestHandlerResolver->resolveRequestHandler();
+        /** @var Response $extbaseResponse */
+        $extbaseResponse = $requestHandler->handleRequest();
+
+        // Convert to PSR-7 response and hand it back to TYPO3 Core
+        $response = $this->convertExtbaseResponseToPsr7Response($extbaseResponse);
+        $this->resetSingletons();
+        $this->objectManager->get(\TYPO3\CMS\Extbase\Service\CacheService::class)->clearCachesOfRegisteredPageIds();
+        return $response;
+    }
+
+    /**
+     * Converts a Extbase response object into a PSR-7 Response
+     *
+     * @param Response $extbaseResponse
+     * @return ResponseInterface
+     */
+    protected function convertExtbaseResponseToPsr7Response(Response $extbaseResponse): ResponseInterface
+    {
+        $response = new \TYPO3\CMS\Core\Http\Response(
+            'php://temp',
+            $extbaseResponse->getStatusCode(),
+            $extbaseResponse->getUnpreparedHeaders()
+        );
+        $content = $extbaseResponse->getContent();
+        if ($content !== null) {
+            $response->getBody()->write($content);
+        }
+        return $response;
+    }
+
+    /**
      * Resets global singletons for the next plugin
      */
     protected function resetSingletons()
     {
         $this->persistenceManager->persistAll();
-        $this->reflectionService->shutdown();
     }
 
     /**

@@ -118,7 +118,7 @@ class CommandController implements CommandControllerInterface
     public function processRequest(RequestInterface $request, ResponseInterface $response)
     {
         if (!$this->canProcessRequest($request)) {
-            throw new UnsupportedRequestTypeException(sprintf('%s only supports command line requests – requests of type "%s" given.', get_class($this), get_class($request)), 1300787096);
+            throw new UnsupportedRequestTypeException(sprintf('%s only supports command line requests – requests of type "%s" given.', static::class, get_class($request)), 1300787096);
         }
 
         $this->request = $request;
@@ -130,6 +130,7 @@ class CommandController implements CommandControllerInterface
         $this->arguments = $this->objectManager->get(Arguments::class);
         $this->initializeCommandMethodArguments();
         $this->mapRequestArgumentsToControllerArguments();
+        $this->initializeBackendAuthentication();
         $this->callCommandMethod();
     }
 
@@ -147,7 +148,7 @@ class CommandController implements CommandControllerInterface
     {
         $commandMethodName = $this->request->getControllerCommandName() . 'Command';
         if (!is_callable([$this, $commandMethodName])) {
-            throw new NoSuchCommandException(sprintf('A command method "%s()" does not exist in controller "%s".', $commandMethodName, get_class($this)), 1300902143);
+            throw new NoSuchCommandException(sprintf('A command method "%s()" does not exist in controller "%s".', $commandMethodName, static::class), 1300902143);
         }
         return $commandMethodName;
     }
@@ -161,7 +162,7 @@ class CommandController implements CommandControllerInterface
      */
     protected function initializeCommandMethodArguments()
     {
-        $methodParameters = $this->reflectionService->getMethodParameters(get_class($this), $this->commandMethodName);
+        $methodParameters = $this->reflectionService->getMethodParameters(static::class, $this->commandMethodName);
 
         foreach ($methodParameters as $parameterName => $parameterInfo) {
             $dataType = null;
@@ -171,9 +172,9 @@ class CommandController implements CommandControllerInterface
                 $dataType = 'array';
             }
             if ($dataType === null) {
-                throw new InvalidArgumentTypeException(sprintf('The argument type for parameter $%s of method %s->%s() could not be detected.', $parameterName, get_class($this), $this->commandMethodName), 1306755296);
+                throw new InvalidArgumentTypeException(sprintf('The argument type for parameter $%s of method %s->%s() could not be detected.', $parameterName, static::class, $this->commandMethodName), 1306755296);
             }
-            $defaultValue = (isset($parameterInfo['defaultValue']) ? $parameterInfo['defaultValue'] : null);
+            $defaultValue = ($parameterInfo['defaultValue'] ?? null);
             $this->arguments->addNewArgument($parameterName, $dataType, ($parameterInfo['optional'] === false), $defaultValue);
         }
     }
@@ -199,6 +200,17 @@ class CommandController implements CommandControllerInterface
                 $argumentValue = $this->output->ask(sprintf('<comment>Please specify the required argument "%s":</comment> ', $commandArgumentDefinition->getDashedName()));
             }
             $argument->setValue($argumentValue);
+        }
+    }
+
+    /**
+     * Initializes and ensures authenticated backend access
+     */
+    protected function initializeBackendAuthentication()
+    {
+        $backendUserAuthentication = $this->getBackendUserAuthentication();
+        if ($backendUserAuthentication !== null) {
+            $backendUserAuthentication->backendCheckLogin();
         }
     }
 
@@ -319,6 +331,6 @@ class CommandController implements CommandControllerInterface
      */
     protected function getBackendUserAuthentication()
     {
-        return isset($GLOBALS['BE_USER']) ? $GLOBALS['BE_USER'] : null;
+        return $GLOBALS['BE_USER'] ?? null;
     }
 }

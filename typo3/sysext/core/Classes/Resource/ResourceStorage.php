@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Core\Resource;
  */
 
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidTargetFolderException;
@@ -190,7 +191,8 @@ class ResourceStorage implements ResourceStorageInterface
                 $e->getMessage()
             );
 
-            $this->getLogger()->error($message);
+            // create a dedicated logger instance because we need a logger in the constructor
+            GeneralUtility::makeInstance(LogManager::class)->getLogger(static::class)->error($message);
         }
         $this->driver->initialize();
         $this->capabilities = $this->driver->getCapabilities();
@@ -521,7 +523,8 @@ class ResourceStorage implements ResourceStorageInterface
                     $isWithinFileMount = true;
                     if (!$checkWriteAccess) {
                         break;
-                    } elseif (empty($fileMount['read_only'])) {
+                    }
+                    if (empty($fileMount['read_only'])) {
                         $writableFileMountAvailable = true;
                         break;
                     }
@@ -716,35 +719,7 @@ class ResourceStorage implements ResourceStorageInterface
     protected function checkFileExtensionPermission($fileName)
     {
         $fileName = $this->driver->sanitizeFileName($fileName);
-        $isAllowed = GeneralUtility::verifyFilenameAgainstDenyPattern($fileName);
-        if ($isAllowed && $this->evaluatePermissions) {
-            $fileExtension = strtolower(PathUtility::pathinfo($fileName, PATHINFO_EXTENSION));
-            // Set up the permissions for the file extension
-            $fileExtensionPermissions = $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace'];
-            $fileExtensionPermissions['allow'] = GeneralUtility::uniqueList(strtolower($fileExtensionPermissions['allow']));
-            $fileExtensionPermissions['deny'] = GeneralUtility::uniqueList(strtolower($fileExtensionPermissions['deny']));
-            if ($fileExtension !== '') {
-                // If the extension is found amongst the allowed types, we return TRUE immediately
-                if ($fileExtensionPermissions['allow'] === '*' || GeneralUtility::inList($fileExtensionPermissions['allow'], $fileExtension)) {
-                    return true;
-                }
-                // If the extension is found amongst the denied types, we return FALSE immediately
-                if ($fileExtensionPermissions['deny'] === '*' || GeneralUtility::inList($fileExtensionPermissions['deny'], $fileExtension)) {
-                    return false;
-                }
-                // If no match we return TRUE
-                return true;
-            } else {
-                if ($fileExtensionPermissions['allow'] === '*') {
-                    return true;
-                }
-                if ($fileExtensionPermissions['deny'] === '*') {
-                    return false;
-                }
-                return true;
-            }
-        }
-        return $isAllowed;
+        return GeneralUtility::verifyFilenameAgainstDenyPattern($fileName);
     }
 
     /**
@@ -761,12 +736,11 @@ class ResourceStorage implements ResourceStorageInterface
                     'You are not allowed to read folders',
                     1430657869
                 );
-            } else {
-                throw new Exception\InsufficientFolderAccessPermissionsException(
+            }
+            throw new Exception\InsufficientFolderAccessPermissionsException(
                     'You are not allowed to access the given folder: "' . $folder->getName() . '"',
                     1375955684
                 );
-            }
         }
     }
 
@@ -1170,7 +1144,8 @@ class ResourceStorage implements ResourceStorageInterface
         $replaceExisting = false;
         if ($conflictMode->equals(DuplicationBehavior::CANCEL) && $this->driver->fileExistsInFolder($targetFileName, $targetFolder->getIdentifier())) {
             throw new Exception\ExistingTargetFileNameException('File "' . $targetFileName . '" already exists in folder ' . $targetFolder->getIdentifier(), 1322121068);
-        } elseif ($conflictMode->equals(DuplicationBehavior::RENAME)) {
+        }
+        if ($conflictMode->equals(DuplicationBehavior::RENAME)) {
             $targetFileName = $this->getUniqueName($targetFolder, $targetFileName);
         } elseif ($conflictMode->equals(DuplicationBehavior::REPLACE) && $this->driver->fileExistsInFolder($targetFileName, $targetFolder->getIdentifier())) {
             $replaceExisting = true;
@@ -1229,7 +1204,7 @@ class ResourceStorage implements ResourceStorageInterface
 
     /**
      * Creates a (cryptographic) hash for a fileIdentifier.
-
+     *
      * @param string $fileIdentifier
      * @param string $hash
      *
@@ -1299,7 +1274,8 @@ class ResourceStorage implements ResourceStorageInterface
                     }
 
                     $queryParameterArray['token'] = GeneralUtility::hmac(implode('|', $queryParameterArray), 'resourceStorageDumpFile');
-                    $publicUrl = PathUtility::getAbsoluteWebPath('index.php') . '?' . http_build_query($queryParameterArray, '', '&', PHP_QUERY_RFC3986);
+                    $publicUrl = GeneralUtility::locationHeaderUrl(PathUtility::getAbsoluteWebPath(PATH_site . 'index.php'));
+                    $publicUrl .= '?' . http_build_query($queryParameterArray, '', '&', PHP_QUERY_RFC3986);
                 }
 
                 // If requested, make the path relative to the current script in order to make it possible
@@ -1447,7 +1423,7 @@ class ResourceStorage implements ResourceStorageInterface
      *
      * @param string $fileName
      * @param Folder $folder
-     * @return NULL|File|ProcessedFile
+     * @return File|ProcessedFile|null
      */
     public function getFileInFolder($fileName, Folder $folder)
     {
@@ -1567,7 +1543,7 @@ class ResourceStorage implements ResourceStorageInterface
             foreach ($allStorages as $storage) {
                 // To circumvent the permission check of the folder, we use the factory to create it "manually" instead of directly using $storage->getProcessingFolder()
                 // See #66695 for details
-                list($storageUid, $processingFolderIdentifier) = GeneralUtility::trimExplode(':', $storage->getStorageRecord()['processingfolder']);
+                list($storageUid, $processingFolderIdentifier) = array_pad(GeneralUtility::trimExplode(':', $storage->getStorageRecord()['processingfolder']), 2, null);
                 if (empty($processingFolderIdentifier) || (int)$storageUid !== $this->getUid()) {
                     continue;
                 }
@@ -1647,7 +1623,8 @@ class ResourceStorage implements ResourceStorageInterface
         // Cache-Control header is needed here to solve an issue with browser IE8 and lower
         // See for more information: http://support.microsoft.com/kb/323308
         header("Cache-Control: ''");
-        header('Last-Modified: ' .
+        header(
+            'Last-Modified: ' .
             gmdate('D, d M Y H:i:s', array_pop($this->driver->getFileInfoByIdentifier($file->getIdentifier(), ['mtime']))) . ' GMT',
             true,
             200
@@ -2339,7 +2316,10 @@ class ResourceStorage implements ResourceStorageInterface
                 $parentPermissions = $this->driver->getPermissions($this->driver->getParentFolderIdentifierOfIdentifier($identifier));
                 if ($parentPermissions['r']) {
                     $folder = GeneralUtility::makeInstance(
-                        InaccessibleFolder::class, $this, $data['identifier'], $data['name']
+                        InaccessibleFolder::class,
+                        $this,
+                        $data['identifier'],
+                        $data['name']
                     );
                 }
             }
@@ -2401,9 +2381,8 @@ class ResourceStorage implements ResourceStorageInterface
         if ($respectFileMounts && !empty($this->fileMounts)) {
             $mount = reset($this->fileMounts);
             return $mount['folder'];
-        } else {
-            return $this->getResourceFactoryInstance()->createFolderObject($this, $this->driver->getRootLevelFolder(), '');
         }
+        return $this->getResourceFactoryInstance()->createFolderObject($this, $this->driver->getRootLevelFolder(), '');
     }
 
     /**
@@ -2879,11 +2858,17 @@ class ResourceStorage implements ResourceStorageInterface
                 }
             } catch (Exception\InsufficientFolderWritePermissionsException $e) {
                 $this->processingFolder = GeneralUtility::makeInstance(
-                    InaccessibleFolder::class, $this, $processingFolder, $processingFolder
+                    InaccessibleFolder::class,
+                    $this,
+                    $processingFolder,
+                    $processingFolder
                 );
             } catch (Exception\ResourcePermissionsUnavailableException $e) {
                 $this->processingFolder = GeneralUtility::makeInstance(
-                    InaccessibleFolder::class, $this, $processingFolder, $processingFolder
+                    InaccessibleFolder::class,
+                    $this,
+                    $processingFolder,
+                    $processingFolder
                 );
             }
         }
@@ -3001,17 +2986,5 @@ class ResourceStorage implements ResourceStorageInterface
     protected function getBackendUser()
     {
         return $GLOBALS['BE_USER'];
-    }
-
-    /**
-     * @return \TYPO3\CMS\Core\Log\Logger
-     */
-    protected function getLogger()
-    {
-        /** @var $logManager \TYPO3\CMS\Core\Log\LogManager */
-        $logManager = GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Log\LogManager::class
-        );
-        return $logManager->getLogger(get_class($this));
     }
 }

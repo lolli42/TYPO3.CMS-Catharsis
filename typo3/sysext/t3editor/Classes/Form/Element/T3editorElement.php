@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\T3editor\Form\Element;
 
 /*
@@ -122,7 +122,10 @@ class T3editorElement extends AbstractFormElement
             $parameterArray['itemFormElValue'],
             $attributeString,
             $this->data['tableName'] . ' > ' . $this->data['fieldName'],
-            ['target' => 0]
+            [
+                'target' => 0,
+                'effectivePid' => $this->data['effectivePid']
+            ]
         );
 
         $fieldInformationResult = $this->renderFieldInformation();
@@ -228,6 +231,10 @@ class T3editorElement extends AbstractFormElement
     protected function getMode(): Mode
     {
         $config = $this->data['parameterArray']['fieldConf']['config'];
+
+        if (!isset($config['format'])) {
+            return ModeRegistry::getInstance()->getDefaultMode();
+        }
 
         $identifier = $config['format'];
         if (strpos($config['format'], '/') !== false) {

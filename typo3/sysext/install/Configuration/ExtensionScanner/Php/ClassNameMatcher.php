@@ -324,11 +324,214 @@ return [
             'Deprecation-81600-UnusedExtbaseExceptions.rst',
         ],
     ],
+    'TYPO3\CMS\Extensionmanager\Utility\DatabaseUtility' => [
+        'restFiles' => [
+            'Breaking-82148-DownloadSQLDumpDroppedInEM.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extensionmanager\ViewHelpers\DownloadExtensionDataViewHelper' => [
+        'restFiles' => [
+            'Breaking-82148-DownloadSQLDumpDroppedInEM.rst',
+        ],
+    ],
+    'TYPO3\CMS\Install\Service\SqlExpectedSchemaService' => [
+        'restFiles' => [
+            'Breaking-82148-DownloadSQLDumpDroppedInEM.rst',
+        ],
+    ],
+    'TYPO3\CMS\Install\Service\SqlSchemaMigrationService' => [
+        'restFiles' => [
+            'Breaking-82148-DownloadSQLDumpDroppedInEM.rst',
+        ],
+    ],
+    'TYPO3\CMS\Fluid\Core\Variables\CmsVariableProvider' => [
+        'restFiles' => [
+            'Important-82229-FluidImplementationOfCmsVariableProviderRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\ExtDirect\ExtDirectDebug' => [
+        'restFiles' => [
+            'Breaking-37180-RemovedExtDirectDebugAndGLOBALSerror.rst',
+        ],
+    ],
+    'TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRecordList' => [
+        'restFiles' => [
+            'Breaking-82334-AbstractRecordList.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\RecordList\AbstractRecordList' => [
+        'restFiles' => [
+            'Breaking-82334-AbstractRecordList.rst',
+        ],
+    ],
+    'TYPO3\CMS\Belog\Domain\Model\HistoryEntry' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Belog\Domain\Repository\HistoryEntryRepository' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Belog\ViewHelpers\HistoryEntryViewHelper' => [
+        'restFiles' => [
+            'Breaking-55298-DecoupledHistoryFunctionality.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Http\BackendModuleRequestHandler' => [
+        'restFiles' => [
+            'Breaking-82406-RoutingBackendModulesRunThroughRegularDispatcher.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Module\AbstractModule' => [
+        'restFiles' => [
+            'Breaking-82689-BackendAbstractWizardControllerNotExtendsAbstractModule.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\TypoScript\ConfigurationForm' => [
+        'restFiles' => [
+            'Deprecation-82725-DeprecateConfigurationForm.rst',
+        ],
+    ],
+    'TYPO3\CMS\Lowlevel\View\ConfigurationView' => [
+        'restFiles' => [
+            'Deprecation-82744-RenameExtlowlevelViewToLowlevelController.rst',
+        ],
+    ],
+    'TYPO3\CMS\Lowlevel\View\DatabaseIntegrityView' => [
+        'restFiles' => [
+            'Deprecation-82744-RenameExtlowlevelViewToLowlevelController.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Object\Container\ClassInfo' => [
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+            'Feature-57594-OptimizeReflectionServiceCacheHandling.rst'
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Object\Container\ClassInfoCache' => [
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+            'Feature-57594-OptimizeReflectionServiceCacheHandling.rst'
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Object\Container\ClassInfoFactory' => [
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+            'Feature-57594-OptimizeReflectionServiceCacheHandling.rst'
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ClassReflection' => [
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\MethodReflection' => [
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Reflection\ParameterReflection' => [
+        'restFiles' => [
+            'Breaking-57594-OptimizeReflectionServiceCacheHandling.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\AjaxLoginHandler' => [
+        'restFiles' => [
+            'Deprecation-82805-RenamedAjaxLoginHandlerPHPClass.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\Utility\ClientUtility' => [
+        'restFiles' => [
+            'Deprecation-82903-DeprecateClientUtility.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\ExtDirect\ExtDirectApi' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Core\ExtDirect\ExtDirectRouter' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\ExtDirectNode' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\Commands' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\DataProvider' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNodeCollection' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Renderer\ExtJsJsonTreeRenderer' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Workspaces\Hooks\PagetreeCollectionsProcessor' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
 
     // Removed interfaces
     'TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface' => [
         'restFiles' => [
             'Breaking-80700-DeprecatedFunctionalityRemoved.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\Pagetree\CollectionProcessorInterface' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\EditableNodeLabelInterface' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Backend\Tree\DraggableAndDropableNodeInterface' => [
+        'restFiles' => [
+            'Breaking-82426-ExtJSAndExtDirectRemoval.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Validation\Validator\RawValidator' => [
+        'restFiles' => [
+            'Deprecation-83503-DeprecateUnneededRawValidator.rst',
+        ],
+    ],
+    'TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase' => [
+        'restFiles' => [
+            'Deprecation-83511-DeprecateAbstractValidatorTestcase.rst',
         ],
     ],
 ];

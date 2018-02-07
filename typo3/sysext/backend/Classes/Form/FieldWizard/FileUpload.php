@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\FieldWizard;
 
 /*
@@ -55,7 +55,7 @@ class FileUpload extends AbstractNode
             // If maxItems = 1 then automatically replace the current item file selector
             $resultArray['additionalJavaScriptPost'][] =
                 'TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[' . GeneralUtility::quoteJSvalue($itemName) . '] = {'
-                   . 'itemFormElID_file: ' . GeneralUtility::quoteJSvalue($uploadFieldId)
+                    . 'itemFormElID_file: ' . GeneralUtility::quoteJSvalue($uploadFieldId)
                 . '}';
         }
 

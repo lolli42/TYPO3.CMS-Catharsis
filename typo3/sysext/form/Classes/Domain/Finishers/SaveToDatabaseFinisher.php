@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Domain\Finishers;
 
 /*
@@ -196,7 +196,7 @@ class SaveToDatabaseFinisher extends AbstractFinisher
      */
     protected function executeInternal()
     {
-        if (!is_array($this->options)) {
+        if (isset($this->options['table'])) {
             $options[] = $this->options;
         } else {
             $options = $this->options;
@@ -219,7 +219,7 @@ class SaveToDatabaseFinisher extends AbstractFinisher
     {
         foreach ($this->getFormValues() as $elementIdentifier => $elementValue) {
             if (
-                $elementValue === null
+                ($elementValue === null || $elementValue === '')
                 && isset($elementsConfiguration[$elementIdentifier])
                 && isset($elementsConfiguration[$elementIdentifier]['skipIfValueIsEmpty'])
                 && $elementsConfiguration[$elementIdentifier]['skipIfValueIsEmpty'] === true
@@ -355,7 +355,7 @@ class SaveToDatabaseFinisher extends AbstractFinisher
      * Returns a form element object for a given identifier.
      *
      * @param string $elementIdentifier
-     * @return NULL|FormElementInterface
+     * @return FormElementInterface|null
      */
     protected function getElementByIdentifier(string $elementIdentifier)
     {

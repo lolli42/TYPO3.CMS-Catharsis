@@ -3,7 +3,7 @@
 	"type": "typo3-cms-framework",
 	"description": "The recycler offers the possibility to restore deleted records or remove them from the database permanently. These actions can be applied to a single record, multiple records, and recursively to child records (ex. restoring a page can restore all content elements on that page). Filtering by page and by table provides a quick overview of deleted records before taking action on them.",
 	"homepage": "https://typo3.org",
-	"license": ["GPL-2.0+"],
+	"license": ["GPL-2.0-or-later"],
 	"authors": [{
 			"name": "TYPO3 Core Team",
 			"email": "typo3cms@typo3.org",
@@ -11,7 +11,7 @@
 		}],
 
 	"require": {
-		"typo3/cms-core": ">=9.0.0 <=9.0.99"
+		"typo3/cms-core": "9.2.*@dev"
 	},
 	"conflict": {
 		"typo3/cms": "*"
@@ -21,7 +21,7 @@
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "9.x-dev"
+			"dev-master": "9.2.x-dev"
 		},
 		"typo3/cms": {
 			"extension-key": "recycler"

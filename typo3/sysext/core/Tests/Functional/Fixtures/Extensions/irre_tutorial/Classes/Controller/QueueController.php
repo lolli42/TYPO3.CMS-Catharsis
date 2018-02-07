@@ -14,13 +14,15 @@ namespace OliverHader\IrreTutorial\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Extbase\Annotation as Extbase;
+
 /**
  * ContentController
  */
 class QueueController extends AbstractController
 {
     /**
-     * @inject
+     * @Extbase\Inject
      * @var \OliverHader\IrreTutorial\Domain\Repository\ContentRepository
      */
     protected $contentRepository;
@@ -55,7 +57,7 @@ class QueueController extends AbstractController
         }
         // Clear these states and fetch fresh entities!
         $this->getPersistenceManager()->clearState();
-        $this->forward($call[1], $call[0], null, isset($call[2]) ? $call[2] : null);
+        $this->forward($call[1], $call[0], null, $call[2] ?? null);
     }
 
     public function finishAction()

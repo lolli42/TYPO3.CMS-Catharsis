@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\Database\Query\Restriction;
 
 /*
@@ -33,7 +33,7 @@ class FrontendGroupRestriction implements QueryRestrictionInterface
      */
     public function __construct(array $frontendGroupIds = null)
     {
-        $this->frontendGroupIds = $frontendGroupIds === null ? explode(',', $GLOBALS['TSFE']->gr_list) : $frontendGroupIds;
+        $this->frontendGroupIds = $frontendGroupIds ?? explode(',', $GLOBALS['TSFE']->gr_list);
     }
 
     /**

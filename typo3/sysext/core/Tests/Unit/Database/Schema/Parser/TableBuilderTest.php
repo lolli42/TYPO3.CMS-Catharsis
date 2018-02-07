@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace TYPO3\CMS\Core\Tests\Unit\Database\Schema\Parser;
 
@@ -242,7 +242,7 @@ class TableBuilderTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         $this->assertSame(['`pid`'], $subject->getForeignColumns());
         $this->assertSame(['`uid`'], $subject->getLocalColumns());
         $this->assertSame('aTestTable', $subject->getLocalTableName());
-        $this->assertSame('pages_language_overlay', $subject->getForeignTableName());
+        $this->assertSame('any_foreign_table', $subject->getForeignTableName());
     }
 
     /**

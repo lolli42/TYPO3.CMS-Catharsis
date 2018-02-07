@@ -18,9 +18,9 @@ use TYPO3\CMS\Extbase\Reflection\ReflectionService;
 
 /**
  * Test case
- * @firsttest test for reflection
- * @anothertest second test for reflection
- * @anothertest second test for reflection with second value
+ * @see test for reflection
+ * @link second test for reflection
+ * @link second test for reflection with second value
  */
 class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
 {
@@ -46,11 +46,16 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
     public function getClassTagsValues()
     {
         $service = new ReflectionService();
-        $classValues = $service->getClassTagsValues(get_class($this));
+        $classValues = $service->getClassTagsValues(static::class);
         $this->assertEquals([
-            'firsttest' => ['test for reflection'],
-            'anothertest' => ['second test for reflection', 'second test for reflection with second value']
+            'see' => ['test for reflection'],
+            'link' => ['second test for reflection', 'second test for reflection with second value']
         ], $classValues);
+
+        $this->assertEquals(
+            [],
+            $service->getClassTagsValues('NonExistantNamespace\\NonExistantClass')
+        );
     }
 
     /**
@@ -59,10 +64,20 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
     public function getClassTagValues()
     {
         $service = new ReflectionService();
-        $classValues = $service->getClassTagValues(get_class($this), 'firsttest');
+        $classValues = $service->getClassTagValues(static::class, 'see');
         $this->assertEquals([
             'test for reflection',
         ], $classValues);
+
+        $this->assertEquals(
+            [],
+            $service->getClassTagValues(static::class, 'nonExistantTag')
+        );
+
+        $this->assertEquals(
+            [],
+            $service->getClassTagValues('NonExistantNamespace\\NonExistantClass', 'nonExistantTag')
+        );
     }
 
     /**
@@ -71,8 +86,9 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
     public function hasMethod()
     {
         $service = new ReflectionService();
-        $this->assertTrue($service->hasMethod(get_class($this), 'fixtureMethodForMethodTagsValues'));
-        $this->assertFalse($service->hasMethod(get_class($this), 'notExistentMethod'));
+        $this->assertTrue($service->hasMethod(static::class, 'fixtureMethodForMethodTagsValues'));
+        $this->assertFalse($service->hasMethod(static::class, 'notExistentMethod'));
+        $this->assertFalse($service->hasMethod('NonExistantNamespace\\NonExistantClass', 'notExistentMethod'));
     }
 
     /**
@@ -81,11 +97,21 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
     public function getMethodTagsValues()
     {
         $service = new ReflectionService();
-        $tagsValues = $service->getMethodTagsValues(get_class($this), 'fixtureMethodForMethodTagsValues');
+        $tagsValues = $service->getMethodTagsValues(static::class, 'fixtureMethodForMethodTagsValues');
         $this->assertEquals([
             'param' => ['array $foo The foo parameter'],
             'return' => ['string']
         ], $tagsValues);
+
+        $this->assertEquals(
+            [],
+            $service->getMethodTagsValues(static::class, 'notExistentMethod')
+        );
+
+        $this->assertEquals(
+            [],
+            $service->getMethodTagsValues('NonExistantNamespace\\NonExistantClass', 'notExistentMethod')
+        );
     }
 
     /**
@@ -94,7 +120,7 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
     public function getMethodParameters()
     {
         $service = new ReflectionService();
-        $parameters = $service->getMethodParameters(get_class($this), 'fixtureMethodForMethodTagsValues');
+        $parameters = $service->getMethodParameters(static::class, 'fixtureMethodForMethodTagsValues');
         $this->assertSame([
             'foo' => [
                 'position' => 0,
@@ -103,9 +129,24 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
                 'optional' => false,
                 'allowsNull' => false,
                 'class' => null,
-                'type' => 'array'
+                'type' => 'array',
+                'nullable' => false,
+                'default' =>  null,
+                'hasDefaultValue' =>  false,
+                'defaultValue' =>  null,
+                'dependency' =>  null,
             ]
         ], $parameters);
+
+        $this->assertSame(
+            [],
+            $service->getMethodParameters(static::class, 'notExistentMethod')
+        );
+
+        $this->assertSame(
+            [],
+            $service->getMethodParameters('NonExistantNamespace\\NonExistantClass', 'notExistentMethod')
+        );
     }
 
     /**
@@ -114,7 +155,7 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
     public function getMethodParametersWithShortTypeNames()
     {
         $service = new ReflectionService();
-        $parameters = $service->getMethodParameters(get_class($this), 'fixtureMethodForMethodTagsValuesWithShortTypes');
+        $parameters = $service->getMethodParameters(static::class, 'fixtureMethodForMethodTagsValuesWithShortTypes');
         $this->assertSame([
             'dummy' => [
                 'position' => 0,
@@ -123,7 +164,12 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
                 'optional' => false,
                 'allowsNull' => true,
                 'class' => null,
-                'type' => 'boolean'
+                'type' => 'boolean',
+                'nullable' => true,
+                'default' =>  null,
+                'hasDefaultValue' =>  false,
+                'defaultValue' =>  null,
+                'dependency' =>  null,
             ],
             'foo' => [
                 'position' => 1,
@@ -132,8 +178,142 @@ class ReflectionServiceTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCa
                 'optional' => false,
                 'allowsNull' => true,
                 'class' => null,
-                'type' => 'integer'
+                'type' => 'integer',
+                'nullable' => true,
+                'default' =>  null,
+                'hasDefaultValue' =>  false,
+                'defaultValue' =>  null,
+                'dependency' =>  null,
             ]
         ], $parameters);
+    }
+
+    public function testIsClassTaggedWith()
+    {
+        $service = new ReflectionService();
+        $this->assertTrue($service->isClassTaggedWith(
+            Fixture\DummyClassWithTags::class,
+            'see'
+        ));
+
+        $this->assertFalse($service->isClassTaggedWith(
+            Fixture\DummyClassWithAllTypesOfProperties::class,
+            'bar'
+        ));
+
+        $this->assertFalse($service->isClassTaggedWith(
+            'NonExistantNamespace\\NonExistantClass',
+            'foo'
+        ));
+    }
+
+    public function testIsPropertyTaggedWith()
+    {
+        $service = new ReflectionService();
+        $this->assertTrue($service->isPropertyTaggedWith(
+            Fixture\DummyClassWithAllTypesOfProperties::class,
+            'propertyWithInjectAnnotation',
+            'extbase\inject'
+        ));
+
+        $this->assertFalse($service->isPropertyTaggedWith(
+            Fixture\DummyClassWithAllTypesOfProperties::class,
+            'propertyWithInjectAnnotation',
+            'foo'
+        ));
+
+        $this->assertFalse($service->isPropertyTaggedWith(
+            Fixture\DummyClassWithAllTypesOfProperties::class,
+            'nonExistantProperty',
+            'foo'
+        ));
+
+        $this->assertFalse($service->isPropertyTaggedWith(
+            'NonExistantNamespace\\NonExistantClass',
+            'propertyWithInjectAnnotation',
+            'extbase\inject'
+        ));
+    }
+
+    public function testgetPropertyTagValues()
+    {
+        $service = new ReflectionService();
+        $this->assertSame(
+            [],
+            $service->getPropertyTagValues(
+                Fixture\DummyClassWithAllTypesOfProperties::class,
+                'propertyWithInjectAnnotation',
+                'foo'
+            )
+        );
+
+        $this->assertSame(
+            [],
+            $service->getPropertyTagValues(
+            Fixture\DummyClassWithAllTypesOfProperties::class,
+            'propertyWithInjectAnnotation',
+            'inject'
+            )
+        );
+    }
+
+    public function testGetPropertyTagsValues()
+    {
+        $service = new ReflectionService();
+        $this->assertSame(
+            [
+                'extbase\inject' => [],
+                'var' => [
+                    'DummyClassWithAllTypesOfProperties'
+                ]
+            ],
+            $service->getPropertyTagsValues(
+                Fixture\DummyClassWithAllTypesOfProperties::class,
+                'propertyWithInjectAnnotation'
+            )
+        );
+
+        $this->assertSame(
+            [],
+            $service->getPropertyTagsValues(
+                Fixture\DummyClassWithAllTypesOfProperties::class,
+                'nonExistantProperty'
+            )
+        );
+
+        $this->assertSame(
+            [],
+            $service->getPropertyTagsValues(
+                'NonExistantNamespace\\NonExistantClass',
+                'nonExistantProperty'
+            )
+        );
+    }
+
+    public function testGetClassPropertyNames()
+    {
+        $service = new ReflectionService();
+        $this->assertSame(
+            [
+                'publicProperty',
+                'protectedProperty',
+                'privateProperty',
+                'publicStaticProperty',
+                'protectedStaticProperty',
+                'privateStaticProperty',
+                'propertyWithIgnoredTags',
+                'propertyWithInjectAnnotation',
+                'propertyWithTransientAnnotation',
+                'propertyWithCascadeAnnotation',
+                'propertyWithCascadeAnnotationWithoutVarAnnotation',
+                'propertyWithObjectStorageAnnotation'
+            ],
+            $service->getClassPropertyNames(Fixture\DummyClassWithAllTypesOfProperties::class)
+        );
+
+        $this->assertSame(
+            [],
+            $service->getClassPropertyNames('NonExistantNamespace\\NonExistantClass')
+        );
     }
 }

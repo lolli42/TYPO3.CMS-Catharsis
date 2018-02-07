@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching;
  */
 
 use TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher;
-use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -42,8 +41,8 @@ class ConditionMatcher extends AbstractConditionMatcher
 
         if (is_bool($result)) {
             return $result;
-        } else {
-            switch ($key) {
+        }
+        switch ($key) {
                 case 'usergroup':
                     $groupList = $this->getGroupList();
                     // '0,-1' is the default usergroups when not logged in!
@@ -84,7 +83,6 @@ class ConditionMatcher extends AbstractConditionMatcher
                         return $conditionResult;
                     }
             }
-        }
 
         return false;
     }
@@ -92,8 +90,13 @@ class ConditionMatcher extends AbstractConditionMatcher
     /**
      * Returns GP / ENV / TSFE vars
      *
+     * @example GP:L
+     * @example TSFE:fe_user|sesData|foo|bar
+     * @example TSFE:id
+     * @example ENV:HTTP_HOST
+     *
      * @param string $var Identifier
-     * @return mixed The value of the variable pointed to or NULL if variable did not exist
+     * @return mixed|null The value of the variable pointed to or NULL if variable did not exist
      */
     protected function getVariable($var)
     {
@@ -105,13 +108,44 @@ class ConditionMatcher extends AbstractConditionMatcher
             if ($k) {
                 switch ((string)trim($vars[0])) {
                     case 'TSFE':
-                        $val = $this->getGlobal('TSFE|' . $vars[1]);
+                        if (strpos($vars[1], 'fe_user|sesData|') === 0) {
+                            $val = $this->getSessionVariable(substr($vars[1], 16));
+                        } else {
+                            $val = $this->getGlobal('TSFE|' . $vars[1]);
+                        }
                         break;
                     default:
                 }
             }
         }
         return $val;
+    }
+
+    /**
+     * Return variable from current frontend user session
+     *
+     * @param string $var Session key
+     * @return mixed|null The value of the variable pointed to or NULL if variable did not exist
+     */
+    protected function getSessionVariable(string $var)
+    {
+        $retVal = null;
+        $keyParts = explode('|', $var);
+        $sessionKey = array_shift($keyParts);
+        $tsfe = $this->getTypoScriptFrontendController();
+        if ($tsfe && is_object($tsfe->fe_user)) {
+            $retVal = $tsfe->fe_user->getSessionData($sessionKey);
+            foreach ($keyParts as $keyPart) {
+                if (is_object($retVal)) {
+                    $retVal = $retVal->{$keyPart};
+                } elseif (is_array($retVal)) {
+                    $retVal = $retVal[$keyPart];
+                } else {
+                    break;
+                }
+            }
+        }
+        return $retVal;
     }
 
     /**
@@ -175,30 +209,10 @@ class ConditionMatcher extends AbstractConditionMatcher
     }
 
     /**
-     * Set/write a log message.
-     *
-     * @param string $message The log message to set/write
-     */
-    protected function log($message)
-    {
-        if ($this->getTimeTracker() !== null) {
-            $this->getTimeTracker()->setTSlogMessage($message, 3);
-        }
-    }
-
-    /**
      * @return \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController
      */
     protected function getTypoScriptFrontendController()
     {
         return $GLOBALS['TSFE'];
-    }
-
-    /**
-     * @return TimeTracker
-     */
-    protected function getTimeTracker()
-    {
-        return GeneralUtility::makeInstance(TimeTracker::class);
     }
 }

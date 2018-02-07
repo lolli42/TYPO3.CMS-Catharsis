@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\Form\Element;
 
 /*
@@ -14,6 +15,9 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Form\NodeFactory;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -21,6 +25,11 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class CheckboxElement extends AbstractFormElement
 {
+    /**
+     * @var IconRegistry
+     */
+    private $iconRegistry;
+
     /**
      * Default field wizards enabled for this element.
      *
@@ -45,11 +54,21 @@ class CheckboxElement extends AbstractFormElement
     ];
 
     /**
+     * @param NodeFactory $nodeFactory
+     * @param array $data
+     */
+    public function __construct(NodeFactory $nodeFactory, array $data)
+    {
+        parent::__construct($nodeFactory, $data);
+        $this->iconRegistry = GeneralUtility::makeInstance(IconRegistry::class);
+    }
+
+    /**
      * This will render a checkbox or an array of checkboxes
      *
      * @return array As defined in initializeResultArray() of AbstractNode
      */
-    public function render()
+    public function render(): array
     {
         $resultArray = $this->initializeResultArray();
 
@@ -61,7 +80,7 @@ class CheckboxElement extends AbstractFormElement
         // Traversing the array of items
         $items = $this->data['parameterArray']['fieldConf']['config']['items'];
 
-        $numberOfItems = count($items);
+        $numberOfItems = \count($items);
         if ($numberOfItems === 0) {
             $items[] = ['', ''];
             $numberOfItems = 1;
@@ -69,43 +88,17 @@ class CheckboxElement extends AbstractFormElement
         $formElementValue = (int)$this->data['parameterArray']['itemFormElValue'];
         $cols = (int)$this->data['parameterArray']['fieldConf']['config']['cols'];
         if ($cols > 1) {
-            $colWidth = (int)floor(12 / $cols);
-            $colClass = 'col-md-12';
-            $colClear = [];
-            if ($colWidth == 6) {
-                $colClass = 'col-sm-6';
-                $colClear = [
-                    2 => 'visible-sm-block visible-md-block visible-lg-block',
-                ];
-            } elseif ($colWidth === 4) {
-                $colClass = 'col-sm-4';
-                $colClear = [
-                    3 => 'visible-sm-block visible-md-block visible-lg-block',
-                ];
-            } elseif ($colWidth === 3) {
-                $colClass = 'col-sm-6 col-md-3';
-                $colClear = [
-                    2 => 'visible-sm-block',
-                    4 => 'visible-md-block visible-lg-block',
-                ];
-            } elseif ($colWidth <= 2) {
-                $colClass = 'checkbox-column col-sm-6 col-md-3 col-lg-2';
-                $colClear = [
-                    2 => 'visible-sm-block',
-                    4 => 'visible-md-block',
-                    6 => 'visible-lg-block'
-                ];
-            }
+            [$colClass, $colClear] = $this->calculateColumnMarkup($cols);
             $elementHtml .= '<div class="checkbox-row row">';
             $counter = 0;
-            // @todo: figure out in which cases checkbox items to not begin at 0 and why and when this would be useful
+            // $itemKey is important here, because items could have been removed via TSConfig
             foreach ($items as $itemKey => $itemDefinition) {
                 $label = $itemDefinition[0];
                 $elementHtml .=
                     '<div class="checkbox-column ' . $colClass . '">'
-                        . $this->renderSingleCheckboxElement($label, $itemKey, $formElementValue, $numberOfItems, $this->data['parameterArray'], $disabled) .
+                    . $this->renderSingleCheckboxElement($label, $itemKey, $formElementValue, $numberOfItems, $this->data['parameterArray'], $disabled) .
                     '</div>';
-                $counter = $counter + 1;
+                ++$counter;
                 if ($counter < $numberOfItems && !empty($colClear)) {
                     foreach ($colClear as $rowBreakAfter => $clearClass) {
                         if ($counter % $rowBreakAfter === 0) {
@@ -119,12 +112,12 @@ class CheckboxElement extends AbstractFormElement
             $counter = 0;
             foreach ($items as $itemKey => $itemDefinition) {
                 $label = $itemDefinition[0];
-                $elementHtml .=  $this->renderSingleCheckboxElement($label, $counter, $formElementValue, $numberOfItems, $this->data['parameterArray'], $disabled);
-                $counter = $counter + 1;
+                $elementHtml .= $this->renderSingleCheckboxElement($label, $counter, $formElementValue, $numberOfItems, $this->data['parameterArray'], $disabled);
+                ++$counter;
             }
         }
         if (!$disabled) {
-            $elementHtml .= '<input type="hidden" name="' . $this->data['parameterArray']['itemFormElName'] . '" value="' . htmlspecialchars($formElementValue) . '" />';
+            $elementHtml .= '<input type="hidden" name="' . htmlspecialchars($this->data['parameterArray']['itemFormElName']) . '" value="' . htmlspecialchars((string)$formElementValue) . '" />';
         }
 
         $fieldInformationResult = $this->renderFieldInformation();
@@ -167,10 +160,11 @@ class CheckboxElement extends AbstractFormElement
      * @param bool $disabled TRUE if form element is disabled
      * @return string Single element HTML
      */
-    protected function renderSingleCheckboxElement($label, $itemCounter, $formElementValue, $numberOfItems, $additionalInformation, $disabled)
+    protected function renderSingleCheckboxElement($label, $itemCounter, $formElementValue, $numberOfItems, $additionalInformation, $disabled): string
     {
         $config = $additionalInformation['fieldConf']['config'];
         $inline = !empty($config['cols']) && $config['cols'] === 'inline';
+        $invert = isset($config['items'][$itemCounter]['invertStateDisplay']) && $config['items'][$itemCounter]['invertStateDisplay'] === true;
         $checkboxParameters = $this->checkBoxParams(
             $additionalInformation['itemFormElName'],
             $formElementValue,
@@ -179,36 +173,34 @@ class CheckboxElement extends AbstractFormElement
             implode('', $additionalInformation['fieldChangeFunc'])
         );
         $checkboxId = $additionalInformation['itemFormElID'] . '_' . $itemCounter;
-        return '
-			<div class="checkbox' . ($inline ? ' checkbox-inline' : '') . (!$disabled ? '' : ' disabled') . '">
-				<label>
-					<input type="checkbox"
-						value="1"
-						data-formengine-input-name="' . htmlspecialchars($additionalInformation['itemFormElName']) . '"
-						' . $checkboxParameters . '
-						' . (!$disabled ?: ' disabled="disabled"') . '
-						id="' . $checkboxId . '" />
-					' . ($label ? htmlspecialchars($label) : '&nbsp;') . '
-				</label>
-			</div>';
-    }
 
-    /**
-     * Creates checkbox parameters
-     *
-     * @param string $itemName Form element name
-     * @param int $formElementValue The value of the checkbox (representing checkboxes with the bits)
-     * @param int $checkbox Checkbox # (0-9?)
-     * @param int $checkboxesCount Total number of checkboxes in the array.
-     * @param string $additionalJavaScript Additional JavaScript for the onclick handler.
-     * @return string The onclick attribute + possibly the checked-option set.
-     */
-    protected function checkBoxParams($itemName, $formElementValue, $checkbox, $checkboxesCount, $additionalJavaScript = '')
-    {
-        $elementName = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . ']';
-        $checkboxPow = pow(2, $checkbox);
-        $onClick = $elementName . '.value=this.checked?(' . $elementName . '.value|' . $checkboxPow . '):('
-            . $elementName . '.value&' . (pow(2, $checkboxesCount) - 1 - $checkboxPow) . ');' . $additionalJavaScript;
-        return ' onclick="' . htmlspecialchars($onClick) . '"' . ($formElementValue & $checkboxPow ? ' checked="checked"' : '');
+        $iconIdentifierChecked = !empty($config['items'][$itemCounter]['iconIdentifierChecked']) ? $config['items'][$itemCounter]['iconIdentifierChecked'] : 'actions-check';
+        if (!$this->iconRegistry->isRegistered($iconIdentifierChecked)) {
+            $iconIdentifierChecked = 'actions-check';
+        }
+        $iconIdentifierUnchecked = !empty($config['items'][$itemCounter]['iconIdentifierUnchecked']) ? $config['items'][$itemCounter]['iconIdentifierUnchecked'] : 'empty-empty';
+        if (!$this->iconRegistry->isRegistered($iconIdentifierUnchecked)) {
+            $iconIdentifierUnchecked = 'empty-empty';
+        }
+        $iconChecked = $this->iconFactory->getIcon($iconIdentifierChecked, Icon::SIZE_SMALL)->render('inline');
+        $iconUnchecked = $this->iconFactory->getIcon($iconIdentifierUnchecked, Icon::SIZE_SMALL)->render('inline');
+
+        return '
+            <div class="checkbox checkbox-type-icon-toggle' . ($invert ? ' checkbox-invert' : '') . ($inline ? ' checkbox-inline' : '') . (!$disabled ? '' : ' disabled') . '">
+                <input type="checkbox"
+                    class="checkbox-input"
+                    value="1"
+                    data-formengine-input-name="' . htmlspecialchars($additionalInformation['itemFormElName']) . '"
+                    ' . $checkboxParameters . '
+                    ' . (!$disabled ?: ' disabled="disabled"') . '
+                    id="' . $checkboxId . '" />
+                <label class="checkbox-label" for="' . $checkboxId . '">
+                    <span class="checkbox-label-icon">
+                        <span class="checkbox-label-icon-checked">' . ($invert ? $iconUnchecked : $iconChecked) . '</span>
+                        <span class="checkbox-label-icon-unchecked">' . ($invert ? $iconChecked : $iconUnchecked) . '</span>
+                    </span>
+                    <span class="checkbox-label-text">' . ($label ? htmlspecialchars($label) : '&nbsp;') . '</span>
+                </label>
+            </div>';
     }
 }

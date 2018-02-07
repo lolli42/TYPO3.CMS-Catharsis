@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Frontend\Typolink;
 
 /*
@@ -54,15 +54,13 @@ class PageLinkBuilder extends AbstractTypolinkBuilder
             throw new UnableToLinkException('Page id "' . $linkDetails['typoLinkParameter'] . '" was not found, so "' . $linkText . '" was not linked.', 1490987336, null, $linkText);
         }
 
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typolinkProcessing']['typolinkModifyParameterForPageLinks'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typolinkProcessing']['typolinkModifyParameterForPageLinks'] as $classData) {
-                $hookObject = GeneralUtility::makeInstance($classData);
-                if (!$hookObject instanceof TypolinkModifyLinkConfigForPageLinksHookInterface) {
-                    throw new \UnexpectedValueException('$hookObject must implement interface ' . TypolinkModifyLinkConfigForPageLinksHookInterface::class, 1483114905);
-                }
-                /** @var $hookObject TypolinkModifyLinkConfigForPageLinksHookInterface */
-                $conf = $hookObject->modifyPageLinkConfiguration($conf, $linkDetails, $page);
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typolinkProcessing']['typolinkModifyParameterForPageLinks'] ?? [] as $classData) {
+            $hookObject = GeneralUtility::makeInstance($classData);
+            if (!$hookObject instanceof TypolinkModifyLinkConfigForPageLinksHookInterface) {
+                throw new \UnexpectedValueException('$hookObject must implement interface ' . TypolinkModifyLinkConfigForPageLinksHookInterface::class, 1483114905);
             }
+            /** @var $hookObject TypolinkModifyLinkConfigForPageLinksHookInterface */
+            $conf = $hookObject->modifyPageLinkConfiguration($conf, $linkDetails, $page);
         }
         $enableLinksAcrossDomains = $tsfe->config['config']['typolinkEnableLinksAcrossDomains'];
         if ($conf['no_cache.']) {
@@ -113,7 +111,7 @@ class PageLinkBuilder extends AbstractTypolinkBuilder
         if (!empty($MPvarAcc)) {
             // Add "&MP" var:
             $addQueryParams .= '&MP=' . rawurlencode(implode(',', $MPvarAcc));
-        } elseif (strpos($addQueryParams, '&MP=') === false && $tsfe->config['config']['typolinkCheckRootline']) {
+        } elseif (strpos($addQueryParams, '&MP=') === false) {
             // We do not come here if additionalParams had '&MP='. This happens when typoLink is called from
             // menu. Mount points always work in the content of the current domain and we must not change
             // domain if MP variables exist.
@@ -142,7 +140,8 @@ class PageLinkBuilder extends AbstractTypolinkBuilder
                 }
             }
 
-            $targetDomain = $tsfe->getDomainNameForPid($page['uid']);
+            $targetDomainRecord = $tsfe->getDomainDataForPid($page['uid']);
+            $targetDomain = $targetDomainRecord ? $targetDomainRecord['domainName'] : null;
             // Do not prepend the domain if it is the current hostname
             if (!$targetDomain || $tsfe->domainNameMatchesCurrentRequest($targetDomain)) {
                 $targetDomain = '';
@@ -182,7 +181,7 @@ class PageLinkBuilder extends AbstractTypolinkBuilder
             $LD['target'] = $target;
             // Convert IDNA-like domain (if any)
             if (!preg_match('/^[a-z0-9.\\-]*$/i', $targetDomain)) {
-                $targetDomain =  GeneralUtility::idnaEncode($targetDomain);
+                $targetDomain = GeneralUtility::idnaEncode($targetDomain);
             }
             $url = $absoluteUrlScheme . '://' . $targetDomain . '/index.php?id=' . $page['uid'] . $addQueryParams . $sectionMark;
         } else {

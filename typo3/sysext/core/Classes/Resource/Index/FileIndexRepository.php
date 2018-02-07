@@ -196,7 +196,7 @@ class FileIndexRepository implements SingletonInterface
      * Find all records for files in a Folder
      *
      * @param Folder $folder
-     * @return array|NULL
+     * @return array|null
      */
     public function findByFolder(Folder $folder)
     {
@@ -232,7 +232,7 @@ class FileIndexRepository implements SingletonInterface
      * @param Folder[] $folders
      * @param bool $includeMissing
      * @param string $fileName
-     * @return array|NULL
+     * @return array|null
      */
     public function findByFolders(array $folders, $includeMissing = true, $fileName = null)
     {
@@ -275,8 +275,10 @@ class FileIndexRepository implements SingletonInterface
                     $queryBuilder->andWhere(
                         $queryBuilder->expr()->like(
                             'name',
-                            $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards($part) . '%',
-                                \PDO::PARAM_STR)
+                            $queryBuilder->createNamedParameter(
+                                '%' . $queryBuilder->escapeLikeWildcards($part) . '%',
+                                \PDO::PARAM_STR
+                            )
                         )
                     );
                 }
@@ -454,7 +456,7 @@ class FileIndexRepository implements SingletonInterface
      * Helper function for the Indexer to detect missing files
      *
      * @param ResourceStorage $storage
-     * @param array $uidList
+     * @param int[] $uidList
      * @return array
      */
     public function findInStorageAndNotInUidList(ResourceStorage $storage, array $uidList)
@@ -475,7 +477,7 @@ class FileIndexRepository implements SingletonInterface
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->notIn(
                     'uid',
-                    $queryBuilder->createNamedParameter($uidList, Connection::PARAM_INT_ARRAY)
+                    array_map('intval', $uidList)
                 )
             );
         }
@@ -551,6 +553,7 @@ class FileIndexRepository implements SingletonInterface
     {
         /** @var $refIndexObj ReferenceIndex */
         $refIndexObj = GeneralUtility::makeInstance(ReferenceIndex::class);
+        $refIndexObj->enableRuntimeCache();
         $refIndexObj->updateRefIndexTable($this->table, $id);
     }
 
@@ -578,7 +581,6 @@ class FileIndexRepository implements SingletonInterface
      * Signal that is called after an IndexRecord is updated
      *
      * @param array $data
-     * @signal
      */
     protected function emitRecordUpdatedSignal(array $data)
     {
@@ -589,7 +591,6 @@ class FileIndexRepository implements SingletonInterface
      * Signal that is called after an IndexRecord is created
      *
      * @param array $data
-     * @signal
      */
     protected function emitRecordCreatedSignal(array $data)
     {
@@ -600,7 +601,6 @@ class FileIndexRepository implements SingletonInterface
      * Signal that is called after an IndexRecord is deleted
      *
      * @param int $fileUid
-     * @signal
      */
     protected function emitRecordDeletedSignal($fileUid)
     {
@@ -611,7 +611,6 @@ class FileIndexRepository implements SingletonInterface
      * Signal that is called after an IndexRecord is marked as missing
      *
      * @param int $fileUid
-     * @signal
      */
     protected function emitRecordMarkedAsMissingSignal($fileUid)
     {

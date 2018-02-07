@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\ViewHelpers;
 
 /*
@@ -17,8 +17,7 @@ namespace TYPO3\CMS\Form\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Extbase\Mvc\Web\Request;
-use TYPO3\CMS\Extbase\Security\Cryptography\HashService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\ViewHelpers\FormViewHelper as FluidFormViewHelper;
 use TYPO3Fluid\Fluid\Core\ViewHelper\TagBuilder;
 
@@ -39,7 +38,7 @@ class FormViewHelper extends FluidFormViewHelper
      */
     protected function renderHiddenReferrerFields()
     {
-        $tagBuilder = $this->objectManager->get(TagBuilder::class, 'input');
+        $tagBuilder = GeneralUtility::makeInstance(TagBuilder::class, 'input');
         $tagBuilder->addAttribute('type', 'hidden');
         $stateName = $this->prefixFieldName($this->arguments['object']->getFormDefinition()->getIdentifier()) . '[__state]';
         $tagBuilder->addAttribute('name', $stateName);

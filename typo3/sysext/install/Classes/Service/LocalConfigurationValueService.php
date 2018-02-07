@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Install\Service;
 
 /*
@@ -16,9 +16,10 @@ namespace TYPO3\CMS\Install\Service;
  */
 
 use TYPO3\CMS\Core\Configuration\ConfigurationManager;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Configuration\Loader\YamlFileLoader;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Install\Status\OkStatus;
 
 /**
  * Service handling bulk read and write of LocalConfiguration values.
@@ -27,19 +28,6 @@ use TYPO3\CMS\Install\Status\OkStatus;
  */
 class LocalConfigurationValueService
 {
-    /**
-     * Error handlers are a bit mask in PHP. This register hints the View to
-     * add a fluid view helper resolving the bit mask to its representation
-     * as constants again for the specified items in ['SYS'].
-     *
-     * @var array
-     */
-    protected $phpErrorCodesSettings = [
-        'errorHandlerErrors',
-        'exceptionalErrors',
-        'syslogErrorReporting',
-        'belogErrorReporting',
-    ];
 
     /**
      * Get up configuration data. Prepares main TYPO3_CONF_VARS
@@ -49,46 +37,103 @@ class LocalConfigurationValueService
      */
     public function getCurrentConfigurationData(): array
     {
+        $configurationManager = GeneralUtility::makeInstance(ConfigurationManager::class);
+        $localConfiguration = $configurationManager->getMergedLocalConfiguration();
+
         $data = [];
-        $typo3ConfVars = array_keys($GLOBALS['TYPO3_CONF_VARS']);
-        sort($typo3ConfVars);
         $commentArray = $this->getDefaultConfigArrayComments();
-        foreach ($typo3ConfVars as $sectionName) {
-            $data[$sectionName] = [];
 
-            foreach ($GLOBALS['TYPO3_CONF_VARS'][$sectionName] as $key => $value) {
-                $description = trim((string)$commentArray[$sectionName][$key]);
-                $isTextarea = (bool)preg_match('/^(<.*?>)?string \\(textarea\\)/i', $description);
-                $doNotRender = (bool)preg_match('/^(<.*?>)?string \\(exclude\\)/i', $description);
+        foreach ($localConfiguration as $sectionName => $section) {
+            if (isset($commentArray[$sectionName])) {
+                $data[$sectionName] = $this->recursiveConfigurationFetching(
+                    $section,
+                    $GLOBALS['TYPO3_CONF_VARS'][$sectionName] ?? null,
+                    $commentArray[$sectionName]
+                );
+            }
+        }
 
-                if (!is_array($value) && !$doNotRender && (!preg_match('/[' . LF . CR . ']/', (string)$value) || $isTextarea)) {
-                    $itemData = [];
-                    $itemData['key'] = $key;
-                    $itemData['description'] = $description;
-                    if ($isTextarea) {
+        ksort($data);
+
+        return $data;
+    }
+
+    /**
+     * Because configuration entries can be at any sub-array level, we need
+     * to check entries recursively.
+     *
+     * @param array $sections
+     * @param array|null $sectionsFromCurrentConfiguration
+     * @param array $descriptions
+     * @param array $path
+     * @return array
+     */
+    protected function recursiveConfigurationFetching(array $sections, array $sectionsFromCurrentConfiguration, array $descriptions, array $path = []): array
+    {
+        $data = [];
+
+        foreach ($sections as $key => $value) {
+            if (!isset($descriptions['items'][$key])) {
+                // @todo should we do something here?
+                continue;
+            }
+
+            $descriptionInfo = $descriptions['items'][$key];
+            $descriptionType = $descriptionInfo['type'];
+
+            $newPath = $path;
+            $newPath[] = $key;
+
+            if ($descriptionType === 'container') {
+                $valueFromCurrentConfiguration = $sectionsFromCurrentConfiguration[$key] ?? null;
+                $data = array_merge($data, $this->recursiveConfigurationFetching($value, $valueFromCurrentConfiguration, $descriptionInfo, $newPath));
+            } elseif (!preg_match('/[' . LF . CR . ']/', (string)$value) || $descriptionType === 'multiline') {
+                $itemData = [];
+                $itemData['key'] = implode('/', $newPath);
+                $itemData['path'] = '[' . implode('][', $newPath) . ']';
+                $itemData['fieldType'] = $descriptionInfo['type'];
+                $itemData['description'] = $descriptionInfo['description'];
+                $itemData['allowedValues'] = $descriptionInfo['allowedValues'];
+                $itemData['differentValueInCurrentConfiguration'] = (!isset($descriptionInfo['compareValuesWithCurrentConfiguration']) ||
+                    $descriptionInfo['compareValuesWithCurrentConfiguration']) &&
+                    isset($sectionsFromCurrentConfiguration[$key]) &&
+                    $value !== $sectionsFromCurrentConfiguration[$key];
+                switch ($descriptionType) {
+                    case 'multiline':
                         $itemData['type'] = 'textarea';
                         $itemData['value'] = str_replace(['\' . LF . \'', '\' . LF . \''], [LF, LF], $value);
-                    } elseif (preg_match('/^(<.*?>)?boolean/i', $description)) {
+                        break;
+                    case 'bool':
                         $itemData['type'] = 'checkbox';
                         $itemData['value'] = $value ? '1' : '0';
                         $itemData['checked'] = (bool)$value;
-                    } elseif (preg_match('/^(<.*?>)?integer/i', $description)) {
+                        break;
+                    case 'int':
                         $itemData['type'] = 'number';
                         $itemData['value'] = (int)$value;
-                    } else {
+                        break;
+                    case 'array':
+                        $itemData['type'] = 'input';
+                        // @todo The line below should be improved when the array handling is introduced in the global settings manager.
+                        $itemData['value'] = is_array($value)
+                            ? implode(',', $value)
+                            : (string)$value;
+                        break;
+                    // Check if the setting is a PHP error code, will trigger a view helper in fluid
+                    case 'errors':
                         $itemData['type'] = 'input';
                         $itemData['value'] = $value;
-                    }
-
-                    // Check if the setting is a PHP error code, will trigger a view helper in fluid
-                    if ($sectionName === 'SYS' && in_array($key, $this->phpErrorCodesSettings)) {
                         $itemData['phpErrorCode'] = true;
-                    }
-
-                    $data[$sectionName][] = $itemData;
+                        break;
+                    default:
+                        $itemData['type'] = 'input';
+                        $itemData['value'] = $value;
                 }
+
+                $data[] = $itemData;
             }
         }
+
         return $data;
     }
 
@@ -96,34 +141,47 @@ class LocalConfigurationValueService
      * Store changed values in LocalConfiguration
      *
      * @param array $valueList Nested array with key['key'] value
-     * @return array StatusInterface[]
+     * @return FlashMessageQueue
      */
-    public function updateLocalConfigurationValues(array $valueList): array
+    public function updateLocalConfigurationValues(array $valueList): FlashMessageQueue
     {
-        $statusObjects = [];
+        $messageQueue = new FlashMessageQueue('install');
         $configurationPathValuePairs = [];
         $commentArray = $this->getDefaultConfigArrayComments();
         $configurationManager = GeneralUtility::makeInstance(ConfigurationManager::class);
         foreach ($valueList as $path => $value) {
             $oldValue = $configurationManager->getConfigurationValueByPath($path);
-            $description = ArrayUtility::getValueByPath($commentArray, $path);
+            $pathParts = explode('/', $path);
+            $descriptionData = $commentArray[$pathParts[0]];
 
-            if (preg_match('/^string \\(textarea\\)/i', $description)) {
+            while ($part = next($pathParts)) {
+                $descriptionData = $descriptionData['items'][$part];
+            }
+
+            $dataType = $descriptionData['type'];
+
+            if ($dataType === 'multiline') {
                 // Force Unix line breaks in text areas
                 $value = str_replace(CR, '', $value);
                 // Preserve line breaks
                 $value = str_replace(LF, '\' . LF . \'', $value);
             }
 
-            if (preg_match('/^(<.*?>)?boolean/i', $description)) {
+            if ($dataType === 'bool') {
                 // When submitting settings in the Install Tool, values that default to "FALSE" or "TRUE"
                 // in EXT:core/Configuration/DefaultConfiguration.php will be sent as "0" resp. "1".
                 $value = $value === '1';
                 $valueHasChanged = (bool)$oldValue !== $value;
-            } elseif (preg_match('/^(<.*?>)?integer/i', $description)) {
+            } elseif ($dataType === 'int') {
                 // Cast integer values to integers (but only for values that can not contain a string as well)
                 $value = (int)$value;
                 $valueHasChanged = (int)$oldValue !== $value;
+            } elseif ($dataType === 'array') {
+                $oldValueAsString = is_array($oldValue)
+                    ? implode(',', $oldValue)
+                    : (string)$oldValue;
+                $valueHasChanged = $oldValueAsString !== $value;
+                $value = GeneralUtility::trimExplode(',', $value, true);
             } else {
                 $valueHasChanged = (string)$oldValue !== (string)$value;
             }
@@ -131,20 +189,27 @@ class LocalConfigurationValueService
             // Save if value changed
             if ($valueHasChanged) {
                 $configurationPathValuePairs[$path] = $value;
-                $status = GeneralUtility::makeInstance(OkStatus::class);
-                $status->setTitle($path);
+
                 if (is_bool($value)) {
-                    $status->setMessage('New value = ' . ($value ? 'true' : 'false'));
+                    $messageBody = 'New value = ' . ($value ? 'true' : 'false');
+                } elseif (empty($value)) {
+                    $messageBody = 'New value = <i>none</i>';
+                } elseif (is_array($value)) {
+                    $messageBody = "New value = ['" . implode("', '", $value) . "']";
                 } else {
-                    $status->setMessage('New value = ' . $value);
+                    $messageBody = 'New value = ' . $value;
                 }
-                $statusObjects[] = $status;
+
+                $messageQueue->enqueue(new FlashMessage(
+                    $messageBody,
+                    $path
+                ));
             }
         }
-        if (!empty($statusObjects)) {
+        if (!empty($messageQueue)) {
             $configurationManager->setLocalConfigurationValuesByPathValuePairs($configurationPathValuePairs);
         }
-        return $statusObjects;
+        return $messageQueue;
     }
 
     /**
@@ -174,6 +239,8 @@ class LocalConfigurationValueService
     protected function getDefaultConfigArrayComments(): array
     {
         $configurationManager = GeneralUtility::makeInstance(ConfigurationManager::class);
-        return require $configurationManager->getDefaultConfigurationDescriptionFileLocation();
+        $fileName = $configurationManager->getDefaultConfigurationDescriptionFileLocation();
+        $fileLoader = GeneralUtility::makeInstance(YamlFileLoader::class);
+        return $fileLoader->load($fileName);
     }
 }

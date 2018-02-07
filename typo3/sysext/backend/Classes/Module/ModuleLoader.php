@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Backend\Module;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -139,7 +138,8 @@ class ModuleLoader
     public function checkMod($name)
     {
         // Check for own way of configuring module
-        if (is_array($GLOBALS['TBE_MODULES']['_configuration'][$name]['configureModuleFunction'])) {
+        if (is_array($GLOBALS['TBE_MODULES']['_configuration'][$name]['configureModuleFunction'] ?? false)) {
+            trigger_error('Registering a module using "configureModuleFunction" is deprecated and will be removed in TYPO3 v10.', E_USER_DEPRECATED);
             $obj = $GLOBALS['TBE_MODULES']['_configuration'][$name]['configureModuleFunction'];
             if (is_callable($obj)) {
                 $MCONF = call_user_func($obj, $name);
@@ -158,32 +158,26 @@ class ModuleLoader
         if (empty($setupInformation['configuration'])) {
             return 'notFound';
         }
-        if (
-            $setupInformation['configuration']['shy']
+        $finalModuleConfiguration = $setupInformation['configuration'];
+        if (!empty($finalModuleConfiguration['shy'])
             || !$this->checkModAccess($name, $setupInformation['configuration'])
             || !$this->checkModWorkspace($name, $setupInformation['configuration'])
         ) {
             return false;
         }
-        $finalModuleConfiguration = $setupInformation['configuration'];
         $finalModuleConfiguration['name'] = $name;
         // Language processing. This will add module labels and image reference to the internal ->moduleLabels array of the LANG object.
         $this->addLabelsForModule($name, ($finalModuleConfiguration['labels'] ?? $setupInformation['labels']));
-
-        // Default script setup
-        if ($setupInformation['configuration']['script'] === '_DISPATCH' || isset($setupInformation['configuration']['routeTarget'])) {
-            if ($setupInformation['configuration']['extbase']) {
-                $finalModuleConfiguration['script'] = BackendUtility::getModuleUrl('Tx_' . $name);
-            } else {
-                // just go through BackendModuleRequestHandler where the routeTarget is resolved
-                $finalModuleConfiguration['script'] = BackendUtility::getModuleUrl($name);
-            }
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        if (isset($setupInformation['configuration']['routeTarget'])) {
+            $finalModuleConfiguration['script'] = (string)$uriBuilder->buildUriFromRoute($name);
         } else {
-            $finalModuleConfiguration['script'] = BackendUtility::getModuleUrl('dummy');
+            $finalModuleConfiguration['script'] = (string)$uriBuilder->buildUriFromRoute('dummy');
         }
 
         if (!empty($setupInformation['configuration']['navigationFrameModule'])) {
-            $finalModuleConfiguration['navFrameScript'] = BackendUtility::getModuleUrl(
+            $finalModuleConfiguration['navFrameScript'] = (string)$uriBuilder->buildUriFromRoute(
                 $setupInformation['configuration']['navigationFrameModule'],
                 !empty($setupInformation['configuration']['navigationFrameModuleParameters'])
                     ? $setupInformation['configuration']['navigationFrameModuleParameters']
@@ -198,10 +192,13 @@ class ModuleLoader
         }
 
         // check if there is a navigation component (like the pagetree)
-        if (is_array($this->navigationComponents[$name])) {
+        if (is_array($this->navigationComponents[$name] ?? false)) {
             $finalModuleConfiguration['navigationComponentId'] = $this->navigationComponents[$name]['componentId'];
-        // navigation component can be overridden by the main module component
-        } elseif ($mainModule && is_array($this->navigationComponents[$mainModule]) && $setupInformation['configuration']['inheritNavigationComponentFromMainModule'] !== false) {
+        } elseif ($mainModule
+            && is_array($this->navigationComponents[$mainModule] ?? false)
+            && $setupInformation['configuration']['inheritNavigationComponentFromMainModule'] !== false) {
+
+            // navigation component can be overridden by the main module component
             $finalModuleConfiguration['navigationComponentId'] = $this->navigationComponents[$mainModule]['componentId'];
         }
         return $finalModuleConfiguration;
@@ -261,6 +258,10 @@ class ModuleLoader
             return true;
         }
         $access = strtolower($MCONF['access']);
+        // Check if this module is only allowed by system maintainers (= admins who are in the list of system maintainers)
+        if (strpos($MCONF['access'], BackendUserAuthentication::ROLE_SYSTEMMAINTAINER) !== false) {
+            return $this->BE_USER->isSystemMaintainer();
+        }
         // Checking if admin-access is required
         // If admin-permissions is required then return TRUE if user is admin
         if (strpos($access, 'admin') !== false && $this->BE_USER->isAdmin()) {
@@ -391,9 +392,9 @@ class ModuleLoader
                 $this->addLabelsForModule($moduleName, $labels['default']['ll_ref']);
             } else {
                 $this->moduleLabels[$moduleName] = [
-                    'shortdescription' => isset($labels[$language]['labels']['tablabel']) ? $labels[$language]['labels']['tablabel'] : $labels['default']['labels']['tablabel'],
-                    'description' => isset($labels[$language]['labels']['tabdescr']) ? $labels[$language]['labels']['tabdescr'] : $labels['default']['labels']['tabdescr'],
-                    'title' => isset($labels[$language]['tabs']['tab']) ? $labels[$language]['tabs']['tab'] : $labels['default']['tabs']['tab'],
+                    'shortdescription' => $labels[$language]['labels']['tablabel'] ?? $labels['default']['labels']['tablabel'],
+                    'description' => $labels[$language]['labels']['tabdescr'] ?? $labels['default']['labels']['tabdescr'],
+                    'title' => $labels[$language]['tabs']['tab'] ?? $labels['default']['tabs']['tab'],
                 ];
             }
         }
@@ -407,7 +408,7 @@ class ModuleLoader
      */
     public function getLabelsForModule($moduleName)
     {
-        return isset($this->moduleLabels[$moduleName]) ? $this->moduleLabels[$moduleName] : [];
+        return $this->moduleLabels[$moduleName] ?? [];
     }
 
     /**

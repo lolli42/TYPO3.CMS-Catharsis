@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Backend\ContextMenu;
 
 /*
@@ -39,7 +39,7 @@ class ContextMenu
      * @param string $context
      * @return array
      */
-    public function getItems(string $table, string $identifier, string $context=''): array
+    public function getItems(string $table, string $identifier, string $context = ''): array
     {
         $items = [];
         $itemsProviders = $this->getAvailableProviders($table, $identifier, $context);
@@ -59,11 +59,7 @@ class ContextMenu
      */
     protected function getAvailableProviders(string $table, string $identifier, string $context): array
     {
-        $providers = $this->itemProviders;
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['BE']['ContextMenu']['ItemProviders'])) {
-            $providers = array_merge($this->itemProviders, $GLOBALS['TYPO3_CONF_VARS']['BE']['ContextMenu']['ItemProviders']);
-        }
-
+        $providers = array_merge($this->itemProviders, $GLOBALS['TYPO3_CONF_VARS']['BE']['ContextMenu']['ItemProviders'] ?? []);
         $availableProviders = [];
         foreach ($providers as $providerClass) {
             $provider = GeneralUtility::makeInstance($providerClass, $table, $identifier, $context);

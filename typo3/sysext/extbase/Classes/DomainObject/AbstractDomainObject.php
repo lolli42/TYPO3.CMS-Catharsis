@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Extbase\DomainObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Extbase\Persistence\Generic\LazyLoadingProxy;
+
 /**
  * A generic Domain Object.
  *
@@ -67,15 +69,14 @@ abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS
     {
         if ($this->uid !== null) {
             return (int)$this->uid;
-        } else {
-            return null;
         }
+        return null;
     }
 
     /**
      * Setter for the pid.
      *
-     * @param int|NULL $pid
+     * @param int|null $pid
      */
     public function setPid($pid)
     {
@@ -95,9 +96,8 @@ abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS
     {
         if ($this->pid === null) {
             return null;
-        } else {
-            return (int)$this->pid;
         }
+        return (int)$this->pid;
     }
 
     /**
@@ -231,7 +231,7 @@ abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS
      */
     public function _getCleanProperty($propertyName)
     {
-        return isset($this->_cleanProperties[$propertyName]) ? $this->_cleanProperties[$propertyName] : null;
+        return $this->_cleanProperties[$propertyName] ?? null;
     }
 
     /**
@@ -273,8 +273,22 @@ abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS
         // In case it is an object and it implements the ObjectMonitoringInterface, we call _isDirty() instead of a simple comparison of objects.
         // We do this, because if the object itself contains a lazy loaded property, the comparison of the objects might fail even if the object didn't change
         if (is_object($currentValue)) {
-            if ($currentValue instanceof DomainObjectInterface) {
-                $result = !is_object($previousValue) || get_class($previousValue) !== get_class($currentValue) || $currentValue->getUid() !== $previousValue->getUid();
+            $currentTypeString = null;
+            if ($currentValue instanceof LazyLoadingProxy) {
+                $currentTypeString = $currentValue->_getTypeAndUidString();
+            } elseif ($currentValue instanceof DomainObjectInterface) {
+                $currentTypeString = get_class($currentValue) . ':' . $currentValue->getUid();
+            }
+
+            if ($currentTypeString !== null) {
+                $previousTypeString = null;
+                if ($previousValue instanceof LazyLoadingProxy) {
+                    $previousTypeString = $previousValue->_getTypeAndUidString();
+                } elseif ($previousValue instanceof DomainObjectInterface) {
+                    $previousTypeString = get_class($previousValue) . ':' . $previousValue->getUid();
+                }
+
+                $result = $currentTypeString !== $previousTypeString;
             } elseif ($currentValue instanceof \TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface) {
                 $result = !is_object($previousValue) || $currentValue->_isDirty() || get_class($previousValue) !== get_class($currentValue);
             } else {
@@ -325,6 +339,6 @@ abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS
      */
     public function __toString()
     {
-        return get_class($this) . ':' . (string)$this->uid;
+        return static::class . ':' . (string)$this->uid;
     }
 }

@@ -16,13 +16,15 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Module\AbstractModule;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Tree\View\ContentCreationPagePositionMap;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Backend\Wizard\NewContentElementWizardHookInterface;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Service\DependencyOrderingService;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
@@ -30,7 +32,7 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
 /**
  * Script Class for the New Content element wizard
  */
-class NewContentElementController extends AbstractModule
+class NewContentElementController
 {
     /**
      * Page id
@@ -126,11 +128,18 @@ class NewContentElementController extends AbstractModule
     protected $menuItemView;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $GLOBALS['SOBE'] = $this;
         $this->view = $this->getFluidTemplateObject();
         $this->menuItemView = $this->getFluidTemplateObject('MenuItem.html');
@@ -165,9 +174,9 @@ class NewContentElementController extends AbstractModule
         // Setting up the context sensitive menu:
         $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ContextMenu');
         // Getting the current page and receiving access information (used in main())
-        $perms_clause = $this->getBackendUser()->getPagePermsClause(1);
+        $perms_clause = $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW);
         $this->pageInfo = BackendUtility::readPageAccess($this->id, $perms_clause);
-        $this->access = is_array($this->pageInfo) ? 1 : 0;
+        $this->access = is_array($this->pageInfo);
     }
 
     /**
@@ -180,9 +189,24 @@ class NewContentElementController extends AbstractModule
      */
     public function mainAction(ServerRequestInterface $request, ResponseInterface $response)
     {
-        $this->main();
+        $this->prepareContent('window');
         $this->moduleTemplate->setContent($this->content);
         $response->getBody()->write($this->moduleTemplate->renderContent());
+        return $response;
+    }
+
+    /**
+     * Injects the request object for the current request or subrequest
+     * As this controller goes only through the main() method, it is rather simple for now
+     *
+     * @param ServerRequestInterface $request the current request
+     * @param ResponseInterface $response
+     * @return ResponseInterface the response with the content
+     */
+    public function wizardAction(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $this->prepareContent('list_frame');
+        $response->getBody()->write($this->content);
         return $response;
     }
 
@@ -190,14 +214,33 @@ class NewContentElementController extends AbstractModule
      * Creating the module output.
      *
      * @throws \UnexpectedValueException
+     * @deprecated since TYPO3 v10 (not used since v9) without substitute
      */
     public function main()
+    {
+        $this->prepareContent('window');
+    }
+
+    /**
+     * Creating the module output.
+     *
+     * @param string $clientContext JavaScript client context to be used
+     *        + 'window', legacy if rendered in current document
+     *        + 'list_frame', in case rendered in global modal
+     *
+     * @throws \UnexpectedValueException
+     */
+    protected function prepareContent(string $clientContext)
     {
         $hasAccess = true;
         if ($this->id && $this->access) {
 
             // Init position map object:
-            $posMap = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ContentCreationPagePositionMap::class);
+            $posMap = GeneralUtility::makeInstance(
+                ContentCreationPagePositionMap::class,
+                null,
+                $clientContext
+            );
             $posMap->cur_sys_language = $this->sys_language;
             // If a column is pre-set:
             if (isset($this->colPos)) {
@@ -224,26 +267,16 @@ class NewContentElementController extends AbstractModule
             $wizardItems = $this->wizardArray();
             // Wrapper for wizards
             // Hook for manipulating wizardItems, wrapper, onClickEvent etc.
-            if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms']['db_new_content_el']['wizardItemsHook'])) {
-                foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms']['db_new_content_el']['wizardItemsHook'] as $className) {
-                    $hookObject = GeneralUtility::makeInstance($className);
-                    if (!$hookObject instanceof NewContentElementWizardHookInterface) {
-                        throw new \UnexpectedValueException(
-                            $className . ' must implement interface ' . NewContentElementWizardHookInterface::class,
-                            1227834741
-                        );
-                    }
-                    $hookObject->manipulateWizardItems($wizardItems, $this);
+            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms']['db_new_content_el']['wizardItemsHook'] ?? [] as $className) {
+                $hookObject = GeneralUtility::makeInstance($className);
+                if (!$hookObject instanceof NewContentElementWizardHookInterface) {
+                    throw new \UnexpectedValueException(
+                        $className . ' must implement interface ' . NewContentElementWizardHookInterface::class,
+                        1227834741
+                    );
                 }
+                $hookObject->manipulateWizardItems($wizardItems, $this);
             }
-            // Add document inline javascript
-            $this->moduleTemplate->addJavaScriptCode(
-                'NewContentElementWizardInlineJavascript',
-                '
-				function goToalt_doc() {
-					' . $this->onClickEvent . '
-				}'
-            );
 
             // Traverse items for the wizard.
             // An item is either a header or an item rendered with a radio button and title/description and icon:
@@ -256,31 +289,30 @@ class NewContentElementController extends AbstractModule
                 $wizardOnClick = '';
                 if ($wInfo['header']) {
                     $menuItems[] = [
-                        'label' => $wInfo['header'],
+                        'label' => $wInfo['header'] ?: '-',
                         'content' => ''
                     ];
                     $key = count($menuItems) - 1;
                 } else {
                     if (!$this->onClickEvent) {
                         // Radio button:
-                        $wizardOnClick = 'document.editForm.defValues.value=unescape(' . GeneralUtility::quoteJSvalue(rawurlencode($wInfo['params'])) . ');goToalt_doc();' . (!$this->onClickEvent ? 'window.location.hash=\'#sel2\';' : '');
+                        $wizardOnClick = 'document.editForm.defValues.value=unescape(' . GeneralUtility::quoteJSvalue(rawurlencode($wInfo['params'])) . '); window.location.hash=\'#sel2\';';
                         // Onclick action for icon/title:
                         $aOnClick = 'document.getElementsByName(\'tempB\')[' . $cc . '].checked=1;' . $wizardOnClick . 'return false;';
                     } else {
-                        $aOnClick = "document.editForm.defValues.value=unescape('" . rawurlencode($wInfo['params']) . "');goToalt_doc();" . (!$this->onClickEvent?"window.location.hash='#sel2';":'');
+                        $aOnClick = "document.editForm.defValues.value=unescape('" . rawurlencode($wInfo['params']) . "');goToalt_doc();";
                     }
 
                     $icon = $this->moduleTemplate->getIconFactory()->getIcon($wInfo['iconIdentifier'])->render();
 
                     $this->menuItemView->assignMultiple([
-                            'onClickEvent' => $this->onClickEvent,
-                            'aOnClick' => $aOnClick,
-                            'wizardInformation' => $wInfo,
-                            'icon' => $icon,
-                            'wizardOnClick' => $wizardOnClick,
-                            'wizardKey' => $wizardKey
-                        ]
-                    );
+                        'onClickEvent' => $this->onClickEvent,
+                        'aOnClick' => $aOnClick,
+                        'wizardInformation' => $wInfo,
+                        'icon' => $icon,
+                        'wizardOnClick' => $wizardOnClick,
+                        'wizardKey' => $wizardKey
+                    ]);
                     $menuItems[$key]['content'] .= $this->menuItemView->render();
                     $cc++;
                 }
@@ -353,7 +385,7 @@ class NewContentElementController extends AbstractModule
     {
         $wizardItems = [];
         if (is_array($this->config)) {
-            $wizards = $this->config['wizardItems.'];
+            $wizards = $this->config['wizardItems.'] ?? [];
             $appendWizards = $this->wizard_appendWizards($wizards['elements.']);
             if (is_array($wizards)) {
                 foreach ($wizards as $groupKey => $wizardGroup) {
@@ -406,9 +438,13 @@ class NewContentElementController extends AbstractModule
         }
         if (is_array($GLOBALS['TBE_MODULES_EXT']['xMOD_db_new_content_el']['addElClasses'])) {
             foreach ($GLOBALS['TBE_MODULES_EXT']['xMOD_db_new_content_el']['addElClasses'] as $class => $path) {
-                require_once $path;
+                if (!class_exists($class) && file_exists($path)) {
+                    require_once $path;
+                }
                 $modObj = GeneralUtility::makeInstance($class);
-                $wizardElements = $modObj->proc($wizardElements);
+                if (method_exists($modObj, 'proc')) {
+                    $wizardElements = $modObj->proc($wizardElements);
+                }
             }
         }
         $returnElements = [];
@@ -490,31 +526,30 @@ class NewContentElementController extends AbstractModule
                         $authModeDeny = $config['type'] === 'select' && $config['authMode']
                             && !$backendUser->checkAuthMode('tt_content', $fN, $fV, $config['authMode']);
                         // explode TSconfig keys only as needed
-                        if (!isset($removeItems[$fN])) {
-                            $removeItems[$fN] = GeneralUtility::trimExplode(
+                        if (!isset($removeItems[$fN]) && isset($TCEFORM_TSconfig[$fN]['removeItems']) && $TCEFORM_TSconfig[$fN]['removeItems'] !== '') {
+                            $removeItems[$fN] = array_flip(GeneralUtility::trimExplode(
                                 ',',
                                 $TCEFORM_TSconfig[$fN]['removeItems'],
                                 true
-                            );
+                            ));
                         }
-                        if (!isset($keepItems[$fN])) {
-                            $keepItems[$fN] = GeneralUtility::trimExplode(
+                        if (!isset($keepItems[$fN]) && isset($TCEFORM_TSconfig[$fN]['keepItems']) && $TCEFORM_TSconfig[$fN]['keepItems'] !== '') {
+                            $keepItems[$fN] = array_flip(GeneralUtility::trimExplode(
                                 ',',
                                 $TCEFORM_TSconfig[$fN]['keepItems'],
                                 true
-                            );
+                            ));
                         }
-                        $isNotInKeepItems = !empty($keepItems[$fN]) && !in_array($fV, $keepItems[$fN]);
-                        if ($authModeDeny || $fN === 'CType' && (in_array($fV, $removeItems[$fN]) || $isNotInKeepItems)) {
+                        $isNotInKeepItems = !empty($keepItems[$fN]) && !isset($keepItems[$fN][$fV]);
+                        if ($authModeDeny || ($fN === 'CType' && (isset($removeItems[$fN][$fV]) || $isNotInKeepItems))) {
                             // Remove element all together:
                             unset($wizardItems[$key]);
                             break;
-                        } else {
-                            // Add the parameter:
-                            $wizardItems[$key]['params'] .= '&defVals[tt_content][' . $fN . ']=' . rawurlencode($this->getLanguageService()->sL($fV));
-                            $tmp = explode('_', $key);
-                            $headersUsed[$tmp[0]] = $tmp[0];
                         }
+                        // Add the parameter:
+                        $wizardItems[$key]['params'] .= '&defVals[tt_content][' . $fN . ']=' . rawurlencode($this->getLanguageService()->sL($fV));
+                        $tmp = explode('_', $key);
+                        $headersUsed[$tmp[0]] = $tmp[0];
                     }
                 }
             }

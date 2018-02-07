@@ -194,7 +194,7 @@ abstract class AbstractConditionMatcher
      *
      * @param string $key The condition to match against its criteria.
      * @param string $value
-     * @return NULL|bool Result of the evaluation; NULL if condition could not be evaluated
+     * @return bool|null Result of the evaluation; NULL if condition could not be evaluated
      */
     protected function evaluateConditionCommon($key, $value)
     {
@@ -356,7 +356,7 @@ abstract class AbstractConditionMatcher
      * e.g. "[MyCompany\MyPackage\ConditionMatcher\MyOwnConditionMatcher = myvalue]"
      *
      * @param string $condition The condition to match
-     * @return NULL|bool Result of the evaluation; NULL if condition could not be evaluated
+     * @return bool|null Result of the evaluation; NULL if condition could not be evaluated
      * @throws \TYPO3\CMS\Core\Configuration\TypoScript\Exception\InvalidTypoScriptConditionException
      */
     protected function evaluateCustomDefinedCondition($condition)
@@ -584,9 +584,8 @@ abstract class AbstractConditionMatcher
         }
         if (!is_array($theVar) && !is_object($theVar)) {
             return $theVar;
-        } else {
-            return '';
         }
+        return '';
     }
 
     /**
@@ -653,11 +652,4 @@ abstract class AbstractConditionMatcher
      * @return bool Determines if a user is logged in
      */
     abstract protected function isUserLoggedIn();
-
-    /**
-     * Sets a log message.
-     *
-     * @param string $message The log message to set/write
-     */
-    abstract protected function log($message);
 }

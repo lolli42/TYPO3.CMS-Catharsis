@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -33,12 +34,6 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
      * @var IconFactory
      */
     protected $iconFactory;
-
-    /**
-     * @var string
-     * static table for pages_language_overlay
-     */
-    protected static $pageLanguageOverlayTable = 'pages_language_overlay';
 
     /**
      * Construct for initialize class variables
@@ -101,7 +96,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
             $depth = $this->pObj->MOD_SETTINGS['depth'];
             // Initialize tree object:
             $tree = GeneralUtility::makeInstance(PageTreeView::class);
-            $tree->init('AND ' . $this->getBackendUser()->getPagePermsClause(1));
+            $tree->init('AND ' . $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW));
             $tree->addField('l18n_cfg');
             // Creating top icon; the current page
             $HTML = $this->iconFactory->getIconForRecord('pages', $treeStartingRecord, Icon::SIZE_SMALL)->render();
@@ -136,6 +131,8 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
         $output = '';
         $newOL_js = [];
         $langRecUids = [];
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         foreach ($tree->tree as $data) {
             $tCells = [];
             $langRecUids[0][] = $data['row']['uid'];
@@ -152,13 +149,20 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
                 '</td>';
             // DEFAULT language:
             // "View page" link is created:
-            $viewPageLink = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick(
-                    $data['row']['uid'], '', null, '', '', '&L=###LANG_UID###')
+            $viewPageLink = '<a href="#" onclick="' . htmlspecialchars(
+                BackendUtility::viewOnClick(
+                    $data['row']['uid'],
+                '',
+                null,
+                '',
+                '',
+                '&L=###LANG_UID###'
+            )
                 ) . '" class="btn btn-default" title="' . $lang->sL('LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_viewPage') . '">' .
                 $this->iconFactory->getIcon('actions-view', Icon::SIZE_SMALL)->render() . '</a>';
             $status = GeneralUtility::hideIfDefaultLanguage($data['row']['l18n_cfg']) ? 'danger' : 'success';
             // Create links:
-            $editUrl = BackendUtility::getModuleUrl('record_edit', [
+            $editUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', [
                 'edit' => [
                     'pages' => [
                         $data['row']['uid'] => 'edit'
@@ -166,8 +170,15 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
                 ],
                 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
             ]);
-            $info = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick(
-                    $data['row']['uid'], '', null, '', '', '')
+            $info = '<a href="#" onclick="' . htmlspecialchars(
+                BackendUtility::viewOnClick(
+                    $data['row']['uid'],
+                '',
+                null,
+                '',
+                '',
+                ''
+            )
                 ) . '" class="btn btn-default" title="' . $lang->sL('LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_viewPage') . '">' .
                 $this->iconFactory->getIcon('actions-view-page', Icon::SIZE_SMALL)->render() . '</a>';
             $info .= '<a href="' . htmlspecialchars($editUrl)
@@ -192,7 +203,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
                     if (is_array($row)) {
                         $langRecUids[$langRow['uid']][] = $row['uid'];
                         $status = $row['_HIDDEN'] ? (GeneralUtility::hideIfNotTranslated($data['row']['l18n_cfg']) || GeneralUtility::hideIfDefaultLanguage($data['row']['l18n_cfg']) ? 'danger' : '') : 'success';
-                        $icon = $this->iconFactory->getIconForRecord('pages_language_overlay', $row, Icon::SIZE_SMALL)->render();
+                        $icon = $this->iconFactory->getIconForRecord('pages', $row, Icon::SIZE_SMALL)->render();
                         $info = $icon . htmlspecialchars(
                                 GeneralUtility::fixed_lgd_cs($row['title'], $titleLen)
                             ) . ((string)$row['nav_title'] !== '' ? ' [Nav: <em>' . htmlspecialchars(
@@ -208,9 +219,9 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
                             ) . '">' . $info . '</a></td>';
                         // Edit whole record:
                         // Create links:
-                        $editUrl = BackendUtility::getModuleUrl('record_edit', [
+                        $editUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', [
                             'edit' => [
-                                'pages_language_overlay' => [
+                                'pages' => [
                                     $row['uid'] => 'edit'
                                 ]
                             ],
@@ -239,7 +250,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
 								+(document.webinfoForm['
                                 . GeneralUtility::quoteJSvalue('newOL[' . $langRow['uid'] . '][' . $data['row']['uid'] . ']')
                                 . '].checked ? '
-                                . GeneralUtility::quoteJSvalue('&edit[pages_language_overlay][' . $data['row']['uid'] . ']=new')
+                                . GeneralUtility::quoteJSvalue('&edit[pages][' . $data['row']['uid'] . ']=new')
                                 . ' : \'\')
 							';
                         }
@@ -259,7 +270,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
         $tCells = [];
         $tCells[] = '<td>' . $lang->sL('LLL:EXT:info/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_page') . ':</td>';
         if (is_array($langRecUids[0])) {
-            $editUrl = BackendUtility::getModuleUrl('record_edit', [
+            $editUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', [
                 'edit' => [
                     'pages' => [
                         implode(',', $langRecUids[0]) => 'edit'
@@ -284,9 +295,9 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
                 $tCells[] = '<td class="col-border-left">' . htmlspecialchars($langRow['title']) . '</td>';
                 // Edit language overlay records:
                 if (is_array($langRecUids[$langRow['uid']])) {
-                    $editUrl = BackendUtility::getModuleUrl('record_edit', [
+                    $editUrl = (string)$uriBuilder->buildUriFromRoute('record_edit', [
                         'edit' => [
-                            'pages_language_overlay' => [
+                            'pages' => [
                                 implode(',', $langRecUids[$langRow['uid']]) => 'edit'
                             ]
                         ],
@@ -301,7 +312,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
                     $editButton = '';
                 }
                 // Create new overlay records:
-                $params = '&columnsOnly=title,hidden,sys_language_uid&overrideVals[pages_language_overlay][sys_language_uid]=' . $langRow['uid'];
+                $params = '&columnsOnly=title,hidden,sys_language_uid&overrideVals[pages][sys_language_uid]=' . $langRow['uid'];
                 $onClick = BackendUtility::editOnClick($params);
                 if (!empty($newOL_js[$langRow['uid']])) {
                     $onClickArray = explode('?', $onClick, 2);
@@ -342,7 +353,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
      */
     public function getSystemLanguages()
     {
-        if (!$this->getBackendUser()->user['admin'] && $this->getBackendUser()->groupData['allowed_languages'] !== '') {
+        if (!$this->getBackendUser()->isAdmin() && $this->getBackendUser()->groupData['allowed_languages'] !== '') {
             $allowed_languages = array_flip(explode(',', $this->getBackendUser()->groupData['allowed_languages']));
         }
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -373,12 +384,12 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
      *
      * @param int $pageId Page ID to look up for.
      * @param int $langId Language UID to select for.
-     * @return array pages_languages_overlay record
+     * @return array translated pages record
      */
     public function getLangStatus($pageId, $langId)
     {
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable(static::$pageLanguageOverlayTable);
+            ->getQueryBuilderForTable('pages');
         $queryBuilder
             ->getRestrictions()
             ->removeAll()
@@ -386,23 +397,23 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
         $result = $queryBuilder
             ->select('*')
-            ->from(static::$pageLanguageOverlayTable)
+            ->from('pages')
             ->where(
                 $queryBuilder->expr()->eq(
-                    'pid',
+                    $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'],
                     $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
                 )
             )
             ->andWhere(
                 $queryBuilder->expr()->eq(
-                    'sys_language_uid',
+                    $GLOBALS['TCA']['pages']['ctrl']['languageField'],
                     $queryBuilder->createNamedParameter($langId, \PDO::PARAM_INT)
                 )
             )
             ->execute();
 
         $row = $result->fetch();
-        BackendUtility::workspaceOL(static::$pageLanguageOverlayTable, $row);
+        BackendUtility::workspaceOL('pages', $row);
         if (is_array($row)) {
             $row['_COUNT'] = $result->rowCount();
             $row['_HIDDEN'] = $row['hidden'] || (int)$row['endtime'] > 0 && (int)$row['endtime'] < $GLOBALS['EXEC_TIME'] || $GLOBALS['EXEC_TIME'] < (int)$row['starttime'];
@@ -421,7 +432,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
     public function getContentElementCount($pageId, $sysLang)
     {
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable(static::$pageLanguageOverlayTable);
+            ->getQueryBuilderForTable('pages');
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Frontend\Typolink;
 
 /*
@@ -71,7 +71,10 @@ class DatabaseRecordLinkBuilder extends AbstractTypolinkBuilder
 
         // nasty workaround so typolink stops putting a link together, there is a link already built
         throw new UnableToLinkException(
-            '', 1491130170, null, $link
+            '',
+            1491130170,
+            null,
+            $link
         );
     }
 }

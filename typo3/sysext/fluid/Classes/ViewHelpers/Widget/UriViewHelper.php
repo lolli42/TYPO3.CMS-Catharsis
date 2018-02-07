@@ -13,7 +13,9 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Widget;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
 
 /**
@@ -31,7 +33,7 @@ use TYPO3Fluid\Fluid\Core\ViewHelper\Traits\CompileWithRenderStatic;
  *
  * @api
  */
-class UriViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
+class UriViewHelper extends AbstractViewHelper
 {
     use CompileWithRenderStatic;
 
@@ -42,7 +44,7 @@ class UriViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
      */
     public function initializeArguments()
     {
-        parent::initializeArguments();
+        $this->registerArgument('useCacheHash', 'bool', 'True whether the cache hash should be appended to the URL', false, false);
         $this->registerArgument('addQueryStringMethod', 'string', 'Method to be used for query string');
         $this->registerArgument('action', 'string', 'Target action');
         $this->registerArgument('arguments', 'array', 'Arguments', false, []);
@@ -63,9 +65,8 @@ class UriViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 
         if ($ajax === true) {
             return static::getAjaxUri($renderingContext, $arguments);
-        } else {
-            return static::getWidgetUri($renderingContext, $arguments);
         }
+        return static::getWidgetUri($renderingContext, $arguments);
     }
 
     /**
@@ -113,6 +114,7 @@ class UriViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
         return $uriBuilder->reset()
             ->setArguments([$argumentPrefix => $parameters])
             ->setSection($arguments['section'])
+            ->setUseCacheHash($arguments['useCacheHash'])
             ->setAddQueryString(true)
             ->setAddQueryStringMethod($arguments['addQueryStringMethod'])
             ->setArgumentsToBeExcludedFromQueryString([$argumentPrefix, 'cHash'])

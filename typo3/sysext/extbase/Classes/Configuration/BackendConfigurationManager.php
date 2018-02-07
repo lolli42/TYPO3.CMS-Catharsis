@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\QueryGenerator;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -86,12 +87,12 @@ class BackendConfigurationManager extends AbstractConfigurationManager
     {
         $setup = $this->getTypoScriptSetup();
         $pluginConfiguration = [];
-        if (is_array($setup['module.']['tx_' . strtolower($extensionName) . '.'])) {
+        if (is_array($setup['module.']['tx_' . strtolower($extensionName) . '.'] ?? false)) {
             $pluginConfiguration = $this->typoScriptService->convertTypoScriptArrayToPlainArray($setup['module.']['tx_' . strtolower($extensionName) . '.']);
         }
         if ($pluginName !== null) {
             $pluginSignature = strtolower($extensionName . '_' . $pluginName);
-            if (is_array($setup['module.']['tx_' . $pluginSignature . '.'])) {
+            if (is_array($setup['module.']['tx_' . $pluginSignature . '.'] ?? false)) {
                 $overruleConfiguration = $this->typoScriptService->convertTypoScriptArrayToPlainArray($setup['module.']['tx_' . $pluginSignature . '.']);
                 ArrayUtility::mergeRecursiveWithOverrule($pluginConfiguration, $overruleConfiguration);
             }
@@ -112,7 +113,7 @@ class BackendConfigurationManager extends AbstractConfigurationManager
      */
     protected function getSwitchableControllerActions($extensionName, $pluginName)
     {
-        $switchableControllerActions = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['modules'][$pluginName]['controllers'];
+        $switchableControllerActions = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['modules'][$pluginName]['controllers'] ?? false;
         if (!is_array($switchableControllerActions)) {
             $switchableControllerActions = [];
         }
@@ -258,7 +259,7 @@ class BackendConfigurationManager extends AbstractConfigurationManager
 
         $recursiveStoragePids = '';
         $storagePids = GeneralUtility::intExplode(',', $storagePid);
-        $permsClause = $this->getBackendUser()->getPagePermsClause(1);
+        $permsClause = $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW);
         $queryGenerator = GeneralUtility::makeInstance(QueryGenerator::class);
         foreach ($storagePids as $startPid) {
             $pids = $queryGenerator->getTreeList($startPid, $recursionDepth, 0, $permsClause);

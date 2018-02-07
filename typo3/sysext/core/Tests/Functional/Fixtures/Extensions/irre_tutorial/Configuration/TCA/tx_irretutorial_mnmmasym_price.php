@@ -101,16 +101,13 @@ return [
                     'showPossibleLocalizationRecords' => 1,
                     'showRemovedLocalizationRecords' => 1,
                 ],
-                'behaviour' => [
-                    'localizationMode' => 'select',
-                ],
             ]
         ],
     ],
     'types' => [
         '0' => ['showitem' =>
             '--div--;LLL:EXT:irre_tutorial/Resources/Private/Language/locallang_db.xml:tabs.general, title, price, offers,' .
-            '--div--;LLL:EXT:irre_tutorial/Resources/Private/Language/locallang_db.xml:tabs.visibility, sys_language_uid, l18n_parent, l18n_diffsource, hidden;;1'
+            '--div--;LLL:EXT:irre_tutorial/Resources/Private/Language/locallang_db.xml:tabs.visibility, sys_language_uid, l18n_parent, l18n_diffsource, hidden'
         ]
     ],
     'palettes' => [

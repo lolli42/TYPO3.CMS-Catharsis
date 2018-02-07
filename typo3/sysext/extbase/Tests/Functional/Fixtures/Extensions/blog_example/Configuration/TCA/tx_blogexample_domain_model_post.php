@@ -93,6 +93,7 @@ return [
             'label' => 'LLL:EXT:blog_example/Resources/Private/Language/locallang_db.xml:tx_blogexample_domain_model_post.date',
             'config' => [
                 'type' => 'input',
+                'renderType' => 'inputDateTime',
                 'size' => 12,
                 'eval' => 'datetime, required',
                 'default' => time()
@@ -101,6 +102,26 @@ return [
         'author' => [
             'exclude' => true,
             'label' => 'LLL:EXT:blog_example/Resources/Private/Language/locallang_db.xml:tx_blogexample_domain_model_post.author',
+            'config' => [
+                'type' => 'select',
+                'renderType' => 'selectSingle',
+                'foreign_table' => 'tx_blogexample_domain_model_person',
+                'fieldControl' => [
+                    'editPopup' => [
+                        'disabled' => false,
+                    ],
+                    'addRecord' => [
+                        'disabled' => false,
+                        'options' => [
+                            'setValue' => 'prepend',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        'reviewer' => [
+            'exclude' => true,
+            'label' => 'LLL:EXT:blog_example/Resources/Private/Language/locallang_db.xml:tx_blogexample_domain_model_post.reviewer',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Service;
 
 /*
@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Localization\Locales;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
@@ -258,13 +259,19 @@ class TranslationService implements SingletonInterface
             $language = $renderingOptions['language'];
         }
 
+        try {
+            $arguments = ArrayUtility::getValueByPath($renderingOptions['arguments'] ?? [], $optionKey, '.');
+        } catch (MissingArrayPathException $e) {
+            $arguments = [];
+        }
+
         $translationKeyChain = [];
         foreach ($translationFiles as $translationFile) {
             $translationKeyChain[] = sprintf('%s:%s.finisher.%s.%s', $translationFile, $formRuntime->getIdentifier(), $finisherIdentifier, $optionKey);
             $translationKeyChain[] = sprintf('%s:finisher.%s.%s', $translationFile, $finisherIdentifier, $optionKey);
         }
 
-        $translatedValue = $this->processTranslationChain($translationKeyChain, $language);
+        $translatedValue = $this->processTranslationChain($translationKeyChain, $language, $arguments);
         $translatedValue = (empty($translatedValue)) ? $optionValue : $translatedValue;
 
         return $translatedValue;
@@ -272,7 +279,7 @@ class TranslationService implements SingletonInterface
 
     /**
      * @param RootRenderableInterface $element
-     * @param string $property
+     * @param array $propertyParts
      * @param FormRuntime $formRuntime
      * @return string|array
      * @throws \InvalidArgumentException
@@ -280,14 +287,15 @@ class TranslationService implements SingletonInterface
      */
     public function translateFormElementValue(
         RootRenderableInterface $element,
-        string $property,
+        array $propertyParts,
         FormRuntime $formRuntime
     ) {
-        if (empty($property)) {
-            throw new \InvalidArgumentException('The argument "property" is empty', 1476216007);
+        if (empty($propertyParts)) {
+            throw new \InvalidArgumentException('The argument "propertyParts" is empty', 1476216007);
         }
 
         $propertyType = 'properties';
+        $property = implode('.', $propertyParts);
         $renderingOptions = $element->getRenderingOptions();
 
         if ($property === 'label') {
@@ -295,15 +303,15 @@ class TranslationService implements SingletonInterface
         } else {
             if ($element instanceof FormElementInterface) {
                 try {
-                    $defaultValue = ArrayUtility::getValueByPath($element->getProperties(), $property, '.');
-                } catch (\RuntimeException $exception) {
+                    $defaultValue = ArrayUtility::getValueByPath($element->getProperties(), $propertyParts, '.');
+                } catch (MissingArrayPathException $exception) {
                     $defaultValue = null;
                 }
             } else {
                 $propertyType = 'renderingOptions';
                 try {
-                    $defaultValue = ArrayUtility::getValueByPath($renderingOptions, $property, '.');
-                } catch (\RuntimeException $exception) {
+                    $defaultValue = ArrayUtility::getValueByPath($renderingOptions, $propertyParts, '.');
+                } catch (MissingArrayPathException $exception) {
                     $defaultValue = null;
                 }
             }
@@ -336,15 +344,22 @@ class TranslationService implements SingletonInterface
             $language = $renderingOptions['translation']['language'];
         }
 
+        try {
+            $arguments = ArrayUtility::getValueByPath($renderingOptions['translation']['arguments'] ?? [], $propertyParts, '.');
+        } catch (MissingArrayPathException $e) {
+            $arguments = [];
+        }
+
         if ($property === 'options' && is_array($defaultValue)) {
             foreach ($defaultValue as $optionValue => &$optionLabel) {
                 $translationKeyChain = [];
                 foreach ($translationFiles as $translationFile) {
                     $translationKeyChain[] = sprintf('%s:%s.element.%s.%s.%s.%s', $translationFile, $formRuntime->getIdentifier(), $element->getIdentifier(), $propertyType, $property, $optionValue);
                     $translationKeyChain[] = sprintf('%s:element.%s.%s.%s.%s', $translationFile, $element->getIdentifier(), $propertyType, $property, $optionValue);
+                    $translationKeyChain[] = sprintf('%s:element.%s.%s.%s.%s', $translationFile, $element->getType(), $propertyType, $property, $optionValue);
                 }
 
-                $translatedValue = $this->processTranslationChain($translationKeyChain, $language);
+                $translatedValue = $this->processTranslationChain($translationKeyChain, $language, $arguments);
                 $optionLabel = (empty($translatedValue)) ? $optionLabel : $translatedValue;
             }
             $translatedValue = $defaultValue;
@@ -357,7 +372,7 @@ class TranslationService implements SingletonInterface
                     $translationKeyChain[] = sprintf('%s:element.%s.%s.%s', $translationFile, $element->getType(), $propertyType, $propertyName);
                 }
 
-                $translatedValue = $this->processTranslationChain($translationKeyChain, $language);
+                $translatedValue = $this->processTranslationChain($translationKeyChain, $language, $arguments);
                 $propertyValue = (empty($translatedValue)) ? $propertyValue : $translatedValue;
             }
             $translatedValue = $defaultValue;
@@ -369,7 +384,7 @@ class TranslationService implements SingletonInterface
                 $translationKeyChain[] = sprintf('%s:element.%s.%s.%s', $translationFile, $element->getType(), $propertyType, $property);
             }
 
-            $translatedValue = $this->processTranslationChain($translationKeyChain, $language);
+            $translatedValue = $this->processTranslationChain($translationKeyChain, $language, $arguments);
             $translatedValue = (empty($translatedValue)) ? $defaultValue : $translatedValue;
         }
 
@@ -427,6 +442,7 @@ class TranslationService implements SingletonInterface
         foreach ($translationFiles as $translationFile) {
             $translationKeyChain[] = sprintf('%s:%s.validation.error.%s.%s', $translationFile, $formRuntime->getIdentifier(), $element->getIdentifier(), $code);
             $translationKeyChain[] = sprintf('%s:%s.validation.error.%s', $translationFile, $formRuntime->getIdentifier(), $code);
+            $translationKeyChain[] = sprintf('%s:validation.error.%s.%s', $translationFile, $element->getIdentifier(), $code);
             $translationKeyChain[] = sprintf('%s:validation.error.%s', $translationFile, $code);
         }
 

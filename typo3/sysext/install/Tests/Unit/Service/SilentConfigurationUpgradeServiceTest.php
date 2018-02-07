@@ -14,11 +14,13 @@ namespace TYPO3\CMS\Install\Tests\Unit\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Core\Configuration\ConfigurationManager;
 use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Tests\Unit\Utility\AccessibleProxies\ExtensionManagementUtilityAccessibleProxy;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Install\Controller\Exception\RedirectException;
+use TYPO3\CMS\Install\Service\Exception\ConfigurationChangedException;
 use TYPO3\CMS\Install\Service\SilentConfigurationUpgradeService;
 
 /**
@@ -107,7 +109,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
             ['BE/loginSecurityLevel', $current]
         ];
         $closure = function () {
-            throw new \RuntimeException('Path does not exist in array', 1476109311);
+            throw new MissingArrayPathException('Path does not exist in array', 1476109311);
         };
 
         $this->createConfigurationManagerWithMockedMethods(
@@ -129,7 +131,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
             ->method('setLocalConfigurationValueByPath')
             ->with($this->equalTo('BE/loginSecurityLevel'), $this->equalTo($setting));
 
-        $this->expectException(RedirectException::class);
+        $this->expectException(ConfigurationChangedException::class);
 
         $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $this->configurationManager);
 
@@ -166,7 +168,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
             ->method('removeLocalConfigurationKeysByPath')
             ->will($this->returnValueMap($currentLocalConfiguration));
 
-        $this->expectException(RedirectException::class);
+        $this->expectException(ConfigurationChangedException::class);
 
         $silentConfigurationUpgradeServiceInstance->_set('obsoleteLocalConfigurationSettings', $obsoleteLocalConfigurationSettings);
         $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $this->configurationManager);
@@ -260,7 +262,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
         );
 
         $closure = function () {
-            throw new \RuntimeException('Path does not exist in array', 1476109266);
+            throw new MissingArrayPathException('Path does not exist in array', 1476109266);
         };
 
         $this->createConfigurationManagerWithMockedMethods(
@@ -276,7 +278,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
             ->method('setLocalConfigurationValueByPath')
             ->with($this->equalTo('SYS/encryptionKey'), $this->isType('string'));
 
-        $this->expectException(RedirectException::class);
+        $this->expectException(ConfigurationChangedException::class);
 
         $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $this->configurationManager);
 
@@ -421,7 +423,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
         }
 
         if ($localConfigurationNeedsUpdate) {
-            $this->expectException(RedirectException::class);
+            $this->expectException(ConfigurationChangedException::class);
         }
 
         $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $this->configurationManager);
@@ -468,7 +470,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
                 [['GFX/imagefile_ext' => 'gif,jpg,jpeg,png']]
             );
 
-        $this->expectException(RedirectException::class);
+        $this->expectException(ConfigurationChangedException::class);
 
         $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $this->configurationManager);
 
@@ -554,7 +556,7 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
                             'GFX/processor_effects' => -1]]
             );
 
-        $this->expectException(RedirectException::class);
+        $this->expectException(ConfigurationChangedException::class);
 
         $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $this->configurationManager);
 
@@ -668,5 +670,47 @@ class SilentConfigurationUpgradeServiceTest extends \TYPO3\TestingFramework\Core
         $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $this->configurationManager);
 
         $silentConfigurationUpgradeServiceInstance->_call('migrateLangDebug');
+    }
+
+    /**
+     * @test
+     */
+    public function migrateCacheHashOptions()
+    {
+        $oldConfig = [
+            'FE/cHashOnlyForParameters' => 'foo,bar',
+            'FE/cHashExcludedParameters' => 'bar,foo',
+            'FE/cHashRequiredParameters' => 'bar,baz',
+            'FE/cHashExcludedParametersIfEmpty' => '*'
+        ];
+
+        /** @var ConfigurationManager|ObjectProphecy $configurationManager */
+        $configurationManager = $this->prophesize(ConfigurationManager::class);
+
+        foreach ($oldConfig as $key => $value) {
+            $configurationManager->getLocalConfigurationValueByPath($key)
+                ->shouldBeCalled()
+                ->willReturn($value);
+        }
+
+        $configurationManager->setLocalConfigurationValuesByPathValuePairs(\Prophecy\Argument::cetera())
+            ->shouldBeCalled();
+        $configurationManager->removeLocalConfigurationKeysByPath(\Prophecy\Argument::cetera())
+            ->shouldBeCalled();
+
+        $this->expectException(ConfigurationChangedException::class);
+
+        /** @var $silentConfigurationUpgradeServiceInstance SilentConfigurationUpgradeService|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\TestingFramework\Core\AccessibleObjectInterface */
+        $silentConfigurationUpgradeServiceInstance = $this->getAccessibleMock(
+            SilentConfigurationUpgradeService::class,
+            ['dummy'],
+            [],
+            '',
+            false
+        );
+
+        $silentConfigurationUpgradeServiceInstance->_set('configurationManager', $configurationManager->reveal());
+
+        $silentConfigurationUpgradeServiceInstance->_call('migrateCacheHashOptions');
     }
 }

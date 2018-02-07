@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Core\TypoScript;
 
 /*
@@ -35,7 +35,7 @@ class TypoScriptService
         foreach ($typoScriptArray as $key => $value) {
             if (substr((string)$key, -1) === '.') {
                 $keyWithoutDot = substr((string)$key, 0, -1);
-                $typoScriptNodeValue = isset($typoScriptArray[$keyWithoutDot]) ? $typoScriptArray[$keyWithoutDot] : null;
+                $typoScriptNodeValue = $typoScriptArray[$keyWithoutDot] ?? null;
                 if (is_array($value)) {
                     $typoScriptArray[$keyWithoutDot] = $this->convertTypoScriptArrayToPlainArray($value);
                     if ($typoScriptNodeValue !== null) {
@@ -73,7 +73,7 @@ class TypoScriptService
                 }
                 $typoScriptArray[$key . '.'] = $this->convertPlainArrayToTypoScriptArray($value);
             } else {
-                $typoScriptArray[$key] = $value === null ? '' : $value;
+                $typoScriptArray[$key] = $value ?? '';
             }
         }
         return $typoScriptArray;

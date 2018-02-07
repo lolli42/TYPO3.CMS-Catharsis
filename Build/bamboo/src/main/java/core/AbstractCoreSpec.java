@@ -16,8 +16,14 @@ package core;
 import java.util.ArrayList;
 
 import com.atlassian.bamboo.specs.api.builders.BambooKey;
+import com.atlassian.bamboo.specs.api.builders.permission.PermissionType;
+import com.atlassian.bamboo.specs.api.builders.permission.Permissions;
+import com.atlassian.bamboo.specs.api.builders.permission.PlanPermissions;
 import com.atlassian.bamboo.specs.api.builders.plan.Job;
+import com.atlassian.bamboo.specs.api.builders.plan.PlanIdentifier;
 import com.atlassian.bamboo.specs.api.builders.plan.artifact.Artifact;
+import com.atlassian.bamboo.specs.api.builders.plan.configuration.AllOtherPluginsConfiguration;
+import com.atlassian.bamboo.specs.api.builders.plan.configuration.PluginConfiguration;
 import com.atlassian.bamboo.specs.api.builders.requirement.Requirement;
 import com.atlassian.bamboo.specs.api.builders.task.Task;
 import com.atlassian.bamboo.specs.builders.task.CheckoutItem;
@@ -28,11 +34,16 @@ import com.atlassian.bamboo.specs.builders.task.TestParserTask;
 import com.atlassian.bamboo.specs.builders.task.VcsCheckoutTask;
 import com.atlassian.bamboo.specs.model.task.ScriptTaskProperties;
 import com.atlassian.bamboo.specs.model.task.TestParserTaskProperties;
+import com.atlassian.bamboo.specs.util.MapBuilder;
 
 /**
  * Abstract class with common methods of pre-merge and nightly plan
  */
 abstract public class AbstractCoreSpec {
+
+    protected static String bambooServerName = "https://bamboo.typo3.com:443";
+    protected static String projectName = "TYPO3 Core";
+    protected static String projectKey = "CORE";
 
     protected String composerRootVersionEnvironment = "COMPOSER_ROOT_VERSION=9.0.0";
 
@@ -63,11 +74,83 @@ abstract public class AbstractCoreSpec {
         " typo3InstallToolPassword=\"klaus\"";
 
     /**
+     * Default permissions on core plans
+     *
+     * @param projectName
+     * @param planName
+     * @return
+     */
+    protected PlanPermissions getDefaultPlanPermissions(String projectKey, String planKey) {
+        return new PlanPermissions(new PlanIdentifier(projectKey, planKey))
+            .permissions(new Permissions()
+            .groupPermissions("TYPO3 GmbH", PermissionType.ADMIN, PermissionType.VIEW, PermissionType.EDIT, PermissionType.BUILD, PermissionType.CLONE)
+            .groupPermissions("TYPO3 Core Team", PermissionType.VIEW, PermissionType.BUILD)
+            .loggedInUserPermissions(PermissionType.VIEW)
+            .anonymousUserPermissionView()
+        );
+    }
+
+    /**
+     * Default plan plugin configuration
+     *
+     * @return
+     */
+    protected PluginConfiguration getDefaultPlanPluginConfiguration() {
+        return new AllOtherPluginsConfiguration()
+            .configuration(new MapBuilder()
+            .put("custom", new MapBuilder()
+                .put("artifactHandlers.useCustomArtifactHandlers", "false")
+                .put("buildExpiryConfig", new MapBuilder()
+                    .put("duration", "30")
+                    .put("period", "days")
+                    .put("labelsToKeep", "")
+                    .put("expiryTypeResult", "true")
+                    .put("buildsToKeep", "")
+                    .put("enabled", "true")
+                    .build()
+                )
+                .build()
+            )
+            .build()
+        );
+    }
+
+    /**
+     * Default job plugin configuration
+     *
+     * @return
+     */
+    protected PluginConfiguration getDefaultJobPluginConfiguration() {
+        return new AllOtherPluginsConfiguration()
+            .configuration(new MapBuilder()
+                .put("repositoryDefiningWorkingDirectory", -1)
+                .put("custom", new MapBuilder()
+                    .put("auto", new MapBuilder()
+                        .put("regex", "")
+                        .put("label", "")
+                        .build()
+                    )
+                    .put("buildHangingConfig.enabled", "false")
+                    .put("ncover.path", "")
+                    .put("clover", new MapBuilder()
+                        .put("path", "")
+                        .put("license", "")
+                        .put("useLocalLicenseKey", "true")
+                        .build()
+                    )
+                    .build()
+                )
+                .build()
+            );
+    }
+
+    /**
      * Job composer validate
      */
     protected Job getJobComposerValidate() {
         return new Job("Validate composer.json", new BambooKey("VC"))
         .description("Validate composer.json before actual tests are executed")
+        .pluginConfigurations(this.getDefaultJobPluginConfiguration())
         .tasks(
             this.getTaskGitCloneRepository(),
             this.getTaskGitCherryPick(),
@@ -75,7 +158,8 @@ abstract public class AbstractCoreSpec {
                 .description("composer validate")
                 .executable("composer").argument("validate")
                 .environmentVariables(this.composerRootVersionEnvironment)
-        );
+        )
+        .cleanWorkingDirectory(true);
     }
 
     /**
@@ -87,6 +171,7 @@ abstract public class AbstractCoreSpec {
     protected Job getJobAcceptanceTestInstallMysql(Requirement requirement, String requirementIdentifier) {
         return new Job("Accept inst my " + requirementIdentifier, new BambooKey("ACINSTMY" + requirementIdentifier))
             .description("Install TYPO3 on mysql and create empty frontend page " + requirementIdentifier)
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
             .tasks(
                 this.getTaskGitCloneRepository(),
                 this.getTaskGitCherryPick(),
@@ -110,7 +195,9 @@ abstract public class AbstractCoreSpec {
             .artifacts(new Artifact()
                 .name("Test Report")
                 .copyPattern("typo3temp/var/tests/AcceptanceReportsInstallMysql/")
-                .shared(false));
+                .shared(false)
+            )
+            .cleanWorkingDirectory(true);
     }
 
     /**
@@ -122,6 +209,7 @@ abstract public class AbstractCoreSpec {
     protected Job getJobAcceptanceTestInstallPgsql(Requirement requirement, String requirementIdentifier) {
         return new Job("Accept inst pg " + requirementIdentifier, new BambooKey("ACINSTPG" + requirementIdentifier))
         .description("Install TYPO3 on pgsql and load introduction package " + requirementIdentifier)
+        .pluginConfigurations(this.getDefaultJobPluginConfiguration())
         .tasks(
             this.getTaskGitCloneRepository(),
             this.getTaskGitCherryPick(),
@@ -145,7 +233,9 @@ abstract public class AbstractCoreSpec {
         .artifacts(new Artifact()
             .name("Test Report")
             .copyPattern("typo3temp/var/tests/AcceptanceReportsInstallPgsql/")
-            .shared(false));
+            .shared(false)
+        )
+        .cleanWorkingDirectory(true);
     }
 
     /**
@@ -161,6 +251,7 @@ abstract public class AbstractCoreSpec {
         for (int i=1; i<=numberOfChunks; i++) {
             jobs.add(new Job("Accept my " + requirementIdentifier + " 0" + i, new BambooKey("ACMY" + requirementIdentifier + "0" + i))
                 .description("Run acceptance tests" + requirementIdentifier)
+                .pluginConfigurations(this.getDefaultJobPluginConfiguration())
                 .tasks(
                     this.getTaskGitCloneRepository(),
                     this.getTaskGitCherryPick(),
@@ -193,6 +284,7 @@ abstract public class AbstractCoreSpec {
                     .copyPattern("typo3temp/var/tests/AcceptanceReports/")
                     .shared(false)
                 )
+                .cleanWorkingDirectory(true)
             );
         }
 
@@ -212,6 +304,7 @@ abstract public class AbstractCoreSpec {
         for (int i=0; i<numberOfChunks; i++) {
             jobs.add(new Job("Func mysql " + requirementIdentifier + " 0" + i, new BambooKey("FMY" + requirementIdentifier + "0" + i))
                 .description("Run functional tests on mysql DB " + requirementIdentifier)
+                .pluginConfigurations(this.getDefaultJobPluginConfiguration())
                 .tasks(
                     this.getTaskGitCloneRepository(),
                     this.getTaskGitCherryPick(),
@@ -234,6 +327,7 @@ abstract public class AbstractCoreSpec {
                 .requirements(
                     requirement
                 )
+                .cleanWorkingDirectory(true)
             );
         }
 
@@ -253,6 +347,7 @@ abstract public class AbstractCoreSpec {
         for (int i=0; i<numberOfChunks; i++) {
             jobs.add(new Job("Func mssql " + requirementIdentifier + " 0" + i, new BambooKey("FMS" + requirementIdentifier + "0" + i))
                 .description("Run functional tests on mysql DB " + requirementIdentifier)
+                .pluginConfigurations(this.getDefaultJobPluginConfiguration())
                 .tasks(
                     this.getTaskGitCloneRepository(),
                     this.getTaskGitCherryPick(),
@@ -275,6 +370,8 @@ abstract public class AbstractCoreSpec {
                 .requirements(
                     requirement
                 )
+                .cleanWorkingDirectory(true)
+                .enabled(false)
             );
         }
 
@@ -294,6 +391,7 @@ abstract public class AbstractCoreSpec {
         for (int i=0; i<numberOfChunks; i++) {
             jobs.add(new Job("Func pgsql " + requirementIdentifier + " 0" + i, new BambooKey("FPG" + requirementIdentifier + "0" + i))
                 .description("Run functional tests on pgsql DB " + requirementIdentifier)
+                .pluginConfigurations(this.getDefaultJobPluginConfiguration())
                 .tasks(
                     this.getTaskGitCloneRepository(),
                     this.getTaskGitCherryPick(),
@@ -316,10 +414,36 @@ abstract public class AbstractCoreSpec {
                 .requirements(
                     requirement
                 )
+                .cleanWorkingDirectory(true)
             );
         }
 
         return jobs;
+    }
+
+    /**
+     * Job with integration test checking for valid @xy annotations
+     */
+    protected Job getJobIntegrationAnnotations() {
+        return new Job("Integration annotations", new BambooKey("IANNO"))
+            .description("Check docblock-annotations by executing Build/Scripts/annotationChecker.php script")
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
+            .tasks(
+                this.getTaskGitCloneRepository(),
+                this.getTaskGitCherryPick(),
+                this.getTaskComposerInstall(),
+                new ScriptTask()
+                    .description("Execute annotations check script")
+                    .interpreter(ScriptTaskProperties.Interpreter.BINSH_OR_CMDEXE)
+                    .inlineBody(
+                        this.getScriptTaskBashInlineBody() +
+                        "./Build/Scripts/annotationChecker.php\n"
+                    )
+            )
+            .requirements(
+                this.getRequirementPhpVersion72()
+            )
+            .cleanWorkingDirectory(true);
     }
 
     /**
@@ -329,6 +453,7 @@ abstract public class AbstractCoreSpec {
         // Exception code checker, xlf, permissions, rst file check
         return new Job("Integration various", new BambooKey("CDECC"))
             .description("Checks duplicate exceptions, git submodules, xlf files, permissions, rst")
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
             .tasks(
                 this.getTaskGitCloneRepository(),
                 this.getTaskGitCherryPick(),
@@ -387,10 +512,9 @@ abstract public class AbstractCoreSpec {
                     )
             )
             .requirements(
-                new Requirement("system.phpVersion")
-                    .matchValue("7\\.0|7\\.1")
-                    .matchType(Requirement.MatchType.MATCHES)
-            );
+                this.getRequirementPhpVersion72()
+            )
+            .cleanWorkingDirectory(true);
     }
 
     /**
@@ -399,15 +523,19 @@ abstract public class AbstractCoreSpec {
     protected Job getJobUnitJavaScript() {
         return new Job("Unit JavaScript", new BambooKey("JSUT"))
             .description("Run JavaScript unit tests")
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
             .tasks(
                 this.getTaskGitCloneRepository(),
                 this.getTaskGitCherryPick(),
                 this.getTaskComposerInstall(),
-                new NpmTask()
-                    .description("npm install in Build/ dir")
-                    .nodeExecutable("Node.js")
-                    .workingSubdirectory("Build/")
-                    .command("install"),
+                new ScriptTask()
+                    .description("yarn install in Build/ dir")
+                    .interpreter(ScriptTaskProperties.Interpreter.BINSH_OR_CMDEXE)
+                    .inlineBody(
+                        this.getScriptTaskBashInlineBody() +
+                        "yarn install"
+                    )
+                    .workingSubdirectory("Build/"),
                 new ScriptTask()
                     .description("Run tests")
                     .interpreter(ScriptTaskProperties.Interpreter.BINSH_OR_CMDEXE)
@@ -421,9 +549,7 @@ abstract public class AbstractCoreSpec {
                     .resultDirectories("typo3temp/var/tests/*")
             )
             .requirements(
-                new Requirement("system.phpVersion")
-                    .matchValue("7\\.0|7\\.1")
-                    .matchType(Requirement.MatchType.MATCHES)
+                this.getRequirementPhpVersion72()
             )
             .artifacts(
                 new Artifact()
@@ -431,7 +557,8 @@ abstract public class AbstractCoreSpec {
                     .copyPattern("**/*.*")
                     .location("Build/target/site/clover")
                     .shared(false)
-            );
+            )
+            .cleanWorkingDirectory(true);
     }
 
     /**
@@ -443,6 +570,7 @@ abstract public class AbstractCoreSpec {
     protected Job getJobLintPhp(Requirement requirement, String requirementIdentifier) {
         return new Job("Lint " + requirementIdentifier, new BambooKey("L" + requirementIdentifier))
             .description("Run php -l on source files for linting " + requirementIdentifier)
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
             .tasks(
                 this.getTaskGitCloneRepository(),
                 this.getTaskGitCherryPick(),
@@ -456,7 +584,8 @@ abstract public class AbstractCoreSpec {
             )
             .requirements(
                 requirement
-            );
+            )
+            .cleanWorkingDirectory(true);
     }
 
     /**
@@ -465,14 +594,18 @@ abstract public class AbstractCoreSpec {
     protected Job getJobLintScssTs() {
         return new Job("Lint scss ts", new BambooKey("LSTS"))
             .description("Run npm lint in Build/ dir")
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
             .tasks(
                 this.getTaskGitCloneRepository(),
                 this.getTaskGitCherryPick(),
-                new NpmTask()
-                    .description("npm install in Build/ dir")
-                    .nodeExecutable("Node.js")
-                    .workingSubdirectory("Build/")
-                    .command("install"),
+                new ScriptTask()
+                    .description("yarn install in Build/ dir")
+                    .interpreter(ScriptTaskProperties.Interpreter.BINSH_OR_CMDEXE)
+                    .inlineBody(
+                        this.getScriptTaskBashInlineBody() +
+                        "yarn install"
+                    )
+                    .workingSubdirectory("Build/"),
                 new NpmTask()
                     .description("Run npm lint")
                     .nodeExecutable("Node.js")
@@ -481,7 +614,8 @@ abstract public class AbstractCoreSpec {
             )
             .requirements(
                 new Requirement("system.imageVersion")
-            );
+            )
+            .cleanWorkingDirectory(true);
     }
 
     /**
@@ -493,6 +627,7 @@ abstract public class AbstractCoreSpec {
     protected Job getJobUnitPhp(Requirement requirement, String requirementIdentifier) {
         return new Job("Unit " + requirementIdentifier, new BambooKey("UT" + requirementIdentifier))
             .description("Run unit tests " + requirementIdentifier)
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
             .tasks(
                 this.getTaskGitCloneRepository(),
                 this.getTaskGitCherryPick(),
@@ -512,7 +647,41 @@ abstract public class AbstractCoreSpec {
             )
             .requirements(
                 requirement
-            );
+            )
+            .cleanWorkingDirectory(true);
+    }
+
+    /**
+     * Job for unit testing deprecated PHP
+     *
+     * @param Requirement requirement
+     * @param String requirementIdentfier
+     */
+    protected Job getJobUnitDeprecatedPhp(Requirement requirement, String requirementIdentifier) {
+        return new Job("Unit deprecated " + requirementIdentifier, new BambooKey("UTD" + requirementIdentifier))
+            .description("Run deprecated unit tests " + requirementIdentifier)
+            .pluginConfigurations(this.getDefaultJobPluginConfiguration())
+            .tasks(
+                this.getTaskGitCloneRepository(),
+                this.getTaskGitCherryPick(),
+                this.getTaskComposerInstall(),
+                new ScriptTask()
+                    .description("Run phpunit")
+                    .interpreter(ScriptTaskProperties.Interpreter.BINSH_OR_CMDEXE)
+                    .inlineBody(
+                        this.getScriptTaskBashInlineBody() +
+                        this.getScriptTaskBashPhpNoXdebug() +
+                        "php_no_xdebug bin/phpunit --log-junit test-reports/phpunit.xml -c " + this.testingFrameworkBuildPath + "UnitTestsDeprecated.xml"
+                    )
+            )
+            .finalTasks(
+                new TestParserTask(TestParserTaskProperties.TestType.JUNIT)
+                    .resultDirectories("test-reports/phpunit.xml")
+            )
+            .requirements(
+                requirement
+            )
+            .cleanWorkingDirectory(true);
     }
 
     /**
@@ -528,6 +697,7 @@ abstract public class AbstractCoreSpec {
         for (int i=0; i<numberOfRuns; i++) {
             jobs.add(new Job("Unit " + requirementIdentifier + " random 0" + i, new BambooKey("UTR" + requirementIdentifier + "0" + i))
                 .description("Run unit tests on " + requirementIdentifier + " in random order 0" + i)
+                .pluginConfigurations(this.getDefaultJobPluginConfiguration())
                 .tasks(
                     this.getTaskGitCloneRepository(),
                     this.getTaskGitCherryPick(),
@@ -548,6 +718,7 @@ abstract public class AbstractCoreSpec {
                 .requirements(
                     requirement
                 )
+                .cleanWorkingDirectory(true)
             );
         }
 
@@ -599,26 +770,15 @@ abstract public class AbstractCoreSpec {
      */
     protected Task getTaskPrepareAcceptanceTest() {
         return new ScriptTask()
-            .description("Start xvfb, selenium, php web server, prepare chrome environment")
+            .description("Start php web server, chromedriver, prepare environment")
             .interpreter(ScriptTaskProperties.Interpreter.BINSH_OR_CMDEXE)
             .inlineBody(
                 this.getScriptTaskBashInlineBody() +
-                "# start xvfb until chrome headless can be used\n" +
-                "/sbin/start-stop-daemon --start --quiet --pidfile xvfb.pid --make-pidfile --background --exec /usr/bin/Xvfb :99\n" +
-                "\n" +
-                "# the display chrome should render to (xvfb)\n" +
-                "export DISPLAY=\":99\"\n" +
-                "\n" +
-                "PATH=$PATH:./bin DBUS_SESSION_BUS_ADDRESS=/dev/null ./bin/selenium-server-standalone >/dev/null 2>&1 & \n" +
-                "echo $! > selenium.pid\n" +
-                "\n" +
-                "# Wait for selenium server to load\n" +
-                "until $(curl --output /dev/null --silent --head --fail http://localhost:4444/wd/hub); do\n" +
-                "    printf '.'\n    sleep 1\n" +
-                "done\n" +
-                "\n" +
                 "php -S localhost:8000 >/dev/null 2>&1 &\n" +
                 "echo $! > phpserver.pid\n" +
+                "\n" +
+                "./bin/chromedriver --url-base=/wd/hub >/dev/null 2>&1 &\n" +
+                "echo $! > chromedriver.pid\n" +
                 "\n" +
                 "mkdir -p typo3temp/var/tests/\n"
             );
@@ -693,13 +853,12 @@ abstract public class AbstractCoreSpec {
      */
     protected Task getTaskTearDownAcceptanceTestSetup() {
         return new ScriptTask()
-            .description("Stop acceptance test services like selenium and friends")
+            .description("Stop acceptance test services like chromedriver and friends")
             .interpreter(ScriptTaskProperties.Interpreter.BINSH_OR_CMDEXE)
             .inlineBody(
                 this.getScriptTaskBashInlineBody() +
                 "kill `cat phpserver.pid`\n" +
-                "kill `cat selenium.pid`\n" +
-                "kill `cat xvfb.pid`\n"
+                "kill `cat chromedriver.pid`\n"
             );
     }
 
@@ -735,11 +894,29 @@ abstract public class AbstractCoreSpec {
     }
 
     /**
+     * Requirement for php 7.2
+     */
+    protected Requirement getRequirementPhpVersion72() {
+        return new Requirement("system.phpVersion")
+            .matchValue("7.2")
+            .matchType(Requirement.MatchType.EQUALS);
+    }
+
+    /**
      * Requirement for php 7.0 or 7.1
      */
     protected Requirement getRequirementPhpVersion70Or71() {
         return new Requirement("system.phpVersion")
             .matchValue("7\\.0|7\\.1")
+            .matchType(Requirement.MatchType.MATCHES);
+    }
+
+    /**
+     * Requirement for php 7.0 or 7.1 or 7.2
+     */
+    protected Requirement getRequirementPhpVersion70Or71Or72() {
+        return new Requirement("system.phpVersion")
+            .matchValue("7\\.0|7\\.1|7\\.2")
             .matchType(Requirement.MatchType.MATCHES);
     }
 

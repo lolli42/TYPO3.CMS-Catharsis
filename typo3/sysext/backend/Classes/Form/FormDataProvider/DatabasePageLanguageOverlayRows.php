@@ -52,15 +52,18 @@ class DatabasePageLanguageOverlayRows implements FormDataProviderInterface
     protected function getDatabaseRows(int $pid): array
     {
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('pages_language_overlay');
+            ->getQueryBuilderForTable('pages');
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
 
         $rows = $queryBuilder->select('*')
-            ->from('pages_language_overlay')
-            ->where($queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, \PDO::PARAM_INT)))
+            ->from('pages')
+            ->where($queryBuilder->expr()->eq(
+                $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'],
+                $queryBuilder->createNamedParameter($pid, \PDO::PARAM_INT)
+            ))
             ->execute()
             ->fetchAll();
 

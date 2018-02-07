@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Inline element entry container.
@@ -120,7 +121,6 @@ class InlineControlContainer extends AbstractContainer
             'uid' => $row['uid'],
             'field' => $field,
             'config' => $config,
-            'localizationMode' => BackendUtility::getInlineLocalizationMode($table, $config),
         ];
         // Extract FlexForm parts (if any) from element name, e.g. array('vDEF', 'lDEF', 'FlexField', 'vDEF')
         if (!empty($parameterArray['itemFormElName'])) {
@@ -131,12 +131,17 @@ class InlineControlContainer extends AbstractContainer
         }
         $inlineStackProcessor->pushStableStructureItem($newStructureItem);
 
-        // Transport the flexform DS identifier fields to the FormAjaxInlineController
+        // Transport the flexform DS identifier fields to the FormInlineAjaxController
         if (!empty($newStructureItem['flexform'])
             && isset($this->data['processedTca']['columns'][$field]['config']['dataStructureIdentifier'])
         ) {
             $config['dataStructureIdentifier'] = $this->data['processedTca']['columns'][$field]['config']['dataStructureIdentifier'];
         }
+
+        // Hand over original returnUrl to FormInlineAjaxController. Needed if opening for instance a
+        // nested element in a new view to then go back to the original returnUrl and not the url of
+        // the inline ajax controller
+        $config['originalReturnUrl'] = $this->data['returnUrl'];
 
         // e.g. data[<table>][<uid>][<field>]
         $nameForm = $inlineStackProcessor->getCurrentStructureFormPrefix();
@@ -231,10 +236,10 @@ class InlineControlContainer extends AbstractContainer
         $numberOfNotYetLocalizedChildren = 0;
         foreach ($this->data['parameterArray']['fieldConf']['children'] as $child) {
             if (!$child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
-                $numberOfFullLocalizedChildren ++;
+                $numberOfFullLocalizedChildren++;
             }
             if ($isLocalizedParent && $child['isInlineDefaultLanguageRecordInLocalizedParentContext']) {
-                $numberOfNotYetLocalizedChildren ++;
+                $numberOfNotYetLocalizedChildren++;
             }
         }
 
@@ -311,7 +316,7 @@ class InlineControlContainer extends AbstractContainer
         $html .= $fieldWizardHtml;
 
         // Add the level links after all child records:
-        if ($config['appearance']['levelLinksPosition'] ===  'both' || $config['appearance']['levelLinksPosition'] === 'bottom') {
+        if ($config['appearance']['levelLinksPosition'] === 'both' || $config['appearance']['levelLinksPosition'] === 'bottom') {
             $html .= $levelLinks . $localizationLinks;
         }
         if (is_array($config['customControls'])) {
@@ -414,13 +419,8 @@ class InlineControlContainer extends AbstractContainer
      */
     protected function wrapWithAnchor($text, $link, $attributes = [])
     {
-        $link = trim($link);
-        $result = '<a href="' . ($link ?: '#') . '"';
-        foreach ($attributes as $key => $value) {
-            $result .= ' ' . $key . '="' . htmlspecialchars(trim($value)) . '"';
-        }
-        $result .= '>' . $text . '</a>';
-        return $result;
+        $attributes['href'] = trim($link ?: '#');
+        return '<a ' . GeneralUtility::implodeAttributes($attributes, true, true) . '>' . $text . '</a>';
     }
 
     /**
@@ -439,8 +439,9 @@ class InlineControlContainer extends AbstractContainer
 
         $foreign_table = $inlineConfiguration['foreign_table'];
         $allowed = $groupFieldConfiguration['allowed'];
-        $objectPrefix = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']) . '-' . $foreign_table;
-        $nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
+        $currentStructureDomObjectIdPrefix = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
+        $objectPrefix = $currentStructureDomObjectIdPrefix . '-' . $foreign_table;
+        $nameObject = $currentStructureDomObjectIdPrefix;
         $mode = 'db';
         $showUpload = false;
         $elementBrowserEnabled = true;
@@ -502,7 +503,7 @@ class InlineControlContainer extends AbstractContainer
                 $maxFileSize = GeneralUtility::getMaxUploadFileSize() * 1024;
                 $item .= ' <a href="#" class="btn btn-default t3js-drag-uploader inlineNewFileUploadButton ' . $this->inlineData['config'][$nameObject]['md5'] . '"
 					' . $buttonStyle . '
-					data-dropzone-target="#' . htmlspecialchars($this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid'])) . '"
+					data-dropzone-target="#' . htmlspecialchars(StringUtility::escapeCssSelector($currentStructureDomObjectIdPrefix)) . '"
 					data-insert-dropzone-before="1"
 					data-file-irre-object="' . htmlspecialchars($objectPrefix) . '"
 					data-file-allowed="' . htmlspecialchars($allowed) . '"
@@ -523,11 +524,13 @@ class InlineControlContainer extends AbstractContainer
                     $buttonText = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:online_media.new_media.button'));
                     $placeholder = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:online_media.new_media.placeholder'));
                     $buttonSubmit = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:online_media.new_media.submit'));
+                    $allowedMediaUrl = htmlspecialchars($languageService->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:cm.allowEmbedSources'));
                     $item .= '
 						<span class="btn btn-default t3js-online-media-add-btn ' . $this->inlineData['config'][$nameObject]['md5'] . '"
 							' . $buttonStyle . '
 							data-file-irre-object="' . htmlspecialchars($objectPrefix) . '"
 							data-online-media-allowed="' . htmlspecialchars(implode(',', $onlineMediaAllowed)) . '"
+							data-online-media-allowed-help-text="' . $allowedMediaUrl . '"
 							data-target-folder="' . htmlspecialchars($folder->getCombinedIdentifier()) . '"
 							title="' . $buttonText . '"
 							data-btn-submit="' . $buttonSubmit . '"
@@ -613,7 +616,7 @@ class InlineControlContainer extends AbstractContainer
      * Helper method used in inline
      *
      * @param string $formElementName The form element name
-     * @return array|NULL
+     * @return array|null
      */
     protected function extractFlexFormParts($formElementName)
     {

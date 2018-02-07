@@ -35,8 +35,8 @@ class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
      * Translation shortcut
      *
      * @param $key
-     * @param NULL|array $arguments
-     * @return NULL|string
+     * @param array|null $arguments
+     * @return string|null
      */
     protected function translate($key, $arguments = null)
     {

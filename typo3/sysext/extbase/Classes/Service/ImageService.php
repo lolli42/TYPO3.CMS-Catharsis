@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileInterface;
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -28,29 +29,25 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 class ImageService implements \TYPO3\CMS\Core\SingletonInterface
 {
     /**
-     * @var \TYPO3\CMS\Core\Resource\ResourceFactory
+     * @var ResourceFactory
      */
     protected $resourceFactory;
 
     /**
-     * @var \TYPO3\CMS\Extbase\Service\EnvironmentService
+     * @var EnvironmentService
      */
     protected $environmentService;
 
     /**
-     * @param \TYPO3\CMS\Core\Resource\ResourceFactory $resourceFactory
+     * ImageService constructor.
+     *
+     * @param EnvironmentService|null $environmentService
+     * @param ResourceFactory|null $resourceFactory
      */
-    public function injectResourceFactory(\TYPO3\CMS\Core\Resource\ResourceFactory $resourceFactory)
+    public function __construct(EnvironmentService $environmentService = null, ResourceFactory $resourceFactory = null)
     {
-        $this->resourceFactory = $resourceFactory;
-    }
-
-    /**
-     * @param \TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService
-     */
-    public function injectEnvironmentService(\TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService)
-    {
-        $this->environmentService = $environmentService;
+        $this->environmentService = $environmentService ?? GeneralUtility::makeInstance(EnvironmentService::class);
+        $this->resourceFactory = $resourceFactory ?? ResourceFactory::getInstance();
     }
 
     /**
@@ -78,7 +75,7 @@ class ImageService implements \TYPO3\CMS\Core\SingletonInterface
      * Get public url of image depending on the environment
      *
      * @param FileInterface $image
-     * @param bool|FALSE $absolute Force absolute URL
+     * @param bool|false $absolute Force absolute URL
      * @return string
      * @api
      */
@@ -95,11 +92,6 @@ class ImageService implements \TYPO3\CMS\Core\SingletonInterface
             $uriPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
         }
 
-        // Prevent double / when concatenating $uriPrefix and $imageUrl
-        if ($imageUrl[0] === '/') {
-            $uriPrefix = rtrim($uriPrefix, '/');
-        }
-
         if ($absolute) {
             // If full URL has no scheme we add the same scheme as used by the site
             // so we have an absolute URL also usable outside of browser scope (e.g. in an email message)
@@ -107,9 +99,8 @@ class ImageService implements \TYPO3\CMS\Core\SingletonInterface
                 $uriPrefix = (GeneralUtility::getIndpEnv('TYPO3_SSL') ? 'https:' : 'http:') . $uriPrefix;
             }
             return GeneralUtility::locationHeaderUrl($uriPrefix . $imageUrl);
-        } else {
-            return $uriPrefix . $imageUrl;
         }
+        return $uriPrefix . $imageUrl;
     }
 
     /**
@@ -136,7 +127,8 @@ class ImageService implements \TYPO3\CMS\Core\SingletonInterface
         }
 
         if (!($image instanceof File || $image instanceof FileReference)) {
-            throw new \UnexpectedValueException('Supplied file object type ' . get_class($image) . ' for ' . $src . ' must be File or FileReference.', 1382687163);
+            $class = is_object($image) ? get_class($image) : 'null';
+            throw new \UnexpectedValueException('Supplied file object type ' . $class . ' for ' . $src . ' must be File or FileReference.', 1382687163);
         }
 
         return $image;

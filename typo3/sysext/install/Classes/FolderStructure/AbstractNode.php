@@ -14,7 +14,7 @@ namespace TYPO3\CMS\Install\FolderStructure;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Install\Status;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 
 /**
  * Abstract node implements common methods
@@ -27,12 +27,12 @@ abstract class AbstractNode
     protected $name = '';
 
     /**
-     * @var NULL|string Target permissions for unix, eg. '2775' or '0664' (4 characters string)
+     * @var string|null Target permissions for unix, eg. '2775' or '0664' (4 characters string)
      */
     protected $targetPermission = null;
 
     /**
-     * @var NULL|NodeInterface Parent object of this structure node
+     * @var NodeInterface|null Parent object of this structure node
      */
     protected $parent = null;
 
@@ -89,7 +89,7 @@ abstract class AbstractNode
     /**
      * Get parent
      *
-     * @return NULL|NodeInterface
+     * @return NodeInterface|null
      */
     protected function getParent()
     {
@@ -127,18 +127,17 @@ abstract class AbstractNode
     {
         if (@is_link($this->getAbsolutePath())) {
             return true;
-        } else {
-            return @file_exists($this->getAbsolutePath());
         }
+        return @file_exists($this->getAbsolutePath());
     }
 
     /**
      * Fix permission if they are not equal to target permission
      *
      * @throws Exception
-     * @return \TYPO3\CMS\Install\Status\StatusInterface
+     * @return FlashMessage
      */
-    protected function fixPermission()
+    protected function fixPermission(): FlashMessage
     {
         if ($this->isPermissionCorrect()) {
             throw new Exception(
@@ -148,17 +147,17 @@ abstract class AbstractNode
         }
         $result = @chmod($this->getAbsolutePath(), octdec($this->getTargetPermission()));
         if ($result === true) {
-            $status = new Status\OkStatus();
-            $status->setTitle('Fixed permission on ' . $this->getRelativePathBelowSiteRoot() . '.');
-        } else {
-            $status = new Status\NoticeStatus();
-            $status->setTitle('Permission change on ' . $this->getRelativePathBelowSiteRoot() . ' not successful');
-            $status->setMessage(
-                'Permissions could not be changed to ' . $this->getTargetPermission() .
-                    '. This only is a problem if files and folders within this node cannot be written.'
+            return new FlashMessage(
+                '',
+                'Fixed permission on ' . $this->getRelativePathBelowSiteRoot() . '.'
             );
         }
-        return $status;
+        return new FlashMessage(
+            'Permissions could not be changed to ' . $this->getTargetPermission()
+                . '. This only is a problem if files and folders within this node cannot be written.',
+            'Permission change on ' . $this->getRelativePathBelowSiteRoot() . ' not successful',
+            FlashMessage::NOTICE
+        );
     }
 
     /**
@@ -173,9 +172,8 @@ abstract class AbstractNode
         }
         if ($this->getCurrentPermission() === $this->getTargetPermission()) {
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**

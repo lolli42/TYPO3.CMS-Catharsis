@@ -59,6 +59,10 @@ $modal-danger-border: $btn-danger-border;
     margin: 0 auto;
     max-height: calc(100vh - 40px);
     max-width: calc(100vw - 40px);
+
+    .help-block {
+        margin-bottom: 0;
+    }
 }
 
 .modal-body {
@@ -92,9 +96,13 @@ $modal-danger-border: $btn-danger-border;
     transition: margin-top 0.1s ease-in;
     border: none;
 
-    .loadmessage {
-        text-align: center;
-        color: $gray-darker;
+    .modal-loading {
+        position: absolute;
+        display: flex;
+        height: 100%;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
     }
 }
 
@@ -173,6 +181,13 @@ $modal-danger-border: $btn-danger-border;
 .modal-size-default {
     .modal-content {
         width: 600px;
+    }
+}
+
+.modal-size-medium {
+    .modal-content {
+        width: 800px;
+        height: 520px;
     }
 }
 

@@ -22,11 +22,7 @@ class DomainVisibleFieldsTest extends \TYPO3\TestingFramework\Core\Functional\Fu
 {
     protected static $domainFields = [
         'hidden',
-        'domainName',
-        'redirectTo',
-        'redirectHttpStatusCode',
-        'prepend_params',
-        'forced',
+        'domainName'
     ];
 
     /**

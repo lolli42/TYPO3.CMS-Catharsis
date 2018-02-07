@@ -60,7 +60,6 @@ class PagesLanguageOverlayVisibleFieldsTest extends \TYPO3\TestingFramework\Core
                 'content_from_pid',
                 'cache_timeout',
                 'cache_tags',
-                'no_cache',
                 'module',
             ],
         ],
@@ -71,13 +70,11 @@ class PagesLanguageOverlayVisibleFieldsTest extends \TYPO3\TestingFramework\Core
                 'content_from_pid',
                 'cache_timeout',
                 'cache_tags',
-                'no_cache',
                 'module',
             ],
         ],
         PageRepository::DOKTYPE_LINK => [
             'additionalFields' => [
-                'urltype',
                 'url',
             ],
             'hiddenFields' => [
@@ -86,7 +83,6 @@ class PagesLanguageOverlayVisibleFieldsTest extends \TYPO3\TestingFramework\Core
                 'content_from_pid',
                 'cache_timeout',
                 'cache_tags',
-                'no_cache',
                 'module',
             ],
         ],
@@ -170,7 +166,7 @@ class PagesLanguageOverlayVisibleFieldsTest extends \TYPO3\TestingFramework\Core
         $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageService::class);
 
         $formEngineTestService = GeneralUtility::makeInstance(FormTestService::class);
-        $formResult = $formEngineTestService->createNewRecordForm('pages_language_overlay', ['doktype' => $doktype]);
+        $formResult = $formEngineTestService->createNewRecordForm('pages', ['doktype' => $doktype]);
 
         foreach ($expectedFields as $expectedField) {
             $this->assertNotFalse(

@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 namespace TYPO3\CMS\Form\Mvc\Configuration;
 
 /*
@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Form\Mvc\Configuration;
  */
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Form\Mvc\Configuration\Exception\CycleInheritancesException;
@@ -121,7 +122,7 @@ class InheritancesResolverService
     /**
      * Resolve all inheritances within a configuration.
      *
-     * @toDo: More description
+     * @todo: More description
      * @param array $configuration
      * @param array $pathStack
      * @param bool $setInheritancePathToCkeck
@@ -149,7 +150,7 @@ class InheritancesResolverService
                             $path . '.' . self::INHERITANCE_OPERATOR,
                             '.'
                         );
-                    } catch (\RuntimeException $exception) {
+                    } catch (MissingArrayPathException $exception) {
                         $inheritances = null;
                     }
 
@@ -181,7 +182,7 @@ class InheritancesResolverService
     /**
      * Additional helper for the resolve method.
      *
-     * @toDo: More description
+     * @todo: More description
      * @param array $inheritances
      * @return array
      * @throws CycleInheritancesException
@@ -198,7 +199,7 @@ class InheritancesResolverService
                     $inheritancePath,
                     '.'
                 );
-            } catch (\RuntimeException $exception) {
+            } catch (MissingArrayPathException $exception) {
                 $inheritedConfiguration = null;
             }
 
@@ -249,7 +250,7 @@ class InheritancesResolverService
     /**
      * Throw an exception if a cycle is detected.
      *
-     * @toDo: More description
+     * @todo: More description
      * @param string $path
      * @param string $pathToCheck
      * @throws CycleInheritancesException
@@ -262,7 +263,7 @@ class InheritancesResolverService
                 $path,
                 '.'
             );
-        } catch (\RuntimeException $exception) {
+        } catch (MissingArrayPathException $exception) {
             $configuration = null;
         }
 
@@ -273,7 +274,7 @@ class InheritancesResolverService
                     $path . '.' . self::INHERITANCE_OPERATOR,
                     '.'
                 );
-            } catch (\RuntimeException $exception) {
+            } catch (MissingArrayPathException $exception) {
                 $inheritances = null;
             }
 
@@ -285,7 +286,7 @@ class InheritancesResolverService
                             $inheritancePath,
                             '.'
                         );
-                    } catch (\RuntimeException $exception) {
+                    } catch (MissingArrayPathException $exception) {
                         $configuration = null;
                     }
 
@@ -296,7 +297,7 @@ class InheritancesResolverService
                                 $inheritancePath . '.' . self::INHERITANCE_OPERATOR,
                                 '.'
                             );
-                        } catch (\RuntimeException $exception) {
+                        } catch (MissingArrayPathException $exception) {
                             $_inheritances = null;
                         }
 

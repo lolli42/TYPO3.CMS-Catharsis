@@ -179,10 +179,13 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
         // for these keys, for example "writerConfiguration"
         $configurationKey = $configurationType . 'Configuration';
         $configuration = $GLOBALS['TYPO3_CONF_VARS']['LOG'];
-        $result = $configuration[$configurationKey] ?: [];
+        $result = $configuration[$configurationKey] ?? [];
         // Walk from general to special (t3lib, t3lib.db, t3lib.db.foo)
         // and search for the most specific configuration
         foreach ($explodedName as $partOfClassName) {
+            if (!isset($configuration[$partOfClassName])) {
+                break;
+            }
             if (!empty($configuration[$partOfClassName][$configurationKey])) {
                 $result = $configuration[$partOfClassName][$configurationKey];
             }

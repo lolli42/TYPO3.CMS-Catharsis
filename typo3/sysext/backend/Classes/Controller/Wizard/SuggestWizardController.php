@@ -20,6 +20,7 @@ use TYPO3\CMS\Backend\Form\Wizard\SuggestWizardDefaultReceiver;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -32,11 +33,10 @@ class SuggestWizardController
      * Ajax handler for the "suggest" feature in FormEngine.
      *
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
      * @throws \RuntimeException for incomplete or invalid arguments
      * @return ResponseInterface
      */
-    public function searchAction(ServerRequestInterface $request, ResponseInterface $response)
+    public function searchAction(ServerRequestInterface $request): ResponseInterface
     {
         $parsedBody = $request->getParsedBody();
 
@@ -129,7 +129,7 @@ class SuggestWizardController
                         $replacement['###PAGE_TSCONFIG_ID###'] = (int)$fieldTSconfig['PAGE_TSCONFIG_ID'];
                     }
                     if (isset($fieldTSconfig['PAGE_TSCONFIG_IDLIST'])) {
-                        $replacement['###PAGE_TSCONFIG_IDLIST###'] =  implode(',', GeneralUtility::intExplode(',', $fieldTSconfig['PAGE_TSCONFIG_IDLIST']));
+                        $replacement['###PAGE_TSCONFIG_IDLIST###'] = implode(',', GeneralUtility::intExplode(',', $fieldTSconfig['PAGE_TSCONFIG_IDLIST']));
                     }
                     if (isset($fieldTSconfig['PAGE_TSCONFIG_STR'])) {
                         $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($fieldConfig['foreign_table']);
@@ -157,13 +157,11 @@ class SuggestWizardController
         }
 
         // Limit the number of items in the result list
-        $maxItems = isset($config['maxItemsInResultList']) ? $config['maxItemsInResultList'] : 10;
+        $maxItems = $config['maxItemsInResultList'] ?? 10;
         $maxItems = min(count($resultRows), $maxItems);
 
         array_splice($resultRows, $maxItems);
-
-        $response->getBody()->write(json_encode(array_values($resultRows)));
-        return $response;
+        return GeneralUtility::makeInstance(JsonResponse::class)->setPayload(array_values($resultRows));
     }
 
     /**

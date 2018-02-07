@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Backend\Form\Container;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -116,11 +117,19 @@ class PaletteAndSingleContainer extends AbstractContainer
             if ($fieldName === '--palette--') {
                 $paletteElementArray = $this->createPaletteContentArray($fieldConfiguration['paletteName']);
                 if (!empty($paletteElementArray)) {
-                    $mainStructureCounter ++;
+                    $mainStructureCounter++;
+                    $paletteLabel = $fieldConfiguration['fieldLabel'];
+                    if ($paletteLabel === null
+                        && !empty($this->data['processedTca']['palettes'][$fieldConfiguration['paletteName']]['label'])
+                    ) {
+                        // If there is no label in ['types']['aType']['showitem'] for this palette: "--palette--;;aPalette" but
+                        // not "--palette--;LLL:aLabelReference;aPalette", then use ['palettes']['aPalette']['label'] if given.
+                        $paletteLabel = $this->data['processedTca']['palettes'][$fieldConfiguration['paletteName']]['label'];
+                    }
                     $targetStructure[$mainStructureCounter] = [
                         'type' => 'palette',
                         'fieldName' => $fieldConfiguration['paletteName'],
-                        'fieldLabel' => $languageService->sL($fieldConfiguration['fieldLabel']),
+                        'fieldLabel' => $languageService->sL($paletteLabel),
                         'elements' => $paletteElementArray,
                     ];
                 }
@@ -136,7 +145,7 @@ class PaletteAndSingleContainer extends AbstractContainer
                 $childResultArray = $this->nodeFactory->create($options)->render();
 
                 if (!empty($childResultArray['html'])) {
-                    $mainStructureCounter ++;
+                    $mainStructureCounter++;
                     $fieldLabel = '';
                     if (!empty($this->data['processedTca']['columns'][$fieldName]['label'])) {
                         $fieldLabel = $this->data['processedTca']['columns'][$fieldName]['label'];
@@ -232,9 +241,8 @@ class PaletteAndSingleContainer extends AbstractContainer
 
         if ($foundRealElement) {
             return $resultStructure;
-        } else {
-            return [];
         }
+        return [];
     }
 
     /**
@@ -370,6 +378,10 @@ class PaletteAndSingleContainer extends AbstractContainer
 
         $label = BackendUtility::wrapInHelp($this->data['tableName'], $fieldName, htmlspecialchars($element['fieldLabel']));
 
+        if ($GLOBALS['TYPO3_CONF_VARS']['BE']['debug'] && $this->getBackendUser()->isAdmin()) {
+            $label .= '<code>[' . htmlspecialchars($fieldName) . ']</code>';
+        }
+
         $content = [];
         $content[] = '<div class="' . implode(' ', $paletteFieldClasses) . '">';
         $content[] =    '<label class="t3js-formengine-label">';
@@ -405,5 +417,15 @@ class PaletteAndSingleContainer extends AbstractContainer
     protected function getLanguageService()
     {
         return $GLOBALS['LANG'];
+    }
+
+    /**
+     * Returns the current BE user.
+     *
+     * @return BackendUserAuthentication
+     */
+    protected function getBackendUser()
+    {
+        return $GLOBALS['BE_USER'];
     }
 }

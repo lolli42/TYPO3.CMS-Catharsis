@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Backend\Controller\File;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Module\AbstractModule;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
@@ -31,7 +31,7 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
  *
  * Displays forms for creating folders (1 to 10), a media asset or a new file.
  */
-class CreateFolderController extends AbstractModule
+class CreateFolderController
 {
     /**
      * @var int
@@ -84,11 +84,18 @@ class CreateFolderController extends AbstractModule
     public $content;
 
     /**
+     * ModuleTemplate object
+     *
+     * @var ModuleTemplate
+     */
+    protected $moduleTemplate;
+
+    /**
      * Constructor
      */
     public function __construct()
     {
-        parent::__construct();
+        $this->moduleTemplate = GeneralUtility::makeInstance(ModuleTemplate::class);
         $GLOBALS['SOBE'] = $this;
         $this->init();
     }
@@ -124,6 +131,9 @@ class CreateFolderController extends AbstractModule
         $pathInfo = [
             'combined_identifier' => $this->folderObject->getCombinedIdentifier(),
         ];
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+
         $this->moduleTemplate->getDocHeaderComponent()->setMetaInformation($pathInfo);
         $this->moduleTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ContextMenu');
         $this->moduleTemplate->addJavaScriptCode(
@@ -141,7 +151,7 @@ class CreateFolderController extends AbstractModule
             . ';
             function reload(a) {
                 var params = "&target="+encodeURIComponent(path)+"&number="+a+"&returnUrl=' . rawurlencode($this->returnUrl) . '";
-                var url = \'' . BackendUtility::getModuleUrl('file_newfolder') . '\';
+                var url = \'' . (string)$uriBuilder->buildUriFromRoute('file_newfolder') . '\';
                 if (!changed) {
                     window.location.href = url + params;
                 } else {
@@ -171,7 +181,9 @@ class CreateFolderController extends AbstractModule
         $assigns = [];
         $assigns['target'] = $this->target;
         if ($this->folderObject->checkActionPermission('add')) {
-            $assigns['moduleUrlTceFile'] = BackendUtility::getModuleUrl('tce_file');
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+            $assigns['moduleUrlTceFile'] = (string)$uriBuilder->buildUriFromRoute('tce_file');
             $assigns['cshFileNewFolder'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_newfolder');
             // Making the selector box for the number of concurrent folder-creations
             $this->number = MathUtility::forceIntegerInRange($this->number, 1, 10);
@@ -193,7 +205,9 @@ class CreateFolderController extends AbstractModule
         }
 
         if ($this->folderObject->getStorage()->checkUserActionPermission('add', 'File')) {
-            $assigns['moduleUrlOnlineMedia'] = BackendUtility::getModuleUrl('online_media');
+            /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+            $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+            $assigns['moduleUrlOnlineMedia'] = (string)$uriBuilder->buildUriFromRoute('online_media');
             $assigns['cshFileNewMedia'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_newMedia');
             // Create a list of allowed file extensions with the readable format "youtube, vimeo" etc.
             $fileExtList = [];
@@ -205,7 +219,7 @@ class CreateFolderController extends AbstractModule
             }
             $assigns['fileExtList'] = $fileExtList;
 
-            $assigns['moduleUrlTceFile'] = BackendUtility::getModuleUrl('tce_file');
+            $assigns['moduleUrlTceFile'] = (string)$uriBuilder->buildUriFromRoute('tce_file');
             $assigns['cshFileNewFile'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_newfile');
             // Create a list of allowed file extensions with a text format "*.txt, *.css" etc.
             $fileExtList = [];
@@ -228,9 +242,9 @@ class CreateFolderController extends AbstractModule
         // Back
         if ($this->returnUrl) {
             $backButton = $buttonBar->makeLinkButton()
-               ->setHref($this->returnUrl)
-               ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
-               ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
+                ->setHref($this->returnUrl)
+                ->setTitle($lang->sL('LLL:EXT:lang/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
+                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-go-back', Icon::SIZE_SMALL));
             $buttonBar->addButton($backButton);
         }
 

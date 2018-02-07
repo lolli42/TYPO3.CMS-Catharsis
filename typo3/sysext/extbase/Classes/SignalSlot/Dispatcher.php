@@ -90,7 +90,9 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface
             'object' => $object,
             'passSignalInformation' => $passSignalInformation === true
         ];
-        if (!is_array($this->slots[$signalClassName][$signalName]) || !in_array($slot, $this->slots[$signalClassName][$signalName])) {
+        // The in_array() comparision needs to be strict to avoid potential issues
+        // with complex objects being registered as slot.
+        if (!is_array($this->slots[$signalClassName][$signalName] ?? false) || !in_array($slot, $this->slots[$signalClassName][$signalName], true)) {
             $this->slots[$signalClassName][$signalName][] = $slot;
         }
     }
@@ -140,12 +142,12 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface
                 if (!is_array($slotReturn)) {
                     throw new Exception\InvalidSlotReturnException('The slot method ' . get_class($object) . '->' . $slotInformation['method'] . '()\'s return value is of an not allowed type ('
                         . gettype($slotReturn) . ').', 1376683067);
-                } elseif (count($slotReturn) !== count($signalArguments)) {
+                }
+                if (count($slotReturn) !== count($signalArguments)) {
                     throw new Exception\InvalidSlotReturnException('The slot method ' . get_class($object) . '->' . $slotInformation['method'] . '() returned a different number ('
                         . count($slotReturn) . ') of arguments, than it received (' . count($signalArguments) . ').', 1376683066);
-                } else {
-                    $signalArguments = $slotReturn;
                 }
+                $signalArguments = $slotReturn;
             }
         }
 
@@ -162,6 +164,6 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface
      */
     public function getSlots($signalClassName, $signalName)
     {
-        return isset($this->slots[$signalClassName][$signalName]) ? $this->slots[$signalClassName][$signalName] : [];
+        return $this->slots[$signalClassName][$signalName] ?? [];
     }
 }

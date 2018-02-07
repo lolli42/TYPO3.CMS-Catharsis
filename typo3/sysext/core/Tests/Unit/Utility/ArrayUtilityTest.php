@@ -15,11 +15,13 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility;
  */
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\Exception\MissingArrayPathException;
+use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 /**
  * Test case
  */
-class ArrayUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
+class ArrayUtilityTest extends UnitTestCase
 {
     ///////////////////////
     // Tests concerning filterByValueRecursive
@@ -196,11 +198,6 @@ class ArrayUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     // Tests concerning isValidPath
     ///////////////////////
     /**
-     * Mock the class under test, isValidPath() (method under test), calls
-     * static getValuePath() internally, which is mocked here to return a specific
-     * result. This works because of 'static' keyword'  instead of 'self'
-     * for getValueByPath() call, using late static binding in PHP 5.3
-     *
      * @test
      */
     public function isValidPathReturnsTrueIfPathExists()
@@ -327,7 +324,19 @@ class ArrayUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionCode(1341397869);
+        ArrayUtility::getValueByPath($array, $path);
+    }
 
+    /**
+     * @test
+     * @dataProvider getValueByPathInvalidPathDataProvider
+     * @param array $array
+     * @param string $path
+     */
+    public function getValueByPathThrowsSpecificExceptionIfPathNotExists(array $array, string $path)
+    {
+        $this->expectException(MissingArrayPathException::class);
+        $this->expectExceptionCode(1341397869);
         ArrayUtility::getValueByPath($array, $path);
     }
 
@@ -775,6 +784,23 @@ class ArrayUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         ];
 
         $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(1371758436);
+
+        ArrayUtility::removeByPath($inputArray, 'foo/baz');
+    }
+
+    /**
+     * @test
+     */
+    public function removeByPathThrowsSpecificExceptionIfPathDoesNotExistInArray()
+    {
+        $inputArray = [
+            'foo' => [
+                'bar' => 42,
+            ]
+        ];
+
+        $this->expectException(MissingArrayPathException::class);
         $this->expectExceptionCode(1371758436);
 
         ArrayUtility::removeByPath($inputArray, 'foo/baz');
@@ -1964,6 +1990,7 @@ class ArrayUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
     public function keepItemsInArrayWorksWithOneArgumentDataProvider()
     {
         $array = [
+            0 => 0,
             'one' => 'one',
             'two' => 'two',
             'three' => 'three'
@@ -2663,5 +2690,167 @@ class ArrayUtilityTest extends \TYPO3\TestingFramework\Core\Unit\UnitTestCase
         ];
 
         $this->assertSame($expected, ArrayUtility::convertBooleanStringsToBooleanRecursive($input));
+    }
+
+    /**
+     * Data provider for arrayFilterRecursiveFiltersFalseElements
+     * @return array
+     */
+    public function filterRecursiveFiltersFalseElementsDataProvider()
+    {
+        return [
+            'filter all values which will be false when converted to boolean' => [
+                // input
+                [
+                    true,
+                    false,
+                    'foo1' => [
+                        'bar' => [
+                            'baz' => [
+                                '1',
+                                null,
+                                '',
+                            ],
+                            '' => 1,
+                            'bbd' => 0,
+                        ]
+                    ],
+                    'foo2' => 'foo',
+                    'foo3' => '',
+                    'foo4' => [
+                        'z' => 'bar',
+                        'bar' => 0,
+                        'baz' => [
+                            'foo' => [
+                                'bar' => '',
+                                'boo' => [],
+                                'bamboo' => 5,
+                                'fooAndBoo' => [0],
+                            ]
+                        ],
+                    ],
+                ],
+                // expected
+                [
+                    true,
+                    'foo1' => [
+                        'bar' => [
+                            'baz' => [
+                                '1',
+                            ],
+                            '' => 1,
+                        ]
+                    ],
+                    'foo2' => 'foo',
+                    'foo4' => [
+                        'z' => 'bar',
+                        'baz' => [
+                            'foo' => [
+                                'bamboo' => 5,
+                                'fooAndBoo' => [],
+                            ]
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider filterRecursiveFiltersFalseElementsDataProvider
+     * @param array $input
+     * @param array $expectedResult
+     */
+    public function filterRecursiveFiltersFalseElements(array $input, array $expectedResult)
+    {
+        // If no callback is supplied, all entries of array equal to FALSE (see converting to boolean) will be removed.
+        $result = ArrayUtility::filterRecursive($input);
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
+     * Data provider for filterRecursiveCallbackFiltersEmptyElementsWithoutIntegerByCallback
+     * @return array
+     */
+    public function filterRecursiveCallbackFiltersEmptyElementsWithoutIntegerZeroByCallbackDataProvider()
+    {
+        return [
+            'filter empty values, keep zero integers' => [
+                // input
+                [
+                    true,
+                    false,
+                    'foo1' => [
+                        'bar' => [
+                            'baz' => [
+                                '1',
+                                null,
+                                '',
+                            ],
+                            '' => 1,
+                            'bbd' => 0,
+                        ]
+                    ],
+                    'foo2' => 'foo',
+                    'foo3' => '',
+                    'foo4' => [
+                        'z' => 'bar',
+                        'bar' => 0,
+                        'baz' => [
+                            'foo' => [
+                                'bar' => '',
+                                'boo' => [],
+                                'bamboo' => 5,
+                                'fooAndBoo' => [0],
+                            ]
+                        ],
+                    ],
+                ],
+                // expected
+                [
+                    true,
+                    false,
+                    'foo1' => [
+                        'bar' => [
+                            'baz' => [
+                                '1',
+                            ],
+                            '' => 1,
+                            'bbd' => 0,
+                        ]
+                    ],
+                    'foo2' => 'foo',
+                    'foo4' => [
+                        'z' => 'bar',
+                        'bar' => 0,
+                        'baz' => [
+                            'foo' => [
+                                'bamboo' => 5,
+                                'fooAndBoo' => [0],
+                            ]
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider filterRecursiveCallbackFiltersEmptyElementsWithoutIntegerZeroByCallbackDataProvider
+     * @param array $input
+     * @param array $expectedResult
+     */
+    public function filterRecursiveCallbackFiltersEmptyElementsWithoutIntegerByCallback(array $input, array $expectedResult)
+    {
+        // callback filters empty strings, array and null but keeps zero integers
+        $result = ArrayUtility::filterRecursive(
+            $input,
+            function ($item) {
+                return $item !== '' && $item !== [] && $item !== null;
+            }
+        );
+        $this->assertEquals($expectedResult, $result);
     }
 }

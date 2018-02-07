@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * View class for the admin panel in frontend editing.
@@ -154,7 +155,6 @@ class AdminPanelView
             unset($beUser->uc['TSFE_adminConfig']['action']);
             // Actions:
             if (($input['action']['clearCache'] && $this->isAdminModuleEnabled('cache')) || isset($input['preview_showFluidDebug'])) {
-                $beUser->extPageInTreeInfo = [];
                 $theStartId = (int)$input['cache_clearCacheId'];
                 $this->getTypoScriptFrontendController()
                     ->clearPageCacheContent_pidList(
@@ -165,7 +165,7 @@ class AdminPanelView
                                 'clearCacheLevels'
                             ),
                             0,
-                            $beUser->getPagePermsClause(1)
+                            $beUser->getPagePermsClause(Permission::PAGE_SHOW)
                         ) . $theStartId
                     );
             }
@@ -212,7 +212,7 @@ class AdminPanelView
         if ($val && isset($beUser->extAdminConfig['override.'][$sectionName . '.'][$val])) {
             return $beUser->extAdminConfig['override.'][$sectionName . '.'][$val];
         }
-        if (isset($beUser->extAdminConfig['override.'][$sectionName])) {
+        if (!$val && isset($beUser->extAdminConfig['override.'][$sectionName])) {
             return $beUser->extAdminConfig['override.'][$sectionName];
         }
 
@@ -289,20 +289,18 @@ class AdminPanelView
         $moduleContent .= $this->getModule('tsdebug', $this->getTSDebugModule());
         $moduleContent .= $this->getModule('info', $this->getInfoModule());
 
-        if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'])) {
-            foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'] as $className) {
-                $hookObject = GeneralUtility::makeInstance($className);
-                if (!$hookObject instanceof AdminPanelViewHookInterface) {
-                    throw new \UnexpectedValueException($className . ' must implement interface ' . AdminPanelViewHookInterface::class, 1311942539);
-                }
-                $content = $hookObject->extendAdminPanel($moduleContent, $this);
-                if ($content) {
-                    $moduleContent .= '<div class="typo3-adminPanel-section typo3-adminPanel-section-open">';
-                    $moduleContent .= '  <div class="typo3-adminPanel-section-body">';
-                    $moduleContent .= '    ' . $content;
-                    $moduleContent .= '  </div>';
-                    $moduleContent .= '</div>';
-                }
+        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'] ?? [] as $className) {
+            $hookObject = GeneralUtility::makeInstance($className);
+            if (!$hookObject instanceof AdminPanelViewHookInterface) {
+                throw new \UnexpectedValueException($className . ' must implement interface ' . AdminPanelViewHookInterface::class, 1311942539);
+            }
+            $content = $hookObject->extendAdminPanel($moduleContent, $this);
+            if ($content) {
+                $moduleContent .= '<div class="typo3-adminPanel-section typo3-adminPanel-section-open">';
+                $moduleContent .= '  <div class="typo3-adminPanel-section-body">';
+                $moduleContent .= '    ' . $content;
+                $moduleContent .= '  </div>';
+                $moduleContent .= '</div>';
             }
         }
 
@@ -360,8 +358,8 @@ class AdminPanelView
         $output[] = '  </div>';
         $output[] = '</form>';
         if ($this->getBackendUser()->uc['TSFE_adminConfig']['display_top']) {
-            $frontendPathExtBackend = htmlspecialchars($this->getTypoScriptFrontendController()->absRefPrefix) . ExtensionManagementUtility::siteRelPath('backend');
-            $output[] = '<script type="text/javascript" src="' . $frontendPathExtBackend . 'Resources/Public/JavaScript/jsfunc.evalfield.js"></script>';
+            $evalFieldJavaScriptFile = GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Public/JavaScript/jsfunc.evalfield.js');
+            $output[] = '<script type="text/javascript" src="' . htmlspecialchars(PathUtility::getAbsoluteWebPath($evalFieldJavaScriptFile)) . '"></script>';
             $output[] = '<script type="text/javascript">/*<![CDATA[*/' . GeneralUtility::minifyJavaScript('
 				var evalFunc = new evalFunc();
 					// TSFEtypo3FormFieldSet()
@@ -391,8 +389,8 @@ class AdminPanelView
 				}') . '/*]]>*/</script>';
             $output[] = '<script language="javascript" type="text/javascript">' . $this->extJSCODE . '</script>';
         }
-        $frontendPathExtFrontend = htmlspecialchars($this->getTypoScriptFrontendController()->absRefPrefix) . ExtensionManagementUtility::siteRelPath('frontend');
-        $output[] = '<link type="text/css" rel="stylesheet" href="' . $frontendPathExtFrontend . 'Resources/Public/Css/adminpanel.css" media="all" />';
+        $cssFileLocation = GeneralUtility::getFileAbsFileName('EXT:frontend/Resources/Public/Css/adminpanel.css');
+        $output[] = '<link type="text/css" rel="stylesheet" href="' . htmlspecialchars(PathUtility::getAbsoluteWebPath($cssFileLocation)) . '" media="all" />';
         $output[] = $this->getAdminPanelHeaderData();
         $output[] = '<!-- TYPO3 admin panel end -->';
 
@@ -478,21 +476,21 @@ class AdminPanelView
                 ->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
             $optionCount = $queryBuilder->count('fe_groups.uid')
-               ->from('fe_groups')
-               ->from('pages')
-               ->where(
-                   $queryBuilder->expr()->eq('pages.uid', $queryBuilder->quoteIdentifier('fe_groups.pid')),
-                   $this->getBackendUser()->getPagePermsClause(1)
-               )
-               ->execute()
-               ->fetchColumn(0);
+                ->from('fe_groups')
+                ->from('pages')
+                ->where(
+                    $queryBuilder->expr()->eq('pages.uid', $queryBuilder->quoteIdentifier('fe_groups.pid')),
+                    $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW)
+                )
+                ->execute()
+                ->fetchColumn(0);
             if ($optionCount > 0) {
                 $result = $queryBuilder->select('fe_groups.uid', 'fe_groups.title')
                     ->from('fe_groups')
                     ->from('pages')
                     ->where(
                         $queryBuilder->expr()->eq('pages.uid', $queryBuilder->quoteIdentifier('fe_groups.pid')),
-                        $this->getBackendUser()->getPagePermsClause(1)
+                        $this->getBackendUser()->getPagePermsClause(Permission::PAGE_SHOW)
                     )
                     ->orderBy('fe_groups.title')
                     ->execute();
@@ -523,8 +521,7 @@ class AdminPanelView
     protected function getCacheModule()
     {
         $output = [];
-        $beUser = $this->getBackendUser();
-        if ($beUser->uc['TSFE_adminConfig']['display_cache']) {
+        if ($this->getBackendUser()->uc['TSFE_adminConfig']['display_cache']) {
             $this->extNeedUpdate = true;
 
             $output[] = '<div class="typo3-adminPanel-form-group">';
@@ -537,7 +534,7 @@ class AdminPanelView
             $output[] = '  </div>';
             $output[] = '</div>';
 
-            $levels = $beUser->uc['TSFE_adminConfig']['cache_clearCacheLevels'];
+            $levels = $this->getBackendUser()->uc['TSFE_adminConfig']['cache_clearCacheLevels'];
             $output[] = '<div class="typo3-adminPanel-form-group">';
             $output[] = '  <label for="' . htmlspecialchars('cache_clearCacheLevels') . '">';
             $output[] = '    ' . $this->extGetLL('cache_clearLevels');
@@ -559,44 +556,6 @@ class AdminPanelView
             $output[] = '  <input type="hidden" name="TSFE_ADMIN_PANEL[cache_clearCacheId]" value="' . $GLOBALS['TSFE']->id . '" />';
             $output[] = '  <input class="typo3-adminPanel-btn typo3-adminPanel-btn-default" type="submit" value="' . $this->extGetLL('update') . '" />';
             $output[] = '</div>';
-
-            // Generating tree:
-            $depth = (int)$this->extGetFeAdminValue('cache', 'clearCacheLevels');
-            $outTable = '';
-            $tsfe = $this->getTypoScriptFrontendController();
-            $beUser->extPageInTreeInfo = [];
-            $beUser->extPageInTreeInfo[] = [
-                $tsfe->page['uid'],
-                htmlspecialchars($tsfe->page['title']),
-                $depth + 1
-            ];
-            $beUser->extGetTreeList(
-                $tsfe->id,
-                $depth,
-                0,
-                $beUser->getPagePermsClause(1)
-            );
-            $output[] = '<div class="typo3-adminPanel-table-overflow">';
-            $output[] = '<table class="typo3-adminPanel-table">';
-            $output[] = '  <thead>';
-            $output[] = '    <tr>';
-            $output[] = '      <th colspan="2">' . $this->extGetLL('cache_cacheEntries') . '</th>';
-            $output[] = '    </tr>';
-            $output[] = '  </thead>';
-            $output[] = '  <tbody>';
-            foreach ($beUser->extPageInTreeInfo as $key => $row) {
-                $output[] = '<tr>';
-                $output[] = '  <td>';
-                $output[] = '    <span style="width: ' . ($depth + 1 - $row[2]) * 5 . 'px; height: 1px; display: inline-block;"></span>';
-                $output[] = '    ' . $this->iconFactory->getIcon('apps-pagetree-page-default', Icon::SIZE_SMALL)->render() . htmlspecialchars($row[1]);
-                $output[] = '  </td>';
-                $output[] = '  <td>' . $beUser->extGetNumberOfCachedPages($row[0]) . '</td>';
-                $output[] = '</tr>';
-            }
-            $output[] = '  <tbody>';
-            $output[] = '</table>';
-            $output[] = '</div>';
-
             $output[] = '<div class="typo3-adminPanel-form-group">';
             $output[] = '  <input class="typo3-adminPanel-btn typo3-adminPanel-btn-default" type="submit" name="TSFE_ADMIN_PANEL[action][clearCache]" value="' . $this->extGetLL('cache_doit') . '" />';
             $output[] = '</div>';
@@ -767,7 +726,7 @@ class AdminPanelView
             $tableArr[] = [$this->extGetLL('info_type'), $tsfe->type];
             $tableArr[] = [$this->extGetLL('info_groupList'), $tsfe->gr_list];
             $tableArr[] = [$this->extGetLL('info_noCache'), $this->extGetLL('info_noCache_' . ($tsfe->no_cache ? 'no' : 'yes'))];
-            $tableArr[] = [$this->extGetLL('info_countUserInt'), count($tsfe->config['INTincScript'])];
+            $tableArr[] = [$this->extGetLL('info_countUserInt'), count($tsfe->config['INTincScript'] ?? [])];
 
             if (!empty($tsfe->fe_user->user['uid'])) {
                 $tableArr[] = [$this->extGetLL('info_feuserName'), htmlspecialchars($tsfe->fe_user->user['username'])];
@@ -868,10 +827,9 @@ class AdminPanelView
         $tsfe = $this->getTypoScriptFrontendController();
         //  If mod.newContentElementWizard.override is set, use that extension's create new content wizard instead:
         $tsConfig = BackendUtility::getModTSconfig($tsfe->page['uid'], 'mod');
-        $moduleName = isset($tsConfig['properties']['newContentElementWizard.']['override'])
-            ? $tsConfig['properties']['newContentElementWizard.']['override']
-            : 'new_content_element';
-        $newContentWizScriptPath = BackendUtility::getModuleUrl($moduleName);
+        $moduleName = $tsConfig['properties']['newContentElementWizard.']['override'] ?? 'new_content_element';
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         $perms = $this->getBackendUser()->calcPerms($tsfe->page);
         $langAllowed = $this->getBackendUser()->checkLanguageAccess($tsfe->sys_language_uid);
         $id = $tsfe->id;
@@ -882,7 +840,7 @@ class AdminPanelView
         $output[] = '  <div class="typo3-adminPanel-btn-group" role="group">';
 
         // History
-        $link = BackendUtility::getModuleUrl(
+        $link = (string)$uriBuilder->buildUriFromRoute(
             'record_history',
             [
                 'element' => 'pages:' . $id,
@@ -896,11 +854,14 @@ class AdminPanelView
 
         // New Content
         if ($perms & Permission::CONTENT_EDIT && $langAllowed) {
-            $params = '';
-            if ($tsfe->sys_language_uid) {
-                $params = '&sys_language_uid=' . $tsfe->sys_language_uid;
+            $linkParameters = [
+                'id' => $id,
+                'returnUrl' => $returnUrl,
+            ];
+            if (!empty($tsfe->sys_language_uid)) {
+                $linkParameters['sys_language_uid'] = $tsfe->sys_language_uid;
             }
-            $link = $newContentWizScriptPath . 'id=' . $id . $params . '&returnUrl=' . rawurlencode($returnUrl);
+            $link = (string)$uriBuilder->buildUriFromRoute($moduleName, $linkParameters);
             $icon = $this->iconFactory->getIcon('actions-add', Icon::SIZE_SMALL)->render();
             $title = $this->extGetLL('edit_newContentElement');
             $output[] = '<a class="' . $classes . '" href="' . htmlspecialchars($link) . '" title="' . $title . '">';
@@ -910,7 +871,7 @@ class AdminPanelView
 
         // Move Page
         if ($perms & Permission::PAGE_EDIT) {
-            $link = BackendUtility::getModuleUrl(
+            $link = (string)$uriBuilder->buildUriFromRoute(
                 'move_element',
                 [
                     'table' => 'pages',
@@ -927,7 +888,7 @@ class AdminPanelView
 
         // New Page
         if ($perms & Permission::PAGE_NEW) {
-            $link = BackendUtility::getModuleUrl(
+            $link = (string)$uriBuilder->buildUriFromRoute(
                 'db_new',
                 [
                     'id' => $id,
@@ -944,7 +905,7 @@ class AdminPanelView
 
         // Edit Page
         if ($perms & Permission::PAGE_EDIT) {
-            $link = BackendUtility::getModuleUrl(
+            $link = (string)$uriBuilder->buildUriFromRoute(
                 'record_edit',
                 [
                     'edit[pages][' . $id . ']' => 'edit',
@@ -962,30 +923,30 @@ class AdminPanelView
         // Edit Page Overlay
         if ($perms & Permission::PAGE_EDIT && $tsfe->sys_language_uid && $langAllowed) {
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getQueryBuilderForTable('pages_language_overlay');
+                ->getQueryBuilderForTable('pages');
             $queryBuilder->setRestrictions(GeneralUtility::makeInstance(FrontendRestrictionContainer::class));
             $row = $queryBuilder
                 ->select('uid', 'pid', 't3ver_state')
-                ->from('pages_language_overlay')
+                ->from('pages')
                 ->where(
                     $queryBuilder->expr()->eq(
-                        'pid',
+                        $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'],
                         $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT)
                     ),
                     $queryBuilder->expr()->eq(
-                        'sys_language_uid',
+                        $GLOBALS['TCA']['pages']['ctrl']['languageField'],
                         $queryBuilder->createNamedParameter($tsfe->sys_language_uid, \PDO::PARAM_INT)
                     )
                 )
                 ->setMaxResults(1)
                 ->execute()
                 ->fetch();
-            $tsfe->sys_page->versionOL('pages_language_overlay', $row);
+            $tsfe->sys_page->versionOL('pages', $row);
             if (is_array($row)) {
-                $link = BackendUtility::getModuleUrl(
+                $link = (string)$uriBuilder->buildUriFromRoute(
                     'record_edit',
                     [
-                        'edit[pages_language_overlay][' . $row['uid'] . ']' => 'edit',
+                        'edit[pages][' . $row['uid'] . ']' => 'edit',
                         'noView' => 1,
                         'returnUrl' => $returnUrl
                     ]
@@ -1000,7 +961,7 @@ class AdminPanelView
 
         // Open list view
         if ($this->getBackendUser()->check('modules', 'web_list')) {
-            $link = BackendUtility::getModuleUrl(
+            $link = (string)$uriBuilder->buildUriFromRoute(
                 'web_list',
                 [
                     'id' => $id,

@@ -53,6 +53,14 @@ class ConfigurationForm extends ExtendedTemplateService
     protected $ext_realValues = [];
 
     /**
+     * Deprecate this class
+     */
+    public function __construct()
+    {
+        trigger_error('Class ConfigurationForm has been deprecated with v9 and will be removed in v10', E_USER_DEPRECATED);
+    }
+
+    /**
      * @param string $configTemplate
      * @return array
      */
@@ -101,14 +109,6 @@ class ConfigurationForm extends ExtendedTemplateService
     }
 
     /**
-     * @param string $cat
-     */
-    public function ext_makeHelpInformationForCategory($cat)
-    {
-        $this->ext_getTSCE_config($cat);
-    }
-
-    /**
      * Get the form for extension configuration
      *
      * @param string $cat
@@ -121,7 +121,6 @@ class ConfigurationForm extends ExtendedTemplateService
      */
     public function ext_getForm($cat, $theConstants, $script = '', $addFields = '', $extKey = '', $addFormTag = true)
     {
-        $this->ext_makeHelpInformationForCategory($cat);
         $printFields = trim($this->ext_printFields($theConstants, $cat));
         $content = '';
         $content .= GeneralUtility::wrapJS('
@@ -135,24 +134,7 @@ class ConfigurationForm extends ExtendedTemplateService
         $content .= $addFields;
         $content .= $printFields;
         $content .= '<input class="btn btn-default" type="submit" name="submit" value="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/Resources/Private/Language/locallang_tsfe.xlf:update')) . '" id="configuration-submit-' . htmlspecialchars($extKey) . '" />';
-        $example = $this->ext_displayExample();
-        $content .= $example ? '<hr/>' . $example : '';
         return $content;
-    }
-
-    /**
-     * Display example
-     *
-     * @return string
-     */
-    public function ext_displayExample()
-    {
-        $out = '';
-        if ($this->helpConfig['description'] || $this->helpConfig['header']) {
-            $out = ($this->helpConfig['description'] ? implode(explode('//', $this->helpConfig['description']), '<br />') . '<br />' : '')
-                . ($this->helpConfig['bulletlist'] ? '<ul><li>' . implode(explode('//', $this->helpConfig['bulletlist']), '<li>') . '</ul>' : '<BR>');
-        }
-        return $out;
     }
 
     /**
@@ -178,7 +160,7 @@ class ConfigurationForm extends ExtendedTemplateService
     {
         $fN = 'data[' . $params['name'] . ']';
         $idName = str_replace('.', '-', $params['name']);
-        $fV = ($params['value'] = isset($this->ext_realValues[$params['name']]) ? $this->ext_realValues[$params['name']] : $params['default_value']);
+        $fV = ($params['value'] = $this->ext_realValues[$params['name']] ?? $params['default_value']);
         $reg = [];
         // Values entered from the constantsedit cannot be constants!
         if (preg_match('/^\\{[\\$][a-zA-Z0-9\\.]*\\}$/', trim($fV), $reg)) {

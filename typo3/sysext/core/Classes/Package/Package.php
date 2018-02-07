@@ -14,8 +14,6 @@ namespace TYPO3\CMS\Core\Package;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
 /**
  * A Package representing the details of an extension and/or a composer package
  * Adapted from FLOW for TYPO3 CMS
@@ -199,7 +197,7 @@ class Package implements PackageInterface
                     // dynamically migrate 'cms' dependency to 'core' dependency
                     // see also \TYPO3\CMS\Extensionmanager\Utility\ExtensionModelUtility::convertDependenciesToObjects
                     if ($packageKey === 'cms') {
-                        GeneralUtility::deprecationLog('Extension "' . $this->packageKey . '" defines a dependency on ext:cms, which has been removed. Please remove the dependency.');
+                        trigger_error('Extension "' . $this->packageKey . '" defines a dependency on ext:cms, which has been removed. Please remove the dependency.', E_USER_DEPRECATED);
                         $packageKey = 'core';
                     }
                     $constraint = new MetaData\PackageConstraint(MetaData::CONSTRAINT_TYPE_DEPENDS, $packageKey);
@@ -233,7 +231,7 @@ class Package implements PackageInterface
      * Returns contents of Composer manifest - or part there of if a key is given.
      *
      * @param string $key Optional. Only return the part of the manifest indexed by 'key'
-     * @return mixed|NULL
+     * @return mixed|null
      * @see json_decode for return values
      */
     public function getValueFromComposerManifest($key = null)
@@ -264,7 +262,7 @@ class Package implements PackageInterface
      */
     public function __sleep()
     {
-        $properties = get_class_vars(get_class($this));
+        $properties = get_class_vars(static::class);
         unset($properties['packageManager']);
         return array_keys($properties);
     }

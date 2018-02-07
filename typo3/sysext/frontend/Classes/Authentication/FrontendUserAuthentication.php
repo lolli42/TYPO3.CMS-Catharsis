@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Frontend\Authentication;
  */
 
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotFoundException;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -33,7 +34,7 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
     public $formfield_permanent = 'permalogin';
 
     /**
-     * Lifetime of session data in seconds.
+     * Lifetime of anonymous session data in seconds.
      * @var int
      */
     protected $sessionDataLifetime = 86400;
@@ -137,6 +138,7 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
         $this->lockIP = $GLOBALS['TYPO3_CONF_VARS']['FE']['lockIP'];
         $this->checkPid = $GLOBALS['TYPO3_CONF_VARS']['FE']['checkFeUserPid'];
         $this->lifetime = (int)$GLOBALS['TYPO3_CONF_VARS']['FE']['lifetime'];
+        $this->sessionTimeout = (int)$GLOBALS['TYPO3_CONF_VARS']['FE']['sessionTimeout'];
     }
 
     /**
@@ -160,7 +162,7 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
      */
     public function start()
     {
-        if ((int)$this->sessionTimeout > 0 && $this->sessionTimeout < $this->lifetime) {
+        if ($this->sessionTimeout > 0 && $this->sessionTimeout < $this->lifetime) {
             // If server session timeout is non-zero but less than client session timeout: Copy this value instead.
             $this->sessionTimeout = $this->lifetime;
         }
@@ -278,12 +280,13 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
         $this->TSdataArray[] = $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultUserTSconfig'];
         // Get the info data for auth services
         $authInfo = $this->getAuthInfoArray();
-        if ($this->writeDevLog) {
-            if (is_array($this->user)) {
-                GeneralUtility::devLog('Get usergroups for user: ' . GeneralUtility::arrayToLogString($this->user, [$this->userid_column, $this->username_column]), __CLASS__);
-            } else {
-                GeneralUtility::devLog('Get usergroups for "anonymous" user', __CLASS__);
-            }
+        if (is_array($this->user)) {
+            $this->logger->debug('Get usergroups for user', [
+                $this->userid_column => $this->user[$this->userid_column],
+                $this->username_column => $this->user[$this->username_column]
+            ]);
+        } else {
+            $this->logger->debug('Get usergroups for "anonymous" user');
         }
         $groupDataArr = [];
         // Use 'auth' service to find the groups for the user
@@ -299,14 +302,14 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
             }
             unset($serviceObj);
         }
-        if ($this->writeDevLog && $serviceChain) {
-            GeneralUtility::devLog($subType . ' auth services called: ' . $serviceChain, __CLASS__);
+        if ($serviceChain) {
+            $this->logger->debug($subType . ' auth services called: ' . $serviceChain);
         }
-        if ($this->writeDevLog && empty($groupDataArr)) {
-            GeneralUtility::devLog('No usergroups found by services', __CLASS__);
+        if (empty($groupDataArr)) {
+            $this->logger->debug('No usergroups found by services');
         }
-        if ($this->writeDevLog && !empty($groupDataArr)) {
-            GeneralUtility::devLog(count($groupDataArr) . ' usergroup records found by services', __CLASS__);
+        if (!empty($groupDataArr)) {
+            $this->logger->debug(count($groupDataArr) . ' usergroup records found by services');
         }
         // Use 'auth' service to check the usergroups if they are really valid
         foreach ($groupDataArr as $groupData) {
@@ -319,9 +322,10 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
                 $serviceObj->initAuth($subType, [], $authInfo, $this);
                 if (!$serviceObj->authGroup($this->user, $groupData)) {
                     $validGroup = false;
-                    if ($this->writeDevLog) {
-                        GeneralUtility::devLog($subType . ' auth service did not auth group: ' . GeneralUtility::arrayToLogString($groupData, 'uid,title'), __CLASS__, 2);
-                    }
+                    $this->logger->debug($subType . ' auth service did not auth group', [
+                        'uid ' => $groupData['uid'],
+                        'title' => $groupData['title']
+                    ]);
                     break;
                 }
                 unset($serviceObj);
@@ -597,5 +601,25 @@ class FrontendUserAuthentication extends AbstractUserAuthentication
     {
         $this->user = null;
         $this->loginHidden = true;
+    }
+
+    /**
+     * Update the field "is_online" every 60 seconds of a logged-in user
+     *
+     * @internal
+     */
+    public function updateOnlineTimestamp()
+    {
+        if (!is_array($this->user) || !$this->user['uid']
+            || $this->user['is_online'] >= $GLOBALS['EXEC_TIME'] - 60) {
+            return;
+        }
+        $dbConnection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('fe_users');
+        $dbConnection->update(
+            'fe_users',
+            ['is_online' => $GLOBALS['EXEC_TIME']],
+            ['uid' => (int)$this->user['uid']]
+        );
+        $this->user['is_online'] = $GLOBALS['EXEC_TIME'];
     }
 }

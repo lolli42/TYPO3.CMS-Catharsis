@@ -52,14 +52,10 @@
 @import "bootstrap/normalize";
 
 //
-// FontAwesome
+// Fonts
 //
+@import "webfont/sourcesanspro";
 @import "font-awesome";
-
-//
-// ShareFont
-//
-@import "webfont/share";
 
 //
 // Bootstrap Core CSS
@@ -120,6 +116,7 @@
 @import "component/diff";
 @import "component/module";
 @import "component/panel";
+@import "component/checkbox";
 
 //
 // Bootstrap Utility classes

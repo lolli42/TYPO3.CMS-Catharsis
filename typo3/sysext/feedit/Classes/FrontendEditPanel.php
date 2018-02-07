@@ -14,11 +14,9 @@ namespace TYPO3\CMS\Feedit;
  * The TYPO3 project - inspiring people to share!
  */
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -185,9 +183,7 @@ class FrontendEditPanel
         }
 
         $hidden = $this->isDisabled($table, $dataArr) ? ' typo3-feedit-element-hidden' : '';
-        $outerWrapConfig = isset($conf['stdWrap.'])
-            ? $conf['stdWrap.']
-            : ['wrap' => '<div class="typo3-feedit-element' . $hidden . '">|</div>'];
+        $outerWrapConfig = $conf['stdWrap.'] ?? ['wrap' => '<div class="typo3-feedit-element' . $hidden . '">|</div>'];
         $finalOut = $this->cObj->stdWrap($finalOut, $outerWrapConfig);
 
         return $finalOut;
@@ -216,14 +212,15 @@ class FrontendEditPanel
         $iconImg = '<span title="' . htmlspecialchars($iconTitle, ENT_COMPAT, 'UTF-8', false) . '" style="' . ($conf['styleAttribute'] ? htmlspecialchars($conf['styleAttribute']) : '') . '">'
             . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)->render('inline')
             . '</span>';
-        $nV = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
+        $noView = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
 
-        $url = BackendUtility::getModuleUrl(
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+        $url = (string)$uriBuilder->buildUriFromRoute(
             'record_edit',
             [
                 'edit[' . $table . '][' . $editUid . ']' => 'edit',
                 'columnsOnly' => $fieldList,
-                'noView' => $nV,
+                'noView' => $noView,
                 'feEdit' => 1
             ]
         ) . $addUrlParamStr;
@@ -258,19 +255,21 @@ class FrontendEditPanel
      */
     protected function editPanelLinkWrap($string, $formName, $cmd, $currentRecord = '', $confirm = '', $nPid = '')
     {
-        $nV = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
+        $noView = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
+        /** @var \TYPO3\CMS\Backend\Routing\UriBuilder $uriBuilder */
+        $uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
         if ($cmd === 'edit') {
             $rParts = explode(':', $currentRecord);
-            $out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', ['edit[' . $rParts[0] . '][' . $rParts[1] . ']' => 'edit', 'noView' => $nV, 'feEdit' => 1]), $currentRecord);
+            $out = $this->editPanelLinkWrap_doWrap($string, (string)$uriBuilder->buildUriFromRoute('record_edit', ['edit[' . $rParts[0] . '][' . $rParts[1] . ']' => 'edit', 'noView' => $noView, 'feEdit' => 1]), $currentRecord);
         } elseif ($cmd === 'new') {
             $rParts = explode(':', $currentRecord);
             if ($rParts[0] === 'pages') {
-                $out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('db_new', ['id' => $rParts[1], 'pagesOnly' => 1]), $currentRecord);
+                $out = $this->editPanelLinkWrap_doWrap($string, (string)$uriBuilder->buildUriFromRoute('db_new', ['id' => $rParts[1], 'pagesOnly' => 1]), $currentRecord);
             } else {
                 if (!(int)$nPid) {
                     $nPid = MathUtility::canBeInterpretedAsInteger($rParts[1]) ? -$rParts[1] : $this->frontendController->id;
                 }
-                $out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', ['edit[' . $rParts[0] . '][' . $nPid . ']' => 'new', 'noView' => $nV]), $currentRecord);
+                $out = $this->editPanelLinkWrap_doWrap($string, (string)$uriBuilder->buildUriFromRoute('record_edit', ['edit[' . $rParts[0] . '][' . $nPid . ']' => 'new', 'noView' => $noView]), $currentRecord);
             }
         } else {
             if ($confirm && $this->backendUser->jsConfirmation(JsConfirmation::FE_EDIT)) {
@@ -298,7 +297,7 @@ class FrontendEditPanel
     {
         $width = MathUtility::forceIntegerInRange($this->backendUser->getTSConfigVal('options.feedit.popupWidth'), 690, 5000, 690);
         $height = MathUtility::forceIntegerInRange($this->backendUser->getTSConfigVal('options.feedit.popupHeight'), 500, 5000, 500);
-        $onclick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($url . '&returnUrl=' . rawurlencode(PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::siteRelPath('backend') . 'Resources/Private/Templates/Close.html'))) . ',\'FEquickEditWindow\',\'width=' . $width . ',height=' . $height . ',status=0,menubar=0,scrollbars=1,resizable=1\');vHWin.focus();return false;';
+        $onclick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($url . '&returnUrl=' . rawurlencode(PathUtility::getAbsoluteWebPath(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Public/Html/Close.html')))) . ',\'FEquickEditWindow\',\'width=' . $width . ',height=' . $height . ',status=0,menubar=0,scrollbars=1,resizable=1\');vHWin.focus();return false;';
         return '<a href="#" class="typo3-editPanel-btn typo3-editPanel-btn-default frontEndEditIconLinks ' . htmlspecialchars($additionalClasses) . '" onclick="' . htmlspecialchars($onclick) . '" style="display: none;">' . $string . '</a>';
     }
 
